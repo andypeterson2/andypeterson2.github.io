@@ -265,23 +265,158 @@
     }
   }
 
-  // ── Service start buttons ───────────────────────────────────
-  document.querySelectorAll(".svc-start-btn").forEach(function (btn) {
-    // Inject icon
-    btn.querySelectorAll("[data-icon]").forEach(function (el) {
-      var name = el.dataset.icon;
-      if (window.UIKit && UIKit.ICONS[name]) el.outerHTML = UIKit.ICONS[name];
+  // ── Bind start buttons (static or dynamically created) ─────
+  function bindStartButtons(root) {
+    (root || document).querySelectorAll(".svc-start-btn").forEach(function (btn) {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.querySelectorAll("[data-icon]").forEach(function (el) {
+        var name = el.dataset.icon;
+        if (window.UIKit && UIKit.ICONS[name]) el.outerHTML = UIKit.ICONS[name];
+      });
+      btn.addEventListener("click", function () {
+        openServiceTab(btn);
+      });
     });
-    btn.addEventListener("click", function () {
-      openServiceTab(btn);
-    });
-  });
+  }
+
+  // ── Load projects from API (for static-hosted frontend) ───
+  function loadProjects() {
+    apiGet("/api/projects")
+      .then(function (projects) {
+        if (!Array.isArray(projects)) return;
+
+        var sidebar = document.querySelector(".sidebar-scroll");
+        if (!sidebar) return;
+
+        // Update project count
+        var countEl = document.querySelector(".topbar-count");
+        if (countEl) countEl.textContent = projects.length + " projects";
+
+        // Clear existing content
+        sidebar.innerHTML = "";
+
+        if (projects.length === 0) {
+          sidebar.innerHTML =
+            '<div class="empty-state">' +
+              "<p>No projects found.</p>" +
+              '<p class="text-muted">Check that the backend is running.</p>' +
+            "</div>";
+          return;
+        }
+
+        projects.forEach(function (p) {
+          var details = document.createElement("details");
+          details.className = "ui-collapsible project-collapsible";
+          details.dataset.project = p.name;
+
+          // Determine dot class
+          var dotClass = "dot-bare";
+          if (p.has_dashboard_manifest) dotClass = "dot-running";
+          else if (p.has_compose) dotClass = "dot-compose";
+          else if (p.has_git) dotClass = "dot-git";
+
+          var summaryHtml =
+            '<span class="sidebar-dot ' + dotClass + '"></span>' +
+            '<span class="sidebar-name">' + p.name + "</span>";
+          if (p.git_dirty) summaryHtml += '<span class="ui-badge ui-badge-warn">M</span>';
+
+          var summary = document.createElement("summary");
+          summary.innerHTML = summaryHtml;
+          details.appendChild(summary);
+
+          var body = document.createElement("div");
+          body.className = "ui-collapsible-body project-info";
+
+          if (p.description) {
+            body.innerHTML += '<p class="project-desc">' + p.description + "</p>";
+          }
+
+          if (p.has_git) {
+            body.innerHTML +=
+              '<div class="info-section">' +
+                '<div class="info-row"><span class="info-label">Branch</span><span class="info-value">' + (p.git_branch || "") + "</span></div>" +
+                '<div class="info-row"><span class="info-label">Commits</span><span class="info-value">' + (p.git_commit_count || 0) + "</span></div>" +
+                '<div class="info-row"><span class="info-label">Last</span><span class="info-value info-truncate">' + (p.git_last_commit || "") + "</span></div>" +
+                (p.git_remote ? '<div class="info-row"><span class="info-label">Remote</span><span class="info-value info-truncate remote-url">' + p.git_remote + "</span></div>" : "") +
+              "</div>";
+          }
+
+          if (p.languages && p.languages.length) {
+            var tags = '<div class="info-tags">';
+            p.languages.forEach(function (lang) {
+              tags += '<span class="ui-badge">' + lang + "</span>";
+            });
+            tags += "</div>";
+            body.innerHTML += tags;
+          }
+
+          // Service buttons
+          var services = p.dashboard_services || [];
+          if (services.length) {
+            var btns = '<div class="service-buttons">';
+            services.forEach(function (svc) {
+              btns +=
+                '<button class="btn btn-xs btn-primary svc-start-btn"' +
+                ' data-project="' + p.name + '"' +
+                ' data-service="' + svc.name + '"' +
+                ' data-display-name="' + (svc.display_name || svc.name) + '"' +
+                ' data-compose-service="' + (svc.compose_service || svc.name) + '"' +
+                ' data-compose-file="' + (svc.compose_file || "docker-compose.yml") + '"' +
+                ' data-port="' + (svc.default_port || "") + '">' +
+                '<span data-icon="play"></span> ' + (svc.display_name || svc.name) +
+                "</button>";
+            });
+            btns += "</div>";
+            body.innerHTML += btns;
+          } else if (p.compose_services && p.compose_services.length) {
+            var btns2 = '<div class="service-buttons">';
+            p.compose_services.forEach(function (svc) {
+              btns2 +=
+                '<button class="btn btn-xs btn-primary svc-start-btn"' +
+                ' data-project="' + p.name + '"' +
+                ' data-service="' + svc + '"' +
+                ' data-display-name="' + svc + '"' +
+                ' data-compose-service="' + svc + '"' +
+                ' data-compose-file="docker-compose.yml"' +
+                ' data-port="">' +
+                '<span data-icon="play"></span> ' + svc +
+                "</button>";
+            });
+            btns2 += "</div>";
+            body.innerHTML += btns2;
+          }
+
+          details.appendChild(body);
+          sidebar.appendChild(details);
+        });
+
+        // Bind newly created buttons
+        bindStartButtons(sidebar);
+      })
+      .catch(function (err) {
+        var sidebar = document.querySelector(".sidebar-scroll");
+        if (sidebar) {
+          sidebar.innerHTML =
+            '<div class="empty-state">' +
+              "<p>Cannot reach backend.</p>" +
+              '<p class="text-muted">' + err.message + "</p>" +
+            "</div>";
+        }
+      });
+  }
+
+  // Bind any server-rendered buttons that already exist
+  bindStartButtons();
+
+  // Load projects from API (static frontend needs this; server-rendered pages get a no-op refresh)
+  loadProjects();
 
   // ── Refresh button ──────────────────────────────────────────
   var refreshBtn = document.getElementById("btn-refresh");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", function () {
-      window.location.reload();
+      loadProjects();
     });
   }
 })();
