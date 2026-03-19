@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,11 +9,44 @@
   <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
   <script src="/shared/site-nav.js" defer></script>
   <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <meta http-equiv="refresh" content="2; url=https://andypeterson2.github.io/ui-kit/showcase.html">
-  <link rel="canonical" href="https://andypeterson2.github.io/ui-kit/showcase.html">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .showcase-frame {
+      position: fixed;
+      top: 44px; /* navbar height */
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: none;
+      width: 100%;
+      height: calc(100% - 44px);
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="https://andypeterson2.github.io/ui-kit/showcase.html">UI Kit Showcase</a>...</p>
+  <iframe class="showcase-frame" src="/lib/ui-kit/v1.1/showcase.html" title="UI Kit Showcase"></iframe>
+  <script>
+    // Sync theme into the iframe
+    var frame = document.querySelector('.showcase-frame');
+    function syncTheme() {
+      try {
+        var theme = document.documentElement.dataset.theme || 'light';
+        frame.contentDocument.documentElement.dataset.theme = theme;
+      } catch (e) { /* cross-origin guard */ }
+    }
+    frame.addEventListener('load', syncTheme);
+    // Watch for theme changes on the parent
+    new MutationObserver(syncTheme).observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-theme']
+    });
+  </script>
 </body>
 </html>
