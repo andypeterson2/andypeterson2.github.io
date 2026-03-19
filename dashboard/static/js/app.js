@@ -409,6 +409,9 @@
   // Bind any server-rendered buttons that already exist
   bindStartButtons();
 
+  // Expose for connect widget to call after reconnecting
+  window.loadProjects = loadProjects;
+
   // Load projects from API (static frontend needs this; server-rendered pages get a no-op refresh)
   loadProjects();
 
