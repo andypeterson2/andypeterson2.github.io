@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
 
@@ -137,6 +137,8 @@
         <button id="theme-toggle" title="Toggle day/night theme" aria-label="Toggle day/night theme"></button>
       </div>
 
+      <div id="backend-connect"></div>
+
       <div id="console-hdr">
         <span id="console-hdr-title">Run Log</span>
         <button id="btn-clear-terminal" title="Clear log" aria-label="Clear run log"></button>
@@ -198,16 +200,31 @@
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
         crossorigin="anonymous"></script>
+<script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
 <script>
-  const MAX_CLUES = {{ MAX_CLUES }};
-  const MAX_GRID  = {{ MAX_GRID }};
+  const MAX_CLUES = 3;
+  const MAX_GRID  = 6;
+  const API_BASE = ServiceConfig.get("nonogram", "http://localhost:5055");
 </script>
 <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
 <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
-<script src="/static/state.js"></script>
-<script src="/static/grid.js"></script>
-<script src="/static/solver.js"></script>
-<script src="/static/ui.js"></script>
-<script src="/static/app.js"></script>
+<script src="static/state.js"></script>
+<script src="static/grid.js"></script>
+<script src="static/solver.js"></script>
+<script src="static/ui.js"></script>
+<script src="static/app.js"></script>
+<script>
+  (function() {
+    var el = document.getElementById('backend-connect');
+    if (el && window.UIKit && UIKit.initConnect) {
+      UIKit.initConnect(el, {
+        service: 'nonogram',
+        defaultHost: 'localhost',
+        defaultPort: 5055,
+        label: 'Backend'
+      });
+    }
+  })();
+</script>
 </body>
 </html>
