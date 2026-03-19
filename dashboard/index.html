@@ -25,7 +25,6 @@
         <button class="btn btn-xs btn-secondary" id="btn-refresh" title="Rescan projects">
           <span data-icon="refresh"></span> Refresh
         </button>
-        <div id="backend-connect"></div>
       </div>
     </div>
 
@@ -63,6 +62,23 @@
           </div>
         </main>
       </div>
+
+      <!-- Right drawer: Server connection -->
+      <div class="drawer drawer-right" id="server-drawer">
+        <button class="side-handle side-handle-right" id="server-handle" aria-expanded="false">
+          <span class="drawer-chevron">&#9654;</span>
+          <span>Server</span>
+        </button>
+        <div class="side-panel side-panel-right">
+          <div class="side-panel-header">
+            <div class="side-panel-title">Backend Connection</div>
+          </div>
+          <div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column;">
+            <div id="backend-connect"></div>
+            <div class="log-terminal" id="connect-log" style="flex: 1; min-height: 120px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -70,18 +86,78 @@
 
   <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
   <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
-  <script>const API_BASE = ServiceConfig.get("dashboard", "http://localhost:5050");</script>
+  <script>var API_BASE = ServiceConfig.get("dashboard", "http://localhost:5050");</script>
   <script src="static/js/app.js"></script>
   <script>
     (function() {
+      // Init drawer
+      var drawer = document.getElementById('server-drawer');
+      var handle = document.getElementById('server-handle');
+      if (drawer && handle && window.UIKit && UIKit.initDrawer) {
+        UIKit.initDrawer(drawer, handle);
+      }
+
+      // Init connection log
+      var logEl = document.getElementById('connect-log');
+      var connLog = (window.UIKit && UIKit.createLogger) ? UIKit.createLogger(logEl, 300) : function() {};
+
+      // Init connect widget
       var el = document.getElementById('backend-connect');
       if (el && window.UIKit && UIKit.initConnect) {
-        UIKit.initConnect(el, {
+        var connect = UIKit.initConnect(el, {
           service: 'dashboard',
           defaultHost: 'localhost',
           defaultPort: 5050,
-          label: 'Backend'
+          label: 'Backend',
+          onConnect: function(info) {
+            connect.setStatus('connecting');
+            connLog('Connecting to ' + info.url + '...', 'ok');
+            API_BASE = info.url;
+
+            fetch(info.url + '/api/projects')
+              .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+              })
+              .then(function(projects) {
+                connect.setStatus('connected');
+                connLog('Connected — ' + projects.length + ' projects found', 'ok');
+                if (window.loadProjects) loadProjects();
+              })
+              .catch(function(err) {
+                connect.setStatus('error', err.message);
+                connLog('Connection failed: ' + err.message, 'err');
+                if (location.protocol === 'https:') {
+                  connLog('Note: HTTPS pages may block HTTP localhost requests in some browsers.', 'warn');
+                  connLog('Try: chrome://flags/#block-insecure-private-network-requests (set to Disabled)', 'warn');
+                }
+              });
+          }
         });
+
+        // Auto-connect on load if a URL is configured
+        if (ServiceConfig.isConfigured('dashboard')) {
+          connLog('Auto-connecting to ' + API_BASE + '...', 'ok');
+          connect.setStatus('connecting');
+          fetch(API_BASE + '/api/projects')
+            .then(function(r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function(projects) {
+              connect.setStatus('connected');
+              connLog('Connected — ' + projects.length + ' projects found', 'ok');
+            })
+            .catch(function(err) {
+              connect.setStatus('error', err.message);
+              connLog('Auto-connect failed: ' + err.message, 'err');
+              if (location.protocol === 'https:') {
+                connLog('HTTPS > HTTP localhost may be blocked by your browser.', 'warn');
+              }
+            });
+        } else {
+          connLog('No backend configured. Enter host:port and click Connect.', 'warn');
+        }
       }
     })();
   </script>
