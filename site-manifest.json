@@ -1,15 +1,13 @@
 {
-  "generated": "2026-03-19T20:13:06.329193+00:00",
+  "generated": "2026-03-19T20:13:23.841754+00:00",
   "apps": [
     {
       "path": "/",
-      "title": "Portfolio",
-      "icon": "fa-solid fa-house"
+      "title": "Andrew Peterson"
     },
     {
       "path": "/classifiers/",
-      "title": "Classifiers",
-      "icon": "fa-solid fa-brain"
+      "title": "Classifiers"
     },
     {
       "path": "/cv/",
@@ -23,8 +21,7 @@
     },
     {
       "path": "/nonogram/",
-      "title": "Nonogram",
-      "icon": "fa-solid fa-magnifying-glass"
+      "title": "Nonogram"
     },
     {
       "path": "/qvc/client/",
