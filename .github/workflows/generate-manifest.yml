@@ -1,0 +1,31 @@
+name: Generate site manifest
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'site-manifest.json'
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate manifest
+        run: python3 generate-manifest.py
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet site-manifest.json && exit 0
+          git add site-manifest.json
+          git commit -m "chore: regenerate site-manifest.json"
+          git push
