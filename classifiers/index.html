@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ plugin.display_name }} — Classifiers</title>
+  <title>Classifiers</title>
   <script src="https://andypeterson2.github.io/ui-kit/theme-bootstrap.js"></script>
+  <script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://andypeterson2.github.io/ui-kit/ui-kit.css">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="static/css/app.css">
 </head>
 <body>
-  <script>const UI_CONFIG = {{ ui_config | tojson }};</script>
+  <script>
+    const UI_CONFIG = {"name":"mnist","display_name":"MNIST","input_type":"image","class_labels":["0","1","2","3","4","5","6","7","8","9"],"feature_names":[],"default_hyperparams":{"epochs":5,"batch_size":64,"lr":0.001}};
+    const API_BASE = ServiceConfig.get("classifier", "http://localhost:5001");
+  </script>
 
   <div class="app-shell">
 
@@ -39,8 +43,9 @@
 
       <!-- Top bar: current dataset name + hamburger dataset switcher -->
       <div class="top-bar" id="top-bar">
-        <span class="current-dataset" id="current-dataset">{{ plugin.display_name }}</span>
+        <span class="current-dataset" id="current-dataset">MNIST</span>
         <div class="top-bar-right">
+          <div id="backend-connect"></div>
           <button id="dataset-menu-btn" class="btn btn-icon hamburger-btn"
                   aria-label="Switch dataset" aria-expanded="false" title="Switch dataset"><span data-icon="hamburger"></span></button>
           <div id="dataset-menu" class="ui-dropdown hidden" role="listbox">
@@ -68,9 +73,9 @@
               <div class="form-row">
                 <label for="model-type" title="Neural network architecture to train">Model</label>
                 <select id="model-type">
-                  {% for t in model_types %}
-                  <option value="{{ t }}">{{ t }}</option>
-                  {% endfor %}
+                  <option value="Linear">Linear</option>
+                  <option value="Conv">Conv</option>
+                  <option value="QKernel">QKernel</option>
                 </select>
               </div>
               <div class="form-row">
@@ -80,17 +85,17 @@
               <div class="form-row">
                 <label for="epochs" title="Number of full passes over the training dataset">Epochs</label>
                 <input type="number" id="epochs"
-                       value="{{ ui_config.default_hyperparams.epochs }}" min="1" max="200">
+                       value="5" min="1" max="200">
               </div>
               <div class="form-row">
                 <label for="batch-size" title="Number of samples per gradient update step">Batch</label>
                 <input type="number" id="batch-size"
-                       value="{{ ui_config.default_hyperparams.batch_size }}" min="1" max="512">
+                       value="64" min="1" max="512">
               </div>
               <div class="form-row">
                 <label for="lr" title="Learning rate — controls how much weights adjust each step">LR</label>
                 <input type="number" id="lr"
-                       value="{{ ui_config.default_hyperparams.lr }}" step="0.0001" min="0.00001" max="1">
+                       value="0.001" step="0.0001" min="0.00001" max="1">
               </div>
               <details class="ui-collapsible" id="advanced-options">
                 <summary>Advanced</summary>
@@ -180,37 +185,17 @@
           <section class="card" id="try-section" aria-labelledby="try-heading">
             <h2 id="try-heading">Try</h2>
 
-            {% if ui_config.input_type == 'image' %}
             <div id="canvas-col" class="canvas-area">
               <div class="canvas-wrap">
                 <canvas id="draw-canvas" class="ui-canvas" width="280" height="280"
                         role="img" aria-label="Drawing canvas"></canvas>
                 <button id="clear-btn" class="ui-canvas-clear" aria-label="Clear canvas" title="Clear"><span data-icon="close"></span></button>
               </div>
-              <p class="canvas-hint">Draw a {{ ui_config.class_labels | join(' / ') | truncate(40) }}</p>
+              <p class="canvas-hint">Draw a 0 / 1 / 2 / 3 / 4 / 5 / 6 / 7 / 8 / 9</p>
             </div>
             <div id="tabular-col" style="display:none" aria-hidden="true">
               <button id="predict-btn" tabindex="-1">Predict</button>
             </div>
-
-            {% else %}
-            <div id="canvas-col" style="display:none" aria-hidden="true">
-              <canvas id="draw-canvas" class="ui-canvas" width="280" height="280"></canvas>
-              <button id="clear-btn" class="ui-canvas-clear" tabindex="-1"><span data-icon="close"></span></button>
-            </div>
-            <div id="tabular-col" class="feature-row">
-              {% if ui_config.feature_names %}
-              {% for feat in ui_config.feature_names %}
-              <label class="feature-label">
-                <span>{{ feat | replace('_', ' ') }}</span>
-                <input type="number" step="0.01" class="feature-input"
-                       data-feature="{{ feat }}" value="0">
-              </label>
-              {% endfor %}
-              {% endif %}
-              <button id="predict-btn" class="btn btn-primary predict-row-btn">Predict</button>
-            </div>
-            {% endif %}
 
             <div class="pred-wrap">
               <table id="pred-table" class="ui-table" aria-label="Model predictions">
@@ -238,14 +223,27 @@
   <button id="theme-toggle" class="ui-theme-toggle" aria-label="Switch to light mode"></button>
   <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
   <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
-  <script src="/static/js/chart.js"></script>
-  <script src="/static/js/sse.js"></script>
-  <script src="/static/js/app.js"></script>
+  <script src="static/js/chart.js"></script>
+  <script src="static/js/sse.js"></script>
+  <script src="static/js/app.js"></script>
   <script>
     document.querySelectorAll('[data-icon]').forEach(function(el) {
       var name = el.dataset.icon;
       if (UIKit.ICONS[name]) el.outerHTML = UIKit.ICONS[name];
     });
+  </script>
+  <script>
+    (function() {
+      var el = document.getElementById('backend-connect');
+      if (el && window.UIKit && UIKit.initConnect) {
+        UIKit.initConnect(el, {
+          service: 'classifier',
+          defaultHost: 'localhost',
+          defaultPort: 5001,
+          label: 'Backend'
+        });
+      }
+    })();
   </script>
 </body>
 </html>
