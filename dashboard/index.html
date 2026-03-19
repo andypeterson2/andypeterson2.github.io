@@ -4,12 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
-  <script src="https://andypeterson2.github.io/ui-kit/theme-bootstrap.js"></script>
-  <link rel="stylesheet" href="https://andypeterson2.github.io/ui-kit/ui-kit.css">
+  <meta name="site-nav-label" content="Dashboard">
+  <meta name="site-nav-icon" content="fa-solid fa-gear">
+  <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
+  <script src="/shared/site-nav.js" defer></script>
+  <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-  <script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <script src="/lib/ui-kit/v1.1/service-config.js"></script>
   <link rel="stylesheet" href="static/css/app.css">
 </head>
 <body>
@@ -84,8 +88,8 @@
 
   <button id="theme-toggle" class="ui-theme-toggle" aria-label="Toggle theme"></button>
 
-  <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
-  <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
+  <script src="/lib/ui-kit/v1.1/icons.js"></script>
+  <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
   <script>var API_BASE = ServiceConfig.get("dashboard", "https://localhost:5050");</script>
   <script src="static/js/app.js"></script>
   <script>

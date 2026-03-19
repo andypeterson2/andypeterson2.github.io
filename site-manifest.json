@@ -1,0 +1,45 @@
+{
+  "generated": "2026-03-19T20:13:06.329193+00:00",
+  "apps": [
+    {
+      "path": "/",
+      "title": "Portfolio",
+      "icon": "fa-solid fa-house"
+    },
+    {
+      "path": "/classifiers/",
+      "title": "Classifiers",
+      "icon": "fa-solid fa-brain"
+    },
+    {
+      "path": "/cv/",
+      "title": "CV Editor",
+      "icon": "fa-solid fa-pen-to-square"
+    },
+    {
+      "path": "/dashboard/",
+      "title": "Dashboard",
+      "icon": "fa-solid fa-gear"
+    },
+    {
+      "path": "/nonogram/",
+      "title": "Nonogram",
+      "icon": "fa-solid fa-magnifying-glass"
+    },
+    {
+      "path": "/qvc/client/",
+      "title": "Video Chat",
+      "icon": "fa-solid fa-lock"
+    },
+    {
+      "path": "/tech-tree/",
+      "title": "Tech Tree",
+      "icon": "fa-solid fa-code-branch"
+    },
+    {
+      "path": "/ui-kit/",
+      "title": "UI Kit",
+      "icon": "fa-regular fa-star"
+    }
+  ]
+}
