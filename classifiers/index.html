@@ -1,22 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Classifiers</title>
-  <script src="https://andypeterson2.github.io/ui-kit/theme-bootstrap.js"></script>
-  <script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
+  <meta name="site-nav-label" content="Classifiers">
+  <meta name="site-nav-icon" content="fa-solid fa-brain">
+  <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
+  <script src="/shared/site-nav.js" defer></script>
+  <script src="/lib/ui-kit/v1.1/service-config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://andypeterson2.github.io/ui-kit/ui-kit.css">
+  <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
   <link rel="stylesheet" href="static/css/app.css">
 </head>
 <body>
   <script>
-    const UI_CONFIG = {"name":"mnist","display_name":"MNIST","input_type":"image","class_labels":["0","1","2","3","4","5","6","7","8","9"],"feature_names":[],"default_hyperparams":{"epochs":5,"batch_size":64,"lr":0.001}};
     const API_BASE = ServiceConfig.get("classifier", "https://localhost:5001");
+
+    // Determine dataset from URL query param or default to "mnist"
+    const _urlDataset = new URLSearchParams(location.search).get("dataset") || "mnist";
+
+    // Fetch UI config from API; fall back to localStorage cache, then hardcoded MNIST default
+    const _defaultConfig = {"name":"mnist","display_name":"MNIST","input_type":"image","class_labels":["0","1","2","3","4","5","6","7","8","9"],"feature_names":[],"default_hyperparams":{"epochs":5,"batch_size":64,"lr":0.001}};
+    let UI_CONFIG = JSON.parse(localStorage.getItem("classifier-ui-config") || "null") || _defaultConfig;
+
+    // Async fetch to update config from backend
+    var _configReady = fetch(API_BASE + "/api/datasets/" + encodeURIComponent(_urlDataset) + "/config")
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function(data) {
+        UI_CONFIG = data.ui_config;
+        UI_CONFIG._model_types = data.model_types;
+        localStorage.setItem("classifier-ui-config", JSON.stringify(UI_CONFIG));
+      })
+      .catch(function() { /* use cached or default */ });
   </script>
 
   <div class="app-shell">
@@ -221,8 +240,8 @@
   </div><!-- /.app-shell -->
 
   <button id="theme-toggle" class="ui-theme-toggle" aria-label="Switch to light mode"></button>
-  <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
-  <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
+  <script src="/lib/ui-kit/v1.1/icons.js"></script>
+  <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
   <script src="static/js/chart.js"></script>
   <script src="static/js/sse.js"></script>
   <script src="static/js/app.js"></script>
