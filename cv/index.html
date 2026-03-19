@@ -11,7 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
@@ -21,6 +22,7 @@
   <header class="topbar" role="banner">
     <h1 class="topbar-title">CV Editor</h1>
     <div class="actions">
+      <div id="backend-connect"></div>
       <select class="doc-select" x-model="activeDoc" @change="switchDoc(activeDoc)" aria-label="Active document">
         <option value="resume">Resume</option>
         <option value="cv">CV</option>
@@ -284,7 +286,7 @@
       <!-- Cover Letter view -->
       <template x-if="activeDoc === 'coverletter'">
         <div class="coverletter-editor" x-data="{ cl: null }" x-init="
-          fetch('/api/coverletter').then(r => r.json()).then(d => cl = d)
+          fetch(API_BASE + '/api/coverletter').then(r => r.json()).then(d => cl = d)
         ">
           <template x-if="cl">
             <div>
@@ -328,6 +330,20 @@
 
   <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
   <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
-  <script src="/app.js"></script>
+  <script>const API_BASE = ServiceConfig.get("cv", "http://localhost:3000");</script>
+  <script src="app.js"></script>
+  <script>
+    (function() {
+      var el = document.getElementById('backend-connect');
+      if (el && window.UIKit && UIKit.initConnect) {
+        UIKit.initConnect(el, {
+          service: 'cv',
+          defaultHost: 'localhost',
+          defaultPort: 3000,
+          label: 'Backend'
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
