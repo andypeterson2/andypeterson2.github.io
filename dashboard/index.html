@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <script src="https://andypeterson2.github.io/ui-kit/theme-bootstrap.js"></script>
+  <link rel="stylesheet" href="https://andypeterson2.github.io/ui-kit/ui-kit.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar -->
+    <div class="app-topbar">
+      <div class="topbar-left">
+        <span class="topbar-brand" data-icon="gear"></span>
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-count">{{ projects | length }} projects</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-xs btn-secondary" id="btn-refresh" title="Rescan projects">
+          <span data-icon="refresh"></span> Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="app-body">
+      <!-- Sidebar: collapsible project cards -->
+      <aside class="app-sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h3>Projects</h3>
+        </div>
+        <div class="sidebar-scroll">
+          {% for p in projects %}
+          <details class="ui-collapsible project-collapsible" data-project="{{ p.name }}">
+            <summary>
+              <span class="sidebar-dot
+                {%- if p.has_dashboard_manifest %} dot-running
+                {%- elif p.has_compose %} dot-compose
+                {%- elif p.has_git %} dot-git
+                {%- else %} dot-bare{% endif %}"></span>
+              <span class="sidebar-name">{{ p.name }}</span>
+              {% if p.git_dirty %}<span class="ui-badge ui-badge-warn">M</span>{% endif %}
+            </summary>
+            <div class="ui-collapsible-body project-info">
+              {% if p.description %}
+              <p class="project-desc">{{ p.description }}</p>
+              {% endif %}
+
+              {% if p.has_git %}
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">Branch</span>
+                  <span class="info-value">{{ p.git_branch }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Commits</span>
+                  <span class="info-value">{{ p.git_commit_count }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Last</span>
+                  <span class="info-value info-truncate">{{ p.git_last_commit }}</span>
+                </div>
+                {% if p.git_remote %}
+                <div class="info-row">
+                  <span class="info-label">Remote</span>
+                  <span class="info-value info-truncate remote-url">{{ p.git_remote }}</span>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              {% if p.languages %}
+              <div class="info-tags">
+                {% for lang in p.languages %}
+                <span class="ui-badge">{{ lang }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              {% if p.dashboard_services %}
+              <div class="service-buttons">
+                {% for svc in p.dashboard_services %}
+                <button class="btn btn-xs btn-primary svc-start-btn"
+                        data-project="{{ p.name }}"
+                        data-service="{{ svc.name }}"
+                        data-display-name="{{ svc.display_name }}"
+                        data-compose-service="{{ svc.compose_service }}"
+                        data-compose-file="{{ svc.compose_file }}"
+                        data-port="{{ svc.default_port }}">
+                  <span data-icon="play"></span> {{ svc.display_name }}
+                </button>
+                {% endfor %}
+              </div>
+              {% elif p.compose_services %}
+              <div class="service-buttons">
+                {% for svc in p.compose_services %}
+                <button class="btn btn-xs btn-primary svc-start-btn"
+                        data-project="{{ p.name }}"
+                        data-service="{{ svc }}"
+                        data-display-name="{{ svc }}"
+                        data-compose-service="{{ svc }}"
+                        data-compose-file="docker-compose.yml"
+                        data-port="">
+                  <span data-icon="play"></span> {{ svc }}
+                </button>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </details>
+          {% endfor %}
+          {% if not projects %}
+          <div class="empty-state">
+            <p>No projects found.</p>
+            <p class="text-muted">Drop repos into the <code>projects/</code> folder.</p>
+          </div>
+          {% endif %}
+        </div>
+      </aside>
+
+      <!-- Workspace -->
+      <div class="workspace">
+        <!-- Tab bar -->
+        <div class="tab-bar" id="tab-bar">
+          <div class="tab-bar-scroll" id="tab-bar-scroll">
+            <!-- Tabs inserted by JS -->
+          </div>
+        </div>
+
+        <!-- Tab content area -->
+        <main class="app-main" id="tab-content">
+          <div class="welcome-state" id="welcome">
+            <div class="welcome-inner">
+              <h2>Welcome</h2>
+              <p>Expand a project in the sidebar and click a service to start it.</p>
+              <p class="text-muted">Each service runs as a Docker container with live logs.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <button id="theme-toggle" class="ui-theme-toggle" aria-label="Toggle theme"></button>
+
+  <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
+  <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

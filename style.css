@@ -3,14 +3,6 @@
    Tokens + base imported from ui-kit; only project-specific overrides here.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@import url("ui-kit/ui-kit-core.css");
-@import url("ui-kit/components/buttons.css");
-@import url("ui-kit/components/cards.css");
-@import url("ui-kit/components/icons.css");
-@import url("ui-kit/components/skip-link.css");
-@import url("ui-kit/components/fade.css");
-@import url("ui-kit/components/theme-toggle.css");
-
 /* ── Project-local tokens ── */
 :root {
   --accent-bg: rgba(216, 166, 87, 0.2);
