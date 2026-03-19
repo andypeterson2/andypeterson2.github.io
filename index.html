@@ -117,6 +117,28 @@
       <!-- Main Content -->
       <main class="main-col">
 
+        <!-- Quick-launch bar -->
+        <nav class="demo-bar ui-fade-in" aria-label="Live demos">
+          <a class="demo-link" href="nonogram/">
+            <span data-icon="search"></span> Nonogram Solver
+          </a>
+          <a class="demo-link" href="classifiers/">
+            <span data-icon="brain"></span> Classifiers
+          </a>
+          <a class="demo-link" href="qvc/client/">
+            <span data-icon="lock"></span> Video Chat
+          </a>
+          <a class="demo-link" href="cv/">
+            <span data-icon="edit"></span> CV Editor
+          </a>
+          <a class="demo-link" href="tech-tree/">
+            <span data-icon="codeBranch"></span> Tech Tree
+          </a>
+          <a class="demo-link" href="dashboard/">
+            <span data-icon="gear"></span> Dashboard
+          </a>
+        </nav>
+
         <section id="about" class="content-section ui-fade-in">
           <h2 class="section-title">About</h2>
           <p>Hi, thank you for visiting my website! I'm Andrew Peterson — a quantum researcher, security engineer, and software architect based in California. I hold a B.S. in Computer Science from UC San Diego.</p>
@@ -190,27 +212,77 @@
           <div class="projects-grid">
             <div class="project-card">
               <div class="project-header">
-                <h3 class="project-title"><span data-icon="lock"></span> Quantum-Encrypted Video Platform</h3>
-                <a class="project-link" href="https://github.com/andypeterson2" target="_blank" rel="noopener noreferrer" aria-label="Quantum-Encrypted Video Platform on GitHub"><span data-icon="github"></span></a>
+                <h3 class="project-title"><span data-icon="lock"></span> Quantum-Encrypted Video Chat</h3>
+                <a class="project-link" href="qvc/client/" aria-label="Launch Quantum Video Chat"><span data-icon="externalLink"></span></a>
               </div>
               <p class="project-desc">End-to-end quantum-encrypted video communication platform built with photonic circuitry at Qualcomm Institute. Demonstrates practical quantum key distribution for real-time media streams.</p>
               <div class="project-tags">
                 <span class="project-tag">Python</span>
-                <span class="project-tag">Qiskit</span>
-                <span class="project-tag">Photonics</span>
+                <span class="project-tag">Socket.IO</span>
+                <span class="project-tag">QKD</span>
                 <span class="project-tag">BB84</span>
               </div>
             </div>
             <div class="project-card">
               <div class="project-header">
-                <h3 class="project-title"><span data-icon="brain"></span> Quantum Machine Learning Models</h3>
-                <a class="project-link" href="https://github.com/andypeterson2" target="_blank" rel="noopener noreferrer" aria-label="Quantum Machine Learning Models on GitHub"><span data-icon="github"></span></a>
+                <h3 class="project-title"><span data-icon="search"></span> Quantum Nonogram Solver</h3>
+                <a class="project-link" href="nonogram/" aria-label="Launch Nonogram Solver"><span data-icon="externalLink"></span></a>
               </div>
-              <p class="project-desc">Classification algorithms implemented via quantum neural networks to improve predictive accuracy. Explores practical QML applications using parameterized quantum circuits and hybrid classical-quantum training.</p>
+              <p class="project-desc">Interactive nonogram puzzle solver comparing classical brute-force with Grover's quantum search algorithm. Features real-time histogram visualization and optional IBM Quantum hardware execution.</p>
               <div class="project-tags">
                 <span class="project-tag">Qiskit</span>
+                <span class="project-tag">Grover's</span>
+                <span class="project-tag">Flask</span>
+                <span class="project-tag">Socket.IO</span>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="project-header">
+                <h3 class="project-title"><span data-icon="brain"></span> Quantum ML Classifiers</h3>
+                <a class="project-link" href="classifiers/" aria-label="Launch Classifiers"><span data-icon="externalLink"></span></a>
+              </div>
+              <p class="project-desc">Train and evaluate neural network classifiers across multiple datasets with live training curves, per-class metrics, ensemble voting, and ablation studies. Supports knowledge distillation.</p>
+              <div class="project-tags">
                 <span class="project-tag">PyTorch</span>
                 <span class="project-tag">QML</span>
+                <span class="project-tag">SSE</span>
+                <span class="project-tag">Python</span>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="project-header">
+                <h3 class="project-title"><span data-icon="edit"></span> CV Editor</h3>
+                <a class="project-link" href="cv/" aria-label="Launch CV Editor"><span data-icon="externalLink"></span></a>
+              </div>
+              <p class="project-desc">Visual editor for LaTeX resume, CV, and cover letter documents. Drag-and-drop section reordering, per-entry resume filtering, inline variable management, and live PDF compilation.</p>
+              <div class="project-tags">
+                <span class="project-tag">Node.js</span>
+                <span class="project-tag">Alpine.js</span>
+                <span class="project-tag">LaTeX</span>
+                <span class="project-tag">XeLaTeX</span>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="project-header">
+                <h3 class="project-title"><span data-icon="codeBranch"></span> Tech Tree</h3>
+                <a class="project-link" href="tech-tree/" aria-label="Launch Tech Tree"><span data-icon="externalLink"></span></a>
+              </div>
+              <p class="project-desc">Interactive knowledge graph for tracking learning progress across quantum computing concepts. Visualizes prerequisite chains and unlocks topics as you learn.</p>
+              <div class="project-tags">
+                <span class="project-tag">JavaScript</span>
+                <span class="project-tag">Canvas</span>
+                <span class="project-tag">Static</span>
+              </div>
+            </div>
+            <div class="project-card">
+              <div class="project-header">
+                <h3 class="project-title"><span data-icon="gear"></span> Project Dashboard</h3>
+                <a class="project-link" href="dashboard/" aria-label="Launch Dashboard"><span data-icon="externalLink"></span></a>
+              </div>
+              <p class="project-desc">Development dashboard that scans project directories and manages Docker Compose services. Start, stop, and live-tail container logs from a unified tabbed interface.</p>
+              <div class="project-tags">
+                <span class="project-tag">Flask</span>
+                <span class="project-tag">Docker</span>
                 <span class="project-tag">Python</span>
               </div>
             </div>
@@ -361,6 +433,7 @@
 
   <script src="https://andypeterson2.github.io/ui-kit/icons.js"></script>
   <script src="https://andypeterson2.github.io/ui-kit/ui-kit.js"></script>
+  <script src="https://andypeterson2.github.io/ui-kit/service-config.js"></script>
   <script src="github.js" defer></script>
   <script>
     // Inject all data-icon elements

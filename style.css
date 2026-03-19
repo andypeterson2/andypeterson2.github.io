@@ -411,6 +411,42 @@ body {
   line-height: 1.5;
 }
 
+/* ========== Demo bar ========== */
+.demo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.demo-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.demo-link svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* ========== Project cards ========== */
 .projects-grid {
   display: grid;
