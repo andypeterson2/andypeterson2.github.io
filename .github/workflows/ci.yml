@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -26,11 +28,34 @@ jobs:
         working-directory: lib/ui-kit/v1.1
         run: npx jest --verbose
 
+  nonogram-unit-tests:
+    name: Nonogram Unit Tests (Jest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: nonogram
+        run: npm ci
+
+      - name: Run nonogram unit tests
+        working-directory: nonogram
+        run: npx jest --verbose
+
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
