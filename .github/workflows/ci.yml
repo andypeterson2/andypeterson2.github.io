@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -42,11 +42,11 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        working-directory: nonogram
+        working-directory: nonogram/website
         run: npm ci
 
       - name: Run nonogram unit tests
-        working-directory: nonogram
+        working-directory: nonogram/website
         run: npx jest --verbose
 
   dashboard-unit-tests:
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -63,11 +63,11 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        working-directory: dashboard
+        working-directory: dashboard/website
         run: npm ci
 
       - name: Run dashboard unit tests
-        working-directory: dashboard
+        working-directory: dashboard/website
         run: npx jest --verbose
 
   integration-tests:
@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
