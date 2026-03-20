@@ -12,18 +12,49 @@ const { state, $,
        } = App;
 
 // ── Socket.IO ──────────────────────────────────────────────────
-const socket = io(API_BASE);
+let socket = io(API_BASE);
+let _navWidget = null;
 
-socket.on("status",       ({ msg, level }) => App.setStatus(msg, level));
-socket.on("busy",         ({ busy }) => App.setBusy(busy));
-socket.on("cl_done",      App.renderClassical);
-socket.on("qu_done",      ({ counts, rows, cols }) => App.renderQuantum(counts, rows, cols));
-socket.on("bench_done",   App.renderBenchmark);
-socket.on("solver_error", ({ message }) => {
-  App.setStatus("Error: " + message, "err");
-  App.setBusy(false);
+function bindSocket(s) {
+  s.on("status",       ({ msg, level }) => App.setStatus(msg, level));
+  s.on("busy",         ({ busy }) => App.setBusy(busy));
+  s.on("cl_done",      App.renderClassical);
+  s.on("qu_done",      ({ counts, rows, cols }) => App.renderQuantum(counts, rows, cols));
+  s.on("bench_done",   App.renderBenchmark);
+  s.on("solver_error", ({ message }) => {
+    App.setStatus("Error: " + message, "err");
+    App.setBusy(false);
+  });
+  s.on("hw_status",    App.applyHwStatus);
+  s.on("connect",      () => { if (_navWidget) _navWidget.setStatus("connected"); });
+  s.on("disconnect",   () => { if (_navWidget) _navWidget.setStatus("disconnected"); });
+  s.on("connect_error",() => { if (_navWidget) _navWidget.setStatus("error"); });
+}
+bindSocket(socket);
+
+// ── Navbar connect widget ───────────────────────────────────────
+document.addEventListener("navbar:connect-ready", e => {
+  if (e.detail.service !== "nonogram") return;
+  _navWidget = e.detail.widget;
+  // Reflect current socket state (may already be connected)
+  if (socket.connected) {
+    _navWidget.setStatus("connected");
+  } else {
+    // Socket hasn't connected yet — listen for it now that widget exists
+    socket.once("connect", () => _navWidget.setStatus("connected"));
+  }
+  // Listen for click on the Connect button to reconnect socket
+  const connectEl = document.getElementById("navbar-backend-connect");
+  if (connectEl) {
+    connectEl.querySelector(".ui-connect-btn").addEventListener("click", () => {
+      const url = _navWidget.getUrl();
+      _navWidget.setStatus("connecting");
+      socket.disconnect();
+      socket = io(url);
+      bindSocket(socket);
+    });
+  }
 });
-socket.on("hw_status",    App.applyHwStatus);
 
 // ── Init ───────────────────────────────────────────────────────
 function init() {
