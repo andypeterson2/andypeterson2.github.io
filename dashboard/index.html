@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Dashboard — Dev Environment</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
   <meta name="site-nav-label" content="Dashboard">
   <meta name="site-nav-icon" content="fa-solid fa-gear">
   <meta name="site-backend-service" content="dashboard">
@@ -36,7 +39,7 @@
 
     <div class="app-body">
       <!-- Sidebar -->
-      <aside class="app-sidebar" id="sidebar">
+      <nav class="app-sidebar" id="sidebar" aria-label="Project list">
         <div class="sidebar-header">
           <h3>Projects</h3>
         </div>
@@ -46,12 +49,12 @@
             <p class="text-muted">Connect a backend to see projects.</p>
           </div>
         </div>
-      </aside>
+      </nav>
 
       <!-- Workspace -->
       <div class="workspace">
         <!-- Tab bar -->
-        <div class="tab-bar" id="tab-bar">
+        <div class="tab-bar" id="tab-bar" role="tablist" aria-label="Running services">
           <div class="tab-bar-scroll" id="tab-bar-scroll">
             <!-- Tabs inserted by JS -->
           </div>
