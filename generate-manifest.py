@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Scan for sub-apps and generate site-manifest.json."""
 import json, re, sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 EXCLUDED = {
@@ -80,7 +79,6 @@ def main():
     apps.sort(key=lambda a: (a["path"] != "/", a["path"]))
 
     manifest = {
-        "generated": datetime.now(timezone.utc).isoformat(),
         "apps": apps,
     }
 
