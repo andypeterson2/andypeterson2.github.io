@@ -11,7 +11,7 @@
       "icon": "fa-solid fa-brain",
       "backend": {
         "service": "classifier",
-        "defaultPort": 5001
+        "defaultPort": 5051
       }
     },
     {
@@ -20,7 +20,7 @@
       "icon": "fa-solid fa-pen-to-square",
       "backend": {
         "service": "cv",
-        "defaultPort": 3000
+        "defaultPort": 3001
       }
     },
     {
