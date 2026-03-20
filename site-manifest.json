@@ -15,47 +15,6 @@
       }
     },
     {
-      "path": "/cv/website/",
-      "title": "CV Editor",
-      "icon": "fa-solid fa-pen-to-square",
-      "backend": {
-        "service": "cv",
-        "defaultPort": 3000
-      }
-    },
-    {
-      "path": "/dashboard/website/",
-      "title": "Dashboard",
-      "icon": "fa-solid fa-gear",
-      "backend": {
-        "service": "dashboard",
-        "defaultPort": 5050
-      }
-    },
-    {
-      "path": "/nonogram/website/",
-      "title": "Nonogram",
-      "icon": "fa-solid fa-puzzle-piece",
-      "backend": {
-        "service": "nonogram",
-        "defaultPort": 5055
-      }
-    },
-    {
-      "path": "/qvc/website/client/",
-      "title": "Video Chat",
-      "icon": "fa-solid fa-lock",
-      "backend": {
-        "service": "qvc",
-        "defaultPort": 5002
-      }
-    },
-    {
-      "path": "/tech-tree/website/",
-      "title": "Tech Tree",
-      "icon": "fa-solid fa-code-branch"
-    },
-    {
       "path": "/ui-kit/",
       "title": "UI Kit",
       "icon": "fa-regular fa-star"
