@@ -34,6 +34,12 @@ const state = {
   errorMessage: '',
   elapsed: 0,
   registrationEmitted: false,
+  // BB84 quantum metrics
+  qber: null,
+  qberEvent: null,
+  qberHistory: [],
+  bb84Active: false,
+  eavesdropperEnabled: false,
 };
 
 let elapsedInterval = null;
@@ -144,6 +150,20 @@ function initSocket(url) {
 
   socket.on('audio-frame', () => {
     // Audio playback not yet implemented in browser
+  });
+
+  socket.on('qber-update', (data) => {
+    state.bb84Active = true;
+    state.qber = data.qber;
+    state.qberEvent = data.event;
+    state.qberHistory.push({
+      time: Date.now(),
+      qber: data.qber,
+      event: data.event,
+    });
+    // Keep last 50 data points
+    if (state.qberHistory.length > 50) state.qberHistory.shift();
+    renderQuantumPanel();
   });
 
   socket.on('camera-list', (cameras) => {
@@ -458,6 +478,7 @@ function render() {
         <span class="incall-room">Room: <strong>${state.roomId}</strong></span>
         <span class="incall-timer" id="elapsed-timer">${formatTime(state.elapsed)}</span>
       </div>
+      <div id="quantum-panel" class="quantum-panel"></div>
       <div class="incall-toolbar">
         <div class="incall-toolbar-center">
           <button class="incall-tool-btn ${state.cameraOn ? '' : 'incall-tool-btn--off'}" onclick="toggleCamera()" title="${state.cameraOn ? 'Turn camera off' : 'Turn camera on'}">
@@ -501,6 +522,7 @@ function render() {
   }
   if (inCall) {
     startNoise(document.getElementById('peer-noise-canvas'));
+    renderQuantumPanel();
   }
 
   // Request device lists
@@ -508,6 +530,136 @@ function render() {
     socket.emit('list_cameras');
     socket.emit('list_audio_devices');
   }
+}
+
+/* ── Quantum Dashboard Panel ───────────────────────────────────────────── */
+function renderQuantumPanel() {
+  const panel = document.getElementById('quantum-panel');
+  if (!panel) return;
+
+  if (!state.bb84Active) {
+    panel.innerHTML = '<div class="qd-inactive">Classical key mode</div>';
+    return;
+  }
+
+  const qber = state.qber;
+  const qberPct = qber !== null ? (qber * 100).toFixed(2) : '--';
+  const event = state.qberEvent || 'unknown';
+
+  // Status classification
+  let statusClass = 'qd-status--normal';
+  let statusLabel = 'Secure';
+  if (event === 'intrusion_detected') {
+    statusClass = 'qd-status--danger';
+    statusLabel = 'INTRUSION';
+  } else if (event === 'warning') {
+    statusClass = 'qd-status--warning';
+    statusLabel = 'Warning';
+  } else if (event === 'key_generation_failed') {
+    statusClass = 'qd-status--warning';
+    statusLabel = 'Key Failed';
+  }
+
+  let html = `
+    <div class="qd-header">
+      <span class="qd-title">BB84 Quantum Channel</span>
+      <span class="qd-badge ${statusClass}">${statusLabel}</span>
+    </div>
+    <div class="qd-metrics">
+      <div class="qd-metric">
+        <span class="qd-metric-value ${qber > 0.11 ? 'qd-metric--danger' : qber > 0.05 ? 'qd-metric--warning' : ''}">${qberPct}%</span>
+        <span class="qd-metric-label">QBER</span>
+      </div>
+      <div class="qd-metric">
+        <span class="qd-metric-value">${state.qberHistory.length}</span>
+        <span class="qd-metric-label">Rounds</span>
+      </div>
+      <div class="qd-metric">
+        <span class="qd-metric-value">11%</span>
+        <span class="qd-metric-label">Threshold</span>
+      </div>
+    </div>
+    <canvas id="qber-chart" class="qd-chart" width="280" height="80"></canvas>
+    <button class="qd-eve-btn ${state.eavesdropperEnabled ? 'qd-eve-btn--active' : ''}"
+            onclick="toggleEavesdropper()" title="Simulate eavesdropper (Eve)">
+      ${state.eavesdropperEnabled ? 'Disable Eve' : 'Simulate Eve'}
+    </button>
+  `;
+  panel.innerHTML = html;
+
+  // Draw QBER chart
+  drawQBERChart();
+}
+
+function drawQBERChart() {
+  const canvas = document.getElementById('qber-chart');
+  if (!canvas || state.qberHistory.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(0, 0, w, h);
+
+  // Threshold line at 11%
+  const thresholdY = h - (0.11 / 0.35) * h;
+  ctx.strokeStyle = 'rgba(255,80,80,0.5)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(0, thresholdY);
+  ctx.lineTo(w, thresholdY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // QBER line
+  const points = state.qberHistory;
+  const step = w / Math.max(points.length - 1, 1);
+
+  ctx.strokeStyle = '#4fc3f7';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const x = i * step;
+    const y = h - (points[i].qber / 0.35) * h;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Mark intrusion points
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].event === 'intrusion_detected') {
+      const x = i * step;
+      const y = h - (points[i].qber / 0.35) * h;
+      ctx.fillStyle = '#ff5252';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function toggleEavesdropper() {
+  state.eavesdropperEnabled = !state.eavesdropperEnabled;
+  // Send to server admin API
+  const serverHost = document.getElementById('server-host')?.value || 'localhost';
+  const serverPort = document.getElementById('server-port')?.value || '5050';
+  const url = `http://${serverHost}:${serverPort}/admin/quantum/eavesdropper`;
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled: state.eavesdropperEnabled }),
+  }).then(r => r.json()).then(data => {
+    showToast(`Eavesdropper ${data.eavesdropper}`);
+    renderQuantumPanel();
+  }).catch(() => {
+    showToast('Could not toggle eavesdropper');
+    state.eavesdropperEnabled = !state.eavesdropperEnabled;
+  });
+  renderQuantumPanel();
 }
 
 /* ── Form handlers ──────────────────────────────────────────────────────── */
