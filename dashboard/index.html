@@ -6,6 +6,8 @@
   <title>Dashboard</title>
   <meta name="site-nav-label" content="Dashboard">
   <meta name="site-nav-icon" content="fa-solid fa-gear">
+  <meta name="site-backend-service" content="dashboard">
+  <meta name="site-backend-port" content="5050">
   <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
   <script src="/shared/site-nav.js" defer></script>
   <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
@@ -78,7 +80,6 @@
             <div class="side-panel-title">Backend Connection</div>
           </div>
           <div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column;">
-            <div id="backend-connect"></div>
             <div class="log-terminal" id="connect-log" style="flex: 1; min-height: 120px;"></div>
           </div>
         </div>
@@ -90,7 +91,7 @@
 
   <script src="/lib/ui-kit/v1.1/icons.js"></script>
   <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
-  <script>var API_BASE = ServiceConfig.get("dashboard", "https://localhost:5050");</script>
+  <script>var API_BASE = (ServiceConfig.resolveBackend || ServiceConfig.get).call(ServiceConfig, "dashboard", "https://localhost:5050");</script>
   <script src="static/js/app.js"></script>
   <script>
     (function() {
@@ -105,41 +106,44 @@
       var logEl = document.getElementById('connect-log');
       var connLog = (window.UIKit && UIKit.createLogger) ? UIKit.createLogger(logEl, 300) : function() {};
 
-      // Init connect widget
-      var el = document.getElementById('backend-connect');
-      if (el && window.UIKit && UIKit.initConnect) {
-        var connect = UIKit.initConnect(el, {
-          service: 'dashboard',
-          defaultHost: 'localhost',
-          defaultPort: 5050,
-          label: 'Backend',
-          onConnect: function(info) {
-            connect.setStatus('connecting');
-            connLog('Connecting to ' + info.url + '...', 'ok');
-            API_BASE = info.url;
+      // Listen for the shared navbar connect widget
+      document.addEventListener("navbar:connect-ready", function(e) {
+        if (e.detail.service !== "dashboard") return;
+        var connect = e.detail.widget;
 
-            fetch(info.url + '/api/projects')
-              .then(function(r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
-              })
-              .then(function(projects) {
-                connect.setStatus('connected');
-                connLog('Connected — ' + projects.length + ' projects found', 'ok');
-                if (window.loadProjects) loadProjects();
-              })
-              .catch(function(err) {
-                connect.setStatus('error', err.message);
-                connLog('Connection failed: ' + err.message, 'err');
-                if (location.protocol === 'https:') {
-                  connLog('Note: HTTPS pages may block HTTP localhost requests in some browsers.', 'warn');
-                  connLog('Try: chrome://flags/#block-insecure-private-network-requests (set to Disabled)', 'warn');
-                }
-              });
+        // Override onConnect via click intercept — re-init with callback
+        var btnEl = document.getElementById('navbar-backend-connect');
+        if (btnEl) {
+          var btn = btnEl.querySelector('.ui-connect-btn');
+          if (btn) {
+            btn.addEventListener('click', function() {
+              var url = connect.getUrl();
+              connect.setStatus('connecting');
+              connLog('Connecting to ' + url + '...', 'ok');
+              API_BASE = url;
+
+              fetch(url + '/api/projects')
+                .then(function(r) {
+                  if (!r.ok) throw new Error('HTTP ' + r.status);
+                  return r.json();
+                })
+                .then(function(projects) {
+                  connect.setStatus('connected');
+                  connLog('Connected — ' + projects.length + ' projects found', 'ok');
+                  if (window.loadProjects) loadProjects();
+                })
+                .catch(function(err) {
+                  connect.setStatus('error', err.message);
+                  connLog('Connection failed: ' + err.message, 'err');
+                  if (location.protocol === 'https:') {
+                    connLog('Note: HTTPS pages may block HTTP localhost requests.', 'warn');
+                  }
+                });
+            });
           }
-        });
+        }
 
-        // Auto-connect on load if a URL is configured
+        // Auto-connect on load if configured
         if (ServiceConfig.isConfigured('dashboard')) {
           connLog('Auto-connecting to ' + API_BASE + '...', 'ok');
           connect.setStatus('connecting');
@@ -155,14 +159,11 @@
             .catch(function(err) {
               connect.setStatus('error', err.message);
               connLog('Auto-connect failed: ' + err.message, 'err');
-              if (location.protocol === 'https:') {
-                connLog('HTTPS > HTTP localhost may be blocked by your browser.', 'warn');
-              }
             });
         } else {
-          connLog('No backend configured. Enter host:port and click Connect.', 'warn');
+          connLog('No backend configured. Use the top bar to connect.', 'warn');
         }
-      }
+      });
     })();
   </script>
 </body>
