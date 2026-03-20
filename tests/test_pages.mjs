@@ -233,3 +233,38 @@ describe('Shared navbar connect', () => {
     assert.ok(text.includes('resolveBackend'), 'service-config.js should define resolveBackend');
   });
 });
+
+// -- Classifier connection gating --
+
+describe('Classifier connection gating', () => {
+  test('classifier app.js has checkBackendConnection function', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('checkBackendConnection'), 'app.js should define checkBackendConnection');
+  });
+
+  test('classifier app.js tracks _backendConnected state', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('_backendConnected'), 'app.js should track _backendConnected');
+  });
+
+  test('classifier app.js gates training behind connection', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('if (!_backendConnected)'), 'train handler should check _backendConnected');
+  });
+
+  test('classifier app.js gates prediction behind connection', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('!_backendConnected || Object.keys(state.models)'),
+      'runPredict should check _backendConnected');
+  });
+
+  test('classifier app.js listens for navbar:connect-ready', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('navbar:connect-ready'), 'app.js should listen for navbar:connect-ready');
+  });
+
+  test('classifier app.js disables train button when disconnected', async () => {
+    const { text } = await fetchText('/classifiers/static/js/app.js');
+    assert.ok(text.includes('setTrainEnabled'), 'app.js should define setTrainEnabled');
+  });
+});
