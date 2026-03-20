@@ -268,3 +268,99 @@ describe('Classifier connection gating', () => {
     assert.ok(text.includes('setTrainEnabled'), 'app.js should define setTrainEnabled');
   });
 });
+
+// -- Nonogram frontend structure --
+
+describe('Nonogram frontend structure', () => {
+  test('nonogram/index.html loads all required JS modules in order', async () => {
+    const { text } = await fetchText('/nonogram/');
+    const scripts = [...text.matchAll(/src="([^"]+\.js[^"]*)"/g)].map(m => m[1]);
+    // Core modules must appear in dependency order
+    const coreModules = ['state.js', 'grid.js', 'solver.js', 'ui.js', 'app.js'];
+    const corePositions = coreModules.map(m => scripts.findIndex(s => s.includes(m)));
+    for (let i = 1; i < corePositions.length; i++) {
+      assert.ok(corePositions[i] > corePositions[i - 1],
+        `${coreModules[i]} should load after ${coreModules[i - 1]}`);
+    }
+  });
+
+  test('nonogram loads socket.io client', async () => {
+    const { text } = await fetchText('/nonogram/');
+    assert.ok(text.includes('socket.io'), 'nonogram should load socket.io');
+  });
+
+  test('nonogram defines MAX_CLUES and MAX_GRID', async () => {
+    const { text } = await fetchText('/nonogram/');
+    assert.ok(text.includes('MAX_CLUES'), 'should define MAX_CLUES');
+    assert.ok(text.includes('MAX_GRID'), 'should define MAX_GRID');
+  });
+
+  test('nonogram has site-backend-service=nonogram meta', async () => {
+    const { text } = await fetchText('/nonogram/');
+    assert.ok(text.includes('content="nonogram"'), 'should have service=nonogram');
+    assert.ok(text.includes('content="5055"'), 'should have port=5055');
+  });
+
+  test('all nonogram static JS files load', async () => {
+    for (const file of ['state.js', 'grid.js', 'solver.js', 'ui.js', 'app.js']) {
+      const { status } = await fetchText(`/nonogram/static/${file}`);
+      assert.equal(status, 200, `${file} should load`);
+    }
+  });
+
+  test('nonogram CSS loads', async () => {
+    const { status } = await fetchText('/nonogram/static/style.css');
+    assert.equal(status, 200);
+  });
+});
+
+describe('Nonogram app.js Socket.IO integration', () => {
+  test('app.js listens for navbar:connect-ready', async () => {
+    const { text } = await fetchText('/nonogram/static/app.js');
+    assert.ok(text.includes('navbar:connect-ready'),
+      'app.js should listen for navbar:connect-ready');
+  });
+
+  test('app.js binds Socket.IO lifecycle events', async () => {
+    const { text } = await fetchText('/nonogram/static/app.js');
+    assert.ok(text.includes('socket.on("connect"') || text.includes("s.on(\"connect\""),
+      'app.js should handle socket connect events');
+    assert.ok(text.includes('"disconnect"'), 'app.js should handle disconnect');
+    assert.ok(text.includes('"connect_error"'), 'app.js should handle connect_error');
+  });
+
+  test('app.js handles all solver events', async () => {
+    const { text } = await fetchText('/nonogram/static/app.js');
+    for (const event of ['status', 'busy', 'cl_done', 'qu_done', 'bench_done', 'solver_error', 'hw_status']) {
+      assert.ok(text.includes(`"${event}"`), `app.js should handle "${event}" event`);
+    }
+  });
+});
+
+describe('Nonogram grid.js logic', () => {
+  test('grid.js exports required functions', async () => {
+    const { text } = await fetchText('/nonogram/static/grid.js');
+    for (const fn of ['initGrid', 'recomputeClues', 'buildGrid', 'getCurrentPuzzle', 'getBestSolSize']) {
+      assert.ok(text.includes(fn), `grid.js should export ${fn}`);
+    }
+  });
+
+  test('grid.js has rle implementation', async () => {
+    const { text } = await fetchText('/nonogram/static/grid.js');
+    assert.ok(text.includes('function rle'), 'grid.js should have rle function');
+  });
+});
+
+describe('Nonogram solver.js logic', () => {
+  test('solver.js exports required functions', async () => {
+    const { text } = await fetchText('/nonogram/static/solver.js');
+    for (const fn of ['renderClassical', 'renderQuantum', 'renderBenchmark', 'clearSolverResults']) {
+      assert.ok(text.includes(fn), `solver.js should export ${fn}`);
+    }
+  });
+
+  test('solver.js has computeThreshold', async () => {
+    const { text } = await fetchText('/nonogram/static/solver.js');
+    assert.ok(text.includes('computeThreshold'), 'solver.js should compute threshold');
+  });
+});
