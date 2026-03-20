@@ -15,10 +15,13 @@
 // ── Shorthand ────────────────────────────────────────────────────────────────
 const ICONS = UIKit.ICONS;
 
-// ── Config injected by template ─────────────────────────────────────────────
+// ── Config (fetched from API or cached) ─────────────────────────────────────
 
 /** @const {string} URL prefix for all API calls scoped to the active dataset. */
-const BASE = API_BASE + `/d/${UI_CONFIG.name}`;
+let BASE = API_BASE + `/d/${UI_CONFIG.name}`;
+
+/** Whether we have verified the backend is reachable. */
+let _backendConnected = false;
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -88,17 +91,10 @@ UIKit.initResize(resizeH, leftCol, splitLayout, {
 const logTerminal = document.getElementById("log-terminal");
 const addLog      = UIKit.createLogger(logTerminal, 200);
 
-// ── Input-type visibility ─────────────────────────────────────────────────────
+// ── Input-type elements (visibility set dynamically in initDatasetMenu) ──────
 
 const canvasCol  = document.getElementById("canvas-col");
 const tabularCol = document.getElementById("tabular-col");
-if (UI_CONFIG.input_type === "image") {
-  canvasCol.style.display  = "";
-  tabularCol.style.display = "none";
-} else {
-  canvasCol.style.display  = "none";
-  tabularCol.style.display = "";
-}
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
@@ -127,6 +123,80 @@ const distillRow       = document.getElementById("distill-row");
 
 /** @type {MiniChart|null} */
 let trainChart = null;
+
+// ── Backend connection management ─────────────────────────────────────────
+
+/**
+ * Ping the backend to verify it's reachable.
+ * Updates the connect widget status and enables/disables the train button.
+ * @param {string} [url] - Override URL to check (defaults to current API_BASE).
+ * @returns {Promise<boolean>} true if backend responded.
+ */
+async function checkBackendConnection(url) {
+  const checkUrl = url || API_BASE;
+  try {
+    const res = await fetch(checkUrl + "/api/datasets", { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      _backendConnected = true;
+      setTrainEnabled(true);
+      return true;
+    }
+  } catch (_) { /* unreachable */ }
+  _backendConnected = false;
+  setTrainEnabled(false);
+  return false;
+}
+
+/** Enable or disable the train button based on connection status. */
+function setTrainEnabled(connected) {
+  const btn = document.getElementById("train-btn");
+  if (!btn) return;
+  if (connected) {
+    btn.disabled = false;
+    btn.title = "";
+  } else {
+    btn.disabled = true;
+    btn.title = "Connect to a backend server first";
+  }
+}
+
+// Listen for the connect widget's connection event from site-nav.js
+document.addEventListener("navbar:connect-ready", (e) => {
+  const widget = e.detail.widget;
+  if (!widget) return;
+
+  // Whenever the user clicks Connect, ping the new URL and update everything
+  const origOnClick = widget._onClick;
+  const connectBtn = document.querySelector("#navbar-backend-connect .ui-connect-btn");
+  if (connectBtn) {
+    connectBtn.addEventListener("click", async () => {
+      const newUrl = widget.getUrl();
+      widget.setStatus("connecting");
+
+      // Update API_BASE and BASE to use the new URL
+      window.API_BASE = newUrl;
+      BASE = newUrl + `/d/${UI_CONFIG.name}`;
+
+      const ok = await checkBackendConnection(newUrl);
+      if (ok) {
+        widget.setStatus("connected");
+        // Reload config from new backend
+        loadModels();
+        loadSavedModels();
+      } else {
+        widget.setStatus("disconnected", "Unable to reach server");
+      }
+    });
+  }
+
+  // Auto-check on page load
+  checkBackendConnection().then(ok => {
+    if (ok) widget.setStatus("connected");
+  });
+});
+
+// Also auto-check without waiting for navbar (in case navbar is slow)
+checkBackendConnection();
 
 // ── Model info panel ─────────────────────────────────────────────────────────
 
@@ -176,6 +246,71 @@ function updateEnsembleBtn() {
 // ── Populate dataset menu ─────────────────────────────────────────────────────
 
 (async function initDatasetMenu() {
+  // Wait for config fetch to complete before reading UI_CONFIG
+  if (window._configReady) await _configReady;
+  BASE = API_BASE + `/d/${UI_CONFIG.name}`;
+
+  // Apply dynamic config to the page
+  document.getElementById("current-dataset").textContent = UI_CONFIG.display_name;
+  document.title = UI_CONFIG.display_name + " — Classifiers";
+
+  // Populate model type dropdown from API config
+  if (UI_CONFIG._model_types) {
+    const sel = document.getElementById("model-type");
+    sel.innerHTML = "";
+    for (const t of UI_CONFIG._model_types) {
+      const opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = t;
+      sel.appendChild(opt);
+    }
+    modelNameInput.placeholder = UI_CONFIG._model_types[0] || "Linear";
+    modelNameInput.value = "";
+  }
+
+  // Apply default hyperparams
+  if (UI_CONFIG.default_hyperparams) {
+    const hp = UI_CONFIG.default_hyperparams;
+    if (hp.epochs) document.getElementById("epochs").value = hp.epochs;
+    if (hp.batch_size) document.getElementById("batch-size").value = hp.batch_size;
+    if (hp.lr) document.getElementById("lr").value = hp.lr;
+  }
+
+  // Update canvas hint for image datasets
+  if (UI_CONFIG.input_type === "image" && UI_CONFIG.class_labels) {
+    const hint = document.querySelector(".canvas-hint");
+    if (hint) hint.textContent = "Draw a " + UI_CONFIG.class_labels.join(" / ");
+  }
+
+  // Build tabular feature inputs dynamically
+  if (UI_CONFIG.input_type !== "image" && UI_CONFIG.feature_names && UI_CONFIG.feature_names.length) {
+    const tabCol = document.getElementById("tabular-col");
+    tabCol.innerHTML = "";
+    tabCol.className = "feature-row";
+    for (const feat of UI_CONFIG.feature_names) {
+      const label = document.createElement("label");
+      label.className = "feature-label";
+      label.innerHTML = '<span>' + feat.replace(/_/g, ' ') + '</span>' +
+        '<input type="number" step="0.01" class="feature-input" data-feature="' + feat + '" value="0">';
+      tabCol.appendChild(label);
+    }
+    const btn = document.createElement("button");
+    btn.id = "predict-btn";
+    btn.className = "btn btn-primary predict-row-btn";
+    btn.textContent = "Predict";
+    tabCol.appendChild(btn);
+  }
+
+  // Toggle canvas vs tabular visibility
+  if (UI_CONFIG.input_type === "image") {
+    canvasCol.style.display = "";
+    tabularCol.style.display = "none";
+  } else {
+    canvasCol.style.display = "none";
+    tabularCol.style.display = "";
+  }
+
+  // Populate dataset switcher menu
   try {
     const res  = await fetch(API_BASE + "/api/datasets");
     const list = await res.json();
@@ -186,7 +321,11 @@ function updateEnsembleBtn() {
       btn.textContent = ds.display_name;
       btn.addEventListener("click", () => {
         dropdown.close();
-        if (ds.name !== UI_CONFIG.name) window.location = `/d/${ds.name}/`;
+        if (ds.name !== UI_CONFIG.name) {
+          const url = new URL(location.href);
+          url.searchParams.set("dataset", ds.name);
+          window.location = url.toString();
+        }
       });
       datasetList.appendChild(btn);
     }
@@ -465,7 +604,7 @@ async function loadModels() {
 // ── Evaluate all session models ───────────────────────────────────────────────
 
 async function runEvaluate() {
-  if (Object.keys(state.models).length === 0) return;
+  if (!_backendConnected || Object.keys(state.models).length === 0) return;
   evalProgress.classList.remove("hidden");
   evalBar.style.width = "5%";
   evalBar.setAttribute("aria-valuenow", "5");
@@ -517,6 +656,10 @@ const SERIES_COLORS = [
 let seriesColorIdx = 0;
 
 trainBtn.addEventListener("click", async () => {
+  if (!_backendConnected) {
+    addLog("Not connected to a backend server. Use the Connect bar above to connect first.", "err");
+    return;
+  }
   const modelType = document.getElementById("model-type").value;
   const epochs    = parseInt(document.getElementById("epochs").value, 10);
   const batchSize = parseInt(document.getElementById("batch-size").value, 10);
@@ -626,7 +769,7 @@ function scheduleAutoPredict() {
 }
 
 async function runPredict() {
-  if (Object.keys(state.models).length === 0) return;
+  if (!_backendConnected || Object.keys(state.models).length === 0) return;
   let body;
   if (UI_CONFIG.input_type === "image") {
     const b64 = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
