@@ -1,3 +1,18 @@
 [submodule "lib/ui-kit/v1.1"]
 	path = lib/ui-kit/v1.1
 	url = https://github.com/andypeterson2/ui-kit.git
+[submodule "nonogram"]
+	path = nonogram
+	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
+[submodule "dashboard"]
+	path = dashboard
+	url = https://github.com/andypeterson2/dashboard.git
+[submodule "tech-tree"]
+	path = tech-tree
+	url = https://github.com/andypeterson2/tech-tree.git
+[submodule "cv"]
+	path = cv
+	url = https://github.com/andypeterson2/cv.git
+[submodule "qvc"]
+	path = qvc
+	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
