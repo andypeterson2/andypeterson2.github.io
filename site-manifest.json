@@ -15,7 +15,7 @@
       }
     },
     {
-      "path": "/cv/",
+      "path": "/cv/website/",
       "title": "CV Editor",
       "icon": "fa-solid fa-pen-to-square",
       "backend": {
@@ -24,7 +24,7 @@
       }
     },
     {
-      "path": "/dashboard/",
+      "path": "/dashboard/website/",
       "title": "Dashboard",
       "icon": "fa-solid fa-gear",
       "backend": {
@@ -33,7 +33,7 @@
       }
     },
     {
-      "path": "/nonogram/",
+      "path": "/nonogram/website/",
       "title": "Nonogram",
       "icon": "fa-solid fa-puzzle-piece",
       "backend": {
@@ -42,7 +42,7 @@
       }
     },
     {
-      "path": "/qvc/client/",
+      "path": "/qvc/website/client/",
       "title": "Video Chat",
       "icon": "fa-solid fa-lock",
       "backend": {
@@ -51,7 +51,7 @@
       }
     },
     {
-      "path": "/tech-tree/",
+      "path": "/tech-tree/website/",
       "title": "Tech Tree",
       "icon": "fa-solid fa-code-branch"
     },

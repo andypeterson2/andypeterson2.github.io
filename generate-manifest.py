@@ -8,8 +8,21 @@ EXCLUDED = {
     "tests", ".claude", "documents",
 }
 
+# Top-level submodule dirs — skip recursive scan (repos contain non-website files)
+SUBMODULE_DIRS = {"nonogram", "dashboard", "tech-tree", "cv", "qvc"}
+
+# Explicit website entry-points inside submodules
+SUBMODULE_WEBSITE_PATHS = {
+    "nonogram/website",
+    "dashboard/website",
+    "tech-tree/website",
+    "cv/website",
+    "qvc/website/client",
+}
+
 EXCLUDED_PATHS = {
     "qvc/server",
+    "qvc/website/server",
 }
 
 
@@ -24,6 +37,11 @@ def main():
         # Skip excluded top-level directories
         if rel.parts and rel.parts[0] in EXCLUDED:
             continue
+
+        # Skip submodule dirs unless path is an explicit website entry-point
+        if rel.parts and rel.parts[0] in SUBMODULE_DIRS:
+            if rel_str not in SUBMODULE_WEBSITE_PATHS:
+                continue
 
         # Skip excluded path prefixes
         if any(rel_str == ex or rel_str.startswith(ex + "/") for ex in EXCLUDED_PATHS):
