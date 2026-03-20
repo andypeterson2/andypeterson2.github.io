@@ -49,6 +49,27 @@ jobs:
         working-directory: nonogram
         run: npx jest --verbose
 
+  dashboard-unit-tests:
+    name: Dashboard Unit Tests (Jest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: dashboard
+        run: npm ci
+
+      - name: Run dashboard unit tests
+        working-directory: dashboard
+        run: npx jest --verbose
+
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest

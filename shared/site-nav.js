@@ -185,19 +185,22 @@
           ? ServiceConfig.resolveBackend(backend.service, defaultUrl)
           : ServiceConfig.get(backend.service, defaultUrl);
 
-        // Parse host/port from resolved URL
+        // Parse host/port/protocol from resolved URL
         var host = "localhost";
         var port = backend.defaultPort;
+        var protocol = "https";
         try {
           var parsed = new URL(resolvedUrl);
           host = parsed.hostname;
           port = parseInt(parsed.port, 10) || backend.defaultPort;
+          protocol = parsed.protocol.replace(":", "");
         } catch (_) {}
 
         var widget = UIKit.initConnect(el, {
           service: backend.service,
           defaultHost: host,
           defaultPort: port,
+          protocol: protocol,
           label: ""
         });
 
