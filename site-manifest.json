@@ -1,5 +1,5 @@
 {
-  "generated": "2026-03-19T20:48:57.026529+00:00",
+  "generated": "2026-03-20T02:37:45.471787+00:00",
   "apps": [
     {
       "path": "/",
@@ -9,27 +9,47 @@
     {
       "path": "/classifiers/",
       "title": "Classifiers",
-      "icon": "fa-solid fa-brain"
+      "icon": "fa-solid fa-brain",
+      "backend": {
+        "service": "classifier",
+        "defaultPort": 5001
+      }
     },
     {
       "path": "/cv/",
       "title": "CV Editor",
-      "icon": "fa-solid fa-pen-to-square"
+      "icon": "fa-solid fa-pen-to-square",
+      "backend": {
+        "service": "cv",
+        "defaultPort": 3000
+      }
     },
     {
       "path": "/dashboard/",
       "title": "Dashboard",
-      "icon": "fa-solid fa-gear"
+      "icon": "fa-solid fa-gear",
+      "backend": {
+        "service": "dashboard",
+        "defaultPort": 5050
+      }
     },
     {
       "path": "/nonogram/",
       "title": "Nonogram",
-      "icon": "fa-solid fa-puzzle-piece"
+      "icon": "fa-solid fa-puzzle-piece",
+      "backend": {
+        "service": "nonogram",
+        "defaultPort": 5055
+      }
     },
     {
       "path": "/qvc/client/",
       "title": "Video Chat",
-      "icon": "fa-solid fa-lock"
+      "icon": "fa-solid fa-lock",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5002
+      }
     },
     {
       "path": "/tech-tree/",

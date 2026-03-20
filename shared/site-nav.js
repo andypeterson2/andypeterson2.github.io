@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  // Inject body padding for the fixed navbar (44px)
+  // Inject body padding for the fixed navbar (44px default, increases if bottom tray)
   var style = document.createElement("style");
   style.textContent = "body { padding-top: 44px !important; }";
   document.head.appendChild(style);
@@ -25,6 +25,11 @@
     var root = apps.find(function (a) { return a.path === "/"; });
     var pinned = apps.filter(function (a) { return a.path !== "/" && a.pin === "left"; });
     var others = apps.filter(function (a) { return a.path !== "/" && a.pin !== "left"; });
+    var currentApp = apps.find(function (a) { return a.path === currentPath; });
+
+    // --- Wrapper: holds navbar + trays ---
+    var wrapper = document.createElement("div");
+    wrapper.className = "ui-navbar-wrapper";
 
     // --- Build <nav class="ui-navbar"> ---
     var nav = document.createElement("nav");
@@ -109,18 +114,102 @@
       }
     });
 
-    // Insert at top of body
-    document.body.prepend(nav);
+    wrapper.appendChild(nav);
+
+    // --- Left tray (structural placeholder) ---
+    var leftTray = document.createElement("div");
+    leftTray.className = "ui-navbar-tray--left";
+    leftTray.setAttribute("aria-label", "Left tray");
+    wrapper.appendChild(leftTray);
+
+    // --- Right tray (structural placeholder) ---
+    var rightTray = document.createElement("div");
+    rightTray.className = "ui-navbar-tray--right";
+    rightTray.setAttribute("aria-label", "Right tray");
+    wrapper.appendChild(rightTray);
+
+    // --- Bottom tray: backend connection (only if current app has a backend) ---
+    var hasBottomTray = false;
+    if (currentApp && currentApp.backend) {
+      hasBottomTray = true;
+      var bottomTray = document.createElement("div");
+      bottomTray.className = "ui-navbar-tray--bottom";
+      bottomTray.setAttribute("aria-label", "Backend connection");
+
+      // Service label
+      var serviceLabel = document.createElement("span");
+      serviceLabel.className = "tray-service-label";
+      serviceLabel.textContent = currentApp.backend.service;
+      bottomTray.appendChild(serviceLabel);
+
+      // Connect widget container
+      var connectEl = document.createElement("div");
+      connectEl.id = "navbar-backend-connect";
+      bottomTray.appendChild(connectEl);
+
+      wrapper.appendChild(bottomTray);
+
+      // Initialize connect widget once UIKit is available
+      initConnectWhenReady(connectEl, currentApp.backend);
+    }
+
+    // Insert wrapper at top of body
+    document.body.prepend(wrapper);
+
+    // Adjust body padding based on bottom tray
+    if (hasBottomTray) {
+      // Bottom tray is approximately 40px
+      style.textContent = "body { padding-top: 84px !important; }";
+    }
 
     // Push down the main page's existing mobile-nav if present
     var existingMobileNav = document.querySelector(".mobile-nav");
     if (existingMobileNav) {
-      existingMobileNav.style.top = "44px";
-      style.textContent = "body { padding-top: 88px !important; }";
-      // Also push the mobile menu dropdown
+      var navbarHeight = hasBottomTray ? 84 : 44;
+      existingMobileNav.style.top = navbarHeight + "px";
+      style.textContent = "body { padding-top: " + (navbarHeight + 44) + "px !important; }";
       var mobileMenu = document.querySelector(".mobile-nav-menu");
-      if (mobileMenu) mobileMenu.style.top = "88px";
+      if (mobileMenu) mobileMenu.style.top = (navbarHeight + 44) + "px";
     }
+  }
+
+  /**
+   * Wait for UIKit and ServiceConfig to be available, then init the connect widget.
+   */
+  function initConnectWhenReady(el, backend) {
+    var attempts = 0;
+    function tryInit() {
+      if (window.UIKit && window.UIKit.initConnect && window.ServiceConfig) {
+        var defaultUrl = "https://localhost:" + backend.defaultPort;
+        var resolvedUrl = ServiceConfig.resolveBackend
+          ? ServiceConfig.resolveBackend(backend.service, defaultUrl)
+          : ServiceConfig.get(backend.service, defaultUrl);
+
+        // Parse host/port from resolved URL
+        var host = "localhost";
+        var port = backend.defaultPort;
+        try {
+          var parsed = new URL(resolvedUrl);
+          host = parsed.hostname;
+          port = parseInt(parsed.port, 10) || backend.defaultPort;
+        } catch (_) {}
+
+        var widget = UIKit.initConnect(el, {
+          service: backend.service,
+          defaultHost: host,
+          defaultPort: port,
+          label: ""
+        });
+
+        // Dispatch event so pages can hook into the shared widget
+        document.dispatchEvent(new CustomEvent("navbar:connect-ready", {
+          detail: { service: backend.service, widget: widget }
+        }));
+      } else if (++attempts < 50) {
+        setTimeout(tryInit, 100);
+      }
+    }
+    tryInit();
   }
 
   function init() {

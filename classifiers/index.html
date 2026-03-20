@@ -6,6 +6,8 @@
   <title>Classifiers</title>
   <meta name="site-nav-label" content="Classifiers">
   <meta name="site-nav-icon" content="fa-solid fa-brain">
+  <meta name="site-backend-service" content="classifier">
+  <meta name="site-backend-port" content="5001">
   <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
   <script src="/shared/site-nav.js" defer></script>
   <script src="/lib/ui-kit/v1.1/service-config.js"></script>
@@ -18,7 +20,7 @@
 </head>
 <body>
   <script>
-    const API_BASE = ServiceConfig.get("classifier", "https://localhost:5001");
+    const API_BASE = (ServiceConfig.resolveBackend || ServiceConfig.get).call(ServiceConfig, "classifier", "https://localhost:5001");
 
     // Determine dataset from URL query param or default to "mnist"
     const _urlDataset = new URLSearchParams(location.search).get("dataset") || "mnist";
@@ -64,7 +66,6 @@
       <div class="top-bar" id="top-bar">
         <span class="current-dataset" id="current-dataset">MNIST</span>
         <div class="top-bar-right">
-          <div id="backend-connect"></div>
           <button id="dataset-menu-btn" class="btn btn-icon hamburger-btn"
                   aria-label="Switch dataset" aria-expanded="false" title="Switch dataset"><span data-icon="hamburger"></span></button>
           <div id="dataset-menu" class="ui-dropdown hidden" role="listbox">
@@ -250,19 +251,6 @@
       var name = el.dataset.icon;
       if (UIKit.ICONS[name]) el.outerHTML = UIKit.ICONS[name];
     });
-  </script>
-  <script>
-    (function() {
-      var el = document.getElementById('backend-connect');
-      if (el && window.UIKit && UIKit.initConnect) {
-        UIKit.initConnect(el, {
-          service: 'classifier',
-          defaultHost: 'localhost',
-          defaultPort: 5001,
-          label: 'Backend'
-        });
-      }
-    })();
   </script>
 </body>
 </html>

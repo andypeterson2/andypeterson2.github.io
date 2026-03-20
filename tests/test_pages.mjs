@@ -51,10 +51,10 @@ async function fetchText(urlPath) {
 
 const PAGES = [
   { path: '/', title: 'Andrew Peterson', id: 'about' },
-  { path: '/nonogram/', title: 'Nonogram', id: 'backend-connect' },
-  { path: '/classifiers/', title: 'Classifiers', id: 'backend-connect' },
-  { path: '/cv/', title: 'CV Editor', id: 'backend-connect' },
-  { path: '/dashboard/', title: 'Dashboard', id: 'backend-connect' },
+  { path: '/nonogram/', title: 'Nonogram', id: 'sidebar' },
+  { path: '/classifiers/', title: 'Classifiers', id: 'train-section' },
+  { path: '/cv/', title: 'CV Editor', id: 'section-list' },
+  { path: '/dashboard/', title: 'Dashboard', id: 'connect-log' },
   { path: '/tech-tree/', title: 'Knowledge Tech Tree', id: 'sidebar' },
   { path: '/qvc/client/', title: 'Video Chat', id: 'app' },
 ];
@@ -105,6 +105,13 @@ describe('ServiceConfig integration', () => {
     test(`${p} defines API_BASE`, async () => {
       const { text } = await fetchText(p);
       assert.ok(text.includes('API_BASE'), `${p} should define API_BASE`);
+    });
+  }
+
+  for (const p of ['/nonogram/', '/classifiers/', '/cv/', '/dashboard/']) {
+    test(`${p} uses resolveBackend`, async () => {
+      const { text } = await fetchText(p);
+      assert.ok(text.includes('resolveBackend'), `${p} should use resolveBackend`);
     });
   }
 });
@@ -166,31 +173,63 @@ describe('Demo bar', () => {
   });
 });
 
-// -- Backend connect widget --
+// -- Manifest backend metadata --
 
-describe('Connect widget', () => {
+describe('Manifest backend metadata', () => {
+  test('manifest has backend metadata for backend apps', async () => {
+    const { text } = await fetchText('/site-manifest.json');
+    const manifest = JSON.parse(text);
+
+    const expected = {
+      '/classifiers/': { service: 'classifier', defaultPort: 5001 },
+      '/cv/': { service: 'cv', defaultPort: 3000 },
+      '/dashboard/': { service: 'dashboard', defaultPort: 5050 },
+      '/nonogram/': { service: 'nonogram', defaultPort: 5055 },
+      '/qvc/client/': { service: 'qvc', defaultPort: 5002 },
+    };
+
+    for (const [appPath, expectedBackend] of Object.entries(expected)) {
+      const app = manifest.apps.find(a => a.path === appPath);
+      assert.ok(app, `manifest should have ${appPath}`);
+      assert.ok(app.backend, `${appPath} should have backend metadata`);
+      assert.equal(app.backend.service, expectedBackend.service);
+      assert.equal(app.backend.defaultPort, expectedBackend.defaultPort);
+    }
+  });
+
+  test('non-backend apps do not have backend metadata', async () => {
+    const { text } = await fetchText('/site-manifest.json');
+    const manifest = JSON.parse(text);
+
+    for (const appPath of ['/', '/tech-tree/', '/ui-kit/']) {
+      const app = manifest.apps.find(a => a.path === appPath);
+      assert.ok(app, `manifest should have ${appPath}`);
+      assert.ok(!app.backend, `${appPath} should NOT have backend metadata`);
+    }
+  });
+});
+
+// -- Shared navbar connects backend pages via site-nav.js --
+
+describe('Shared navbar connect', () => {
+  test('site-nav.js contains initConnect logic for bottom tray', async () => {
+    const { text } = await fetchText('/shared/site-nav.js');
+    assert.ok(text.includes('navbar-backend-connect'), 'site-nav.js should create #navbar-backend-connect');
+    assert.ok(text.includes('initConnect'), 'site-nav.js should call initConnect');
+    assert.ok(text.includes('navbar:connect-ready'), 'site-nav.js should dispatch navbar:connect-ready event');
+    assert.ok(text.includes('resolveBackend'), 'site-nav.js should use resolveBackend');
+  });
+
   for (const p of BACKEND_PAGES) {
-    test(`${p} has backend-connect div`, async () => {
+    test(`${p} has backend meta tags`, async () => {
       const { text } = await fetchText(p);
-      assert.ok(text.includes('id="backend-connect"'), `${p} should have #backend-connect`);
-    });
-
-    test(`${p} has initConnect script`, async () => {
-      const { text } = await fetchText(p);
-      // initConnect may be inline or in a referenced JS file
-      let found = text.includes('initConnect');
-      if (!found) {
-        // Check referenced local JS files
-        const jsRefs = [...text.matchAll(/src="([^"]+\.js)"/g)]
-          .map(m => m[1])
-          .filter(s => !s.startsWith('http'));
-        for (const ref of jsRefs) {
-          const jsPath = p.endsWith('/') ? p + ref : p + '/' + ref;
-          const { text: jsText } = await fetchText(jsPath);
-          if (jsText.includes('initConnect')) { found = true; break; }
-        }
-      }
-      assert.ok(found, `${p} should call UIKit.initConnect (inline or in JS)`);
+      assert.ok(text.includes('site-backend-service'), `${p} should have site-backend-service meta`);
+      assert.ok(text.includes('site-backend-port'), `${p} should have site-backend-port meta`);
     });
   }
+
+  test('service-config.js has resolveBackend method', async () => {
+    const { text } = await fetchText('/lib/ui-kit/v1.1/service-config.js');
+    assert.ok(text.includes('resolveBackend'), 'service-config.js should define resolveBackend');
+  });
 });

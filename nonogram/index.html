@@ -6,6 +6,8 @@
   <title>Nonogram</title>
   <meta name="site-nav-label" content="Nonogram">
   <meta name="site-nav-icon" content="fa-solid fa-puzzle-piece">
+  <meta name="site-backend-service" content="nonogram">
+  <meta name="site-backend-port" content="5055">
   <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
   <script src="/shared/site-nav.js" defer></script>
   <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
@@ -140,8 +142,6 @@
         <button id="theme-toggle" title="Toggle day/night theme" aria-label="Toggle day/night theme"></button>
       </div>
 
-      <div id="backend-connect"></div>
-
       <div id="console-hdr">
         <span id="console-hdr-title">Run Log</span>
         <button id="btn-clear-terminal" title="Clear log" aria-label="Clear run log"></button>
@@ -207,7 +207,7 @@
 <script>
   const MAX_CLUES = 3;
   const MAX_GRID  = 6;
-  const API_BASE = ServiceConfig.get("nonogram", "https://localhost:5055");
+  const API_BASE = (ServiceConfig.resolveBackend || ServiceConfig.get).call(ServiceConfig, "nonogram", "https://localhost:5055");
 </script>
 <script src="/lib/ui-kit/v1.1/icons.js"></script>
 <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
@@ -216,18 +216,5 @@
 <script src="static/solver.js"></script>
 <script src="static/ui.js"></script>
 <script src="static/app.js"></script>
-<script>
-  (function() {
-    var el = document.getElementById('backend-connect');
-    if (el && window.UIKit && UIKit.initConnect) {
-      UIKit.initConnect(el, {
-        service: 'nonogram',
-        defaultHost: 'localhost',
-        defaultPort: 5055,
-        label: 'Backend'
-      });
-    }
-  })();
-</script>
 </body>
 </html>
