@@ -7,6 +7,8 @@
   <title>CV Editor</title>
   <meta name="site-nav-label" content="CV Editor">
   <meta name="site-nav-icon" content="fa-solid fa-pen-to-square">
+  <meta name="site-backend-service" content="cv">
+  <meta name="site-backend-port" content="3000">
   <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
   <script src="/shared/site-nav.js" defer></script>
   <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
@@ -25,7 +27,6 @@
   <header class="topbar" role="banner">
     <h1 class="topbar-title">CV Editor</h1>
     <div class="actions">
-      <div id="backend-connect"></div>
       <select class="doc-select" x-model="activeDoc" @change="switchDoc(activeDoc)" aria-label="Active document">
         <option value="resume">Resume</option>
         <option value="cv">CV</option>
@@ -333,20 +334,7 @@
 
   <script src="/lib/ui-kit/v1.1/icons.js"></script>
   <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
-  <script>const API_BASE = ServiceConfig.get("cv", "https://localhost:3000");</script>
+  <script>const API_BASE = (ServiceConfig.resolveBackend || ServiceConfig.get).call(ServiceConfig, "cv", "https://localhost:3000");</script>
   <script src="app.js"></script>
-  <script>
-    (function() {
-      var el = document.getElementById('backend-connect');
-      if (el && window.UIKit && UIKit.initConnect) {
-        UIKit.initConnect(el, {
-          service: 'cv',
-          defaultHost: 'localhost',
-          defaultPort: 3000,
-          label: 'Backend'
-        });
-      }
-    })();
-  </script>
 </body>
 </html>

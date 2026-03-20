@@ -45,6 +45,14 @@ def main():
         m_pin = re.search(
             r'<meta\s+name="site-nav-pin"\s+content="([^"]*)"', html, re.IGNORECASE
         )
+        # <meta name="site-backend-service" content="...">  (backend service name)
+        m_backend_svc = re.search(
+            r'<meta\s+name="site-backend-service"\s+content="([^"]*)"', html, re.IGNORECASE
+        )
+        # <meta name="site-backend-port" content="...">  (backend default port)
+        m_backend_port = re.search(
+            r'<meta\s+name="site-backend-port"\s+content="([^"]*)"', html, re.IGNORECASE
+        )
         # Fallback to <title> for the label
         m_title = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE)
 
@@ -61,6 +69,11 @@ def main():
             entry["icon"] = icon
         if pin:
             entry["pin"] = pin
+        if m_backend_svc:
+            entry["backend"] = {
+                "service": m_backend_svc.group(1).strip(),
+                "defaultPort": int(m_backend_port.group(1).strip()) if m_backend_port else 8080,
+            }
         apps.append(entry)
 
     # Root first, then alphabetical
