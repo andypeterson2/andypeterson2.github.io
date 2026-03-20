@@ -364,3 +364,62 @@ describe('Nonogram solver.js logic', () => {
     assert.ok(text.includes('computeThreshold'), 'solver.js should compute threshold');
   });
 });
+
+// -- Dashboard frontend structure --
+
+describe('Dashboard frontend structure', () => {
+  test('dashboard/index.html has required DOM elements', async () => {
+    const { text } = await fetchText('/dashboard/');
+    for (const id of ['tab-bar-scroll', 'tab-content', 'welcome', 'server-drawer', 'connect-log', 'btn-refresh']) {
+      assert.ok(text.includes(`id="${id}"`), `dashboard should have #${id}`);
+    }
+  });
+
+  test('dashboard loads app.js', async () => {
+    const { status } = await fetchText('/dashboard/static/js/app.js');
+    assert.equal(status, 200);
+  });
+
+  test('dashboard app.js has API helper functions', async () => {
+    const { text } = await fetchText('/dashboard/static/js/app.js');
+    assert.ok(text.includes('function apiPost'), 'app.js should define apiPost');
+    assert.ok(text.includes('function apiGet'), 'app.js should define apiGet');
+    assert.ok(text.includes('API_BASE'), 'app.js should use API_BASE');
+  });
+
+  test('dashboard app.js has loadProjects function', async () => {
+    const { text } = await fetchText('/dashboard/static/js/app.js');
+    assert.ok(text.includes('function loadProjects'), 'app.js should define loadProjects');
+    assert.ok(text.includes('window.loadProjects'), 'app.js should expose loadProjects on window');
+  });
+
+  test('dashboard app.js has tab management functions', async () => {
+    const { text } = await fetchText('/dashboard/static/js/app.js');
+    assert.ok(text.includes('openServiceTab'), 'app.js should define openServiceTab');
+    assert.ok(text.includes('activateTab'), 'app.js should define activateTab');
+    assert.ok(text.includes('stopAndCloseTab'), 'app.js should define stopAndCloseTab');
+  });
+
+  test('dashboard app.js has log polling', async () => {
+    const { text } = await fetchText('/dashboard/static/js/app.js');
+    assert.ok(text.includes('startLogPolling'), 'app.js should define startLogPolling');
+  });
+
+  test('dashboard index.html listens for navbar:connect-ready', async () => {
+    const { text } = await fetchText('/dashboard/');
+    assert.ok(text.includes('navbar:connect-ready'), 'dashboard should listen for navbar:connect-ready');
+  });
+
+  test('dashboard index.html has connect error handling', async () => {
+    const { text } = await fetchText('/dashboard/');
+    assert.ok(text.includes('connect.setStatus'), 'dashboard should update connect status');
+    assert.ok(text.includes("setStatus('error'") || text.includes('setStatus("error"'),
+      'dashboard should handle connection errors');
+  });
+
+  test('dashboard has site-backend-service=dashboard meta', async () => {
+    const { text } = await fetchText('/dashboard/');
+    assert.ok(text.includes('content="dashboard"'), 'should have service=dashboard');
+    assert.ok(text.includes('content="5050"'), 'should have port=5050');
+  });
+});
