@@ -1,0 +1,76 @@
+x-common: &common
+  restart: unless-stopped
+  networks: [appnet]
+
+services:
+  # ── Nginx reverse proxy ──────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    <<: *common
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - website
+      - cv-editor
+      - classifier
+      - nonogram
+      - videochat-middleware
+
+  # ── Website (static) ─────────────────────────────────────────────────
+  website:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.website
+    <<: *common
+    volumes:
+      - ./:/app:ro
+    expose: ["8000"]
+
+  # ── CV Editor (Node + xelatex) ──────────────────────────────────────
+  cv-editor:
+    build:
+      context: ../cv
+      dockerfile: ${PWD}/dockerfiles/Dockerfile.cv-editor
+    <<: *common
+    volumes:
+      - ../cv:/app
+      - /app/editor/node_modules
+    expose: ["3000"]
+
+  # ── Quantum Protein Kernel (Flask + PyTorch) ─────────────────────────
+  classifier:
+    build:
+      context: ../quantum-protein-kernel
+      dockerfile: ${PWD}/dockerfiles/Dockerfile.classifier
+    <<: *common
+    volumes:
+      - ../quantum-protein-kernel:/app
+    expose: ["5001"]
+
+  # ── Quantum Nonogram Solver (Flask + SocketIO + Qiskit) ──────────────
+  nonogram:
+    build:
+      context: ../quantum-nonogram-solver
+      dockerfile: ${PWD}/dockerfiles/Dockerfile.nonogram
+    <<: *common
+    volumes:
+      - ../quantum-nonogram-solver:/app
+    expose: ["5055"]
+
+  # ── Video Chat Middleware (Flask + gevent SocketIO) ──────────────────
+  videochat-middleware:
+    build:
+      context: ../Quantum-Video-Chat
+      dockerfile: ${PWD}/dockerfiles/Dockerfile.videochat-middleware
+    <<: *common
+    volumes:
+      - ../Quantum-Video-Chat:/app
+    expose: ["5002"]
+    environment:
+      - MIDDLEWARE_PORT=5002
+
+networks:
+  appnet:
+    driver: bridge

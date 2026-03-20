@@ -1,0 +1,9 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY pyproject.toml .
+RUN pip install --no-cache-dir -e ".[quantum,web]"
+COPY . .
+
+EXPOSE 5055
+CMD ["python", "tools/webapp.py"]
