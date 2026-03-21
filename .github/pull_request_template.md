@@ -4,13 +4,16 @@
 
 ## Design System Checklist
 
-- [ ] Uses only CSS custom properties from tokens.css (no raw hex/rgb values)
-- [ ] Uses only token spacing values (no arbitrary px/rem)
-- [ ] Uses token typography scale (no hardcoded font sizes)
-- [ ] Supports both dark and light themes
+- [ ] Uses design tokens — no raw hex colors or magic spacing values
+- [ ] Components used where available (Button, Card, Tag, etc.)
+- [ ] Tested in both light and dark mode
+- [ ] Touch targets meet 48px minimum on mobile
+- [ ] Images have appropriate alt text
+- [ ] Passes `npm run lint:styles` (Stylelint)
+- [ ] Lighthouse score above 90 on all categories
+- [ ] No new border-radius values outside 0/2/3/50%
+- [ ] No new box-shadow values outside approved set
 - [ ] No hardcoded identity strings (names, emails)
-- [ ] Component uses Astro scoped styles
-- [ ] Tested in both themes
 
 ## Test Plan
 
