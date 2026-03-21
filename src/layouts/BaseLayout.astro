@@ -108,6 +108,12 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
     >
       &uarr;
     </button>
+    <!-- Easter egg: console message for devs -->
+    <script is:inline>
+      console.log('%c👋 Hey, dev!', 'font-size: 20px; font-weight: bold;');
+      console.log('%cCurious about the code? Check it out on GitHub.', 'font-size: 14px; color: #d79921;');
+      console.log('%cBuilt with Astro, design tokens, and zero JavaScript frameworks.', 'font-size: 12px; color: #928374;');
+    </script>
     <script>
       const btn = document.getElementById('back-to-top');
       if (btn) {

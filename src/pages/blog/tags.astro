@@ -1,0 +1,106 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Tag from '../../components/Tag.astro';
+import { siteConfig } from '../../config/site';
+
+const posts = await Astro.glob('../../content/blog/*.mdx');
+const tagMap = new Map<string, { title: string; slug: string; date: string }[]>();
+
+for (const post of posts) {
+  const slug = post.file.split('/').pop()?.replace('.mdx', '') || '';
+  for (const tag of (post.frontmatter.tags || [])) {
+    if (!tagMap.has(tag)) tagMap.set(tag, []);
+    tagMap.get(tag)!.push({
+      title: post.frontmatter.title,
+      slug,
+      date: post.frontmatter.date,
+    });
+  }
+}
+
+const sortedTags = [...tagMap.entries()].sort((a, b) => b[1].length - a[1].length);
+---
+
+<BaseLayout title="Tags" description="Browse blog posts by tag">
+  <div class="container">
+    <Breadcrumbs crumbs={[
+      { label: 'Blog', href: '/blog' },
+      { label: 'Tags' },
+    ]} />
+
+    <section class="page-header">
+      <h1>Tags</h1>
+      <p class="page-subtitle">Browse posts by topic.</p>
+    </section>
+
+    <div class="tags-grid">
+      {sortedTags.map(([tag, tagPosts]) => (
+        <div class="tag-group">
+          <h2 class="tag-heading">
+            <Tag variant="default">{tag}</Tag>
+            <span class="tag-count">{tagPosts.length} post{tagPosts.length > 1 ? 's' : ''}</span>
+          </h2>
+          <ul class="tag-posts">
+            {tagPosts
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .map((p) => (
+                <li>
+                  <a href={`/blog/${p.slug}`}>{p.title}</a>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-8);
+    padding-bottom: var(--space-12);
+  }
+  .tag-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+  .tag-count {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+  .tag-posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .tag-posts li {
+    margin-bottom: var(--space-2);
+  }
+  .tag-posts a {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color var(--duration-fast);
+  }
+  .tag-posts a:hover {
+    color: var(--color-accent);
+  }
+</style>

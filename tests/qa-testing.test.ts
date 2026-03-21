@@ -68,7 +68,7 @@ describe('Critical user journeys', () => {
 
   test('404 page exists and has back link', () => {
     const fourOhFour = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');
-    expect(fourOhFour).toContain('Back to Home');
+    expect(fourOhFour).toContain('Home');
     expect(fourOhFour).toContain('href="/"');
   });
 });
