@@ -20,7 +20,7 @@
       "icon": "fa-solid fa-pen-to-square",
       "backend": {
         "service": "cv",
-        "defaultPort": 3001
+        "defaultPort": 3000
       }
     },
     {
