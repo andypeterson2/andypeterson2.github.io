@@ -2,11 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import Button from '../components/Button.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="Resume" description={`Resume of ${siteConfig.displayName}`}>
   <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'Resume' }]} />
     <section class="page-header">
       <h1>Resume</h1>
       <p class="page-subtitle">Experience, education, and publications.</p>
