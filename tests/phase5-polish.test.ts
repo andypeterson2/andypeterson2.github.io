@@ -312,7 +312,7 @@ describe('Smooth scroll and nav offset', () => {
       resolve(ROOT, 'src/layouts/BaseLayout.astro'),
       'utf-8',
     );
-    expect(layoutSrc).toContain('padding-top: var(--space-16)');
+    expect(layoutSrc).toContain('padding-top: 48px');
   });
 });
 
