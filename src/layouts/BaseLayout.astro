@@ -1,5 +1,7 @@
 ---
 import { siteConfig } from '../config/site';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
 import '../styles/tokens.css';
 import '../styles/base.css';
 
@@ -28,6 +30,35 @@ const pageDescription = description || siteConfig.description;
     />
   </head>
   <body>
-    <slot />
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    <header>
+      <Nav />
+    </header>
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
   </body>
 </html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: var(--space-4);
+    z-index: 200;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-accent);
+    color: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: top var(--duration-fast);
+  }
+  .skip-link:focus {
+    top: var(--space-2);
+  }
+  main {
+    padding-top: var(--space-16);
+  }
+</style>

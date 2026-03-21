@@ -1,0 +1,119 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Button from '../components/Button.astro';
+import { siteConfig } from '../config/site';
+---
+
+<BaseLayout title="Contact" description={`Contact ${siteConfig.displayName}`}>
+  <div class="container">
+    <section class="page-header">
+      <h1>Contact</h1>
+      <p class="page-subtitle">Get in touch for collaboration, research, or consulting.</p>
+    </section>
+
+    <section class="contact-availability">
+      <SectionLabel label="Availability" />
+      <div class="availability-badge">
+        <span class="availability-dot"></span>
+        <span>Available for new projects</span>
+      </div>
+    </section>
+
+    <section class="contact-methods">
+      <SectionLabel label="Reach Out" />
+      <div class="contact-grid">
+        {siteConfig.email && (
+          <div class="contact-card">
+            <h3>Email</h3>
+            <p>Best for project inquiries and collaboration.</p>
+            <Button
+              href={`mailto:${siteConfig.email}?subject=Project%20Inquiry%20from%20Portfolio`}
+              variant="primary"
+            >
+              Send Email
+            </Button>
+          </div>
+        )}
+        {siteConfig.github && (
+          <div class="contact-card">
+            <h3>GitHub</h3>
+            <p>Check out my open-source work and contributions.</p>
+            <Button href={siteConfig.github} variant="secondary">
+              View GitHub
+            </Button>
+          </div>
+        )}
+        {siteConfig.linkedin && (
+          <div class="contact-card">
+            <h3>LinkedIn</h3>
+            <p>Connect for professional networking.</p>
+            <Button href={siteConfig.linkedin} variant="secondary">
+              View LinkedIn
+            </Button>
+          </div>
+        )}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .contact-availability,
+  .contact-methods {
+    padding: var(--space-12) 0;
+  }
+  .availability-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+  .availability-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-teal);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+  .contact-card {
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .contact-card h3 {
+    margin-bottom: var(--space-2);
+  }
+  .contact-card p {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+  }
+</style>

@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Button from '../components/Button.astro';
+import { siteConfig } from '../config/site';
+---
+
+<BaseLayout title="Resume" description={`Resume of ${siteConfig.displayName}`}>
+  <div class="container">
+    <section class="page-header">
+      <h1>Resume</h1>
+      <p class="page-subtitle">Experience, education, and publications.</p>
+    </section>
+
+    <section class="resume-downloads">
+      <SectionLabel label="Download" />
+      <div class="download-links">
+        <Button href="/resume.pdf" variant="primary">Download PDF</Button>
+      </div>
+      <p class="last-updated">Last updated: 2026</p>
+    </section>
+
+    <section class="resume-experience">
+      <SectionLabel label="Experience" />
+      <div class="experience-list">
+        <div class="experience-item">
+          <div class="experience-header">
+            <h3>Quantum Computing Researcher</h3>
+            <span class="experience-date">Present</span>
+          </div>
+          <p class="experience-org">Qualcomm Institute</p>
+          <p class="experience-desc">Research in quantum key distribution, quantum optimization algorithms, and quantum-classical hybrid computing.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="resume-education">
+      <SectionLabel label="Education" />
+      <div class="experience-list">
+        <div class="experience-item">
+          <div class="experience-header">
+            <h3>Computer Science</h3>
+          </div>
+          <p class="experience-desc">Focus on quantum computing, machine learning, and systems programming.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .resume-downloads,
+  .resume-experience,
+  .resume-education {
+    padding: var(--space-12) 0;
+  }
+  .download-links {
+    margin-bottom: var(--space-3);
+  }
+  .last-updated {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .experience-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .experience-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .experience-date {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+  }
+  .experience-org {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+  }
+  .experience-desc {
+    color: var(--color-text-secondary);
+    max-width: var(--content-width);
+  }
+</style>

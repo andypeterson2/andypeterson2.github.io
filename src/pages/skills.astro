@@ -1,0 +1,153 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Tag from '../components/Tag.astro';
+import { siteConfig } from '../config/site';
+
+const categories = [
+  {
+    id: 'quantum',
+    label: 'Quantum Computing',
+    skills: ['QKD Protocols (BB84)', 'Qiskit', 'Quantum Circuits', 'Quantum Optimization', 'Quantum Error Correction'],
+  },
+  {
+    id: 'languages',
+    label: 'Languages',
+    skills: ['Python', 'TypeScript', 'JavaScript', 'Rust', 'C++', 'SQL'],
+  },
+  {
+    id: 'frameworks',
+    label: 'Frameworks & Tools',
+    skills: ['React', 'Astro', 'Node.js', 'Flask', 'Docker', 'WebRTC'],
+  },
+  {
+    id: 'ml',
+    label: 'Machine Learning',
+    skills: ['PyTorch', 'Scikit-learn', 'Kernel Methods', 'CNNs', 'Data Pipelines'],
+  },
+];
+---
+
+<BaseLayout title="Skills" description={`Skills and expertise of ${siteConfig.displayName}`}>
+  <div class="container">
+    <section class="page-header">
+      <h1>Skills</h1>
+      <p class="page-subtitle">Technical skills and areas of expertise.</p>
+    </section>
+
+    <div class="skills-tabs" role="tablist" aria-label="Skill categories">
+      {categories.map((cat, i) => (
+        <button
+          role="tab"
+          id={`tab-${cat.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          aria-controls={`panel-${cat.id}`}
+          class:list={['tab-btn', { active: i === 0 }]}
+          data-tab={cat.id}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+
+    {categories.map((cat, i) => (
+      <div
+        role="tabpanel"
+        id={`panel-${cat.id}`}
+        aria-labelledby={`tab-${cat.id}`}
+        class:list={['tab-panel', { active: i === 0 }]}
+        data-panel={cat.id}
+      >
+        <div class="skill-grid">
+          {cat.skills.map((skill) => (
+            <div class="skill-item">
+              <span class="skill-name">{skill}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</BaseLayout>
+
+<script>
+  const tabs = document.querySelectorAll('[role="tab"]');
+  const panels = document.querySelectorAll('[role="tabpanel"]');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = (tab as HTMLElement).dataset.tab;
+      tabs.forEach((t) => {
+        t.setAttribute('aria-selected', 'false');
+        t.classList.remove('active');
+      });
+      panels.forEach((p) => p.classList.remove('active'));
+      tab.setAttribute('aria-selected', 'true');
+      tab.classList.add('active');
+      document.querySelector(`[data-panel="${target}"]`)?.classList.add('active');
+    });
+  });
+</script>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .skills-tabs {
+    display: flex;
+    gap: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-8);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: var(--space-3) var(--space-4);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 48px;
+    transition: color var(--duration-fast), border-color var(--duration-fast);
+  }
+  .tab-btn:hover {
+    color: var(--color-text);
+  }
+  .tab-btn.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+  }
+
+  .tab-panel {
+    display: none;
+  }
+  .tab-panel.active {
+    display: block;
+  }
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-3);
+  }
+  .skill-item {
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .skill-name {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+</style>
