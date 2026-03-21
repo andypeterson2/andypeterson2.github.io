@@ -5,29 +5,33 @@ import Tag from '../../components/Tag.astro';
 import Button from '../../components/Button.astro';
 import { siteConfig } from '../../config/site';
 
-const posts = await Astro.glob('../../content/blog/*.mdx');
-const sortedPosts = posts
-  .filter(p => p.frontmatter.date)
-  .sort((a, b) => new Date(a.frontmatter.date).getTime() - new Date(b.frontmatter.date).getTime());
-
-export function getStaticPaths() {
-  return posts.map((post) => ({
-    params: { slug: post.file.split('/').pop()?.replace('.mdx', '') || '' },
+export async function getStaticPaths() {
+  const allPosts = await import.meta.glob('../../content/blog/*.mdx', { eager: true });
+  return Object.entries(allPosts).map(([path, post]: [string, any]) => ({
+    params: { slug: path.split('/').pop()?.replace('.mdx', '') || '' },
+    props: { post },
   }));
 }
 
-const { slug } = Astro.params;
-const postIndex = sortedPosts.findIndex(
-  p => p.file.split('/').pop()?.replace('.mdx', '') === slug
-);
-const post = sortedPosts[postIndex];
+const { post } = Astro.props;
 const { Content, frontmatter } = post;
+const { slug } = Astro.params;
+
+const allPostModules = import.meta.glob('../../content/blog/*.mdx', { eager: true });
+const allPostEntries = Object.entries(allPostModules).map(([path, mod]: [string, any]) => ({
+  ...mod,
+  _slug: path.split('/').pop()?.replace('.mdx', '') || '',
+}));
+const sortedPosts = allPostEntries
+  .filter(p => p.frontmatter?.date)
+  .sort((a, b) => new Date(a.frontmatter.date).getTime() - new Date(b.frontmatter.date).getTime());
+const postIndex = sortedPosts.findIndex(p => p._slug === slug);
 
 const prevPost = postIndex > 0 ? sortedPosts[postIndex - 1] : null;
 const nextPost = postIndex < sortedPosts.length - 1 ? sortedPosts[postIndex + 1] : null;
 
-const prevSlug = prevPost?.file.split('/').pop()?.replace('.mdx', '');
-const nextSlug = nextPost?.file.split('/').pop()?.replace('.mdx', '');
+const prevSlug = prevPost?._slug;
+const nextSlug = nextPost?._slug;
 
 // Series support
 const seriesPosts = frontmatter.series
@@ -68,7 +72,7 @@ const seriesPosts = frontmatter.series
           <p class="series-label">Part of series: <strong>{frontmatter.series}</strong></p>
           <ol class="series-list">
             {seriesPosts.map((sp) => {
-              const spSlug = sp.file.split('/').pop()?.replace('.mdx', '');
+              const spSlug = sp._slug;
               const isCurrent = spSlug === slug;
               return (
                 <li class:list={[{ current: isCurrent }]}>

@@ -4,11 +4,12 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Tag from '../../components/Tag.astro';
 import { siteConfig } from '../../config/site';
 
-const posts = await Astro.glob('../../content/blog/*.mdx');
+const postModules = import.meta.glob('../../content/blog/*.mdx', { eager: true });
 const tagMap = new Map<string, { title: string; slug: string; date: string }[]>();
 
-for (const post of posts) {
-  const slug = post.file.split('/').pop()?.replace('.mdx', '') || '';
+for (const [path, mod] of Object.entries(postModules)) {
+  const post = mod as any;
+  const slug = path.split('/').pop()?.replace('.mdx', '') || '';
   for (const tag of (post.frontmatter.tags || [])) {
     if (!tagMap.has(tag)) tagMap.set(tag, []);
     tagMap.get(tag)!.push({
