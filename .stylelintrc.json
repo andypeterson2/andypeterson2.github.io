@@ -1,0 +1,26 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "color-no-hex": true,
+    "declaration-property-value-disallowed-list": {
+      "border-radius": ["/^[4-9]px/", "/^[1-9]\\d+px/"],
+      "box-shadow": ["/^(?!none|0|var\\()/"]
+    },
+    "custom-property-pattern": null,
+    "selector-class-pattern": null,
+    "no-descending-specificity": null
+  },
+  "overrides": [
+    {
+      "files": ["src/styles/tokens.css", "src/tokens/**/*.css"],
+      "rules": {
+        "color-no-hex": null
+      }
+    }
+  ],
+  "ignoreFiles": [
+    "node_modules/**",
+    "dist/**",
+    "src/tokens/tokens.generated.css"
+  ]
+}

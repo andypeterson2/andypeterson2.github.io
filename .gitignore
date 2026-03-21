@@ -2,6 +2,7 @@
 !.git*
 !.env.example
 !.prettierrc
+!.stylelintrc.json
 !.github/
 node_modules/
 dist/

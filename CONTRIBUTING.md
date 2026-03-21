@@ -1,37 +1,62 @@
-# Contributing to the Portfolio Website
+# Contributing — Design System Rules
 
-## Design System Rules
+## Token Workflow
 
-### Adding a New Component
+1. Edit `src/tokens/tokens.json` (single source of truth)
+2. Run `npm run tokens` to regenerate CSS and TypeScript
+3. Never edit `src/styles/tokens.css` directly — it is auto-generated
 
-1. Create the component in `src/components/`
-2. Use only CSS custom properties from `src/styles/tokens.css`
-3. Use Astro scoped styles — no global CSS leakage
-4. Support both dark and light themes via token variables
-5. Test the component renders correctly
+## Color Rules
 
-### Adding or Modifying Tokens
+- **No raw hex values** in component or page CSS. Always use `var(--color-*)` tokens.
+- The token file (`tokens.json`) is the only place hex values should appear.
+- Monochrome palette: 9-value gray scale + blue accent + green status. No other colors.
+- Color never carries meaning alone — always paired with text, icon, or position.
 
-1. Edit `src/tokens/tokens.json` (the single source of truth)
-2. Run `npm run tokens` to regenerate CSS and TypeScript outputs
-3. Update `src/styles/tokens.css` to match (or use the generated file)
-4. Verify both dark and light themes
+## Spacing Rules
 
-### Token Rules
+- All spacing values must be multiples of 4px, using `var(--space-*)` tokens.
+- No magic numbers: `5px`, `10px`, `15px` are not valid spacing values.
 
-- **Colors:** Only use `var(--color-*)` — no raw hex/rgb values in components
-- **Spacing:** Only use `var(--space-*)` — no arbitrary pixel/rem values
-- **Typography:** Only use `var(--text-*)` for font sizes, `var(--font-*)` for families
-- **Motion:** Only use `var(--duration-*)` for transitions
+## Border Radius
 
-### Identity Safety
+- `0px` — containers, cards, sections, code blocks (structural elements)
+- `2px` — buttons, inputs, tags/badges (interactive controls)
+- `3px` — nav active backgrounds, dropdowns (system UI elements)
+- `50%` — avatar only
+- No other radius values are permitted.
 
-- Never hardcode names, emails, or identity-specific strings
-- Always reference `siteConfig` from `src/config/site.ts`
-- Run `scripts/check-name-leakage.sh` before committing
+## Typography
 
-## Code Style
+- IBM Plex Sans for headings and body
+- IBM Plex Mono for labels, tags, code, metadata
+- Mono text never exceeds `--text-sm` in size
+- All caps only for section labels and category tags (Plex Mono, `--text-xs`)
 
-- TypeScript strict mode
-- ESLint + Prettier formatting (run `npm run lint` and `npm run format`)
-- Astro components use scoped `<style>` blocks
+## Components
+
+When a design system component exists, use it instead of raw HTML:
+
+| Raw HTML | Use Instead |
+|----------|-------------|
+| `<button>` | `<Button>` component |
+| `<a>` (styled card) | `<Card href="...">` component |
+| `<span class="tag">` | `<Tag>` component |
+| `<code>` (block) | `<CodeBlock>` component |
+
+Override with an eslint-disable comment + justification when genuinely needed.
+
+## New Component Checklist
+
+1. Define in `src/components/` as an Astro component
+2. Use scoped `<style>` with only token-based values
+3. Include proper TypeScript interface for props
+4. Ensure 48px minimum touch targets for interactive elements
+5. Add `aria-label` for elements without visible text
+6. Test in both light and dark modes
+
+## Shadows
+
+- Nav bar: `0 1px 3px rgba(0, 0, 0, 0.06)` (always present)
+- Modals: `0 4px 16px rgba(0, 0, 0, 0.10)` (only substantial shadow)
+- Everything else: no shadow
