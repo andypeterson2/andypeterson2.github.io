@@ -1,0 +1,269 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Card from '../../components/Card.astro';
+import Tag from '../../components/Tag.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import Button from '../../components/Button.astro';
+import { siteConfig } from '../../config/site';
+
+const projects = [
+  {
+    title: 'Quantum Video Chat',
+    slug: 'quantum-video-chat',
+    description: 'QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.',
+    longDescription: 'A real-time video communication system secured by quantum key distribution. Uses a simulated BB84 protocol to establish shared secret keys, which are then used to encrypt WebRTC data channels.',
+    category: 'quantum',
+    status: 'active',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'WebRTC', variant: 'teal' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Quantum Nonogram Solver',
+    slug: 'quantum-nonogram-solver',
+    description: 'Quantum computing approach to solving nonogram puzzles with visual solver UI.',
+    longDescription: 'Explores quantum advantage in constraint satisfaction problems through nonogram (picross) puzzles. Features a visual solver UI that shows the quantum circuit execution in real time.',
+    category: 'quantum',
+    status: 'active',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'Qiskit', variant: 'purple' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Quantum Protein Kernel',
+    slug: 'quantum-protein-kernel',
+    description: 'Quantum-classical hybrid kernel methods for protein structure classification.',
+    longDescription: 'A hybrid quantum-classical approach to protein structure classification using quantum kernel methods. Compares quantum-enhanced feature maps with classical SVM baselines on protein fold recognition tasks.',
+    category: 'quantum',
+    status: 'active',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'ML', variant: 'teal' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Tech Tree',
+    slug: 'tech-tree',
+    description: 'Interactive skill dependency visualization inspired by game tech trees.',
+    longDescription: 'An interactive visualization tool that maps skill dependencies as a directed graph, inspired by technology trees in strategy games. Renders with HTML5 Canvas for smooth panning and zooming.',
+    category: 'tools',
+    status: 'active',
+    tags: [
+      { label: 'Canvas', variant: 'teal' as const },
+      { label: 'JavaScript', variant: 'blue' as const },
+    ],
+  },
+  {
+    title: 'Portfolio Dashboard',
+    slug: 'dashboard',
+    description: 'Real-time monitoring dashboard for portfolio project health and metrics.',
+    longDescription: 'A Flask-based dashboard that aggregates health checks, build status, and performance metrics across all portfolio projects. Provides at-a-glance project status monitoring.',
+    category: 'tools',
+    status: 'active',
+    tags: [
+      { label: 'Flask', variant: 'teal' as const },
+      { label: 'Python', variant: 'blue' as const },
+    ],
+  },
+];
+
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+const projectIndex = projects.findIndex(p => p.slug === slug);
+const project = projects[projectIndex]!;
+
+const prevProject = projectIndex > 0 ? projects[projectIndex - 1] : null;
+const nextProject = projectIndex < projects.length - 1 ? projects[projectIndex + 1] : null;
+
+const relatedProjects = projects
+  .filter(p => p.slug !== slug && p.category === project.category)
+  .slice(0, 2);
+---
+
+<BaseLayout title={project.title} description={project.description}>
+  <div class="container">
+    <Breadcrumbs crumbs={[
+      { label: 'Projects', href: '/projects' },
+      { label: project.title },
+    ]} />
+
+    <section class="project-header">
+      <div class="project-meta">
+        <span class={`status-indicator status-${project.status}`}>{project.status}</span>
+        <span class="project-category">{project.category}</span>
+      </div>
+      <h1>{project.title}</h1>
+      <p class="project-description">{project.longDescription || project.description}</p>
+      <div class="project-tags">
+        {project.tags.map((tag) => (
+          <Tag variant={tag.variant}>{tag.label}</Tag>
+        ))}
+      </div>
+    </section>
+
+    <section class="project-content">
+      <SectionLabel label="Architecture" />
+      <div class="architecture-placeholder">
+        <p>Architecture diagram and technical details for this project.</p>
+      </div>
+    </section>
+
+    {relatedProjects.length > 0 && (
+      <section class="related-projects">
+        <SectionLabel label="Related Projects" />
+        <div class="related-grid">
+          {relatedProjects.map((rp) => (
+            <Card title={rp.title} href={`/projects/${rp.slug}`}>
+              <p>{rp.description}</p>
+              <div class="card-tags">
+                {rp.tags.map((tag) => (
+                  <Tag variant={tag.variant}>{tag.label}</Tag>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <nav class="project-nav" aria-label="Project navigation">
+      {prevProject ? (
+        <a href={`/projects/${prevProject.slug}`} class="project-nav-link prev">
+          <span class="project-nav-dir">&larr; Previous</span>
+          <span class="project-nav-title">{prevProject.title}</span>
+        </a>
+      ) : <span />}
+      {nextProject ? (
+        <a href={`/projects/${nextProject.slug}`} class="project-nav-link next">
+          <span class="project-nav-dir">Next &rarr;</span>
+          <span class="project-nav-title">{nextProject.title}</span>
+        </a>
+      ) : <span />}
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  .project-header {
+    padding: var(--space-8) 0 var(--space-12);
+    max-width: var(--content-width);
+  }
+  .project-meta {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+  .project-category {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+  .status-indicator {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+  .status-active::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--color-success);
+    border-radius: 50%;
+    margin-right: var(--space-1);
+    vertical-align: middle;
+  }
+  .project-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .project-description {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-6);
+  }
+  .project-tags {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .project-content {
+    padding: var(--space-12) 0;
+  }
+  .architecture-placeholder {
+    padding: var(--space-8);
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+
+  .related-projects {
+    padding: var(--space-12) 0;
+  }
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+  .card-tags {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .project-nav {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-12) 0;
+    border-top: 1px solid var(--color-border);
+    gap: var(--space-4);
+  }
+  .project-nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    text-decoration: none;
+    transition: border-color var(--duration-fast);
+    max-width: 45%;
+  }
+  .project-nav-link:hover {
+    border-color: var(--color-accent);
+  }
+  .project-nav-link.next {
+    text-align: right;
+    margin-left: auto;
+  }
+  .project-nav-dir {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+  .project-nav-title {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+</style>
