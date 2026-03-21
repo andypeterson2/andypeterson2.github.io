@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
+    "tokens": "node scripts/build-tokens.js",
     "build": "astro build",
     "preview": "astro preview",
     "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}'",
