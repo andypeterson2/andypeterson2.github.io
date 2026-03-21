@@ -1,11 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PullQuote from '../components/PullQuote.astro';
 import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="About" description={`About ${siteConfig.displayName}`}>
   <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'About' }]} />
     <section class="page-header">
       <h1>About</h1>
       <p class="page-subtitle">Background, research, and what drives my work.</p>
@@ -20,6 +23,10 @@ import { siteConfig } from '../config/site';
         </p>
       </div>
     </section>
+
+    <PullQuote>
+      Building bridges between quantum theory and practical software — one qubit at a time.
+    </PullQuote>
 
     <section class="about-timeline">
       <SectionLabel label="Timeline" />
@@ -102,6 +109,15 @@ import { siteConfig } from '../config/site';
   }
   .timeline-content p {
     color: var(--color-text-secondary);
+  }
+  .timeline-item {
+    transition: transform var(--duration-normal) var(--ease-default);
+  }
+  .timeline-item:hover {
+    transform: translateX(var(--space-2));
+  }
+  .timeline-item:hover .timeline-date {
+    color: var(--color-accent-hover);
   }
 
   .interest-list {

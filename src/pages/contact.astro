@@ -2,11 +2,13 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import Button from '../components/Button.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="Contact" description={`Contact ${siteConfig.displayName}`}>
   <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'Contact' }]} />
     <section class="page-header">
       <h1>Contact</h1>
       <p class="page-subtitle">Get in touch for collaboration, research, or consulting.</p>
