@@ -166,6 +166,8 @@ describe('Component Files Exist', () => {
     'InlineCode.astro',
     'CodeBlock.astro',
     'InvertedSection.astro',
+    'Nav.astro',
+    'Footer.astro',
   ];
 
   test.each(components)('%s component exists', (filename) => {
