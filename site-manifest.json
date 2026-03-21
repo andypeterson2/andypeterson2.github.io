@@ -37,21 +37,32 @@
       "title": "Portfolio"
     },
     {
+      "path": "/dist/about/",
+      "title": "About | Portfolio"
+    },
+    {
+      "path": "/dist/contact/",
+      "title": "Contact | Portfolio"
+    },
+    {
+      "path": "/dist/projects/",
+      "title": "Projects | Portfolio"
+    },
+    {
+      "path": "/dist/resume/",
+      "title": "Resume | Portfolio"
+    },
+    {
+      "path": "/dist/skills/",
+      "title": "Skills | Portfolio"
+    },
+    {
       "path": "/nonogram/website/",
       "title": "Nonogram",
       "icon": "fa-solid fa-puzzle-piece",
       "backend": {
         "service": "nonogram",
         "defaultPort": 5055
-      }
-    },
-    {
-      "path": "/qvc/website/client/",
-      "title": "Video Chat",
-      "icon": "fa-solid fa-lock",
-      "backend": {
-        "service": "qvc",
-        "defaultPort": 5002
       }
     },
     {

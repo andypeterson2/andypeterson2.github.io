@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Card from '../../components/Card.astro';
+import Tag from '../../components/Tag.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import { siteConfig } from '../../config/site';
+
+const projects = [
+  {
+    title: 'Quantum Video Chat',
+    slug: 'quantum-video-chat',
+    description: 'QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'WebRTC', variant: 'teal' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Quantum Nonogram Solver',
+    slug: 'quantum-nonogram-solver',
+    description: 'Quantum computing approach to solving nonogram puzzles with visual solver UI.',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'Qiskit', variant: 'purple' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Quantum Protein Kernel',
+    slug: 'quantum-protein-kernel',
+    description: 'Quantum-classical hybrid kernel methods for protein structure classification.',
+    tags: [
+      { label: 'Quantum', variant: 'accent' as const },
+      { label: 'ML', variant: 'teal' as const },
+      { label: 'Python', variant: 'default' as const },
+    ],
+  },
+  {
+    title: 'Tech Tree',
+    slug: 'tech-tree',
+    description: 'Interactive skill dependency visualization inspired by game tech trees.',
+    tags: [
+      { label: 'D3.js', variant: 'teal' as const },
+      { label: 'TypeScript', variant: 'blue' as const },
+    ],
+  },
+  {
+    title: 'Portfolio Dashboard',
+    slug: 'dashboard',
+    description: 'Real-time monitoring dashboard for portfolio project health and metrics.',
+    tags: [
+      { label: 'React', variant: 'teal' as const },
+      { label: 'TypeScript', variant: 'blue' as const },
+    ],
+  },
+];
+---
+
+<BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
+  <div class="container">
+    <section class="page-header">
+      <h1>Projects</h1>
+      <p class="page-subtitle">Research projects, tools, and experiments.</p>
+    </section>
+
+    <section class="project-listing">
+      <div class="project-grid">
+        {projects.map((project) => (
+          <Card title={project.title} href={`/projects/${project.slug}`}>
+            <p>{project.description}</p>
+            <div class="card-tags">
+              {project.tags.map((tag) => (
+                <Tag variant={tag.variant}>{tag.label}</Tag>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+  .project-listing {
+    padding: var(--space-8) 0;
+  }
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+  }
+  .card-tags {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    flex-wrap: wrap;
+  }
+</style>
