@@ -1,6 +1,7 @@
 import eslintPluginAstro from 'eslint-plugin-astro';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import * as designSystem from './scripts/eslint-plugin-design-system.js';
 
 export default [
   {
@@ -21,4 +22,14 @@ export default [
     },
   },
   ...eslintPluginAstro.configs.recommended,
+  {
+    files: ['src/pages/**/*.astro', 'src/layouts/**/*.astro'],
+    plugins: {
+      'design-system': { rules: designSystem.rules },
+    },
+    rules: {
+      'design-system/prefer-button': 'warn',
+      'design-system/prefer-tag': 'warn',
+    },
+  },
 ];
