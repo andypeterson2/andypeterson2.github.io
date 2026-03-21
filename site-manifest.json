@@ -37,16 +37,76 @@
       "title": "Portfolio"
     },
     {
+      "path": "/dist/Current-Resume.pdf/",
+      "title": "Redirecting to: /resume"
+    },
+    {
       "path": "/dist/about/",
       "title": "About | Portfolio"
+    },
+    {
+      "path": "/dist/blog/",
+      "title": "Blog | Portfolio"
+    },
+    {
+      "path": "/dist/blog/hello-world/",
+      "title": "Hello World | Portfolio"
+    },
+    {
+      "path": "/dist/blog/tags/",
+      "title": "Tags | Portfolio"
     },
     {
       "path": "/dist/contact/",
       "title": "Contact | Portfolio"
     },
     {
+      "path": "/dist/cover-letter/",
+      "title": "Cover Letter | Portfolio"
+    },
+    {
+      "path": "/dist/me/",
+      "title": "Redirecting to: /about"
+    },
+    {
+      "path": "/dist/nonograms.html/",
+      "title": "Redirecting to: /projects"
+    },
+    {
+      "path": "/dist/nonograms/",
+      "title": "Redirecting to: /projects"
+    },
+    {
       "path": "/dist/projects/",
       "title": "Projects | Portfolio"
+    },
+    {
+      "path": "/dist/projects/dashboard/",
+      "title": "Portfolio Dashboard | Portfolio"
+    },
+    {
+      "path": "/dist/projects/quantum-nonogram-solver/",
+      "title": "Quantum Nonogram Solver | Portfolio"
+    },
+    {
+      "path": "/dist/projects/quantum-protein-kernel/",
+      "title": "Quantum Protein Kernel | Portfolio"
+    },
+    {
+      "path": "/dist/projects/quantum-video-chat/",
+      "title": "Quantum Video Chat | Portfolio"
+    },
+    {
+      "path": "/dist/projects/tech-tree/",
+      "title": "Tech Tree | Portfolio"
+    },
+    {
+      "path": "/dist/quantumvideo.html/",
+      "title": "Redirecting to: /projects"
+    },
+    {
+      "path": "/dist/quantumvideo/",
+      "title": "Redirecting to: /projects"
     },
     {
       "path": "/dist/resume/",
@@ -55,6 +115,18 @@
     {
       "path": "/dist/skills/",
       "title": "Skills | Portfolio"
+    },
+    {
+      "path": "/dist/underconstruction.html/",
+      "title": "Redirecting to: /"
+    },
+    {
+      "path": "/dist/underconstruction/",
+      "title": "Redirecting to: /"
+    },
+    {
+      "path": "/dist/uses/",
+      "title": "Uses | Portfolio"
     },
     {
       "path": "/nonogram/website/",
