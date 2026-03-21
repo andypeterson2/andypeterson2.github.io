@@ -18,8 +18,24 @@ import { siteConfig } from '../config/site';
       <SectionLabel label="Download" />
       <div class="download-links">
         <Button href="/resume.pdf" variant="primary">Download PDF</Button>
+        <Button href="/cover-letter" variant="secondary">Cover Letter</Button>
       </div>
       <p class="last-updated">Last updated: 2026</p>
+    </section>
+
+    <section class="resume-inline" id="resume-view">
+      <SectionLabel label="Quick View" />
+      <div class="resume-document">
+        <div class="resume-doc-header">
+          <h2 class="resume-doc-name">{siteConfig.displayName}</h2>
+          <p class="resume-doc-tagline">{siteConfig.description}</p>
+          <div class="resume-doc-contact">
+            {siteConfig.email && <span>{siteConfig.email}</span>}
+            {siteConfig.github && <span>GitHub</span>}
+            {siteConfig.linkedin && <span>LinkedIn</span>}
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="resume-experience">
@@ -103,5 +119,35 @@ import { siteConfig } from '../config/site';
   .experience-desc {
     color: var(--color-text-secondary);
     max-width: var(--content-width);
+  }
+
+  .resume-inline {
+    padding: var(--space-12) 0;
+  }
+  .resume-document {
+    max-width: var(--content-width);
+    padding: var(--space-8);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .resume-doc-header {
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+  .resume-doc-name {
+    margin-bottom: var(--space-1);
+  }
+  .resume-doc-tagline {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+  }
+  .resume-doc-contact {
+    display: flex;
+    gap: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
   }
 </style>
