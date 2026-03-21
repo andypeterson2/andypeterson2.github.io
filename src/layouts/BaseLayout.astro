@@ -55,6 +55,16 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Theme: restore saved preference before paint to prevent flash -->
+    <script is:inline>
+      (function() {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'light' || saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+      })();
+    </script>
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
@@ -65,6 +75,25 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       <slot />
     </main>
     <Footer />
+    <button
+      id="back-to-top"
+      class="back-to-top"
+      aria-label="Back to top"
+      type="button"
+    >
+      &uarr;
+    </button>
+    <script>
+      const btn = document.getElementById('back-to-top');
+      if (btn) {
+        window.addEventListener('scroll', () => {
+          btn.classList.toggle('visible', window.scrollY > 400);
+        });
+        btn.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    </script>
   </body>
 </html>
 
@@ -87,5 +116,32 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
   }
   main {
     padding-top: var(--space-16);
+  }
+  .back-to-top {
+    position: fixed;
+    bottom: var(--space-6);
+    right: var(--space-6);
+    z-index: 100;
+    width: 48px;
+    height: 48px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: var(--text-xl);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-normal), color var(--duration-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .back-to-top:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
   }
 </style>
