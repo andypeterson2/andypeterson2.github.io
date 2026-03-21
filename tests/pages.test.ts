@@ -441,10 +441,10 @@ describe('SEO and Meta Tags', () => {
     expect(layoutSrc).toContain('apple-touch-icon');
   });
 
-  test('has font preconnect for performance', () => {
-    expect(layoutSrc).toContain('rel="preconnect"');
-    expect(layoutSrc).toContain('fonts.googleapis.com');
-    expect(layoutSrc).toContain('fonts.gstatic.com');
+  test('fonts are self-hosted via @fontsource', () => {
+    expect(layoutSrc).toContain('@fontsource/ibm-plex-sans');
+    expect(layoutSrc).toContain('@fontsource/ibm-plex-mono');
+    expect(layoutSrc).not.toContain('fonts.googleapis.com');
   });
 });
 
