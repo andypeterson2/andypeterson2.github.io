@@ -9,7 +9,7 @@ export const projects = [
     featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
-      { label: 'WebRTC', variant: 'teal' as const },
+      { label: 'WebRTC', variant: 'default' as const },
       { label: 'Python', variant: 'default' as const },
     ],
   },
@@ -23,7 +23,7 @@ export const projects = [
     featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
-      { label: 'Qiskit', variant: 'purple' as const },
+      { label: 'Qiskit', variant: 'default' as const },
       { label: 'Python', variant: 'default' as const },
     ],
   },
@@ -37,7 +37,7 @@ export const projects = [
     featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
-      { label: 'ML', variant: 'teal' as const },
+      { label: 'ML', variant: 'default' as const },
       { label: 'Python', variant: 'default' as const },
     ],
   },
@@ -50,8 +50,8 @@ export const projects = [
     status: 'active' as const,
     featured: false,
     tags: [
-      { label: 'Canvas', variant: 'teal' as const },
-      { label: 'JavaScript', variant: 'blue' as const },
+      { label: 'Canvas', variant: 'default' as const },
+      { label: 'JavaScript', variant: 'default' as const },
     ],
   },
   {
@@ -63,8 +63,8 @@ export const projects = [
     status: 'active' as const,
     featured: false,
     tags: [
-      { label: 'Flask', variant: 'teal' as const },
-      { label: 'Python', variant: 'blue' as const },
+      { label: 'Flask', variant: 'default' as const },
+      { label: 'Python', variant: 'default' as const },
     ],
   },
 ];

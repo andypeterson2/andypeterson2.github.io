@@ -114,8 +114,8 @@ const year = new Date().getFullYear();
     justify-content: center;
   }
   .theme-toggle:hover {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
+    color: var(--color-text);
+    border-color: var(--color-text);
   }
 </style>
 
@@ -125,7 +125,7 @@ const year = new Date().getFullYear();
     function updateLabel() {
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
       const icon = toggle.querySelector('.theme-toggle-icon');
-      if (icon) icon.textContent = current === 'dark' ? '☀' : '☾';
+      if (icon) icon.textContent = current === 'dark' ? 'Light' : 'Dark';
     }
     updateLabel();
     toggle.addEventListener('click', () => {

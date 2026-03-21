@@ -170,12 +170,13 @@ const categories = [...new Set(projects.map(p => p.category))];
     color: var(--color-text-muted);
     cursor: pointer;
     transition: all var(--duration-fast);
-    min-height: 36px;
+    min-height: 48px;
+    border-radius: 2px;
   }
   .tag-filter-btn:hover,
   .tag-filter-btn.active {
-    border-color: var(--color-accent-teal);
-    color: var(--color-accent-teal);
+    border-color: var(--color-text);
+    color: var(--color-text);
   }
   .card-meta {
     display: flex;

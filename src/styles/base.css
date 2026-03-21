@@ -48,10 +48,12 @@ p:last-child { margin-bottom: 0; }
 
 a {
   color: var(--color-accent);
-  text-decoration: none;
-  transition: color var(--duration-fast);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast), color var(--duration-fast);
 }
-a:hover { color: var(--color-accent-hover); }
+a:hover { text-decoration-color: var(--color-accent); }
 
 code {
   font-family: var(--font-mono);
@@ -102,8 +104,8 @@ pre code {
 
 /* ── Selection ── */
 ::selection {
-  background: var(--color-accent);
-  color: var(--color-text-inverse);
+  background: var(--color-accent-muted);
+  color: var(--color-text);
 }
 
 /* ── Scrollbar ── */

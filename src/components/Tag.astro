@@ -1,6 +1,6 @@
 ---
 interface Props {
-  variant?: 'default' | 'accent' | 'teal' | 'purple' | 'blue';
+  variant?: 'default' | 'accent';
   class?: string;
 }
 
@@ -18,13 +18,12 @@ const { variant = 'default', class: className } = Astro.props;
     font-weight: 500;
     padding: var(--space-1) var(--space-2);
     border: 1px solid var(--color-border);
+    border-radius: 2px;
     font-family: var(--font-mono);
-    letter-spacing: var(--tracking-wide);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    background: var(--color-surface-2);
   }
   .tag-default { color: var(--color-text-muted); }
   .tag-accent { color: var(--color-accent); border-color: var(--color-accent); }
-  .tag-teal { color: var(--color-accent-teal); border-color: var(--color-accent-teal); }
-  .tag-purple { color: var(--color-accent-purple); border-color: var(--color-accent-purple); }
-  .tag-blue { color: var(--color-accent-blue); border-color: var(--color-accent-blue); }
 </style>
