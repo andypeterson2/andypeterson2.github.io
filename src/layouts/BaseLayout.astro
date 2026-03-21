@@ -66,6 +66,17 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
     })} />
 
+    <!-- Error boundary -->
+    <script is:inline>
+      window.addEventListener('error', function(e) {
+        var el = document.getElementById('error-boundary');
+        if (el) {
+          el.style.display = 'block';
+          el.textContent = 'Something went wrong. Please refresh.';
+        }
+      });
+    </script>
+
     <!-- Theme: restore saved preference before paint to prevent flash -->
     <script is:inline>
       (function() {
@@ -77,6 +88,7 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
     </script>
   </head>
   <body>
+    <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
     <a href="#main-content" class="skip-link">Skip to content</a>
     <header>
       <Nav />
@@ -108,6 +120,19 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 </html>
 
 <style>
+  .error-boundary {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-danger);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
   .skip-link {
     position: absolute;
     top: -100%;

@@ -110,3 +110,62 @@ pre code {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-surface-muted); }
+
+/* ── Print stylesheet ── */
+@media print {
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.8em;
+  }
+  a[href^='#']::after,
+  a[href^='javascript:']::after,
+  nav a[href]::after {
+    content: '';
+  }
+  nav,
+  .nav,
+  .back-to-top,
+  .theme-toggle,
+  .skip-link,
+  .nav-toggle,
+  .mobile-menu,
+  .filter-btn {
+    display: none !important;
+  }
+  main {
+    padding-top: 0 !important;
+  }
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+  img, pre, blockquote {
+    page-break-inside: avoid;
+  }
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+  footer {
+    border-top: 1px solid #ccc;
+  }
+  footer .theme-toggle,
+  footer .footer-links {
+    display: none !important;
+  }
+}
