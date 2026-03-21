@@ -225,15 +225,11 @@ describe('Performance budget validation', () => {
     expect(baseCss).not.toContain('@tailwind');
   });
 
-  test('font loading uses display=swap', () => {
+  test('fonts are self-hosted via @fontsource', () => {
     const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    expect(layout).toContain('display=swap');
-  });
-
-  test('font preconnect configured', () => {
-    const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    expect(layout).toContain('rel="preconnect"');
-    expect(layout).toContain('fonts.googleapis.com');
+    expect(layout).toContain('@fontsource/ibm-plex-sans');
+    expect(layout).toContain('@fontsource/ibm-plex-mono');
+    expect(layout).not.toContain('fonts.googleapis.com');
   });
 });
 

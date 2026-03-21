@@ -17,6 +17,8 @@
     "@astrojs/mdx": "^5.0.2",
     "@astrojs/rss": "^4.0.17",
     "@astrojs/sitemap": "^3.7.1",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
     "astro": "^6.0.8"
   },
   "devDependencies": {
