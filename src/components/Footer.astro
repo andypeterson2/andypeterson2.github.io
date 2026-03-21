@@ -34,6 +34,16 @@ const year = new Date().getFullYear();
             </a>
           </li>
         )}
+        <li>
+          <button
+            id="theme-toggle"
+            class="theme-toggle"
+            aria-label="Toggle dark mode"
+            type="button"
+          >
+            <span class="theme-toggle-icon" aria-hidden="true"></span>
+          </button>
+        </li>
       </ul>
     </nav>
   </div>
@@ -73,4 +83,42 @@ const year = new Date().getFullYear();
   .footer-links a:hover {
     color: var(--color-accent);
   }
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--space-1) var(--space-2);
+    transition: color var(--duration-fast), border-color var(--duration-fast);
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .theme-toggle:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
 </style>
+
+<script>
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    function updateLabel() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const icon = toggle.querySelector('.theme-toggle-icon');
+      if (icon) icon.textContent = current === 'dark' ? '☀' : '☾';
+    }
+    updateLabel();
+    toggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateLabel();
+    });
+  }
+</script>
