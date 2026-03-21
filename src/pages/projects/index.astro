@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Card from '../../components/Card.astro';
 import Tag from '../../components/Tag.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { siteConfig } from '../../config/site';
 
 const projects = [
@@ -76,6 +77,7 @@ const categories = [...new Set(projects.map(p => p.category))];
 
 <BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
   <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'Projects' }]} />
     <section class="page-header">
       <h1>Projects</h1>
       <p class="page-subtitle">Research projects, tools, and experiments.</p>
@@ -110,6 +112,19 @@ const categories = [...new Set(projects.map(p => p.category))];
     </section>
 
     <script>
+      // Scroll entrance animation
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.project-card-wrap').forEach(card => {
+        observer.observe(card);
+      });
+
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -145,6 +160,16 @@ const categories = [...new Set(projects.map(p => p.category))];
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--space-6);
+  }
+  .project-card-wrap {
+    opacity: 0;
+    transform: translateY(var(--space-4));
+    transition: opacity var(--duration-slow) var(--ease-default),
+                transform var(--duration-slow) var(--ease-default);
+  }
+  .project-card-wrap.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
   .card-tags {
     display: flex;

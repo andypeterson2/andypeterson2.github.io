@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import Tag from '../components/Tag.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { siteConfig } from '../config/site';
 
 const categories = [
@@ -30,6 +31,7 @@ const categories = [
 
 <BaseLayout title="Skills" description={`Skills and expertise of ${siteConfig.displayName}`}>
   <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'Skills' }]} />
     <section class="page-header">
       <h1>Skills</h1>
       <p class="page-subtitle">Technical skills and areas of expertise.</p>
@@ -74,6 +76,24 @@ const categories = [
   const tabs = document.querySelectorAll('[role="tab"]');
   const panels = document.querySelectorAll('[role="tabpanel"]');
 
+  // Skill entrance animation
+  const skillObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        (entry.target as HTMLElement).classList.add('visible');
+        skillObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  function observeSkills() {
+    document.querySelectorAll('.tab-panel.active .skill-item').forEach((item, i) => {
+      (item as HTMLElement).style.transitionDelay = `${i * 50}ms`;
+      skillObserver.observe(item);
+    });
+  }
+  observeSkills();
+
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = (tab as HTMLElement).dataset.tab;
@@ -85,6 +105,7 @@ const categories = [
       tab.setAttribute('aria-selected', 'true');
       tab.classList.add('active');
       document.querySelector(`[data-panel="${target}"]`)?.classList.add('active');
+      observeSkills();
     });
   });
 </script>
@@ -145,6 +166,18 @@ const categories = [
     padding: var(--space-3) var(--space-4);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
+    opacity: 0;
+    transform: translateY(var(--space-2));
+    transition: opacity var(--duration-slow) var(--ease-default),
+                transform var(--duration-slow) var(--ease-default),
+                border-color var(--duration-fast);
+  }
+  .skill-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .skill-item:hover {
+    border-color: var(--color-accent);
   }
   .skill-name {
     font-family: var(--font-mono);

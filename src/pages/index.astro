@@ -13,6 +13,10 @@ import { siteConfig } from '../config/site';
       <p class="hero-greeting">Hello, I'm</p>
       <h1 class="hero-name">{siteConfig.displayName}</h1>
       <p class="hero-tagline">{siteConfig.description}</p>
+      <div class="hero-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Currently working on quantum-secured video chat</span>
+      </div>
       <div class="hero-actions">
         <Button href="/projects">View Projects</Button>
         <Button variant="secondary" href="/contact">Get in Touch</Button>
@@ -62,6 +66,29 @@ import { siteConfig } from '../config/site';
     color: var(--color-text-secondary);
     margin-bottom: var(--space-8);
     max-width: 36rem;
+  }
+  .hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-8);
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--color-success);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
   .hero-actions {
     display: flex;
