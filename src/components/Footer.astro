@@ -10,6 +10,9 @@ const year = new Date().getFullYear();
       <p class="footer-copyright">
         &copy; {year} {siteConfig.displayName}
       </p>
+      <p class="footer-built-with">
+        Built with <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a>
+      </p>
     </div>
     <nav class="footer-links" aria-label="Footer navigation">
       <ul role="list">
@@ -65,6 +68,18 @@ const year = new Date().getFullYear();
   .footer-copyright {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
+  }
+  .footer-built-with {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+  }
+  .footer-built-with a {
+    color: var(--color-text-muted);
+    text-decoration: underline;
+  }
+  .footer-built-with a:hover {
+    color: var(--color-accent);
   }
   .footer-links ul {
     display: flex;

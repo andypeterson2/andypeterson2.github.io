@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+---
+
+<BaseLayout title="Uses" description="Tools, hardware, and software I use daily.">
+  <div class="container">
+    <Breadcrumbs crumbs={[{ label: 'Uses' }]} />
+    <section class="page-header">
+      <h1>/uses</h1>
+      <p class="page-subtitle">Tools, hardware, and software I use daily.</p>
+    </section>
+
+    <section class="uses-section">
+      <SectionLabel label="Editor & Terminal" />
+      <ul class="uses-list">
+        <li><strong>Editor:</strong> VS Code with Gruvbox theme</li>
+        <li><strong>Terminal:</strong> iTerm2 + zsh + oh-my-zsh</li>
+        <li><strong>Font:</strong> IBM Plex Mono</li>
+        <li><strong>AI:</strong> Claude Code</li>
+      </ul>
+    </section>
+
+    <section class="uses-section">
+      <SectionLabel label="Languages & Frameworks" />
+      <ul class="uses-list">
+        <li><strong>Primary:</strong> Python, TypeScript</li>
+        <li><strong>Quantum:</strong> Qiskit, PennyLane</li>
+        <li><strong>Web:</strong> Astro, React, Flask</li>
+        <li><strong>Data:</strong> PyTorch, scikit-learn</li>
+      </ul>
+    </section>
+
+    <section class="uses-section">
+      <SectionLabel label="Infrastructure" />
+      <ul class="uses-list">
+        <li><strong>Hosting:</strong> Vercel</li>
+        <li><strong>Version control:</strong> Git + GitHub</li>
+        <li><strong>CI/CD:</strong> GitHub Actions</li>
+        <li><strong>Project management:</strong> OpenProject</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+    font-family: var(--font-mono);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+  .uses-section {
+    padding: var(--space-8) 0;
+    max-width: var(--content-width);
+  }
+  .uses-list {
+    list-style: none;
+    padding: 0;
+  }
+  .uses-list li {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+  .uses-list li strong {
+    font-family: var(--font-mono);
+    color: var(--color-text);
+    margin-right: var(--space-2);
+  }
+</style>

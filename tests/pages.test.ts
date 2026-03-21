@@ -133,7 +133,7 @@ describe('URL Routing', () => {
 
   test('404 page has back-to-home link', () => {
     const notFound = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');
-    expect(notFound).toContain('Back to Home');
+    expect(notFound).toContain('Home');
     expect(notFound).toContain('href="/"');
   });
 });

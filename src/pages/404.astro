@@ -5,10 +5,19 @@ import Button from '../components/Button.astro';
 
 <BaseLayout title="404 — Not Found">
   <div class="container not-found">
-    <p class="not-found-code">404</p>
-    <h1>Page not found</h1>
-    <p class="not-found-message">The page you're looking for doesn't exist or has been moved.</p>
-    <Button href="/">Back to Home</Button>
+    <p class="not-found-code" aria-hidden="true">404</p>
+    <h1>Lost in the superposition</h1>
+    <p class="not-found-message">
+      This page collapsed to |0⟩ — it doesn't exist in this basis.
+    </p>
+    <p class="not-found-suggestion">
+      Maybe try observing one of these states instead:
+    </p>
+    <nav class="not-found-links" aria-label="Suggested pages">
+      <Button href="/">Home</Button>
+      <Button variant="secondary" href="/projects">Projects</Button>
+      <Button variant="secondary" href="/blog">Blog</Button>
+    </nav>
   </div>
 </BaseLayout>
 
@@ -28,7 +37,19 @@ import Button from '../components/Button.astro';
   }
   .not-found-message {
     color: var(--color-text-secondary);
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-4);
     font-size: var(--text-lg);
+    font-family: var(--font-mono);
+  }
+  .not-found-suggestion {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-6);
+  }
+  .not-found-links {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+    flex-wrap: wrap;
   }
 </style>
