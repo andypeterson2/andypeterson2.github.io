@@ -5,6 +5,9 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   integrations: [mdx(), sitemap()],
+  image: {
+    service: { entrypoint: 'astro/assets/services/sharp' },
+  },
   site: process.env.SITE_URL || 'https://andypeterson.dev',
   redirects: {
     '/nonograms.html': '/projects',
