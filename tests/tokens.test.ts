@@ -239,8 +239,7 @@ describe('Tag Component', () => {
   test('supports variant prop', () => {
     expect(tagSrc).toContain('variant');
     expect(tagSrc).toContain('accent');
-    expect(tagSrc).toContain('teal');
-    expect(tagSrc).toContain('purple');
+    expect(tagSrc).toContain('default');
   });
 
   test('uses mono font', () => {
@@ -259,7 +258,7 @@ describe('SectionLabel Component', () => {
   });
 
   test('has decorative line', () => {
-    expect(src).toContain('section-label-line');
+    expect(src).toContain('section-label-rule');
   });
 });
 

@@ -21,7 +21,7 @@ describe('Dark mode token implementation', () => {
 
   test('dark theme is default (:root)', () => {
     expect(tokensCss).toContain(':root');
-    expect(tokensCss).toContain('--color-bg: #1d2021');
+    expect(tokensCss).toContain('--color-bg: #111111');
   });
 
   test('light theme defined via data-theme attribute', () => {
@@ -146,14 +146,14 @@ describe('Dark mode full token verification', () => {
 
   test('dark and light backgrounds have sufficient contrast', () => {
     // Dark bg should be dark (#1d2021), light bg should be light (#fbf1c7)
-    expect(tokensCss).toContain('--color-bg: #1d2021');
-    expect(tokensCss).toContain('--color-bg: #fbf1c7');
+    expect(tokensCss).toContain('--color-bg: #111111');
+    expect(tokensCss).toContain('--color-bg: #FFFFFF');
   });
 
   test('dark and light text colors are inverted', () => {
     // Dark theme text is light, light theme text is dark
-    expect(tokensCss).toContain('--color-text: #ebdbb2');
-    expect(tokensCss).toContain('--color-text: #3c3836');
+    expect(tokensCss).toContain('--color-text: #EEEEEE');
+    expect(tokensCss).toContain('--color-text: #111111');
   });
 
   test('semantic colors defined in both themes', () => {
