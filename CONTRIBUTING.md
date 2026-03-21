@@ -55,6 +55,18 @@ Override with an eslint-disable comment + justification when genuinely needed.
 5. Add `aria-label` for elements without visible text
 6. Test in both light and dark modes
 
+## Images
+
+- Use Astro's `<Image>` component from `astro:assets` — never raw `<img>` tags
+- Store source images in `src/assets/` (not `public/`) so Astro can optimize them
+- Sharp generates WebP/AVIF at build time; no manual format conversion needed
+- Always provide descriptive `alt` text:
+  - Screenshots/diagrams: describe what's shown ("QKD key exchange sequence diagram")
+  - Decorative images: use `alt=""` with `aria-hidden="true"`
+  - Avoid "image of" or "photo of" prefixes — screen readers already announce it as an image
+- Use `loading="lazy"` for below-fold images (Astro Image does this by default)
+- Provide `width` and `height` to prevent layout shift
+
 ## Shadows
 
 - Nav bar: `0 1px 3px rgba(0, 0, 0, 0.06)` (always present)
