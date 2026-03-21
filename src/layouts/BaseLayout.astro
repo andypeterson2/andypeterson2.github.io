@@ -26,6 +26,7 @@ const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
+const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
 ---
 
 <!doctype html>
@@ -70,6 +71,15 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
     })} />
 
+    {/* Analytics — only loads when PLAUSIBLE_DOMAIN env var is set */}
+    {plausibleDomain && (
+      <script
+        defer
+        data-domain={plausibleDomain}
+        src="https://plausible.io/js/script.js"
+      />
+    )}
+
     <!-- Error boundary -->
     <script is:inline>
       window.addEventListener('error', function(e) {
@@ -101,6 +111,7 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       <slot />
     </main>
     <Footer />
+    {/* eslint-disable-next-line design-system/prefer-button -- layout-level scroll control, not a form action */}
     <button
       id="back-to-top"
       class="back-to-top"
