@@ -56,6 +56,16 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
       rel="stylesheet"
     />
 
+    <!-- Structured data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: siteConfig.displayName,
+      url: canonicalUrl.href,
+      jobTitle: 'Quantum Researcher',
+      sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
+    })} />
+
     <!-- Theme: restore saved preference before paint to prevent flash -->
     <script is:inline>
       (function() {
