@@ -111,8 +111,8 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
     <!-- Easter egg: console message for devs -->
     <script is:inline>
       console.log('%c👋 Hey, dev!', 'font-size: 20px; font-weight: bold;');
-      console.log('%cCurious about the code? Check it out on GitHub.', 'font-size: 14px; color: #d79921;');
-      console.log('%cBuilt with Astro, design tokens, and zero JavaScript frameworks.', 'font-size: 12px; color: #928374;');
+      console.log('%cCurious about the code? Check it out on GitHub.', 'font-size: 14px; color: #2255CC;');
+      console.log('%cBuilt with Astro, design tokens, and zero JavaScript frameworks.', 'font-size: 12px; color: #888888;');
     </script>
     <script>
       const btn = document.getElementById('back-to-top');
@@ -159,7 +159,7 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
     top: var(--space-2);
   }
   main {
-    padding-top: var(--space-16);
+    padding-top: 48px;
   }
   .back-to-top {
     position: fixed;
@@ -185,7 +185,7 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
     pointer-events: auto;
   }
   .back-to-top:hover {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
+    color: var(--color-text);
+    border-color: var(--color-text);
   }
 </style>

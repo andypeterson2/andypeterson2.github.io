@@ -1,70 +1,53 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Design Tokens — CSS Custom Properties
-   Gruvbox-adjacent warm palette. Dark by default; light via data-theme="light".
+   Monochrome-first palette per Design Language Spec.
+   Dark by default; light via data-theme="light".
    Typography: IBM Plex Sans + IBM Plex Mono.
+   Auto-generated from tokens.json — do not edit manually.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Surfaces ── */
-  --color-bg: #1d2021;
-  --color-surface: #282828;
-  --color-surface-2: #3c3836;
-  --color-surface-muted: #504945;
-  --color-surface-highlight: #665c54;
-
-  /* ── Borders ── */
-  --color-border: #3c3836;
-  --color-border-focus: #d79921;
-  --color-focus-ring: rgba(215, 153, 33, 0.4);
-
-  /* ── Text ── */
-  --color-text: #ebdbb2;
-  --color-text-secondary: #d5c4a1;
-  --color-text-muted: #a89984;
-  --color-text-inverse: #1d2021;
-
-  /* ── Accents ── */
-  --color-accent: #d79921;
-  --color-accent-hover: #fabd2f;
-  --color-accent-teal: #689d6a;
-  --color-accent-blue: #458588;
-  --color-accent-purple: #b16286;
-  --color-accent-red: #cc241d;
-
-  /* ── Semantic ── */
-  --color-success: #98971a;
-  --color-warn: #d79921;
-  --color-danger: #cc241d;
-
-  /* ── Syntax ── */
-  --color-syntax-string: #b8bb26;
-  --color-syntax-keyword: #d3869b;
-  --color-syntax-function: #fabd2f;
-  --color-syntax-comment: #928374;
-  --color-syntax-type: #8ec07c;
-
-  /* ── Typography ── */
+  /* ── color ── */
+  --color-bg: #111111;
+  --color-surface: #1A1A1A;
+  --color-surface-2: #222222;
+  --color-surface-muted: #333333;
+  --color-surface-highlight: #444444;
+  --color-border: #333333;
+  --color-border-focus: #6699EE;
+  --color-focus-ring: rgba(102, 153, 238, 0.4);
+  --color-text: #EEEEEE;
+  --color-text-secondary: #DDDDDD;
+  --color-text-muted: #777777;
+  --color-text-inverse: #111111;
+  --color-accent: #6699EE;
+  --color-accent-hover: #88BBFF;
+  --color-accent-muted: rgba(102, 153, 238, 0.12);
+  --color-green: #44BB77;
+  --color-green-muted: rgba(68, 187, 119, 0.12);
+  --color-red: #EE5555;
+  --color-success: #44BB77;
+  --color-warn: #DDAA33;
+  --color-danger: #EE5555;
+  --color-syntax-string: #D4A865;
+  --color-syntax-keyword: #EEEEEE;
+  --color-syntax-function: #6699EE;
+  --color-syntax-comment: #666666;
+  --color-syntax-type: #DDDDDD;
+  --color-syntax-number: #C4A24E;
+  /* ── font ── */
   --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
-
-  --text-xs: clamp(0.625rem, 0.6rem + 0.125vw, 0.75rem);
-  --text-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  /* ── fontSize ── */
+  --text-xs: clamp(0.625rem, 0.6rem + 0.125vw, 0.6875rem);
+  --text-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.8125rem);
   --text-base: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
-  --text-xl: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
-  --text-2xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
-  --text-3xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
-  --text-4xl: clamp(2rem, 1.5rem + 2.5vw, 3rem);
-
-  --leading-tight: 1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.75;
-
-  --tracking-tight: -0.01em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.05em;
-
-  /* ── Spacing ── */
+  --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1rem + 0.625vw, 1.5625rem);
+  --text-2xl: clamp(1.5rem, 1.2rem + 0.75vw, 2rem);
+  --text-3xl: clamp(2rem, 1.5rem + 1.5vw, 2.5rem);
+  --text-4xl: clamp(2.5rem, 2rem + 2.5vw, 3.125rem);
+  /* ── space ── */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -75,83 +58,85 @@
   --space-16: 4rem;
   --space-24: 6rem;
   --space-32: 8rem;
-
-  /* ── Layout ── */
-  --max-width: 72rem;
-  --content-width: 48rem;
+  /* ── layout ── */
+  --max-width: 66.25rem;
+  --content-width: 42.5rem;
   --radius: 0;
-
-  /* ── Motion ── */
-  --duration-fast: 0.1s;
+  /* ── typography ── */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.1em;
+  /* ── motion ── */
+  --duration-fast: 0.15s;
   --duration-normal: 0.2s;
   --duration-slow: 0.3s;
-  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-default: cubic-bezier(0.0, 0.0, 0.2, 1);
 }
 
 /* ── Light theme ── */
 [data-theme='light'] {
-  --color-bg: #fbf1c7;
-  --color-surface: #f2e5bc;
-  --color-surface-2: #ebdbb2;
-  --color-surface-muted: #d5c4a1;
-  --color-surface-highlight: #bdae93;
-
-  --color-border: #d5c4a1;
-  --color-border-focus: #b57614;
-  --color-focus-ring: rgba(181, 118, 20, 0.3);
-
-  --color-text: #3c3836;
-  --color-text-secondary: #504945;
-  --color-text-muted: #7c6f64;
-  --color-text-inverse: #fbf1c7;
-
-  --color-accent: #b57614;
-  --color-accent-hover: #af6800;
-  --color-accent-teal: #427b58;
-  --color-accent-blue: #076678;
-  --color-accent-purple: #8f3f71;
-  --color-accent-red: #9d0006;
-
-  --color-success: #79740e;
-  --color-warn: #b57614;
-  --color-danger: #9d0006;
-
-  --color-syntax-string: #79740e;
-  --color-syntax-keyword: #8f3f71;
-  --color-syntax-function: #b57614;
-  --color-syntax-comment: #928374;
-  --color-syntax-type: #427b58;
+  --color-bg: #FFFFFF;
+  --color-surface: #FAFAFA;
+  --color-surface-2: #F2F2F2;
+  --color-surface-muted: #E5E5E5;
+  --color-surface-highlight: #CCCCCC;
+  --color-border: #CCCCCC;
+  --color-border-focus: #2255CC;
+  --color-focus-ring: rgba(34, 85, 204, 0.4);
+  --color-text: #111111;
+  --color-text-secondary: #222222;
+  --color-text-muted: #888888;
+  --color-text-inverse: #FFFFFF;
+  --color-accent: #2255CC;
+  --color-accent-hover: #1A44AA;
+  --color-accent-muted: rgba(34, 85, 204, 0.12);
+  --color-green: #1A7A42;
+  --color-green-muted: rgba(26, 122, 66, 0.12);
+  --color-red: #CC3333;
+  --color-success: #1A7A42;
+  --color-warn: #CC8800;
+  --color-danger: #CC3333;
+  --color-syntax-string: #8B6834;
+  --color-syntax-keyword: #111111;
+  --color-syntax-function: #2255CC;
+  --color-syntax-comment: #888888;
+  --color-syntax-type: #222222;
+  --color-syntax-number: #7A5B1A;
 }
 
 /* ── OS preference fallback ── */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --color-bg: #fbf1c7;
-    --color-surface: #f2e5bc;
-    --color-surface-2: #ebdbb2;
-    --color-surface-muted: #d5c4a1;
-    --color-surface-highlight: #bdae93;
-    --color-border: #d5c4a1;
-    --color-border-focus: #b57614;
-    --color-focus-ring: rgba(181, 118, 20, 0.3);
-    --color-text: #3c3836;
-    --color-text-secondary: #504945;
-    --color-text-muted: #7c6f64;
-    --color-text-inverse: #fbf1c7;
-    --color-accent: #b57614;
-    --color-accent-hover: #af6800;
-    --color-accent-teal: #427b58;
-    --color-accent-blue: #076678;
-    --color-accent-purple: #8f3f71;
-    --color-accent-red: #9d0006;
-    --color-success: #79740e;
-    --color-warn: #b57614;
-    --color-danger: #9d0006;
-    --color-syntax-string: #79740e;
-    --color-syntax-keyword: #8f3f71;
-    --color-syntax-function: #b57614;
-    --color-syntax-comment: #928374;
-    --color-syntax-type: #427b58;
+    --color-bg: #FFFFFF;
+    --color-surface: #FAFAFA;
+    --color-surface-2: #F2F2F2;
+    --color-surface-muted: #E5E5E5;
+    --color-surface-highlight: #CCCCCC;
+    --color-border: #CCCCCC;
+    --color-border-focus: #2255CC;
+    --color-focus-ring: rgba(34, 85, 204, 0.4);
+    --color-text: #111111;
+    --color-text-secondary: #222222;
+    --color-text-muted: #888888;
+    --color-text-inverse: #FFFFFF;
+    --color-accent: #2255CC;
+    --color-accent-hover: #1A44AA;
+    --color-accent-muted: rgba(34, 85, 204, 0.12);
+    --color-green: #1A7A42;
+    --color-green-muted: rgba(26, 122, 66, 0.12);
+    --color-red: #CC3333;
+    --color-success: #1A7A42;
+    --color-warn: #CC8800;
+    --color-danger: #CC3333;
+    --color-syntax-string: #8B6834;
+    --color-syntax-keyword: #111111;
+    --color-syntax-function: #2255CC;
+    --color-syntax-comment: #888888;
+    --color-syntax-type: #222222;
+    --color-syntax-number: #7A5B1A;
   }
 }
 
