@@ -22,8 +22,30 @@ import { siteConfig } from '../config/site';
       </div>
     </section>
 
+    <section class="contact-form-section">
+      <SectionLabel label="Send a Message" />
+      <form class="contact-form" id="contact-form" novalidate>
+        <div class="form-group">
+          <label for="contact-name">Name <span class="required">*</span></label>
+          <input type="text" id="contact-name" name="name" required autocomplete="name" />
+          <span class="form-error" data-for="contact-name"></span>
+        </div>
+        <div class="form-group">
+          <label for="contact-email">Email <span class="required">*</span></label>
+          <input type="email" id="contact-email" name="email" required autocomplete="email" />
+          <span class="form-error" data-for="contact-email"></span>
+        </div>
+        <div class="form-group">
+          <label for="contact-message">Message <span class="required">*</span></label>
+          <textarea id="contact-message" name="message" rows="5" required></textarea>
+          <span class="form-error" data-for="contact-message"></span>
+        </div>
+        <Button variant="primary" type="submit">Send Message</Button>
+      </form>
+    </section>
+
     <section class="contact-methods">
-      <SectionLabel label="Reach Out" />
+      <SectionLabel label="Other Ways to Reach Me" />
       <div class="contact-grid">
         {siteConfig.email && (
           <div class="contact-card">
@@ -57,8 +79,68 @@ import { siteConfig } from '../config/site';
         )}
       </div>
     </section>
+
+    <section class="social-links-section">
+      <SectionLabel label="Social" />
+      <div class="social-links">
+        {siteConfig.github && (
+          <a href={siteConfig.github} class="social-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <span class="social-icon">GH</span>
+            <span>GitHub</span>
+          </a>
+        )}
+        {siteConfig.linkedin && (
+          <a href={siteConfig.linkedin} class="social-link" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <span class="social-icon">LI</span>
+            <span>LinkedIn</span>
+          </a>
+        )}
+        {siteConfig.email && (
+          <a href={`mailto:${siteConfig.email}`} class="social-link" aria-label="Email">
+            <span class="social-icon">@</span>
+            <span>Email</span>
+          </a>
+        )}
+      </div>
+    </section>
   </div>
 </BaseLayout>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  if (form) {
+    function showError(fieldId: string, message: string) {
+      const errorEl = form!.querySelector(`[data-for="${fieldId}"]`);
+      if (errorEl) errorEl.textContent = message;
+      document.getElementById(fieldId)?.classList.add('invalid');
+    }
+    function clearErrors() {
+      form!.querySelectorAll('.form-error').forEach(el => el.textContent = '');
+      form!.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearErrors();
+      const name = (form!.querySelector('#contact-name') as HTMLInputElement).value.trim();
+      const email = (form!.querySelector('#contact-email') as HTMLInputElement).value.trim();
+      const message = (form!.querySelector('#contact-message') as HTMLTextAreaElement).value.trim();
+      let valid = true;
+
+      if (!name) { showError('contact-name', 'Name is required'); valid = false; }
+      if (!email) { showError('contact-email', 'Email is required'); valid = false; }
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('contact-email', 'Please enter a valid email'); valid = false;
+      }
+      if (!message) { showError('contact-message', 'Message is required'); valid = false; }
+
+      if (valid) {
+        const btn = form!.querySelector('[type="submit"]') as HTMLButtonElement;
+        if (btn) { btn.textContent = 'Sent!'; btn.disabled = true; }
+      }
+    });
+  }
+</script>
 
 <style>
   .page-header {
@@ -117,5 +199,83 @@ import { siteConfig } from '../config/site';
     color: var(--color-text-secondary);
     margin-bottom: var(--space-4);
     font-size: var(--text-sm);
+  }
+
+  .contact-form-section {
+    padding: var(--space-12) 0;
+  }
+  .contact-form {
+    max-width: var(--content-width);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .form-group label {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+  .required {
+    color: var(--color-danger);
+  }
+  .form-group input,
+  .form-group textarea {
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    transition: border-color var(--duration-fast);
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--color-accent);
+    outline: none;
+  }
+  .form-group input.invalid,
+  .form-group textarea.invalid {
+    border-color: var(--color-danger);
+  }
+  .form-error {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    min-height: 1.2em;
+  }
+
+  .social-links-section {
+    padding: var(--space-12) 0;
+  }
+  .social-links {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: border-color var(--duration-fast), color var(--duration-fast);
+  }
+  .social-link:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .social-icon {
+    font-weight: 600;
+    font-size: var(--text-base);
   }
 </style>
