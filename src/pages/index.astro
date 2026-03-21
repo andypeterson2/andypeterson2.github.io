@@ -8,14 +8,14 @@ import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout>
-  <main class="container">
+  <div class="container">
     <section class="hero">
       <p class="hero-greeting">Hello, I'm</p>
       <h1 class="hero-name">{siteConfig.displayName}</h1>
       <p class="hero-tagline">{siteConfig.description}</p>
       <div class="hero-actions">
-        <Button href="#projects">View Projects</Button>
-        <Button variant="secondary" href="#contact">Get in Touch</Button>
+        <Button href="/projects">View Projects</Button>
+        <Button variant="secondary" href="/contact">Get in Touch</Button>
       </div>
     </section>
 
@@ -40,7 +40,7 @@ import { siteConfig } from '../config/site';
         </Card>
       </div>
     </section>
-  </main>
+  </div>
 </BaseLayout>
 
 <style>
