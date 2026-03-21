@@ -38,8 +38,8 @@ describe('Blog index page', () => {
   });
 
   test('loads blog posts from content', () => {
-    expect(blogIndex).toContain('Astro.glob');
-    expect(blogIndex).toContain('content/blog');
+    expect(blogIndex).toContain('import.meta.glob');
+    expect(blogIndex).toContain('blog');
   });
 
   test('sorts posts by date descending', () => {

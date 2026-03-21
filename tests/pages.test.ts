@@ -252,9 +252,10 @@ describe('Projects Page', () => {
   );
 
   test('lists multiple projects', () => {
-    expect(projectsSrc).toContain('Quantum Video Chat');
-    expect(projectsSrc).toContain('Quantum Nonogram Solver');
-    expect(projectsSrc).toContain('Quantum Protein Kernel');
+    const projectsData = readFileSync(resolve(ROOT, 'src/data/projects.ts'), 'utf-8');
+    expect(projectsData).toContain('Quantum Video Chat');
+    expect(projectsData).toContain('Quantum Nonogram Solver');
+    expect(projectsData).toContain('Quantum Protein Kernel');
   });
 
   test('uses Card components', () => {
