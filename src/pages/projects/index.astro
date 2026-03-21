@@ -91,9 +91,16 @@ const categories = [...new Set(projects.map(p => p.category))];
         ))}
       </div>
 
+      <div class="project-filters" role="group" aria-label="Filter projects by technology">
+        <button class="tag-filter-btn active" data-tag="all" type="button">All Tags</button>
+        {[...new Set(projects.flatMap(p => p.tags.map(t => t.label)))].map((tag) => (
+          <button class="tag-filter-btn" data-tag={tag} type="button">{tag}</button>
+        ))}
+      </div>
+
       <div class="project-grid">
         {projects.map((project) => (
-          <div class="project-card-wrap" data-category={project.category}>
+          <div class="project-card-wrap" data-category={project.category} data-tags={project.tags.map(t => t.label).join(',')}>
             <Card title={project.title} href={`/projects/${project.slug}`}>
               <div class="card-meta">
                 {project.featured && <span class="featured-badge">Featured</span>}
@@ -125,16 +132,35 @@ const categories = [...new Set(projects.map(p => p.category))];
         observer.observe(card);
       });
 
+      let activeCategory = 'all';
+      let activeTag = 'all';
+
+      function applyFilters() {
+        document.querySelectorAll('.project-card-wrap').forEach(card => {
+          const el = card as HTMLElement;
+          const cat = el.getAttribute('data-category');
+          const tags = el.getAttribute('data-tags') || '';
+          const matchesCat = activeCategory === 'all' || cat === activeCategory;
+          const matchesTag = activeTag === 'all' || tags.split(',').includes(activeTag);
+          el.style.display = matchesCat && matchesTag ? '' : 'none';
+        });
+      }
+
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          const filter = btn.getAttribute('data-filter');
-          document.querySelectorAll('.project-card-wrap').forEach(card => {
-            const cat = card.getAttribute('data-category');
-            (card as HTMLElement).style.display =
-              filter === 'all' || cat === filter ? '' : 'none';
-          });
+          activeCategory = btn.getAttribute('data-filter') || 'all';
+          applyFilters();
+        });
+      });
+
+      document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tag-filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeTag = btn.getAttribute('data-tag') || 'all';
+          applyFilters();
         });
       });
     </script>
@@ -199,6 +225,22 @@ const categories = [...new Set(projects.map(p => p.category))];
   .filter-btn.active {
     border-color: var(--color-accent);
     color: var(--color-accent);
+  }
+  .tag-filter-btn {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    min-height: 36px;
+  }
+  .tag-filter-btn:hover,
+  .tag-filter-btn.active {
+    border-color: var(--color-accent-teal);
+    color: var(--color-accent-teal);
   }
   .card-meta {
     display: flex;

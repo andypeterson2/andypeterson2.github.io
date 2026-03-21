@@ -111,6 +111,27 @@ pre code {
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-surface-muted); }
 
+/* ── Page transitions ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+@keyframes slide-in {
+  from { transform: translateY(var(--space-4)); }
+}
+@keyframes slide-out {
+  to { transform: translateY(calc(-1 * var(--space-4))); }
+}
+
+::view-transition-old(root) {
+  animation: 0.15s ease-out fade-out;
+}
+::view-transition-new(root) {
+  animation: 0.15s ease-out fade-in, 0.2s ease-out slide-in;
+}
+
 /* ── Print stylesheet ── */
 @media print {
   *,
