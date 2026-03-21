@@ -1,0 +1,62 @@
+---
+interface Props {
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { variant = 'primary', size = 'md', href, class: className, ...rest } = Astro.props;
+const Tag = href ? 'a' : 'button';
+const classes = ['btn', `btn-${variant}`, `btn-${size}`, className].filter(Boolean).join(' ');
+---
+
+<Tag class={classes} href={href} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--color-border);
+    transition:
+      background var(--duration-fast),
+      border-color var(--duration-fast),
+      color var(--duration-fast),
+      transform 0.1s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    border-color: var(--color-accent);
+  }
+  .btn-primary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+
+  .btn-secondary {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+  .btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text-muted);
+    border-color: transparent;
+  }
+  .btn-ghost:hover { color: var(--color-accent); }
+
+  .btn-sm { font-size: var(--text-sm); padding: var(--space-1) var(--space-3); }
+  .btn-md { font-size: var(--text-sm); padding: var(--space-2) var(--space-4); }
+  .btn-lg { font-size: var(--text-base); padding: var(--space-3) var(--space-6); }
+</style>

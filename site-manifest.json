@@ -33,6 +33,10 @@
       }
     },
     {
+      "path": "/dist/",
+      "title": "Portfolio"
+    },
+    {
       "path": "/nonogram/website/",
       "title": "Nonogram",
       "icon": "fa-solid fa-puzzle-piece",
