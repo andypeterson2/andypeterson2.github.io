@@ -416,6 +416,69 @@ describe('SEO and Meta Tags', () => {
   test('has lang attribute on html', () => {
     expect(layoutSrc).toContain('lang="en"');
   });
+
+  test('has Open Graph meta tags', () => {
+    expect(layoutSrc).toContain('og:type');
+    expect(layoutSrc).toContain('og:title');
+    expect(layoutSrc).toContain('og:description');
+    expect(layoutSrc).toContain('og:url');
+    expect(layoutSrc).toContain('og:site_name');
+  });
+
+  test('has Twitter card meta tags', () => {
+    expect(layoutSrc).toContain('twitter:card');
+    expect(layoutSrc).toContain('twitter:title');
+  });
+
+  test('has canonical URL', () => {
+    expect(layoutSrc).toContain('rel="canonical"');
+    expect(layoutSrc).toContain('canonicalUrl');
+  });
+
+  test('has favicon links', () => {
+    expect(layoutSrc).toContain('favicon.svg');
+    expect(layoutSrc).toContain('apple-touch-icon');
+  });
+
+  test('has font preconnect for performance', () => {
+    expect(layoutSrc).toContain('rel="preconnect"');
+    expect(layoutSrc).toContain('fonts.googleapis.com');
+    expect(layoutSrc).toContain('fonts.gstatic.com');
+  });
+});
+
+// ---- HTTP Security Headers ----
+
+describe('HTTP Security Headers', () => {
+  const headers = readFileSync(resolve(ROOT, 'public/_headers'), 'utf-8');
+
+  test('sets X-Content-Type-Options', () => {
+    expect(headers).toContain('X-Content-Type-Options: nosniff');
+  });
+
+  test('sets X-Frame-Options', () => {
+    expect(headers).toContain('X-Frame-Options: DENY');
+  });
+
+  test('sets Referrer-Policy', () => {
+    expect(headers).toContain('Referrer-Policy');
+  });
+
+  test('sets Permissions-Policy', () => {
+    expect(headers).toContain('Permissions-Policy');
+  });
+
+  test('sets Content-Security-Policy', () => {
+    expect(headers).toContain('Content-Security-Policy');
+  });
+});
+
+// ---- Favicon ----
+
+describe('Favicon', () => {
+  test('favicon.svg exists in public/', () => {
+    expect(existsSync(resolve(ROOT, 'public/favicon.svg'))).toBe(true);
+  });
 });
 
 // ---- External Link Security ----
