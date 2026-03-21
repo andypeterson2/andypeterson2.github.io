@@ -11,7 +11,8 @@
     "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.css'",
     "lint:styles": "stylelint 'src/**/*.css'",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css}'",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.2",
@@ -23,6 +24,7 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^10.1.0",
