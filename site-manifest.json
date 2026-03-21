@@ -129,6 +129,14 @@
       "title": "Uses | Portfolio"
     },
     {
+      "path": "/node_modules/mute-stream/coverage/lcov-report/",
+      "title": "Code coverage report for All files"
+    },
+    {
+      "path": "/node_modules/mute-stream/coverage/lcov-report/__root__/",
+      "title": "Code coverage report for __root__/"
+    },
+    {
       "path": "/nonogram/website/",
       "title": "Nonogram",
       "icon": "fa-solid fa-puzzle-piece",
