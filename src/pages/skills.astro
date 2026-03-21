@@ -41,6 +41,7 @@ const categories = [
       {categories.map((cat, i) => (
         <button
           role="tab"
+          type="button"
           id={`tab-${cat.id}`}
           aria-selected={i === 0 ? 'true' : 'false'}
           aria-controls={`panel-${cat.id}`}
