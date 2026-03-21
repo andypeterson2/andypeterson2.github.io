@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Button from '../components/Button.astro';
+import { siteConfig } from '../config/site';
+
+const today = new Date().toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title="Cover Letter" description={`Cover letter template for ${siteConfig.displayName}`}>
+  <div class="container">
+    <Breadcrumbs crumbs={[
+      { label: 'Resume', href: '/resume' },
+      { label: 'Cover Letter' },
+    ]} />
+
+    <section class="page-header">
+      <h1>Cover Letter</h1>
+      <p class="page-subtitle">Customizable cover letter template.</p>
+    </section>
+
+    <section class="letter-template">
+      <div class="letter-document">
+        <div class="letter-header">
+          <p class="letter-name">{siteConfig.displayName}</p>
+          {siteConfig.email && <p class="letter-contact">{siteConfig.email}</p>}
+          <p class="letter-date">{today}</p>
+        </div>
+
+        <div class="letter-body">
+          <p>Dear Hiring Manager,</p>
+
+          <p>
+            I am writing to express my interest in the [Position Title] role at [Company Name].
+            As a quantum computing researcher with experience in applied cryptography, optimization
+            algorithms, and full-stack development, I am excited about the opportunity to contribute
+            to your team.
+          </p>
+
+          <p>
+            In my current work, I focus on quantum key distribution protocols, quantum-classical
+            hybrid computing, and building practical software tools that bridge theoretical research
+            and real-world applications. My portfolio includes projects spanning QKD-secured
+            communication systems, quantum optimization solvers, and developer tools.
+          </p>
+
+          <p>
+            I would welcome the opportunity to discuss how my background in quantum computing
+            and software engineering could benefit [Company Name]. Thank you for your consideration.
+          </p>
+
+          <p class="letter-closing">
+            Sincerely,<br />
+            {siteConfig.displayName}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="letter-actions">
+      <Button href="/resume" variant="secondary">Back to Resume</Button>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-16) 0 var(--space-8);
+    max-width: var(--content-width);
+  }
+  .page-header h1 {
+    margin-bottom: var(--space-4);
+  }
+  .page-subtitle {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .letter-template {
+    padding: var(--space-8) 0;
+  }
+  .letter-document {
+    max-width: var(--content-width);
+    padding: var(--space-8);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+  .letter-header {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .letter-name {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+  }
+  .letter-contact {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+  }
+  .letter-date {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+  .letter-body p {
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+  }
+  .letter-closing {
+    margin-top: var(--space-8);
+  }
+  .letter-actions {
+    padding: var(--space-4) 0 var(--space-12);
+  }
+</style>
