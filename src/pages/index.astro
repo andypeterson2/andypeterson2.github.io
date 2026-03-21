@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+import Card from '../components/Card.astro';
+import Tag from '../components/Tag.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { siteConfig } from '../config/site';
+---
+
+<BaseLayout>
+  <main class="container">
+    <section class="hero">
+      <p class="hero-greeting">Hello, I'm</p>
+      <h1 class="hero-name">{siteConfig.displayName}</h1>
+      <p class="hero-tagline">{siteConfig.description}</p>
+      <div class="hero-actions">
+        <Button href="#projects">View Projects</Button>
+        <Button variant="secondary" href="#contact">Get in Touch</Button>
+      </div>
+    </section>
+
+    <section id="projects">
+      <SectionLabel label="Projects" />
+      <div class="project-grid">
+        <Card title="Quantum Video Chat" href="/projects/quantum-video-chat">
+          <p>QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.</p>
+          <div class="card-tags">
+            <Tag variant="accent">Quantum</Tag>
+            <Tag variant="teal">WebRTC</Tag>
+            <Tag>Python</Tag>
+          </div>
+        </Card>
+        <Card title="Quantum Nonogram Solver" href="/projects/quantum-nonogram-solver">
+          <p>Quantum computing approach to solving nonogram puzzles with visual solver UI.</p>
+          <div class="card-tags">
+            <Tag variant="accent">Quantum</Tag>
+            <Tag variant="purple">Qiskit</Tag>
+            <Tag>Python</Tag>
+          </div>
+        </Card>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: var(--space-32) 0 var(--space-24);
+    max-width: var(--content-width);
+  }
+  .hero-greeting {
+    font-size: var(--text-lg);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    margin-bottom: var(--space-2);
+  }
+  .hero-name {
+    margin-bottom: var(--space-4);
+  }
+  .hero-tagline {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-8);
+    max-width: 36rem;
+  }
+  .hero-actions {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  #projects {
+    padding: var(--space-16) 0;
+  }
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+  }
+  .card-tags {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    flex-wrap: wrap;
+  }
+</style>
