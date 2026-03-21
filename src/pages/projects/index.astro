@@ -10,6 +10,9 @@ const projects = [
     title: 'Quantum Video Chat',
     slug: 'quantum-video-chat',
     description: 'QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.',
+    category: 'quantum',
+    status: 'active',
+    featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'WebRTC', variant: 'teal' as const },
@@ -20,6 +23,9 @@ const projects = [
     title: 'Quantum Nonogram Solver',
     slug: 'quantum-nonogram-solver',
     description: 'Quantum computing approach to solving nonogram puzzles with visual solver UI.',
+    category: 'quantum',
+    status: 'active',
+    featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'Qiskit', variant: 'purple' as const },
@@ -30,6 +36,9 @@ const projects = [
     title: 'Quantum Protein Kernel',
     slug: 'quantum-protein-kernel',
     description: 'Quantum-classical hybrid kernel methods for protein structure classification.',
+    category: 'quantum',
+    status: 'active',
+    featured: true,
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'ML', variant: 'teal' as const },
@@ -40,21 +49,29 @@ const projects = [
     title: 'Tech Tree',
     slug: 'tech-tree',
     description: 'Interactive skill dependency visualization inspired by game tech trees.',
+    category: 'tools',
+    status: 'active',
+    featured: false,
     tags: [
-      { label: 'D3.js', variant: 'teal' as const },
-      { label: 'TypeScript', variant: 'blue' as const },
+      { label: 'Canvas', variant: 'teal' as const },
+      { label: 'JavaScript', variant: 'blue' as const },
     ],
   },
   {
     title: 'Portfolio Dashboard',
     slug: 'dashboard',
     description: 'Real-time monitoring dashboard for portfolio project health and metrics.',
+    category: 'tools',
+    status: 'active',
+    featured: false,
     tags: [
-      { label: 'React', variant: 'teal' as const },
-      { label: 'TypeScript', variant: 'blue' as const },
+      { label: 'Flask', variant: 'teal' as const },
+      { label: 'Python', variant: 'blue' as const },
     ],
   },
 ];
+
+const categories = [...new Set(projects.map(p => p.category))];
 ---
 
 <BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
@@ -65,19 +82,47 @@ const projects = [
     </section>
 
     <section class="project-listing">
+      <div class="project-filters" role="group" aria-label="Filter projects by category">
+        <button class="filter-btn active" data-filter="all">All</button>
+        {categories.map((cat) => (
+          <button class="filter-btn" data-filter={cat}>{cat}</button>
+        ))}
+      </div>
+
       <div class="project-grid">
         {projects.map((project) => (
-          <Card title={project.title} href={`/projects/${project.slug}`}>
-            <p>{project.description}</p>
-            <div class="card-tags">
-              {project.tags.map((tag) => (
-                <Tag variant={tag.variant}>{tag.label}</Tag>
-              ))}
-            </div>
-          </Card>
+          <div class="project-card-wrap" data-category={project.category}>
+            <Card title={project.title} href={`/projects/${project.slug}`}>
+              <div class="card-meta">
+                {project.featured && <span class="featured-badge">Featured</span>}
+                <span class={`status-indicator status-${project.status}`}>{project.status}</span>
+              </div>
+              <p>{project.description}</p>
+              <div class="card-tags">
+                {project.tags.map((tag) => (
+                  <Tag variant={tag.variant}>{tag.label}</Tag>
+                ))}
+              </div>
+            </Card>
+          </div>
         ))}
       </div>
     </section>
+
+    <script>
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.getAttribute('data-filter');
+          document.querySelectorAll('.project-card-wrap').forEach(card => {
+            const cat = card.getAttribute('data-category');
+            (card as HTMLElement).style.display =
+              filter === 'all' || cat === filter ? '' : 'none';
+          });
+        });
+      });
+    </script>
   </div>
 </BaseLayout>
 
@@ -106,5 +151,59 @@ const projects = [
     gap: var(--space-2);
     margin-top: var(--space-3);
     flex-wrap: wrap;
+  }
+  .project-filters {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: all var(--duration-fast);
+    min-height: 48px;
+  }
+  .filter-btn:hover,
+  .filter-btn.active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+  .card-meta {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    align-items: center;
+  }
+  .featured-badge {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+  .status-indicator {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+  .status-active::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--color-success);
+    border-radius: 50%;
+    margin-right: var(--space-1);
+    vertical-align: middle;
   }
 </style>
