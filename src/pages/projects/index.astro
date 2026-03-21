@@ -85,9 +85,9 @@ const categories = [...new Set(projects.map(p => p.category))];
 
     <section class="project-listing">
       <div class="project-filters" role="group" aria-label="Filter projects by category">
-        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn active" data-filter="all" type="button">All</button>
         {categories.map((cat) => (
-          <button class="filter-btn" data-filter={cat}>{cat}</button>
+          <button class="filter-btn" data-filter={cat} type="button">{cat}</button>
         ))}
       </div>
 
