@@ -1,0 +1,90 @@
+/* Auto-generated from tokens.json — do not edit manually */
+
+:root {
+  /* ── color ── */
+  --color-bg: #1d2021;
+  --color-surface: #282828;
+  --color-surface-2: #3c3836;
+  --color-surface-muted: #504945;
+  --color-surface-highlight: #665c54;
+  --color-border: #3c3836;
+  --color-border-focus: #d79921;
+  --color-text: #ebdbb2;
+  --color-text-secondary: #d5c4a1;
+  --color-text-muted: #a89984;
+  --color-text-inverse: #1d2021;
+  --color-accent: #d79921;
+  --color-accent-hover: #fabd2f;
+  --color-accent-teal: #689d6a;
+  --color-accent-blue: #458588;
+  --color-accent-purple: #b16286;
+  --color-accent-red: #cc241d;
+  --color-success: #98971a;
+  --color-warn: #d79921;
+  --color-danger: #cc241d;
+  --color-syntax-string: #b8bb26;
+  --color-syntax-keyword: #d3869b;
+  --color-syntax-function: #fabd2f;
+  --color-syntax-comment: #928374;
+  --color-syntax-type: #8ec07c;
+  /* ── font ── */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace;
+  /* ── fontSize ── */
+  --text-xs: clamp(0.625rem, 0.6rem + 0.125vw, 0.75rem);
+  --text-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-base: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+  --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+  --text-xl: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+  --text-2xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+  --text-3xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  --text-4xl: clamp(2rem, 1.5rem + 2.5vw, 3rem);
+  /* ── space ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  /* ── layout ── */
+  --max-width: 72rem;
+  --content-width: 48rem;
+  --radius: 0;
+  /* ── motion ── */
+  --duration-fast: 0.1s;
+  --duration-normal: 0.2s;
+  --duration-slow: 0.3s;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+  --color-bg: #fbf1c7;
+  --color-surface: #f2e5bc;
+  --color-surface-2: #ebdbb2;
+  --color-surface-muted: #d5c4a1;
+  --color-surface-highlight: #bdae93;
+  --color-border: #d5c4a1;
+  --color-border-focus: #b57614;
+  --color-text: #3c3836;
+  --color-text-secondary: #504945;
+  --color-text-muted: #7c6f64;
+  --color-text-inverse: #fbf1c7;
+  --color-accent: #b57614;
+  --color-accent-hover: #af6800;
+  --color-accent-teal: #427b58;
+  --color-accent-blue: #076678;
+  --color-accent-purple: #8f3f71;
+  --color-accent-red: #9d0006;
+  --color-success: #79740e;
+  --color-warn: #b57614;
+  --color-danger: #9d0006;
+  --color-syntax-string: #79740e;
+  --color-syntax-keyword: #8f3f71;
+  --color-syntax-function: #b57614;
+  --color-syntax-comment: #928374;
+  --color-syntax-type: #427b58;
+}
