@@ -24,7 +24,7 @@ const Tag = href ? 'a' : 'div';
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+    transition: border-color var(--duration-fast);
   }
   .card-link {
     text-decoration: none;
@@ -32,8 +32,7 @@ const Tag = href ? 'a' : 'div';
     cursor: pointer;
   }
   .card-link:hover {
-    border-color: var(--color-accent);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    border-color: var(--color-text);
   }
   .card-title {
     font-size: var(--text-lg);
