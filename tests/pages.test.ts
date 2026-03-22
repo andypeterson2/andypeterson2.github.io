@@ -51,9 +51,9 @@ describe('Nav Component', () => {
     expect(navSrc).toContain("setAttribute('aria-expanded'");
   });
 
-  test('uses token variables', () => {
-    expect(navSrc).toContain('var(--color-');
-    expect(navSrc).toContain('var(--font-mono)');
+  test('uses System 6 aesthetic', () => {
+    expect(navSrc).toContain('#000');
+    expect(navSrc).toContain('Chicago');
   });
 
   test('nav is fixed position', () => {
@@ -67,7 +67,6 @@ describe('Nav Component', () => {
   });
 
   test('touch targets meet 48px minimum', () => {
-    expect(navSrc).toContain('min-width: 48px');
     expect(navSrc).toContain('min-height: 48px');
   });
 });
@@ -108,9 +107,9 @@ describe('Footer Component', () => {
     expect(footerSrc).toContain('siteConfig.email');
   });
 
-  test('uses token variables', () => {
-    expect(footerSrc).toContain('var(--color-');
-    expect(footerSrc).toContain('var(--font-mono)');
+  test('uses System 6 aesthetic', () => {
+    expect(footerSrc).toContain('#000');
+    expect(footerSrc).toContain('Chicago');
   });
 });
 

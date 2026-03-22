@@ -54,7 +54,7 @@ const year = new Date().getFullYear();
 
 <style>
   .footer {
-    border-top: 1px solid var(--color-border);
+    border-top: 2px solid #000;
     padding: var(--space-8) 0;
     margin-top: var(--space-24);
   }
@@ -66,20 +66,22 @@ const year = new Date().getFullYear();
     gap: var(--space-4);
   }
   .footer-copyright {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-size: 12px;
+    color: #000;
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
   }
   .footer-built-with {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #000;
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
   }
   .footer-built-with a {
-    color: var(--color-text-muted);
+    color: #000;
     text-decoration: underline;
   }
   .footer-built-with a:hover {
-    color: var(--color-accent);
+    background: #000;
+    color: #fff;
   }
   .footer-links ul {
     display: flex;
@@ -89,36 +91,32 @@ const year = new Date().getFullYear();
     padding: 0;
   }
   .footer-links a {
-    font-size: var(--text-sm);
-    font-family: var(--font-mono);
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: color var(--duration-fast);
-    min-height: 48px;
+    font-size: 12px;
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    color: #000;
+    text-decoration: underline;
     display: inline-flex;
     align-items: center;
   }
   .footer-links a:hover {
-    color: var(--color-accent);
+    background: #000;
+    color: #fff;
   }
   .theme-toggle {
-    background: none;
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
+    background: #fff;
+    border: 2px solid #000;
+    color: #000;
     cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    padding: var(--space-1) var(--space-2);
-    transition: color var(--duration-fast), border-color var(--duration-fast);
-    min-width: 48px;
-    min-height: 48px;
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 12px;
+    padding: 4px 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
   .theme-toggle:hover {
-    color: var(--color-text);
-    border-color: var(--color-text);
+    background: #000;
+    color: #fff;
   }
 </style>
 

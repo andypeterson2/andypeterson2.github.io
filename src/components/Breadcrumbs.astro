@@ -37,8 +37,8 @@ const { crumbs } = Astro.props;
     margin: 0;
     padding: 0;
     gap: var(--space-1);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 12px;
   }
   .breadcrumbs li {
     display: flex;
@@ -49,12 +49,12 @@ const { crumbs } = Astro.props;
     color: var(--color-text-muted);
   }
   .breadcrumbs a {
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: color var(--duration-fast);
+    color: #000;
+    text-decoration: underline;
   }
   .breadcrumbs a:hover {
-    color: var(--color-accent);
+    background: #000;
+    color: #fff;
   }
   .breadcrumbs [aria-current='page'] {
     color: var(--color-text-muted);
