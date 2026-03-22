@@ -18,13 +18,13 @@ const Tag = href ? 'a' : 'div';
 
 <style>
   .card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: #fff;
+    border: 2px solid #000;
     padding: var(--space-6);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    transition: border-color var(--duration-fast);
+    font-family: var(--font-sans);
   }
   .card-link {
     text-decoration: none;
@@ -32,16 +32,22 @@ const Tag = href ? 'a' : 'div';
     cursor: pointer;
   }
   .card-link:hover {
-    border-color: var(--color-text);
+    background: #000;
+    color: #fff;
   }
+  .card-link:hover .card-title { color: #fff; }
+  .card-link:hover .card-body { color: #fff; }
   .card-title {
-    font-size: var(--text-lg);
-    font-weight: 600;
-    color: var(--color-text);
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #000;
+    border: none;
+    padding: 0;
   }
   .card-body {
-    color: var(--color-text-secondary);
+    color: #000;
     font-size: var(--text-sm);
-    line-height: var(--leading-normal);
+    line-height: 1.5;
   }
 </style>

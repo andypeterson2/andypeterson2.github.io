@@ -18,13 +18,11 @@ html {
 
 /* ── Body ── */
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: #fff;
+  color: #000;
+  font-family: Chicago_12, Chicago, Geneva_9, Geneva, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 /* ── Typography ── */
@@ -34,11 +32,12 @@ h3,
 h4,
 h5,
 h6 {
-  line-height: var(--leading-tight);
-  font-weight: 600;
+  line-height: 1.25;
+  font-weight: 700;
+  font-family: Chicago, Chicago_12, Geneva, system-ui, sans-serif;
 }
 
-h1 { font-size: var(--text-4xl); letter-spacing: var(--tracking-tight); }
+h1 { font-size: var(--text-4xl); }
 h2 { font-size: var(--text-3xl); }
 h3 { font-size: var(--text-2xl); }
 h4 { font-size: var(--text-xl); }
@@ -47,29 +46,27 @@ p { margin-bottom: var(--space-4); }
 p:last-child { margin-bottom: 0; }
 
 a {
-  color: var(--color-accent);
+  color: #000;
   text-decoration: underline;
-  text-decoration-color: var(--color-border);
-  text-underline-offset: 3px;
-  transition: text-decoration-color var(--duration-fast), color var(--duration-fast);
 }
-a:hover { text-decoration-color: var(--color-accent); }
+a:hover { background: #000; color: #fff; }
 
 code {
-  font-family: var(--font-mono);
+  font-family: Monaco, ui-monospace, monospace;
   font-size: 0.9em;
-  background: var(--color-surface-2);
+  background: #eee;
   padding: 0.15em 0.4em;
+  border: 1px solid #000;
 }
 
 pre {
-  font-family: var(--font-mono);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  font-family: Monaco, ui-monospace, monospace;
+  background: #fff;
+  border: 2px solid #000;
   padding: var(--space-4);
   overflow-x: auto;
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 pre code {
@@ -108,10 +105,7 @@ pre code {
   color: var(--color-text);
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--color-bg); }
-::-webkit-scrollbar-thumb { background: var(--color-surface-muted); }
+/* ── Scrollbar — defer to system.css retro scrollbars ── */
 
 /* ── Page transitions ── */
 @keyframes fade-in {

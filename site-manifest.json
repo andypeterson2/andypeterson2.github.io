@@ -146,6 +146,10 @@
       }
     },
     {
+      "path": "/task-randomizer/",
+      "title": "Task Randomizer"
+    },
+    {
       "path": "/tech-tree/website/",
       "title": "Tech Tree",
       "icon": "fa-solid fa-code-branch"
