@@ -16,3 +16,6 @@
 [submodule "qvc"]
 	path = qvc
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
+[submodule "task-randomizer"]
+	path = task-randomizer
+	url = https://github.com/andypeterson2/task-randomizer.git

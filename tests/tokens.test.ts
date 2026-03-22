@@ -128,10 +128,11 @@ describe('Base CSS', () => {
     expect(baseCss).toContain('box-sizing: border-box');
   });
 
-  test('body uses token variables', () => {
-    expect(baseCss).toContain('var(--color-bg)');
-    expect(baseCss).toContain('var(--color-text)');
-    expect(baseCss).toContain('var(--font-sans)');
+  test('body uses System 6 styling', () => {
+    // System 6 aesthetic uses hardcoded #fff/#000 and Chicago font instead of token variables
+    expect(baseCss).toContain('#fff');
+    expect(baseCss).toContain('#000');
+    expect(baseCss).toContain('Chicago');
   });
 
   test('defines heading styles', () => {
@@ -139,8 +140,10 @@ describe('Base CSS', () => {
     expect(baseCss).toContain('var(--text-4xl)');
   });
 
-  test('link styles use accent color', () => {
-    expect(baseCss).toContain('var(--color-accent)');
+  test('link styles use System 6 colors', () => {
+    // System 6 aesthetic uses #000 for links with hover inversion instead of accent tokens
+    expect(baseCss).toContain('a {');
+    expect(baseCss).toContain('color: #000');
   });
 
   test('focus-visible styles are defined', () => {
@@ -196,9 +199,11 @@ describe('Button Component', () => {
     expect(buttonSrc).toContain('btn-lg');
   });
 
-  test('uses token variables for styling', () => {
-    expect(buttonSrc).toContain('var(--color-');
-    expect(buttonSrc).toContain('var(--duration-');
+  test('uses System 6 styling patterns', () => {
+    // System 6 buttons use hardcoded #000/#fff with no transitions
+    expect(buttonSrc).toContain('#000');
+    expect(buttonSrc).toContain('#fff');
+    expect(buttonSrc).toContain('2px solid');
   });
 
   test('supports href for link-style buttons', () => {
@@ -212,9 +217,10 @@ describe('Card Component', () => {
     'utf-8',
   );
 
-  test('uses token variables', () => {
-    expect(cardSrc).toContain('var(--color-surface)');
-    expect(cardSrc).toContain('var(--color-border)');
+  test('uses System 6 styling', () => {
+    // System 6 cards use hardcoded #000/#fff and 2px solid borders
+    expect(cardSrc).toContain('#000');
+    expect(cardSrc).toContain('2px solid #000');
   });
 
   test('supports title prop', () => {
@@ -225,8 +231,9 @@ describe('Card Component', () => {
     expect(cardSrc).toContain('href');
   });
 
-  test('has hover transition', () => {
-    expect(cardSrc).toContain('transition');
+  test('has hover inversion', () => {
+    // System 6 cards use color inversion on hover instead of transitions
+    expect(cardSrc).toContain(':hover');
   });
 });
 
@@ -242,8 +249,10 @@ describe('Tag Component', () => {
     expect(tagSrc).toContain('default');
   });
 
-  test('uses mono font', () => {
-    expect(tagSrc).toContain('var(--font-mono)');
+  test('uses System 6 font family', () => {
+    // System 6 aesthetic uses Chicago font directly instead of token variable
+    expect(tagSrc).toContain('Chicago');
+    expect(tagSrc).toContain('2px solid #000');
   });
 });
 
