@@ -23,9 +23,15 @@
   --color-warn: #000;
   --color-danger: #000;
 
-  /* ── font — Chicago / Geneva / Monaco from system.css ── */
-  --font-sans: Chicago_12, Chicago, Geneva_9, Geneva, system-ui, sans-serif;
-  --font-mono: Monaco, ui-monospace, monospace;
+  /* ── font — Geneva for body, Chicago for window chrome only ── */
+  --font-sans: 'Geneva_9', 'Geneva', system-ui, sans-serif;
+  --font-ui: 'Chicago_12', 'Chicago', system-ui, sans-serif;
+  --font-mono: 'Monaco', ui-monospace, monospace;
+
+  /* ── dither patterns (future-ready, flat grays for now) ── */
+  --pattern-checker: #ccc;
+  --pattern-light: #eee;
+  --pattern-diagonal: #ddd;
 
   /* ── fontSize ── */
   --text-xs: 0.6875rem;

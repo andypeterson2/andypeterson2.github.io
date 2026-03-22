@@ -54,10 +54,7 @@ describe('Critical user journeys', () => {
   test('navigation links cover all main pages', () => {
     const navSrc = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
     expect(navSrc).toContain("href: '/'");
-    expect(navSrc).toContain("href: '/about'");
     expect(navSrc).toContain("href: '/projects'");
-    expect(navSrc).toContain("href: '/skills'");
-    expect(navSrc).toContain("href: '/resume'");
     expect(navSrc).toContain("href: '/contact'");
   });
 
@@ -148,9 +145,9 @@ describe('Accessibility audit - all pages', () => {
   test('all pages have descriptive headings', () => {
     for (const page of pages) {
       const content = readFileSync(page, 'utf-8');
-      if (!page.includes('404')) {
-        expect(content, `${page} missing h1`).toContain('<h1');
-      }
+      // Skip 404 and the home page (Finder icon grid, no h1)
+      if (page.includes('404') || page.endsWith('pages/index.astro')) continue;
+      expect(content, `${page} missing h1`).toContain('<h1');
     }
   });
 

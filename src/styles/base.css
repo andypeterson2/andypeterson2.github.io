@@ -16,17 +16,17 @@
 /* ── Override system.css checkered body background ── */
 body {
   background: #fff;
-  font-family: Chicago_12, Chicago, Geneva_9, Geneva, system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   color: #000;
 }
 
-/* ── Typography — extend system.css h1/h2 ── */
+/* ── Typography — Geneva for headings (bold), Chicago only in title bars ── */
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
   font-weight: 700;
-  font-family: Chicago, Chicago_12, Geneva, system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 h1 { font-size: var(--text-4xl); }
 h2 { font-size: var(--text-3xl); }
@@ -41,14 +41,14 @@ a:hover { background: #000; color: #fff; }
 
 /* ── Code — use Monaco from system.css fonts ── */
 code {
-  font-family: Monaco, ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   background: #eee;
   padding: 0.15em 0.4em;
   border: 1px solid #000;
 }
 pre {
-  font-family: Monaco, ui-monospace, monospace;
+  font-family: var(--font-mono);
   background: #fff;
   border: 2px solid #000;
   padding: var(--space-4);

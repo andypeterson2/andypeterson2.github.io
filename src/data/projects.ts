@@ -62,6 +62,20 @@ export const projects = [
     ],
   },
   {
+    title: 'Task Randomizer',
+    slug: 'task-randomizer',
+    description: 'Randomized task selection tool for focused productivity.',
+    longDescription: 'A lightweight tool that randomly selects tasks from a pool, helping break decision paralysis and maintain focus on what matters.',
+    category: 'tools',
+    status: 'active' as const,
+    featured: false,
+    appUrl: '/task-randomizer/',
+    repoUrl: 'https://github.com/andypeterson2/task-randomizer',
+    tags: [
+      { label: 'JavaScript', variant: 'default' as const },
+    ],
+  },
+  {
     title: 'Portfolio Dashboard',
     slug: 'dashboard',
     description: 'Real-time monitoring dashboard for portfolio project health and metrics.',

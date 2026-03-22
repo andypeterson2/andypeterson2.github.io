@@ -273,12 +273,14 @@ describe('Hidden /uses page', () => {
 describe('Built with credit line', () => {
   const footer = readFileSync(resolve(ROOT, 'src/components/Footer.astro'), 'utf-8');
 
-  test('footer has built-with text', () => {
-    expect(footer).toContain('Built with');
+  test('footer has details-bar with copyright', () => {
+    expect(footer).toContain('details-bar footer-bar');
+    expect(footer).toContain('getFullYear()');
   });
 
-  test('credits Astro', () => {
-    expect(footer).toContain('Astro');
+  test('footer has social links', () => {
+    expect(footer).toContain('siteConfig.github');
+    expect(footer).toContain('siteConfig.linkedin');
   });
 });
 

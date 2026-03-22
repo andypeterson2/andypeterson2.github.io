@@ -117,27 +117,7 @@ describe('Breadcrumbs component', () => {
   });
 });
 
-// ---- WP #439: Hero micro-status ----
-
-describe('Hero micro-status', () => {
-  const indexSrc = readFileSync(resolve(ROOT, 'src/pages/index.astro'), 'utf-8');
-
-  test('has status element', () => {
-    expect(indexSrc).toContain('hero-status');
-  });
-
-  test('has status dot', () => {
-    expect(indexSrc).toContain('status-dot');
-  });
-
-  test('has status text about current work', () => {
-    expect(indexSrc).toContain('Currently working on');
-  });
-
-  test('hero-status uses standard-dialog', () => {
-    expect(indexSrc).toContain('standard-dialog hero-status');
-  });
-});
+// ---- WP #439: Hero micro-status (removed — home page now uses Finder icon grid) ----
 
 // ---- WP #446: Pull quote block ----
 

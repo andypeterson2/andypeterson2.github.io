@@ -1,98 +1,107 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Button from '../components/Button.astro';
-import Card from '../components/Card.astro';
-import Tag from '../components/Tag.astro';
-import SectionLabel from '../components/SectionLabel.astro';
 import { siteConfig } from '../config/site';
+import { projects } from '../data/projects';
+
+// Icon map — simple text icons for each project (Finder-style)
+const iconMap: Record<string, string> = {
+  'quantum-video-chat': '🔐',
+  'quantum-nonogram-solver': '▦',
+  'quantum-protein-kernel': '🧬',
+  'tech-tree': '🌳',
+  'task-randomizer': '🎲',
+  'dashboard': '📊',
+};
 ---
 
 <BaseLayout>
-  <section class="hero">
-    <p class="hero-greeting">Hello, I'm</p>
-    <h1>{siteConfig.displayName}</h1>
-    <p class="hero-tagline">{siteConfig.description}</p>
+  <!-- Details bar — like "5 items  232K in disk  167K available" -->
+  <div class="details-bar finder-bar">
+    <span>{projects.length} items</span>
+    <span>Built with Astro</span>
+    <span>2026</span>
+  </div>
 
-    <div class="standard-dialog hero-status">
-      <span class="status-dot"></span>
-      Currently working on quantum-secured video chat
-    </div>
-
-    <div class="hero-actions">
-      <Button href="/projects">View Projects</Button>
-      <Button variant="secondary" href="/contact">Get in Touch</Button>
-    </div>
-  </section>
-
-  <div class="separator"></div>
-
-  <section>
-    <SectionLabel label="Projects" />
-    <div class="project-grid">
-      <Card title="Quantum Video Chat" href="/projects/quantum-video-chat">
-        <p>QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.</p>
-        <div class="card-tags">
-          <Tag variant="accent">Quantum</Tag>
-          <Tag>WebRTC</Tag>
-          <Tag>Python</Tag>
+  <!-- Finder icon grid -->
+  <div class="icon-grid">
+    {projects.map((project) => (
+      <a href={`/projects/${project.slug}`} class="finder-icon">
+        <div class="icon-box">
+          <span class="icon-glyph">{iconMap[project.slug] || '📁'}</span>
         </div>
-      </Card>
-      <Card title="Quantum Nonogram Solver" href="/projects/quantum-nonogram-solver">
-        <p>Quantum computing approach to solving nonogram puzzles with visual solver UI.</p>
-        <div class="card-tags">
-          <Tag variant="accent">Quantum</Tag>
-          <Tag>Qiskit</Tag>
-          <Tag>Python</Tag>
-        </div>
-      </Card>
-    </div>
-  </section>
+        <span class="icon-label">{project.title}</span>
+      </a>
+    ))}
+  </div>
 </BaseLayout>
 
 <style>
-  .hero {
-    padding: var(--space-16) 0 var(--space-8);
-    max-width: var(--content-width);
-  }
-  .hero-greeting {
-    font-family: Monaco, ui-monospace, monospace;
-    font-size: 14px;
-    margin-bottom: var(--space-2);
-  }
-  .hero h1 { margin-bottom: var(--space-4); }
-  .hero-tagline {
-    font-size: 16px;
+  .finder-bar {
+    margin: 0 calc(-1 * var(--space-6));
+    padding: 4px 12px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 700;
     margin-bottom: var(--space-6);
-    max-width: 36rem;
   }
-  .hero-status {
-    display: inline-flex;
+
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-6);
+    padding: var(--space-4) 0;
+    justify-items: center;
+  }
+
+  .finder-icon {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: var(--space-2);
-    font-family: Monaco, ui-monospace, monospace;
-    font-size: 12px;
-    margin-bottom: var(--space-6);
+    text-decoration: none;
+    color: #000;
+    padding: var(--space-2);
+    cursor: pointer;
+    max-width: 100px;
   }
-  .status-dot {
-    width: 8px;
-    height: 8px;
+  .finder-icon:hover {
     background: #000;
-    border: 1px solid #000;
+    color: #fff;
   }
-  .hero-actions {
+  .finder-icon:hover .icon-box {
+    border-color: #fff;
+  }
+
+  .icon-box {
+    width: 64px;
+    height: 64px;
+    border: 2px solid #000;
     display: flex;
-    gap: var(--space-4);
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
   }
-  .project-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-4);
+  .finder-icon:hover .icon-box {
+    background: #000;
   }
-  .card-tags {
-    display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-    flex-wrap: wrap;
+
+  .icon-glyph {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .icon-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-align: center;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 480px) {
+    .icon-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-4);
+    }
   }
 </style>
