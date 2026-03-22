@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  // Inject body padding for the fixed navbar (44px default, increases if bottom tray)
+  // Inject body padding for the fixed navbar (48px default, increases if bottom tray)
   var style = document.createElement("style");
-  style.textContent = "body { padding-top: 44px !important; }";
+  style.textContent = "body { padding-top: 48px !important; }";
   document.head.appendChild(style);
 
   function buildIcon(faClass) {
@@ -159,17 +159,17 @@
     // Adjust body padding based on bottom tray
     if (hasBottomTray) {
       // Bottom tray is approximately 40px
-      style.textContent = "body { padding-top: 84px !important; }";
+      style.textContent = "body { padding-top: 88px !important; }";
     }
 
     // Push down the main page's existing mobile-nav if present
     var existingMobileNav = document.querySelector(".mobile-nav");
     if (existingMobileNav) {
-      var navbarHeight = hasBottomTray ? 84 : 44;
+      var navbarHeight = hasBottomTray ? 88 : 48;
       existingMobileNav.style.top = navbarHeight + "px";
-      style.textContent = "body { padding-top: " + (navbarHeight + 44) + "px !important; }";
+      style.textContent = "body { padding-top: " + (navbarHeight + 48) + "px !important; }";
       var mobileMenu = document.querySelector(".mobile-nav-menu");
-      if (mobileMenu) mobileMenu.style.top = (navbarHeight + 44) + "px";
+      if (mobileMenu) mobileMenu.style.top = (navbarHeight + 48) + "px";
     }
   }
 
@@ -180,7 +180,7 @@
     var attempts = 0;
     function tryInit() {
       if (window.UIKit && window.UIKit.initConnect && window.ServiceConfig) {
-        var defaultUrl = "https://localhost:" + backend.defaultPort;
+        var defaultUrl = "http://localhost:" + backend.defaultPort;
         var resolvedUrl = ServiceConfig.resolveBackend
           ? ServiceConfig.resolveBackend(backend.service, defaultUrl)
           : ServiceConfig.get(backend.service, defaultUrl);
@@ -188,7 +188,7 @@
         // Parse host/port/protocol from resolved URL
         var host = "localhost";
         var port = backend.defaultPort;
-        var protocol = "https";
+        var protocol = "http";
         try {
           var parsed = new URL(resolvedUrl);
           host = parsed.hostname;
@@ -202,6 +202,32 @@
           defaultPort: port,
           protocol: protocol,
           label: ""
+        });
+
+        // Periodic health check — ping backend every 30s
+        var HEALTH_INTERVAL = 30000;
+        var HEALTH_TIMEOUT  = 5000;
+        var healthTimer = null;
+
+        function healthPing() {
+          var url = widget.getUrl();
+          fetch(url + "/", { method: "HEAD", mode: "no-cors", signal: AbortSignal.timeout(HEALTH_TIMEOUT) })
+            .then(function () { widget.setStatus("connected"); })
+            .catch(function () { widget.setStatus("disconnected", "Server unreachable"); });
+        }
+
+        function startHealthCheck() {
+          if (healthTimer) clearInterval(healthTimer);
+          healthPing();
+          healthTimer = setInterval(healthPing, HEALTH_INTERVAL);
+        }
+
+        // Start health checks once the initial connection is established
+        startHealthCheck();
+
+        // Restart health checks when user clicks Connect with new host/port
+        el.querySelector(".ui-connect-btn").addEventListener("click", function () {
+          startHealthCheck();
         });
 
         // Dispatch event so pages can hook into the shared widget
