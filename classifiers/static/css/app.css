@@ -34,9 +34,9 @@
 .import-disk-row select {
   flex: 1; min-width: 0; background: var(--surface2); border: 1px solid var(--border);
   border-radius: 0; color: var(--text); font-size: 12px; padding: 5px 8px;
-  outline: none; font-family: var(--font); transition: border-color 0.15s;
+  outline: none; font-family: var(--font);
 }
-.import-disk-row select:focus { border-color: var(--accent); }
+.import-disk-row select:focus { border-color: #000; }
 
 /* ── Sticky-table app-specific classes ── */
 .corner-cell {
@@ -77,7 +77,7 @@ th.metric-label {
 .cfg-cell { color: var(--text-muted); font-size: 11px; }
 
 /* ── Colour helpers ── */
-.pred-label { font-size: 13px; font-weight: 700; color: var(--accent); }
+.pred-label { font-size: 13px; font-weight: 700; color: #000; }
 .pred-model-name { color: var(--text-muted); font-size: 12px; }
 .conf-high  { color: var(--success); }
 .conf-low   { color: var(--text-muted); }
