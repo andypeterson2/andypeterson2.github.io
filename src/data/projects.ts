@@ -7,6 +7,7 @@ export const projects = [
     category: 'quantum',
     status: 'active' as const,
     featured: true,
+    repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'WebRTC', variant: 'default' as const },
@@ -21,6 +22,8 @@ export const projects = [
     category: 'quantum',
     status: 'active' as const,
     featured: true,
+    appUrl: '/nonogram/website/',
+    repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'Qiskit', variant: 'default' as const },
@@ -35,6 +38,8 @@ export const projects = [
     category: 'quantum',
     status: 'active' as const,
     featured: true,
+    appUrl: '/classifiers/',
+    repoUrl: 'https://github.com/andypeterson2/quantum-protein-kernel',
     tags: [
       { label: 'Quantum', variant: 'accent' as const },
       { label: 'ML', variant: 'default' as const },
@@ -49,6 +54,8 @@ export const projects = [
     category: 'tools',
     status: 'active' as const,
     featured: false,
+    appUrl: '/tech-tree/website/',
+    repoUrl: 'https://github.com/andypeterson2/tech-tree',
     tags: [
       { label: 'Canvas', variant: 'default' as const },
       { label: 'JavaScript', variant: 'default' as const },
@@ -62,6 +69,8 @@ export const projects = [
     category: 'tools',
     status: 'active' as const,
     featured: false,
+    appUrl: '/dashboard/website/',
+    repoUrl: 'https://github.com/andypeterson2/dashboard',
     tags: [
       { label: 'Flask', variant: 'default' as const },
       { label: 'Python', variant: 'default' as const },
