@@ -35,8 +35,8 @@ describe('Design Token Source of Truth', () => {
   });
 
   test('font tokens define sans and mono', () => {
-    expect(tokensJson.font.sans.value).toContain('IBM Plex Sans');
-    expect(tokensJson.font.mono.value).toContain('IBM Plex Mono');
+    expect(tokensJson.font.sans.value).toContain('Chicago');
+    expect(tokensJson.font.mono.value).toContain('Monaco');
   });
 
   test('fontSize tokens use clamp() for responsive sizing', () => {
