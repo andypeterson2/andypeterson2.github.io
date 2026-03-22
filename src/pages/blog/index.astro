@@ -118,7 +118,7 @@ const allTags = [...new Set(sortedPosts.flatMap(p => p.frontmatter.tags || []))]
   }
   .post-link:hover .post-title { color: #fff; }
   .post-date {
-    font-family: Monaco, ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     color: #666;
   }
@@ -137,7 +137,7 @@ const allTags = [...new Set(sortedPosts.flatMap(p => p.frontmatter.tags || []))]
   }
   .rss-section { padding: var(--space-6) 0; }
   .rss-link {
-    font-family: Monaco, ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
     color: #000;
   }

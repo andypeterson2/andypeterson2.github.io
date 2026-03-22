@@ -80,13 +80,16 @@ const windowTitle = title || siteConfig.title;
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     <div class="desktop">
+      <!-- Menu bar sits ABOVE the window, like real System 6 -->
+      <Nav />
+
+      <!-- Main window -->
       <div class="window site-window">
         <div class="title-bar">
           <button class="close" aria-hidden="true"><span>Close</span></button>
           <h1 class="title">{windowTitle}</h1>
           <button class="resize" aria-hidden="true"><span>Resize</span></button>
         </div>
-        <Nav />
         <div class="window-pane" id="main-content">
           <slot />
           <Footer />
@@ -123,7 +126,7 @@ const windowTitle = title || siteConfig.title;
     padding: 6px 12px;
     background: #000;
     color: #fff;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-family: var(--font-sans);
     font-size: 14px;
     text-align: center;
   }
@@ -135,27 +138,28 @@ const windowTitle = title || siteConfig.title;
     padding: 4px 8px;
     background: #000;
     color: #fff;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-family: var(--font-sans);
     font-size: 12px;
     text-decoration: none;
   }
   .skip-link:focus { top: 8px; }
 
   .desktop {
-    min-height: 100vh;
-    padding: var(--space-4);
-  }
-  .site-window {
     max-width: var(--max-width);
     margin: 0 auto;
+    padding: var(--space-4);
+    min-height: 100vh;
+  }
+  .site-window {
     min-width: 0;
     display: flex;
   }
   .site-window .window-pane {
     overflow-y: auto;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 100px);
     padding: var(--space-6);
     font-size: 14px;
+    font-family: var(--font-sans);
     letter-spacing: 0;
   }
 
@@ -174,7 +178,7 @@ const windowTitle = title || siteConfig.title;
 
   @media (max-width: 768px) {
     .desktop { padding: 0; }
-    .site-window { margin: 0; border: none; }
+    .site-window { margin: 0; border-left: none; border-right: none; }
     .site-window .window-pane { max-height: none; }
   }
 </style>

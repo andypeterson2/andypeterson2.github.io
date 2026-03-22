@@ -9,19 +9,16 @@ const { currentPath = Astro.url.pathname } = Astro.props;
 
 const links = [
   { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
   { href: '/projects', label: 'Projects' },
-  { href: '/skills', label: 'Skills' },
-  { href: '/resume', label: 'Resume' },
   { href: '/contact', label: 'Contact' },
 ];
 ---
 
-<!-- system.css native menu-bar -->
-<nav aria-label="Main navigation">
+<!-- System 6 menu bar — rounded top corners, Geneva bold, heart icon -->
+<nav class="menu-bar-wrap" aria-label="Main navigation">
   <ul role="menu-bar" class="site-menu-bar">
-    <li role="menu-item" class="menu-brand">
-      <a href="/">{siteConfig.firstName}</a>
+    <li role="menu-item" class="apple-menu" aria-hidden="true">
+      <span class="apple-icon">♥</span>
     </li>
     {links.map(({ href, label }) => (
       <li
@@ -40,7 +37,7 @@ const links = [
 
   <!-- Mobile: hamburger + dropdown -->
   <div class="mobile-bar">
-    <a href="/" class="mobile-brand">{siteConfig.firstName}</a>
+    <span class="mobile-apple" aria-hidden="true">♥</span>
     <button class="btn mobile-toggle" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu" type="button">
       Menu
     </button>
@@ -73,12 +70,20 @@ const links = [
 </script>
 
 <style>
-  nav {
+  /* ── System 6 menu bar: rounded top corners, white bg, above windows ── */
+  .menu-bar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border: 2px solid #000;
     border-bottom: 2px solid #000;
+    border-radius: 8px 8px 0 0;
   }
-  /* system.css menu-bar is already styled — we just adjust spacing */
+
+  /* system.css ul[role=menu-bar] provides flex + white bg + cursor */
   .site-menu-bar {
-    flex-wrap: wrap;
+    border-radius: 6px 6px 0 0;
   }
   .site-menu-bar a {
     text-decoration: none;
@@ -86,35 +91,45 @@ const links = [
     display: block;
     padding: 0;
   }
+  .site-menu-bar [role="menu-item"] {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+  }
   .site-menu-bar [role="menu-item"].active {
     background: #000;
     color: #fff;
   }
-  .menu-brand {
-    font-weight: 700;
-    margin-right: auto;
+
+  /* Heart icon — styled like the Apple menu */
+  .apple-menu {
+    padding: 6px 12px !important;
+    font-size: 16px;
   }
-  .menu-brand a {
-    font-weight: 700;
+  .apple-icon {
+    display: block;
+    line-height: 1;
   }
 
-  /* Mobile nav */
+  /* ── Mobile nav ── */
   .mobile-bar {
     display: none;
     align-items: center;
     justify-content: space-between;
     padding: 4px 8px;
+    border-radius: 6px 6px 0 0;
   }
-  .mobile-brand {
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    color: #000;
-    text-decoration: none;
+  .mobile-apple {
+    font-size: 16px;
+    padding: 2px 4px;
   }
-  .mobile-brand:hover { background: #000; color: #fff; }
   .mobile-menu {
     display: none;
+    border-radius: 0;
+  }
+  .mobile-menu a {
+    font-family: var(--font-sans);
+    font-weight: 700;
   }
   .mobile-menu a.active {
     background: #000;
