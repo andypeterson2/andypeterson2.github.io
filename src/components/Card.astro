@@ -9,7 +9,7 @@ const { title, href, class: className } = Astro.props;
 const Tag = href ? 'a' : 'div';
 ---
 
-<Tag class:list={['card', { 'card-link': !!href }, className]} href={href}>
+<Tag class:list={['standard-dialog', 'card', { 'card-link': !!href }, className]} href={href}>
   {title && <h3 class="card-title">{title}</h3>}
   <div class="card-body">
     <slot />
@@ -17,37 +17,30 @@ const Tag = href ? 'a' : 'div';
 </Tag>
 
 <style>
+  /* system.css .standard-dialog gives us: border: 2px solid, box-shadow: 2px 2px, padding: 10px, white bg */
   .card {
-    background: #fff;
-    border: 2px solid #000;
-    padding: var(--space-6);
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-    font-family: var(--font-sans);
+    gap: var(--space-2);
   }
   .card-link {
     text-decoration: none;
-    color: inherit;
+    color: #000;
     cursor: pointer;
   }
   .card-link:hover {
     background: #000;
     color: #fff;
   }
-  .card-link:hover .card-title { color: #fff; }
+  .card-link:hover .card-title,
   .card-link:hover .card-body { color: #fff; }
   .card-title {
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    font-size: 1.2em;
+    font-family: Chicago, Chicago_12, Geneva, system-ui, sans-serif;
+    font-size: 1.1em;
     font-weight: 700;
-    color: #000;
-    border: none;
-    padding: 0;
   }
   .card-body {
-    color: #000;
-    font-size: var(--text-sm);
+    font-size: 14px;
     line-height: 1.5;
   }
 </style>

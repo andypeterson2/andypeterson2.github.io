@@ -8,106 +8,91 @@ import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout>
-  <div class="container">
-    <section class="hero">
-      <p class="hero-greeting">Hello, I'm</p>
-      <h1 class="hero-name">{siteConfig.displayName}</h1>
-      <p class="hero-tagline">{siteConfig.description}</p>
-      <div class="hero-status">
-        <span class="status-dot"></span>
-        <span class="status-text">Currently working on quantum-secured video chat</span>
-      </div>
-      <div class="hero-actions">
-        <Button href="/projects">View Projects</Button>
-        <Button variant="secondary" href="/contact">Get in Touch</Button>
-      </div>
-    </section>
+  <section class="hero">
+    <p class="hero-greeting">Hello, I'm</p>
+    <h1>{siteConfig.displayName}</h1>
+    <p class="hero-tagline">{siteConfig.description}</p>
 
-    <section id="projects">
-      <SectionLabel label="Projects" />
-      <div class="project-grid">
-        <Card title="Quantum Video Chat" href="/projects/quantum-video-chat">
-          <p>QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.</p>
-          <div class="card-tags">
-            <Tag variant="accent">Quantum</Tag>
-            <Tag>WebRTC</Tag>
-            <Tag>Python</Tag>
-          </div>
-        </Card>
-        <Card title="Quantum Nonogram Solver" href="/projects/quantum-nonogram-solver">
-          <p>Quantum computing approach to solving nonogram puzzles with visual solver UI.</p>
-          <div class="card-tags">
-            <Tag variant="accent">Quantum</Tag>
-            <Tag>Qiskit</Tag>
-            <Tag>Python</Tag>
-          </div>
-        </Card>
-      </div>
-    </section>
-  </div>
+    <div class="standard-dialog hero-status">
+      <span class="status-dot"></span>
+      Currently working on quantum-secured video chat
+    </div>
+
+    <div class="hero-actions">
+      <Button href="/projects">View Projects</Button>
+      <Button variant="secondary" href="/contact">Get in Touch</Button>
+    </div>
+  </section>
+
+  <div class="separator"></div>
+
+  <section>
+    <SectionLabel label="Projects" />
+    <div class="project-grid">
+      <Card title="Quantum Video Chat" href="/projects/quantum-video-chat">
+        <p>QKD-secured real-time video chat using WebRTC and BB84 protocol simulation.</p>
+        <div class="card-tags">
+          <Tag variant="accent">Quantum</Tag>
+          <Tag>WebRTC</Tag>
+          <Tag>Python</Tag>
+        </div>
+      </Card>
+      <Card title="Quantum Nonogram Solver" href="/projects/quantum-nonogram-solver">
+        <p>Quantum computing approach to solving nonogram puzzles with visual solver UI.</p>
+        <div class="card-tags">
+          <Tag variant="accent">Quantum</Tag>
+          <Tag>Qiskit</Tag>
+          <Tag>Python</Tag>
+        </div>
+      </Card>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
   .hero {
-    padding: var(--space-32) 0 var(--space-24);
+    padding: var(--space-16) 0 var(--space-8);
     max-width: var(--content-width);
   }
   .hero-greeting {
-    font-size: var(--text-lg);
-    color: var(--color-accent);
-    font-family: var(--font-mono);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 14px;
     margin-bottom: var(--space-2);
   }
-  .hero-name {
-    margin-bottom: var(--space-4);
-  }
+  .hero h1 { margin-bottom: var(--space-4); }
   .hero-tagline {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-8);
+    font-size: 16px;
+    margin-bottom: var(--space-6);
     max-width: 36rem;
   }
   .hero-status {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-8);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 12px;
+    margin-bottom: var(--space-6);
   }
   .status-dot {
     width: 8px;
     height: 8px;
-    background: var(--color-success);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+    background: #000;
+    border: 1px solid #000;
   }
   .hero-actions {
     display: flex;
     gap: var(--space-4);
     flex-wrap: wrap;
   }
-
-  #projects {
-    padding: var(--space-16) 0;
-  }
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-4);
   }
   .card-tags {
     display: flex;
     gap: var(--space-2);
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
     flex-wrap: wrap;
   }
 </style>

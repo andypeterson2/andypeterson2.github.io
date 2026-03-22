@@ -1,5 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Base Styles — Reset, body defaults, typography, utilities
+   Base Styles — system.css overrides and site-level resets
+   system.css provides: body bg, links, headings, buttons, inputs, windows,
+   scrollbars, menus, dialogs. We only add what it doesn't cover.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Reset ── */
@@ -11,32 +13,21 @@
   padding: 0;
 }
 
-/* ── Smooth scroll ── */
-html {
-  scroll-behavior: smooth;
-}
-
-/* ── Body ── */
+/* ── Override system.css checkered body background ── */
 body {
   background: #fff;
-  color: #000;
   font-family: Chicago_12, Chicago, Geneva_9, Geneva, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  color: #000;
 }
 
-/* ── Typography ── */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* ── Typography — extend system.css h1/h2 ── */
+h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
   font-weight: 700;
   font-family: Chicago, Chicago_12, Geneva, system-ui, sans-serif;
 }
-
 h1 { font-size: var(--text-4xl); }
 h2 { font-size: var(--text-3xl); }
 h3 { font-size: var(--text-2xl); }
@@ -45,12 +36,10 @@ h4 { font-size: var(--text-xl); }
 p { margin-bottom: var(--space-4); }
 p:last-child { margin-bottom: 0; }
 
-a {
-  color: #000;
-  text-decoration: underline;
-}
+/* system.css already styles a { color: #000; text-decoration: underline; } */
 a:hover { background: #000; color: #fff; }
 
+/* ── Code — use Monaco from system.css fonts ── */
 code {
   font-family: Monaco, ui-monospace, monospace;
   font-size: 0.9em;
@@ -58,7 +47,6 @@ code {
   padding: 0.15em 0.4em;
   border: 1px solid #000;
 }
-
 pre {
   font-family: Monaco, ui-monospace, monospace;
   background: #fff;
@@ -68,10 +56,10 @@ pre {
   font-size: 12px;
   line-height: 1.6;
 }
-
 pre code {
   background: none;
   padding: 0;
+  border: none;
 }
 
 /* ── Utilities ── */
@@ -93,39 +81,16 @@ pre code {
   padding: 0 var(--space-6);
 }
 
-/* ── Focus ── */
-:focus-visible {
-  outline: 2px solid var(--color-border-focus);
-  outline-offset: 2px;
+/* ── system.css separator extension ── */
+.separator {
+  border-top: 1px solid #000;
+  margin: var(--space-4) 0;
 }
 
 /* ── Selection ── */
 ::selection {
-  background: var(--color-accent-muted);
-  color: var(--color-text);
-}
-
-/* ── Scrollbar — defer to system.css retro scrollbars ── */
-
-/* ── Page transitions ── */
-@keyframes fade-in {
-  from { opacity: 0; }
-}
-@keyframes fade-out {
-  to { opacity: 0; }
-}
-@keyframes slide-in {
-  from { transform: translateY(var(--space-4)); }
-}
-@keyframes slide-out {
-  to { transform: translateY(calc(-1 * var(--space-4))); }
-}
-
-::view-transition-old(root) {
-  animation: 0.15s ease-out fade-out;
-}
-::view-transition-new(root) {
-  animation: 0.15s ease-out fade-in, 0.2s ease-out slide-in;
+  background: #000;
+  color: #fff;
 }
 
 /* ── Print stylesheet ── */
@@ -138,51 +103,17 @@ pre code {
     box-shadow: none !important;
     text-shadow: none !important;
   }
-  body {
-    font-size: 12pt;
-    line-height: 1.5;
-  }
-  a,
-  a:visited {
-    text-decoration: underline;
-  }
-  a[href]::after {
-    content: ' (' attr(href) ')';
-    font-size: 0.8em;
-  }
-  a[href^='#']::after,
-  a[href^='javascript:']::after,
-  nav a[href]::after {
-    content: '';
-  }
-  nav,
-  .nav,
-  .back-to-top,
-  .theme-toggle,
-  .skip-link,
-  .nav-toggle,
-  .mobile-menu,
-  .filter-btn {
+  body { font-size: 12pt; line-height: 1.5; }
+  a, a:visited { text-decoration: underline; }
+  a[href]::after { content: ' (' attr(href) ')'; font-size: 0.8em; }
+  a[href^='#']::after, a[href^='javascript:']::after, nav a[href]::after { content: ''; }
+  nav, .nav, .back-to-top, .skip-link, .nav-toggle, .mobile-menu, .filter-btn {
     display: none !important;
   }
-  main {
-    padding-top: 0 !important;
-  }
-  h1, h2, h3, h4 {
-    page-break-after: avoid;
-  }
-  img, pre, blockquote {
-    page-break-inside: avoid;
-  }
-  .container {
-    max-width: 100%;
-    padding: 0;
-  }
-  footer {
-    border-top: 1px solid #ccc;
-  }
-  footer .theme-toggle,
-  footer .footer-links {
-    display: none !important;
-  }
+  main { padding-top: 0 !important; }
+  h1, h2, h3, h4 { page-break-after: avoid; }
+  img, pre, blockquote { page-break-inside: avoid; }
+  .container { max-width: 100%; padding: 0; }
+  footer { border-top: 1px solid #ccc; }
+  footer .footer-links { display: none !important; }
 }

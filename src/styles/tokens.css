@@ -1,52 +1,42 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Design Tokens — CSS Custom Properties
-   Monochrome-first palette per Design Language Spec.
-   Dark by default; light via data-theme="light".
-   Typography: IBM Plex Sans + IBM Plex Mono.
+   System 6 monochrome palette. Black and white only.
+   Typography: Chicago / Geneva / Monaco (loaded by system.css @font-face).
    Auto-generated from tokens.json — do not edit manually.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── color ── */
-  --color-bg: #111111;
-  --color-surface: #1A1A1A;
-  --color-surface-2: #222222;
-  --color-surface-muted: #333333;
-  --color-surface-highlight: #444444;
-  --color-border: #333333;
-  --color-border-focus: #6699EE;
-  --color-focus-ring: rgba(102, 153, 238, 0.4);
-  --color-text: #EEEEEE;
-  --color-text-secondary: #DDDDDD;
-  --color-text-muted: #777777;
-  --color-text-inverse: #111111;
-  --color-accent: #6699EE;
-  --color-accent-hover: #88BBFF;
-  --color-accent-muted: rgba(102, 153, 238, 0.12);
-  --color-green: #44BB77;
-  --color-green-muted: rgba(68, 187, 119, 0.12);
-  --color-red: #EE5555;
-  --color-success: #44BB77;
-  --color-warn: #DDAA33;
-  --color-danger: #EE5555;
-  --color-syntax-string: #D4A865;
-  --color-syntax-keyword: #EEEEEE;
-  --color-syntax-function: #6699EE;
-  --color-syntax-comment: #666666;
-  --color-syntax-type: #DDDDDD;
-  --color-syntax-number: #C4A24E;
-  /* ── font ── */
-  --font-sans: 'Chicago_12', 'Chicago', 'Geneva_9', 'Geneva', system-ui, sans-serif;
-  --font-mono: 'Monaco', ui-monospace, 'Cascadia Code', monospace;
+  /* ── color — pure monochrome, matches system.css ── */
+  --color-bg: #fff;
+  --color-surface: #fff;
+  --color-surface-2: #eee;
+  --color-border: #000;
+  --color-border-focus: #000;
+  --color-text: #000;
+  --color-text-secondary: #000;
+  --color-text-muted: #666;
+  --color-text-inverse: #fff;
+  --color-accent: #000;
+  --color-accent-hover: #000;
+  --color-accent-muted: #eee;
+  --color-success: #000;
+  --color-warn: #000;
+  --color-danger: #000;
+
+  /* ── font — Chicago / Geneva / Monaco from system.css ── */
+  --font-sans: Chicago_12, Chicago, Geneva_9, Geneva, system-ui, sans-serif;
+  --font-mono: Monaco, ui-monospace, monospace;
+
   /* ── fontSize ── */
-  --text-xs: clamp(0.625rem, 0.6rem + 0.125vw, 0.6875rem);
-  --text-sm: clamp(0.75rem, 0.7rem + 0.25vw, 0.8125rem);
-  --text-base: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
-  --text-xl: clamp(1.25rem, 1rem + 0.625vw, 1.5625rem);
-  --text-2xl: clamp(1.5rem, 1.2rem + 0.75vw, 2rem);
-  --text-3xl: clamp(2rem, 1.5rem + 1.5vw, 2.5rem);
-  --text-4xl: clamp(2.5rem, 2rem + 2.5vw, 3.125rem);
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+  --text-4xl: 3rem;
+
   /* ── space ── */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -58,10 +48,11 @@
   --space-16: 4rem;
   --space-24: 6rem;
   --space-32: 8rem;
+
   /* ── layout ── */
   --max-width: 66.25rem;
   --content-width: 42.5rem;
-  --radius: 0;
+
   /* ── typography ── */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
@@ -69,75 +60,6 @@
   --tracking-tight: -0.02em;
   --tracking-normal: 0;
   --tracking-wide: 0.1em;
-  /* ── motion ── */
-  --duration-fast: 0.15s;
-  --duration-normal: 0.2s;
-  --duration-slow: 0.3s;
-  --ease-default: cubic-bezier(0.0, 0.0, 0.2, 1);
-}
-
-/* ── Light theme ── */
-[data-theme='light'] {
-  --color-bg: #FFFFFF;
-  --color-surface: #FAFAFA;
-  --color-surface-2: #F2F2F2;
-  --color-surface-muted: #E5E5E5;
-  --color-surface-highlight: #CCCCCC;
-  --color-border: #CCCCCC;
-  --color-border-focus: #2255CC;
-  --color-focus-ring: rgba(34, 85, 204, 0.4);
-  --color-text: #111111;
-  --color-text-secondary: #222222;
-  --color-text-muted: #888888;
-  --color-text-inverse: #FFFFFF;
-  --color-accent: #2255CC;
-  --color-accent-hover: #1A44AA;
-  --color-accent-muted: rgba(34, 85, 204, 0.12);
-  --color-green: #1A7A42;
-  --color-green-muted: rgba(26, 122, 66, 0.12);
-  --color-red: #CC3333;
-  --color-success: #1A7A42;
-  --color-warn: #CC8800;
-  --color-danger: #CC3333;
-  --color-syntax-string: #8B6834;
-  --color-syntax-keyword: #111111;
-  --color-syntax-function: #2255CC;
-  --color-syntax-comment: #888888;
-  --color-syntax-type: #222222;
-  --color-syntax-number: #7A5B1A;
-}
-
-/* ── OS preference fallback ── */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) {
-    --color-bg: #FFFFFF;
-    --color-surface: #FAFAFA;
-    --color-surface-2: #F2F2F2;
-    --color-surface-muted: #E5E5E5;
-    --color-surface-highlight: #CCCCCC;
-    --color-border: #CCCCCC;
-    --color-border-focus: #2255CC;
-    --color-focus-ring: rgba(34, 85, 204, 0.4);
-    --color-text: #111111;
-    --color-text-secondary: #222222;
-    --color-text-muted: #888888;
-    --color-text-inverse: #FFFFFF;
-    --color-accent: #2255CC;
-    --color-accent-hover: #1A44AA;
-    --color-accent-muted: rgba(34, 85, 204, 0.12);
-    --color-green: #1A7A42;
-    --color-green-muted: rgba(26, 122, 66, 0.12);
-    --color-red: #CC3333;
-    --color-success: #1A7A42;
-    --color-warn: #CC8800;
-    --color-danger: #CC3333;
-    --color-syntax-string: #8B6834;
-    --color-syntax-keyword: #111111;
-    --color-syntax-function: #2255CC;
-    --color-syntax-comment: #888888;
-    --color-syntax-type: #222222;
-    --color-syntax-number: #7A5B1A;
-  }
 }
 
 /* ── Reduced motion ── */
