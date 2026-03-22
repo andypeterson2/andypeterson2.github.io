@@ -130,7 +130,7 @@ const categories = [...new Set(projects.map(p => p.category))];
     align-items: center;
   }
   .featured-badge {
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-family: var(--font-sans);
     font-size: 10px;
     padding: 1px 4px;
     background: #000;
@@ -139,7 +139,7 @@ const categories = [...new Set(projects.map(p => p.category))];
     letter-spacing: 0.1em;
   }
   .status-indicator {
-    font-family: Monaco, ui-monospace, monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     color: #666;
     text-transform: capitalize;

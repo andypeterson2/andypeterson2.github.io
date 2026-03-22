@@ -3,27 +3,28 @@ import { siteConfig } from '../config/site';
 const year = new Date().getFullYear();
 ---
 
-<footer>
-  <div class="separator"></div>
-  <div class="details-bar">
-    <span>&copy; {year} {siteConfig.displayName} &mdash; Built with Astro</span>
-    <span class="footer-links">
-      {siteConfig.github && <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
-      {siteConfig.linkedin && <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
-      {siteConfig.email && <a href={`mailto:${siteConfig.email}`}>Email</a>}
-    </span>
-  </div>
-</footer>
+<!-- System 6 details bar — like "5 items  232K in disk  167K available" -->
+<div class="details-bar footer-bar">
+  <span>&copy; {year} {siteConfig.displayName}</span>
+  <span class="footer-links">
+    {siteConfig.github && <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
+    {siteConfig.linkedin && <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
+    {siteConfig.email && <a href={`mailto:${siteConfig.email}`}>Email</a>}
+  </span>
+</div>
 
 <style>
-  footer {
-    margin-top: var(--space-12);
+  .footer-bar {
+    margin-top: var(--space-8);
+    font-family: var(--font-sans);
+    font-size: 12px;
   }
   .footer-links {
     display: flex;
     gap: var(--space-4);
   }
   .footer-links a {
+    font-family: var(--font-sans);
     font-size: 12px;
     color: #000;
     text-decoration: underline;

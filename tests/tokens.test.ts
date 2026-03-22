@@ -244,8 +244,8 @@ describe('Tag Component', () => {
     expect(tagSrc).toContain('default');
   });
 
-  test('uses Chicago font and 1.5px solid border', () => {
-    expect(tagSrc).toContain('Chicago');
+  test('uses sans font and 1.5px solid border', () => {
+    expect(tagSrc).toContain('var(--font-sans)');
     expect(tagSrc).toContain('1.5px solid #000');
   });
 });
