@@ -31,8 +31,8 @@ export const tokens = {
     'syntax-number': '#C4A24E',
   },
   font: {
-    sans: ''IBM Plex Sans', system-ui, -apple-system, sans-serif',
-    mono: ''IBM Plex Mono', ui-monospace, 'Cascadia Code', monospace',
+    sans: ''Chicago_12', 'Chicago', 'Geneva_9', 'Geneva', system-ui, sans-serif',
+    mono: ''Monaco', ui-monospace, 'Cascadia Code', monospace',
   },
   fontSize: {
     xs: 'clamp(0.625rem, 0.6rem + 0.125vw, 0.6875rem)',

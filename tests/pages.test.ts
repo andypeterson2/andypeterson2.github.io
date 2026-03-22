@@ -441,9 +441,8 @@ describe('SEO and Meta Tags', () => {
     expect(layoutSrc).toContain('apple-touch-icon');
   });
 
-  test('fonts are self-hosted via @fontsource', () => {
-    expect(layoutSrc).toContain('@fontsource/ibm-plex-sans');
-    expect(layoutSrc).toContain('@fontsource/ibm-plex-mono');
+  test('fonts are vendored via system.css (no external CDN)', () => {
+    expect(layoutSrc).toContain('system.css');
     expect(layoutSrc).not.toContain('fonts.googleapis.com');
   });
 });
