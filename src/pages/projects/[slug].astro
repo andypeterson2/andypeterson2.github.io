@@ -45,6 +45,17 @@ const relatedProjects = projects
           <Tag variant={tag.variant}>{tag.label}</Tag>
         ))}
       </div>
+
+      {(project.appUrl || project.repoUrl) && (
+        <div class="project-actions">
+          {project.appUrl && (
+            <Button href={project.appUrl} variant="primary">Launch App</Button>
+          )}
+          {project.repoUrl && (
+            <Button href={project.repoUrl} variant="secondary">View Source</Button>
+          )}
+        </div>
+      )}
     </section>
 
     <section class="project-content">
@@ -134,6 +145,12 @@ const relatedProjects = projects
   .project-tags {
     display: flex;
     gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .project-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
     flex-wrap: wrap;
   }
 

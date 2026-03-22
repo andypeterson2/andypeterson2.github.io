@@ -2,6 +2,10 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   integrations: [mdx(), sitemap()],
@@ -19,5 +23,70 @@ export default defineConfig({
     '/me': '/about',
     '/me/': '/about',
     '/Current-Resume.pdf': '/resume',
+  },
+  vite: {
+    server: {
+      fs: {
+        // Allow serving files from the repo root (submodule directories)
+        allow: [root],
+      },
+    },
+    plugins: [
+      {
+        name: 'serve-subprojects',
+        configureServer(server) {
+          // Serve sub-project static directories that live outside src/pages
+          const { sirv } = {};
+          server.middlewares.use((req, res, next) => {
+            const subPaths = [
+              '/nonogram/',
+              '/tech-tree/',
+              '/dashboard/',
+              '/classifiers/',
+              '/cv/',
+              '/lib/',
+              '/shared/',
+              '/ui-kit/',
+              '/site-manifest.json',
+            ];
+            const url = req.url || '';
+            if (subPaths.some(p => url.startsWith(p))) {
+              // Let Vite's static file serving handle it from root
+              const filePath = path.join(root, url);
+              import('fs').then(fs => {
+                // Check if it's a directory request, try index.html
+                let target = filePath;
+                if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
+                  target = path.join(target, 'index.html');
+                }
+                if (fs.existsSync(target)) {
+                  const ext = path.extname(target).toLowerCase();
+                  const mimeTypes = {
+                    '.html': 'text/html',
+                    '.css': 'text/css',
+                    '.js': 'application/javascript',
+                    '.mjs': 'application/javascript',
+                    '.json': 'application/json',
+                    '.png': 'image/png',
+                    '.jpg': 'image/jpeg',
+                    '.svg': 'image/svg+xml',
+                    '.ico': 'image/x-icon',
+                    '.woff': 'font/woff',
+                    '.woff2': 'font/woff2',
+                    '.ttf': 'font/ttf',
+                  };
+                  res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+                  fs.createReadStream(target).pipe(res);
+                } else {
+                  next();
+                }
+              });
+            } else {
+              next();
+            }
+          });
+        },
+      },
+    ],
   },
 });
