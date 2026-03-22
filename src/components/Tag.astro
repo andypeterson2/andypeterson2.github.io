@@ -14,16 +14,18 @@ const { variant = 'default', class: className } = Astro.props;
 <style>
   .tag {
     display: inline-block;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border: 2px solid #000;
     font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border: 1.5px solid #000;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     background: #fff;
     color: #000;
   }
-  .tag-default { }
-  .tag-accent { background: #000; color: #fff; }
+  .tag-accent {
+    background: #000;
+    color: #fff;
+  }
 </style>

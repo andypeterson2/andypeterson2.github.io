@@ -4,6 +4,7 @@
  * WP #489: Form submission routing per identity
  * WP #614: Test: Contact form validation and submission
  * WP #401: Sitemap and robots.txt
+ * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -66,53 +67,55 @@ describe('Contact form with validation', () => {
 
   test('has invalid class styling', () => {
     expect(contactSrc).toContain('.invalid');
-    expect(contactSrc).toContain('--color-danger');
-  });
-
-  test('labels have required indicator', () => {
-    expect(contactSrc).toContain('<span class="required">*</span>');
   });
 
   test('inputs have autocomplete attributes', () => {
     expect(contactSrc).toContain('autocomplete="name"');
     expect(contactSrc).toContain('autocomplete="email"');
   });
-});
 
-// ---- WP #486: Social links ----
-
-describe('Social links', () => {
-  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
-
-  test('social links section exists', () => {
-    expect(contactSrc).toContain('social-links-section');
+  test('form uses system.css field-row layout', () => {
+    expect(contactSrc).toContain('field-row');
   });
 
-  test('has GitHub social link', () => {
-    expect(contactSrc).toContain('social-link');
+  test('form is inside a window with New Message title', () => {
+    expect(contactSrc).toContain('window contact-window');
+    expect(contactSrc).toContain('New Message');
+  });
+});
+
+// ---- WP #486: Social links (now contact cards) ----
+
+describe('Contact method cards', () => {
+  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
+
+  test('contact cards section exists', () => {
+    expect(contactSrc).toContain('contact-grid');
+  });
+
+  test('has GitHub contact card', () => {
+    expect(contactSrc).toContain('standard-dialog contact-card');
     expect(contactSrc).toContain('GitHub');
   });
 
-  test('has LinkedIn social link', () => {
+  test('has LinkedIn contact card', () => {
     expect(contactSrc).toContain('LinkedIn');
   });
 
-  test('has Email social link', () => {
+  test('has Email contact card', () => {
     expect(contactSrc).toContain('Email');
   });
 
-  test('social links open in new tab', () => {
+  test('contact card links open in new tab', () => {
     expect(contactSrc).toContain('target="_blank"');
     expect(contactSrc).toContain('rel="noopener noreferrer"');
   });
 
-  test('social links have aria-labels', () => {
-    expect(contactSrc).toContain('aria-label="GitHub"');
-    expect(contactSrc).toContain('aria-label="LinkedIn"');
-    expect(contactSrc).toContain('aria-label="Email"');
+  test('contact card links use system.css btn class', () => {
+    expect(contactSrc).toContain('class="btn"');
   });
 
-  test('social links use siteConfig values', () => {
+  test('contact cards use siteConfig values', () => {
     expect(contactSrc).toContain('siteConfig.github');
     expect(contactSrc).toContain('siteConfig.linkedin');
     expect(contactSrc).toContain('siteConfig.email');
@@ -130,10 +133,8 @@ describe('Form submission routing per identity', () => {
   });
 
   test('no hardcoded email addresses in form', () => {
-    // Ensure no literal email addresses are in the source
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-    // Filter out the validation regex pattern
-    const srcWithoutRegex = contactSrc.replace(/@\[\\s@\]\+\\\.\[\\s@\]\+/, '');
+    const srcWithoutRegex = contactSrc.replace(/@\[.*?\]\+/g, '');
     expect(srcWithoutRegex).not.toMatch(emailRegex);
   });
 });

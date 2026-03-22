@@ -13,25 +13,24 @@ const { cite } = Astro.props;
 
 <style>
   .pull-quote {
-    position: relative;
     margin: var(--space-8) 0;
-    padding: var(--space-6) var(--space-8);
-    border-left: 3px solid var(--color-accent);
-    background: var(--color-surface);
+    padding: var(--space-4) var(--space-6);
+    border-left: 4px solid #000;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
   }
   .pull-quote p {
-    font-size: var(--text-lg);
+    font-size: 16px;
     font-style: italic;
-    line-height: var(--leading-relaxed);
-    color: var(--color-text-secondary);
+    line-height: 1.6;
     margin-bottom: 0;
   }
   .pull-quote cite {
     display: block;
-    margin-top: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    margin-top: var(--space-2);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 12px;
     font-style: normal;
-    color: var(--color-text-muted);
+    color: #666;
   }
 </style>

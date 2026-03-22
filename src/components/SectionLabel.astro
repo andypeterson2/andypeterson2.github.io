@@ -17,7 +17,7 @@ const { label, class: className } = Astro.props;
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-6);
   }
   .section-label-rule {
     width: 24px;
@@ -26,12 +26,12 @@ const { label, class: className } = Astro.props;
     flex-shrink: 0;
   }
   .section-label-text {
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: #000;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
     white-space: nowrap;
   }
 </style>

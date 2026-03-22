@@ -5,10 +5,6 @@ import Footer from '../components/Footer.astro';
 import '../styles/tokens.css';
 import '../styles/base.css';
 
-// System 6 retro fonts (Chicago/Geneva/Monaco) are vendored in the UI Kit
-// via system.css by @sakofchit (MIT) — see lib/ui-kit/v1.1/CREDITS.md
-// No external font imports needed; fonts are loaded by system.css @font-face rules
-
 interface Props {
   title?: string;
   description?: string;
@@ -22,6 +18,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
+const windowTitle = title || siteConfig.title;
 ---
 
 <!doctype html>
@@ -33,6 +30,9 @@ const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
     {isPreviewDeploy && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
     <link rel="canonical" href={canonicalUrl.href} />
+
+    <!-- system.css — System 6 UI framework -->
+    <link rel="stylesheet" href="/lib/ui-kit/v1.1/vendor/system.css" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -46,9 +46,6 @@ const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
-
-    <!-- Page transition -->
-    <meta name="view-transition" content="same-origin" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -66,69 +63,52 @@ const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
       sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
     })} />
 
-    {/* Analytics — only loads when PLAUSIBLE_DOMAIN env var is set */}
     {plausibleDomain && (
-      <script
-        defer
-        data-domain={plausibleDomain}
-        src="https://plausible.io/js/script.js"
-      />
+      <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
     )}
 
     <!-- Error boundary -->
     <script is:inline>
       window.addEventListener('error', function(e) {
         var el = document.getElementById('error-boundary');
-        if (el) {
-          el.style.display = 'block';
-          el.textContent = 'Something went wrong. Please refresh.';
-        }
+        if (el) { el.style.display = 'block'; el.textContent = 'Something went wrong. Please refresh.'; }
       });
-    </script>
-
-    <!-- Theme: restore saved preference before paint to prevent flash -->
-    <script is:inline>
-      (function() {
-        var saved = localStorage.getItem('theme');
-        if (saved === 'light' || saved === 'dark') {
-          document.documentElement.setAttribute('data-theme', saved);
-        }
-      })();
     </script>
   </head>
   <body>
     <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <header>
-      <Nav />
-    </header>
-    <main id="main-content">
-      <slot />
-    </main>
-    <Footer />
-    {/* eslint-disable-next-line design-system/prefer-button -- layout-level scroll control, not a form action */}
-    <button
-      id="back-to-top"
-      class="back-to-top"
-      aria-label="Back to top"
-      type="button"
-    >
-      &uarr;
+
+    <div class="desktop">
+      <div class="window site-window">
+        <div class="title-bar">
+          <button class="close" aria-hidden="true"><span>Close</span></button>
+          <h1 class="title">{windowTitle}</h1>
+          <button class="resize" aria-hidden="true"><span>Resize</span></button>
+        </div>
+        <Nav />
+        <div class="window-pane" id="main-content">
+          <slot />
+          <Footer />
+        </div>
+      </div>
+    </div>
+
+    <button id="back-to-top" class="btn back-to-top" aria-label="Back to top" type="button">
+      &uarr; Top
     </button>
-    <!-- Easter egg: console message for devs -->
-    <script is:inline>
-      console.log('%c👋 Hey, dev!', 'font-size: 20px; font-weight: bold;');
-      console.log('%cCurious about the code? Check it out on GitHub.', 'font-size: 14px; color: #2255CC;');
-      console.log('%cBuilt with Astro, design tokens, and zero JavaScript frameworks.', 'font-size: 12px; color: #888888;');
-    </script>
+
     <script>
       const btn = document.getElementById('back-to-top');
       if (btn) {
-        window.addEventListener('scroll', () => {
-          btn.classList.toggle('visible', window.scrollY > 400);
+        const pane = document.querySelector('.window-pane');
+        const scrollTarget = pane || window;
+        const getScroll = () => pane ? pane.scrollTop : window.scrollY;
+        (pane || window).addEventListener('scroll', () => {
+          btn.classList.toggle('visible', getScroll() > 400);
         });
         btn.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          (pane || window).scrollTo({ top: 0, behavior: 'smooth' });
         });
       }
     </script>
@@ -138,61 +118,63 @@ const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
 <style>
   .error-boundary {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 300;
-    padding: var(--space-3) var(--space-6);
-    background: var(--color-danger);
+    padding: 6px 12px;
+    background: #000;
     color: #fff;
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 14px;
     text-align: center;
   }
   .skip-link {
     position: absolute;
     top: -100%;
-    left: var(--space-4);
+    left: 8px;
     z-index: 200;
-    padding: var(--space-2) var(--space-4);
-    background: var(--color-accent);
-    color: var(--color-bg);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    padding: 4px 8px;
+    background: #000;
+    color: #fff;
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 12px;
     text-decoration: none;
-    transition: top var(--duration-fast);
   }
-  .skip-link:focus {
-    top: var(--space-2);
+  .skip-link:focus { top: 8px; }
+
+  .desktop {
+    min-height: 100vh;
+    padding: var(--space-4);
   }
-  main {
-    padding-top: 48px;
+  .site-window {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    min-width: 0;
+    display: flex;
   }
+  .site-window .window-pane {
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+    padding: var(--space-6);
+    font-size: 14px;
+    letter-spacing: 0;
+  }
+
   .back-to-top {
     position: fixed;
     bottom: var(--space-6);
     right: var(--space-6);
     z-index: 100;
-    width: 48px;
-    height: 48px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    font-size: var(--text-xl);
-    cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-normal), color var(--duration-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   .back-to-top.visible {
     opacity: 1;
     pointer-events: auto;
   }
-  .back-to-top:hover {
-    color: var(--color-text);
-    border-color: var(--color-text);
+
+  @media (max-width: 768px) {
+    .desktop { padding: 0; }
+    .site-window { margin: 0; border: none; }
+    .site-window .window-pane { max-height: none; }
   }
 </style>

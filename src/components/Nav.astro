@@ -17,188 +17,112 @@ const links = [
 ];
 ---
 
-<nav class="nav" aria-label="Main navigation">
-  <div class="nav-inner container">
-    <a href="/" class="nav-logo" aria-label={`${siteConfig.firstName} — Home`}>
-      {siteConfig.firstName}
-    </a>
+<!-- system.css native menu-bar -->
+<nav aria-label="Main navigation">
+  <ul role="menu-bar" class="site-menu-bar">
+    <li role="menu-item" class="menu-brand">
+      <a href="/">{siteConfig.firstName}</a>
+    </li>
+    {links.map(({ href, label }) => (
+      <li
+        role="menu-item"
+        class:list={{ active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }}
+      >
+        <a
+          href={href}
+          aria-current={currentPath === href ? 'page' : undefined}
+        >
+          {label}
+        </a>
+      </li>
+    ))}
+  </ul>
 
-    <ul class="nav-links" role="list">
-      {links.map(({ href, label }) => (
-        <li>
-          <a
-            href={href}
-            class:list={['nav-link', { active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }]}
-            aria-current={currentPath === href ? 'page' : undefined}
-          >
-            {label}
-          </a>
-        </li>
-      ))}
-    </ul>
-
-    <button
-      class="nav-toggle"
-      aria-label="Toggle navigation menu"
-      aria-expanded="false"
-      aria-controls="mobile-menu"
-      type="button"
-    >
-      <span class="nav-toggle-bar"></span>
-      <span class="nav-toggle-bar"></span>
-      <span class="nav-toggle-bar"></span>
+  <!-- Mobile: hamburger + dropdown -->
+  <div class="mobile-bar">
+    <a href="/" class="mobile-brand">{siteConfig.firstName}</a>
+    <button class="btn mobile-toggle" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu" type="button">
+      Menu
     </button>
   </div>
-
-  <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
-    <ul role="list">
-      {links.map(({ href, label }) => (
-        <li>
-          <a
-            href={href}
-            class:list={['mobile-link', { active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }]}
-            aria-current={currentPath === href ? 'page' : undefined}
-          >
-            {label}
-          </a>
-        </li>
-      ))}
-    </ul>
-  </div>
+  <ul role="menu" id="mobile-menu" class="mobile-menu">
+    {links.map(({ href, label }) => (
+      <li role="menu-item">
+        <a
+          href={href}
+          class:list={{ active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }}
+          aria-current={currentPath === href ? 'page' : undefined}
+        >
+          {label}
+        </a>
+      </li>
+    ))}
+  </ul>
 </nav>
 
 <script>
-  const toggle = document.querySelector('.nav-toggle');
-  const menu = document.getElementById('mobile-menu');
+  const toggle = document.querySelector('.mobile-toggle');
+  const menu = document.getElementById('mobile-menu') as HTMLElement;
   if (toggle && menu) {
     toggle.addEventListener('click', () => {
-      const expanded = toggle.getAttribute('aria-expanded') === 'true';
-      toggle.setAttribute('aria-expanded', String(!expanded));
-      menu.setAttribute('aria-hidden', String(expanded));
-      menu.classList.toggle('open');
-      toggle.classList.toggle('open');
+      const open = menu.style.display === 'block';
+      menu.style.display = open ? 'none' : 'block';
+      toggle.setAttribute('aria-expanded', String(!open));
     });
   }
 </script>
 
 <style>
-  .nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: #fff;
+  nav {
     border-bottom: 2px solid #000;
   }
-  .nav-inner {
-    display: flex;
+  /* system.css menu-bar is already styled — we just adjust spacing */
+  .site-menu-bar {
+    flex-wrap: wrap;
+  }
+  .site-menu-bar a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    padding: 0;
+  }
+  .site-menu-bar [role="menu-item"].active {
+    background: #000;
+    color: #fff;
+  }
+  .menu-brand {
+    font-weight: 700;
+    margin-right: auto;
+  }
+  .menu-brand a {
+    font-weight: 700;
+  }
+
+  /* Mobile nav */
+  .mobile-bar {
+    display: none;
     align-items: center;
     justify-content: space-between;
-    height: 48px;
+    padding: 4px 8px;
   }
-  .nav-logo {
+  .mobile-brand {
     font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
     font-weight: 700;
     font-size: 14px;
     color: #000;
     text-decoration: none;
   }
-  .nav-logo:hover { background: #000; color: #fff; }
-
-  .nav-links {
-    display: flex;
-    gap: 0;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .nav-link {
-    display: flex;
-    align-items: center;
-    padding: 6px 10px;
-    min-height: 48px;
-    font-size: 14px;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    font-weight: 700;
-    color: #000;
-    text-decoration: none;
-  }
-  .nav-link:hover {
-    background: #000;
-    color: #fff;
-  }
-  .nav-link.active {
-    background: #000;
-    color: #fff;
-  }
-
-  /* Hamburger toggle */
-  .nav-toggle {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    background: none;
-    border: 2px solid #000;
-    cursor: pointer;
-    padding: 8px;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-toggle-bar {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background: #000;
-  }
-  .nav-toggle.open .nav-toggle-bar:nth-child(1) {
-    transform: translateY(7px) rotate(45deg);
-  }
-  .nav-toggle.open .nav-toggle-bar:nth-child(2) {
-    opacity: 0;
-  }
-  .nav-toggle.open .nav-toggle-bar:nth-child(3) {
-    transform: translateY(-7px) rotate(-45deg);
-  }
-
-  /* Mobile menu */
+  .mobile-brand:hover { background: #000; color: #fff; }
   .mobile-menu {
     display: none;
-    background: #fff;
-    border-bottom: 2px solid #000;
-    padding: var(--space-4);
   }
-  .mobile-menu[aria-hidden='false'],
-  .mobile-menu.open {
-    display: block;
-  }
-  .mobile-menu ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .mobile-link {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: #000;
-    text-decoration: none;
-    border-bottom: 1px solid #000;
-  }
-  .mobile-link:hover {
-    background: #000;
-    color: #fff;
-  }
-  .mobile-link.active {
+  .mobile-menu a.active {
     background: #000;
     color: #fff;
   }
 
   @media (max-width: 768px) {
-    .nav-links { display: none; }
-    .nav-toggle { display: flex; }
+    .site-menu-bar { display: none !important; }
+    .mobile-bar { display: flex; }
   }
 </style>

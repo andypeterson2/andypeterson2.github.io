@@ -1,6 +1,7 @@
 /**
  * WP #579-#588: Component and design system tests
  * WP #632: Token build pipeline output
+ * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -28,7 +29,7 @@ describe('Design Token Source of Truth', () => {
     }
   });
 
-  test('all color tokens have light overrides', () => {
+  test('all color tokens have light overrides in JSON', () => {
     for (const [name, def] of Object.entries(tokensJson.color)) {
       expect((def as { light: string }).light).toBeTruthy();
     }
@@ -37,12 +38,6 @@ describe('Design Token Source of Truth', () => {
   test('font tokens define sans and mono', () => {
     expect(tokensJson.font.sans.value).toContain('Chicago');
     expect(tokensJson.font.mono.value).toContain('Monaco');
-  });
-
-  test('fontSize tokens use clamp() for responsive sizing', () => {
-    for (const [name, def] of Object.entries(tokensJson.fontSize)) {
-      expect((def as { value: string }).value).toContain('clamp(');
-    }
   });
 
   test('spacing scale is complete', () => {
@@ -63,19 +58,19 @@ describe('Token CSS Output', () => {
     'utf-8',
   );
 
-  test('defines :root with dark theme variables', () => {
+  test('defines :root with monochrome variables', () => {
     expect(tokensCss).toMatch(/:root\s*\{/);
     expect(tokensCss).toContain('--color-bg:');
     expect(tokensCss).toContain('--color-text:');
     expect(tokensCss).toContain('--color-accent:');
   });
 
-  test('defines light theme overrides', () => {
-    expect(tokensCss).toContain('[data-theme=\'light\']');
+  test('no light theme overrides (pure monochrome)', () => {
+    expect(tokensCss).not.toContain("[data-theme='light']");
   });
 
-  test('includes prefers-color-scheme fallback', () => {
-    expect(tokensCss).toContain('prefers-color-scheme: light');
+  test('no OS preference fallback (pure monochrome)', () => {
+    expect(tokensCss).not.toContain('prefers-color-scheme: light');
   });
 
   test('includes prefers-reduced-motion', () => {
@@ -88,9 +83,19 @@ describe('Token CSS Output', () => {
     expect(tokensCss).toContain('--space-16:');
   });
 
-  test('defines typography tokens with clamp()', () => {
-    expect(tokensCss).toContain('--text-base:');
-    expect(tokensCss).toContain('clamp(');
+  test('font size tokens use fixed values (no clamp)', () => {
+    const textTokenLines = tokensCss
+      .split('\n')
+      .filter((l) => l.includes('--text-') && l.includes(':'));
+    for (const line of textTokenLines) {
+      if (line.includes('--text-inverse') || line.includes('--text-secondary') || line.includes('--text-muted')) {
+        continue;
+      }
+      const match = line.match(/--text-(xs|sm|base|lg|xl|2xl|3xl|4xl)/);
+      if (match) {
+        expect(line).not.toContain('clamp(');
+      }
+    }
   });
 });
 
@@ -129,7 +134,6 @@ describe('Base CSS', () => {
   });
 
   test('body uses System 6 styling', () => {
-    // System 6 aesthetic uses hardcoded #fff/#000 and Chicago font instead of token variables
     expect(baseCss).toContain('#fff');
     expect(baseCss).toContain('#000');
     expect(baseCss).toContain('Chicago');
@@ -140,14 +144,15 @@ describe('Base CSS', () => {
     expect(baseCss).toContain('var(--text-4xl)');
   });
 
-  test('link styles use System 6 colors', () => {
-    // System 6 aesthetic uses #000 for links with hover inversion instead of accent tokens
-    expect(baseCss).toContain('a {');
-    expect(baseCss).toContain('color: #000');
+  test('link hover uses monochrome inversion', () => {
+    expect(baseCss).toContain('a:hover');
+    expect(baseCss).toContain('background: #000');
+    expect(baseCss).toContain('color: #fff');
   });
 
-  test('focus-visible styles are defined', () => {
-    expect(baseCss).toContain(':focus-visible');
+  test('selection uses monochrome inversion', () => {
+    expect(baseCss).toContain('::selection');
+    expect(baseCss).toContain('background: #000');
   });
 
   test('sr-only utility is defined', () => {
@@ -186,24 +191,16 @@ describe('Button Component', () => {
     'utf-8',
   );
 
+  test('uses system.css btn and btn-default classes', () => {
+    expect(buttonSrc).toContain('btn-default');
+    expect(buttonSrc).toContain('btn');
+  });
+
   test('supports variant prop', () => {
     expect(buttonSrc).toContain('variant');
     expect(buttonSrc).toContain('primary');
     expect(buttonSrc).toContain('secondary');
     expect(buttonSrc).toContain('ghost');
-  });
-
-  test('supports size prop', () => {
-    expect(buttonSrc).toContain('size');
-    expect(buttonSrc).toContain('btn-sm');
-    expect(buttonSrc).toContain('btn-lg');
-  });
-
-  test('uses System 6 styling patterns', () => {
-    // System 6 buttons use hardcoded #000/#fff with no transitions
-    expect(buttonSrc).toContain('#000');
-    expect(buttonSrc).toContain('#fff');
-    expect(buttonSrc).toContain('2px solid');
   });
 
   test('supports href for link-style buttons', () => {
@@ -217,10 +214,8 @@ describe('Card Component', () => {
     'utf-8',
   );
 
-  test('uses System 6 styling', () => {
-    // System 6 cards use hardcoded #000/#fff and 2px solid borders
-    expect(cardSrc).toContain('#000');
-    expect(cardSrc).toContain('2px solid #000');
+  test('uses system.css standard-dialog class', () => {
+    expect(cardSrc).toContain('standard-dialog');
   });
 
   test('supports title prop', () => {
@@ -232,8 +227,8 @@ describe('Card Component', () => {
   });
 
   test('has hover inversion', () => {
-    // System 6 cards use color inversion on hover instead of transitions
     expect(cardSrc).toContain(':hover');
+    expect(cardSrc).toContain('background: #000');
   });
 });
 
@@ -249,10 +244,9 @@ describe('Tag Component', () => {
     expect(tagSrc).toContain('default');
   });
 
-  test('uses System 6 font family', () => {
-    // System 6 aesthetic uses Chicago font directly instead of token variable
+  test('uses Chicago font and 1.5px solid border', () => {
     expect(tagSrc).toContain('Chicago');
-    expect(tagSrc).toContain('2px solid #000');
+    expect(tagSrc).toContain('1.5px solid #000');
   });
 });
 
@@ -300,8 +294,8 @@ describe('CodeBlock Component', () => {
     expect(src).toContain('language');
   });
 
-  test('uses token colors', () => {
-    expect(src).toContain('var(--color-');
+  test('uses system.css standard-dialog class', () => {
+    expect(src).toContain('standard-dialog');
   });
 });
 
@@ -311,12 +305,9 @@ describe('InvertedSection Component', () => {
     'utf-8',
   );
 
-  test('uses surface background', () => {
-    expect(src).toContain('var(--color-surface)');
-  });
-
-  test('uses border', () => {
-    expect(src).toContain('var(--color-border)');
+  test('uses monochrome inverted background', () => {
+    expect(src).toContain('background: #000');
+    expect(src).toContain('color: #fff');
   });
 });
 
@@ -340,28 +331,5 @@ describe('Site Configuration', () => {
 
   test('has displayName field', () => {
     expect(siteSrc).toContain('displayName');
-  });
-});
-
-describe('Responsive Type Sizing', () => {
-  const tokensCss = readFileSync(
-    resolve(ROOT, 'src/styles/tokens.css'),
-    'utf-8',
-  );
-
-  test('all text-* tokens use clamp()', () => {
-    const textTokenLines = tokensCss
-      .split('\n')
-      .filter((l) => l.includes('--text-') && l.includes(':'));
-    for (const line of textTokenLines) {
-      if (line.includes('clamp(') || line.includes('--text-inverse') || line.includes('--text-secondary') || line.includes('--text-muted')) {
-        continue;
-      }
-      // Lines defining text-xs through text-4xl should use clamp
-      const match = line.match(/--text-(xs|sm|base|lg|xl|2xl|3xl|4xl)/);
-      if (match) {
-        expect(line).toContain('clamp(');
-      }
-    }
   });
 });

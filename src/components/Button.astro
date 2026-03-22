@@ -9,7 +9,9 @@ interface Props {
 
 const { variant = 'primary', size = 'md', href, class: className, ...rest } = Astro.props;
 const Tag = href ? 'a' : 'button';
-const classes = ['btn', `btn-${variant}`, `btn-${size}`, className].filter(Boolean).join(' ');
+// primary = btn-default (bold beveled border), secondary/ghost = btn (standard bevel)
+const btnClass = variant === 'primary' ? 'btn-default' : 'btn';
+const classes = [btnClass, className].filter(Boolean).join(' ');
 ---
 
 <Tag class={classes} href={href} {...rest}>
@@ -17,36 +19,12 @@ const classes = ['btn', `btn-${variant}`, `btn-${size}`, className].filter(Boole
 </Tag>
 
 <style>
-  /* Extend system.css .btn — do not fight its border-image bevels */
-  .btn {
+  /* system.css .btn and .btn-default handle all styling.
+     We only add inline-flex for icon alignment. */
+  .btn, .btn-default {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 6px;
     text-decoration: none;
-    white-space: nowrap;
-    cursor: pointer;
   }
-  .btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-
-  .btn-primary {
-    background: #000;
-    color: #fff;
-  }
-  .btn-primary:active { background: #fff; color: #000; }
-
-  .btn-secondary {
-    background: #fff;
-    color: #000;
-  }
-  .btn-secondary:active { background: #000; color: #fff; }
-
-  .btn-ghost {
-    background: #fff;
-    color: #000;
-  }
-  .btn-ghost:active { background: #000; color: #fff; }
-
-  .btn-sm { font-size: 14px; padding: 0 12px; }
-  .btn-md { font-size: 18px; padding: 0 20px; }
-  .btn-lg { font-size: 22px; padding: 2px 28px; }
 </style>

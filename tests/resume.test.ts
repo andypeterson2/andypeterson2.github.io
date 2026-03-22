@@ -3,6 +3,7 @@
  * WP #477: ATS compatibility verification
  * WP #480: Cover letter template
  * WP #612: Test: Build-time PDF generation (placeholder verified)
+ * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -15,13 +16,13 @@ const ROOT = resolve(import.meta.dirname!, '..');
 describe('Inline resume web view', () => {
   const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
 
-  test('has inline resume section', () => {
-    expect(resumeSrc).toContain('resume-inline');
+  test('has quick view section', () => {
     expect(resumeSrc).toContain('Quick View');
   });
 
-  test('has resume document container', () => {
-    expect(resumeSrc).toContain('resume-document');
+  test('has resume window container', () => {
+    expect(resumeSrc).toContain('window resume-window');
+    expect(resumeSrc).toContain('resume-content');
   });
 
   test('shows display name from config', () => {
@@ -41,6 +42,11 @@ describe('Inline resume web view', () => {
     expect(resumeSrc).toContain('/cover-letter');
     expect(resumeSrc).toContain('Cover Letter');
   });
+
+  test('quick view uses system.css window with title-bar and details-bar', () => {
+    expect(resumeSrc).toContain('title-bar');
+    expect(resumeSrc).toContain('details-bar');
+  });
 });
 
 // ---- WP #477: ATS compatibility verification ----
@@ -50,26 +56,21 @@ describe('ATS compatibility verification', () => {
 
   test('uses semantic section structure', () => {
     expect(resumeSrc).toContain('<section');
-    expect(resumeSrc).toContain('resume-experience');
-    expect(resumeSrc).toContain('resume-education');
   });
 
   test('uses proper heading hierarchy', () => {
     expect(resumeSrc).toContain('<h1>');
-    expect(resumeSrc).toContain('<h3>');
   });
 
   test('no personal info hardcoded (uses siteConfig)', () => {
     expect(resumeSrc).toContain('siteConfig');
-    // Verify no literal personal email addresses
     expect(resumeSrc).not.toMatch(/[a-z]+@gmail\.com/);
   });
 
-  test('experience items have structured data', () => {
-    expect(resumeSrc).toContain('experience-header');
-    expect(resumeSrc).toContain('experience-date');
+  test('experience items use standard-dialog with details-bar', () => {
+    expect(resumeSrc).toContain('standard-dialog experience-item');
+    expect(resumeSrc).toContain('details-bar');
     expect(resumeSrc).toContain('experience-org');
-    expect(resumeSrc).toContain('experience-desc');
   });
 
   test('page has breadcrumbs', () => {
@@ -100,8 +101,7 @@ describe('Cover letter template', () => {
   });
 
   test('has letter document structure', () => {
-    expect(coverSrc).toContain('letter-document');
-    expect(coverSrc).toContain('letter-header');
+    expect(coverSrc).toContain('letter-window');
     expect(coverSrc).toContain('letter-body');
   });
 
@@ -134,7 +134,6 @@ describe('PDF generation readiness', () => {
   const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
 
   test('resume page has printable structure', () => {
-    // Print stylesheet exists in base.css
     const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
     expect(baseCss).toContain('@media print');
   });

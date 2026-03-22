@@ -7,131 +7,72 @@ import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="About" description={`About ${siteConfig.displayName}`}>
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'About' }]} />
-    <section class="page-header">
-      <h1>About</h1>
-      <p class="page-subtitle">Background, research, and what drives my work.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'About' }]} />
+  <section class="page-header">
+    <h1>About</h1>
+    <p class="page-subtitle">Background, research, and what drives my work.</p>
+  </section>
 
-    <section class="about-bio">
-      <SectionLabel label="Bio" />
-      <div class="bio-content">
-        <p>
-          {siteConfig.displayName} — researcher, engineer, and builder of things
-          at the intersection of quantum computing and applied software.
-        </p>
+  <section class="content-section">
+    <SectionLabel label="Bio" />
+    <p class="bio">
+      {siteConfig.displayName} — researcher, engineer, and builder of things
+      at the intersection of quantum computing and applied software.
+    </p>
+  </section>
+
+  <PullQuote>
+    Building bridges between quantum theory and practical software — one qubit at a time.
+  </PullQuote>
+
+  <section class="content-section">
+    <SectionLabel label="Timeline" />
+    <div class="standard-dialog timeline-item">
+      <div class="details-bar">
+        <span>Quantum Computing Research</span>
+        <span>Present</span>
       </div>
-    </section>
-
-    <PullQuote>
-      Building bridges between quantum theory and practical software — one qubit at a time.
-    </PullQuote>
-
-    <section class="about-timeline">
-      <SectionLabel label="Timeline" />
-      <div class="timeline">
-        <div class="timeline-item">
-          <span class="timeline-date">Present</span>
-          <div class="timeline-content">
-            <h3>Quantum Computing Research</h3>
-            <p>Building quantum-secured communication systems and exploring quantum advantage in optimization problems.</p>
-          </div>
-        </div>
+      <div class="timeline-body">
+        Building quantum-secured communication systems and exploring quantum advantage in optimization problems.
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="about-interests">
-      <SectionLabel label="Research Interests" />
-      <ul class="interest-list">
-        <li>Quantum Key Distribution (QKD)</li>
-        <li>Quantum Optimization Algorithms</li>
-        <li>Applied Cryptography</li>
-        <li>Systems Programming</li>
-      </ul>
-    </section>
-  </div>
+  <section class="content-section">
+    <SectionLabel label="Research Interests" />
+    <div class="interest-grid">
+      <div class="standard-dialog interest-item">Quantum Key Distribution (QKD)</div>
+      <div class="standard-dialog interest-item">Quantum Optimization Algorithms</div>
+      <div class="standard-dialog interest-item">Applied Cryptography</div>
+      <div class="standard-dialog interest-item">Systems Programming</div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
-  .page-header h1 {
-    margin-bottom: var(--space-4);
-  }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-
-  .about-bio,
-  .about-timeline,
-  .about-interests {
-    padding: var(--space-12) 0;
-  }
-  .bio-content {
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
+  .content-section { padding: var(--space-6) 0; }
+  .bio {
     max-width: var(--content-width);
-  }
-  .bio-content p {
-    font-size: var(--text-lg);
+    font-size: 16px;
     line-height: 1.8;
-    color: var(--color-text-secondary);
   }
-
-  .timeline {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-    padding-left: var(--space-6);
-    border-left: 2px solid var(--color-border);
+  .timeline-body {
+    padding: var(--space-4);
+    font-size: 14px;
   }
-  .timeline-item {
-    position: relative;
-  }
-  .timeline-item::before {
-    content: '';
-    position: absolute;
-    left: calc(-1 * var(--space-6) - 5px);
-    top: var(--space-1);
-    width: 8px;
-    height: 8px;
-    background: var(--color-accent);
-  }
-  .timeline-date {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-accent);
-  }
-  .timeline-content h3 {
-    margin: var(--space-1) 0 var(--space-2);
-  }
-  .timeline-content p {
-    color: var(--color-text-secondary);
-  }
-  .timeline-item {
-    transition: transform var(--duration-normal) var(--ease-default);
-  }
-  .timeline-item:hover {
-    transform: translateX(var(--space-2));
-  }
-  .timeline-item:hover .timeline-date {
-    color: var(--color-accent-hover);
-  }
-
-  .interest-list {
+  .interest-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: var(--space-3);
-    list-style: none;
-    padding: 0;
   }
-  .interest-list li {
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+  .interest-item {
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 13px;
   }
 </style>

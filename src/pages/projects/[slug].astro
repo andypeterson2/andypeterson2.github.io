@@ -27,120 +27,89 @@ const relatedProjects = projects
 ---
 
 <BaseLayout title={project.title} description={project.description}>
-  <div class="container">
-    <Breadcrumbs crumbs={[
-      { label: 'Projects', href: '/projects' },
-      { label: project.title },
-    ]} />
+  <Breadcrumbs crumbs={[
+    { label: 'Projects', href: '/projects' },
+    { label: project.title },
+  ]} />
 
-    <section class="project-header">
-      <div class="project-meta">
-        <span class={`status-indicator status-${project.status}`}>{project.status}</span>
-        <span class="project-category">{project.category}</span>
+  <section class="project-header">
+    <div class="details-bar project-meta">
+      <span>{project.status}</span>
+      <span>{project.category}</span>
+    </div>
+    <h1>{project.title}</h1>
+    <p class="project-description">{project.longDescription || project.description}</p>
+    <div class="project-tags">
+      {project.tags.map((tag) => (
+        <Tag variant={tag.variant}>{tag.label}</Tag>
+      ))}
+    </div>
+    {(project.appUrl || project.repoUrl) && (
+      <div class="project-actions">
+        {project.appUrl && <Button href={project.appUrl}>Launch App</Button>}
+        {project.repoUrl && <Button href={project.repoUrl} variant="secondary">View Source</Button>}
       </div>
-      <h1>{project.title}</h1>
-      <p class="project-description">{project.longDescription || project.description}</p>
-      <div class="project-tags">
-        {project.tags.map((tag) => (
-          <Tag variant={tag.variant}>{tag.label}</Tag>
+    )}
+  </section>
+
+  <div class="separator"></div>
+
+  <section class="content-section">
+    <SectionLabel label="Architecture" />
+    <div class="standard-dialog architecture-placeholder">
+      Architecture diagram and technical details for this project.
+    </div>
+  </section>
+
+  {relatedProjects.length > 0 && (
+    <section class="content-section">
+      <SectionLabel label="Related Projects" />
+      <div class="related-grid">
+        {relatedProjects.map((rp) => (
+          <Card title={rp.title} href={`/projects/${rp.slug}`}>
+            <p>{rp.description}</p>
+            <div class="card-tags">
+              {rp.tags.map((tag) => (
+                <Tag variant={tag.variant}>{tag.label}</Tag>
+              ))}
+            </div>
+          </Card>
         ))}
       </div>
-
-      {(project.appUrl || project.repoUrl) && (
-        <div class="project-actions">
-          {project.appUrl && (
-            <Button href={project.appUrl} variant="primary">Launch App</Button>
-          )}
-          {project.repoUrl && (
-            <Button href={project.repoUrl} variant="secondary">View Source</Button>
-          )}
-        </div>
-      )}
     </section>
+  )}
 
-    <section class="project-content">
-      <SectionLabel label="Architecture" />
-      <div class="architecture-placeholder">
-        <p>Architecture diagram and technical details for this project.</p>
-      </div>
-    </section>
+  <div class="separator"></div>
 
-    {relatedProjects.length > 0 && (
-      <section class="related-projects">
-        <SectionLabel label="Related Projects" />
-        <div class="related-grid">
-          {relatedProjects.map((rp) => (
-            <Card title={rp.title} href={`/projects/${rp.slug}`}>
-              <p>{rp.description}</p>
-              <div class="card-tags">
-                {rp.tags.map((tag) => (
-                  <Tag variant={tag.variant}>{tag.label}</Tag>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
-    )}
-
-    <nav class="project-nav" aria-label="Project navigation">
-      {prevProject ? (
-        <a href={`/projects/${prevProject.slug}`} class="project-nav-link prev">
-          <span class="project-nav-dir">&larr; Previous</span>
-          <span class="project-nav-title">{prevProject.title}</span>
-        </a>
-      ) : <span />}
-      {nextProject ? (
-        <a href={`/projects/${nextProject.slug}`} class="project-nav-link next">
-          <span class="project-nav-dir">Next &rarr;</span>
-          <span class="project-nav-title">{nextProject.title}</span>
-        </a>
-      ) : <span />}
-    </nav>
-  </div>
+  <nav class="project-nav" aria-label="Project navigation">
+    {prevProject ? (
+      <a href={`/projects/${prevProject.slug}`} class="standard-dialog project-nav-link">
+        <span class="project-nav-dir">&larr; Previous</span>
+        <span class="project-nav-title">{prevProject.title}</span>
+      </a>
+    ) : <span />}
+    {nextProject ? (
+      <a href={`/projects/${nextProject.slug}`} class="standard-dialog project-nav-link next">
+        <span class="project-nav-dir">Next &rarr;</span>
+        <span class="project-nav-title">{nextProject.title}</span>
+      </a>
+    ) : <span />}
+  </nav>
 </BaseLayout>
 
 <style>
   .project-header {
-    padding: var(--space-8) 0 var(--space-12);
+    padding: var(--space-4) 0 var(--space-8);
     max-width: var(--content-width);
   }
   .project-meta {
-    display: flex;
-    gap: var(--space-3);
-    align-items: center;
     margin-bottom: var(--space-4);
   }
-  .project-category {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    text-transform: capitalize;
-  }
-  .status-indicator {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    text-transform: capitalize;
-  }
-  .status-active::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background: var(--color-success);
-    border-radius: 50%;
-    margin-right: var(--space-1);
-    vertical-align: middle;
-  }
-  .project-header h1 {
-    margin-bottom: var(--space-4);
-  }
+  .project-header h1 { margin-bottom: var(--space-4); }
   .project-description {
-    font-size: var(--text-lg);
-    color: var(--color-text-secondary);
-    line-height: var(--leading-relaxed);
-    margin-bottom: var(--space-6);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: var(--space-4);
   }
   .project-tags {
     display: flex;
@@ -150,72 +119,48 @@ const relatedProjects = projects
   .project-actions {
     display: flex;
     gap: var(--space-3);
-    margin-top: var(--space-6);
+    margin-top: var(--space-4);
     flex-wrap: wrap;
   }
-
-  .project-content {
-    padding: var(--space-12) 0;
-  }
+  .content-section { padding: var(--space-6) 0; }
   .architecture-placeholder {
-    padding: var(--space-8);
-    background: var(--color-surface);
-    border: 1px dashed var(--color-border);
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 13px;
     text-align: center;
-  }
-
-  .related-projects {
-    padding: var(--space-12) 0;
+    color: #666;
   }
   .related-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
   }
   .card-tags {
     display: flex;
     gap: var(--space-2);
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
     flex-wrap: wrap;
   }
-
   .project-nav {
     display: flex;
     justify-content: space-between;
-    padding: var(--space-12) 0;
-    border-top: 1px solid var(--color-border);
+    padding: var(--space-6) 0;
     gap: var(--space-4);
   }
   .project-nav-link {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    padding: var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     text-decoration: none;
-    transition: border-color var(--duration-fast);
+    color: #000;
     max-width: 45%;
   }
-  .project-nav-link:hover {
-    border-color: var(--color-accent);
-  }
-  .project-nav-link.next {
-    text-align: right;
-    margin-left: auto;
-  }
+  .project-nav-link:hover { background: #000; color: #fff; }
+  .project-nav-link.next { text-align: right; margin-left: auto; }
   .project-nav-dir {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
+    letter-spacing: 0.1em;
   }
-  .project-nav-title {
-    font-size: var(--text-sm);
-    color: var(--color-text);
-  }
+  .project-nav-title { font-size: 13px; }
 </style>

@@ -5,75 +5,66 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 ---
 
 <BaseLayout title="Uses" description="Tools, hardware, and software I use daily.">
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'Uses' }]} />
-    <section class="page-header">
-      <h1>/uses</h1>
-      <p class="page-subtitle">Tools, hardware, and software I use daily.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'Uses' }]} />
+  <section class="page-header">
+    <h1>/uses</h1>
+    <p class="page-subtitle">Tools, hardware, and software I use daily.</p>
+  </section>
 
-    <section class="uses-section">
-      <SectionLabel label="Editor & Terminal" />
-      <ul class="uses-list">
-        <li><strong>Editor:</strong> VS Code with Gruvbox theme</li>
-        <li><strong>Terminal:</strong> iTerm2 + zsh + oh-my-zsh</li>
-        <li><strong>Font:</strong> IBM Plex Mono</li>
-        <li><strong>AI:</strong> Claude Code</li>
-      </ul>
-    </section>
+  <section class="content-section">
+    <SectionLabel label="Editor & Terminal" />
+    <div class="standard-dialog uses-list">
+      <div class="details-bar"><span>Editor</span><span>VS Code with Gruvbox theme</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Terminal</span><span>iTerm2 + zsh + oh-my-zsh</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Font</span><span>IBM Plex Mono</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>AI</span><span>Claude Code</span></div>
+    </div>
+  </section>
 
-    <section class="uses-section">
-      <SectionLabel label="Languages & Frameworks" />
-      <ul class="uses-list">
-        <li><strong>Primary:</strong> Python, TypeScript</li>
-        <li><strong>Quantum:</strong> Qiskit, PennyLane</li>
-        <li><strong>Web:</strong> Astro, React, Flask</li>
-        <li><strong>Data:</strong> PyTorch, scikit-learn</li>
-      </ul>
-    </section>
+  <section class="content-section">
+    <SectionLabel label="Languages & Frameworks" />
+    <div class="standard-dialog uses-list">
+      <div class="details-bar"><span>Primary</span><span>Python, TypeScript</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Quantum</span><span>Qiskit, PennyLane</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Web</span><span>Astro, React, Flask</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Data</span><span>PyTorch, scikit-learn</span></div>
+    </div>
+  </section>
 
-    <section class="uses-section">
-      <SectionLabel label="Infrastructure" />
-      <ul class="uses-list">
-        <li><strong>Hosting:</strong> Vercel</li>
-        <li><strong>Version control:</strong> Git + GitHub</li>
-        <li><strong>CI/CD:</strong> GitHub Actions</li>
-        <li><strong>Project management:</strong> OpenProject</li>
-      </ul>
-    </section>
-  </div>
+  <section class="content-section">
+    <SectionLabel label="Infrastructure" />
+    <div class="standard-dialog uses-list">
+      <div class="details-bar"><span>Hosting</span><span>Vercel</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Version control</span><span>Git + GitHub</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>CI/CD</span><span>GitHub Actions</span></div>
+      <div class="separator"></div>
+      <div class="details-bar"><span>Project management</span><span>OpenProject</span></div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
   .page-header h1 {
-    margin-bottom: var(--space-4);
-    font-family: var(--font-mono);
+    margin-bottom: var(--space-2);
+    font-family: Monaco, ui-monospace, monospace;
   }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-  .uses-section {
-    padding: var(--space-8) 0;
+  .page-subtitle { font-size: 16px; }
+  .content-section {
+    padding: var(--space-6) 0;
     max-width: var(--content-width);
   }
-  .uses-list {
-    list-style: none;
-    padding: 0;
-  }
-  .uses-list li {
-    padding: var(--space-3) var(--space-4);
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-  }
-  .uses-list li strong {
-    font-family: var(--font-mono);
-    color: var(--color-text);
-    margin-right: var(--space-2);
-  }
+  .uses-list { padding: 0; }
+  .uses-list .separator { margin: 0; }
 </style>

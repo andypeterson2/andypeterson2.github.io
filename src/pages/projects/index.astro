@@ -11,202 +11,137 @@ const categories = [...new Set(projects.map(p => p.category))];
 ---
 
 <BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'Projects' }]} />
-    <section class="page-header">
-      <h1>Projects</h1>
-      <p class="page-subtitle">Research projects, tools, and experiments.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'Projects' }]} />
+  <section class="page-header">
+    <h1>Projects</h1>
+    <p class="page-subtitle">Research projects, tools, and experiments.</p>
+  </section>
 
-    <section class="project-listing">
-      <div class="project-filters" role="group" aria-label="Filter projects by category">
-        <button class="filter-btn active" data-filter="all" type="button">All</button>
-        {categories.map((cat) => (
-          <button class="filter-btn" data-filter={cat} type="button">{cat}</button>
-        ))}
-      </div>
+  <section>
+    <div class="project-filters" role="group" aria-label="Filter projects by category">
+      <button class="btn filter-btn active" data-filter="all" type="button">All</button>
+      {categories.map((cat) => (
+        <button class="btn filter-btn" data-filter={cat} type="button">{cat}</button>
+      ))}
+    </div>
 
-      <div class="project-filters" role="group" aria-label="Filter projects by technology">
-        <button class="tag-filter-btn active" data-tag="all" type="button">All Tags</button>
-        {[...new Set(projects.flatMap(p => p.tags.map(t => t.label)))].map((tag) => (
-          <button class="tag-filter-btn" data-tag={tag} type="button">{tag}</button>
-        ))}
-      </div>
+    <div class="project-filters" role="group" aria-label="Filter projects by technology">
+      <button class="btn tag-filter-btn active" data-tag="all" type="button">All Tags</button>
+      {[...new Set(projects.flatMap(p => p.tags.map(t => t.label)))].map((tag) => (
+        <button class="btn tag-filter-btn" data-tag={tag} type="button">{tag}</button>
+      ))}
+    </div>
 
-      <div class="project-grid">
-        {projects.map((project) => (
-          <div class="project-card-wrap" data-category={project.category} data-tags={project.tags.map(t => t.label).join(',')}>
-            <Card title={project.title} href={`/projects/${project.slug}`}>
-              <div class="card-meta">
-                {project.featured && <span class="featured-badge">Featured</span>}
-                <span class={`status-indicator status-${project.status}`}>{project.status}</span>
-              </div>
-              <p>{project.description}</p>
-              <div class="card-tags">
-                {project.tags.map((tag) => (
-                  <Tag variant={tag.variant}>{tag.label}</Tag>
-                ))}
-              </div>
-            </Card>
-          </div>
-        ))}
-      </div>
-    </section>
+    <div class="project-grid">
+      {projects.map((project) => (
+        <div class="project-card-wrap visible" data-category={project.category} data-tags={project.tags.map(t => t.label).join(',')}>
+          <Card title={project.title} href={`/projects/${project.slug}`}>
+            <div class="card-meta">
+              {project.featured && <span class="featured-badge">Featured</span>}
+              <span class="status-indicator">{project.status}</span>
+            </div>
+            <p>{project.description}</p>
+            <div class="card-tags">
+              {project.tags.map((tag) => (
+                <Tag variant={tag.variant}>{tag.label}</Tag>
+              ))}
+            </div>
+          </Card>
+        </div>
+      ))}
+    </div>
+  </section>
 
-    <script>
-      // Scroll entrance animation
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            (entry.target as HTMLElement).classList.add('visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1 });
+  <script>
+    let activeCategory = 'all';
+    let activeTag = 'all';
+
+    function applyFilters() {
       document.querySelectorAll('.project-card-wrap').forEach(card => {
-        observer.observe(card);
+        const el = card as HTMLElement;
+        const cat = el.getAttribute('data-category');
+        const tags = el.getAttribute('data-tags') || '';
+        const matchesCat = activeCategory === 'all' || cat === activeCategory;
+        const matchesTag = activeTag === 'all' || tags.split(',').includes(activeTag);
+        el.style.display = matchesCat && matchesTag ? '' : 'none';
       });
+    }
 
-      let activeCategory = 'all';
-      let activeTag = 'all';
-
-      function applyFilters() {
-        document.querySelectorAll('.project-card-wrap').forEach(card => {
-          const el = card as HTMLElement;
-          const cat = el.getAttribute('data-category');
-          const tags = el.getAttribute('data-tags') || '';
-          const matchesCat = activeCategory === 'all' || cat === activeCategory;
-          const matchesTag = activeTag === 'all' || tags.split(',').includes(activeTag);
-          el.style.display = matchesCat && matchesTag ? '' : 'none';
-        });
-      }
-
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          activeCategory = btn.getAttribute('data-filter') || 'all';
-          applyFilters();
-        });
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = btn.getAttribute('data-filter') || 'all';
+        applyFilters();
       });
+    });
 
-      document.querySelectorAll('.tag-filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.tag-filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          activeTag = btn.getAttribute('data-tag') || 'all';
-          applyFilters();
-        });
+    document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tag-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeTag = btn.getAttribute('data-tag') || 'all';
+        applyFilters();
       });
-    </script>
-  </div>
+    });
+  </script>
 </BaseLayout>
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
-  .page-header h1 {
-    margin-bottom: var(--space-4);
-  }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-  .project-listing {
-    padding: var(--space-8) 0;
-  }
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-4);
   }
-  .project-card-wrap {
-    opacity: 0;
-    transform: translateY(var(--space-4));
-    transition: opacity var(--duration-slow) var(--ease-default),
-                transform var(--duration-slow) var(--ease-default);
-  }
-  .project-card-wrap.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .project-card-wrap { }
   .card-tags {
     display: flex;
     gap: var(--space-2);
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
     flex-wrap: wrap;
   }
   .project-filters {
     display: flex;
     gap: var(--space-2);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
     flex-wrap: wrap;
   }
-  .filter-btn {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    padding: var(--space-2) var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    cursor: pointer;
+  .filter-btn, .tag-filter-btn {
+    font-size: 12px;
     text-transform: capitalize;
-    transition: all var(--duration-fast);
-    min-height: 48px;
+    min-width: auto;
+    min-height: auto;
+    padding: 2px 10px;
   }
-  .filter-btn:hover,
-  .filter-btn.active {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-  .tag-filter-btn {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    padding: var(--space-1) var(--space-3);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition: all var(--duration-fast);
-    min-height: 48px;
-    border-radius: 2px;
-  }
-  .tag-filter-btn:hover,
-  .tag-filter-btn.active {
-    border-color: var(--color-text);
-    color: var(--color-text);
+  .filter-btn.active, .tag-filter-btn.active {
+    background: #000;
+    color: #fff;
   }
   .card-meta {
     display: flex;
     gap: var(--space-2);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
     align-items: center;
   }
   .featured-badge {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    padding: var(--space-1) var(--space-2);
-    background: var(--color-accent);
-    color: var(--color-text-inverse);
+    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
+    font-size: 10px;
+    padding: 1px 4px;
+    background: #000;
+    color: #fff;
     text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
+    letter-spacing: 0.1em;
   }
   .status-indicator {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 11px;
+    color: #666;
     text-transform: capitalize;
-  }
-  .status-active::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    background: var(--color-success);
-    border-radius: 50%;
-    margin-right: var(--space-1);
-    vertical-align: middle;
   }
 </style>
