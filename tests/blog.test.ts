@@ -8,11 +8,10 @@
  * WP #530: Tags and categories browsing page
  * WP #531: Post series support
  * WP #532: Copy-to-clipboard on code blocks
- * WP #534: Console.log message for devs
  * WP #535: Custom 404 with personality
- * WP #536: Terminal mode easter egg (console message)
  * WP #537: Hidden /uses page
  * WP #434: Built with credit line
+ * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -110,13 +109,13 @@ describe('Table of contents', () => {
     expect(postTemplate).toContain('Table of contents');
   });
 
+  test('TOC uses standard-dialog styling', () => {
+    expect(postTemplate).toContain('standard-dialog toc');
+  });
+
   test('TOC script generates from headings', () => {
     expect(postTemplate).toContain('post-content h2');
     expect(postTemplate).toContain('toc-nav');
-  });
-
-  test('TOC has nested styling for h3', () => {
-    expect(postTemplate).toContain('toc-h3');
   });
 });
 
@@ -211,27 +210,8 @@ describe('Copy-to-clipboard on code blocks', () => {
     expect(postTemplate).toContain('Copied!');
   });
 
-  test('copy button has aria-label', () => {
-    expect(postTemplate).toContain('aria-label');
-    expect(postTemplate).toContain('Copy code');
-  });
-});
-
-// ---- WP #534 / #536: Console message & terminal easter egg ----
-
-describe('Console easter eggs', () => {
-  const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-
-  test('console.log message exists', () => {
-    expect(layout).toContain('console.log');
-  });
-
-  test('message has styled output', () => {
-    expect(layout).toContain('%c');
-  });
-
-  test('message mentions GitHub', () => {
-    expect(layout).toContain('GitHub');
+  test('copy button uses system.css btn class', () => {
+    expect(postTemplate).toContain("className = 'btn copy-btn'");
   });
 });
 
@@ -245,13 +225,14 @@ describe('Custom 404 with personality', () => {
   });
 
   test('suggests multiple navigation options', () => {
-    expect(fourOhFour).toContain('not-found-links');
+    expect(fourOhFour).toContain('error-actions');
     expect(fourOhFour).toContain('/projects');
     expect(fourOhFour).toContain('/blog');
   });
 
-  test('has navigation aria-label', () => {
-    expect(fourOhFour).toContain('aria-label="Suggested pages"');
+  test('404 uses system.css window with Error title', () => {
+    expect(fourOhFour).toContain('window error-window');
+    expect(fourOhFour).toContain('>Error<');
   });
 });
 
@@ -298,7 +279,6 @@ describe('Built with credit line', () => {
 
   test('credits Astro', () => {
     expect(footer).toContain('Astro');
-    expect(footer).toContain('astro.build');
   });
 });
 

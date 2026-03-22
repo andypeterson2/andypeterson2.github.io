@@ -3,9 +3,10 @@
  * WP #456: Next/previous project navigation
  * WP #453: Architecture diagram support
  * WP #462: Technology/tag filter
- * WP #426: Page transition animations
  * WP #568: New page scaffolding script
  * WP #606: Test: Related projects and prev/next navigation
+ * Updated for system.css monochrome architecture.
+ * Removed: view-transition animations (no longer used).
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -49,7 +50,6 @@ describe('Project detail page', () => {
   });
 
   test('shows project status', () => {
-    expect(detailSrc).toContain('status-indicator');
     expect(detailSrc).toContain('project.status');
   });
 });
@@ -61,16 +61,11 @@ describe('Related projects section', () => {
   );
 
   test('related projects section exists', () => {
-    expect(detailSrc).toContain('related-projects');
     expect(detailSrc).toContain('Related Projects');
   });
 
-  test('filters related by same category', () => {
-    expect(detailSrc).toContain('p.category === project.category');
-  });
-
-  test('excludes current project from related', () => {
-    expect(detailSrc).toContain("p.slug !== slug");
+  test('filters related by same category and excludes current', () => {
+    expect(detailSrc).toContain('p.slug !== slug && p.category === project.category');
   });
 
   test('limits related projects', () => {
@@ -154,33 +149,6 @@ describe('Technology tag filter', () => {
 
   test('has All Tags button', () => {
     expect(projectsSrc).toContain('All Tags');
-  });
-});
-
-// ---- WP #426: Page transitions ----
-
-describe('Page transition animations', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
-  const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
-
-  test('view-transition meta tag exists', () => {
-    expect(layoutSrc).toContain('view-transition');
-  });
-
-  test('view transition animations defined', () => {
-    expect(baseCss).toContain('::view-transition-old');
-    expect(baseCss).toContain('::view-transition-new');
-  });
-
-  test('fade-in animation defined', () => {
-    expect(baseCss).toContain('@keyframes fade-in');
-  });
-
-  test('fade-out animation defined', () => {
-    expect(baseCss).toContain('@keyframes fade-out');
   });
 });
 

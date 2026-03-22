@@ -30,158 +30,85 @@ const categories = [
 ---
 
 <BaseLayout title="Skills" description={`Skills and expertise of ${siteConfig.displayName}`}>
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'Skills' }]} />
-    <section class="page-header">
-      <h1>Skills</h1>
-      <p class="page-subtitle">Technical skills and areas of expertise.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'Skills' }]} />
+  <section class="page-header">
+    <h1>Skills</h1>
+    <p class="page-subtitle">Technical skills and areas of expertise.</p>
+  </section>
 
-    <div class="skills-tabs" role="tablist" aria-label="Skill categories">
-      {categories.map((cat, i) => (
-        <button
-          role="tab"
-          type="button"
-          id={`tab-${cat.id}`}
-          aria-selected={i === 0 ? 'true' : 'false'}
-          aria-controls={`panel-${cat.id}`}
-          class:list={['tab-btn', { active: i === 0 }]}
-          data-tab={cat.id}
-        >
-          {cat.label}
-        </button>
-      ))}
-    </div>
-
+  <!-- system.css menu-bar as tab switcher -->
+  <ul role="menu-bar" class="skills-tabs">
     {categories.map((cat, i) => (
-      <div
-        role="tabpanel"
-        id={`panel-${cat.id}`}
-        aria-labelledby={`tab-${cat.id}`}
-        class:list={['tab-panel', { active: i === 0 }]}
-        data-panel={cat.id}
+      <li
+        role="menu-item"
+        class:list={['tab-btn', { active: i === 0 }]}
+        data-tab={cat.id}
+        tabindex="0"
       >
-        <div class="skill-grid">
-          {cat.skills.map((skill) => (
-            <div class="skill-item">
-              <span class="skill-name">{skill}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+        {cat.label}
+      </li>
     ))}
-  </div>
+  </ul>
+
+  {categories.map((cat, i) => (
+    <div
+      class:list={['tab-panel', { active: i === 0 }]}
+      data-panel={cat.id}
+    >
+      <div class="skill-grid">
+        {cat.skills.map((skill) => (
+          <div class="standard-dialog skill-item">
+            {skill}
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
 </BaseLayout>
 
 <script>
-  const tabs = document.querySelectorAll('[role="tab"]');
-  const panels = document.querySelectorAll('[role="tabpanel"]');
-
-  // Skill entrance animation
-  const skillObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        (entry.target as HTMLElement).classList.add('visible');
-        skillObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  function observeSkills() {
-    document.querySelectorAll('.tab-panel.active .skill-item').forEach((item, i) => {
-      (item as HTMLElement).style.transitionDelay = `${i * 50}ms`;
-      skillObserver.observe(item);
-    });
-  }
-  observeSkills();
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = (tab as HTMLElement).dataset.tab;
-      tabs.forEach((t) => {
-        t.setAttribute('aria-selected', 'false');
-        t.classList.remove('active');
-      });
-      panels.forEach((p) => p.classList.remove('active'));
-      tab.setAttribute('aria-selected', 'true');
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       document.querySelector(`[data-panel="${target}"]`)?.classList.add('active');
-      observeSkills();
     });
   });
 </script>
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
-  .page-header h1 {
-    margin-bottom: var(--space-4);
-  }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
   .skills-tabs {
-    display: flex;
-    gap: var(--space-1);
-    border-bottom: 1px solid var(--color-border);
-    margin-bottom: var(--space-8);
-    overflow-x: auto;
-  }
-  .tab-btn {
-    padding: var(--space-3) var(--space-4);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    white-space: nowrap;
-    min-height: 48px;
-    transition: color var(--duration-fast), border-color var(--duration-fast);
-  }
-  .tab-btn:hover {
-    color: var(--color-text);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid #000;
   }
   .tab-btn.active {
-    color: var(--color-accent);
-    border-bottom-color: var(--color-accent);
+    background: #000;
+    color: #fff;
   }
-
-  .tab-panel {
-    display: none;
-  }
-  .tab-panel.active {
-    display: block;
-  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
   .skill-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: var(--space-3);
   }
   .skill-item {
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    opacity: 0;
-    transform: translateY(var(--space-2));
-    transition: opacity var(--duration-slow) var(--ease-default),
-                transform var(--duration-slow) var(--ease-default),
-                border-color var(--duration-fast);
-  }
-  .skill-item.visible {
-    opacity: 1;
-    transform: translateY(0);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 13px;
   }
   .skill-item:hover {
-    border-color: var(--color-accent);
-  }
-  .skill-name {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    background: #000;
+    color: #fff;
   }
 </style>

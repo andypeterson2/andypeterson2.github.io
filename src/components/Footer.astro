@@ -1,140 +1,35 @@
 ---
 import { siteConfig } from '../config/site';
-
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer" role="contentinfo">
-  <div class="footer-inner container">
-    <div class="footer-left">
-      <p class="footer-copyright">
-        &copy; {year} {siteConfig.displayName}
-      </p>
-      <p class="footer-built-with">
-        Built with <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a>
-      </p>
-    </div>
-    <nav class="footer-links" aria-label="Footer navigation">
-      <ul role="list">
-        {siteConfig.github && (
-          <li>
-            <a href={siteConfig.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile">
-              GitHub
-            </a>
-          </li>
-        )}
-        {siteConfig.linkedin && (
-          <li>
-            <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">
-              LinkedIn
-            </a>
-          </li>
-        )}
-        {siteConfig.email && (
-          <li>
-            <a href={`mailto:${siteConfig.email}`} aria-label="Send email">
-              Email
-            </a>
-          </li>
-        )}
-        <li>
-          <button
-            id="theme-toggle"
-            class="theme-toggle"
-            aria-label="Toggle dark mode"
-            type="button"
-          >
-            <span class="theme-toggle-icon" aria-hidden="true"></span>
-          </button>
-        </li>
-      </ul>
-    </nav>
+<footer>
+  <div class="separator"></div>
+  <div class="details-bar">
+    <span>&copy; {year} {siteConfig.displayName} &mdash; Built with Astro</span>
+    <span class="footer-links">
+      {siteConfig.github && <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
+      {siteConfig.linkedin && <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
+      {siteConfig.email && <a href={`mailto:${siteConfig.email}`}>Email</a>}
+    </span>
   </div>
 </footer>
 
 <style>
-  .footer {
-    border-top: 2px solid #000;
-    padding: var(--space-8) 0;
-    margin-top: var(--space-24);
+  footer {
+    margin-top: var(--space-12);
   }
-  .footer-inner {
+  .footer-links {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
     gap: var(--space-4);
-  }
-  .footer-copyright {
-    font-size: 12px;
-    color: #000;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-  }
-  .footer-built-with {
-    font-size: 11px;
-    color: #000;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-  }
-  .footer-built-with a {
-    color: #000;
-    text-decoration: underline;
-  }
-  .footer-built-with a:hover {
-    background: #000;
-    color: #fff;
-  }
-  .footer-links ul {
-    display: flex;
-    gap: var(--space-6);
-    list-style: none;
-    margin: 0;
-    padding: 0;
   }
   .footer-links a {
     font-size: 12px;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
     color: #000;
     text-decoration: underline;
-    display: inline-flex;
-    align-items: center;
   }
   .footer-links a:hover {
     background: #000;
     color: #fff;
   }
-  .theme-toggle {
-    background: #fff;
-    border: 2px solid #000;
-    color: #000;
-    cursor: pointer;
-    font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
-    font-size: 12px;
-    padding: 4px 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .theme-toggle:hover {
-    background: #000;
-    color: #fff;
-  }
 </style>
-
-<script>
-  const toggle = document.getElementById('theme-toggle');
-  if (toggle) {
-    function updateLabel() {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      const icon = toggle.querySelector('.theme-toggle-icon');
-      if (icon) icon.textContent = current === 'dark' ? 'Light' : 'Dark';
-    }
-    updateLabel();
-    toggle.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      updateLabel();
-    });
-  }
-</script>

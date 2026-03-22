@@ -1,20 +1,14 @@
 /**
  * WP #506: Print stylesheet
  * WP #428: Breadcrumbs on nested pages
- * WP #444: Timeline hover states
  * WP #439: Hero micro-status
- * WP #451: Project card scroll entrance animation
- * WP #468: Skill item entrance animation
  * WP #446: Pull quote block
  * WP #553: Error boundary for runtime errors
  * WP #429: Back to top button
- * WP #430: Smooth scroll
- * WP #593: Page transition animations (scroll entrance)
- * WP #594: Smooth scroll and nav offset
- * WP #601: Timeline hover interactions
  * WP #603: Project category filter logic
- * WP #605: Project card scroll entrance animation
- * WP #609: Skill item entrance animation
+ * Updated for system.css monochrome architecture.
+ * Removed: IntersectionObserver animations, view transitions,
+ * timeline hover transitions, smooth scroll, theme toggle in print.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -40,11 +34,6 @@ describe('Print stylesheet', () => {
   test('hides back-to-top in print', () => {
     const printSection = baseCss.split('@media print')[1] || '';
     expect(printSection).toContain('.back-to-top');
-  });
-
-  test('hides theme toggle in print', () => {
-    const printSection = baseCss.split('@media print')[1] || '';
-    expect(printSection).toContain('.theme-toggle');
   });
 
   test('makes backgrounds transparent', () => {
@@ -128,26 +117,6 @@ describe('Breadcrumbs component', () => {
   });
 });
 
-// ---- WP #444 / #601: Timeline hover states ----
-
-describe('Timeline hover interactions', () => {
-  const aboutSrc = readFileSync(resolve(ROOT, 'src/pages/about.astro'), 'utf-8');
-
-  test('timeline items have hover transition', () => {
-    expect(aboutSrc).toContain('.timeline-item');
-    expect(aboutSrc).toContain('transition:');
-  });
-
-  test('timeline items translate on hover', () => {
-    expect(aboutSrc).toContain('.timeline-item:hover');
-    expect(aboutSrc).toContain('transform: translateX');
-  });
-
-  test('timeline date changes color on hover', () => {
-    expect(aboutSrc).toContain('.timeline-item:hover .timeline-date');
-  });
-});
-
 // ---- WP #439: Hero micro-status ----
 
 describe('Hero micro-status', () => {
@@ -157,79 +126,16 @@ describe('Hero micro-status', () => {
     expect(indexSrc).toContain('hero-status');
   });
 
-  test('has pulsing status dot', () => {
+  test('has status dot', () => {
     expect(indexSrc).toContain('status-dot');
-    expect(indexSrc).toContain('animation: pulse');
   });
 
   test('has status text about current work', () => {
-    expect(indexSrc).toContain('status-text');
     expect(indexSrc).toContain('Currently working on');
   });
-});
 
-// ---- WP #451 / #605: Project card scroll entrance ----
-
-describe('Project card scroll entrance animation', () => {
-  const projectsSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/index.astro'),
-    'utf-8',
-  );
-
-  test('uses IntersectionObserver for scroll animation', () => {
-    expect(projectsSrc).toContain('IntersectionObserver');
-  });
-
-  test('cards start with opacity 0', () => {
-    expect(projectsSrc).toContain('opacity: 0');
-  });
-
-  test('cards start translated down', () => {
-    expect(projectsSrc).toContain('transform: translateY');
-  });
-
-  test('visible class sets opacity 1', () => {
-    expect(projectsSrc).toContain('.project-card-wrap.visible');
-    expect(projectsSrc).toContain('opacity: 1');
-  });
-
-  test('observer unobserves after intersection', () => {
-    expect(projectsSrc).toContain('observer.unobserve');
-  });
-});
-
-// ---- WP #468 / #609: Skill item entrance animation ----
-
-describe('Skill item entrance animation', () => {
-  const skillsSrc = readFileSync(resolve(ROOT, 'src/pages/skills.astro'), 'utf-8');
-
-  test('uses IntersectionObserver for skills', () => {
-    expect(skillsSrc).toContain('IntersectionObserver');
-  });
-
-  test('skill items start invisible', () => {
-    expect(skillsSrc).toContain('.skill-item');
-    expect(skillsSrc).toContain('opacity: 0');
-  });
-
-  test('visible class reveals skill items', () => {
-    expect(skillsSrc).toContain('.skill-item.visible');
-  });
-
-  test('has staggered delay per item', () => {
-    expect(skillsSrc).toContain('transitionDelay');
-  });
-
-  test('skill items have hover state', () => {
-    expect(skillsSrc).toContain('.skill-item:hover');
-    expect(skillsSrc).toContain('border-color: var(--color-accent)');
-  });
-
-  test('re-observes on tab switch', () => {
-    expect(skillsSrc).toContain('observeSkills()');
-    // Called in the tab click handler
-    const tabHandler = skillsSrc.split("tab.addEventListener('click'")[1] || '';
-    expect(tabHandler).toContain('observeSkills');
+  test('hero-status uses standard-dialog', () => {
+    expect(indexSrc).toContain('standard-dialog hero-status');
   });
 });
 
@@ -250,9 +156,9 @@ describe('Pull quote component', () => {
     expect(pullQuoteSrc).toContain('pull-quote');
   });
 
-  test('has accent border-left', () => {
+  test('has monochrome border-left', () => {
     expect(pullQuoteSrc).toContain('border-left');
-    expect(pullQuoteSrc).toContain('--color-accent');
+    expect(pullQuoteSrc).toContain('#000');
   });
 
   test('supports optional cite prop', () => {
@@ -298,24 +204,6 @@ describe('Error boundary for runtime errors', () => {
   });
 });
 
-// ---- WP #430 / #594: Smooth scroll ----
-
-describe('Smooth scroll and nav offset', () => {
-  const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
-
-  test('smooth scroll behavior set on html', () => {
-    expect(baseCss).toContain('scroll-behavior: smooth');
-  });
-
-  test('main has padding-top for fixed nav', () => {
-    const layoutSrc = readFileSync(
-      resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-      'utf-8',
-    );
-    expect(layoutSrc).toContain('padding-top: 48px');
-  });
-});
-
 // ---- WP #429: Back to top button ----
 
 describe('Back to top button', () => {
@@ -330,6 +218,10 @@ describe('Back to top button', () => {
 
   test('has aria-label', () => {
     expect(layoutSrc).toContain('aria-label="Back to top"');
+  });
+
+  test('uses system.css btn class', () => {
+    expect(layoutSrc).toContain('class="btn back-to-top"');
   });
 
   test('scroll listener toggles visible class', () => {

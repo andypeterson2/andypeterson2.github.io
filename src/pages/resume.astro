@@ -7,147 +7,99 @@ import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="Resume" description={`Resume of ${siteConfig.displayName}`}>
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'Resume' }]} />
-    <section class="page-header">
-      <h1>Resume</h1>
-      <p class="page-subtitle">Experience, education, and publications.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'Resume' }]} />
+  <section class="page-header">
+    <h1>Resume</h1>
+    <p class="page-subtitle">Experience, education, and publications.</p>
+  </section>
 
-    <section class="resume-downloads">
-      <SectionLabel label="Download" />
-      <div class="download-links">
-        <Button href="/resume.pdf" variant="primary">Download PDF</Button>
-        <Button href="/cover-letter" variant="secondary">Cover Letter</Button>
-      </div>
-      <p class="last-updated">Last updated: 2026</p>
-    </section>
+  <section class="content-section">
+    <SectionLabel label="Download" />
+    <div class="download-links">
+      <Button href="/resume.pdf">Download PDF</Button>
+      <Button href="/cover-letter" variant="secondary">Cover Letter</Button>
+    </div>
+    <p class="last-updated">Last updated: 2026</p>
+  </section>
 
-    <section class="resume-inline" id="resume-view">
-      <SectionLabel label="Quick View" />
-      <div class="resume-document">
-        <div class="resume-doc-header">
-          <h2 class="resume-doc-name">{siteConfig.displayName}</h2>
-          <p class="resume-doc-tagline">{siteConfig.description}</p>
-          <div class="resume-doc-contact">
-            {siteConfig.email && <span>{siteConfig.email}</span>}
-            {siteConfig.github && <span>GitHub</span>}
-            {siteConfig.linkedin && <span>LinkedIn</span>}
-          </div>
-        </div>
+  <section class="content-section">
+    <SectionLabel label="Quick View" />
+    <div class="window resume-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true"><span>Close</span></button>
+        <h1 class="title">{siteConfig.displayName} — Resume</h1>
+        <button class="resize" aria-hidden="true"><span>Resize</span></button>
       </div>
-    </section>
+      <div class="details-bar">
+        <span>{siteConfig.description}</span>
+        <span>{siteConfig.email || ''}</span>
+      </div>
+      <div class="window-pane resume-content">
+        <p>Quantum computing researcher focused on QKD, optimization algorithms, and quantum-classical hybrid computing.</p>
+      </div>
+    </div>
+  </section>
 
-    <section class="resume-experience">
-      <SectionLabel label="Experience" />
-      <div class="experience-list">
-        <div class="experience-item">
-          <div class="experience-header">
-            <h3>Quantum Computing Researcher</h3>
-            <span class="experience-date">Present</span>
-          </div>
-          <p class="experience-org">Qualcomm Institute</p>
-          <p class="experience-desc">Research in quantum key distribution, quantum optimization algorithms, and quantum-classical hybrid computing.</p>
-        </div>
+  <section class="content-section">
+    <SectionLabel label="Experience" />
+    <div class="standard-dialog experience-item">
+      <div class="details-bar">
+        <span><strong>Quantum Computing Researcher</strong></span>
+        <span>Present</span>
       </div>
-    </section>
+      <div class="experience-body">
+        <p class="experience-org">Qualcomm Institute</p>
+        <p>Research in quantum key distribution, quantum optimization algorithms, and quantum-classical hybrid computing.</p>
+      </div>
+    </div>
+  </section>
 
-    <section class="resume-education">
-      <SectionLabel label="Education" />
-      <div class="experience-list">
-        <div class="experience-item">
-          <div class="experience-header">
-            <h3>Computer Science</h3>
-          </div>
-          <p class="experience-desc">Focus on quantum computing, machine learning, and systems programming.</p>
-        </div>
+  <section class="content-section">
+    <SectionLabel label="Education" />
+    <div class="standard-dialog experience-item">
+      <div class="details-bar">
+        <span><strong>Computer Science</strong></span>
       </div>
-    </section>
-  </div>
+      <div class="experience-body">
+        <p>Focus on quantum computing, machine learning, and systems programming.</p>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
-  .page-header h1 {
-    margin-bottom: var(--space-4);
-  }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-
-  .resume-downloads,
-  .resume-experience,
-  .resume-education {
-    padding: var(--space-12) 0;
-  }
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
+  .content-section { padding: var(--space-6) 0; }
   .download-links {
-    margin-bottom: var(--space-3);
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
   }
   .last-updated {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 12px;
+    color: #666;
   }
-
-  .experience-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
+  .resume-window {
+    max-width: var(--content-width);
+    min-width: 0;
   }
-  .experience-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+  .resume-content {
+    max-height: 200px;
+    font-size: 14px;
   }
-  .experience-date {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-accent);
+  .experience-item { padding: 0; }
+  .experience-body {
+    padding: var(--space-4);
   }
   .experience-org {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 12px;
     margin-bottom: var(--space-2);
-  }
-  .experience-desc {
-    color: var(--color-text-secondary);
-    max-width: var(--content-width);
-  }
-
-  .resume-inline {
-    padding: var(--space-12) 0;
-  }
-  .resume-document {
-    max-width: var(--content-width);
-    padding: var(--space-8);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-  }
-  .resume-doc-header {
-    border-bottom: 2px solid var(--color-accent);
-    padding-bottom: var(--space-4);
-    margin-bottom: var(--space-6);
-  }
-  .resume-doc-name {
-    margin-bottom: var(--space-1);
-  }
-  .resume-doc-tagline {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-2);
-  }
-  .resume-doc-contact {
-    display: flex;
-    gap: var(--space-4);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    flex-wrap: wrap;
   }
 </style>

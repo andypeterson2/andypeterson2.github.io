@@ -27,15 +27,12 @@ const { crumbs } = Astro.props;
 </nav>
 
 <style>
-  .breadcrumbs {
-    margin-bottom: var(--space-4);
-  }
+  .breadcrumbs { margin-bottom: var(--space-4); }
   .breadcrumbs ol {
     display: flex;
     flex-wrap: wrap;
     list-style: none;
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     gap: var(--space-1);
     font-family: Chicago_12, Chicago, Geneva, system-ui, sans-serif;
     font-size: 12px;
@@ -45,18 +42,8 @@ const { crumbs } = Astro.props;
     align-items: center;
     gap: var(--space-1);
   }
-  .breadcrumb-sep {
-    color: var(--color-text-muted);
-  }
-  .breadcrumbs a {
-    color: #000;
-    text-decoration: underline;
-  }
-  .breadcrumbs a:hover {
-    background: #000;
-    color: #fff;
-  }
-  .breadcrumbs [aria-current='page'] {
-    color: var(--color-text-muted);
-  }
+  .breadcrumb-sep { color: #666; }
+  .breadcrumbs a { color: #000; text-decoration: underline; }
+  .breadcrumbs a:hover { background: #000; color: #fff; }
+  .breadcrumbs [aria-current='page'] { color: #666; }
 </style>

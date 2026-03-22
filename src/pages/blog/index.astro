@@ -18,50 +18,46 @@ const allTags = [...new Set(sortedPosts.flatMap(p => p.frontmatter.tags || []))]
 ---
 
 <BaseLayout title="Blog" description={`Blog posts by ${siteConfig.displayName}`}>
-  <div class="container">
-    <Breadcrumbs crumbs={[{ label: 'Blog' }]} />
-    <section class="page-header">
-      <h1>Blog</h1>
-      <p class="page-subtitle">Thoughts on quantum computing, software, and research.</p>
-    </section>
+  <Breadcrumbs crumbs={[{ label: 'Blog' }]} />
+  <section class="page-header">
+    <h1>Blog</h1>
+    <p class="page-subtitle">Thoughts on quantum computing, software, and research.</p>
+  </section>
 
-    <div class="blog-tags" role="group" aria-label="Filter by tag">
-      <button class="blog-tag-btn active" data-tag="all" type="button">All</button>
-      {allTags.map((tag) => (
-        <button class="blog-tag-btn" data-tag={tag} type="button">{tag}</button>
-      ))}
-    </div>
-
-    <div class="blog-feed" role="feed" aria-label="Blog posts">
-      {sortedPosts.map((post) => {
-        const slug = post.slug;
-        return (
-          <article class="blog-post-card" data-tags={post.frontmatter.tags?.join(',') || ''}>
-            <a href={`/blog/${slug}`} class="post-link">
-              <time class="post-date" datetime={post.frontmatter.date}>
-                {new Date(post.frontmatter.date).toLocaleDateString('en-US', {
-                  year: 'numeric', month: 'short', day: 'numeric',
-                })}
-              </time>
-              <h2 class="post-title">{post.frontmatter.title}</h2>
-              <p class="post-excerpt">{post.frontmatter.description}</p>
-              <div class="post-tags">
-                {post.frontmatter.tags?.map((tag: string) => (
-                  <Tag variant="default">{tag}</Tag>
-                ))}
-              </div>
-            </a>
-          </article>
-        );
-      })}
-    </div>
-
-    <section class="rss-section">
-      <a href="/rss.xml" class="rss-link">
-        <span class="rss-icon">RSS</span> Subscribe via RSS
-      </a>
-    </section>
+  <div class="blog-tags" role="group" aria-label="Filter by tag">
+    <button class="btn blog-tag-btn active" data-tag="all" type="button">All</button>
+    {allTags.map((tag) => (
+      <button class="btn blog-tag-btn" data-tag={tag} type="button">{tag}</button>
+    ))}
   </div>
+
+  <div class="blog-feed" role="feed" aria-label="Blog posts">
+    {sortedPosts.map((post) => {
+      const slug = post.slug;
+      return (
+        <article class="blog-post-card" data-tags={post.frontmatter.tags?.join(',') || ''}>
+          <a href={`/blog/${slug}`} class="post-link">
+            <time class="post-date" datetime={post.frontmatter.date}>
+              {new Date(post.frontmatter.date).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric',
+              })}
+            </time>
+            <h2 class="post-title">{post.frontmatter.title}</h2>
+            <p class="post-excerpt">{post.frontmatter.description}</p>
+            <div class="post-tags">
+              {post.frontmatter.tags?.map((tag: string) => (
+                <Tag variant="default">{tag}</Tag>
+              ))}
+            </div>
+          </a>
+        </article>
+      );
+    })}
+  </div>
+
+  <section class="rss-section">
+    <a href="/rss.xml" class="rss-link">[RSS] Subscribe via RSS</a>
+  </section>
 </BaseLayout>
 
 <script>
@@ -81,74 +77,57 @@ const allTags = [...new Set(sortedPosts.flatMap(p => p.frontmatter.tags || []))]
 
 <style>
   .page-header {
-    padding: var(--space-16) 0 var(--space-8);
+    padding: var(--space-8) 0 var(--space-6);
     max-width: var(--content-width);
   }
-  .page-header h1 {
-    margin-bottom: var(--space-4);
-  }
-  .page-subtitle {
-    font-size: var(--text-xl);
-    color: var(--color-text-secondary);
-  }
-
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
   .blog-tags {
     display: flex;
     gap: var(--space-2);
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-6);
     flex-wrap: wrap;
   }
   .blog-tag-btn {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--duration-fast);
-    min-height: 40px;
+    font-size: 12px;
+    min-width: auto;
+    min-height: auto;
+    padding: 2px 8px;
   }
-  .blog-tag-btn:hover,
   .blog-tag-btn.active {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    background: #000;
+    color: #fff;
   }
-
   .blog-feed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
     max-width: var(--content-width);
   }
   .blog-post-card {
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 2px solid #000;
   }
   .post-link {
     display: block;
-    padding: var(--space-6) 0;
+    padding: var(--space-4) 0;
     text-decoration: none;
-    transition: transform var(--duration-fast);
+    color: #000;
   }
   .post-link:hover {
-    transform: translateX(var(--space-2));
+    background: #000;
+    color: #fff;
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
   }
-  .post-link:hover .post-title {
-    color: var(--color-accent);
-  }
+  .post-link:hover .post-title { color: #fff; }
   .post-date {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 12px;
+    color: #666;
   }
+  .post-link:hover .post-date { color: #ccc; }
   .post-title {
-    color: var(--color-text);
-    margin: var(--space-2) 0;
-    transition: color var(--duration-fast);
+    margin: var(--space-1) 0;
   }
   .post-excerpt {
-    color: var(--color-text-secondary);
-    font-size: var(--text-sm);
+    font-size: 13px;
     margin-bottom: var(--space-2);
   }
   .post-tags {
@@ -156,28 +135,11 @@ const allTags = [...new Set(sortedPosts.flatMap(p => p.frontmatter.tags || []))]
     gap: var(--space-2);
     flex-wrap: wrap;
   }
-
-  .rss-section {
-    padding: var(--space-8) 0;
-  }
+  .rss-section { padding: var(--space-6) 0; }
   .rss-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: color var(--duration-fast);
+    font-family: Monaco, ui-monospace, monospace;
+    font-size: 13px;
+    color: #000;
   }
-  .rss-link:hover {
-    color: var(--color-accent);
-  }
-  .rss-icon {
-    padding: var(--space-1) var(--space-2);
-    background: var(--color-accent);
-    color: var(--color-text-inverse);
-    font-size: var(--text-xs);
-    font-weight: 600;
-  }
+  .rss-link:hover { background: #000; color: #fff; }
 </style>
