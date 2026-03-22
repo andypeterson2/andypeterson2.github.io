@@ -25,10 +25,7 @@ describe('Nav Component', () => {
 
   test('renders nav links for all pages', () => {
     expect(navSrc).toContain("'/'");
-    expect(navSrc).toContain("'/about'");
     expect(navSrc).toContain("'/projects'");
-    expect(navSrc).toContain("'/skills'");
-    expect(navSrc).toContain("'/resume'");
     expect(navSrc).toContain("'/contact'");
   });
 
@@ -83,9 +80,8 @@ describe('Footer Component', () => {
     expect(footerSrc).toContain('siteConfig.displayName');
   });
 
-  test('uses system.css separator and details-bar', () => {
-    expect(footerSrc).toContain('separator');
-    expect(footerSrc).toContain('details-bar');
+  test('uses system.css details-bar', () => {
+    expect(footerSrc).toContain('details-bar footer-bar');
   });
 
   test('external links have security attributes', () => {
@@ -176,28 +172,24 @@ describe('Layout Structure', () => {
 
 // ---- Hero Page ----
 
-describe('Hero Section', () => {
-  const heroSrc = readFileSync(
+describe('Home Page — Finder Icon Grid', () => {
+  const indexSrc = readFileSync(
     resolve(ROOT, 'src/pages/index.astro'),
     'utf-8',
   );
 
-  test('uses siteConfig for display name', () => {
-    expect(heroSrc).toContain('siteConfig.displayName');
+  test('has finder-style details bar', () => {
+    expect(indexSrc).toContain('finder-bar');
+    expect(indexSrc).toContain('Built with Astro');
   });
 
-  test('uses siteConfig for description', () => {
-    expect(heroSrc).toContain('siteConfig.description');
+  test('has icon grid with project icons', () => {
+    expect(indexSrc).toContain('icon-grid');
+    expect(indexSrc).toContain('finder-icon');
   });
 
-  test('has action buttons', () => {
-    expect(heroSrc).toContain('View Projects');
-    expect(heroSrc).toContain('Get in Touch');
-  });
-
-  test('action buttons link to pages', () => {
-    expect(heroSrc).toContain('href="/projects"');
-    expect(heroSrc).toContain('href="/contact"');
+  test('links to individual project pages', () => {
+    expect(indexSrc).toContain('/projects/');
   });
 });
 
