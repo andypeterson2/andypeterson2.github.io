@@ -5,14 +5,9 @@ import Footer from '../components/Footer.astro';
 import '../styles/tokens.css';
 import '../styles/base.css';
 
-// Self-hosted IBM Plex fonts — Latin subset only
-import '@fontsource/ibm-plex-sans/latin-400.css';
-import '@fontsource/ibm-plex-sans/latin-500.css';
-import '@fontsource/ibm-plex-sans/latin-600.css';
-import '@fontsource/ibm-plex-sans/latin-700.css';
-import '@fontsource/ibm-plex-mono/latin-400.css';
-import '@fontsource/ibm-plex-mono/latin-500.css';
-import '@fontsource/ibm-plex-mono/latin-600.css';
+// System 6 retro fonts (Chicago/Geneva/Monaco) are vendored in the UI Kit
+// via system.css by @sakofchit (MIT) — see lib/ui-kit/v1.1/CREDITS.md
+// No external font imports needed; fonts are loaded by system.css @font-face rules
 
 interface Props {
   title?: string;

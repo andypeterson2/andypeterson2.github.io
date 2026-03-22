@@ -225,10 +225,9 @@ describe('Performance budget validation', () => {
     expect(baseCss).not.toContain('@tailwind');
   });
 
-  test('fonts are self-hosted via @fontsource', () => {
+  test('fonts are vendored via system.css (no external CDN)', () => {
     const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    expect(layout).toContain('@fontsource/ibm-plex-sans');
-    expect(layout).toContain('@fontsource/ibm-plex-mono');
+    expect(layout).toContain('system.css');
     expect(layout).not.toContain('fonts.googleapis.com');
   });
 });
