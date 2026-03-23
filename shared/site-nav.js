@@ -3,7 +3,7 @@
 
   // Inject body padding for the fixed navbar (48px default, increases if bottom tray)
   var style = document.createElement("style");
-  style.textContent = "body { padding-top: 48px !important; }";
+  style.textContent = "body { padding-top: 44px !important; }";
   document.head.appendChild(style);
 
   function buildIcon(faClass) {
@@ -36,16 +36,15 @@
     nav.className = "ui-navbar";
     nav.setAttribute("aria-label", "Site navigation");
 
-    // Brand (home link — always pinned left)
+    // Brand (heart icon — matches main site menu bar)
     var brand = document.createElement("a");
     brand.className = "ui-navbar-brand";
     brand.href = "/";
-    if (root && root.icon) {
-      brand.appendChild(buildIcon(root.icon));
-      brand.appendChild(document.createTextNode(" " + (root.title || "Home")));
-    } else {
-      brand.textContent = root ? root.title : "Home";
-    }
+    var heart = document.createElement("span");
+    heart.className = "ui-navbar-apple";
+    heart.setAttribute("aria-hidden", "true");
+    heart.textContent = "\u2665"; // ♥
+    brand.appendChild(heart);
     if (currentPath === "/") brand.classList.add("active");
     nav.appendChild(brand);
 
@@ -159,13 +158,13 @@
     // Adjust body padding based on bottom tray
     if (hasBottomTray) {
       // Bottom tray is approximately 40px
-      style.textContent = "body { padding-top: 88px !important; }";
+      style.textContent = "body { padding-top: 84px !important; }";
     }
 
     // Push down the main page's existing mobile-nav if present
     var existingMobileNav = document.querySelector(".mobile-nav");
     if (existingMobileNav) {
-      var navbarHeight = hasBottomTray ? 88 : 48;
+      var navbarHeight = hasBottomTray ? 84 : 44;
       existingMobileNav.style.top = navbarHeight + "px";
       style.textContent = "body { padding-top: " + (navbarHeight + 48) + "px !important; }";
       var mobileMenu = document.querySelector(".mobile-nav-menu");
