@@ -1,9 +1,8 @@
 (function () {
   "use strict";
 
-  // Inject body padding for the fixed navbar (48px default, increases if bottom tray)
+  // Style element for dynamic adjustments (no longer needed for padding)
   var style = document.createElement("style");
-  style.textContent = "body { padding-top: 44px !important; }";
   document.head.appendChild(style);
 
   function buildIcon(faClass) {
@@ -140,21 +139,7 @@
     // Insert wrapper at top of body
     document.body.prepend(wrapper);
 
-    // Adjust body padding based on bottom tray
-    if (hasBottomTray) {
-      // Bottom tray is approximately 40px
-      style.textContent = "body { padding-top: 84px !important; }";
-    }
-
-    // Push down the main page's existing mobile-nav if present
-    var existingMobileNav = document.querySelector(".mobile-nav");
-    if (existingMobileNav) {
-      var navbarHeight = hasBottomTray ? 84 : 44;
-      existingMobileNav.style.top = navbarHeight + "px";
-      style.textContent = "body { padding-top: " + (navbarHeight + 48) + "px !important; }";
-      var mobileMenu = document.querySelector(".mobile-nav-menu");
-      if (mobileMenu) mobileMenu.style.top = (navbarHeight + 48) + "px";
-    }
+    // Nav is now in-flow inside the canvas, no padding needed
   }
 
   /**
