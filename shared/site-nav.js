@@ -22,10 +22,14 @@
       currentPath += "/";
     }
 
-    var root = apps.find(function (a) { return a.path === "/"; });
-    var pinned = apps.filter(function (a) { return a.path !== "/" && a.pin === "left"; });
-    var others = apps.filter(function (a) { return a.path !== "/" && a.pin !== "left"; });
     var currentApp = apps.find(function (a) { return a.path === currentPath; });
+
+    // Fixed nav items — matches main Astro site exactly: ♥ Home Projects Contact
+    var navLinks = [
+      { href: "/", label: "Home" },
+      { href: "/projects", label: "Projects" },
+      { href: "/contact", label: "Contact" },
+    ];
 
     // --- Wrapper: holds navbar + trays ---
     var wrapper = document.createElement("div");
@@ -36,7 +40,7 @@
     nav.className = "ui-navbar";
     nav.setAttribute("aria-label", "Site navigation");
 
-    // Brand (heart icon — matches main site menu bar)
+    // Heart icon brand — matches main site
     var brand = document.createElement("a");
     brand.className = "ui-navbar-brand";
     brand.href = "/";
@@ -45,50 +49,31 @@
     heart.setAttribute("aria-hidden", "true");
     heart.textContent = "\u2665"; // ♥
     brand.appendChild(heart);
-    if (currentPath === "/") brand.classList.add("active");
     nav.appendChild(brand);
 
-    // Pinned links (always visible, placed right after brand)
-    pinned.forEach(function (app) {
-      var a = document.createElement("a");
-      a.href = app.path;
-      a.className = "ui-navbar-pinned";
-      if (app.icon) {
-        a.appendChild(buildIcon(app.icon));
-        a.appendChild(document.createTextNode(" " + app.title));
-      } else {
-        a.textContent = app.title;
-      }
-      if (currentPath === app.path) a.classList.add("active");
-      nav.appendChild(a);
-    });
-
-    // Menu container
+    // Menu container with fixed 3 links
     var menu = document.createElement("div");
     menu.className = "ui-navbar-menu";
 
-    others.forEach(function (app) {
+    navLinks.forEach(function (link) {
       var a = document.createElement("a");
-      a.href = app.path;
-      if (app.icon) {
-        a.appendChild(buildIcon(app.icon));
-        a.appendChild(document.createTextNode(" " + app.title));
-      } else {
-        a.textContent = app.title;
+      a.href = link.href;
+      a.textContent = link.label;
+      if (currentPath === link.href || (link.href !== "/" && currentPath.startsWith(link.href))) {
+        a.className = "active";
       }
-      if (currentPath === app.path) a.className = "active";
       menu.appendChild(a);
     });
 
     nav.appendChild(menu);
 
-    // Hamburger toggle button
+    // Hamburger toggle button (mobile)
     var toggle = document.createElement("button");
     toggle.className = "ui-navbar-toggle";
     toggle.type = "button";
-    toggle.setAttribute("aria-label", "Toggle navigation");
+    toggle.setAttribute("aria-label", "Menu");
     toggle.setAttribute("aria-expanded", "false");
-    toggle.innerHTML = "&#9776;";
+    toggle.textContent = "Menu";
     nav.appendChild(toggle);
 
     // Toggle behaviour
