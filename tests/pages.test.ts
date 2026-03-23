@@ -265,9 +265,10 @@ describe('Skills Page', () => {
     'utf-8',
   );
 
-  test('uses system.css menu-bar as tabs', () => {
-    expect(skillsSrc).toContain('role="menu-bar"');
-    expect(skillsSrc).toContain('role="menu-item"');
+  test('uses ARIA tablist for skill tabs', () => {
+    expect(skillsSrc).toContain('role="tablist"');
+    expect(skillsSrc).toContain('role="tab"');
+    expect(skillsSrc).toContain('role="tabpanel"');
   });
 
   test('has skill categories', () => {

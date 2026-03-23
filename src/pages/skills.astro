@@ -36,24 +36,30 @@ const categories = [
     <p class="page-subtitle">Technical skills and areas of expertise.</p>
   </section>
 
-  <!-- system.css menu-bar as tab switcher -->
-  <ul role="menu-bar" class="skills-tabs">
+  <!-- Tab switcher styled like system.css menu-bar -->
+  <div role="tablist" class="skills-tabs" aria-label="Skill categories">
     {categories.map((cat, i) => (
-      <li
-        role="menu-item"
+      <button
+        role="tab"
+        type="button"
         class:list={['tab-btn', { active: i === 0 }]}
         data-tab={cat.id}
-        tabindex="0"
+        aria-selected={i === 0 ? 'true' : 'false'}
+        aria-controls={`panel-${cat.id}`}
+        id={`tab-${cat.id}`}
       >
         {cat.label}
-      </li>
+      </button>
     ))}
-  </ul>
+  </div>
 
   {categories.map((cat, i) => (
     <div
       class:list={['tab-panel', { active: i === 0 }]}
       data-panel={cat.id}
+      id={`panel-${cat.id}`}
+      role="tabpanel"
+      aria-labelledby={`tab-${cat.id}`}
     >
       <div class="skill-grid">
         {cat.skills.map((skill) => (
@@ -67,15 +73,16 @@ const categories = [
 </BaseLayout>
 
 <script>
-  const tabs = document.querySelectorAll('.tab-btn');
-  const panels = document.querySelectorAll('.tab-panel');
+  const tabs = document.querySelectorAll('[role="tab"]');
+  const panels = document.querySelectorAll('[role="tabpanel"]');
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = (tab as HTMLElement).dataset.tab;
-      tabs.forEach(t => t.classList.remove('active'));
+      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
       panels.forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
       document.querySelector(`[data-panel="${target}"]`)?.classList.add('active');
     });
   });
@@ -89,9 +96,23 @@ const categories = [
   .page-header h1 { margin-bottom: var(--space-2); }
   .page-subtitle { font-size: 16px; }
   .skills-tabs {
+    display: flex;
     margin-bottom: var(--space-6);
+    border: 2px solid #000;
     border-bottom: 2px solid #000;
+    background: #fff;
   }
+  .tab-btn {
+    padding: 6px 12px;
+    border: none;
+    background: #fff;
+    color: #000;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .tab-btn:hover { background: #000; color: #fff; }
   .tab-btn.active {
     background: #000;
     color: #fff;
