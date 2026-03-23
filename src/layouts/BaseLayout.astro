@@ -144,19 +144,36 @@ const windowTitle = title || siteConfig.title;
   }
   .skip-link:focus { top: 8px; }
 
-  .desktop {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: var(--space-4);
+  /* ── Classic Mac monitor canvas: 4:3 aspect ratio, rounded corners ── */
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     min-height: 100vh;
+    background: #eee;
+  }
+  .desktop {
+    width: 100%;
+    max-width: min(90vw, 1280px);
+    aspect-ratio: 512 / 384;
+    max-height: 90vh;
+    border: 3px solid #000;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 6px 6px #000;
   }
   .site-window {
     min-width: 0;
     display: flex;
+    flex: 1;
+    min-height: 0;
   }
   .site-window .window-pane {
     overflow-y: auto;
-    max-height: calc(100vh - 100px);
+    flex: 1;
     padding: var(--space-6);
     font-size: 16px;
     font-family: var(--font-sans);
@@ -176,9 +193,18 @@ const windowTitle = title || siteConfig.title;
     pointer-events: auto;
   }
 
-  @media (max-width: 768px) {
-    .desktop { padding: 0; }
-    .site-window { margin: 0; border-left: none; border-right: none; }
+  /* ── Mobile: full-screen, no canvas frame ── */
+  @media (max-width: 768px), (max-aspect-ratio: 3/4) {
+    body { background: #fff; display: block; }
+    .desktop {
+      max-width: 100%;
+      aspect-ratio: auto;
+      max-height: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .site-window { border-left: none; border-right: none; }
     .site-window .window-pane { max-height: none; }
   }
 </style>
