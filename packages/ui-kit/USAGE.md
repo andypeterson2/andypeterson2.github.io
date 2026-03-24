@@ -16,10 +16,10 @@ ui-kit/
 
 ## Quick Start
 
-Add the Inter font and link the entry-point CSS + JS:
+Add the Atkinson Hyperlegible font and link the entry-point CSS + JS:
 
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="ui-kit/ui-kit.css">
 <!-- your app CSS after, so overrides win -->
 <link rel="stylesheet" href="css/app.css">
@@ -33,7 +33,7 @@ Add the Inter font and link the entry-point CSS + JS:
 
 The toolkit ships with dark (default) and light themes controlled by the `data-theme` attribute on `<html>`. All colours come from CSS custom properties defined in `tokens.css`.
 
-Key tokens: `--bg`, `--surface`, `--surface-alt`, `--border`, `--accent`, `--accent-hover`, `--text`, `--text-muted`, `--radius`, `--font`.
+Key tokens: `--bg`, `--surface`, `--surface2`, `--border`, `--accent`, `--accent-hover`, `--text`, `--text-muted`, `--radius`, `--font`.
 
 To initialise the toggle button:
 
@@ -44,7 +44,7 @@ To initialise the toggle button:
 </script>
 ```
 
-It persists the choice to `localStorage` under the key `"theme"`.
+It persists the choice to `localStorage` under the key `"sm-theme"`.
 
 ## JavaScript API — `window.UIKit`
 
@@ -63,7 +63,7 @@ Nothing auto-initialises. Call only what you need.
 
 Object of inline SVG markup strings (16x16, `currentColor`):
 
-`play`, `refresh`, `spinner`, `save`, `close`, `moon`, `sun`, `hamburger`, `chevron`
+`play`, `pause`, `stop`, `refresh`, `spinner`, `save`, `close`, `plus`, `minus`, `hamburger`, `chevron`, `gear`, `moon`, `sun`, `mapMarker`, `graduationCap`, `envelope`, `certificate`, `download`, `upload`, `lock`, `unlock`, `brain`, `github`, `linkedin`, `calendar`, `video`, `videoOff`, `microphone`, `microphoneOff`, `wifi`, `externalLink`, `copy`, `edit`, `trash`, `search`, `info`, `warning`, `check`, `arrowLeft`, `arrowRight`, `star`, `codeBranch`
 
 Usage: `element.innerHTML = UIKit.ICONS.play + " Train";`
 
@@ -115,7 +115,7 @@ All styles use class selectors — no IDs. Apply classes to your markup:
 ### Log Terminal
 - `.log-terminal` — dark scrollable terminal area
 - `.log-entry`, `.log-time`, `.log-msg` — log line parts
-- `.log-ok`, `.log-warn`, `.log-error` — colour levels
+- `.log-ok`, `.log-warn`, `.log-err` — colour levels
 
 ### Drawing Canvas
 - `.ui-canvas` — bordered canvas element

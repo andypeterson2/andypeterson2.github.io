@@ -13,74 +13,50 @@ const ROOT = resolve(import.meta.dirname!, '..');
 
 // ---- WP #476: Inline resume web view ----
 
-describe('Inline resume web view', () => {
+describe('Resume page (redirect stub)', () => {
   const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
 
-  test('has quick view section', () => {
-    expect(resumeSrc).toContain('Quick View');
+  test('is a redirect stub to /about', () => {
+    expect(resumeSrc).toContain('http-equiv="refresh"');
+    expect(resumeSrc).toContain('url=/about');
   });
 
-  test('has resume window container', () => {
-    expect(resumeSrc).toContain('window resume-window');
-    expect(resumeSrc).toContain('resume-content');
+  test('uses BaseLayout', () => {
+    expect(resumeSrc).toContain('BaseLayout');
   });
 
-  test('shows display name from config', () => {
-    expect(resumeSrc).toContain('siteConfig.displayName');
-  });
-
-  test('shows description from config', () => {
-    expect(resumeSrc).toContain('siteConfig.description');
-  });
-
-  test('has download PDF button', () => {
-    expect(resumeSrc).toContain('Download PDF');
-    expect(resumeSrc).toContain('/resume.pdf');
-  });
-
-  test('has link to cover letter', () => {
-    expect(resumeSrc).toContain('/cover-letter');
-    expect(resumeSrc).toContain('Cover Letter');
-  });
-
-  test('quick view uses system.css window with title-bar and details-bar', () => {
-    expect(resumeSrc).toContain('title-bar');
-    expect(resumeSrc).toContain('details-bar');
+  test('has fallback link', () => {
+    expect(resumeSrc).toContain('href="/about"');
   });
 });
 
 // ---- WP #477: ATS compatibility verification ----
 
-describe('ATS compatibility verification', () => {
-  const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
+describe('ATS compatibility verification (about page houses resume content)', () => {
+  const aboutSrc = readFileSync(resolve(ROOT, 'src/pages/about.astro'), 'utf-8');
 
   test('uses semantic section structure', () => {
-    expect(resumeSrc).toContain('<section');
+    expect(aboutSrc).toContain('<section');
   });
 
   test('uses proper heading hierarchy', () => {
-    expect(resumeSrc).toContain('<h1>');
+    expect(aboutSrc).toContain('<h1');
   });
 
   test('no personal info hardcoded (uses siteConfig)', () => {
-    expect(resumeSrc).toContain('siteConfig');
-    expect(resumeSrc).not.toMatch(/[a-z]+@gmail\.com/);
+    expect(aboutSrc).toContain('siteConfig');
+    expect(aboutSrc).not.toMatch(/[a-z]+@gmail\.com/);
   });
 
-  test('experience items use standard-dialog with details-bar', () => {
-    expect(resumeSrc).toContain('standard-dialog experience-item');
-    expect(resumeSrc).toContain('details-bar');
-    expect(resumeSrc).toContain('experience-org');
-  });
-
-  test('page has breadcrumbs', () => {
-    expect(resumeSrc).toContain('Breadcrumbs');
+  test('experience items use window-based layout with details-bar', () => {
+    expect(aboutSrc).toContain('section-window');
+    expect(aboutSrc).toContain('details-bar');
   });
 });
 
 // ---- WP #480: Cover letter template ----
 
-describe('Cover letter template', () => {
+describe('Cover letter page (redirect stub)', () => {
   test('cover letter page exists', () => {
     expect(existsSync(resolve(ROOT, 'src/pages/cover-letter.astro'))).toBe(true);
   });
@@ -94,55 +70,31 @@ describe('Cover letter template', () => {
     expect(coverSrc).toContain('BaseLayout');
   });
 
-  test('has breadcrumbs with Resume parent', () => {
-    expect(coverSrc).toContain('Breadcrumbs');
-    expect(coverSrc).toContain("label: 'Resume'");
-    expect(coverSrc).toContain("href: '/resume'");
+  test('is a redirect stub to /about', () => {
+    expect(coverSrc).toContain('http-equiv="refresh"');
+    expect(coverSrc).toContain('url=/about');
   });
 
-  test('has letter document structure', () => {
-    expect(coverSrc).toContain('letter-window');
-    expect(coverSrc).toContain('letter-body');
-  });
-
-  test('uses siteConfig for name', () => {
-    expect(coverSrc).toContain('siteConfig.displayName');
-  });
-
-  test('uses siteConfig for email', () => {
-    expect(coverSrc).toContain('siteConfig.email');
-  });
-
-  test('has customizable placeholder text', () => {
-    expect(coverSrc).toContain('[Position Title]');
-    expect(coverSrc).toContain('[Company Name]');
-  });
-
-  test('has proper closing', () => {
-    expect(coverSrc).toContain('Sincerely');
-  });
-
-  test('has back to resume link', () => {
-    expect(coverSrc).toContain('/resume');
-    expect(coverSrc).toContain('Back to Resume');
+  test('has fallback link', () => {
+    expect(coverSrc).toContain('href="/about"');
   });
 });
 
 // ---- WP #612: PDF generation readiness ----
 
 describe('PDF generation readiness', () => {
-  const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
-
-  test('resume page has printable structure', () => {
+  test('site has printable structure', () => {
     const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
     expect(baseCss).toContain('@media print');
   });
 
-  test('resume content is in semantic sections', () => {
-    expect(resumeSrc).toContain('<section');
+  test('about page (which houses resume content) has semantic sections', () => {
+    const aboutSrc = readFileSync(resolve(ROOT, 'src/pages/about.astro'), 'utf-8');
+    expect(aboutSrc).toContain('<section');
   });
 
-  test('download link points to PDF', () => {
-    expect(resumeSrc).toContain('/resume.pdf');
+  test('about page has download link to resume PDF', () => {
+    const aboutSrc = readFileSync(resolve(ROOT, 'src/pages/about.astro'), 'utf-8');
+    expect(aboutSrc).toContain('/resume.pdf');
   });
 });

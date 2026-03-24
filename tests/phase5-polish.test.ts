@@ -91,29 +91,10 @@ describe('Breadcrumbs component', () => {
     expect(breadcrumbsSrc).toContain('aria-hidden="true"');
   });
 
-  test('breadcrumbs used on about page', () => {
-    const aboutSrc = readFileSync(resolve(ROOT, 'src/pages/about.astro'), 'utf-8');
-    expect(aboutSrc).toContain('Breadcrumbs');
-  });
-
-  test('breadcrumbs used on projects page', () => {
-    const projectsSrc = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
-    expect(projectsSrc).toContain('Breadcrumbs');
-  });
-
-  test('breadcrumbs used on skills page', () => {
-    const skillsSrc = readFileSync(resolve(ROOT, 'src/pages/skills.astro'), 'utf-8');
-    expect(skillsSrc).toContain('Breadcrumbs');
-  });
-
-  test('breadcrumbs used on resume page', () => {
-    const resumeSrc = readFileSync(resolve(ROOT, 'src/pages/resume.astro'), 'utf-8');
-    expect(resumeSrc).toContain('Breadcrumbs');
-  });
-
-  test('breadcrumbs used on contact page', () => {
-    const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
-    expect(contactSrc).toContain('Breadcrumbs');
+  test('breadcrumbs auto-generated in BaseLayout for non-home pages', () => {
+    const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
+    expect(layoutSrc).toContain('breadcrumbs');
+    expect(layoutSrc).toContain('isHome');
   });
 });
 
