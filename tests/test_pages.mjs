@@ -54,7 +54,6 @@ const PAGES = [
   { path: '/nonogram/', title: 'Nonogram', id: 'sidebar' },
   { path: '/classifiers/', title: 'Classifiers', id: 'train-section' },
   { path: '/cv/', title: 'CV Editor', id: 'section-list' },
-  { path: '/dashboard/', title: 'Dashboard', id: 'connect-log' },
   { path: '/tech-tree/', title: 'Knowledge Tech Tree', id: 'sidebar' },
   { path: '/qvc/client/', title: 'Video Chat', id: 'app' },
 ];
@@ -91,7 +90,7 @@ describe('No Jinja2 artifacts', () => {
 
 // -- Service config present on backend pages --
 
-const BACKEND_PAGES = ['/nonogram/', '/classifiers/', '/cv/', '/dashboard/', '/qvc/client/'];
+const BACKEND_PAGES = ['/nonogram/', '/classifiers/', '/cv/', '/qvc/client/'];
 
 describe('ServiceConfig integration', () => {
   for (const p of BACKEND_PAGES) {
@@ -101,14 +100,14 @@ describe('ServiceConfig integration', () => {
     });
   }
 
-  for (const p of ['/nonogram/', '/classifiers/', '/cv/', '/dashboard/']) {
+  for (const p of ['/nonogram/', '/classifiers/', '/cv/']) {
     test(`${p} defines API_BASE`, async () => {
       const { text } = await fetchText(p);
       assert.ok(text.includes('API_BASE'), `${p} should define API_BASE`);
     });
   }
 
-  for (const p of ['/nonogram/', '/classifiers/', '/cv/', '/dashboard/']) {
+  for (const p of ['/nonogram/', '/classifiers/', '/cv/']) {
     test(`${p} uses resolveBackend`, async () => {
       const { text } = await fetchText(p);
       assert.ok(text.includes('resolveBackend'), `${p} should use resolveBackend`);
@@ -133,10 +132,6 @@ describe('Static assets', () => {
   });
   test('cv app.js loads', async () => {
     const { status } = await fetchText('/cv/app.js');
-    assert.equal(status, 200);
-  });
-  test('dashboard app.js loads', async () => {
-    const { status } = await fetchText('/dashboard/static/js/app.js');
     assert.equal(status, 200);
   });
   test('tech-tree app.js loads', async () => {
@@ -167,7 +162,7 @@ describe('Demo bar', () => {
   test('main page has demo-bar with all project links', async () => {
     const { text } = await fetchText('/');
     assert.ok(text.includes('demo-bar'), 'main page should have demo-bar');
-    for (const href of ['nonogram/', 'classifiers/', 'qvc/client/', 'cv/', 'tech-tree/', 'dashboard/', 'ui-kit/']) {
+    for (const href of ['nonogram/', 'classifiers/', 'qvc/client/', 'cv/', 'tech-tree/', 'ui-kit/']) {
       assert.ok(text.includes(`href="${href}"`), `demo-bar should link to ${href}`);
     }
   });
@@ -183,7 +178,6 @@ describe('Manifest backend metadata', () => {
     const expected = {
       '/classifiers/': { service: 'classifier', defaultPort: 5001 },
       '/cv/': { service: 'cv', defaultPort: 3000 },
-      '/dashboard/': { service: 'dashboard', defaultPort: 5050 },
       '/nonogram/': { service: 'nonogram', defaultPort: 5055 },
       '/qvc/client/': { service: 'qvc', defaultPort: 5002 },
     };
@@ -365,61 +359,3 @@ describe('Nonogram solver.js logic', () => {
   });
 });
 
-// -- Dashboard frontend structure --
-
-describe('Dashboard frontend structure', () => {
-  test('dashboard/index.html has required DOM elements', async () => {
-    const { text } = await fetchText('/dashboard/');
-    for (const id of ['tab-bar-scroll', 'tab-content', 'welcome', 'server-drawer', 'connect-log', 'btn-refresh']) {
-      assert.ok(text.includes(`id="${id}"`), `dashboard should have #${id}`);
-    }
-  });
-
-  test('dashboard loads app.js', async () => {
-    const { status } = await fetchText('/dashboard/static/js/app.js');
-    assert.equal(status, 200);
-  });
-
-  test('dashboard app.js has API helper functions', async () => {
-    const { text } = await fetchText('/dashboard/static/js/app.js');
-    assert.ok(text.includes('function apiPost'), 'app.js should define apiPost');
-    assert.ok(text.includes('function apiGet'), 'app.js should define apiGet');
-    assert.ok(text.includes('API_BASE'), 'app.js should use API_BASE');
-  });
-
-  test('dashboard app.js has loadProjects function', async () => {
-    const { text } = await fetchText('/dashboard/static/js/app.js');
-    assert.ok(text.includes('function loadProjects'), 'app.js should define loadProjects');
-    assert.ok(text.includes('window.loadProjects'), 'app.js should expose loadProjects on window');
-  });
-
-  test('dashboard app.js has tab management functions', async () => {
-    const { text } = await fetchText('/dashboard/static/js/app.js');
-    assert.ok(text.includes('openServiceTab'), 'app.js should define openServiceTab');
-    assert.ok(text.includes('activateTab'), 'app.js should define activateTab');
-    assert.ok(text.includes('stopAndCloseTab'), 'app.js should define stopAndCloseTab');
-  });
-
-  test('dashboard app.js has log polling', async () => {
-    const { text } = await fetchText('/dashboard/static/js/app.js');
-    assert.ok(text.includes('startLogPolling'), 'app.js should define startLogPolling');
-  });
-
-  test('dashboard index.html listens for navbar:connect-ready', async () => {
-    const { text } = await fetchText('/dashboard/');
-    assert.ok(text.includes('navbar:connect-ready'), 'dashboard should listen for navbar:connect-ready');
-  });
-
-  test('dashboard index.html has connect error handling', async () => {
-    const { text } = await fetchText('/dashboard/');
-    assert.ok(text.includes('connect.setStatus'), 'dashboard should update connect status');
-    assert.ok(text.includes("setStatus('error'") || text.includes('setStatus("error"'),
-      'dashboard should handle connection errors');
-  });
-
-  test('dashboard has site-backend-service=dashboard meta', async () => {
-    const { text } = await fetchText('/dashboard/');
-    assert.ok(text.includes('content="dashboard"'), 'should have service=dashboard');
-    assert.ok(text.includes('content="5050"'), 'should have port=5050');
-  });
-});
