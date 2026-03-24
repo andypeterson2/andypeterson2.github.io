@@ -6,3 +6,15 @@
 !.github/
 node_modules/
 dist/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Build
+*.log
