@@ -34,35 +34,35 @@
     },
     {
       "path": "/dist/",
-      "title": "Portfolio"
+      "title": "Projects | Projects"
     },
     {
       "path": "/dist/Current-Resume.pdf/",
-      "title": "Redirecting to: /resume"
+      "title": "Redirecting to: /about"
     },
     {
       "path": "/dist/about/",
-      "title": "About | Portfolio"
+      "title": "About | Projects"
     },
     {
       "path": "/dist/blog/",
-      "title": "Blog | Portfolio"
+      "title": "Blog | Projects"
     },
     {
       "path": "/dist/blog/hello-world/",
-      "title": "Hello World | Portfolio"
+      "title": "Hello World | Projects"
     },
     {
       "path": "/dist/blog/tags/",
-      "title": "Tags | Portfolio"
+      "title": "Tags | Projects"
     },
     {
       "path": "/dist/contact/",
-      "title": "Contact | Portfolio"
+      "title": "Contact | Projects"
     },
     {
       "path": "/dist/cover-letter/",
-      "title": "Cover Letter | Portfolio"
+      "title": "Redirecting to: /about"
     },
     {
       "path": "/dist/me/",
@@ -78,31 +78,31 @@
     },
     {
       "path": "/dist/projects/",
-      "title": "Projects | Portfolio"
+      "title": "Projects | Projects"
     },
     {
       "path": "/dist/projects/dashboard/",
-      "title": "Portfolio Dashboard | Portfolio"
+      "title": "Portfolio Dashboard | Projects"
     },
     {
       "path": "/dist/projects/quantum-nonogram-solver/",
-      "title": "Quantum Nonogram Solver | Portfolio"
+      "title": "Quantum Nonogram Solver | Projects"
     },
     {
       "path": "/dist/projects/quantum-protein-kernel/",
-      "title": "Quantum Protein Kernel | Portfolio"
+      "title": "Quantum Protein Kernel | Projects"
     },
     {
       "path": "/dist/projects/quantum-video-chat/",
-      "title": "Quantum Video Chat | Portfolio"
+      "title": "Quantum Video Chat | Projects"
     },
     {
       "path": "/dist/projects/task-randomizer/",
-      "title": "Task Randomizer | Portfolio"
+      "title": "Task Randomizer | Projects"
     },
     {
       "path": "/dist/projects/tech-tree/",
-      "title": "Tech Tree | Portfolio"
+      "title": "Tech Tree | Projects"
     },
     {
       "path": "/dist/quantumvideo.html/",
@@ -114,11 +114,11 @@
     },
     {
       "path": "/dist/resume/",
-      "title": "Resume | Portfolio"
+      "title": "Redirecting to: /about"
     },
     {
       "path": "/dist/skills/",
-      "title": "Skills | Portfolio"
+      "title": "Skills | Projects"
     },
     {
       "path": "/dist/underconstruction.html/",
@@ -130,7 +130,7 @@
     },
     {
       "path": "/dist/uses/",
-      "title": "Uses | Portfolio"
+      "title": "Uses | Projects"
     },
     {
       "path": "/node_modules/mute-stream/coverage/lcov-report/",
@@ -142,12 +142,7 @@
     },
     {
       "path": "/nonogram/website/",
-      "title": "Nonogram",
-      "icon": "fa-solid fa-puzzle-piece",
-      "backend": {
-        "service": "nonogram",
-        "defaultPort": 5055
-      }
+      "title": "Nonogram"
     },
     {
       "path": "/task-randomizer/",
