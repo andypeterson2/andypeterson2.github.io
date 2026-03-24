@@ -1,3 +1,9 @@
+[project]
+name = "andypeterson-portfolio"
+version = "1.0.0"
+description = "Monorepo for andypeterson.dev portfolio and sub-projects"
+requires-python = ">=3.10"
+
 # Root-level shared Python tooling configuration.
 # Individual projects inherit these settings via ruff/mypy config discovery.
 

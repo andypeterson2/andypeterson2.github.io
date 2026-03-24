@@ -47,7 +47,7 @@ lint-py: ## Ruff lint
 	ruff check $(PYTHON_PROJECTS) packages/flask-core/src
 
 lint-js: ## ESLint (if configured)
-	@if [ -f ".eslintrc.js" ] || [ -f "eslint.config.mjs" ]; then npx eslint src/; fi
+	npm run lint
 
 build: ## Build Astro site
 	npm run build
