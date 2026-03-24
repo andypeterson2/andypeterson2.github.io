@@ -1,22 +1,4 @@
 services:
-  dashboard:
-    build:
-      context: ./dashboard
-    ports:
-      - "127.0.0.1:${DASHBOARD_PORT:-5050}:5050"
-    environment:
-      DASHBOARD_PORT: "5050"
-      DASHBOARD_PROJECTS: /projects
-      DASHBOARD_CORS_ORIGINS: "http://localhost:*"
-      DEV_CERT_DIR: ""
-    volumes:
-      - .:/projects:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:5050/api/health"]
-      interval: 30s
-      timeout: 3s
-
   classifiers:
     build:
       context: .

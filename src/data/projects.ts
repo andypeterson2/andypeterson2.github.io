@@ -75,19 +75,4 @@ export const projects = [
       { label: 'JavaScript', variant: 'default' as const },
     ],
   },
-  {
-    title: 'Portfolio Dashboard',
-    slug: 'dashboard',
-    description: 'Real-time monitoring dashboard for portfolio project health and metrics.',
-    longDescription: 'A Flask-based dashboard that aggregates health checks, build status, and performance metrics across all portfolio projects. Provides at-a-glance project status monitoring.',
-    category: 'tools',
-    status: 'active' as const,
-    featured: false,
-    appUrl: '/dashboard/website/',
-    repoUrl: 'https://github.com/andypeterson2/dashboard',
-    tags: [
-      { label: 'Flask', variant: 'default' as const },
-      { label: 'Python', variant: 'default' as const },
-    ],
-  },
 ];
