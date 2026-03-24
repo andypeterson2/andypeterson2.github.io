@@ -1,0 +1,35 @@
+# Hidden files
+.*
+!.git*
+!.certs/
+!.dashboard.yaml
+!.dockerignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+
+# IDE
+*.swp
+
+# OS
+Thumbs.db
+
+# Docker
+*.log
+
+# ML artifacts
+*.pth
+*.pt
+*.onnx
+data/
+
+# Testing
+htmlcov/
+
+# Other
+ui-kit.zip
