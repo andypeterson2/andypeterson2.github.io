@@ -19,6 +19,24 @@ const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
 const windowTitle = title || siteConfig.title;
+
+// Auto-generate breadcrumbs from URL path
+const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isHome = pathname === '/';
+interface Crumb { label: string; href?: string }
+const breadcrumbs: Crumb[] = [];
+
+if (!isHome) {
+  const segments = pathname.split('/').filter(Boolean);
+  for (let i = 0; i < segments.length; i++) {
+    const isLast = i === segments.length - 1;
+    const href = '/' + segments.slice(0, i + 1).join('/') + '/';
+    const label = isLast && title
+      ? title
+      : segments[i].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    breadcrumbs.push({ label, href: isLast ? undefined : href });
+  }
+}
 ---
 
 <!doctype html>
@@ -49,9 +67,6 @@ const windowTitle = title || siteConfig.title;
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- Structured data -->
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -76,23 +91,23 @@ const windowTitle = title || siteConfig.title;
     </script>
   </head>
   <body>
-    <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
     <a href="#main-content" class="skip-link">Skip to content</a>
+    <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
 
     <div class="desktop">
-      <!-- Menu bar sits ABOVE the window, like real System 6 -->
-      <Nav />
+      <!-- Menu bar + breadcrumb tray -->
+      <div class="ui-navbar-wrapper">
+        <Nav />
+      </div>
 
       <!-- Main window -->
       <div class="window site-window">
         <div class="title-bar">
-          <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
           <h1 class="title">{windowTitle}</h1>
-          <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
         </div>
+        <slot name="details-bar" />
         <div class="window-pane" id="main-content">
           <slot />
-          <Footer />
         </div>
       </div>
     </div>
@@ -119,6 +134,19 @@ const windowTitle = title || siteConfig.title;
 </html>
 
 <style>
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    padding: 8px 16px;
+    background: #000;
+    color: #fff;
+    z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
   .error-boundary {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -130,27 +158,15 @@ const windowTitle = title || siteConfig.title;
     font-size: 16px;
     text-align: center;
   }
-  .skip-link {
-    position: absolute;
-    top: -100%;
-    left: 8px;
-    z-index: 200;
-    padding: 4px 8px;
-    background: #000;
-    color: #fff;
-    font-family: var(--font-sans);
-    font-size: 12px;
-    text-decoration: none;
-  }
-  .skip-link:focus { top: 8px; }
-
   /* ── Classic Mac monitor canvas: 4:3 aspect ratio, rounded corners ── */
   body {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: #eee;
+    background: #eee url('/bg-pattern.svg') repeat;
+    background-size: 32px 32px;
+    image-rendering: pixelated;
   }
   .desktop {
     width: 100%;
@@ -165,21 +181,29 @@ const windowTitle = title || siteConfig.title;
     flex-direction: column;
     box-shadow: 6px 6px #000;
   }
+  .ui-navbar-wrapper {
+    flex-shrink: 0;
+  }
+  .ui-navbar-wrapper .site-navbar {
+    border-bottom: 2px solid #000;
+  }
   .site-window {
     min-width: 0;
     display: flex;
     flex: 1;
     min-height: 0;
   }
+  .site-window .title-bar {
+    border: 2px solid #000;
+  }
   .site-window .window-pane {
     overflow-y: auto;
     flex: 1;
-    padding: var(--space-6);
+    padding: 0 var(--space-6) var(--space-6);
     font-size: 16px;
     font-family: var(--font-sans);
     letter-spacing: 0;
   }
-
   .back-to-top {
     position: fixed;
     bottom: var(--space-6);

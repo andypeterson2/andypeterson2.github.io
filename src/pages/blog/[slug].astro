@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Tag from '../../components/Tag.astro';
 import Button from '../../components/Button.astro';
 import { siteConfig } from '../../config/site';
@@ -38,11 +37,6 @@ const seriesPosts = frontmatter.series
 ---
 
 <BaseLayout title={frontmatter.title} description={frontmatter.description}>
-  <Breadcrumbs crumbs={[
-    { label: 'Blog', href: '/blog' },
-    { label: frontmatter.title },
-  ]} />
-
   <article class="blog-post">
     <header class="post-header">
       <time class="post-date" datetime={frontmatter.date}>
