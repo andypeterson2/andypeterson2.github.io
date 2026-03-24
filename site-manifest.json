@@ -24,15 +24,6 @@
       }
     },
     {
-      "path": "/dashboard/website/",
-      "title": "Dashboard",
-      "icon": "fa-solid fa-gear",
-      "backend": {
-        "service": "dashboard",
-        "defaultPort": 5050
-      }
-    },
-    {
       "path": "/dist/",
       "title": "Projects | Projects"
     },

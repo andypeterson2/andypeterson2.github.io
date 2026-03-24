@@ -8,7 +8,6 @@
     { href: "/classifiers/", label: "Quantum Protein Kernel" },
     { href: "/tech-tree/website/", label: "Tech Tree" },
     { href: "/task-randomizer/", label: "Task Randomizer" },
-    { href: "/dashboard/website/", label: "Portfolio Dashboard" },
   ];
 
   /* ── Derive breadcrumb label from the current page's <title> ── */
