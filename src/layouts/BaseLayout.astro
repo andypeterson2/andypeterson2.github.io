@@ -9,9 +9,10 @@ interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
+  hideChrome?: boolean;
 }
 
-const { title, description, ogImage } = Astro.props;
+const { title, description, ogImage, hideChrome = false } = Astro.props;
 const pageTitle = title ? `${title} | ${siteConfig.title}` : siteConfig.title;
 const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
@@ -51,6 +52,8 @@ if (!isHome) {
 
     <!-- system.css — System 6 UI framework -->
     <link rel="stylesheet" href="/lib/ui-kit/v1.1/vendor/system.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
+    <slot name="head" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -94,23 +97,28 @@ if (!isHome) {
     <a href="#main-content" class="skip-link">Skip to content</a>
     <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
 
-    <div class="desktop">
-      <!-- Menu bar + breadcrumb tray -->
-      <div class="ui-navbar-wrapper">
-        <Nav />
-      </div>
+    <slot name="topbar" />
 
-      <!-- Main window -->
-      <div class="window site-window">
-        <div class="title-bar">
-          <h1 class="title">{windowTitle}</h1>
-        </div>
-        <slot name="details-bar" />
-        <div class="window-pane" id="main-content">
-          <slot />
+    {hideChrome ? (
+      <slot />
+    ) : (
+      <div class="desktop-area">
+        <div class="desktop">
+          <div class="ui-navbar-wrapper">
+            <Nav />
+          </div>
+          <div class="window site-window">
+            <div class="title-bar">
+              <h1 class="title">{windowTitle}</h1>
+            </div>
+            <slot name="details-bar" />
+            <div class="window-pane" id="main-content">
+              <slot />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    )}
 
     <button id="back-to-top" class="btn back-to-top" aria-label="Back to top" type="button">
       &uarr; Top
@@ -158,28 +166,38 @@ if (!isHome) {
     font-size: 16px;
     text-align: center;
   }
+  html {
+    background: #000;
+  }
   /* ── Classic Mac monitor canvas: 4:3 aspect ratio, rounded corners ── */
   body {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     min-height: 100vh;
     background: #eee url('/bg-pattern.svg') repeat;
-    background-size: 32px 32px;
+    background-size: 2.5vw 2.5vw;
     image-rendering: pixelated;
+    border: 0.5vw solid #000;
+    border-radius: 1.25vw;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .desktop-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .desktop {
     width: 100%;
     max-width: min(90vw, 1280px);
     aspect-ratio: 512 / 384;
     max-height: 90vh;
-    border: 3px solid #000;
-    border-radius: 16px;
     overflow: hidden;
     background: #fff;
     display: flex;
     flex-direction: column;
-    box-shadow: 6px 6px #000;
+    border-radius: 0 0 1vw 1vw;
   }
   .ui-navbar-wrapper {
     flex-shrink: 0;
@@ -196,6 +214,13 @@ if (!isHome) {
   .site-window .title-bar {
     border: 2px solid #000;
   }
+  .bare-window,
+  .bare-window::before,
+  .bare-window::after {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
   .site-window .window-pane {
     overflow-y: auto;
     flex: 1;
@@ -203,6 +228,8 @@ if (!isHome) {
     font-size: 16px;
     font-family: var(--font-sans);
     letter-spacing: 0;
+    display: flex;
+    flex-direction: column;
   }
   .back-to-top {
     position: fixed;
@@ -219,14 +246,17 @@ if (!isHome) {
 
   /* ── Mobile: full-screen, no canvas frame ── */
   @media (max-width: 768px), (max-aspect-ratio: 3/4) {
-    body { background: #fff; display: block; }
+    body {
+      display: flex;
+      border: none;
+      border-radius: 0;
+    }
+    .desktop-area { align-items: stretch; flex-direction: column; }
     .desktop {
       max-width: 100%;
       aspect-ratio: auto;
       max-height: none;
-      border: none;
       border-radius: 0;
-      box-shadow: none;
     }
     .site-window { border-left: none; border-right: none; }
     .site-window .window-pane { max-height: none; }
