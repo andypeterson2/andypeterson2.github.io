@@ -20,6 +20,8 @@ keywords = [
 dependencies = [
     "flask>=3.0",
     "flask-cors>=6.0",
+    # Install shared infra: pip install -e packages/flask-core
+    "flask-core",
     "torch>=2.2",
     "torchvision>=0.17",
     "numpy>=1.26",
