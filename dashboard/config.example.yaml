@@ -1,3 +1,0 @@
-# config.yaml — example configuration
-# Copy to config.local.yaml and edit for your environment
-projects_root: ${DASHBOARD_PROJECTS:-~/Projects}

@@ -42,7 +42,6 @@ export default defineConfig({
             const subPaths = [
               '/nonogram/',
               '/tech-tree/',
-              '/dashboard/',
               '/classifiers/',
               '/cv/',
               '/packages/',

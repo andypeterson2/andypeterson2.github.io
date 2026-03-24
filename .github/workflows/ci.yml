@@ -13,7 +13,6 @@ jobs:
       pull-requests: read
     outputs:
       website: ${{ steps.filter.outputs.website }}
-      dashboard: ${{ steps.filter.outputs.dashboard }}
       qpk: ${{ steps.filter.outputs.qpk }}
       ui-kit: ${{ steps.filter.outputs.ui-kit }}
       cv: ${{ steps.filter.outputs.cv }}
@@ -30,8 +29,6 @@ jobs:
               - 'astro.config.mjs'
               - 'package.json'
               - 'packages/shared-js/**'
-            dashboard:
-              - 'dashboard/**'
             qpk:
               - 'quantum-protein-kernel/**'
             ui-kit:
@@ -94,7 +91,6 @@ jobs:
   python-lint:
     needs: changes
     if: >-
-      needs.changes.outputs.dashboard == 'true' ||
       needs.changes.outputs.qpk == 'true' ||
       needs.changes.outputs.flask-core == 'true'
     runs-on: ubuntu-latest
@@ -104,19 +100,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check dashboard/src quantum-protein-kernel/classifiers packages/flask-core/src
-
-  dashboard-tests:
-    needs: changes
-    if: needs.changes.outputs.dashboard == 'true' || needs.changes.outputs.flask-core == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -e packages/flask-core && pip install -e "dashboard[dev]"
-      - run: cd dashboard && python -m pytest tests/ -v --tb=short
+      - run: ruff check quantum-protein-kernel/classifiers packages/flask-core/src
 
   qpk-tests:
     needs: changes
@@ -133,10 +117,8 @@ jobs:
 
   docker-build:
     needs: changes
-    if: >-
-      needs.changes.outputs.dashboard == 'true' ||
-      needs.changes.outputs.qpk == 'true'
+    if: needs.changes.outputs.qpk == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose build dashboard classifiers
+      - run: docker compose build classifiers
