@@ -1,0 +1,38 @@
+# Hidden files
+.*
+!.git*
+!.env.example
+!.pre-commit-config.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+env/
+
+# Testing & coverage
+htmlcov/
+
+# IDE
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Project-specific
+projects/
+config.yaml
+config.local.yaml
+*.pem
+*.key
+*.crt
