@@ -15,6 +15,24 @@
       }
     },
     {
+      "path": "/cv/website/",
+      "title": "CV Editor",
+      "icon": "fa-solid fa-pen-to-square",
+      "backend": {
+        "service": "cv",
+        "defaultPort": 3000
+      }
+    },
+    {
+      "path": "/dashboard/website/",
+      "title": "Dashboard",
+      "icon": "fa-solid fa-gear",
+      "backend": {
+        "service": "dashboard",
+        "defaultPort": 5050
+      }
+    },
+    {
       "path": "/dist/",
       "title": "Projects | Projects"
     },
@@ -125,6 +143,15 @@
     {
       "path": "/nonogram/website/",
       "title": "Nonogram"
+    },
+    {
+      "path": "/task-randomizer/",
+      "title": "Task Randomizer"
+    },
+    {
+      "path": "/tech-tree/website/",
+      "title": "Tech Tree",
+      "icon": "fa-solid fa-code-branch"
     },
     {
       "path": "/ui-kit/",

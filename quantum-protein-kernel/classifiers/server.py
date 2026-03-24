@@ -27,7 +27,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from flask import Flask
-from flask_cors import CORS
+
+from flask_core import configure_cors
 
 from .model_registry import ModelRegistry
 from .persistence import ModelPersistence
@@ -58,7 +59,7 @@ def create_app(models_dir: Path | None = None) -> Flask:
         static_folder="static",
     )
     app.config["SECRET_KEY"] = "classifiers-dev-secret"
-    CORS(app)
+    configure_cors(app, env_var="CLASSIFIERS_CORS_ORIGINS")
 
     # Auto-discover dataset plugins (mnist, iris, etc.)
     discover_plugins()

@@ -9,15 +9,15 @@
   <meta name="site-nav-icon" content="fa-solid fa-pen-to-square">
   <meta name="site-backend-service" content="cv">
   <meta name="site-backend-port" content="3000">
-  <script src="/lib/ui-kit/v1.1/theme-bootstrap.js"></script>
-  <script src="/shared/site-nav.js" defer></script>
-  <link rel="stylesheet" href="/lib/ui-kit/v1.1/ui-kit.css">
+  <script src="/packages/ui-kit/theme-bootstrap.js"></script>
+  <script src="/packages/shared-js/site-nav.js" defer></script>
+  <link rel="stylesheet" href="/packages/ui-kit/ui-kit.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="/lib/ui-kit/v1.1/service-config.js"></script>
+  <script src="/packages/ui-kit/service-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
@@ -332,8 +332,8 @@
     </aside>
   </div>
 
-  <script src="/lib/ui-kit/v1.1/icons.js"></script>
-  <script src="/lib/ui-kit/v1.1/ui-kit.js"></script>
+  <script src="/packages/ui-kit/icons.js"></script>
+  <script src="/packages/ui-kit/ui-kit.js"></script>
   <script>const API_BASE = (ServiceConfig.resolveBackend || ServiceConfig.get).call(ServiceConfig, "cv", "https://localhost:3000");</script>
   <script src="app.js"></script>
 </body>

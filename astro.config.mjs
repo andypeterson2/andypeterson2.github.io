@@ -45,10 +45,9 @@ export default defineConfig({
               '/dashboard/',
               '/classifiers/',
               '/cv/',
-              '/lib/',
-              '/shared/',
-              '/ui-kit/',
+              '/packages/',
               '/task-randomizer/',
+              '/lib/',
               '/site-manifest.json',
             ];
             const url = req.url || '';
