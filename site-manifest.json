@@ -25,27 +25,19 @@
     },
     {
       "path": "/dist/",
-      "title": "Projects | Projects"
+      "title": "Portfolio | Projects"
     },
     {
       "path": "/dist/Current-Resume.pdf/",
-      "title": "Redirecting to: /about"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/about/",
-      "title": "About | Projects"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/blog/",
-      "title": "Blog | Projects"
-    },
-    {
-      "path": "/dist/blog/hello-world/",
-      "title": "Hello World | Projects"
-    },
-    {
-      "path": "/dist/blog/tags/",
-      "title": "Tags | Projects"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/contact/",
@@ -53,11 +45,11 @@
     },
     {
       "path": "/dist/cover-letter/",
-      "title": "Redirecting to: /about"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/me/",
-      "title": "Redirecting to: /about"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/nonograms.html/",
@@ -70,10 +62,6 @@
     {
       "path": "/dist/projects/",
       "title": "Projects | Projects"
-    },
-    {
-      "path": "/dist/projects/dashboard/",
-      "title": "Portfolio Dashboard | Projects"
     },
     {
       "path": "/dist/projects/quantum-nonogram-solver/",
@@ -105,11 +93,11 @@
     },
     {
       "path": "/dist/resume/",
-      "title": "Redirecting to: /about"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/skills/",
-      "title": "Skills | Projects"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/dist/underconstruction.html/",
@@ -121,7 +109,7 @@
     },
     {
       "path": "/dist/uses/",
-      "title": "Uses | Projects"
+      "title": "Redirecting to: /"
     },
     {
       "path": "/node_modules/mute-stream/coverage/lcov-report/",
