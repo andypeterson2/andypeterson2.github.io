@@ -1,5 +1,4 @@
-# Installed from packages/flask-core/ via: pip install -e packages/flask-core
-flask-core
+# flask-core is installed separately from packages/flask-core/
 flask==3.0.2
 flask-cors==6.0.2
 torch==2.2.2
