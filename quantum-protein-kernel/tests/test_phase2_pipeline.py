@@ -16,6 +16,7 @@ import re
 import pytest
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+MONOREPO_ROOT = os.path.abspath(os.path.join(ROOT, os.pardir))
 
 
 # ---------------------------------------------------------------------------
@@ -23,8 +24,16 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 # ---------------------------------------------------------------------------
 
 def _read(relpath: str) -> str:
-    """Read a project file relative to the repository root."""
+    """Read a project file relative to the QPK root."""
     path = os.path.join(ROOT, relpath)
+    assert os.path.isfile(path), f"Expected file not found: {relpath}"
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+def _read_monorepo(relpath: str) -> str:
+    """Read a project file relative to the monorepo root."""
+    path = os.path.join(MONOREPO_ROOT, relpath)
     assert os.path.isfile(path), f"Expected file not found: {relpath}"
     with open(path, encoding="utf-8") as fh:
         return fh.read()
@@ -265,7 +274,7 @@ class TestContainerEnvironment:
 
     def test_docker_compose_env_port(self):
         src = _read("docker-compose.yml")
-        assert "CLASSIFIERS_PORT" in src
+        assert "PORT" in src
 
     def test_dockerfile_env_cert_dir(self):
         src = _read("Dockerfile")
@@ -317,15 +326,15 @@ class TestClassifierFrontend:
         assert os.path.isfile(path)
 
     def test_ui_kit_exists(self):
-        path = os.path.join(ROOT, "ui-kit")
+        path = os.path.join(MONOREPO_ROOT, "packages", "ui-kit")
         assert os.path.isdir(path), "ui-kit directory not found"
 
     def test_ui_kit_css_exists(self):
-        path = os.path.join(ROOT, "ui-kit", "ui-kit.css")
+        path = os.path.join(MONOREPO_ROOT, "packages", "ui-kit", "ui-kit.css")
         assert os.path.isfile(path)
 
     def test_ui_kit_js_exists(self):
-        path = os.path.join(ROOT, "ui-kit", "ui-kit.js")
+        path = os.path.join(MONOREPO_ROOT, "packages", "ui-kit", "ui-kit.js")
         assert os.path.isfile(path)
 
     def test_flask_serves_static(self):
@@ -381,35 +390,35 @@ class TestCIPipeline:
     """#695 — Verify CI configuration exists and is correct."""
 
     def test_ci_config_exists(self):
-        path = os.path.join(ROOT, ".github", "workflows", "ci.yml")
+        path = os.path.join(MONOREPO_ROOT, ".github", "workflows", "ci.yml")
         assert os.path.isfile(path)
 
     def test_ci_runs_pytest(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "pytest" in src
 
     def test_ci_runs_on_push(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "push" in src
 
     def test_ci_runs_on_pr(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "pull_request" in src
 
     def test_ci_uses_python_312(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "3.12" in src
 
     def test_ci_installs_dependencies(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "pip install" in src
 
     def test_ci_has_lint_job(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "lint" in src
 
     def test_ci_has_docker_job(self):
-        src = _read(".github/workflows/ci.yml")
+        src = _read_monorepo(".github/workflows/ci.yml")
         assert "docker" in src.lower()
 
 
