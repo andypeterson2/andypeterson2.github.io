@@ -1,0 +1,6 @@
+.*
+!.git*
+!.storybook/
+
+node_modules/
+storybook-static/

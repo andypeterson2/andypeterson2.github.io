@@ -1,0 +1,187 @@
+/* ═══════════════════════════════
+   NAVBAR + TRAYS
+   Fixed top navigation bar with
+   hamburger toggle, left/right
+   slide-out trays, and bottom
+   connection tray.
+   ═══════════════════════════════ */
+
+/* ── Wrapper: fixed container for navbar + trays ── */
+.ui-navbar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  font-family: var(--font);
+}
+
+.ui-navbar {
+  position: relative;
+  height: 44px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-family: var(--font);
+}
+.ui-navbar-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-navbar-pinned {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 10px;
+  margin-right: auto;
+  border: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-navbar-pinned:hover,
+.ui-navbar-pinned.active {
+  color: var(--accent);
+  border-color: var(--border);
+}
+.ui-navbar-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  display: none;
+}
+.ui-navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.ui-navbar-menu a {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-navbar-menu a:hover,
+.ui-navbar-menu a.active {
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.ui-navbar .icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* ── Bottom tray: backend connection bar ── */
+.ui-navbar-tray--bottom {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.ui-navbar-tray--bottom .ui-connect {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: none;
+}
+.ui-navbar-tray--bottom .ui-connect-row {
+  gap: 6px;
+}
+.ui-navbar-tray--bottom .ui-connect-host {
+  max-width: 140px;
+}
+.ui-navbar-tray--bottom .ui-connect-port {
+  width: 52px;
+}
+.ui-navbar-tray--bottom .tray-service-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Left / Right trays (structural placeholders) ── */
+.ui-navbar-tray--left,
+.ui-navbar-tray--right {
+  position: fixed;
+  top: 44px;
+  bottom: 0;
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  z-index: 999;
+  overflow-y: auto;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ui-navbar-tray--left {
+  left: 0;
+  border-left: none;
+  transform: translateX(-100%);
+}
+.ui-navbar-tray--left.open {
+  transform: translateX(0);
+}
+.ui-navbar-tray--right {
+  right: 0;
+  border-right: none;
+  transform: translateX(100%);
+}
+.ui-navbar-tray--right.open {
+  transform: translateX(0);
+}
+
+/* ── Mobile: hamburger toggle ── */
+@media (max-width: 700px) {
+  .ui-navbar-toggle { display: block; }
+  .ui-navbar-menu {
+    display: none;
+    position: absolute;
+    top: 44px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 1001;
+  }
+  .ui-navbar-menu.open { display: flex; }
+  .ui-navbar-menu a {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  /* Bottom tray wraps on mobile */
+  .ui-navbar-tray--bottom {
+    flex-wrap: wrap;
+  }
+  /* Left/right trays go full-width on mobile */
+  .ui-navbar-tray--left,
+  .ui-navbar-tray--right {
+    width: 100%;
+  }
+}
