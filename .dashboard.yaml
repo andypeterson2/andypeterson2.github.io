@@ -1,0 +1,5 @@
+services:
+  - name: task-randomizer
+    display_name: Task Randomizer
+    compose_service: task-randomizer
+    default_port: 8070
