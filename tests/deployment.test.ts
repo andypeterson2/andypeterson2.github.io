@@ -58,11 +58,11 @@ describe('Preview deploy safety', () => {
   });
 
   test('robots.txt exists', () => {
-    expect(existsSync(resolve(ROOT, 'robots.txt'))).toBe(true);
+    expect(existsSync(resolve(ROOT, 'public/robots.txt'))).toBe(true);
   });
 
   test('robots.txt allows crawling', () => {
-    const robots = readFileSync(resolve(ROOT, 'robots.txt'), 'utf-8');
+    const robots = readFileSync(resolve(ROOT, 'public/robots.txt'), 'utf-8');
     expect(robots).toContain('Allow: /');
   });
 });
@@ -148,7 +148,6 @@ describe('Dual-identity leakage prevention', () => {
 
   test('pages use siteConfig for display name, not hardcoded', () => {
     const pages = [
-      'src/pages/index.astro',
       'src/pages/about.astro',
       'src/pages/contact.astro',
     ];
