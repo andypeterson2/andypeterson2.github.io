@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Tag from '../../components/Tag.astro';
 import { siteConfig } from '../../config/site';
 
@@ -24,11 +23,6 @@ const sortedTags = [...tagMap.entries()].sort((a, b) => b[1].length - a[1].lengt
 ---
 
 <BaseLayout title="Tags" description="Browse blog posts by tag">
-  <Breadcrumbs crumbs={[
-    { label: 'Blog', href: '/blog' },
-    { label: 'Tags' },
-  ]} />
-
   <section class="page-header">
     <h1>Tags</h1>
     <p class="page-subtitle">Browse posts by topic.</p>

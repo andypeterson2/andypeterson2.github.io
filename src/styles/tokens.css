@@ -2,7 +2,7 @@
    Design Tokens — CSS Custom Properties
    System 6 monochrome palette. Black and white only.
    Typography: Chicago / Geneva / Monaco (loaded by system.css @font-face).
-   Auto-generated from tokens.json — do not edit manually.
+   Hand-maintained source of truth. tokens.json pipeline is not in use.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {

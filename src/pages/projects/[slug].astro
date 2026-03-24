@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Card from '../../components/Card.astro';
 import Tag from '../../components/Tag.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
@@ -27,11 +26,6 @@ const relatedProjects = projects
 ---
 
 <BaseLayout title={project.title} description={project.description}>
-  <Breadcrumbs crumbs={[
-    { label: 'Projects', href: '/projects' },
-    { label: project.title },
-  ]} />
-
   <section class="project-header">
     <div class="details-bar project-meta">
       <span>{project.status}</span>

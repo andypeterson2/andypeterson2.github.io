@@ -3,7 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Card from '../../components/Card.astro';
 import Tag from '../../components/Tag.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { siteConfig } from '../../config/site';
 import { projects } from '../../data/projects';
 
@@ -11,7 +10,6 @@ const categories = [...new Set(projects.map(p => p.category))];
 ---
 
 <BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
-  <Breadcrumbs crumbs={[{ label: 'Projects' }]} />
   <section class="page-header">
     <h1>Projects</h1>
     <p class="page-subtitle">Research projects, tools, and experiments.</p>
