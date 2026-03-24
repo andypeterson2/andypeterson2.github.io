@@ -2,105 +2,141 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, overhaul, monorepo-migration]
   pull_request:
     branches: [main]
 
 jobs:
-  unit-tests:
-    name: Unit Tests (Jest)
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      website: ${{ steps.filter.outputs.website }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
+      qpk: ${{ steps.filter.outputs.qpk }}
+      ui-kit: ${{ steps.filter.outputs.ui-kit }}
+      cv: ${{ steps.filter.outputs.cv }}
+      tech-tree: ${{ steps.filter.outputs.tech-tree }}
+      flask-core: ${{ steps.filter.outputs.flask-core }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            website:
+              - 'src/**'
+              - 'astro.config.mjs'
+              - 'package.json'
+              - 'packages/shared-js/**'
+            dashboard:
+              - 'dashboard/**'
+            qpk:
+              - 'quantum-protein-kernel/**'
+            ui-kit:
+              - 'packages/ui-kit/**'
+            cv:
+              - 'cv/**'
+            tech-tree:
+              - 'tech-tree/**'
+            flask-core:
+              - 'packages/flask-core/**'
+
+  astro-build:
+    needs: changes
+    if: needs.changes.outputs.website == 'true' || needs.changes.outputs.ui-kit == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
 
-      - name: Install dependencies
-        working-directory: lib/ui-kit/v1.1
-        run: npm ci
-
-      - name: Run unit tests
-        working-directory: lib/ui-kit/v1.1
-        run: npx jest --verbose
-
-  nonogram-unit-tests:
-    name: Nonogram Unit Tests (Jest)
+  ui-kit-tests:
+    needs: changes
+    if: needs.changes.outputs.ui-kit == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: cd packages/ui-kit && npm ci && npx jest --verbose
 
-      - name: Install dependencies
-        working-directory: nonogram/website
-        run: npm ci
-
-      - name: Run nonogram unit tests
-        working-directory: nonogram/website
-        run: npx jest --verbose
-
-  dashboard-unit-tests:
-    name: Dashboard Unit Tests (Jest)
+  cv-tests:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: cd cv/editor && npm ci && npm test
 
-      - name: Install dependencies
-        working-directory: dashboard/website
-        run: npm ci
-
-      - name: Run dashboard unit tests
-        working-directory: dashboard/website
-        run: npx jest --verbose
-
-  astro-unit-tests:
-    name: Astro Unit Tests (Vitest)
+  tech-tree-tests:
+    needs: changes
+    if: needs.changes.outputs.tech-tree == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: node --test tech-tree/tests/test_data.mjs
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run vitest
-        run: npm test
-
-  integration-tests:
-    name: Integration Tests
+  python-lint:
+    needs: changes
+    if: >-
+      needs.changes.outputs.dashboard == 'true' ||
+      needs.changes.outputs.qpk == 'true' ||
+      needs.changes.outputs.flask-core == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          submodules: recursive
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check dashboard/src quantum-protein-kernel/classifiers packages/flask-core/src
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+  dashboard-tests:
+    needs: changes
+    if: needs.changes.outputs.dashboard == 'true' || needs.changes.outputs.flask-core == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.12"
+      - run: pip install -e packages/flask-core && pip install -e "dashboard[dev]"
+      - run: cd dashboard && python -m pytest tests/ -v --tb=short
 
-      - name: Run integration tests
-        run: node tests/test_pages.mjs
+  qpk-tests:
+    needs: changes
+    if: needs.changes.outputs.qpk == 'true' || needs.changes.outputs.flask-core == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e packages/flask-core
+      - run: cd quantum-protein-kernel && pip install -r requirements.txt && pip install pytest
+      - run: cd quantum-protein-kernel && python -m pytest tests/ -v --tb=short
+
+  docker-build:
+    needs: changes
+    if: >-
+      needs.changes.outputs.dashboard == 'true' ||
+      needs.changes.outputs.qpk == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build dashboard classifiers

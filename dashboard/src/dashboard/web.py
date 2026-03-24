@@ -10,7 +10,8 @@ import threading
 from pathlib import Path
 
 from flask import Flask, jsonify, request
-from flask_cors import CORS
+
+from flask_core import configure_cors, get_ssl_context
 
 from dashboard.scanner import scan_projects
 from dashboard import openproject
@@ -56,7 +57,7 @@ def _compose_cmd(project_path: str, compose_file: str, *args: str) -> list[str]:
 def create_app(projects_root: str | Path | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
-    CORS(app)
+    configure_cors(app, env_var="DASHBOARD_CORS_ORIGINS")
 
     if projects_root is None:
         projects_root = os.environ.get("DASHBOARD_PROJECTS", "/projects")
@@ -296,18 +297,6 @@ def _find_free_port(preferred: int = 5050) -> int:
             return s.getsockname()[1]
 
 
-def _get_ssl_context() -> tuple[str, str] | None:
-    """Return (cert, key) paths if dev certs exist, else None."""
-    for d in [
-        Path(os.environ.get("DEV_CERT_DIR", "")),
-        Path(__file__).resolve().parents[3] / ".certs",
-    ]:
-        cert, key = d / "cert.pem", d / "key.pem"
-        if cert.is_file() and key.is_file():
-            return (str(cert), str(key))
-    return None
-
-
 def main() -> None:
     """Entry point for running the web dashboard."""
     projects_root = os.environ.get("DASHBOARD_PROJECTS", str(Path.cwd() / "projects"))
@@ -316,7 +305,9 @@ def main() -> None:
     port = _find_free_port(preferred)
     if port != preferred:
         print(f"Port {preferred} in use, using port {port} instead")
-    ssl_ctx = _get_ssl_context()
+    ssl_ctx = get_ssl_context(
+        search_dirs=[Path(__file__).resolve().parents[3] / ".certs"],
+    )
     scheme = "https" if ssl_ctx else "http"
     print(f"Dashboard running at {scheme}://localhost:{port}")
     app.run(

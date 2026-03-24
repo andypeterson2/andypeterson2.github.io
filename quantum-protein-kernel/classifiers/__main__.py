@@ -16,6 +16,9 @@ rather than probing for a new one.
 import logging
 import os
 import socket
+from pathlib import Path
+
+from flask_core import get_ssl_context
 
 from .server import create_app
 
@@ -26,19 +29,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 logger = logging.getLogger("classifiers")
-
-
-def _get_ssl_context():
-    """Return (cert, key) paths if dev certs exist, else None."""
-    from pathlib import Path
-    for d in [
-        Path(os.environ.get("DEV_CERT_DIR", "")),
-        Path(__file__).resolve().parents[2] / ".certs",
-    ]:
-        cert, key = d / "cert.pem", d / "key.pem"
-        if cert.is_file() and key.is_file():
-            return (str(cert), str(key))
-    return None
 
 
 def _find_free_port() -> int:
@@ -71,7 +61,9 @@ app = create_app()
 
 # Only print from the outer watcher process — WERKZEUG_RUN_MAIN is set in the
 # reloader child, which would otherwise produce duplicate output.
-ssl_ctx = _get_ssl_context()
+ssl_ctx = get_ssl_context(
+    search_dirs=[Path(__file__).resolve().parents[2] / ".certs"],
+)
 scheme = "https" if ssl_ctx else "http"
 
 if not os.environ.get("WERKZEUG_RUN_MAIN"):

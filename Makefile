@@ -1,38 +1,73 @@
-.PHONY: setup update status install clean
+.PHONY: help setup install test test-py test-js lint lint-py lint-js build \
+        docker-build docker-up docker-down clean
 
-# One-command project setup: clone repo, run `make setup`, done.
-setup:
+PYTHON_PROJECTS := dashboard quantum-protein-kernel
+JS_PROJECTS     := packages/ui-kit cv tech-tree task-randomizer
+
+help: ## Show available targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
+	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+setup: ## Initial setup: submodules + deps
 	git submodule update --init --recursive
-	@echo ""
-	@echo "✓ All submodules initialised."
 	@$(MAKE) --no-print-directory install
 
-# Pull latest commits for every submodule
-update:
-	git submodule update --remote --merge
-	@echo ""
-	@echo "✓ Submodules updated to latest remote commits."
-
-# Install npm dependencies for sub-apps that need them
-install:
-	@for dir in nonogram/website dashboard/website; do \
-		if [ -f "$$dir/package.json" ]; then \
-			echo "→ npm ci in $$dir"; \
-			(cd "$$dir" && npm ci --silent); \
-		fi; \
+install: ## Install all dependencies
+	npm ci
+	@for dir in $(JS_PROJECTS); do \
+	  if [ -f "$$dir/package.json" ]; then \
+	    echo "→ npm ci in $$dir"; (cd "$$dir" && npm ci --silent 2>/dev/null || true); \
+	  fi; \
 	done
-	@if [ -f "lib/ui-kit/v1.1/package.json" ]; then \
-		echo "→ npm ci in lib/ui-kit/v1.1"; \
-		(cd lib/ui-kit/v1.1 && npm ci --silent); \
-	fi
-	@echo ""
-	@echo "✓ Dependencies installed."
+	pip install -e packages/flask-core 2>/dev/null || true
+	@for dir in $(PYTHON_PROJECTS); do \
+	  echo "→ pip install -e $$dir"; pip install -e "$$dir[dev]" 2>/dev/null || true; \
+	done
+	@echo "\n✓ Dependencies installed."
 
-# Show submodule status at a glance
-status:
-	@git submodule status
+test: test-py test-js ## Run all tests
 
-# Remove all submodule working trees (re-run `make setup` to restore)
-clean:
-	git submodule deinit --all -f
-	@echo "✓ Submodules de-initialised. Run 'make setup' to restore."
+test-py: ## Python tests (pytest)
+	@for dir in $(PYTHON_PROJECTS); do \
+	  echo "\n=== pytest $$dir ==="; \
+	  (cd "$$dir" && python -m pytest tests/ -v --tb=short) || true; \
+	done
+
+test-js: ## JavaScript tests (jest/vitest)
+	npm test || true
+	@for dir in $(JS_PROJECTS); do \
+	  if [ -f "$$dir/package.json" ] && grep -q '"test"' "$$dir/package.json"; then \
+	    echo "\n=== test $$dir ==="; (cd "$$dir" && npm test) || true; \
+	  fi; \
+	done
+
+lint: lint-py lint-js ## Lint everything
+
+lint-py: ## Ruff lint
+	ruff check $(PYTHON_PROJECTS) packages/flask-core
+
+lint-js: ## ESLint (if configured)
+	@if [ -f ".eslintrc.js" ] || [ -f "eslint.config.mjs" ]; then npx eslint src/; fi
+
+build: ## Build Astro site
+	npm run build
+
+test-%: ## Test a single project (e.g. make test-dashboard)
+	@if [ -f "$*/pyproject.toml" ]; then (cd "$*" && python -m pytest tests/ -v); \
+	elif [ -f "$*/package.json" ]; then (cd "$*" && npm test); \
+	else echo "No test config found for $*"; fi
+
+docker-build: ## Build all Docker images
+	docker compose build
+
+docker-up: ## Start all services
+	docker compose up -d
+
+docker-down: ## Stop all services
+	docker compose down
+
+clean: ## Remove build artifacts
+	rm -rf dist .astro
+	find . -maxdepth 3 -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -maxdepth 3 -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	@echo "✓ Cleaned."
