@@ -2,7 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import Tag from '../components/Tag.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { siteConfig } from '../config/site';
 
 const categories = [
@@ -30,7 +29,6 @@ const categories = [
 ---
 
 <BaseLayout title="Skills" description={`Skills and expertise of ${siteConfig.displayName}`}>
-  <Breadcrumbs crumbs={[{ label: 'Skills' }]} />
   <section class="page-header">
     <h1>Skills</h1>
     <p class="page-subtitle">Technical skills and areas of expertise.</p>

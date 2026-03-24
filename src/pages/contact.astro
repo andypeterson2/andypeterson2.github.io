@@ -1,13 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionLabel from '../components/SectionLabel.astro';
-import Button from '../components/Button.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="Contact" description={`Contact ${siteConfig.displayName}`}>
-  <Breadcrumbs crumbs={[{ label: 'Contact' }]} />
   <section class="page-header">
     <h1>Contact</h1>
     <p class="page-subtitle">Get in touch for collaboration, research, or consulting.</p>
@@ -111,8 +108,9 @@ import { siteConfig } from '../config/site';
       if (!message) { showError('contact-message', 'Message is required'); valid = false; }
 
       if (valid) {
+        // TODO: Wire up a real form service (e.g. Formspree) to actually send messages
         const btn = form!.querySelector('[type="submit"]') as HTMLButtonElement;
-        if (btn) { btn.textContent = 'Sent!'; btn.disabled = true; }
+        if (btn) { btn.textContent = 'Demo mode \u2014 form not connected'; btn.disabled = true; }
       }
     });
   }

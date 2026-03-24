@@ -15,7 +15,14 @@
   var THEME_KEY = "sm-theme";       // "dark" | "light"
 
   var stored = localStorage.getItem(THEME_KEY);
-  var theme = stored || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  var theme;
+  if (stored) {
+    theme = stored;
+  } else if (typeof matchMedia !== 'undefined') {
+    theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  } else {
+    theme = "light";
+  }
 
   document.documentElement.dataset.theme = theme;
 

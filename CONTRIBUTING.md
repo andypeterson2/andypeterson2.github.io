@@ -2,15 +2,15 @@
 
 ## Token Workflow
 
-1. Edit `src/tokens/tokens.json` (single source of truth)
-2. Run `npm run tokens` to regenerate CSS and TypeScript
-3. Never edit `src/styles/tokens.css` directly — it is auto-generated
+1. Edit `src/styles/tokens.css` directly — this is the hand-maintained source of truth
+2. `tokens.json` and `scripts/build-tokens.js` exist but the generation pipeline is not in use
+3. Do not run `npm run tokens` — the generated files have been removed
 
 ## Color Rules
 
 - **No raw hex values** in component or page CSS. Always use `var(--color-*)` tokens.
-- The token file (`tokens.json`) is the only place hex values should appear.
-- Monochrome palette: 9-value gray scale + blue accent + green status. No other colors.
+- The token file (`src/styles/tokens.css`) is the only place hex values should appear.
+- Pure monochrome palette: black (#000), white (#fff), and minimal grays (#666, #eee, #ccc, #ddd). No blue accent, no green status — all semantic colors map to black.
 - Color never carries meaning alone — always paired with text, icon, or position.
 
 ## Spacing Rules
@@ -28,10 +28,12 @@
 
 ## Typography
 
-- IBM Plex Sans for headings and body
-- IBM Plex Mono for labels, tags, code, metadata
+- Geneva (`--font-sans`) for body text and headings
+- Chicago (`--font-ui`) for window chrome / title bars only
+- Monaco (`--font-mono`) for labels, tags, code, metadata
+- All fonts loaded via system.css @font-face declarations
 - Mono text never exceeds `--text-sm` in size
-- All caps only for section labels and category tags (Plex Mono, `--text-xs`)
+- All caps only for section labels and category tags (Monaco, `--text-xs`)
 
 ## Components
 

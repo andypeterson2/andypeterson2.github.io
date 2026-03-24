@@ -1,5 +1,6 @@
 ---
 import { siteConfig } from '../config/site';
+import { projects } from '../data/projects';
 
 interface Props {
   currentPath?: string;
@@ -7,134 +8,58 @@ interface Props {
 
 const { currentPath = Astro.url.pathname } = Astro.props;
 
-const links = [
-  { href: '/', label: 'Home' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/contact', label: 'Contact' },
-];
+function isActive(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
 ---
 
-<!-- System 6 menu bar — rounded top corners, Geneva bold, heart icon -->
-<nav class="menu-bar-wrap" aria-label="Main navigation">
-  <ul role="menu-bar" class="site-menu-bar">
-    <li role="menu-item" class="apple-menu" aria-hidden="true">
-      <span class="apple-icon">♥</span>
+<nav class="ui-navbar site-navbar" aria-label="Main navigation">
+  <ul role="menu-bar">
+    <li role="menu-item" aria-haspopup="false" class="heart-item">
+      <a href="/" aria-current={isActive('/') ? 'page' : undefined} class:list={[{ active: isActive('/') }]}><img src="/icons/heart.svg" alt="Home" class="heart-icon" /></a>
     </li>
-    {links.map(({ href, label }) => (
-      <li
-        role="menu-item"
-        class:list={{ active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }}
-      >
-        <a
-          href={href}
-          aria-current={currentPath === href ? 'page' : undefined}
-        >
-          {label}
-        </a>
-      </li>
-    ))}
-  </ul>
-
-  <!-- Mobile: hamburger + dropdown -->
-  <div class="mobile-bar">
-    <span class="mobile-apple" aria-hidden="true">♥</span>
-    <button class="btn mobile-toggle" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu" type="button">
-      Menu
-    </button>
-  </div>
-  <ul role="menu" id="mobile-menu" class="mobile-menu">
-    {links.map(({ href, label }) => (
-      <li role="menu-item">
-        <a
-          href={href}
-          class:list={{ active: currentPath === href || (href !== '/' && currentPath.startsWith(href)) }}
-          aria-current={currentPath === href ? 'page' : undefined}
-        >
-          {label}
-        </a>
-      </li>
-    ))}
+    <li role="menu-item" aria-haspopup="false">
+      <a href="/about" aria-current={isActive('/about') ? 'page' : undefined} class:list={[{ active: isActive('/about') }]}>About</a>
+    </li>
+    <li role="menu-item" aria-haspopup="true" tabindex="0">Projects
+      <ul role="menu">
+        {projects.map((project) => {
+          const href = project.appUrl || `/projects/${project.slug}/`;
+          return (
+            <li role="menu-item">
+              <a href={href} aria-current={isActive(href) ? 'page' : undefined} class:list={[{ active: isActive(href) }]}>{project.title}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </li>
+    <li role="menu-item" aria-haspopup="false">
+      <a href="/contact" aria-current={isActive('/contact') ? 'page' : undefined} class:list={[{ active: isActive('/contact') }]}>Contact</a>
+    </li>
   </ul>
 </nav>
 
-<script>
-  const toggle = document.querySelector('.mobile-toggle');
-  const menu = document.getElementById('mobile-menu') as HTMLElement;
-  if (toggle && menu) {
-    toggle.addEventListener('click', () => {
-      const open = menu.style.display === 'block';
-      menu.style.display = open ? 'none' : 'block';
-      toggle.setAttribute('aria-expanded', String(!open));
-    });
-  }
-</script>
-
 <style>
-  /* ── System 6 menu bar: rounded top corners, white bg, above windows ── */
-  .menu-bar-wrap {
-    flex-shrink: 0;
-    z-index: 100;
-    background: #fff;
+  .site-navbar {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
     border-bottom: 2px solid #000;
   }
-
-  /* system.css ul[role=menu-bar] provides flex + white bg + cursor */
-  .site-menu-bar {
-    border-radius: 6px 6px 0 0;
+  .site-navbar [role="menu-item"] {
+    font-weight: 400;
+    margin-top: 2px;
   }
-  .site-menu-bar a {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    padding: 0;
-  }
-  .site-menu-bar [role="menu-item"] {
-    font-family: var(--font-sans);
-    font-weight: 700;
-    font-size: 16px;
-  }
-  .site-menu-bar [role="menu-item"].active {
-    background: #000;
-    color: #fff;
-  }
-
-  /* Heart icon — styled like the Apple menu */
-  .apple-menu {
-    padding: 6px 12px !important;
-    font-size: 16px;
-  }
-  .apple-icon {
-    display: block;
-    line-height: 1;
-  }
-
-  /* ── Mobile nav ── */
-  .mobile-bar {
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 8px;
-    border-radius: 6px 6px 0 0;
-  }
-  .mobile-apple {
-    font-size: 16px;
-    padding: 2px 4px;
-  }
-  .mobile-menu {
-    display: none;
-    border-radius: 0;
-  }
-  .mobile-menu a {
-    font-family: var(--font-sans);
+  .site-navbar a.active {
     font-weight: 700;
   }
-  .mobile-menu a.active {
-    background: #000;
-    color: #fff;
+  .heart-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
   }
-
-  @media (max-width: 768px) {
-    .site-menu-bar { display: none !important; }
-    .mobile-bar { display: flex; }
+  .heart-item:hover .heart-icon {
+    filter: invert(1);
   }
 </style>

@@ -23,7 +23,7 @@ export const siteConfig: SiteConfig = {
   lastName: (import.meta.env.SITE_DISPLAY_NAME || '').split(' ').slice(1).join(' ') || '',
   domain: import.meta.env.SITE_DOMAIN || 'localhost',
   email: import.meta.env.SITE_EMAIL || '',
-  title: import.meta.env.SITE_TITLE || 'Portfolio',
+  title: import.meta.env.SITE_TITLE || 'Projects',
   description: import.meta.env.SITE_DESCRIPTION || 'Personal portfolio and project showcase',
   github: import.meta.env.SITE_GITHUB || '',
   linkedin: import.meta.env.SITE_LINKEDIN || '',

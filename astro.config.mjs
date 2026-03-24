@@ -22,7 +22,9 @@ export default defineConfig({
     '/underconstruction': '/',
     '/me': '/about',
     '/me/': '/about',
-    '/Current-Resume.pdf': '/resume',
+    '/Current-Resume.pdf': '/about',
+    '/resume': '/about',
+    '/cover-letter': '/about',
   },
   vite: {
     server: {
@@ -36,7 +38,6 @@ export default defineConfig({
         name: 'serve-subprojects',
         configureServer(server) {
           // Serve sub-project static directories that live outside src/pages
-          const { sirv } = {};
           server.middlewares.use((req, res, next) => {
             const subPaths = [
               '/nonogram/',
@@ -47,6 +48,7 @@ export default defineConfig({
               '/lib/',
               '/shared/',
               '/ui-kit/',
+              '/task-randomizer/',
               '/site-manifest.json',
             ];
             const url = req.url || '';

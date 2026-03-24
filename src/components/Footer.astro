@@ -3,21 +3,21 @@ import { siteConfig } from '../config/site';
 const year = new Date().getFullYear();
 ---
 
-<!-- System 6 details bar — like "5 items  232K in disk  167K available" -->
 <div class="details-bar footer-bar">
   <span>&copy; {year} {siteConfig.displayName}</span>
   <span class="footer-links">
     {siteConfig.github && <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
     {siteConfig.linkedin && <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
     {siteConfig.email && <a href={`mailto:${siteConfig.email}`}>Email</a>}
+    <span class="built-with">Built with Astro</span>
   </span>
 </div>
 
 <style>
   .footer-bar {
-    margin-top: var(--space-8);
+    padding-top: var(--space-8);
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
   }
   .footer-links {
     display: flex;
@@ -25,7 +25,7 @@ const year = new Date().getFullYear();
   }
   .footer-links a {
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
     color: #000;
     text-decoration: underline;
   }

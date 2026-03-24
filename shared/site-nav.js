@@ -1,220 +1,165 @@
 (function () {
   "use strict";
 
-  // Style element for dynamic adjustments (no longer needed for padding)
-  var style = document.createElement("style");
-  document.head.appendChild(style);
+  /* ── Project list for the Projects submenu ── */
+  var projectLinks = [
+    { href: "/projects/quantum-video-chat/", label: "Quantum Video Chat" },
+    { href: "/nonogram/website/", label: "Quantum Nonogram Solver" },
+    { href: "/classifiers/", label: "Quantum Protein Kernel" },
+    { href: "/tech-tree/website/", label: "Tech Tree" },
+    { href: "/task-randomizer/", label: "Task Randomizer" },
+    { href: "/dashboard/website/", label: "Portfolio Dashboard" },
+  ];
 
-  function buildIcon(faClass) {
-    var span = document.createElement("span");
-    span.className = "icon";
-    var i = document.createElement("i");
-    i.className = faClass;
-    span.appendChild(i);
-    return span;
+  /* ── Derive breadcrumb label from the current page's <title> ── */
+  function getPageLabel() {
+    var t = document.title || "";
+    // Strip " — Dev Environment" or similar suffixes
+    return t.split(/\s*[—–|]\s*/)[0].trim() || "Page";
   }
 
-  function build(apps) {
+  /* ── Build the system.css role="menu-bar" nav matching Nav.astro ── */
+  function build() {
     var currentPath = location.pathname;
-    // Normalize trailing slash
-    if (currentPath !== "/" && !currentPath.endsWith("/")) {
-      currentPath += "/";
-    }
 
-    var currentApp = apps.find(function (a) { return a.path === currentPath; });
-
-    // Fixed nav items — matches main Astro site exactly: ♥ Home Projects Contact
-    var navLinks = [
-      { href: "/", label: "Home" },
-      { href: "/projects", label: "Projects" },
-      { href: "/contact", label: "Contact" },
-    ];
-
-    // --- Wrapper: holds navbar + trays ---
+    // --- Wrapper ---
     var wrapper = document.createElement("div");
     wrapper.className = "ui-navbar-wrapper";
 
-    // --- Build <nav class="ui-navbar"> ---
+    // --- system.css nav with role="menu-bar" ---
     var nav = document.createElement("nav");
-    nav.className = "ui-navbar";
+    nav.className = "ui-navbar site-navbar";
     nav.setAttribute("aria-label", "Site navigation");
 
-    // Heart icon brand — matches main site
-    var brand = document.createElement("a");
-    brand.className = "ui-navbar-brand";
-    brand.href = "/";
-    var heart = document.createElement("span");
-    heart.className = "ui-navbar-apple";
-    heart.setAttribute("aria-hidden", "true");
-    heart.textContent = "\u2665"; // ♥
-    brand.appendChild(heart);
-    nav.appendChild(brand);
+    var ul = document.createElement("ul");
+    ul.setAttribute("role", "menu-bar");
 
-    // Menu container with fixed 3 links
-    var menu = document.createElement("div");
-    menu.className = "ui-navbar-menu";
+    // 1. Heart icon (home link)
+    var heartLi = document.createElement("li");
+    heartLi.setAttribute("role", "menu-item");
+    heartLi.setAttribute("aria-haspopup", "false");
+    heartLi.className = "heart-item";
+    var heartA = document.createElement("a");
+    heartA.href = "/";
+    var heartImg = document.createElement("img");
+    heartImg.src = "/icons/heart.svg";
+    heartImg.alt = "Home";
+    heartImg.className = "heart-icon";
+    heartA.appendChild(heartImg);
+    heartLi.appendChild(heartA);
+    ul.appendChild(heartLi);
 
-    navLinks.forEach(function (link) {
+    // 2. About (submenu)
+    var aboutLi = document.createElement("li");
+    aboutLi.setAttribute("role", "menu-item");
+    aboutLi.setAttribute("aria-haspopup", "true");
+    aboutLi.tabIndex = 0;
+    aboutLi.textContent = "About";
+    var aboutUl = document.createElement("ul");
+    aboutUl.setAttribute("role", "menu");
+    [
+      { href: "/about", label: "Intro" },
+      { href: "/about", label: "Resume" },
+      { href: "/about", label: "CV" },
+    ].forEach(function (item) {
+      var li = document.createElement("li");
+      li.setAttribute("role", "menu-item");
       var a = document.createElement("a");
-      a.href = link.href;
-      a.textContent = link.label;
-      if (currentPath === link.href || (link.href !== "/" && currentPath.startsWith(link.href))) {
-        a.className = "active";
-      }
-      menu.appendChild(a);
+      a.href = item.href;
+      a.textContent = item.label;
+      li.appendChild(a);
+      aboutUl.appendChild(li);
     });
+    aboutLi.appendChild(aboutUl);
+    ul.appendChild(aboutLi);
 
-    nav.appendChild(menu);
-
-    // Hamburger toggle button (mobile)
-    var toggle = document.createElement("button");
-    toggle.className = "ui-navbar-toggle";
-    toggle.type = "button";
-    toggle.setAttribute("aria-label", "Menu");
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.textContent = "Menu";
-    nav.appendChild(toggle);
-
-    // Toggle behaviour
-    toggle.addEventListener("click", function () {
-      var open = menu.classList.toggle("open");
-      toggle.setAttribute("aria-expanded", String(open));
+    // 3. Projects (submenu)
+    var projectsLi = document.createElement("li");
+    projectsLi.setAttribute("role", "menu-item");
+    projectsLi.setAttribute("aria-haspopup", "true");
+    projectsLi.tabIndex = 0;
+    projectsLi.textContent = "Projects";
+    var projectsUl = document.createElement("ul");
+    projectsUl.setAttribute("role", "menu");
+    projectLinks.forEach(function (item) {
+      var li = document.createElement("li");
+      li.setAttribute("role", "menu-item");
+      var a = document.createElement("a");
+      a.href = item.href;
+      a.textContent = item.label;
+      li.appendChild(a);
+      projectsUl.appendChild(li);
     });
+    projectsLi.appendChild(projectsUl);
+    ul.appendChild(projectsLi);
 
-    // Close menu on link click
-    menu.addEventListener("click", function (e) {
-      if (e.target.closest("a")) {
-        menu.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
-    });
+    // 4. Contact
+    var contactLi = document.createElement("li");
+    contactLi.setAttribute("role", "menu-item");
+    contactLi.setAttribute("aria-haspopup", "false");
+    var contactA = document.createElement("a");
+    contactA.href = "/contact";
+    contactA.textContent = "Contact";
+    contactLi.appendChild(contactA);
+    ul.appendChild(contactLi);
 
-    // Close on Escape
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && menu.classList.contains("open")) {
-        menu.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
-    });
-
+    nav.appendChild(ul);
     wrapper.appendChild(nav);
 
-    // --- Left tray (structural placeholder) ---
-    var leftTray = document.createElement("div");
-    leftTray.className = "ui-navbar-tray--left";
-    leftTray.setAttribute("aria-label", "Left tray");
-    wrapper.appendChild(leftTray);
+    // --- Breadcrumb tray ---
+    var tray = document.createElement("div");
+    tray.className = "ui-navbar-tray--bottom";
+    var bc = document.createElement("nav");
+    bc.className = "ui-breadcrumb";
+    bc.setAttribute("aria-label", "Breadcrumb");
 
-    // --- Right tray (structural placeholder) ---
-    var rightTray = document.createElement("div");
-    rightTray.className = "ui-navbar-tray--right";
-    rightTray.setAttribute("aria-label", "Right tray");
-    wrapper.appendChild(rightTray);
+    var homeA = document.createElement("a");
+    homeA.href = "/";
+    homeA.textContent = "Home";
+    bc.appendChild(homeA);
 
-    // --- Bottom tray: backend connection (only if current app has a backend) ---
-    var hasBottomTray = false;
-    if (currentApp && currentApp.backend) {
-      hasBottomTray = true;
-      var bottomTray = document.createElement("div");
-      bottomTray.className = "ui-navbar-tray--bottom";
-      bottomTray.setAttribute("aria-label", "Backend connection");
+    // Add "Projects" crumb
+    var sep1 = document.createElement("span");
+    sep1.className = "ui-breadcrumb-sep";
+    bc.appendChild(sep1);
+    var projA = document.createElement("a");
+    projA.href = "/projects";
+    projA.textContent = "Projects";
+    bc.appendChild(projA);
 
-      // Service label
-      var serviceLabel = document.createElement("span");
-      serviceLabel.className = "tray-service-label";
-      serviceLabel.textContent = currentApp.backend.service;
-      bottomTray.appendChild(serviceLabel);
+    // Add current page crumb
+    var sep2 = document.createElement("span");
+    sep2.className = "ui-breadcrumb-sep";
+    bc.appendChild(sep2);
+    var currentSpan = document.createElement("span");
+    currentSpan.className = "ui-breadcrumb-current";
+    currentSpan.textContent = getPageLabel();
+    bc.appendChild(currentSpan);
 
-      // Connect widget container
-      var connectEl = document.createElement("div");
-      connectEl.id = "navbar-backend-connect";
-      bottomTray.appendChild(connectEl);
+    tray.appendChild(bc);
+    wrapper.appendChild(tray);
 
-      wrapper.appendChild(bottomTray);
-
-      // Initialize connect widget once UIKit is available
-      initConnectWhenReady(connectEl, currentApp.backend);
-    }
-
-    // Insert wrapper at top of body
+    // Insert at top of body
     document.body.prepend(wrapper);
-
-    // Nav is now in-flow inside the canvas, no padding needed
   }
 
-  /**
-   * Wait for UIKit and ServiceConfig to be available, then init the connect widget.
-   */
-  function initConnectWhenReady(el, backend) {
-    var attempts = 0;
-    function tryInit() {
-      if (window.UIKit && window.UIKit.initConnect && window.ServiceConfig) {
-        var defaultUrl = "http://localhost:" + backend.defaultPort;
-        var resolvedUrl = ServiceConfig.resolveBackend
-          ? ServiceConfig.resolveBackend(backend.service, defaultUrl)
-          : ServiceConfig.get(backend.service, defaultUrl);
-
-        // Parse host/port/protocol from resolved URL
-        var host = "localhost";
-        var port = backend.defaultPort;
-        var protocol = "http";
-        try {
-          var parsed = new URL(resolvedUrl);
-          host = parsed.hostname;
-          port = parseInt(parsed.port, 10) || backend.defaultPort;
-          protocol = parsed.protocol.replace(":", "");
-        } catch (_) {}
-
-        var widget = UIKit.initConnect(el, {
-          service: backend.service,
-          defaultHost: host,
-          defaultPort: port,
-          protocol: protocol,
-          label: ""
-        });
-
-        // Periodic health check — ping backend every 30s
-        var HEALTH_INTERVAL = 30000;
-        var HEALTH_TIMEOUT  = 5000;
-        var healthTimer = null;
-
-        function healthPing() {
-          var url = widget.getUrl();
-          fetch(url + "/", { method: "HEAD", mode: "no-cors", signal: AbortSignal.timeout(HEALTH_TIMEOUT) })
-            .then(function () { widget.setStatus("connected"); })
-            .catch(function () { widget.setStatus("disconnected", "Server unreachable"); });
-        }
-
-        function startHealthCheck() {
-          if (healthTimer) clearInterval(healthTimer);
-          healthPing();
-          healthTimer = setInterval(healthPing, HEALTH_INTERVAL);
-        }
-
-        // Start health checks once the initial connection is established
-        startHealthCheck();
-
-        // Restart health checks when user clicks Connect with new host/port
-        el.querySelector(".ui-connect-btn").addEventListener("click", function () {
-          startHealthCheck();
-        });
-
-        // Dispatch event so pages can hook into the shared widget
-        document.dispatchEvent(new CustomEvent("navbar:connect-ready", {
-          detail: { service: backend.service, widget: widget }
-        }));
-      } else if (++attempts < 50) {
-        setTimeout(tryInit, 100);
-      }
-    }
-    tryInit();
+  /* ── Inline styles to match Nav.astro exactly ── */
+  function injectStyles() {
+    var style = document.createElement("style");
+    style.textContent = [
+      "html { background: #eee url('/bg-pattern.svg') repeat !important; background-size: 32px 32px !important; image-rendering: pixelated; }",
+      ".site-navbar { border-bottom: none; padding-top: 4px; padding-bottom: 4px; }",
+      ".site-navbar [role=\"menu-item\"] { font-weight: 400; }",
+      ".heart-icon { width: 24px; height: 24px; display: block; }",
+      ".heart-item:hover .heart-icon { filter: invert(1); }",
+      ".ui-navbar-tray--bottom { background: #fff; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 12px; display: flex; align-items: center; font-size: 14px; }",
+    ].join("\n");
+    document.head.appendChild(style);
   }
 
   function init() {
-    fetch("/site-manifest.json")
-      .then(function (r) { return r.json(); })
-      .then(function (data) { build(data.apps); })
-      .catch(function () { /* manifest unavailable — degrade silently */ });
+    injectStyles();
+    build();
   }
 
   if (document.readyState === "loading") {
