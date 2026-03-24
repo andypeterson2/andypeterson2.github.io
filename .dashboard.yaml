@@ -1,0 +1,5 @@
+services:
+  - name: tech-tree
+    display_name: Tech Tree
+    compose_service: tech-tree
+    default_port: 8080
