@@ -298,8 +298,8 @@ describe('WP #675 — Variable substitution in data.tex', () => {
   });
 
   test('defines metric newcommands', () => {
-    // Metrics from data.json should become \\newcommand entries
-    expect(dataTex).toContain('\\newcommand');
+    // Metrics from data.json should become \\providecommand entries
+    expect(dataTex).toContain('\\providecommand');
   });
 
   test('data.json metrics match data.tex commands', () => {

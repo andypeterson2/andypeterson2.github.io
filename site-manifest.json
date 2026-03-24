@@ -133,7 +133,21 @@
     },
     {
       "path": "/nonogram/website/",
-      "title": "Nonogram"
+      "title": "Nonogram",
+      "icon": "fa-solid fa-puzzle-piece",
+      "backend": {
+        "service": "nonogram",
+        "defaultPort": 5055
+      }
+    },
+    {
+      "path": "/qvc/website/client/",
+      "title": "Video Chat",
+      "icon": "fa-solid fa-lock",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5002
+      }
     },
     {
       "path": "/task-randomizer/",

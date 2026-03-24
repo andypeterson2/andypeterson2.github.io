@@ -5,6 +5,16 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
+
+// Check if xelatex is available on this system
+let hasXelatex = false;
+try {
+  execSync('which xelatex', { stdio: 'ignore' });
+  hasXelatex = true;
+} catch (_) {
+  hasXelatex = false;
+}
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..');
 let server;
@@ -257,21 +267,23 @@ describe('GET /api/coverletter', () => {
 // ---- POST /api/compile/:name ----
 
 describe('POST /api/compile/:name', () => {
-  test('compiles CV successfully', async () => {
+  const compileIt = hasXelatex ? test : test.skip;
+
+  compileIt('compiles CV successfully', async () => {
     const res = await request('POST', '/api/compile/cv');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(fs.existsSync(path.join(PROJECT_ROOT, 'cv.pdf'))).toBe(true);
   }, 30000);
 
-  test('compiles resume successfully', async () => {
+  compileIt('compiles resume successfully', async () => {
     const res = await request('POST', '/api/compile/resume');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(fs.existsSync(path.join(PROJECT_ROOT, 'resume.pdf'))).toBe(true);
   }, 30000);
 
-  test('compiles cover letter successfully', async () => {
+  compileIt('compiles cover letter successfully', async () => {
     const res = await request('POST', '/api/compile/coverletter');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -287,7 +299,9 @@ describe('POST /api/compile/:name', () => {
 // ---- GET /api/pdf/:name ----
 
 describe('GET /api/pdf/:name', () => {
-  test('serves compiled CV PDF', async () => {
+  const pdfIt = hasXelatex ? test : test.skip;
+
+  pdfIt('serves compiled CV PDF', async () => {
     // Compile first to ensure PDF exists
     await request('POST', '/api/compile/cv');
 

@@ -84,8 +84,11 @@ class TestE2EPipeline:
         assert result.model is not None
         assert result.epochs_completed == 2
 
-        evaluator = Evaluator(result.model, test_loader, num_classes=3)
-        eval_result = evaluator.evaluate()
+        evaluator = Evaluator()
+        eval_result = evaluator.evaluate(
+            result.model, test_loader, num_classes=3,
+            class_labels=["setosa", "versicolor", "virginica"],
+        )
         assert 0.0 <= eval_result.accuracy <= 1.0
 
         # Predict on a single sample
@@ -116,8 +119,11 @@ class TestE2EPipeline:
         assert result.model is not None
         assert result.epochs_completed == 1
 
-        evaluator = Evaluator(result.model, test_loader, num_classes=10)
-        eval_result = evaluator.evaluate()
+        evaluator = Evaluator()
+        eval_result = evaluator.evaluate(
+            result.model, test_loader, num_classes=10,
+            class_labels=[str(i) for i in range(10)],
+        )
         assert 0.0 <= eval_result.accuracy <= 1.0
 
     def test_svm_model_uses_hinge_loss(self):
@@ -161,8 +167,11 @@ class TestModelAccuracyRegression:
         )
         result = trainer.train()
 
-        evaluator = Evaluator(result.model, test_loader, num_classes=3)
-        eval_result = evaluator.evaluate()
+        evaluator = Evaluator()
+        eval_result = evaluator.evaluate(
+            result.model, test_loader, num_classes=3,
+            class_labels=["setosa", "versicolor", "virginica"],
+        )
         # With random data the model may not beat 33% reliably,
         # so we check it doesn't crash and returns a valid accuracy.
         assert 0.0 <= eval_result.accuracy <= 1.0
@@ -370,10 +379,18 @@ class TestPerformanceAndResources:
         """Core modules should use logging, not bare print()."""
         for mod in ["trainer.py", "evaluator.py", "predictor.py", "server.py"]:
             src = _read(f"classifiers/{mod}")
-            # Allow print in comments/strings but flag bare print() calls
+            # Allow print in comments, docstrings, and string literals
             lines = src.split("\n")
+            in_docstring = False
             for i, line in enumerate(lines, 1):
                 stripped = line.strip()
+                # Track triple-quoted docstrings
+                triple_count = stripped.count('"""') + stripped.count("'''")
+                if triple_count == 1:
+                    in_docstring = not in_docstring
+                    continue
+                if in_docstring:
+                    continue
                 if stripped.startswith("#"):
                     continue
                 if re.match(r"^\s*print\(", line):

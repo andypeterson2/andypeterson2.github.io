@@ -211,7 +211,8 @@ describe('WP #668 — Accessibility compliance', () => {
   });
 
   test('textareas have aria-label attributes', () => {
-    expect(html).toContain('aria-label="Bullet point');
+    // Bullet point labels use Alpine.js dynamic binding
+    expect(html).toContain(":aria-label=\"'Bullet point ' + (ii + 1)\"");
     expect(html).toContain('aria-label="CV summary text"');
     expect(html).toContain('aria-label="Resume summary text"');
   });

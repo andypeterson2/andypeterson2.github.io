@@ -191,7 +191,7 @@ describe('parseSection - cvparagraph (summary)', () => {
   });
 
   test('extracts paragraph text', () => {
-    expect(parsed.text).toContain('full-stack software engineer');
+    expect(parsed.text).toContain('Full-stack software engineer');
     expect(parsed.text.length).toBeGreaterThan(100);
   });
 
