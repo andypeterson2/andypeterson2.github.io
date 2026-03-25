@@ -1,0 +1,345 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import PullQuote from '../components/PullQuote.astro';
+import Button from '../components/Button.astro';
+import { siteConfig } from '../config/site';
+---
+
+<BaseLayout title="About" description={`About ${siteConfig.displayName}`}>
+  <section class="page-header">
+    <h1>About</h1>
+    <p class="page-subtitle">Background, experience, and what drives my work.</p>
+  </section>
+
+  <!-- Bio -->
+  <section class="content-section">
+    <SectionLabel label="Bio" />
+    <div class="window bio-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">{siteConfig.displayName}</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>Quantum Researcher · Security Engineer · Software Architect</span>
+        <span>California, USA</span>
+      </div>
+      <div class="window-pane bio-body">
+        <p>
+          Quantum computing researcher and software engineer with experience spanning
+          quantum key distribution, cybersecurity, and full-stack development. Currently
+          focused on building quantum-secured communication systems and exploring
+          practical applications of quantum advantage in optimization problems.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <PullQuote cite="Rick Ord">Start early, start often.</PullQuote>
+
+  <!-- Experience -->
+  <section class="content-section">
+    <SectionLabel label="Experience" />
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Quantum Software Engineering Lead (Intern)</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>Qualcomm Institute — La Jolla, CA</span>
+        <span>Jul. 2022 – Dec. 2024</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Architected a video communication platform utilizing end-to-end quantum encryption via photonic circuitry, enhancing data security protocols.</li>
+          <li>Optimized Grover's algorithm using Qiskit to solve complex binary constraint satisfaction problems, demonstrating practical applications for quantum search.</li>
+          <li>Developed and evaluated Quantum Machine Learning (QML) models, implementing classification algorithms via quantum neural networks.</li>
+          <li>Mentored a cross-functional team of interns under Dr. Nikola Alic, overseeing software deliverables and the technical setup of a new undergraduate quantum computing lab.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Full-Stack DevOps Engineer & Advisor</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>Rochester Institute of Technology Esports — Remote</span>
+        <span>Sep. 2020 – Jul. 2022</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Engineered and deployed scalable web resources using the MERN stack, leveraging Docker for consistent environment orchestration.</li>
+          <li>Orchestrated cloud infrastructure on DigitalOcean Droplets, implementing Nginx reverse proxies and Docker Compose to ensure 99.9% uptime.</li>
+          <li>Streamlined development lifecycles by building CI/CD pipelines and monitoring suites, reducing deployment friction.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Instructor & IT Systems Specialist</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>Mathnasium — Temecula, CA</span>
+        <span>Mar. 2020 – Sep. 2021</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Delivered advanced technical instruction in Calculus and Computer Science, tailoring complex concepts to diverse student learning levels.</li>
+          <li>Directed the center's digital transformation during COVID-19, authoring technical documentation and maintaining IT infrastructure for seamless remote learning.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Education -->
+  <section class="content-section">
+    <SectionLabel label="Education" />
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Bachelors of Science in Computer Science</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>University of California: San Diego — La Jolla, CA</span>
+        <span>Sep. 2020 – Dec. 2024</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Extracurricular -->
+  <section class="content-section">
+    <SectionLabel label="Extracurricular" />
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Co-Founder & President / Technical Curriculum Lead</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>Quantum Computing at UC San Diego</span>
+        <span>Feb. 2021 – Dec. 2024</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Co-founded and scaled the first undergraduate quantum computing organization at UCSD, establishing a community for 100+ aspiring researchers and engineers.</li>
+          <li>Developed a comprehensive technical curriculum for workshops covering foundations in quantum computing and Qiskit.</li>
+          <li>Standardized organizational workflows and digital infrastructure, enabling sustainable leadership transitions and cross-campus collaborations.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">President & Cybersecurity Competition Member</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>ACM Cyber @ UCSD</span>
+        <span>Aug. 2020 – Jun. 2023</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Trained teams for (and competed in) high-stakes national and international competitions including CCDC, CPTC, and Google CTF.</li>
+          <li>Authored training modules on penetration testing, network defense, and cryptography to elevate competitive ranking.</li>
+          <li>Orchestrated weekly technical workshops and "Deep Dive" sessions, fostering peer-to-peer mentorship in advanced security topics.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Lead Infrastructure Engineer & Challenge Designer</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="details-bar">
+        <span>San Diego Capture the Flag (SDCTF)</span>
+        <span>Dec. 2020 – May 2022</span>
+      </div>
+      <div class="window-pane section-body">
+        <ul>
+          <li>Engineered the backend for San Diego's largest annual cybersecurity competition, supporting 500+ global participants in its inaugural year.</li>
+          <li>Provisioned cloud-native infrastructure using Terraform (IaC), managing a Postgres database and containerized challenge environments.</li>
+          <li>Designed and deployed a Discord.JS-integrated submission bot for real-time flag validation and leaderboard updates.</li>
+          <li>Developed high-quality OSINT challenges testing competitors' ability to perform investigative digital forensics.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section class="content-section">
+    <SectionLabel label="Skills" />
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Technical Skills</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="window-pane section-body skills-body">
+        <div class="skill-row">
+          <span class="skill-label">Languages</span>
+          <span>Python (Expert), C/C++, Java, TypeScript/JavaScript, SQL, Bash, LaTeX, Matlab, Rust</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Quantum Computing</span>
+          <span>Qiskit, Cirq, Quantum Neural Networks (QML), QAOA, Grover's & HHL Algorithms, BB84, Error Mitigation</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Systems & DevOps</span>
+          <span>Docker, Kubernetes, Terraform, Linux Kernel, Distributed Systems, CI/CD, Nginx, Git, AWS, DigitalOcean</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Cybersecurity</span>
+          <span>Reverse Engineering (Ghidra/IDA), Network Security (TCP/IP), Penetration Testing, OSINT, Applied Cryptography</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Software Engineering</span>
+          <span>Data Structures & Algorithms, System Design, Design Patterns, Agile/Scrum, Unit Testing</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Data Science & AI</span>
+          <span>PyTorch, Scikit-Learn, Pandas, Computer Vision, NLP, Ollama (LLMs), Statistical Modeling, Jupyter</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Infrastructure</span>
+          <span>PostgreSQL, MongoDB, Redis, RESTful/GraphQL API Design, Microservices, Linux Server Administration</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-label">Experimental Lab</span>
+          <span>Free-space Photonics, Laser Systems, Signal Processing, Oscilloscopes, Atomic Force Microscopy (AFM)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Certifications -->
+  <section class="content-section">
+    <SectionLabel label="Certifications" />
+    <div class="window section-window">
+      <div class="title-bar">
+        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <h1 class="title">Certifications</h1>
+        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+      </div>
+      <div class="window-pane section-body">
+        <div class="cert-row">
+          <span><strong>Azure Data Fundamentals</strong> — Microsoft</span>
+          <span>2025</span>
+        </div>
+        <div class="cert-row">
+          <span><strong>IT Fundamentals+</strong> — CompTIA</span>
+          <span>2022</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="content-section">
+    <SectionLabel label="Download" />
+    <div class="download-links">
+      <Button href="/resume.pdf">Download Resume PDF</Button>
+    </div>
+    <p class="last-updated">Last updated: 2026</p>
+  </section>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: var(--space-8) 0 var(--space-6);
+    max-width: var(--content-width);
+  }
+  .page-header h1 { margin-bottom: var(--space-2); }
+  .page-subtitle { font-size: 16px; }
+  .content-section { padding: var(--space-6) 0; }
+
+  .bio-window,
+  .section-window {
+    max-width: var(--content-width);
+    min-width: 0;
+    margin-bottom: var(--space-4);
+  }
+  .section-window:last-child {
+    margin-bottom: 0;
+  }
+
+  .bio-body,
+  .section-body {
+    font-size: 16px;
+    line-height: 1.65;
+    max-height: 400px;
+  }
+
+  .section-body ul {
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+  .section-body li {
+    margin-bottom: var(--space-2);
+  }
+  .section-body li:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Skills */
+  .skills-body {
+    max-height: none;
+  }
+  .skill-row {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .skill-row:last-child {
+    border-bottom: none;
+  }
+  .skill-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 140px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  /* Certifications */
+  .cert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+  }
+  .cert-row:last-child {
+    border-bottom: none;
+  }
+
+  /* Download */
+  .download-links {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+  .last-updated {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #666;
+  }
+</style>

@@ -1,5 +1,6 @@
 ---
 import { siteConfig } from '../config/site';
+import { projects } from '../data/projects';
 import '../styles/tokens.css';
 import '../styles/base.css';
 
@@ -114,7 +115,19 @@ const detailsSegments = isHome
         <li role="menu-item" class="heart-item">
           <a href="/"><img src="/icons/heart.svg" alt="Home" class="heart-icon" width="36" height="36" /></a>
         </li>
-        <li role="menu-item"><a href="/projects/">Projects</a></li>
+        <li role="menu-item" aria-haspopup="true" tabindex="0"><a href="/projects/">Projects</a>
+          <ul role="menu">
+            {projects.map((project) => {
+              const href = project.appUrl || `/projects/${project.slug}/`;
+              return (
+                <li role="menu-item">
+                  <a href={href}>{project.title}</a>
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+        <li role="menu-item"><a href="/about">About</a></li>
         <li role="menu-item"><a href="/contact">Contact</a></li>
       </ul>
     </nav>
@@ -126,6 +139,7 @@ const detailsSegments = isHome
       </a>
       <select class="mobile-nav-select" aria-label="Navigate to">
         <option value="">Navigate...</option>
+        <option value="/about/">About</option>
         <option value="/projects/">Projects</option>
         <option value="/contact/">Contact</option>
       </select>
@@ -204,7 +218,6 @@ const detailsSegments = isHome
         var ul = document.querySelector('.site-menubar ul[role="menu-bar"]');
         if (!ul) return;
 
-        // Server nav item
         serverLi = document.createElement("li");
         serverLi.setAttribute("role", "menu-item");
         serverLi.setAttribute("aria-haspopup", "false");
@@ -220,7 +233,6 @@ const detailsSegments = isHome
         dot.className = "sn-dot";
         serverLi.appendChild(dot);
 
-        // Submenu (shown when connected)
         serverSubUl = document.createElement("ul");
         serverSubUl.setAttribute("role", "menu");
         serverSubUl.style.display = "none";
@@ -251,7 +263,6 @@ const detailsSegments = isHome
 
         ul.appendChild(serverLi);
 
-        // Also add to mobile nav
         var mobileSelect = document.querySelector('.mobile-nav-select');
         if (mobileSelect) {
           var opt = document.createElement("option");

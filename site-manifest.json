@@ -25,7 +25,7 @@
     },
     {
       "path": "/dist/",
-      "title": "Projects | Projects"
+      "title": "Home | Projects"
     },
     {
       "path": "/dist/Current-Resume.pdf/",
@@ -33,11 +33,15 @@
     },
     {
       "path": "/dist/about/",
-      "title": "Redirecting to: /"
+      "title": "About | Projects"
     },
     {
       "path": "/dist/blog/",
       "title": "Redirecting to: /"
+    },
+    {
+      "path": "/dist/classifiers/",
+      "title": "Classifier | Projects"
     },
     {
       "path": "/dist/contact/",
