@@ -6,6 +6,15 @@
       "icon": "fa-solid fa-house"
     },
     {
+      "path": "/classifiers/",
+      "title": "Classifiers",
+      "icon": "fa-solid fa-brain",
+      "backend": {
+        "service": "classifier",
+        "defaultPort": 5051
+      }
+    },
+    {
       "path": "/cv/website/",
       "title": "CV Editor",
       "icon": "fa-solid fa-pen-to-square",
@@ -131,8 +140,39 @@
       "title": "Code coverage report for __root__/"
     },
     {
+      "path": "/packages/nonogram/",
+      "title": "Redirecting\u2026"
+    },
+    {
+      "path": "/packages/nonogram/website/",
+      "title": "Nonogram",
+      "icon": "fa-solid fa-puzzle-piece",
+      "backend": {
+        "service": "nonogram",
+        "defaultPort": 5055
+      }
+    },
+    {
       "path": "/public/server-dashboard/",
       "title": "QVC Server Dashboard"
+    },
+    {
+      "path": "/qvc/website/client/",
+      "title": "Video Chat",
+      "icon": "fa-solid fa-lock",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5002
+      }
+    },
+    {
+      "path": "/task-randomizer/",
+      "title": "Task Randomizer"
+    },
+    {
+      "path": "/tech-tree/website/",
+      "title": "Tech Tree",
+      "icon": "fa-solid fa-code-branch"
     },
     {
       "path": "/ui-kit/",
