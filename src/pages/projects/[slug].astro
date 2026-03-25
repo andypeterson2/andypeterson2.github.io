@@ -1,10 +1,5 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Card from '../../components/Card.astro';
-import Tag from '../../components/Tag.astro';
-import SectionLabel from '../../components/SectionLabel.astro';
-import Button from '../../components/Button.astro';
-import { siteConfig } from '../../config/site';
 import { projects } from '../../data/projects';
 
 export function getStaticPaths() {
@@ -26,135 +21,330 @@ const relatedProjects = projects
 ---
 
 <BaseLayout title={project.title} description={project.description}>
-  <section class="project-header">
-    <div class="details-bar project-meta">
-      <span>{project.status}</span>
-      <span>{project.category}</span>
-    </div>
-    <h1>{project.title}</h1>
-    <p class="project-description">{project.longDescription || project.description}</p>
-    <div class="project-tags">
-      {project.tags.map((tag) => (
-        <Tag variant={tag.variant}>{tag.label}</Tag>
-      ))}
-    </div>
-    {(project.appUrl || project.repoUrl) && (
-      <div class="project-actions">
-        {project.appUrl && <Button href={project.appUrl}>Launch App</Button>}
-        {project.repoUrl && <Button href={project.repoUrl} variant="secondary">View Source</Button>}
+  <div class="project-hero">
+    {(project.appUrl || project.appLinks || project.repoUrl) && (
+      <div class="hero-actions">
+        {project.appLinks ? (
+          project.appLinks.map((link: { label: string; href: string }) => (
+            <a href={link.href} class="action-btn">{link.label}</a>
+          ))
+        ) : (
+          project.appUrl && <a href={project.appUrl} class="action-btn">Launch App</a>
+        )}
+        {project.repoUrl && <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">View Source</a>}
       </div>
     )}
-  </section>
-
-  <div class="separator"></div>
-
-  <section class="content-section">
-    <SectionLabel label="Architecture" />
-    <div class="standard-dialog architecture-placeholder">
-      Architecture diagram and technical details for this project.
+    <div class="hero-screenshot">
+      <div class="screenshot-viewer" data-auto="true">
+        <div class="screenshot-controls">
+          <div class="arrow-left" role="button" aria-label="Previous screenshot" tabindex="0"></div>
+          <div class="arrow-right" role="button" aria-label="Next screenshot" tabindex="0"></div>
+        </div>
+        <div class="screenshot-stage">
+          {project.screenshots.length > 0 ? (
+            project.screenshots.map((src, i) => (
+              <img
+                src={src}
+                alt={`${project.title} screenshot ${i + 1}`}
+                class:list={['screenshot-slide', { active: i === 0 }]}
+                data-index={i}
+              />
+            ))
+          ) : (
+            <div class="screenshot-placeholder screenshot-slide active" data-index="0">
+              <img src={`/icons/${project.icon}`} alt="" class="screenshot-icon" />
+              <span class="screenshot-label">Screenshot</span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  </section>
+    <p class="hero-desc">{project.longDescription || project.description}</p>
+  </div>
 
   {relatedProjects.length > 0 && (
-    <section class="content-section">
-      <SectionLabel label="Related Projects" />
-      <div class="related-grid">
+    <div class="project-section">
+      <div class="section-rule"><span>Related Projects</span></div>
+      <div class="related-list">
         {relatedProjects.map((rp) => (
-          <Card title={rp.title} href={`/projects/${rp.slug}`}>
-            <p>{rp.description}</p>
-            <div class="card-tags">
-              {rp.tags.map((tag) => (
-                <Tag variant={tag.variant}>{tag.label}</Tag>
-              ))}
+          <a href={`/projects/${rp.slug}/`} class="related-item">
+            <img src={`/icons/${rp.icon}`} alt="" class="related-icon" />
+            <div class="related-info">
+              <span class="related-title">{rp.title}</span>
+              <span class="related-desc">{rp.description}</span>
             </div>
-          </Card>
+          </a>
         ))}
       </div>
-    </section>
+    </div>
   )}
 
-  <div class="separator"></div>
-
-  <nav class="project-nav" aria-label="Project navigation">
-    {prevProject ? (
-      <a href={`/projects/${prevProject.slug}`} class="standard-dialog project-nav-link">
-        <span class="project-nav-dir">&larr; Previous</span>
-        <span class="project-nav-title">{prevProject.title}</span>
-      </a>
-    ) : <span />}
-    {nextProject ? (
-      <a href={`/projects/${nextProject.slug}`} class="standard-dialog project-nav-link next">
-        <span class="project-nav-dir">Next &rarr;</span>
-        <span class="project-nav-title">{nextProject.title}</span>
-      </a>
-    ) : <span />}
-  </nav>
+  <div class="project-section">
+    <div class="section-rule"><span>Browse Projects</span></div>
+    <nav class="project-nav" aria-label="Project navigation">
+      {prevProject ? (
+        <a href={`/projects/${prevProject.slug}/`} class="nav-link">
+          <span class="nav-dir">&larr; Previous</span>
+          <span class="nav-title">{prevProject.title}</span>
+        </a>
+      ) : <span />}
+      {nextProject ? (
+        <a href={`/projects/${nextProject.slug}/`} class="nav-link nav-next">
+          <span class="nav-dir">Next &rarr;</span>
+          <span class="nav-title">{nextProject.title}</span>
+        </a>
+      ) : <span />}
+    </nav>
+  </div>
 </BaseLayout>
 
+<script>
+  const viewer = document.querySelector('.screenshot-viewer') as HTMLElement | null;
+  if (viewer) {
+    const slides = viewer.querySelectorAll('.screenshot-slide');
+    const leftBtn = viewer.querySelector('.arrow-left');
+    const rightBtn = viewer.querySelector('.arrow-right');
+    let current = 0;
+    let autoTimer: ReturnType<typeof setInterval> | null = null;
+    const total = slides.length;
+
+    function show(index: number) {
+      slides.forEach(s => s.classList.remove('active'));
+      current = ((index % total) + total) % total;
+      slides[current].classList.add('active');
+    }
+
+    function startAuto() {
+      if (total <= 1) return;
+      stopAuto();
+      autoTimer = setInterval(() => show(current + 1), 4000);
+    }
+
+    function stopAuto() {
+      if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    }
+
+    leftBtn?.addEventListener('click', () => { stopAuto(); show(current - 1); });
+    rightBtn?.addEventListener('click', () => { stopAuto(); show(current + 1); });
+
+    startAuto();
+  }
+</script>
+
 <style>
-  .project-header {
-    padding: var(--space-4) 0 var(--space-8);
-    max-width: var(--content-width);
+  /* ── Hero ── */
+  .project-hero {
+    padding: clamp(16px, 3vw, 40px) 0 clamp(12px, 2vw, 28px);
   }
-  .project-meta {
-    margin-bottom: var(--space-4);
+  .project-hero::after {
+    content: '';
+    display: table;
+    clear: both;
   }
-  .project-header h1 { margin-bottom: var(--space-4); }
-  .project-description {
-    font-size: 16px;
+  .hero-screenshot {
+    float: left;
+    width: clamp(160px, 22vw, 320px);
+    margin: 0 clamp(16px, 3vw, 40px) clamp(8px, 1vw, 16px) 0;
+  }
+  .screenshot-viewer {
+    display: flex;
+    flex-direction: column;
+  }
+  .screenshot-controls {
+    position: relative;
+    height: clamp(10px, 1.4vw, 18px);
+    background: #fff;
+    border: 3px solid #000;
+    border-bottom: none;
+    border-radius: clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px) 0 0;
+    cursor: pointer;
+  }
+  .arrow-left,
+  .arrow-right {
+    position: absolute;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-top: calc(clamp(10px, 1.4vw, 18px) / 2) solid transparent;
+    border-bottom: calc(clamp(10px, 1.4vw, 18px) / 2) solid transparent;
+  }
+  .arrow-left {
+    left: 25%;
+    border-right: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid #000;
+  }
+  .arrow-right {
+    right: 25%;
+    border-left: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid #000;
+  }
+  .screenshot-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 3px solid #000;
+    border-radius: 0 0 clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px);
+    overflow: hidden;
+    background: #eee;
+  }
+  .screenshot-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .screenshot-slide.active {
+    opacity: 1;
+  }
+  .screenshot-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 0.8vw, 12px);
+  }
+  .screenshot-icon {
+    width: clamp(32px, 4vw, 56px);
+    height: clamp(32px, 4vw, 56px);
+    opacity: 0.4;
+  }
+  .screenshot-label {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: clamp(9px, 1.2vw, 16px);
+    opacity: 0.4;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .hero-desc {
+    font-size: clamp(9px, 1.34vw, 18px);
     line-height: 1.6;
-    margin-bottom: var(--space-4);
+    margin-bottom: clamp(10px, 1.5vw, 20px);
   }
-  .project-tags {
+  .hero-actions {
     display: flex;
-    gap: var(--space-2);
+    gap: clamp(8px, 1vw, 16px);
     flex-wrap: wrap;
+    margin-bottom: clamp(8px, 1.5vw, 20px);
   }
-  .project-actions {
+  .action-btn {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: clamp(12px, 1.78vw, 24px);
+    padding: clamp(4px, 0.6vw, 10px) clamp(12px, 1.5vw, 24px);
+    border: 2px solid #000;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .action-btn:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  /* ── Sections ── */
+  .project-section {
+    padding: clamp(12px, 2vw, 28px) 0;
+  }
+  .section-rule {
     display: flex;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-    flex-wrap: wrap;
+    align-items: center;
+    gap: clamp(6px, 1vw, 14px);
+    margin-bottom: clamp(12px, 2vw, 28px);
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: clamp(10px, 1.4vw, 18px);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
-  .content-section { padding: var(--space-6) 0; }
-  .architecture-placeholder {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    text-align: center;
-    color: #666;
+  .section-rule::before,
+  .section-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #000;
   }
-  .related-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: var(--space-4);
-  }
-  .card-tags {
+
+  /* ── Related ── */
+  .related-list {
     display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: clamp(6px, 1vw, 14px);
   }
+  .related-item {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 16px);
+    text-decoration: none;
+    color: #000;
+    padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
+    border: 2px solid #000;
+  }
+  .related-item:hover {
+    background: #000;
+    color: #fff;
+  }
+  .related-item:hover .related-icon {
+    filter: invert(1);
+  }
+  .related-icon {
+    width: clamp(28px, 3vw, 44px);
+    height: clamp(28px, 3vw, 44px);
+    flex-shrink: 0;
+  }
+  .related-info {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 0.3vw, 4px);
+  }
+  .related-title {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: clamp(12px, 1.78vw, 24px);
+  }
+  .related-desc {
+    font-size: clamp(10px, 1.4vw, 18px);
+    opacity: 0.6;
+  }
+
+  /* ── Nav ── */
   .project-nav {
     display: flex;
     justify-content: space-between;
-    padding: var(--space-6) 0;
-    gap: var(--space-4);
+    gap: clamp(8px, 1.5vw, 20px);
   }
-  .project-nav-link {
+  .nav-link {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: clamp(2px, 0.3vw, 4px);
     text-decoration: none;
     color: #000;
+    padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
+    border: 2px solid #000;
     max-width: 45%;
   }
-  .project-nav-link:hover { background: #000; color: #fff; }
-  .project-nav-link.next { text-align: right; margin-left: auto; }
-  .project-nav-dir {
-    font-family: var(--font-mono);
-    font-size: 11px;
+  .nav-link:hover {
+    background: #000;
+    color: #fff;
+  }
+  .nav-next {
+    text-align: right;
+    margin-left: auto;
+  }
+  .nav-dir {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: clamp(9px, 1.2vw, 16px);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
-  .project-nav-title { font-size: 13px; }
+  .nav-title {
+    font-size: clamp(11px, 1.5vw, 20px);
+  }
+
+  @media (max-width: 600px) {
+    .project-hero {
+      flex-direction: column;
+    }
+    .hero-screenshot {
+      width: 100%;
+    }
+  }
 </style>
