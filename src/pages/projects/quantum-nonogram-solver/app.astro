@@ -1,0 +1,327 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Nonogram Solver" breadcrumbs={[{ label: 'projects', href: '/projects/' }, { label: 'quantum nonogram solver', href: '/projects/quantum-nonogram-solver/' }, { label: 'app' }]}>
+
+  <meta slot="head" name="site-backend-service" content="nonogram" />
+  <meta slot="head" name="site-backend-port" content="5055" />
+
+  <!-- App shell -->
+  <div id="nonogram-app">
+    <div class="nono-columns">
+      <div class="nono-left">
+        <div class="section-rule"><span>Puzzle Editor</span></div>
+        <div id="draw-view"></div>
+        <div class="editor-actions">
+          <button id="btn-clear" class="nono-btn">Clear</button>
+          <button id="btn-random" class="nono-btn">Randomize</button>
+        </div>
+        <div class="grid-size-controls">
+          <button id="btn-add-row" class="nono-btn nono-btn-sm">+ Row</button>
+          <button id="btn-add-col" class="nono-btn nono-btn-sm">+ Col</button>
+          <span id="grid-size-label">3 &times; 3</span>
+        </div>
+        <div id="status-line" class="status-line">Ready</div>
+      </div>
+      <div class="nono-right">
+        <div class="controls-bar">
+          <label class="trials-label">Trials
+            <input type="number" id="trials-input" min="1" max="20" value="1">
+          </label>
+          <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Run on Simulator</button>
+        </div>
+        <div class="section-rule"><span>Classical</span></div>
+        <div id="cl-canvas" class="sol-canvas">
+          <div id="cl-placeholder" class="placeholder-msg">Run Benchmark to see solutions.</div>
+        </div>
+        <div class="section-rule"><span>Quantum</span></div>
+        <div id="qu-list" class="sol-canvas">
+          <div id="qu-sol-placeholder" class="placeholder-msg">Run Benchmark to see solutions.</div>
+        </div>
+        <div class="section-rule"><span>Histogram</span></div>
+        <div class="histogram-controls">
+          <label class="threshold-label">Thr
+            <input type="number" id="threshold-input" min="0" max="100" step="0.01" value="0.50">
+            <span>%</span>
+          </label>
+        </div>
+        <div id="qu-area" class="histogram-area">
+          <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
+          <div id="qu-placeholder" class="placeholder-msg" style="display:none"></div>
+        </div>
+        <div class="section-rule"><span>Metrics</span></div>
+        <div id="metrics-pane"></div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script is:inline src="/nonogram/js/state.js"></script>
+  <script is:inline src="/nonogram/js/grid.js"></script>
+  <script is:inline src="/nonogram/js/solver.js"></script>
+  <script is:inline src="/nonogram/js/app.js"></script>
+</BaseLayout>
+
+<style>
+  /* ── Buttons ── */
+  .nono-btn {
+    background: #fff;
+    border: 2px solid #000;
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 13px;
+    padding: 6px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nono-btn:hover { background: #000; color: #fff; }
+  .nono-btn:disabled { opacity: 0.4; cursor: default; }
+  .nono-btn:disabled:hover { background: #fff; color: #000; }
+  .nono-btn-sm { font-size: 12px; padding: 4px 10px; }
+  .nono-btn-run {
+    background: #000;
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 16px;
+  }
+  .nono-btn-run:hover { background: #333; }
+  .nono-btn-run:disabled { opacity: 0.4; }
+
+  /* ── Two-column layout ── */
+  .nono-columns {
+    display: flex;
+    gap: 0;
+    min-height: 600px;
+  }
+  .nono-left {
+    width: 40%;
+    border-right: 2px solid #000;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .nono-right {
+    width: 60%;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── Section rule (centered text with lines) ── */
+  .section-rule {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .section-rule::before,
+  .section-rule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #000;
+  }
+
+  /* ── Draw view / grid ── */
+  :global(#draw-view) {
+    display: flex;
+    justify-content: center;
+    user-select: none;
+  }
+  :global(.nonogram-table) {
+    border-collapse: collapse;
+  }
+  :global(.nonogram-table td.cell) {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #000;
+    background: #fff;
+    cursor: crosshair;
+  }
+  :global(.nonogram-table td.cell.filled) {
+    background: #000;
+  }
+  :global(.nonogram-table .corner-cell) {
+    background: transparent;
+  }
+  :global(.nonogram-table .row-clue),
+  :global(.nonogram-table .col-clue) {
+    background: #eee;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #ccc;
+    padding: 2px;
+  }
+  :global(.row-clue-slots) {
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+    padding: 0 4px;
+  }
+  :global(.col-clue-slots) {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    align-items: center;
+    padding: 2px 4px;
+  }
+  :global(.clue-slot) {
+    font-size: 11px;
+    font-weight: 700;
+    color: #333;
+    min-width: 12px;
+    text-align: center;
+  }
+  :global(.clue-slot.empty) {
+    visibility: hidden;
+  }
+
+  /* ── Editor actions ── */
+  .editor-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .grid-size-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  :global(#grid-size-label) {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 13px;
+    color: #333;
+  }
+
+  /* ── Status line ── */
+  .status-line {
+    font-size: 12px;
+    color: #666;
+    padding: 4px 0;
+    text-align: center;
+  }
+  :global(.status-line.status-err) { color: #c00; }
+  :global(.status-line.status-ok)  { color: #060; }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .trials-label {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trials-label input {
+    width: 50px;
+    border: 2px solid #000;
+    background: #fff;
+    padding: 4px 6px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* ── Solution canvases ── */
+  .sol-canvas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 40px;
+  }
+  :global(.placeholder-msg) {
+    color: #999;
+    font-size: 12px;
+    font-style: italic;
+    padding: 8px 0;
+  }
+  :global(.sol-grid-wrap) {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  :global(.sol-grid-label) {
+    font-size: 10px;
+    color: #666;
+    font-weight: 600;
+  }
+  :global(.sol-table) {
+    border-collapse: collapse;
+  }
+  :global(.sol-table.sz-sm td) { width: 10px; height: 10px; }
+  :global(.sol-table.sz-md td) { width: 16px; height: 16px; }
+  :global(.sol-table.sz-lg td) { width: 22px; height: 22px; }
+  :global(.sol-table td) {
+    border: 1px solid #ccc;
+  }
+  :global(.sol-table td.f) { background: #000; }
+  :global(.sol-table td.e) { background: #fff; }
+
+  /* ── Histogram ── */
+  .histogram-controls {
+    display: flex;
+    gap: 8px;
+  }
+  .threshold-label {
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .threshold-label input {
+    width: 60px;
+    border: 2px solid #000;
+    background: #fff;
+    padding: 4px 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .histogram-area {
+    height: 220px;
+    border: 2px solid #000;
+    position: relative;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  /* ── Metrics ── */
+  :global(#metrics-pane) {
+    font-size: 12px;
+  }
+  :global(#metrics-pane:not(.visible)) {
+    display: none;
+  }
+  :global(.metrics-table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  :global(.metrics-table th) {
+    background: #000;
+    color: #fff;
+    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    text-align: left;
+  }
+  :global(.metrics-table td) {
+    border: 1px solid #ccc;
+    padding: 3px 8px;
+  }
+  :global(.metrics-table .metric-label) {
+    font-weight: 600;
+    background: #f5f5f5;
+  }
+</style>
