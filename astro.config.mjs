@@ -20,7 +20,6 @@ export default defineConfig({
     '/quantumvideo': '/projects',
     '/underconstruction.html': '/',
     '/underconstruction': '/',
-    '/about': '/',
     '/me': '/',
     '/me/': '/',
     '/skills': '/',

@@ -19,6 +19,9 @@ function isActive(href: string): boolean {
     <li role="menu-item" aria-haspopup="false" class="heart-item">
       <a href="/" aria-current={isActive('/') ? 'page' : undefined} class:list={[{ active: isActive('/') }]}><img src="/icons/heart.svg" alt="Home" class="heart-icon" /></a>
     </li>
+    <li role="menu-item" aria-haspopup="false">
+      <a href="/about" aria-current={isActive('/about') ? 'page' : undefined} class:list={[{ active: isActive('/about') }]}>About</a>
+    </li>
     <li role="menu-item" aria-haspopup="true" tabindex="0">Projects
       <ul role="menu">
         {projects.map((project) => {
