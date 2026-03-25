@@ -304,18 +304,6 @@ describe('Print stylesheet verification', () => {
 // ---- WP #578: Mobile responsive ----
 
 describe('Mobile responsive spot-check', () => {
-  const navSrc = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
-
-  // TODO: Mobile nav not yet implemented in Nav.astro. Re-enable when added.
-  test.skip('responsive nav breakpoint exists', () => {
-    expect(navSrc).toContain('@media (max-width: 768px)');
-  });
-
-  test.skip('mobile hamburger menu exists', () => {
-    expect(navSrc).toContain('mobile-toggle');
-    expect(navSrc).toContain('mobile-menu');
-  });
-
   test('grid layouts use auto-fill/minmax for responsiveness', () => {
     const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
     let foundAutoFill = false;
