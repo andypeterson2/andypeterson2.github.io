@@ -25,7 +25,7 @@
     },
     {
       "path": "/dist/",
-      "title": "Home | Projects"
+      "title": "Projects | Projects"
     },
     {
       "path": "/dist/Current-Resume.pdf/",
@@ -69,7 +69,11 @@
     },
     {
       "path": "/dist/projects/quantum-nonogram-solver/app/",
-      "title": "Nonogram Solver | Projects"
+      "title": "Nonogram Solver | Projects",
+      "backend": {
+        "service": "nonogram",
+        "defaultPort": 5055
+      }
     },
     {
       "path": "/dist/projects/quantum-protein-kernel/",
@@ -85,7 +89,15 @@
     },
     {
       "path": "/dist/projects/quantum-video-chat/app/",
-      "title": "Video Chat | Projects"
+      "title": "Video Chat | Projects",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5002
+      }
+    },
+    {
+      "path": "/dist/projects/quantum-video-chat/server/",
+      "title": "Video Chat Server | Projects"
     },
     {
       "path": "/dist/projects/task-randomizer/",
@@ -114,6 +126,10 @@
     {
       "path": "/dist/resume/",
       "title": "Redirecting to: /"
+    },
+    {
+      "path": "/dist/server-dashboard/",
+      "title": "QVC Server Dashboard"
     },
     {
       "path": "/dist/skills/",

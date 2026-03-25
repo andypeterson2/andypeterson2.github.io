@@ -162,9 +162,9 @@ describe('Home Page', () => {
     expect(indexSrc).toContain('BaseLayout');
   });
 
-  test('has window structure', () => {
-    expect(indexSrc).toContain('window');
-    expect(indexSrc).toContain('title-bar');
+  test('has finder icon grid', () => {
+    expect(indexSrc).toContain('icon-grid');
+    expect(indexSrc).toContain('finder-icon');
   });
 
   test('links to projects', () => {
