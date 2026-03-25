@@ -4,3 +4,6 @@
 [submodule "packages/ui-kit"]
 	path = packages/ui-kit
 	url = https://github.com/andypeterson2/ui-kit.git
+[submodule "packages/nonogram"]
+	path = packages/nonogram
+	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
