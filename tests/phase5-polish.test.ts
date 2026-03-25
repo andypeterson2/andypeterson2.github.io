@@ -130,10 +130,6 @@ describe('Pull quote component', () => {
     expect(pullQuoteSrc).toContain('font-style: italic');
   });
 
-  // About page does not exist yet; skipping pull quote usage test.
-  test.skip('pull quote used on about page', () => {
-    // Re-enable when about.astro is created
-  });
 });
 
 // ---- WP #553: Error boundary ----

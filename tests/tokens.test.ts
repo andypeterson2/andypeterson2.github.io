@@ -99,35 +99,6 @@ describe('Token CSS Output', () => {
   });
 });
 
-// TODO: Token build pipeline not yet configured — generated files do not exist.
-// Re-enable once a build step generates tokens.generated.css and tokens.generated.ts.
-describe('Token Build Pipeline', () => {
-  test.skip('generated CSS file exists', () => {
-    expect(existsSync(resolve(ROOT, 'src/tokens/tokens.generated.css'))).toBe(true);
-  });
-
-  test.skip('generated TS file exists', () => {
-    expect(existsSync(resolve(ROOT, 'src/tokens/tokens.generated.ts'))).toBe(true);
-  });
-
-  test.skip('generated CSS contains custom properties', () => {
-    const css = readFileSync(
-      resolve(ROOT, 'src/tokens/tokens.generated.css'),
-      'utf-8',
-    );
-    expect(css).toContain(':root {');
-    expect(css).toContain('--color-');
-  });
-
-  test.skip('generated TS exports token object', () => {
-    const ts = readFileSync(
-      resolve(ROOT, 'src/tokens/tokens.generated.ts'),
-      'utf-8',
-    );
-    expect(ts).toContain('export const tokens');
-  });
-});
-
 describe('Base CSS', () => {
   const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
 

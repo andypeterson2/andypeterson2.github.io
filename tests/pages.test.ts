@@ -34,22 +34,6 @@ describe('Nav Component', () => {
     expect(navSrc).toContain('aria-current');
   });
 
-  // TODO: Mobile nav (hamburger menu, aria-expanded, aria-controls) not yet implemented.
-  // These tests should be re-enabled once mobile navigation is added to Nav.astro.
-  test.skip('has mobile toggle button', () => {
-    expect(navSrc).toContain('mobile-toggle');
-    expect(navSrc).toContain('aria-expanded');
-    expect(navSrc).toContain('aria-controls="mobile-menu"');
-  });
-
-  test.skip('has mobile menu', () => {
-    expect(navSrc).toContain('mobile-menu');
-  });
-
-  test.skip('toggle script manages expanded state', () => {
-    expect(navSrc).toContain("setAttribute('aria-expanded'");
-  });
-
   test('uses system.css menu-bar pattern', () => {
     expect(navSrc).toContain('role="menu-bar"');
     expect(navSrc).toContain('role="menu-item"');
@@ -60,11 +44,6 @@ describe('Nav Component', () => {
     expect(navSrc).toContain('border-bottom: 2px solid #000');
   });
 
-  // TODO: Mobile nav not yet implemented — no media query or display:none for hamburger.
-  test.skip('hamburger hidden on desktop via media query', () => {
-    expect(navSrc).toContain('@media (max-width: 768px)');
-    expect(navSrc).toContain('display: none');
-  });
 });
 
 // ---- Footer ----

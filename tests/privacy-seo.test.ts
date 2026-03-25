@@ -154,16 +154,6 @@ describe('Screen reader navigation', () => {
     expect(navSrc).toContain('aria-label="Main navigation"');
   });
 
-  // TODO: Mobile nav not yet implemented. Re-enable when mobile menu is added.
-  test.skip('mobile menu has appropriate ARIA', () => {
-    expect(navSrc).toContain('aria-expanded');
-    expect(navSrc).toContain('aria-controls');
-  });
-
-  test.skip('nav toggle has aria-expanded', () => {
-    expect(navSrc).toContain('aria-expanded');
-  });
-
   test('active nav link has aria-current', () => {
     expect(navSrc).toContain('aria-current');
   });
