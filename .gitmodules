@@ -1,6 +1,6 @@
-[submodule "nonogram"]
-	path = nonogram
-	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
 [submodule "qvc"]
 	path = qvc
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
+[submodule "packages/ui-kit"]
+	path = packages/ui-kit
+	url = https://github.com/andypeterson2/ui-kit.git
