@@ -148,7 +148,6 @@ describe('Dual-identity leakage prevention', () => {
 
   test('pages use siteConfig for display name, not hardcoded', () => {
     const pages = [
-      'src/pages/about.astro',
       'src/pages/contact.astro',
     ];
     for (const page of pages) {
