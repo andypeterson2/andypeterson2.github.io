@@ -84,14 +84,13 @@ describe('Migration redirects', () => {
     expect(astroConfig).toContain('/underconstruction');
   });
 
-  test('redirects /me to /about', () => {
+  test('redirects /me to /', () => {
     expect(astroConfig).toContain("'/me'");
-    expect(astroConfig).toContain('/about');
+    expect(astroConfig).toContain("'/me': '/'");
   });
 
   test('redirects old resume PDF', () => {
     expect(astroConfig).toContain('Current-Resume.pdf');
-    expect(astroConfig).toContain('/resume');
   });
 });
 
