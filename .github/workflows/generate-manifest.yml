@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -22,16 +21,11 @@ jobs:
       - name: Generate manifest
         run: python3 generate-manifest.py
 
-      - name: Create PR if manifest changed
+      - name: Commit if manifest changed
         run: |
           git diff --quiet site-manifest.json && echo "No changes" && exit 0
-          BRANCH="chore/update-manifest-$(date +%s)"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
           git add site-manifest.json
           git commit -m "chore: regenerate site-manifest.json"
-          git push origin "$BRANCH"
-          gh pr create --title "chore: regenerate site-manifest.json" --body "Auto-generated manifest update." --base main --head "$BRANCH"
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git push
