@@ -1,20 +1,20 @@
+# Hidden files (covers .env, .venv, .DS_Store, IDE configs, caches, etc.)
 .*
 !.git*
 !.env.example
 !.prettierrc
 !.stylelintrc.json
 !.github/
+
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+*.log
+*.aux
 
 # Python
 __pycache__/
 *.pyc
 *.egg-info/
-.venv/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-
-# Build
-*.log
