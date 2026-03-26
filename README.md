@@ -13,8 +13,6 @@ packages/
   quantum-protein-kernel/     [submodule] ML classifier platform (Flask + PyTorch + Qiskit)
   qvc/                        [submodule] Quantum video chat
   shared-js/                  Site navigation, theme bootstrap
-  task-randomizer/            Task picker (static)
-  tech-tree/                  Interactive knowledge graph (Canvas)
   ui-kit/                     [submodule] Design system (50 CSS components, Storybook)
 ```
 
@@ -30,7 +28,7 @@ npm run dev   # starts Astro dev server on localhost:4321
 ## Running Services (Docker)
 
 ```bash
-make docker-up   # starts classifiers:5001, cv-editor:3001, tech-tree:8080
+make docker-up   # starts classifiers:5001, cv-editor:3001
 ```
 
 ## Testing

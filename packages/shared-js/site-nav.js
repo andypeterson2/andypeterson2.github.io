@@ -6,8 +6,6 @@
     { href: "/projects/quantum-video-chat/", label: "Quantum Video Chat" },
     { href: "/nonogram/website/", label: "Quantum Nonogram Solver" },
     { href: "/classifiers/", label: "Quantum Protein Kernel" },
-    { href: "/tech-tree/website/", label: "Tech Tree" },
-    { href: "/task-randomizer/", label: "Task Randomizer" },
   ];
 
   /* ── Derive breadcrumb label from the current page's <title> ── */

@@ -16,7 +16,6 @@ jobs:
       qpk: ${{ steps.filter.outputs.qpk }}
       ui-kit: ${{ steps.filter.outputs.ui-kit }}
       cv: ${{ steps.filter.outputs.cv }}
-      tech-tree: ${{ steps.filter.outputs.tech-tree }}
       flask-core: ${{ steps.filter.outputs.flask-core }}
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +34,6 @@ jobs:
               - 'packages/ui-kit/**'
             cv:
               - 'packages/cv/**'
-            tech-tree:
-              - 'packages/tech-tree/**'
             flask-core:
               - 'packages/flask-core/**'
 
@@ -78,17 +75,6 @@ jobs:
         with:
           node-version: "22"
       - run: cd packages/cv/editor && npm ci && npm test
-
-  tech-tree-tests:
-    needs: changes
-    if: needs.changes.outputs.tech-tree == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: node --test packages/tech-tree/tests/test_data.mjs
 
   python-lint:
     needs: changes
