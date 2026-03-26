@@ -1,20 +1,6 @@
 {
   "apps": [
     {
-      "path": "/",
-      "title": "Portfolio",
-      "icon": "fa-solid fa-house"
-    },
-    {
-      "path": "/classifiers/",
-      "title": "Classifiers",
-      "icon": "fa-solid fa-brain",
-      "backend": {
-        "service": "classifier",
-        "defaultPort": 5051
-      }
-    },
-    {
       "path": "/dist/",
       "title": "Home | Projects"
     },
@@ -198,22 +184,17 @@
       "title": "QVC Server Dashboard"
     },
     {
-      "path": "/public/server-dashboard/",
-      "title": "QVC Server Dashboard"
-    },
-    {
-      "path": "/task-randomizer/",
+      "path": "/packages/task-randomizer/",
       "title": "Task Randomizer"
     },
     {
-      "path": "/tech-tree/website/",
-      "title": "Tech Tree",
-      "icon": "fa-solid fa-code-branch"
+      "path": "/packages/tech-tree/",
+      "title": "Redirecting\u2026"
     },
     {
-      "path": "/ui-kit/",
-      "title": "UI Kit",
-      "icon": "fa-regular fa-star"
+      "path": "/packages/tech-tree/website/",
+      "title": "Tech Tree",
+      "icon": "fa-solid fa-code-branch"
     }
   ]
 }

@@ -18,9 +18,9 @@ Sub-projects with Flask or Express backends can be run two ways:
 
 1. **Individually** -- start a single service from its directory:
    ```bash
-   cd quantum-protein-kernel && python -m classifiers
-   cd cv && npm start
-   cd tech-tree && npm start
+   cd packages/quantum-protein-kernel && python -m classifiers
+   cd packages/cv && npm start
+   cd packages/tech-tree && npm start
    ```
 
 2. **All at once via Docker**:
@@ -61,7 +61,7 @@ Or clone with `--recursive` from the start. `make setup` handles this automatica
 
 ## Adding a New Project
 
-1. Create a directory at the repo root (or under `packages/` if it is shared).
+1. Create a directory under `packages/`.
 2. Add build/test targets to the `Makefile`.
 3. If the project runs as a service, add it to `docker-compose.yml` and `dockerfiles/`.
 4. Register the route in `astro.config.mjs` by adding the path to `subPaths`.
