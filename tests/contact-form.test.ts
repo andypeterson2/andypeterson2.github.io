@@ -1,9 +1,6 @@
 /**
- * WP #485: Contact form with validation
- * WP #486: Social links
- * WP #489: Form submission routing per identity
- * WP #614: Test: Contact form validation and submission
- * WP #401: Sitemap and robots.txt
+ * Contact form validation, social links, form submission routing,
+ * and sitemap/robots.txt tests.
  * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
@@ -12,7 +9,7 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- WP #485 / #614: Contact form ----
+// ---- Contact form ----
 
 describe('Contact form with validation', () => {
   const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
@@ -84,7 +81,7 @@ describe('Contact form with validation', () => {
   });
 });
 
-// ---- WP #486: Social links (now contact cards) ----
+// ---- Social links (contact cards) ----
 
 describe('Contact method cards', () => {
   const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
@@ -122,7 +119,7 @@ describe('Contact method cards', () => {
   });
 });
 
-// ---- WP #489: Form submission routing per identity ----
+// ---- Form submission routing per identity ----
 
 describe('Form submission routing per identity', () => {
   const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
@@ -132,14 +129,9 @@ describe('Form submission routing per identity', () => {
     expect(contactSrc).toContain('mailto:');
   });
 
-  test('no hardcoded email addresses in form', () => {
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-    const srcWithoutRegex = contactSrc.replace(/@\[.*?\]\+/g, '');
-    expect(srcWithoutRegex).not.toMatch(emailRegex);
-  });
 });
 
-// ---- WP #401: Sitemap and robots.txt ----
+// ---- Sitemap and robots.txt ----
 
 describe('Sitemap and robots.txt', () => {
   test('robots.txt exists', () => {

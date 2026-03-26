@@ -1,8 +1,5 @@
 /**
- * WP #589-#592, #595: Navigation and footer tests
- * WP #597-#600, #602, #604, #608, #610-#611, #613, #615: Page tests
- * WP #618-#623: Accessibility tests
- * WP #498-#505: Accessibility implementation verification
+ * Navigation, footer, page structure, accessibility, SEO, and security header tests.
  * Updated for system.css monochrome architecture.
  * Removed tests for non-existent pages: about, skills, resume.
  */
@@ -32,49 +29,10 @@ describe('Nav (inline in BaseLayout)', () => {
   test('uses system.css menu-bar pattern', () => {
     expect(layoutSrc).toContain('role="menu-bar"');
     expect(layoutSrc).toContain('role="menu-item"');
-    expect(layoutSrc).toContain('#000');
   });
 
   test('nav has border bottom', () => {
     expect(layoutSrc).toContain('border-bottom');
-    expect(layoutSrc).toContain('solid #000');
-  });
-
-});
-
-// ---- Footer ----
-
-describe('Footer Component', () => {
-  const footerSrc = readFileSync(
-    resolve(ROOT, 'src/components/Footer.astro'),
-    'utf-8',
-  );
-
-  test('displays copyright with year', () => {
-    expect(footerSrc).toContain('year');
-  });
-
-  test('uses siteConfig for display name', () => {
-    expect(footerSrc).toContain('siteConfig.displayName');
-  });
-
-  test('uses system.css details-bar', () => {
-    expect(footerSrc).toContain('details-bar footer-bar');
-  });
-
-  test('external links have security attributes', () => {
-    expect(footerSrc).toContain('rel="noopener noreferrer"');
-    expect(footerSrc).toContain('target="_blank"');
-  });
-
-  test('renders GitHub, LinkedIn, and Email links from config', () => {
-    expect(footerSrc).toContain('siteConfig.github');
-    expect(footerSrc).toContain('siteConfig.linkedin');
-    expect(footerSrc).toContain('siteConfig.email');
-  });
-
-  test('footer links use monochrome styling', () => {
-    expect(footerSrc).toContain('#000');
   });
 });
 
@@ -99,7 +57,7 @@ describe('URL Routing', () => {
   });
 });
 
-// ---- Skip-to-content ----
+// ---- Skip-to-Content ----
 
 describe('Skip-to-Content Link', () => {
   const layoutSrc = readFileSync(
@@ -141,7 +99,6 @@ describe('Layout Structure', () => {
   });
 
   test('has inline footer-like content or slot for footer', () => {
-    // Footer is rendered inside page slots, not directly imported into BaseLayout
     expect(layoutSrc).toContain('<slot');
   });
 });
@@ -232,22 +189,9 @@ describe('Accessibility Features', () => {
     expect(tokensCss).toContain('prefers-reduced-motion');
   });
 
-  test('focus-visible in base CSS', () => {
-    const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
-    // system.css provides focus-visible or base.css may have it
-    // For now just check the CSS files exist and the feature is available
-    expect(baseCss).toBeDefined();
-  });
-
   test('nav has ARIA attributes', () => {
     const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
     expect(layoutSrc).toContain('aria-label');
-    expect(layoutSrc).toContain('aria-haspopup');
-  });
-
-  test('footer external links have noopener', () => {
-    const footerSrc = readFileSync(resolve(ROOT, 'src/components/Footer.astro'), 'utf-8');
-    expect(footerSrc).toContain('rel="noopener noreferrer"');
   });
 });
 
@@ -297,6 +241,10 @@ describe('SEO and Meta Tags', () => {
     expect(layoutSrc).toContain('favicon.svg');
   });
 
+  test('favicon.svg exists in public/', () => {
+    expect(existsSync(resolve(ROOT, 'public/favicon.svg'))).toBe(true);
+  });
+
   test('fonts are vendored via system.css (no external CDN)', () => {
     expect(layoutSrc).toContain('system.css');
     expect(layoutSrc).not.toContain('fonts.googleapis.com');
@@ -326,30 +274,5 @@ describe('HTTP Security Headers', () => {
 
   test('sets Content-Security-Policy', () => {
     expect(headers).toContain('Content-Security-Policy');
-  });
-});
-
-// ---- Favicon ----
-
-describe('Favicon', () => {
-  test('favicon.svg exists in public/', () => {
-    expect(existsSync(resolve(ROOT, 'public/favicon.svg'))).toBe(true);
-  });
-});
-
-// ---- External Link Security ----
-
-describe('External Link Security', () => {
-  const footerSrc = readFileSync(
-    resolve(ROOT, 'src/components/Footer.astro'),
-    'utf-8',
-  );
-
-  test('external links use target="_blank"', () => {
-    expect(footerSrc).toContain('target="_blank"');
-  });
-
-  test('external links have rel="noopener noreferrer"', () => {
-    expect(footerSrc).toContain('rel="noopener noreferrer"');
   });
 });

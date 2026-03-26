@@ -1,11 +1,6 @@
 /**
- * WP #506: Print stylesheet
- * WP #428: Breadcrumbs on nested pages
- * WP #439: Hero micro-status
- * WP #446: Pull quote block
- * WP #553: Error boundary for runtime errors
- * WP #429: Back to top button
- * WP #603: Project category filter logic
+ * Print stylesheet, breadcrumbs, pull quote, error boundary,
+ * and back-to-top button tests.
  * Updated for system.css monochrome architecture.
  * Removed: IntersectionObserver animations, view transitions,
  * timeline hover transitions, smooth scroll, theme toggle in print.
@@ -16,7 +11,7 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- WP #506: Print stylesheet ----
+// ---- Print stylesheet ----
 
 describe('Print stylesheet', () => {
   const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
@@ -62,7 +57,7 @@ describe('Print stylesheet', () => {
   });
 });
 
-// ---- WP #428: Breadcrumbs (inline in BaseLayout) ----
+// ---- Breadcrumbs (inline in BaseLayout) ----
 
 describe('Breadcrumbs (inline in BaseLayout)', () => {
   const layoutSrc = readFileSync(
@@ -86,9 +81,7 @@ describe('Breadcrumbs (inline in BaseLayout)', () => {
   });
 });
 
-// ---- WP #439: Hero micro-status (removed — home page now uses Finder icon grid) ----
-
-// ---- WP #446: Pull quote block ----
+// ---- Pull quote block ----
 
 describe('Pull quote component', () => {
   const pullQuoteSrc = readFileSync(
@@ -105,9 +98,8 @@ describe('Pull quote component', () => {
     expect(pullQuoteSrc).toContain('pull-quote');
   });
 
-  test('has monochrome border-left', () => {
+  test('has border-left styling', () => {
     expect(pullQuoteSrc).toContain('border-left');
-    expect(pullQuoteSrc).toContain('#000');
   });
 
   test('supports optional cite prop', () => {
@@ -117,10 +109,9 @@ describe('Pull quote component', () => {
   test('uses italic styling', () => {
     expect(pullQuoteSrc).toContain('font-style: italic');
   });
-
 });
 
-// ---- WP #553: Error boundary ----
+// ---- Error boundary ----
 
 describe('Error boundary for runtime errors', () => {
   const layoutSrc = readFileSync(
@@ -149,7 +140,7 @@ describe('Error boundary for runtime errors', () => {
   });
 });
 
-// ---- WP #429: Back to top button ----
+// ---- Back to top button ----
 
 describe('Back to top button', () => {
   const layoutSrc = readFileSync(

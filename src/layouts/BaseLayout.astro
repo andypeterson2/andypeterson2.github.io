@@ -2,6 +2,7 @@
 import { siteConfig } from '../config/site';
 import '../styles/tokens.css';
 import '../styles/base.css';
+import ServerConnectModal from '../components/ServerConnectModal.astro';
 
 interface Crumb { label: string; href?: string }
 
@@ -184,189 +185,7 @@ const detailsSegments = isHome
       }
     </script>
 
-    <!-- Backend connect: Server nav item + modal (only on pages with site-backend-service meta) -->
-    <script is:inline>
-    (function() {
-      var sm = document.querySelector('meta[name="site-backend-service"]');
-      var pm = document.querySelector('meta[name="site-backend-port"]');
-      if (!sm) return;
-
-      var service = sm.getAttribute("content") || "";
-      var defaultPort = parseInt((pm && pm.getAttribute("content")) || "8080") || 8080;
-      if (!service) return;
-
-      var connState = { connected: false };
-      var serverLi = null;
-      var serverSubUl = null;
-      var modalOverlay = null;
-      var hostInput = null;
-      var portInput = null;
-      var widget = null;
-
-      function init() {
-        var ul = document.querySelector('.site-menubar ul[role="menu-bar"]');
-        if (!ul) return;
-
-        serverLi = document.createElement("li");
-        serverLi.setAttribute("role", "menu-item");
-        serverLi.setAttribute("aria-haspopup", "false");
-        serverLi.style.cursor = "pointer";
-        serverLi.className = "server-nav-item";
-
-        var label = document.createElement("span");
-        label.textContent = "Server";
-        label.style.pointerEvents = "none";
-        serverLi.appendChild(label);
-
-        var dot = document.createElement("span");
-        dot.className = "sn-dot";
-        serverLi.appendChild(dot);
-
-        serverSubUl = document.createElement("ul");
-        serverSubUl.setAttribute("role", "menu");
-        serverSubUl.style.display = "none";
-
-        var reconnLi = document.createElement("li");
-        reconnLi.setAttribute("role", "menu-item");
-        var reconnA = document.createElement("a");
-        reconnA.href = "#";
-        reconnA.textContent = "Re-connect";
-        reconnA.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); openModal(); });
-        reconnLi.appendChild(reconnA);
-        serverSubUl.appendChild(reconnLi);
-
-        var disconnLi = document.createElement("li");
-        disconnLi.setAttribute("role", "menu-item");
-        var disconnA = document.createElement("a");
-        disconnA.href = "#";
-        disconnA.textContent = "Disconnect";
-        disconnA.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); doDisconnect(); });
-        disconnLi.appendChild(disconnA);
-        serverSubUl.appendChild(disconnLi);
-
-        serverLi.appendChild(serverSubUl);
-
-        serverLi.addEventListener("click", function(e) {
-          if (!connState.connected) { e.preventDefault(); e.stopPropagation(); openModal(); }
-        });
-
-        ul.appendChild(serverLi);
-
-        var mobileSelect = document.querySelector('.mobile-nav-select');
-        if (mobileSelect) {
-          var opt = document.createElement("option");
-          opt.value = "__server__";
-          opt.textContent = "Server...";
-          mobileSelect.appendChild(opt);
-          mobileSelect.addEventListener("change", function() {
-            if (mobileSelect.value === "__server__") {
-              mobileSelect.value = "";
-              openModal();
-            }
-          });
-        }
-
-        buildModal();
-        dispatchReady();
-      }
-
-      function buildModal() {
-        modalOverlay = document.createElement("div");
-        modalOverlay.className = "sn-modal-overlay";
-        modalOverlay.style.display = "none";
-
-        var dialog = document.createElement("div");
-        dialog.className = "sn-modal";
-        dialog.setAttribute("role", "dialog");
-        dialog.setAttribute("aria-label", "Connect to server");
-
-        dialog.innerHTML =
-          '<div class="sn-modal-header">Connect to Server</div>' +
-          '<form class="sn-connect-form">' +
-            '<div class="sn-form-row"><label for="sn-host">Host</label><input id="sn-host" type="text" placeholder="localhost" value="localhost" spellcheck="false" autocomplete="off"></div>' +
-            '<div class="sn-form-row"><label for="sn-port">Port</label><input id="sn-port" type="number" placeholder="' + defaultPort + '" value="' + defaultPort + '" min="1" max="65535"></div>' +
-          '</form>' +
-          '<div class="sn-modal-footer">' +
-            '<button type="button" class="sn-btn" id="sn-cancel">Cancel</button>' +
-            '<button type="button" class="sn-btn sn-btn-primary" id="sn-connect">Connect</button>' +
-          '</div>';
-
-        modalOverlay.appendChild(dialog);
-        document.body.appendChild(modalOverlay);
-
-        hostInput = dialog.querySelector("#sn-host");
-        portInput = dialog.querySelector("#sn-port");
-
-        dialog.querySelector("#sn-cancel").addEventListener("click", closeModal);
-        dialog.querySelector("#sn-connect").addEventListener("click", doConnect);
-        dialog.querySelector("form").addEventListener("submit", function(e) { e.preventDefault(); doConnect(); });
-        modalOverlay.addEventListener("click", function(e) { if (e.target === modalOverlay) closeModal(); });
-        document.addEventListener("keydown", function(e) { if (e.key === "Escape" && modalOverlay.style.display !== "none") closeModal(); });
-      }
-
-      function openModal() {
-        if (!modalOverlay) return;
-        modalOverlay.style.display = "";
-        if (hostInput) setTimeout(function() { hostInput.focus(); hostInput.select(); }, 50);
-      }
-
-      function closeModal() {
-        if (modalOverlay) modalOverlay.style.display = "none";
-      }
-
-      function doConnect() {
-        var host = hostInput ? (hostInput.value.trim() || "localhost") : "localhost";
-        var port = portInput ? (parseInt(portInput.value) || defaultPort) : defaultPort;
-        var url = "http://" + host + ":" + port;
-        connState.connected = true;
-        updateNav();
-        closeModal();
-        document.dispatchEvent(new CustomEvent("navbar:connect", { detail: { service: service, host: host, port: port, url: url } }));
-      }
-
-      function doDisconnect() {
-        connState.connected = false;
-        updateNav();
-        document.dispatchEvent(new CustomEvent("navbar:disconnect", { detail: { service: service } }));
-      }
-
-      function updateNav() {
-        if (!serverLi) return;
-        var dot = serverLi.querySelector(".sn-dot");
-        if (connState.connected) {
-          serverLi.setAttribute("aria-haspopup", "true");
-          if (serverSubUl) serverSubUl.style.display = "";
-          if (dot) dot.classList.add("connected");
-        } else {
-          serverLi.setAttribute("aria-haspopup", "false");
-          if (serverSubUl) serverSubUl.style.display = "none";
-          if (dot) dot.classList.remove("connected");
-        }
-      }
-
-      function dispatchReady() {
-        widget = {
-          getUrl: function() {
-            var h = hostInput ? (hostInput.value.trim() || "localhost") : "localhost";
-            var p = portInput ? (parseInt(portInput.value) || defaultPort) : defaultPort;
-            return "http://" + h + ":" + p;
-          },
-          setStatus: function(status) {
-            if (status === "connected") connState.connected = true;
-            else if (status === "disconnected" || status === "error" || status === "idle") connState.connected = false;
-            updateNav();
-          }
-        };
-        document.dispatchEvent(new CustomEvent("navbar:connect-ready", { detail: { service: service, widget: widget } }));
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-      } else {
-        init();
-      }
-    })();
-    </script>
+    <ServerConnectModal />
   </body>
 </html>
 
@@ -415,7 +234,7 @@ const detailsSegments = isHome
   .site-menubar {
     width: 100%;
     padding: 0.5vh 1.25vw;
-    font-size: 1.96vw;
+    font-size: clamp(0.875rem, 1.96vw, 1.5rem);
     border-bottom: 3px solid #000;
     background: #fff;
     box-sizing: border-box;
@@ -567,7 +386,7 @@ const detailsSegments = isHome
     }
 
     .mobile-nav-select {
-      font-size: 4vw;
+      font-size: clamp(0.875rem, 4vw, 1.5rem);
       height: 10vw;
     }
 
@@ -588,111 +407,3 @@ const detailsSegments = isHome
   }
 </style>
 
-<style is:global>
-  /* ── Server nav item (injected by JS) ── */
-  .server-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    cursor: pointer;
-  }
-  .sn-dot {
-    width: 0.45em;
-    height: 0.45em;
-    border-radius: 50%;
-    background: #999;
-    opacity: 0.5;
-    flex-shrink: 0;
-    pointer-events: none;
-  }
-  .sn-dot.connected {
-    background: #22c55e;
-    opacity: 1;
-    box-shadow: 0 0 5px rgba(34,197,94,0.5);
-  }
-
-  /* ── Connect modal (injected by JS) ── */
-  .sn-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    animation: sn-fade-in 0.15s ease;
-  }
-  @keyframes sn-fade-in { from { opacity: 0; } to { opacity: 1; } }
-  .sn-modal {
-    background: #fff;
-    border: 3px solid #000;
-    padding: 20px 24px;
-    min-width: 320px;
-    max-width: 90vw;
-    font-family: 'Chicago', 'ChicagoFLF', system-ui, sans-serif;
-    animation: sn-slide-in 0.2s ease;
-  }
-  @keyframes sn-slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .sn-modal-header {
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #333;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 12px;
-    margin-bottom: 16px;
-  }
-  .sn-modal-footer {
-    border-top: 1px solid #ccc;
-    padding-top: 12px;
-    margin-top: 16px;
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-  .sn-connect-form { display: flex; flex-direction: column; gap: 0; }
-  .sn-form-row {
-    display: grid;
-    grid-template-columns: 52px 1fr;
-    align-items: center;
-    border-bottom: 1px solid #eee;
-    padding: 8px 0;
-  }
-  .sn-form-row:last-child { border-bottom: none; }
-  .sn-form-row label {
-    font-size: 11px;
-    font-weight: 500;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .sn-form-row input {
-    width: 100%;
-    background: #f5f5f5;
-    border: 1px solid #ccc;
-    color: #000;
-    font-size: 13px;
-    padding: 6px 9px;
-    outline: none;
-    font-family: monospace;
-    box-sizing: border-box;
-  }
-  .sn-form-row input:focus { border-color: #0066cc; }
-  .sn-form-row input::-webkit-inner-spin-button,
-  .sn-form-row input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  .sn-form-row input[type=number] { -moz-appearance: textfield; }
-  .sn-btn {
-    height: 28px;
-    padding: 0 16px;
-    font-size: 12px;
-    border: 2px solid #000;
-    cursor: pointer;
-    background: #fff;
-    color: #000;
-    font-family: 'Chicago', 'ChicagoFLF', system-ui, sans-serif;
-  }
-  .sn-btn:hover { background: #000; color: #fff; }
-  .sn-btn-primary { background: #000; color: #fff; }
-  .sn-btn-primary:hover { background: #333; }
-</style>

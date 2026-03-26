@@ -87,6 +87,25 @@ pre code {
   margin: var(--space-4) 0;
 }
 
+/* ── Section rule — centered text between horizontal lines ── */
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1vw, 14px);
+  margin-bottom: clamp(10px, 1.5vw, 24px);
+  font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+  font-size: clamp(10px, 1.4vw, 18px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.section-rule::before,
+.section-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #000;
+}
+
 /* ── Selection ── */
 ::selection {
   background: #000;

@@ -11,7 +11,8 @@ const { variant = 'primary', size = 'md', href, class: className, ...rest } = As
 const Tag = href ? 'a' : 'button';
 // primary = btn-default (bold beveled border), secondary/ghost = btn (standard bevel)
 const btnClass = variant === 'primary' ? 'btn-default' : 'btn';
-const classes = [btnClass, className].filter(Boolean).join(' ');
+const sizeClass = size !== 'md' ? `btn-${size}` : '';
+const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
 ---
 
 <Tag class={classes} href={href} {...rest}>
@@ -20,11 +21,21 @@ const classes = [btnClass, className].filter(Boolean).join(' ');
 
 <style>
   /* system.css .btn and .btn-default handle all styling.
-     We only add inline-flex for icon alignment. */
+     We only add inline-flex for icon alignment and size variants. */
   .btn, .btn-default {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     text-decoration: none;
+  }
+  .btn-sm, :global(.btn-default).btn-sm {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    gap: 4px;
+  }
+  .btn-lg, :global(.btn-default).btn-lg {
+    font-size: 1.25rem;
+    padding: 8px 20px;
+    gap: 8px;
   }
 </style>

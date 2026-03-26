@@ -5,7 +5,7 @@ from pathlib import Path
 
 EXCLUDED = {
     "dockerfiles", "images", "lib", "nginx", "shared",
-    "tests", "documents",
+    "tests", "documents", "node_modules", "dist",
 }
 
 # Top-level submodule dirs — skip recursive scan (repos contain non-website files)
@@ -26,7 +26,7 @@ EXCLUDED_PATHS = {
 
 
 def main():
-    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent
+    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
     apps = []
 
     for index_html in sorted(root.rglob("index.html")):

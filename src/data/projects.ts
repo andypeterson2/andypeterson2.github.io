@@ -31,14 +31,14 @@ export const projects = [
   {
     title: 'Quantum Protein Kernel',
     slug: 'quantum-protein-kernel',
-    description: 'Quantum-classical hybrid kernel methods for protein structure classification.',
-    longDescription: 'A hybrid quantum-classical approach to protein structure classification using quantum kernel methods. Compares quantum-enhanced feature maps with classical SVM baselines on protein fold recognition tasks.',
+    description: 'Quantum-classical hybrid ML platform building toward protein structure classification.',
+    longDescription: 'A multi-dataset classifier platform exploring quantum-enhanced feature maps and kernel methods. Currently benchmarking quantum SVM accuracy on MNIST and Iris against published results, with the goal of extending to protein fold recognition using quantum kernel methods.',
     category: 'quantum',
     status: 'active' as const,
     featured: true,
     appUrl: '/projects/quantum-protein-kernel/app/',
     icon: 'microscope.svg',
     screenshots: [] as string[],
-    repoUrl: 'https://github.com/andypeterson2/quantum-protein-kernel',
+    repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
   },
 ];

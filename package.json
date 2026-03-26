@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "tokens": "node scripts/build-tokens.js",
     "build": "astro build",
     "preview": "astro preview",
     "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.css'",
@@ -15,11 +14,8 @@
     "lighthouse": "lhci autorun"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.2",
-    "@astrojs/rss": "^4.0.17",
     "@astrojs/sitemap": "^3.7.1",
-"astro": "^6.0.8",
-    "sharp": "^0.34.5"
+    "astro": "^6.0.8"
   },
   "devDependencies": {
     "@lhci/cli": "^0.15.1",

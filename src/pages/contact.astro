@@ -4,6 +4,7 @@ import { siteConfig } from '../config/site';
 ---
 
 <BaseLayout title="Contact" description={`Contact ${siteConfig.displayName}`}>
+  {siteConfig.email && <meta slot="head" name="contact-email" content={siteConfig.email} />}
   <div class="contact-intro">
     <p class="subtitle">Open to full-time roles in quantum computing, software engineering, and cybersecurity. Also available for research collaboration.</p>
   </div>
@@ -74,21 +75,26 @@ import { siteConfig } from '../config/site';
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       clearErrors();
-      const name = (form!.querySelector('#contact-name') as HTMLInputElement).value.trim();
-      const email = (form!.querySelector('#contact-email') as HTMLInputElement).value.trim();
-      const message = (form!.querySelector('#contact-message') as HTMLTextAreaElement).value.trim();
+      const name = (form!.querySelector('#contact-name') as HTMLInputElement);
+      const email = (form!.querySelector('#contact-email') as HTMLInputElement);
+      const message = (form!.querySelector('#contact-message') as HTMLTextAreaElement);
+      const nameVal = name.value.trim();
+      const emailVal = email.value.trim();
+      const messageVal = message.value.trim();
       let valid = true;
 
-      if (!name) { showError('contact-name', 'Name is required'); valid = false; }
-      if (!email) { showError('contact-email', 'Email is required'); valid = false; }
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (!nameVal) { showError('contact-name', 'Name is required'); valid = false; }
+      if (!emailVal) { showError('contact-email', 'Email is required'); valid = false; }
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
         showError('contact-email', 'Please enter a valid email'); valid = false;
       }
-      if (!message) { showError('contact-message', 'Message is required'); valid = false; }
+      if (!messageVal) { showError('contact-message', 'Message is required'); valid = false; }
 
       if (valid) {
-        const btn = form!.querySelector('[type="submit"]') as HTMLButtonElement;
-        if (btn) { btn.textContent = 'Message sent — thank you!'; btn.disabled = true; }
+        const recipient = document.querySelector('meta[name="contact-email"]')?.getAttribute('content') || 'acpeters@ucsd.edu';
+        const subject = encodeURIComponent(`Contact from ${nameVal}`);
+        const body = encodeURIComponent(`From: ${nameVal} (${emailVal})\n\n${messageVal}`);
+        window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
       }
     });
   }
@@ -106,24 +112,6 @@ import { siteConfig } from '../config/site';
 
   .contact-section {
     padding: clamp(12px, 2vw, 28px) 0;
-  }
-
-  .section-rule {
-    display: flex;
-    align-items: center;
-    gap: clamp(6px, 1vw, 14px);
-    margin-bottom: clamp(12px, 2vw, 28px);
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
-    font-size: clamp(10px, 1.4vw, 18px);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .section-rule::before,
-  .section-rule::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #000;
   }
 
   /* ── Form ── */
