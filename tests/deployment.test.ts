@@ -156,8 +156,8 @@ describe('Dual-identity leakage prevention', () => {
   });
 
   test('nav uses siteConfig for branding', () => {
-    const nav = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
-    expect(nav).toContain('siteConfig');
+    const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
+    expect(layout).toContain('siteConfig');
   });
 
   test('footer uses siteConfig for copyright', () => {

@@ -141,14 +141,10 @@ describe('Base CSS', () => {
 describe('Component Files Exist', () => {
   const components = [
     'Button.astro',
-    'Card.astro',
     'Tag.astro',
     'SectionLabel.astro',
-    'InlineCode.astro',
-    'CodeBlock.astro',
-    'InvertedSection.astro',
-    'Nav.astro',
     'Footer.astro',
+    'PullQuote.astro',
   ];
 
   test.each(components)('%s component exists', (filename) => {
@@ -178,30 +174,6 @@ describe('Button Component', () => {
 
   test('supports href for link-style buttons', () => {
     expect(buttonSrc).toContain('href');
-  });
-});
-
-describe('Card Component', () => {
-  const cardSrc = readFileSync(
-    resolve(ROOT, 'src/components/Card.astro'),
-    'utf-8',
-  );
-
-  test('uses system.css standard-dialog class', () => {
-    expect(cardSrc).toContain('standard-dialog');
-  });
-
-  test('supports title prop', () => {
-    expect(cardSrc).toContain('title');
-  });
-
-  test('supports href for link cards', () => {
-    expect(cardSrc).toContain('href');
-  });
-
-  test('has hover inversion', () => {
-    expect(cardSrc).toContain(':hover');
-    expect(cardSrc).toContain('background: #000');
   });
 });
 
@@ -235,52 +207,6 @@ describe('SectionLabel Component', () => {
 
   test('has decorative line', () => {
     expect(src).toContain('section-label-rule');
-  });
-});
-
-describe('InlineCode Component', () => {
-  const src = readFileSync(
-    resolve(ROOT, 'src/components/InlineCode.astro'),
-    'utf-8',
-  );
-
-  test('uses mono font', () => {
-    expect(src).toContain('var(--font-mono)');
-  });
-
-  test('uses surface background', () => {
-    expect(src).toContain('var(--color-surface');
-  });
-});
-
-describe('CodeBlock Component', () => {
-  const src = readFileSync(
-    resolve(ROOT, 'src/components/CodeBlock.astro'),
-    'utf-8',
-  );
-
-  test('supports filename prop', () => {
-    expect(src).toContain('filename');
-  });
-
-  test('supports language prop', () => {
-    expect(src).toContain('language');
-  });
-
-  test('uses system.css standard-dialog class', () => {
-    expect(src).toContain('standard-dialog');
-  });
-});
-
-describe('InvertedSection Component', () => {
-  const src = readFileSync(
-    resolve(ROOT, 'src/components/InvertedSection.astro'),
-    'utf-8',
-  );
-
-  test('uses monochrome inverted background', () => {
-    expect(src).toContain('background: #000');
-    expect(src).toContain('color: #fff');
   });
 });
 

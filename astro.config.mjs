@@ -47,14 +47,30 @@ export default defineConfig({
               '/tech-tree/',
               '/classifiers/',
               '/cv/',
+              '/qvc/',
               '/packages/',
               '/task-randomizer/',
               '/lib/',
               '/site-manifest.json',
             ];
-            const url = req.url || '';
+            // Rewrite legacy root-level paths to packages/
+            const pathRewrites = {
+              '/cv/': '/packages/cv/',
+              '/qvc/': '/packages/qvc/',
+              '/classifiers/': '/packages/quantum-protein-kernel/classifiers/',
+              '/nonogram/': '/packages/nonogram/',
+              '/tech-tree/': '/packages/tech-tree/',
+              '/task-randomizer/': '/packages/task-randomizer/',
+            };
+            let url = req.url || '';
             if (subPaths.some(p => url.startsWith(p))) {
-              // Let Vite's static file serving handle it from root
+              // Apply path rewrites for moved directories
+              for (const [from, to] of Object.entries(pathRewrites)) {
+                if (url.startsWith(from)) {
+                  url = to + url.slice(from.length);
+                  break;
+                }
+              }
               const filePath = path.join(root, url);
               import('fs').then(fs => {
                 // Check if it's a directory request, try index.html

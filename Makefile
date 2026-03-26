@@ -1,8 +1,8 @@
 .PHONY: help setup install test test-py test-js lint lint-py lint-js build \
         docker-build docker-up docker-down clean
 
-PYTHON_PROJECTS := quantum-protein-kernel
-JS_PROJECTS     := packages/ui-kit cv tech-tree task-randomizer
+PYTHON_PROJECTS := packages/quantum-protein-kernel
+JS_PROJECTS     := packages/ui-kit packages/cv packages/tech-tree packages/task-randomizer
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -44,7 +44,7 @@ test-js: ## JavaScript tests (jest/vitest)
 lint: lint-py lint-js ## Lint everything
 
 lint-py: ## Ruff lint
-	ruff check $(PYTHON_PROJECTS) packages/flask-core/src
+	ruff check packages/quantum-protein-kernel/classifiers packages/flask-core/src
 
 lint-js: ## ESLint (if configured)
 	npm run lint

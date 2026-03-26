@@ -1,9 +1,12 @@
-[submodule "qvc"]
-	path = qvc
-	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
 [submodule "packages/ui-kit"]
 	path = packages/ui-kit
 	url = https://github.com/andypeterson2/ui-kit.git
 [submodule "packages/nonogram"]
 	path = packages/nonogram
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
+[submodule "packages/quantum-protein-kernel"]
+	path = packages/quantum-protein-kernel
+	url = https://github.com/andypeterson2/quantum-machine-learning.git
+[submodule "packages/qvc"]
+	path = packages/qvc
+	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git

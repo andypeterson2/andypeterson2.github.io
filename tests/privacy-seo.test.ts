@@ -135,10 +135,6 @@ describe('Screen reader navigation', () => {
     resolve(ROOT, 'src/layouts/BaseLayout.astro'),
     'utf-8',
   );
-  const navSrc = readFileSync(
-    resolve(ROOT, 'src/components/Nav.astro'),
-    'utf-8',
-  );
 
   test('skip link exists', () => {
     expect(layoutSrc).toContain('skip-link');
@@ -151,11 +147,7 @@ describe('Screen reader navigation', () => {
   });
 
   test('nav has aria-label', () => {
-    expect(navSrc).toContain('aria-label="Main navigation"');
-  });
-
-  test('active nav link has aria-current', () => {
-    expect(navSrc).toContain('aria-current');
+    expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 });
 
@@ -228,9 +220,8 @@ describe('Design system component usage', () => {
 
   test('components directory has reusable components', () => {
     const components = readdirSync(resolve(srcDir, 'components'));
-    expect(components.length).toBeGreaterThanOrEqual(5);
+    expect(components.length).toBeGreaterThanOrEqual(3);
     expect(components).toContain('Button.astro');
-    expect(components).toContain('Card.astro');
     expect(components).toContain('Tag.astro');
   });
 

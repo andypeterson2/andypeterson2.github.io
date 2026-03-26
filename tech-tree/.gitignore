@@ -1,6 +1,0 @@
-# Hidden files
-.*
-!.git*
-!.dashboard.yaml
-
-node_modules/
