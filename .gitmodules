@@ -10,3 +10,6 @@
 [submodule "packages/qvc"]
 	path = packages/qvc
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
+[submodule "packages/cv"]
+	path = packages/cv
+	url = https://github.com/andypeterson2/cv.git
