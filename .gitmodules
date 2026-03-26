@@ -7,3 +7,6 @@
 [submodule "packages/nonogram"]
 	path = packages/nonogram
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
+[submodule "packages/quantum-protein-kernel"]
+	path = packages/quantum-protein-kernel
+	url = https://github.com/andypeterson2/quantum-machine-learning.git
