@@ -1,29 +1,6 @@
 {
   "apps": [
     {
-      "path": "/",
-      "title": "Portfolio",
-      "icon": "fa-solid fa-house"
-    },
-    {
-      "path": "/classifiers/",
-      "title": "Classifiers",
-      "icon": "fa-solid fa-brain",
-      "backend": {
-        "service": "classifier",
-        "defaultPort": 5051
-      }
-    },
-    {
-      "path": "/cv/website/",
-      "title": "CV Editor",
-      "icon": "fa-solid fa-pen-to-square",
-      "backend": {
-        "service": "cv",
-        "defaultPort": 3000
-      }
-    },
-    {
       "path": "/dist/",
       "title": "Home | Projects"
     },
@@ -160,6 +137,23 @@
       "title": "Code coverage report for __root__/"
     },
     {
+      "path": "/packages/cv/",
+      "title": "Redirecting\u2026"
+    },
+    {
+      "path": "/packages/cv/editor/public/",
+      "title": "CV Editor"
+    },
+    {
+      "path": "/packages/cv/website/",
+      "title": "CV Editor",
+      "icon": "fa-solid fa-pen-to-square",
+      "backend": {
+        "service": "cv",
+        "defaultPort": 3000
+      }
+    },
+    {
       "path": "/packages/nonogram/",
       "title": "Redirecting\u2026"
     },
@@ -173,11 +167,11 @@
       }
     },
     {
-      "path": "/public/server-dashboard/",
+      "path": "/packages/qvc/server-dashboard/",
       "title": "QVC Server Dashboard"
     },
     {
-      "path": "/qvc/website/client/",
+      "path": "/packages/qvc/website/client/",
       "title": "Video Chat",
       "icon": "fa-solid fa-lock",
       "backend": {
@@ -186,18 +180,21 @@
       }
     },
     {
-      "path": "/task-randomizer/",
+      "path": "/packages/qvc/website/server/",
+      "title": "QVC Server Dashboard"
+    },
+    {
+      "path": "/packages/task-randomizer/",
       "title": "Task Randomizer"
     },
     {
-      "path": "/tech-tree/website/",
-      "title": "Tech Tree",
-      "icon": "fa-solid fa-code-branch"
+      "path": "/packages/tech-tree/",
+      "title": "Redirecting\u2026"
     },
     {
-      "path": "/ui-kit/",
-      "title": "UI Kit",
-      "icon": "fa-regular fa-star"
+      "path": "/packages/tech-tree/website/",
+      "title": "Tech Tree",
+      "icon": "fa-solid fa-code-branch"
     }
   ]
 }

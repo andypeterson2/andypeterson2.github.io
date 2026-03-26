@@ -7,15 +7,15 @@ Monorepo for portfolio site and sub-projects.
 ```
 src/                          Astro 6 portfolio site
 packages/
-  ui-kit/                     Design system (50 CSS components, Storybook)
+  cv/                         LaTeX CV/resume editor (Express)
   flask-core/                 Shared Flask CORS/SSL infrastructure
+  nonogram/                   [submodule] Quantum nonogram solver
+  quantum-protein-kernel/     [submodule] ML classifier platform (Flask + PyTorch + Qiskit)
+  qvc/                        [submodule] Quantum video chat
   shared-js/                  Site navigation, theme bootstrap
-cv/                           LaTeX CV/resume editor (Express)
-tech-tree/                    Interactive knowledge graph (Canvas)
-quantum-protein-kernel/       ML classifier platform (Flask + PyTorch + Qiskit)
-task-randomizer/              Task picker (static)
-nonogram/                     [submodule] Quantum nonogram solver
-qvc/                          [submodule] Quantum video chat
+  task-randomizer/            Task picker (static)
+  tech-tree/                  Interactive knowledge graph (Canvas)
+  ui-kit/                     [submodule] Design system (50 CSS components, Storybook)
 ```
 
 ## Quick Start

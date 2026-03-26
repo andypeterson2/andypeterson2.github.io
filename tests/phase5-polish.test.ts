@@ -62,39 +62,27 @@ describe('Print stylesheet', () => {
   });
 });
 
-// ---- WP #428: Breadcrumbs ----
+// ---- WP #428: Breadcrumbs (inline in BaseLayout) ----
 
-describe('Breadcrumbs component', () => {
-  const breadcrumbsSrc = readFileSync(
-    resolve(ROOT, 'src/components/Breadcrumbs.astro'),
+describe('Breadcrumbs (inline in BaseLayout)', () => {
+  const layoutSrc = readFileSync(
+    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
     'utf-8',
   );
 
-  test('component file exists', () => {
-    expect(existsSync(resolve(ROOT, 'src/components/Breadcrumbs.astro'))).toBe(true);
-  });
-
-  test('has breadcrumb nav with aria-label', () => {
-    expect(breadcrumbsSrc).toContain('aria-label="Breadcrumb"');
+  test('breadcrumbs auto-generated in BaseLayout for non-home pages', () => {
+    expect(layoutSrc).toContain('breadcrumbs');
+    expect(layoutSrc).toContain('isHome');
   });
 
   test('includes Home link', () => {
-    expect(breadcrumbsSrc).toContain('href="/"');
-    expect(breadcrumbsSrc).toContain('Home');
+    expect(layoutSrc).toContain('href="/"');
+    expect(layoutSrc).toContain('Home');
   });
 
-  test('uses aria-current for current page', () => {
-    expect(breadcrumbsSrc).toContain('aria-current="page"');
-  });
-
-  test('has separator with aria-hidden', () => {
-    expect(breadcrumbsSrc).toContain('aria-hidden="true"');
-  });
-
-  test('breadcrumbs auto-generated in BaseLayout for non-home pages', () => {
-    const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    expect(layoutSrc).toContain('breadcrumbs');
-    expect(layoutSrc).toContain('isHome');
+  test('has details-bar for breadcrumb display', () => {
+    expect(layoutSrc).toContain('details-bar');
+    expect(layoutSrc).toContain('crumb-link');
   });
 });
 
