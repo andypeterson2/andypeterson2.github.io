@@ -15,15 +15,6 @@
       }
     },
     {
-      "path": "/cv/website/",
-      "title": "CV Editor",
-      "icon": "fa-solid fa-pen-to-square",
-      "backend": {
-        "service": "cv",
-        "defaultPort": 3000
-      }
-    },
-    {
       "path": "/dist/",
       "title": "Home | Projects"
     },
@@ -158,6 +149,23 @@
     {
       "path": "/node_modules/mute-stream/coverage/lcov-report/__root__/",
       "title": "Code coverage report for __root__/"
+    },
+    {
+      "path": "/packages/cv/",
+      "title": "Redirecting\u2026"
+    },
+    {
+      "path": "/packages/cv/editor/public/",
+      "title": "CV Editor"
+    },
+    {
+      "path": "/packages/cv/website/",
+      "title": "CV Editor",
+      "icon": "fa-solid fa-pen-to-square",
+      "backend": {
+        "service": "cv",
+        "defaultPort": 3000
+      }
     },
     {
       "path": "/packages/nonogram/",
