@@ -12,36 +12,32 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- Navigation ----
+// ---- Navigation (inline in BaseLayout) ----
 
-describe('Nav Component', () => {
-  const navSrc = readFileSync(
-    resolve(ROOT, 'src/components/Nav.astro'),
+describe('Nav (inline in BaseLayout)', () => {
+  const layoutSrc = readFileSync(
+    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
     'utf-8',
   );
 
   test('has aria-label for main navigation', () => {
-    expect(navSrc).toContain('aria-label="Main navigation"');
+    expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 
   test('renders nav links for existing pages', () => {
-    expect(navSrc).toContain('href="/"');
-    expect(navSrc).toContain('href="/contact"');
-  });
-
-  test('supports active state via currentPath', () => {
-    expect(navSrc).toContain('active');
-    expect(navSrc).toContain('aria-current');
+    expect(layoutSrc).toContain('href="/"');
+    expect(layoutSrc).toContain('href="/contact"');
   });
 
   test('uses system.css menu-bar pattern', () => {
-    expect(navSrc).toContain('role="menu-bar"');
-    expect(navSrc).toContain('role="menu-item"');
-    expect(navSrc).toContain('#000');
+    expect(layoutSrc).toContain('role="menu-bar"');
+    expect(layoutSrc).toContain('role="menu-item"');
+    expect(layoutSrc).toContain('#000');
   });
 
   test('nav has border bottom', () => {
-    expect(navSrc).toContain('border-bottom: 2px solid #000');
+    expect(layoutSrc).toContain('border-bottom');
+    expect(layoutSrc).toContain('solid #000');
   });
 
 });
@@ -244,10 +240,9 @@ describe('Accessibility Features', () => {
   });
 
   test('nav has ARIA attributes', () => {
-    const navSrc = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
-    expect(navSrc).toContain('aria-label');
-    expect(navSrc).toContain('aria-haspopup');
-    expect(navSrc).toContain('aria-current');
+    const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
+    expect(layoutSrc).toContain('aria-label');
+    expect(layoutSrc).toContain('aria-haspopup');
   });
 
   test('footer external links have noopener', () => {

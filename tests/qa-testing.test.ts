@@ -52,9 +52,9 @@ describe('Critical user journeys', () => {
   });
 
   test('navigation links cover all main pages', () => {
-    const navSrc = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
-    expect(navSrc).toContain('href="/"');
-    expect(navSrc).toContain('href="/contact"');
+    const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
+    expect(layoutSrc).toContain('href="/"');
+    expect(layoutSrc).toContain('href="/contact"');
   });
 
   test('layout has slot for page content including footer', () => {
@@ -77,12 +77,9 @@ describe('Visual regression baseline - component inventory', () => {
 
   test('all core components exist', () => {
     expect(components).toContain('Button.astro');
-    expect(components).toContain('Card.astro');
     expect(components).toContain('Tag.astro');
-    expect(components).toContain('Nav.astro');
     expect(components).toContain('Footer.astro');
     expect(components).toContain('SectionLabel.astro');
-    expect(components).toContain('Breadcrumbs.astro');
     expect(components).toContain('PullQuote.astro');
   });
 
@@ -331,10 +328,11 @@ describe('Mobile responsive spot-check', () => {
 
 describe('Internal link consistency', () => {
   const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
-  const navSrc = readFileSync(resolve(ROOT, 'src/components/Nav.astro'), 'utf-8');
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('all nav links point to existing pages', () => {
-    const navLinks = navSrc.match(/href="([^"{}]+)"/g) || [];
+    const navSection = layoutSrc.split('aria-label="Main navigation"')[1]?.split('</nav>')[0] || '';
+    const navLinks = navSection.match(/href="([^"{}]+)"/g) || [];
     const pageRoutes = pages.map(p => {
       const rel = p.replace(resolve(ROOT, 'src/pages'), '');
       return rel
@@ -347,7 +345,10 @@ describe('Internal link consistency', () => {
     for (const link of navLinks) {
       const href = link.match(/href="([^"]+)"/)?.[1];
       if (href) {
-        const exists = pageRoutes.some(r => r === href || r.startsWith(href + '/'));
+        // Skip non-page links (images, icons, etc.)
+        if (href.includes('.')) continue;
+        const normalizedHref = href.replace(/\/$/, '') || '/';
+        const exists = pageRoutes.some(r => r === normalizedHref || r.startsWith(normalizedHref + '/'));
         expect(exists, `Nav link ${href} has no matching page`).toBe(true);
       }
     }
