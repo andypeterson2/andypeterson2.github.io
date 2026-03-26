@@ -108,24 +108,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     gap: 12px;
   }
 
-  /* ── Section rule (centered text with lines) ── */
-  .section-rule {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .section-rule::before,
-  .section-rule::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #000;
-  }
-
   /* ── Draw view / grid ── */
   :global(#draw-view) {
     display: flex;

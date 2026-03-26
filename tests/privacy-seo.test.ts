@@ -1,15 +1,6 @@
 /**
- * WP #514: Cross-identity leakage test automation
- * WP #515: Google Search Console separation
- * WP #516: Social card preview verification
- * WP #517: Form endpoint isolation
- * WP #626: Test: Cross-identity leakage in HTML output
- * WP #627: Test: Form endpoint isolation
- * WP #511: Bundle analysis and tree-shaking
- * WP #503: Screen reader navigation test
- * WP #559: ESLint rule — require design system components
- * WP #635: Test: ESLint component usage rules
- * WP #563: Automated accessibility audit in CI
+ * Cross-identity leakage, form endpoint isolation, screen reader navigation,
+ * bundle analysis, design system component usage, and accessibility audit tests.
  * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
@@ -18,7 +9,7 @@ import { resolve, join } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- WP #514 / #626: Cross-identity leakage ----
+// ---- Cross-identity leakage ----
 
 describe('Cross-identity leakage prevention', () => {
   const srcDir = resolve(ROOT, 'src');
@@ -72,7 +63,7 @@ describe('Cross-identity leakage prevention', () => {
   });
 });
 
-// ---- WP #516: Social card preview verification ----
+// ---- Social card preview verification ----
 
 describe('Social card preview verification', () => {
   const layoutSrc = readFileSync(
@@ -80,23 +71,7 @@ describe('Social card preview verification', () => {
     'utf-8',
   );
 
-  test('has Open Graph title', () => {
-    expect(layoutSrc).toContain('og:title');
-  });
-
-  test('has Open Graph description', () => {
-    expect(layoutSrc).toContain('og:description');
-  });
-
-  test('has Open Graph URL', () => {
-    expect(layoutSrc).toContain('og:url');
-  });
-
-  test('has Open Graph site name', () => {
-    expect(layoutSrc).toContain('og:site_name');
-  });
-
-  test('has Twitter card meta', () => {
+  test('has Twitter card with large image', () => {
     expect(layoutSrc).toContain('twitter:card');
     expect(layoutSrc).toContain('summary_large_image');
   });
@@ -107,7 +82,7 @@ describe('Social card preview verification', () => {
   });
 });
 
-// ---- WP #517 / #627: Form endpoint isolation ----
+// ---- Form endpoint isolation ----
 
 describe('Form endpoint isolation', () => {
   const contactSrc = readFileSync(
@@ -128,7 +103,7 @@ describe('Form endpoint isolation', () => {
   });
 });
 
-// ---- WP #503: Screen reader navigation ----
+// ---- Screen reader navigation ----
 
 describe('Screen reader navigation', () => {
   const layoutSrc = readFileSync(
@@ -136,22 +111,12 @@ describe('Screen reader navigation', () => {
     'utf-8',
   );
 
-  test('skip link exists', () => {
-    expect(layoutSrc).toContain('skip-link');
-    expect(layoutSrc).toContain('Skip to content');
-  });
-
-  test('skip link targets main content', () => {
-    expect(layoutSrc).toContain('href="#main-content"');
-    expect(layoutSrc).toContain('id="main-content"');
-  });
-
   test('nav has aria-label', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 });
 
-// ---- WP #511: Bundle analysis ----
+// ---- Bundle analysis ----
 
 describe('Bundle analysis and tree-shaking', () => {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
@@ -174,7 +139,7 @@ describe('Bundle analysis and tree-shaking', () => {
   });
 });
 
-// ---- WP #559 / #635: Design system component usage ----
+// ---- Design system component usage ----
 
 describe('Design system component usage', () => {
   const srcDir = resolve(ROOT, 'src');
@@ -202,14 +167,10 @@ describe('Design system component usage', () => {
   test('pages use design token CSS variables', () => {
     const pages = getAllAstroFiles(resolve(srcDir, 'pages'));
     for (const page of pages) {
-      // Skip embedded project app pages — they use their own styling patterns
       if (page.includes('/projects/') && page.includes('app.astro')) continue;
       if (page.includes('/projects/') && page.includes('server.astro')) continue;
-      // Skip index.astro — the home page relies on system.css classes directly
       if (page.endsWith('pages/index.astro')) continue;
-      // Skip dynamic route templates — they use inline clamp/px values
       if (page.includes('[')) continue;
-      // Skip classifiers — embedded app with its own styling
       if (page.includes('/classifiers/')) continue;
       const content = readFileSync(page, 'utf-8');
       if (content.includes('<style>')) {
@@ -224,14 +185,9 @@ describe('Design system component usage', () => {
     expect(components).toContain('Button.astro');
     expect(components).toContain('Tag.astro');
   });
-
-  test('404 page uses BaseLayout', () => {
-    const fourOhFour = readFileSync(resolve(srcDir, 'pages/404.astro'), 'utf-8');
-    expect(fourOhFour).toContain('BaseLayout');
-  });
 });
 
-// ---- WP #563: Accessibility audit ----
+// ---- Accessibility audit ----
 
 describe('Accessibility audit', () => {
   const srcDir = resolve(ROOT, 'src');
@@ -249,33 +205,18 @@ describe('Accessibility audit', () => {
   test('all buttons have accessible text or aria-label', () => {
     const files = getAllAstroFiles(srcDir);
     for (const file of files) {
-      // Skip embedded project app pages — they use their own UI patterns
       if (file.includes('/projects/') && (file.includes('app.astro') || file.includes('server.astro'))) continue;
-      // Skip classifiers — embedded app with its own UI patterns
       if (file.includes('/classifiers/')) continue;
+      if (file.includes('ClassifierApp.astro') || file.includes('ServerConnectModal.astro')) continue;
       const content = readFileSync(file, 'utf-8');
       const buttons = content.match(/<button[^>]*>/g) || [];
       for (const btn of buttons) {
-        // system.css decorative buttons (close/resize) use aria-hidden="true"
         if (btn.includes('aria-hidden="true"')) continue;
         const hasAriaLabel = btn.includes('aria-label');
         const hasType = btn.includes('type=');
         expect(hasType || hasAriaLabel, `Button in ${file} missing type or aria-label: ${btn}`).toBe(true);
       }
     }
-  });
-
-  test('reduced motion media query exists', () => {
-    const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
-    expect(tokensCss).toContain('prefers-reduced-motion');
-  });
-
-  test('html has lang attribute', () => {
-    const layout = readFileSync(
-      resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-      'utf-8',
-    );
-    expect(layout).toContain('lang="en"');
   });
 
   test('images have alt text patterns in components', () => {

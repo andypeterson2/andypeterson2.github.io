@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -8,10 +7,7 @@ import path from 'path';
 const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  integrations: [mdx(), sitemap()],
-  image: {
-    service: { entrypoint: 'astro/assets/services/sharp' },
-  },
+  integrations: [sitemap()],
   site: process.env.SITE_URL || 'https://andypeterson.dev',
   redirects: {
     '/nonograms.html': '/projects',
