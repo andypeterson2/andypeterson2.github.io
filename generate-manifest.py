@@ -9,13 +9,12 @@ EXCLUDED = {
 }
 
 # Top-level submodule dirs — skip recursive scan (repos contain non-website files)
-SUBMODULE_DIRS = {"nonogram", "dashboard", "tech-tree", "cv", "qvc"}
+SUBMODULE_DIRS = {"nonogram", "dashboard", "cv", "qvc"}
 
 # Explicit website entry-points inside submodules
 SUBMODULE_WEBSITE_PATHS = {
     "nonogram/website",
     "dashboard/website",
-    "tech-tree/website",
     "cv/website",
     "qvc/website/client",
 }

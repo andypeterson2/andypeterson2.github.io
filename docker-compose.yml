@@ -23,15 +23,3 @@ services:
     volumes:
       - ./packages/cv:/app
     working_dir: /app/editor
-
-  tech-tree:
-    image: node:20-slim
-    command: node serve.mjs
-    ports:
-      - "127.0.0.1:${TECHTREE_PORT:-8080}:8080"
-    environment:
-      PORT: "8080"
-      HOST: "0.0.0.0"
-    volumes:
-      - ./packages/tech-tree:/app
-    working_dir: /app

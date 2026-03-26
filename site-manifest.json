@@ -182,19 +182,6 @@
     {
       "path": "/packages/qvc/website/server/",
       "title": "QVC Server Dashboard"
-    },
-    {
-      "path": "/packages/task-randomizer/",
-      "title": "Task Randomizer"
-    },
-    {
-      "path": "/packages/tech-tree/",
-      "title": "Redirecting\u2026"
-    },
-    {
-      "path": "/packages/tech-tree/website/",
-      "title": "Tech Tree",
-      "icon": "fa-solid fa-code-branch"
     }
   ]
 }
