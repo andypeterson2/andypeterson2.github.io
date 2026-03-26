@@ -173,17 +173,25 @@
       }
     },
     {
-      "path": "/public/server-dashboard/",
+      "path": "/packages/qvc/server-dashboard/",
       "title": "QVC Server Dashboard"
     },
     {
-      "path": "/qvc/website/client/",
+      "path": "/packages/qvc/website/client/",
       "title": "Video Chat",
       "icon": "fa-solid fa-lock",
       "backend": {
         "service": "qvc",
         "defaultPort": 5002
       }
+    },
+    {
+      "path": "/packages/qvc/website/server/",
+      "title": "QVC Server Dashboard"
+    },
+    {
+      "path": "/public/server-dashboard/",
+      "title": "QVC Server Dashboard"
     },
     {
       "path": "/task-randomizer/",
