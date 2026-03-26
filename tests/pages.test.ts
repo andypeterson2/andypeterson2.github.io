@@ -187,8 +187,9 @@ describe('Projects Page', () => {
     expect(projectsData).toContain('Quantum Protein Kernel');
   });
 
-  test('uses Card components', () => {
-    expect(projectsSrc).toContain('Card');
+  test('uses finder-icon grid layout', () => {
+    expect(projectsSrc).toContain('finder-icon');
+    expect(projectsSrc).toContain('icon-grid');
   });
 
   test('uses responsive grid', () => {
@@ -196,13 +197,9 @@ describe('Projects Page', () => {
     expect(projectsSrc).toContain('auto-fill');
   });
 
-  test('projects have tags', () => {
-    expect(projectsSrc).toContain('Tag');
-    expect(projectsSrc).toContain('tags');
-  });
-
-  test('filter buttons use system.css btn class', () => {
-    expect(projectsSrc).toContain('class="btn filter-btn');
+  test('projects link to detail pages', () => {
+    expect(projectsSrc).toContain('/projects/');
+    expect(projectsSrc).toContain('project.slug');
   });
 });
 
@@ -214,9 +211,9 @@ describe('Contact Page', () => {
     'utf-8',
   );
 
-  test('has availability badge with status dot', () => {
-    expect(contactSrc).toContain('availability-badge');
-    expect(contactSrc).toContain('status-dot');
+  test('has contact intro with subtitle', () => {
+    expect(contactSrc).toContain('contact-intro');
+    expect(contactSrc).toContain('subtitle');
   });
 
   test('has mailto link with pre-filled subject', () => {

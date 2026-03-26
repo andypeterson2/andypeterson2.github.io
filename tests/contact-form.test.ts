@@ -74,13 +74,13 @@ describe('Contact form with validation', () => {
     expect(contactSrc).toContain('autocomplete="email"');
   });
 
-  test('form uses system.css field-row layout', () => {
-    expect(contactSrc).toContain('field-row');
+  test('form uses form-field layout', () => {
+    expect(contactSrc).toContain('form-field');
   });
 
-  test('form is inside a window with New Message title', () => {
-    expect(contactSrc).toContain('window contact-window');
-    expect(contactSrc).toContain('New Message');
+  test('form is inside a section with Send a Message heading', () => {
+    expect(contactSrc).toContain('contact-section');
+    expect(contactSrc).toContain('Send a Message');
   });
 });
 
@@ -89,12 +89,12 @@ describe('Contact form with validation', () => {
 describe('Contact method cards', () => {
   const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
 
-  test('contact cards section exists', () => {
-    expect(contactSrc).toContain('contact-grid');
+  test('contact links section exists', () => {
+    expect(contactSrc).toContain('link-list');
   });
 
-  test('has GitHub contact card', () => {
-    expect(contactSrc).toContain('standard-dialog contact-card');
+  test('has GitHub contact link', () => {
+    expect(contactSrc).toContain('contact-link');
     expect(contactSrc).toContain('GitHub');
   });
 
@@ -111,8 +111,8 @@ describe('Contact method cards', () => {
     expect(contactSrc).toContain('rel="noopener noreferrer"');
   });
 
-  test('contact card links use system.css btn class', () => {
-    expect(contactSrc).toContain('class="btn"');
+  test('contact links use contact-link class', () => {
+    expect(contactSrc).toContain('class="contact-link"');
   });
 
   test('contact cards use siteConfig values', () => {
