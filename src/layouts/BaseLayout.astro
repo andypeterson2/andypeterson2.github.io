@@ -1,6 +1,5 @@
 ---
 import { siteConfig } from '../config/site';
-import { projects } from '../data/projects';
 import '../styles/tokens.css';
 import '../styles/base.css';
 
@@ -115,18 +114,7 @@ const detailsSegments = isHome
         <li role="menu-item" class="heart-item">
           <a href="/"><img src="/icons/heart.svg" alt="Home" class="heart-icon" width="36" height="36" /></a>
         </li>
-        <li role="menu-item" aria-haspopup="true" tabindex="0"><a href="/projects/">Projects</a>
-          <ul role="menu">
-            {projects.map((project) => {
-              const href = project.appUrl || `/projects/${project.slug}/`;
-              return (
-                <li role="menu-item">
-                  <a href={href}>{project.title}</a>
-                </li>
-              );
-            })}
-          </ul>
-        </li>
+        <li role="menu-item"><a href="/projects/">Projects</a></li>
         <li role="menu-item"><a href="/about">About</a></li>
         <li role="menu-item"><a href="/contact">Contact</a></li>
       </ul>
@@ -161,6 +149,7 @@ const detailsSegments = isHome
                   : <span>{seg.text}</span>
           )}
         </div>
+        <slot name="details-bar" />
         <div class="window-pane site-pane" id="main-content">
           <slot />
         </div>
