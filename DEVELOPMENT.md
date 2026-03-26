@@ -9,7 +9,7 @@ npm run dev
 ```
 
 This launches Astro on `localhost:4321`. A custom Vite plugin in `astro.config.mjs`
-serves sub-apps at their respective paths (`/classifiers/`, `/cv/`, `/tech-tree/`,
+serves sub-apps at their respective paths (`/classifiers/`, `/cv/`,
 etc.), so the full site is navigable from a single dev server.
 
 ## Backend Services
@@ -20,7 +20,6 @@ Sub-projects with Flask or Express backends can be run two ways:
    ```bash
    cd packages/quantum-protein-kernel && python -m classifiers
    cd packages/cv && npm start
-   cd packages/tech-tree && npm start
    ```
 
 2. **All at once via Docker**:
@@ -34,7 +33,6 @@ Sub-projects with Flask or Express backends can be run two ways:
 |---------------|------|
 | classifiers   | 5001 |
 | cv-editor     | 3001 |
-| tech-tree     | 8080 |
 | nonogram      | 5055 |
 
 ### Service URL Resolution

@@ -108,7 +108,7 @@ describe('Dual-identity leakage prevention', () => {
         // Skip node_modules, .git, dist, submodules
         if (['node_modules', '.git', 'dist', 'public', 'lib', 'shared'].includes(entry.name)) continue;
         // Skip submodule directories
-        if (['qvc', 'nonogram', 'tech-tree', 'cv', 'dashboard', 'classifiers'].includes(entry.name)) continue;
+        if (['qvc', 'nonogram', 'cv', 'dashboard', 'classifiers'].includes(entry.name)) continue;
         collectSourceFiles(full, files);
       } else {
         const ext = extname(entry.name);

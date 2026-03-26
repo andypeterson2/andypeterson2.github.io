@@ -44,12 +44,10 @@ export default defineConfig({
           server.middlewares.use((req, res, next) => {
             const subPaths = [
               '/nonogram/',
-              '/tech-tree/',
               '/classifiers/',
               '/cv/',
               '/qvc/',
               '/packages/',
-              '/task-randomizer/',
               '/lib/',
               '/site-manifest.json',
             ];
@@ -59,8 +57,6 @@ export default defineConfig({
               '/qvc/': '/packages/qvc/',
               '/classifiers/': '/packages/quantum-protein-kernel/classifiers/',
               '/nonogram/': '/packages/nonogram/',
-              '/tech-tree/': '/packages/tech-tree/',
-              '/task-randomizer/': '/packages/task-randomizer/',
             };
             let url = req.url || '';
             if (subPaths.some(p => url.startsWith(p))) {
