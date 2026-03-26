@@ -2,7 +2,7 @@ services:
   classifiers:
     build:
       context: .
-      dockerfile: quantum-protein-kernel/Dockerfile
+      dockerfile: packages/quantum-protein-kernel/Dockerfile
     ports:
       - "127.0.0.1:${QPK_PORT:-5001}:5001"
     environment:
@@ -21,7 +21,7 @@ services:
     environment:
       PORT: "3001"
     volumes:
-      - ./cv:/app
+      - ./packages/cv:/app
     working_dir: /app/editor
 
   tech-tree:
@@ -33,5 +33,5 @@ services:
       PORT: "8080"
       HOST: "0.0.0.0"
     volumes:
-      - ./tech-tree:/app
+      - ./packages/tech-tree:/app
     working_dir: /app
