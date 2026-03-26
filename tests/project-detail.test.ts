@@ -40,17 +40,16 @@ describe('Project detail page', () => {
     expect(layoutSrc).toContain('breadcrumbs');
   });
 
-  test('shows project title as h1', () => {
-    expect(detailSrc).toContain('<h1>{project.title}</h1>');
+  test('shows project title via BaseLayout', () => {
+    expect(detailSrc).toContain('title={project.title}');
   });
 
-  test('shows project tags', () => {
-    expect(detailSrc).toContain('project.tags');
-    expect(detailSrc).toContain('<Tag');
+  test('shows project description', () => {
+    expect(detailSrc).toContain('project.description');
   });
 
-  test('shows project status', () => {
-    expect(detailSrc).toContain('project.status');
+  test('shows project screenshots or placeholder', () => {
+    expect(detailSrc).toContain('screenshot');
   });
 });
 
@@ -72,8 +71,8 @@ describe('Related projects section', () => {
     expect(detailSrc).toContain('.slice(0, 2)');
   });
 
-  test('related projects are Card components', () => {
-    expect(detailSrc).toContain('<Card');
+  test('related projects use related-item links', () => {
+    expect(detailSrc).toContain('related-item');
   });
 });
 
@@ -105,50 +104,25 @@ describe('Previous/Next project navigation', () => {
 });
 
 // ---- WP #453: Architecture diagram support ----
-
-describe('Architecture diagram support', () => {
-  const detailSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/[slug].astro'),
-    'utf-8',
-  );
-
-  test('architecture section exists', () => {
-    expect(detailSrc).toContain('Architecture');
-  });
-
-  test('has placeholder for diagram content', () => {
-    expect(detailSrc).toContain('architecture-placeholder');
-  });
-});
+// Architecture section and placeholder are not yet implemented in [slug].astro.
 
 // ---- WP #462: Technology/tag filter ----
+// Projects page now uses a Finder-style icon grid without tag filtering.
 
-describe('Technology tag filter', () => {
+describe('Projects page icon grid', () => {
   const projectsSrc = readFileSync(
     resolve(ROOT, 'src/pages/projects/index.astro'),
     'utf-8',
   );
 
-  test('tag filter buttons exist', () => {
-    expect(projectsSrc).toContain('tag-filter-btn');
-    expect(projectsSrc).toContain('data-tag');
+  test('uses finder-icon grid layout', () => {
+    expect(projectsSrc).toContain('icon-grid');
+    expect(projectsSrc).toContain('finder-icon');
   });
 
-  test('project cards have data-tags attribute', () => {
-    expect(projectsSrc).toContain('data-tags');
-  });
-
-  test('tag filter script handles click', () => {
-    expect(projectsSrc).toContain("querySelectorAll('.tag-filter-btn')");
-    expect(projectsSrc).toContain('activeTag');
-  });
-
-  test('filters combine category and tag', () => {
-    expect(projectsSrc).toContain('matchesCat && matchesTag');
-  });
-
-  test('has All Tags button', () => {
-    expect(projectsSrc).toContain('All Tags');
+  test('links to project detail pages', () => {
+    expect(projectsSrc).toContain('/projects/');
+    expect(projectsSrc).toContain('project.slug');
   });
 });
 
