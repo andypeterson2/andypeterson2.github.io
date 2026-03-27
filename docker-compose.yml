@@ -18,11 +18,10 @@ services:
   # ── Astro website (static via lightweight server) ────────────────────
   website:
     image: node:20-slim
-    command: npx serve dist -l 8000 --no-clipboard
+    command: npx serve /app/dist -l 8000 --no-clipboard
     working_dir: /app
     volumes:
-      - .:/app:ro
-      - /app/node_modules
+      - ./dist:/app/dist:ro
     environment:
       PORT: "8000"
 
@@ -71,6 +70,7 @@ services:
     build:
       context: ./packages/qvc
       dockerfile: Dockerfile.client
+    image: qvc-client:local
     environment:
       QUANTUM_SERVER_HOST: videochat-server
       QUANTUM_SERVER_PORT: "5050"
@@ -81,9 +81,7 @@ services:
 
   # ── QVC client B ─────────────────────────────────────────────────────
   videochat-client-b:
-    build:
-      context: ./packages/qvc
-      dockerfile: Dockerfile.client
+    image: qvc-client:local
     environment:
       QUANTUM_SERVER_HOST: videochat-server
       QUANTUM_SERVER_PORT: "5050"
@@ -95,7 +93,7 @@ services:
   # ── CV Editor ────────────────────────────────────────────────────────
   cv-editor:
     image: node:20-slim
-    command: sh -c "npm install --production && node server.js"
+    command: node server.js
     environment:
       PORT: "3000"
       HOST: "0.0.0.0"
