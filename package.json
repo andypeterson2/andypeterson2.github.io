@@ -12,15 +12,13 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css}'",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:all": "vitest run && playwright test",
-    "lighthouse": "lhci autorun"
+    "test:all": "vitest run && playwright test"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.1",
     "astro": "^6.0.8"
   },
   "devDependencies": {
-    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
