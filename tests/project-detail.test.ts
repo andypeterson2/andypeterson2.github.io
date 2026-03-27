@@ -13,10 +13,7 @@ const ROOT = resolve(import.meta.dirname!, '..');
 // ---- Project detail pages ----
 
 describe('Project detail page', () => {
-  const detailSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/[slug].astro'),
-    'utf-8',
-  );
+  const detailSrc = readFileSync(resolve(ROOT, 'src/pages/projects/[slug].astro'), 'utf-8');
 
   test('detail page template exists', () => {
     expect(existsSync(resolve(ROOT, 'src/pages/projects/[slug].astro'))).toBe(true);
@@ -49,10 +46,7 @@ describe('Project detail page', () => {
 });
 
 describe('Related projects section', () => {
-  const detailSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/[slug].astro'),
-    'utf-8',
-  );
+  const detailSrc = readFileSync(resolve(ROOT, 'src/pages/projects/[slug].astro'), 'utf-8');
 
   test('related projects section exists', () => {
     expect(detailSrc).toContain('Related Projects');
@@ -72,10 +66,7 @@ describe('Related projects section', () => {
 });
 
 describe('Previous/Next project navigation', () => {
-  const detailSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/[slug].astro'),
-    'utf-8',
-  );
+  const detailSrc = readFileSync(resolve(ROOT, 'src/pages/projects/[slug].astro'), 'utf-8');
 
   test('nav element with aria-label exists', () => {
     expect(detailSrc).toContain('project-nav');
@@ -101,10 +92,7 @@ describe('Previous/Next project navigation', () => {
 // ---- Projects page icon grid ----
 
 describe('Projects page icon grid', () => {
-  const projectsSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/index.astro'),
-    'utf-8',
-  );
+  const projectsSrc = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
 
   test('uses finder-icon grid layout', () => {
     expect(projectsSrc).toContain('icon-grid');

@@ -2,8 +2,15 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ClassifierApp from '../../../components/ClassifierApp.astro';
 ---
-<BaseLayout title="Classifier" breadcrumbs={[{ label: 'projects', href: '/projects/' }, { label: 'quantum protein kernel', href: '/projects/quantum-protein-kernel/' }, { label: 'app' }]}>
 
+<BaseLayout
+  title="Classifier"
+  breadcrumbs={[
+    { label: 'projects', href: '/projects/' },
+    { label: 'quantum protein kernel', href: '/projects/quantum-protein-kernel/' },
+    { label: 'app' },
+  ]}
+>
   <meta slot="head" name="site-backend-service" content="classifiers" />
   <meta slot="head" name="site-backend-port" content="5001" />
 

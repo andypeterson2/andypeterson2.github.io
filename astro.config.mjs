@@ -17,7 +17,6 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/me': '/',
-    '/me/': '/',
     '/skills': '/',
     '/uses': '/',
     '/blog': '/',
