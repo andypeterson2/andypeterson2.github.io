@@ -44,6 +44,14 @@ def app():
     return test_app
 
 
+@pytest.fixture(autouse=True)
+def reset_busy():
+    """Clear busy flag between tests so benchmark doesn't get 409."""
+    yield
+    with app_state.state_lock:
+        app_state.state["busy"] = False
+
+
 @pytest.fixture()
 def client(app):
     with app.test_client() as c:
@@ -115,16 +123,25 @@ class TestBenchmarkContract:
     """Frontend app.js POSTs to /api/benchmark."""
 
     def test_benchmark_accepts_trials(self, client):
-        # Set up grid first
-        client.post(
-            "/api/grid",
-            json={"rows": 2, "cols": 2, "grid": [[True, True], [True, True]]},
+        resp = client.post(
+            "/api/benchmark",
+            json={
+                "row_clues": [[2], [2]],
+                "col_clues": [[2], [2]],
+                "trials": 1,
+            },
         )
-        resp = client.post("/api/benchmark", json={"trials": 1})
         assert resp.status_code == 200
 
     def test_benchmark_rejects_invalid_trials(self, client):
-        resp = client.post("/api/benchmark", json={"trials": -1})
+        resp = client.post(
+            "/api/benchmark",
+            json={
+                "row_clues": [[1]],
+                "col_clues": [[1]],
+                "trials": -1,
+            },
+        )
         assert resp.status_code in (200, 400, 422)
 
 
