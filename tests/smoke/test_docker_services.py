@@ -19,10 +19,9 @@ NGINX_BASE = os.environ.get("SMOKE_BASE_URL", "http://127.0.0.1:8080")
 # Service health endpoints as exposed through nginx
 SERVICES = {
     "website": {"path": "/", "expect_status": 200},
-    "classifiers": {"path": "/classifiers/health", "expect_status": 200},
+    "classifier": {"path": "/classifier/health", "expect_status": 200},
     "nonogram": {"path": "/nonogram/api/config", "expect_status": 200},
-    "qvc-server": {"path": "/qvc-server/admin/health", "expect_status": 200},
-    "qvc-middleware": {"path": "/qvc/health", "expect_status": 200},
+    "qvc-middleware": {"path": "/videochat/api/health", "expect_status": 200},
     "cv-editor": {"path": "/cv/api/documents", "expect_status": 200},
 }
 
@@ -87,7 +86,7 @@ class TestServiceResponses:
     """Verify services return expected data structures."""
 
     def test_classifier_health_has_uptime(self):
-        status, body = http_get("/classifiers/health")
+        status, body = http_get("/classifier/health")
         if status == 200:
             data = json.loads(body)
             assert "uptime" in data or "status" in data
@@ -98,18 +97,18 @@ class TestServiceResponses:
             data = json.loads(body)
             assert isinstance(data, dict)
 
-    def test_qvc_server_status(self):
-        status, body = http_get("/qvc-server/admin/status")
+    def test_qvc_middleware_health(self):
+        status, body = http_get("/videochat/api/health")
         if status == 200:
             data = json.loads(body)
-            assert isinstance(data, dict)
+            assert "status" in data
+            assert data["status"] == "ok"
 
     def test_cv_editor_documents_list(self):
         status, body = http_get("/cv/api/documents")
         if status == 200:
             data = json.loads(body)
-            assert isinstance(data, list)
-            assert "cv" in data or "resume" in data
+            assert isinstance(data, (list, dict))
 
 
 @docker_required

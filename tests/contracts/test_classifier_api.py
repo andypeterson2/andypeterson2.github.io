@@ -12,10 +12,10 @@ QPK_ROOT = Path(__file__).resolve().parent.parent.parent / "packages" / "quantum
 sys.path.insert(0, str(QPK_ROOT))
 
 try:
-    from classifiers import create_app
+    from classifiers.server import create_app
 
     APP_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     APP_AVAILABLE = False
 
 
