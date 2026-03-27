@@ -7,8 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.css'",
-    "lint:styles": "stylelint 'src/**/*.css'",
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}'",
+    "lint:styles": "stylelint 'src/**/*.{css,astro}'",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css}'",
     "test": "vitest run",
     "lighthouse": "lhci autorun"
@@ -23,9 +23,11 @@
     "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^10.1.0",
     "eslint-plugin-astro": "^1.6.0",
+    "postcss-html": "^1.8.1",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
     "stylelint": "^17.5.0",
+    "stylelint-config-html": "^1.1.0",
     "stylelint-config-standard": "^40.0.0",
     "vitest": "^4.1.0"
   }

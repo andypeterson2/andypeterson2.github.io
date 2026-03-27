@@ -22,6 +22,7 @@ const ICONS = {
 const state = {
   middlewareConnected: false,
   serverConnected: false,
+  serverRequested: false,   // true once user explicitly initiates server connection
   userId: '',
   roomId: '',
   waitingForPeer: false,
@@ -46,71 +47,44 @@ const state = {
 
 let elapsedInterval = null;
 let noiseRaf = null;
-let socket = null;
 
-/* ── Socket.IO ──────────────────────────────────────────────────────────── */
-function initSocket(url) {
-  var base = url || localStorage.getItem('video-chat-api-base') || window.location.origin;
-  socket = io(base, {
-    autoConnect: false,
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionAttempts: 20,
-  });
+/* ── Socket accessor (provided by connectionManager) ──────────────────── */
+function getSocket() {
+  return connectionManager ? connectionManager.socket : null;
+}
 
-  socket.on('connect', () => {
-    state.middlewareConnected = true;
-    if (window.backendConnect) window.backendConnect.setStatus('connected');
-    render();
-  });
+/* ── Wire socket events onto whatever socket connectionManager gives us ── */
+function _bindSocketEvents(sock) {
+  if (!sock) return;
 
-  socket.on('disconnect', () => {
-    state.middlewareConnected = false;
-    state.serverConnected = false;
-    if (window.backendConnect) window.backendConnect.setStatus('disconnected');
-    render();
-  });
-
-  socket.on('welcome', (cfg) => {
-    state.middlewareConnected = true;
-    state.registrationEmitted = false;
-    if (cfg && cfg.host) {
-      state.serverHost = cfg.host;
-      state.serverPort = cfg.port || 5050;
-    }
-    if (cfg && cfg.isLocal) {
-      connectToServer(cfg.host, cfg.port);
-    }
-    render();
-  });
-
-  socket.on('server-connected', () => {
+  sock.on('server-connected', () => {
+    if (!state.serverRequested) return;  // ignore until user initiates server connection
     state.serverConnected = true;
     state.errorMessage = '';
     if (!state.registrationEmitted) {
       state.registrationEmitted = true;
-      socket.emit('create_user');
+      sock.emit('create_user');
     }
     render();
   });
 
-  socket.on('server-error', (msg) => {
+  sock.on('server-error', (msg) => {
     state.serverConnected = false;
     showToast(msg || 'Connection failed.');
     render();
   });
 
-  socket.on('user-registered', (data) => {
+  sock.on('user-registered', (data) => {
     state.userId = data.user_id || data;
     render();
   });
 
-  socket.on('waiting-for-peer', () => {
+  sock.on('waiting-for-peer', () => {
     state.waitingForPeer = true;
     render();
   });
 
-  socket.on('room-id', (roomId) => {
+  sock.on('room-id', (roomId) => {
     state.roomId = roomId;
     state.waitingForPeer = false;
     state.elapsed = 0;
@@ -118,12 +92,12 @@ function initSocket(url) {
     render();
   });
 
-  socket.on('peer-disconnected', () => {
+  sock.on('peer-disconnected', () => {
     leaveSession();
     showToast('Peer disconnected.');
   });
 
-  socket.on('frame', (data) => {
+  sock.on('frame', (data) => {
     if (data.self) {
       drawOnCanvas(document.getElementById('self-canvas'), data);
     } else {
@@ -131,11 +105,11 @@ function initSocket(url) {
     }
   });
 
-  socket.on('audio-frame', () => {
+  sock.on('audio-frame', () => {
     // Audio playback not yet implemented in browser
   });
 
-  socket.on('qber-update', (data) => {
+  sock.on('qber-update', (data) => {
     state.bb84Active = true;
     state.qber = data.qber;
     state.qberEvent = data.event;
@@ -144,57 +118,144 @@ function initSocket(url) {
       qber: data.qber,
       event: data.event,
     });
-    // Keep last 50 data points
     if (state.qberHistory.length > 50) state.qberHistory.shift();
     renderQuantumPanel();
   });
 
-  socket.on('camera-list', (cameras) => {
+  sock.on('camera-list', (cameras) => {
     state.cameras = cameras;
     render();
   });
 
-  socket.on('audio-device-list', (devices) => {
+  sock.on('audio-device-list', (devices) => {
     state.audioDevices = devices;
     render();
   });
-
-  socket.connect();
 }
+
+/* ── Connection state observer ─────────────────────────────────────────── */
+document.addEventListener('connection:statechange', function(e) {
+  var s = e.detail.state;
+  if (s === 'connected') {
+    state.middlewareConnected = true;
+    render();
+  } else if (s === 'disconnected' || s === 'idle') {
+    state.middlewareConnected = false;
+    state.serverConnected = false;
+    render();
+  }
+});
+
+document.addEventListener('connection:welcome', function(e) {
+  var cfg = e.detail;
+  state.middlewareConnected = true;
+  state.registrationEmitted = false;
+  if (cfg && cfg.host) {
+    state.serverHost = cfg.host;
+    state.serverPort = cfg.port || 5050;
+  }
+  // Bind app-level socket events to the new socket
+  var sock = getSocket();
+  if (sock) _bindSocketEvents(sock);
+  // No auto-connect — user must manually connect via Server tab
+  render();
+});
+
+/* ── QKD Server navbar tab (qvc-server) ─────────────────────────────── */
+(function() {
+  var _serverWidget = null;
+
+  document.addEventListener('navbar:connect-ready', function(e) {
+    if (e.detail.service !== 'qvc-server') return;
+    _serverWidget = e.detail.widget;
+    _serverWidget.setStatus(state.serverConnected ? 'connected' : 'idle');
+  });
+
+  document.addEventListener('navbar:connect', function(e) {
+    if (e.detail.service !== 'qvc-server') return;
+    if (!state.middlewareConnected) {
+      showToast('Connect to middleware first.');
+      if (_serverWidget) _serverWidget.setStatus('error');
+      return;
+    }
+    state.serverRequested = true;
+    state.serverHost = e.detail.host;
+    state.serverPort = e.detail.port;
+    if (_serverWidget) _serverWidget.setStatus('connecting');
+    connectToServer(e.detail.host, e.detail.port);
+  });
+
+  document.addEventListener('navbar:disconnect', function(e) {
+    if (e.detail.service !== 'qvc-server') return;
+    state.serverConnected = false;
+    state.serverRequested = false;
+    state.serverHost = '';
+    state.serverPort = 5050;
+    if (_serverWidget) _serverWidget.setStatus('disconnected');
+    render();
+  });
+
+  // Keep server dot in sync with middleware state changes
+  document.addEventListener('connection:statechange', function() {
+    if (!state.middlewareConnected && _serverWidget) {
+      state.serverConnected = false;
+      _serverWidget.setStatus('idle');
+    }
+  });
+
+  // Patch _bindSocketEvents to hook server-connected/server-error for the widget
+  var _origBind = _bindSocketEvents;
+  _bindSocketEvents = function(sock) {
+    _origBind(sock);
+    sock.on('server-connected', function() {
+      if (_serverWidget) _serverWidget.setStatus('connected');
+    });
+    sock.on('server-error', function(msg) {
+      if (_serverWidget) _serverWidget.setStatus('error');
+    });
+  };
+})();
 
 /* ── Actions ────────────────────────────────────────────────────────────── */
 function connectToServer(host, port) {
-  socket.emit('configure_server', { host, port: parseInt(port, 10) });
+  var sock = getSocket();
+  if (sock) sock.emit('configure_server', { host, port: parseInt(port, 10) });
 }
 
 function toggleCamera() {
   state.cameraOn = !state.cameraOn;
-  socket.emit('toggle_camera', { enabled: state.cameraOn });
+  var sock = getSocket();
+  if (sock) sock.emit('toggle_camera', { enabled: state.cameraOn });
   render();
 }
 
 function toggleMute() {
   state.muted = !state.muted;
-  socket.emit('toggle_mute', { muted: state.muted });
+  var sock = getSocket();
+  if (sock) sock.emit('toggle_mute', { muted: state.muted });
   render();
 }
 
 function selectCamera(index) {
   state.selectedCamera = index;
-  socket.emit('select_camera', { device: index });
+  var sock = getSocket();
+  if (sock) sock.emit('select_camera', { device: index });
 }
 
 function selectAudio(index) {
   state.selectedAudio = index;
-  socket.emit('select_audio', { device: index });
+  var sock = getSocket();
+  if (sock) sock.emit('select_audio', { device: index });
 }
 
 function joinRoom(peerId) {
-  socket.emit('join_room', { peer_id: peerId || null });
+  var sock = getSocket();
+  if (sock) sock.emit('join_room', { peer_id: peerId || null });
 }
 
 function leaveSession() {
-  socket.emit('leave_room');
+  var sock = getSocket();
+  if (sock) sock.emit('leave_room');
   state.roomId = '';
   state.waitingForPeer = false;
   state.elapsed = 0;
@@ -490,9 +551,10 @@ function render() {
   }
 
   // Request device lists
-  if (socket && socket.connected) {
-    socket.emit('list_cameras');
-    socket.emit('list_audio_devices');
+  var sock = getSocket();
+  if (sock && sock.connected) {
+    sock.emit('list_cameras');
+    sock.emit('list_audio_devices');
   }
 }
 
@@ -637,29 +699,6 @@ function handleJoin(e) {
   joinRoom(id || null);
 }
 
-/* ── Navbar Connect (Server menu in site-nav / BaseLayout) ───────────── */
-document.addEventListener('navbar:connect-ready', function(e) {
-  if (e.detail.service !== 'qvc') return;
-  window.backendConnect = e.detail.widget;
-  if (socket && socket.connected) {
-    window.backendConnect.setStatus('connected');
-  }
-});
-
-document.addEventListener('navbar:connect', function(e) {
-  if (e.detail.service !== 'qvc') return;
-  if (socket) { socket.disconnect(); }
-  initSocket(e.detail.url);
-});
-
-document.addEventListener('navbar:disconnect', function(e) {
-  if (e.detail.service !== 'qvc') return;
-  if (socket) { socket.disconnect(); socket = null; }
-  state.middlewareConnected = false;
-  state.serverConnected = false;
-  render();
-});
-
 /* ── Init ───────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   // Apply stored theme
@@ -667,10 +706,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial render
   render();
-
-  // Auto-connect if stored URL exists
-  var storedUrl = localStorage.getItem('video-chat-api-base');
-  if (storedUrl) {
-    initSocket(storedUrl);
-  }
 });

@@ -128,7 +128,6 @@ describe('Form submission routing per identity', () => {
     expect(contactSrc).toContain('siteConfig.email');
     expect(contactSrc).toContain('mailto:');
   });
-
 });
 
 // ---- Sitemap and robots.txt ----
