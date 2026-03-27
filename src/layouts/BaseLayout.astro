@@ -97,17 +97,10 @@ const detailsSegments = isHome
       <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
     )}
 
-    <!-- Error boundary -->
-    <script is:inline>
-      window.addEventListener('error', function(e) {
-        var el = document.getElementById('error-boundary');
-        if (el) { el.style.display = 'block'; el.textContent = 'Something went wrong. Please refresh.'; }
-      });
-    </script>
+    <!-- Error boundary removed — app pages handle errors via their own UI -->
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
 
     <!-- Desktop menubar (>768px) -->
     <nav class="site-menubar" aria-label="Main navigation">
@@ -202,17 +195,6 @@ const detailsSegments = isHome
   }
   .skip-link:focus {
     top: 0;
-  }
-  .error-boundary {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 300;
-    padding: 6px 12px;
-    background: #000;
-    color: #fff;
-    font-family: var(--font-sans);
-    font-size: 16px;
-    text-align: center;
   }
   html {
     background: #000;
