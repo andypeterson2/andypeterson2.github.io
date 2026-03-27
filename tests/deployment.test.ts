@@ -11,10 +11,7 @@ const ROOT = resolve(import.meta.dirname!, '..');
 
 describe('Preview deploy safety', () => {
   test('layout supports noindex for preview deploys', () => {
-    const layout = readFileSync(
-      resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-      'utf-8',
-    );
+    const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
     expect(layout).toContain('PREVIEW_DEPLOY');
     expect(layout).toContain('noindex');
     expect(layout).toContain('nofollow');

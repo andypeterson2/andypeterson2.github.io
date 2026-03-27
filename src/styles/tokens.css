@@ -55,6 +55,9 @@
   --space-24: 6rem;
   --space-32: 8rem;
 
+  /* ── shadows ── */
+  --shadow-focus: 2px 2px 0 #000;
+
   /* ── layout ── */
   --max-width: 66.25rem;
   --content-width: 42.5rem;
