@@ -90,6 +90,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -102,15 +104,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -e packages/flask-core
       - name: Install CPU-only torch and project deps
         run: |
-          cd packages/quantum-protein-kernel
           pip install torch==2.2.2+cpu torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements.txt --no-deps torch torchvision
+          cd packages/quantum-protein-kernel
+          pip install --no-deps -r requirements.txt
+          pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
           pip install pytest
       - run: cd packages/quantum-protein-kernel && python -m pytest tests/ -v --tb=short
 
@@ -120,4 +125,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - run: docker compose build classifier
