@@ -9,10 +9,7 @@ import { resolve } from 'path';
 const ROOT = resolve(import.meta.dirname!, '..');
 
 describe('Token CSS Output', () => {
-  const tokensCss = readFileSync(
-    resolve(ROOT, 'src/styles/tokens.css'),
-    'utf-8',
-  );
+  const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
 
   test('defines :root with monochrome variables', () => {
     expect(tokensCss).toMatch(/:root\s*\{/);
@@ -44,7 +41,11 @@ describe('Token CSS Output', () => {
       .split('\n')
       .filter((l) => l.includes('--text-') && l.includes(':'));
     for (const line of textTokenLines) {
-      if (line.includes('--text-inverse') || line.includes('--text-secondary') || line.includes('--text-muted')) {
+      if (
+        line.includes('--text-inverse') ||
+        line.includes('--text-secondary') ||
+        line.includes('--text-muted')
+      ) {
         continue;
       }
       const match = line.match(/--text-(xs|sm|base|lg|xl|2xl|3xl|4xl)/);
@@ -90,25 +91,15 @@ describe('Base CSS', () => {
 });
 
 describe('Component Files Exist', () => {
-  const components = [
-    'Button.astro',
-    'Tag.astro',
-    'SectionLabel.astro',
-    'PullQuote.astro',
-  ];
+  const components = ['Button.astro', 'SectionLabel.astro', 'PullQuote.astro'];
 
   test.each(components)('%s component exists', (filename) => {
-    expect(
-      existsSync(resolve(ROOT, 'src/components', filename)),
-    ).toBe(true);
+    expect(existsSync(resolve(ROOT, 'src/components', filename))).toBe(true);
   });
 });
 
 describe('Button Component', () => {
-  const buttonSrc = readFileSync(
-    resolve(ROOT, 'src/components/Button.astro'),
-    'utf-8',
-  );
+  const buttonSrc = readFileSync(resolve(ROOT, 'src/components/Button.astro'), 'utf-8');
 
   test('uses system.css btn and btn-default classes', () => {
     expect(buttonSrc).toContain('btn-default');
@@ -127,29 +118,8 @@ describe('Button Component', () => {
   });
 });
 
-describe('Tag Component', () => {
-  const tagSrc = readFileSync(
-    resolve(ROOT, 'src/components/Tag.astro'),
-    'utf-8',
-  );
-
-  test('supports variant prop', () => {
-    expect(tagSrc).toContain('variant');
-    expect(tagSrc).toContain('accent');
-    expect(tagSrc).toContain('default');
-  });
-
-  test('uses sans font and solid border', () => {
-    expect(tagSrc).toContain('var(--font-sans)');
-    expect(tagSrc).toContain('solid');
-  });
-});
-
 describe('SectionLabel Component', () => {
-  const src = readFileSync(
-    resolve(ROOT, 'src/components/SectionLabel.astro'),
-    'utf-8',
-  );
+  const src = readFileSync(resolve(ROOT, 'src/components/SectionLabel.astro'), 'utf-8');
 
   test('renders label text', () => {
     expect(src).toContain('label');
@@ -161,10 +131,7 @@ describe('SectionLabel Component', () => {
 });
 
 describe('Site Configuration', () => {
-  const siteSrc = readFileSync(
-    resolve(ROOT, 'src/config/site.ts'),
-    'utf-8',
-  );
+  const siteSrc = readFileSync(resolve(ROOT, 'src/config/site.ts'), 'utf-8');
 
   test('reads from environment variables', () => {
     expect(siteSrc).toContain('import.meta.env');

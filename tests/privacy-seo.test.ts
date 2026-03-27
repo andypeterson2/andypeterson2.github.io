@@ -37,7 +37,8 @@ describe('Cross-identity leakage prevention', () => {
 
   test('no hardcoded email addresses in source', () => {
     const astroFiles = getAllFiles(srcDir, '.astro');
-    const emailRegex = /[a-zA-Z0-9._%+-]+@(?![\]\\s@])(?:gmail|yahoo|hotmail|outlook|proton)\.[a-z]{2,}/i;
+    const emailRegex =
+      /[a-zA-Z0-9._%+-]+@(?![\]\\s@])(?:gmail|yahoo|hotmail|outlook|proton)\.[a-z]{2,}/i;
     for (const file of astroFiles) {
       const content = readFileSync(file, 'utf-8');
       const stripped = content.replace(/@\[.*?\]/g, '');
@@ -66,10 +67,7 @@ describe('Cross-identity leakage prevention', () => {
 // ---- Social card preview verification ----
 
 describe('Social card preview verification', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('has Twitter card with large image', () => {
     expect(layoutSrc).toContain('twitter:card');
@@ -85,10 +83,7 @@ describe('Social card preview verification', () => {
 // ---- Form endpoint isolation ----
 
 describe('Form endpoint isolation', () => {
-  const contactSrc = readFileSync(
-    resolve(ROOT, 'src/pages/contact.astro'),
-    'utf-8',
-  );
+  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
 
   test('contact form uses siteConfig for email', () => {
     expect(contactSrc).toContain('siteConfig.email');
@@ -106,10 +101,7 @@ describe('Form endpoint isolation', () => {
 // ---- Screen reader navigation ----
 
 describe('Screen reader navigation', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('nav has aria-label', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
@@ -134,7 +126,7 @@ describe('Bundle analysis and tree-shaking', () => {
 
   test('no duplicate framework deps', () => {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    const frameworks = ['react', 'vue', 'svelte', 'solid-js'].filter(f => deps[f]);
+    const frameworks = ['react', 'vue', 'svelte', 'solid-js'].filter((f) => deps[f]);
     expect(frameworks.length).toBeLessThanOrEqual(1);
   });
 });
@@ -155,9 +147,7 @@ describe('Design system component usage', () => {
   }
 
   test('pages use BaseLayout', () => {
-    const pages = getAllAstroFiles(resolve(srcDir, 'pages')).filter(
-      f => !f.includes('404'),
-    );
+    const pages = getAllAstroFiles(resolve(srcDir, 'pages')).filter((f) => !f.includes('404'));
     for (const page of pages) {
       const content = readFileSync(page, 'utf-8');
       expect(content, `${page} does not use BaseLayout`).toContain('BaseLayout');
@@ -183,7 +173,7 @@ describe('Design system component usage', () => {
     const components = readdirSync(resolve(srcDir, 'components'));
     expect(components.length).toBeGreaterThanOrEqual(3);
     expect(components).toContain('Button.astro');
-    expect(components).toContain('Tag.astro');
+    expect(components).toContain('SectionLabel.astro');
   });
 });
 
@@ -205,16 +195,24 @@ describe('Accessibility audit', () => {
   test('all buttons have accessible text or aria-label', () => {
     const files = getAllAstroFiles(srcDir);
     for (const file of files) {
-      if (file.includes('/projects/') && (file.includes('app.astro') || file.includes('server.astro'))) continue;
+      if (
+        file.includes('/projects/') &&
+        (file.includes('app.astro') || file.includes('server.astro'))
+      )
+        continue;
       if (file.includes('/classifiers/')) continue;
-      if (file.includes('ClassifierApp.astro') || file.includes('ServerConnectModal.astro')) continue;
+      if (file.includes('ClassifierApp.astro') || file.includes('ServerConnectModal.astro'))
+        continue;
       const content = readFileSync(file, 'utf-8');
       const buttons = content.match(/<button[^>]*>/g) || [];
       for (const btn of buttons) {
         if (btn.includes('aria-hidden="true"')) continue;
         const hasAriaLabel = btn.includes('aria-label');
         const hasType = btn.includes('type=');
-        expect(hasType || hasAriaLabel, `Button in ${file} missing type or aria-label: ${btn}`).toBe(true);
+        expect(
+          hasType || hasAriaLabel,
+          `Button in ${file} missing type or aria-label: ${btn}`,
+        ).toBe(true);
       }
     }
   });

@@ -1,32 +1,46 @@
 #!/usr/bin/env python3
 """Scan for sub-apps and generate site-manifest.json."""
-import json, re, sys
+import json
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 EXCLUDED = {
     "dockerfiles", "images", "lib", "nginx", "shared",
-    "tests", "documents", "node_modules", "dist",
+    "tests", "documents", "node_modules", "dist", "templates",
 }
 
-# Top-level submodule dirs — skip recursive scan (repos contain non-website files)
-SUBMODULE_DIRS = {"nonogram", "dashboard", "cv", "qvc"}
+EXCLUDED_PATTERNS = {
+    "backup", "submodule-backup",
+}
+
+
+def get_submodule_dirs(root: Path) -> set[str]:
+    """Auto-detect submodule paths from .gitmodules."""
+    gitmodules = root / ".gitmodules"
+    if not gitmodules.is_file():
+        return set()
+    content = gitmodules.read_text()
+    return set(re.findall(r'path\s*=\s*(.+)', content))
+
 
 # Explicit website entry-points inside submodules
 SUBMODULE_WEBSITE_PATHS = {
-    "nonogram/website",
-    "dashboard/website",
-    "cv/website",
-    "qvc/website/client",
+    "packages/nonogram/website",
+    "packages/cv/website",
+    "packages/qvc/website/client",
 }
 
 EXCLUDED_PATHS = {
-    "qvc/server",
-    "qvc/website/server",
+    "packages/qvc/server",
+    "packages/qvc/website/server",
 }
 
 
 def main():
     root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
+    submodule_dirs = get_submodule_dirs(root)
     apps = []
 
     for index_html in sorted(root.rglob("index.html")):
@@ -41,8 +55,18 @@ def main():
         if rel.parts and rel.parts[0] in EXCLUDED:
             continue
 
+        # Skip paths containing excluded patterns (e.g. backup dirs)
+        if any(pattern in p for p in rel.parts for pattern in EXCLUDED_PATTERNS):
+            continue
+
+        # Skip excluded directory names at any depth
+        if any(p in EXCLUDED for p in rel.parts):
+            continue
+
         # Skip submodule dirs unless path is an explicit website entry-point
-        if rel.parts and rel.parts[0] in SUBMODULE_DIRS:
+        if rel_str in submodule_dirs or any(
+            rel_str.startswith(sd + "/") for sd in submodule_dirs
+        ):
             if rel_str not in SUBMODULE_WEBSITE_PATHS:
                 continue
 
@@ -52,6 +76,10 @@ def main():
 
         # Extract metadata from HTML
         html = index_html.read_text(encoding="utf-8", errors="ignore")
+
+        # Skip Jinja/template files (contain {{ }})
+        if "{{" in html and "}}" in html:
+            continue
 
         # <meta name="site-nav-label" content="...">  (display name override)
         m_label = re.search(
@@ -65,11 +93,15 @@ def main():
         m_pin = re.search(
             r'<meta\s+name="site-nav-pin"\s+content="([^"]*)"', html, re.IGNORECASE
         )
-        # <meta name="site-backend-service" content="...">  (backend service name)
-        m_backend_svc = re.search(
+        # New format: <meta name="site-backend" content="svc" data-port="8080" data-label="...">
+        m_backend_new = re.search(
+            r'<meta\s+name="site-backend"\s+content="([^"]*)"(?:\s+data-port="(\d+)")?', html, re.IGNORECASE
+        )
+        # Legacy: <meta name="site-backend-service" content="...">
+        m_backend_svc = m_backend_new or re.search(
             r'<meta\s+name="site-backend-service"\s+content="([^"]*)"', html, re.IGNORECASE
         )
-        # <meta name="site-backend-port" content="...">  (backend default port)
+        # Legacy: <meta name="site-backend-port" content="...">
         m_backend_port = re.search(
             r'<meta\s+name="site-backend-port"\s+content="([^"]*)"', html, re.IGNORECASE
         )
@@ -90,9 +122,17 @@ def main():
         if pin:
             entry["pin"] = pin
         if m_backend_svc:
+            svc_name = m_backend_svc.group(1).strip()
+            # New format has data-port in group(2); legacy uses separate meta tag
+            if m_backend_new and m_backend_new.group(2):
+                port = int(m_backend_new.group(2))
+            elif m_backend_port:
+                port = int(m_backend_port.group(1).strip())
+            else:
+                port = 8080
             entry["backend"] = {
-                "service": m_backend_svc.group(1).strip(),
-                "defaultPort": int(m_backend_port.group(1).strip()) if m_backend_port else 8080,
+                "service": svc_name,
+                "defaultPort": port,
             }
         apps.append(entry)
 
