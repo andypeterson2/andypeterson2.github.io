@@ -22,18 +22,23 @@ const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
 <style>
   /* system.css .btn and .btn-default handle all styling.
      We only add inline-flex for icon alignment and size variants. */
-  .btn, .btn-default {
+  .btn,
+  .btn-default {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     text-decoration: none;
   }
-  .btn-sm, :global(.btn-default).btn-sm {
+
+  .btn-sm,
+  :global(.btn-default).btn-sm {
     font-size: 0.75rem;
     padding: 2px 8px;
     gap: 4px;
   }
-  .btn-lg, :global(.btn-default).btn-lg {
+
+  .btn-lg,
+  :global(.btn-default).btn-lg {
     font-size: 1.25rem;
     padding: 8px 20px;
     gap: 8px;

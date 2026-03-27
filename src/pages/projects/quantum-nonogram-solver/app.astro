@@ -1,8 +1,15 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
-<BaseLayout title="Nonogram Solver" breadcrumbs={[{ label: 'projects', href: '/projects/' }, { label: 'quantum nonogram solver', href: '/projects/quantum-nonogram-solver/' }, { label: 'app' }]}>
 
+<BaseLayout
+  title="Nonogram Solver"
+  breadcrumbs={[
+    { label: 'projects', href: '/projects/' },
+    { label: 'quantum nonogram solver', href: '/projects/quantum-nonogram-solver/' },
+    { label: 'app' },
+  ]}
+>
   <meta slot="head" name="site-backend-service" content="nonogram" />
   <meta slot="head" name="site-backend-port" content="5055" />
 
@@ -25,8 +32,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       </div>
       <div class="nono-right">
         <div class="controls-bar">
-          <label class="trials-label">Trials
-            <input type="number" id="trials-input" min="1" max="20" value="1">
+          <label class="trials-label"
+            >Trials
+            <input type="number" id="trials-input" min="1" max="20" value="1" />
           </label>
           <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Run on Simulator</button>
         </div>
@@ -40,8 +48,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </div>
         <div class="section-rule"><span>Histogram</span></div>
         <div class="histogram-controls">
-          <label class="threshold-label">Thr
-            <input type="number" id="threshold-input" min="0" max="100" step="0.01" value="0.50">
+          <label class="threshold-label"
+            >Thr
+            <input type="number" id="threshold-input" min="0" max="100" step="0.01" value="0.50" />
             <span>%</span>
           </label>
         </div>
@@ -55,7 +64,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <script is:inline src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script
+    is:inline
+    src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+    crossorigin="anonymous"
+    integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"></script>
   <script is:inline src="/nonogram/js/state.js"></script>
   <script is:inline src="/nonogram/js/grid.js"></script>
   <script is:inline src="/nonogram/js/solver.js"></script>
@@ -67,24 +80,47 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   .nono-btn {
     background: #fff;
     border: 2px solid #000;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: 13px;
     padding: 6px 14px;
     cursor: pointer;
     user-select: none;
   }
-  .nono-btn:hover { background: #000; color: #fff; }
-  .nono-btn:disabled { opacity: 0.4; cursor: default; }
-  .nono-btn:disabled:hover { background: #fff; color: #000; }
-  .nono-btn-sm { font-size: 12px; padding: 4px 10px; }
+
+  .nono-btn:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .nono-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .nono-btn:disabled:hover {
+    background: #fff;
+    color: #000;
+  }
+
+  .nono-btn-sm {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
   .nono-btn-run {
     background: #000;
     color: #fff;
     font-size: 13px;
     padding: 6px 16px;
   }
-  .nono-btn-run:hover { background: #333; }
-  .nono-btn-run:disabled { opacity: 0.4; }
+
+  .nono-btn-run:hover {
+    background: #333;
+  }
+
+  .nono-btn-run:disabled {
+    opacity: 0.4;
+  }
 
   /* ── Two-column layout ── */
   .nono-columns {
@@ -92,6 +128,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     gap: 0;
     min-height: 600px;
   }
+
   .nono-left {
     width: 40%;
     border-right: 2px solid #000;
@@ -100,6 +137,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     flex-direction: column;
     gap: 12px;
   }
+
   .nono-right {
     width: 60%;
     padding: 16px;
@@ -114,9 +152,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     justify-content: center;
     user-select: none;
   }
+
   :global(.nonogram-table) {
     border-collapse: collapse;
   }
+
   :global(.nonogram-table td.cell) {
     width: 24px;
     height: 24px;
@@ -124,12 +164,15 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     background: #fff;
     cursor: crosshair;
   }
+
   :global(.nonogram-table td.cell.filled) {
     background: #000;
   }
+
   :global(.nonogram-table .corner-cell) {
     background: transparent;
   }
+
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
     background: #eee;
@@ -139,12 +182,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     border: 1px solid #ccc;
     padding: 2px;
   }
+
   :global(.row-clue-slots) {
     display: flex;
     gap: 2px;
     justify-content: flex-end;
     padding: 0 4px;
   }
+
   :global(.col-clue-slots) {
     display: flex;
     flex-direction: column;
@@ -152,6 +197,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     align-items: center;
     padding: 2px 4px;
   }
+
   :global(.clue-slot) {
     font-size: 11px;
     font-weight: 700;
@@ -159,6 +205,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     min-width: 12px;
     text-align: center;
   }
+
   :global(.clue-slot.empty) {
     visibility: hidden;
   }
@@ -169,14 +216,16 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     gap: 8px;
     justify-content: center;
   }
+
   .grid-size-controls {
     display: flex;
     gap: 8px;
     align-items: center;
     justify-content: center;
   }
+
   :global(#grid-size-label) {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: 13px;
     color: #333;
   }
@@ -188,8 +237,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     padding: 4px 0;
     text-align: center;
   }
-  :global(.status-line.status-err) { color: #c00; }
-  :global(.status-line.status-ok)  { color: #060; }
+
+  :global(.status-line.status-err) {
+    color: #c00;
+  }
+
+  :global(.status-line.status-ok) {
+    color: #060;
+  }
 
   /* ── Controls bar ── */
   .controls-bar {
@@ -197,13 +252,15 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     gap: 12px;
     align-items: center;
   }
+
   .trials-label {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
+
   .trials-label input {
     width: 50px;
     border: 2px solid #000;
@@ -220,47 +277,72 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     gap: 12px;
     min-height: 40px;
   }
+
   :global(.placeholder-msg) {
     color: #999;
     font-size: 12px;
     font-style: italic;
     padding: 8px 0;
   }
+
   :global(.sol-grid-wrap) {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
   }
+
   :global(.sol-grid-label) {
     font-size: 10px;
     color: #666;
     font-weight: 600;
   }
+
   :global(.sol-table) {
     border-collapse: collapse;
   }
-  :global(.sol-table.sz-sm td) { width: 10px; height: 10px; }
-  :global(.sol-table.sz-md td) { width: 16px; height: 16px; }
-  :global(.sol-table.sz-lg td) { width: 22px; height: 22px; }
+
+  :global(.sol-table.sz-sm td) {
+    width: 10px;
+    height: 10px;
+  }
+
+  :global(.sol-table.sz-md td) {
+    width: 16px;
+    height: 16px;
+  }
+
+  :global(.sol-table.sz-lg td) {
+    width: 22px;
+    height: 22px;
+  }
+
   :global(.sol-table td) {
     border: 1px solid #ccc;
   }
-  :global(.sol-table td.f) { background: #000; }
-  :global(.sol-table td.e) { background: #fff; }
+
+  :global(.sol-table td.f) {
+    background: #000;
+  }
+
+  :global(.sol-table td.e) {
+    background: #fff;
+  }
 
   /* ── Histogram ── */
   .histogram-controls {
     display: flex;
     gap: 8px;
   }
+
   .threshold-label {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: 12px;
     display: flex;
     align-items: center;
     gap: 4px;
   }
+
   .threshold-label input {
     width: 60px;
     border: 2px solid #000;
@@ -269,6 +351,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     font-size: 12px;
     text-align: center;
   }
+
   .histogram-area {
     height: 220px;
     border: 2px solid #000;
@@ -281,27 +364,32 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(#metrics-pane) {
     font-size: 12px;
   }
+
   :global(#metrics-pane:not(.visible)) {
     display: none;
   }
+
   :global(.metrics-table) {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
   }
+
   :global(.metrics-table th) {
     background: #000;
     color: #fff;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: 11px;
     text-transform: uppercase;
     padding: 4px 8px;
     text-align: left;
   }
+
   :global(.metrics-table td) {
     border: 1px solid #ccc;
     padding: 3px 8px;
   }
+
   :global(.metrics-table .metric-label) {
     font-weight: 600;
     background: #f5f5f5;
