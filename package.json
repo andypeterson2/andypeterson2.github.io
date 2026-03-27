@@ -11,6 +11,8 @@
     "lint:styles": "stylelint 'src/**/*.{css,astro}'",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css}'",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test",
     "lighthouse": "lhci autorun"
   },
   "dependencies": {
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^10.1.0",
