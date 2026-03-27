@@ -1,6 +1,5 @@
 <!-- App UI -->
 <div id="classifier-app">
-
   <!-- Top bar -->
   <header class="app-navbar">
     <div class="navbar-left">
@@ -9,16 +8,13 @@
         <div id="dataset-list"></div>
       </div>
     </div>
-    <div class="navbar-right">
-    </div>
+    <div class="navbar-right"></div>
   </header>
 
   <!-- Main layout -->
   <div id="split-layout" class="split-layout">
-
     <!-- Left column -->
     <aside id="left-col" class="left-col">
-
       <!-- TRAIN card -->
       <section class="card">
         <h2 class="card-title">Train</h2>
@@ -30,24 +26,24 @@
         </div>
 
         <label for="model-name">Name</label>
-        <input id="model-name" type="text" placeholder="auto">
+        <input id="model-name" type="text" placeholder="auto" />
 
         <label for="epochs">Epochs</label>
-        <input id="epochs" type="number" value="10" min="1">
+        <input id="epochs" type="number" value="10" min="1" />
 
         <label for="batch-size">Batch size</label>
-        <input id="batch-size" type="number" value="64" min="1">
+        <input id="batch-size" type="number" value="64" min="1" />
 
         <label for="lr">Learning rate</label>
-        <input id="lr" type="number" value="0.01" step="0.001" min="0">
+        <input id="lr" type="number" value="0.01" step="0.001" min="0" />
 
         <details class="advanced-toggle">
           <summary>Advanced</summary>
           <label for="patience">Patience (early stop)</label>
-          <input id="patience" type="number" placeholder="disabled" min="1">
+          <input id="patience" type="number" placeholder="disabled" min="1" />
 
           <label for="val-gap">Val every N batches</label>
-          <input id="val-gap" type="number" value="50" min="1">
+          <input id="val-gap" type="number" value="50" min="1" />
 
           <label for="teacher-select">Distill from</label>
           <select id="teacher-select">
@@ -56,7 +52,7 @@
 
           <div id="distill-row" class="hidden">
             <label for="distill-weight">Distill weight (alpha)</label>
-            <input id="distill-weight" type="number" value="0.5" step="0.1" min="0" max="1">
+            <input id="distill-weight" type="number" value="0.5" step="0.1" min="0" max="1" />
           </div>
         </details>
 
@@ -86,7 +82,6 @@
 
     <!-- Right column -->
     <main class="right-col">
-
       <!-- Draw card (image input) -->
       <section class="card" id="canvas-col" style="display:none">
         <h2 class="card-title">Draw</h2>
@@ -162,6 +157,7 @@
     height: 100%;
     font-size: clamp(9px, 1.2vw, 14px);
   }
+
   .app-navbar {
     display: flex;
     align-items: center;
@@ -171,8 +167,19 @@
     background: #eee;
     flex-shrink: 0;
   }
-  .navbar-left { display: flex; align-items: center; gap: 8px; position: relative; }
-  .navbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
   /* ── Dropdown ── */
   .dropdown {
@@ -184,7 +191,11 @@
     z-index: 50;
     min-width: 150px;
   }
-  .dropdown.hidden { display: none; }
+
+  .dropdown.hidden {
+    display: none;
+  }
+
   :global(.ui-dropdown-item) {
     display: block;
     width: 100%;
@@ -196,6 +207,7 @@
     font-family: inherit;
     font-size: inherit;
   }
+
   :global(.ui-dropdown-item:hover),
   :global(.ui-dropdown-item.active) {
     background: #000;
@@ -209,6 +221,7 @@
     min-height: 0;
     overflow: hidden;
   }
+
   .left-col {
     overflow-y: auto;
     padding: 8px;
@@ -218,6 +231,7 @@
     flex-direction: column;
     gap: 8px;
   }
+
   .right-col {
     flex: 1;
     overflow-y: auto;
@@ -227,13 +241,17 @@
     gap: 8px;
     min-width: 0;
   }
+
   .resize-handle {
     width: 5px;
     cursor: col-resize;
     background: #ccc;
     flex-shrink: 0;
   }
-  .resize-handle:hover { background: #999; }
+
+  .resize-handle:hover {
+    background: #999;
+  }
 
   /* ── Cards ── */
   .card {
@@ -241,6 +259,7 @@
     padding: 8px 10px;
     background: #fff;
   }
+
   .card-title {
     font-size: clamp(11px, 1.5vw, 18px);
     font-weight: 700;
@@ -258,7 +277,10 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  select, input[type="number"], input[type="text"] {
+
+  select,
+  input[type='number'],
+  input[type='text'] {
     width: 100%;
     box-sizing: border-box;
     font-family: inherit;
@@ -267,6 +289,7 @@
     border: 1.5px solid #000;
     background: #fff;
   }
+
   .advanced-toggle summary {
     cursor: pointer;
     font-size: clamp(9px, 1.1vw, 13px);
@@ -276,7 +299,7 @@
 
   /* ── Buttons ── */
   .btn {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(9px, 1.2vw, 14px);
     padding: 3px 10px;
     border: 2px solid #000;
@@ -284,18 +307,57 @@
     color: #000;
     cursor: pointer;
   }
-  .btn:hover { background: #000; color: #fff; }
-  .btn-primary { background: #000; color: #fff; }
-  .btn-primary:hover { background: #333; }
-  .btn-danger { color: #c00; }
-  .btn-danger:hover { background: #c00; color: #fff; }
-  .btn-block { display: block; width: 100%; margin-top: 6px; }
-  .btn-sm { font-size: clamp(8px, 1vw, 12px); padding: 2px 6px; }
-  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  .btn:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .btn-primary {
+    background: #000;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #333;
+  }
+
+  .btn-danger {
+    color: #c00;
+  }
+
+  .btn-danger:hover {
+    background: #c00;
+    color: #fff;
+  }
+
+  .btn-block {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .btn-sm {
+    font-size: clamp(8px, 1vw, 12px);
+    padding: 2px 6px;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 
   /* ── Row helper ── */
-  .row { display: flex; gap: 6px; align-items: center; }
-  .row select { flex: 1; min-width: 0; }
+  .row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .row select {
+    flex: 1;
+    min-width: 0;
+  }
 
   /* ── Model rows ── */
   :global(.model-row) {
@@ -306,45 +368,121 @@
     border-bottom: 1px solid #ddd;
     flex-wrap: wrap;
   }
-  :global(.model-name) { font-weight: 600; }
+
+  :global(.model-name) {
+    font-weight: 600;
+  }
+
   :global(.model-tag) {
     font-size: clamp(8px, 1vw, 12px);
     padding: 1px 5px;
     border: 1px solid #999;
     color: #666;
   }
-  :global(.empty-msg) { color: #999; font-size: clamp(9px, 1.1vw, 13px); }
+
+  :global(.empty-msg) {
+    color: #999;
+    font-size: clamp(9px, 1.1vw, 13px);
+  }
 
   /* ── Tables ── */
-  .app-table { width: 100%; border-collapse: collapse; font-size: clamp(9px, 1.1vw, 13px); }
-  .app-table th, .app-table td { padding: 3px 6px; border-bottom: 1px solid #ddd; text-align: left; }
-  .app-table th { font-weight: 700; background: #f5f5f5; }
-  .metrics-wrap { overflow: auto; max-height: 300px; }
-
-  :global(.corner-cell) { min-width: 80px; position: sticky; left: 0; z-index: 3; background: #f5f5f5; }
-  :global(.model-col-head) { min-width: 80px; }
-  :global(.col-model-name) { font-weight: 600; }
-  :global(.metrics-section-row > td) {
-    background: #eee; color: #666; font-size: clamp(8px, 1vw, 11px);
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-    padding: 4px 6px; border-top: 1px solid #ccc;
+  .app-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(9px, 1.1vw, 13px);
   }
+
+  .app-table th,
+  .app-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+  }
+
+  .app-table th {
+    font-weight: 700;
+    background: #f5f5f5;
+  }
+
+  .metrics-wrap {
+    overflow: auto;
+    max-height: 300px;
+  }
+
+  :global(.corner-cell) {
+    min-width: 80px;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #f5f5f5;
+  }
+
+  :global(.model-col-head) {
+    min-width: 80px;
+  }
+
+  :global(.col-model-name) {
+    font-weight: 600;
+  }
+
+  :global(.metrics-section-row > td) {
+    background: #eee;
+    color: #666;
+    font-size: clamp(8px, 1vw, 11px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 6px;
+    border-top: 1px solid #ccc;
+  }
+
   :global(.metric-label) {
-    background: #f5f5f5; font-size: clamp(8px, 1vw, 12px); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
-    padding: 3px 6px; text-align: left; position: sticky; left: 0; z-index: 2;
+    background: #f5f5f5;
+    font-size: clamp(8px, 1vw, 12px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    padding: 3px 6px;
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 2;
     border-right: 1px solid #ddd;
   }
-  :global(.cfg-cell) { color: #666; }
+
+  :global(.cfg-cell) {
+    color: #666;
+  }
 
   /* ── Colour helpers ── */
-  :global(.pred-label) { font-weight: 700; }
-  :global(.pred-model-name) { color: #666; }
-  :global(.conf-high) { color: #16a34a; }
-  :global(.conf-low) { color: #999; }
-  :global(.acc-high) { color: #16a34a; }
-  :global(.acc-med) { color: #d97706; }
-  :global(.acc-low) { color: #dc2626; }
+  :global(.pred-label) {
+    font-weight: 700;
+  }
+
+  :global(.pred-model-name) {
+    color: #666;
+  }
+
+  :global(.conf-high) {
+    color: #16a34a;
+  }
+
+  :global(.conf-low) {
+    color: #999;
+  }
+
+  :global(.acc-high) {
+    color: #16a34a;
+  }
+
+  :global(.acc-med) {
+    color: #d97706;
+  }
+
+  :global(.acc-low) {
+    color: #dc2626;
+  }
 
   /* ── Canvas ── */
   #draw-canvas {
@@ -357,7 +495,10 @@
   }
 
   /* ── Chart ── */
-  #chart-area canvas { width: 100%; display: block; }
+  #chart-area canvas {
+    width: 100%;
+    display: block;
+  }
 
   /* ── Progress bar ── */
   .progress-bar {
@@ -366,6 +507,7 @@
     border: 1.5px solid #000;
     margin-bottom: 4px;
   }
+
   .progress-bar-fill {
     height: 100%;
     background: #000;
@@ -381,7 +523,11 @@
     overflow: hidden;
     flex-shrink: 0;
   }
-  .log-drawer.open { max-height: 50vh; }
+
+  .log-drawer.open {
+    max-height: 50vh;
+  }
+
   .log-handle {
     padding: 2px 8px;
     font-size: clamp(8px, 1vw, 12px);
@@ -392,6 +538,7 @@
     cursor: pointer;
     border-bottom: 1px solid #ccc;
   }
+
   .log-terminal {
     font-family: monospace;
     font-size: clamp(8px, 1vw, 12px);
@@ -402,19 +549,49 @@
     white-space: pre-wrap;
     word-break: break-all;
   }
-  :global(.log-entry) { display: flex; gap: 8px; line-height: 1.4; }
-  :global(.log-time) { color: #999; flex-shrink: 0; }
-  :global(.log-msg) { color: #333; }
-  :global(.log-ok) { color: #16a34a; }
-  :global(.log-err) { color: #dc2626; }
+
+  :global(.log-entry) {
+    display: flex;
+    gap: 8px;
+    line-height: 1.4;
+  }
+
+  :global(.log-time) {
+    color: #999;
+    flex-shrink: 0;
+  }
+
+  :global(.log-msg) {
+    color: #333;
+  }
+
+  :global(.log-ok) {
+    color: #16a34a;
+  }
+
+  :global(.log-err) {
+    color: #dc2626;
+  }
 
   /* ── Hidden helper ── */
-  .hidden { display: none !important; }
+  .hidden {
+    display: none !important;
+  }
 
   /* ── Mobile ── */
-  @media (max-width: 768px) {
-    .split-layout { flex-direction: column; }
-    .left-col { border-right: none; border-bottom: 2px solid #000; width: 100% !important; }
-    .resize-handle { display: none; }
+  @media (width <= 768px) {
+    .split-layout {
+      flex-direction: column;
+    }
+
+    .left-col {
+      border-right: none;
+      border-bottom: 2px solid #000;
+      width: 100% !important;
+    }
+
+    .resize-handle {
+      display: none;
+    }
   }
 </style>

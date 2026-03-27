@@ -4,8 +4,8 @@
   /* ── Project list for the Projects submenu ── */
   var projectLinks = [
     { href: "/projects/quantum-video-chat/", label: "Quantum Video Chat" },
-    { href: "/nonogram/website/", label: "Quantum Nonogram Solver" },
-    { href: "/classifiers/", label: "Quantum Protein Kernel" },
+    { href: "/projects/quantum-nonogram-solver/", label: "Quantum Nonogram Solver" },
+    { href: "/projects/quantum-protein-kernel/", label: "Quantum Protein Kernel" },
   ];
 
   /* ── Derive breadcrumb label from the current page's <title> ── */
@@ -55,9 +55,7 @@
     var aboutUl = document.createElement("ul");
     aboutUl.setAttribute("role", "menu");
     [
-      { href: "/about", label: "Intro" },
-      { href: "/about", label: "Resume" },
-      { href: "/about", label: "CV" },
+      { href: "/about/", label: "About" },
     ].forEach(function (item) {
       var li = document.createElement("li");
       li.setAttribute("role", "menu-item");
