@@ -1,25 +1,26 @@
 services:
   classifiers:
     build:
-      context: .
-      dockerfile: packages/quantum-protein-kernel/Dockerfile
+      context: ./packages/quantum-protein-kernel
+      dockerfile: Dockerfile
     ports:
       - "127.0.0.1:${QPK_PORT:-5001}:5001"
     environment:
       CLASSIFIERS_PORT: "5001"
       CLASSIFIERS_HOST: "0.0.0.0"
-      CLASSIFIERS_CORS_ORIGINS: "http://localhost:*"
+      CLASSIFIERS_CORS_ORIGINS: "http://localhost:*,https://andypeterson.dev"
       DEV_CERT_DIR: ""
     volumes:
       - ./packages/ui-kit:/app/classifiers/static/ui-kit:ro
 
   cv-editor:
     image: node:20-slim
-    command: node server.js
+    command: sh -c "npm install --production && node server.js"
     ports:
       - "127.0.0.1:${CV_PORT:-3001}:3001"
     environment:
       PORT: "3001"
+      HOST: "0.0.0.0"
     volumes:
       - ./packages/cv:/app
     working_dir: /app/editor

@@ -1,18 +1,4 @@
-<!-- Connection overlay -->
-<div id="connect-overlay" class="connect-overlay hidden">
-  <div class="connect-dialog">
-    <h2>Connect to Backend</h2>
-    <p>Enter the URL of a running classifier backend.</p>
-    <form id="connect-form">
-      <input id="connect-url" type="text" placeholder="http://localhost:5001" required />
-      <button type="submit" class="btn btn-primary">Connect</button>
-    </form>
-    <p id="connect-error" class="connect-error"></p>
-    <p id="connect-status" class="connect-status"></p>
-  </div>
-</div>
-
-<!-- App UI (hidden until connected) -->
+<!-- App UI -->
 <div id="classifier-app">
 
   <!-- Top bar -->
@@ -24,7 +10,6 @@
       </div>
     </div>
     <div class="navbar-right">
-      <button id="disconnect-btn" class="btn btn-sm">Disconnect</button>
     </div>
   </header>
 
@@ -164,53 +149,12 @@
 </div>
 
 <!-- Scripts -->
+<script is:inline src="/classifiers/js/connection.js"></script>
 <script is:inline src="/classifiers/js/sse.js"></script>
 <script is:inline src="/classifiers/js/chart.js"></script>
 <script is:inline src="/classifiers/js/app.js"></script>
 
 <style>
-  /* ── Connection overlay ── */
-  .connect-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .connect-overlay.hidden { display: none; }
-  .connect-dialog {
-    background: #fff;
-    border: 3px solid #000;
-    padding: clamp(16px, 3vw, 32px);
-    max-width: 400px;
-    width: 90%;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
-  }
-  .connect-dialog h2 {
-    font-size: clamp(14px, 2vw, 22px);
-    margin: 0 0 8px;
-  }
-  .connect-dialog p {
-    font-size: clamp(10px, 1.4vw, 16px);
-    margin: 4px 0 12px;
-  }
-  .connect-dialog form {
-    display: flex;
-    gap: 8px;
-  }
-  .connect-dialog input[type="text"] {
-    flex: 1;
-    font-family: inherit;
-    font-size: clamp(10px, 1.4vw, 16px);
-    padding: 4px 8px;
-    border: 2px solid #000;
-    background: #fff;
-  }
-  .connect-error { color: #c00; font-size: clamp(9px, 1.2vw, 14px); }
-  .connect-status { color: #666; font-size: clamp(9px, 1.2vw, 14px); }
-
   /* ── App layout ── */
   #classifier-app {
     display: flex;

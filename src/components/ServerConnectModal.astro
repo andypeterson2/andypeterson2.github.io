@@ -154,14 +154,19 @@
   function updateNav() {
     if (!serverLi) return;
     var dot = serverLi.querySelector(".sn-dot");
+    var s = connState.status || "idle";
+    if (dot) {
+      dot.className = "sn-dot";
+      if (s === "connected") dot.classList.add("sn-green");
+      else if (s === "connecting" || s === "degraded") dot.classList.add("sn-yellow");
+      else if (s === "disconnected" || s === "error") dot.classList.add("sn-red");
+    }
     if (connState.connected) {
       serverLi.setAttribute("aria-haspopup", "true");
       if (serverSubUl) serverSubUl.style.display = "";
-      if (dot) dot.classList.add("connected");
     } else {
       serverLi.setAttribute("aria-haspopup", "false");
       if (serverSubUl) serverSubUl.style.display = "none";
-      if (dot) dot.classList.remove("connected");
     }
   }
 
@@ -173,8 +178,9 @@
         return "http://" + h + ":" + p;
       },
       setStatus: function(status) {
-        if (status === "connected") connState.connected = true;
-        else if (status === "disconnected" || status === "error" || status === "idle") connState.connected = false;
+        connState.status = status;
+        if (status === "connected" || status === "degraded") connState.connected = true;
+        else connState.connected = false;
         updateNav();
       }
     };
@@ -201,15 +207,25 @@
     width: 0.45em;
     height: 0.45em;
     border-radius: 50%;
-    background: #999;
+    background-color: #999 !important;
     opacity: 0.5;
     flex-shrink: 0;
     pointer-events: none;
   }
-  .sn-dot.connected {
-    background: #22c55e;
+  .sn-dot.sn-green {
+    background-color: #22c55e !important;
     opacity: 1;
     box-shadow: 0 0 5px rgba(34,197,94,0.5);
+  }
+  .sn-dot.sn-yellow {
+    background-color: #eab308 !important;
+    opacity: 1;
+    box-shadow: 0 0 5px rgba(234,179,8,0.5);
+  }
+  .sn-dot.sn-red {
+    background-color: #ef4444 !important;
+    opacity: 1;
+    box-shadow: 0 0 5px rgba(239,68,68,0.5);
   }
 
   /* ── Connect modal (injected by JS) ── */
