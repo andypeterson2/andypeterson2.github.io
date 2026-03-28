@@ -4,7 +4,10 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
 
-interface Crumb { label: string; href?: string }
+interface Crumb {
+  label: string;
+  href?: string;
+}
 
 interface Props {
   title?: string;
@@ -34,16 +37,20 @@ if (customBreadcrumbs) {
   for (let i = 0; i < segments.length; i++) {
     const isLast = i === segments.length - 1;
     const href = '/' + segments.slice(0, i + 1).join('/') + '/';
-    const label = isLast && title
-      ? title
-      : segments[i].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const label =
+      isLast && title
+        ? title
+        : segments[i].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     breadcrumbs.push({ label, href: isLast ? undefined : href });
   }
 }
 
 // Details bar text
 const detailsSegments = isHome
-  ? [{ text: '~', bold: false, href: '/', isHeart: true }, { text: '/', bold: true }]
+  ? [
+      { text: '~', bold: false, href: '/', isHeart: true },
+      { text: '/', bold: true },
+    ]
   : [
       { text: '~', bold: false, href: '/', isHeart: true },
       ...breadcrumbs.flatMap((crumb, i) => [
@@ -64,7 +71,12 @@ const detailsSegments = isHome
     <link rel="canonical" href={canonicalUrl.href} />
 
     <!-- system.css — System 6 UI framework -->
-    <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@sakun/system.css"
+      crossorigin="anonymous"
+      integrity="sha384-dMAAxgW1m+ZMJvdWjqqgUg28ZMQl4r9gur4ULWmHsCY0I1jy+KqTI/Ti+sGBUYxm"
+    />
     <slot name="head" />
 
     <!-- Open Graph -->
@@ -84,36 +96,36 @@ const detailsSegments = isHome
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- Structured data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'Person',
-      name: siteConfig.displayName,
-      url: canonicalUrl.href,
-      jobTitle: 'Quantum Researcher',
-      sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
-    })} />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: siteConfig.displayName,
+        url: canonicalUrl.href,
+        jobTitle: 'Quantum Researcher',
+        sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
+      })}
+    />
 
-    {plausibleDomain && (
-      <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
-    )}
+    {
+      plausibleDomain && (
+        <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
+      )
+    }
 
-    <!-- Error boundary -->
-    <script is:inline>
-      window.addEventListener('error', function(e) {
-        var el = document.getElementById('error-boundary');
-        if (el) { el.style.display = 'block'; el.textContent = 'Something went wrong. Please refresh.'; }
-      });
-    </script>
+    <!-- Error boundary removed — app pages handle errors via their own UI -->
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <div id="error-boundary" class="error-boundary" role="alert" style="display:none"></div>
 
     <!-- Desktop menubar (>768px) -->
     <nav class="site-menubar" aria-label="Main navigation">
       <ul role="menu-bar">
         <li role="menu-item" class="heart-item">
-          <a href="/"><img src="/icons/heart.svg" alt="Home" class="heart-icon" width="36" height="36" /></a>
+          <a href="/"
+            ><img src="/icons/heart.svg" alt="Home" class="heart-icon" width="36" height="36" /></a
+          >
         </li>
         <li role="menu-item"><a href="/projects/">Projects</a></li>
         <li role="menu-item"><a href="/about">About</a></li>
@@ -140,15 +152,23 @@ const detailsSegments = isHome
           <h1 class="title">{windowTitle}</h1>
         </div>
         <div class="details-bar">
-          {detailsSegments.map((seg) =>
-            seg.bold
-              ? <span class="crumb-sep">{seg.text}</span>
-              : seg.isHeart
-                ? <a href={seg.href} class="crumb-link crumb-heart"><img src="/icons/heart_light.svg" alt="Home" class="crumb-heart-icon" /></a>
-                : seg.href
-                  ? <a href={seg.href} class="crumb-link">{seg.text}</a>
-                  : <span>{seg.text}</span>
-          )}
+          {
+            detailsSegments.map((seg) =>
+              seg.bold ? (
+                <span class="crumb-sep">{seg.text}</span>
+              ) : seg.isHeart ? (
+                <a href={seg.href} class="crumb-link crumb-heart">
+                  <img src="/icons/heart_light.svg" alt="Home" class="crumb-heart-icon" />
+                </a>
+              ) : seg.href ? (
+                <a href={seg.href} class="crumb-link">
+                  {seg.text}
+                </a>
+              ) : (
+                <span>{seg.text}</span>
+              ),
+            )
+          }
         </div>
         <slot name="details-bar" />
         <div class="window-pane site-pane" id="main-content">
@@ -175,7 +195,7 @@ const detailsSegments = isHome
       if (btn) {
         const pane = document.querySelector('.site-pane');
         const scrollTarget = pane || window;
-        const getScroll = () => pane ? pane.scrollTop : window.scrollY;
+        const getScroll = () => (pane ? pane.scrollTop : window.scrollY);
         (pane || window).addEventListener('scroll', () => {
           btn.classList.toggle('visible', getScroll() > 400);
         });
@@ -200,23 +220,15 @@ const detailsSegments = isHome
     z-index: 9999;
     text-decoration: none;
   }
+
   .skip-link:focus {
     top: 0;
   }
-  .error-boundary {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 300;
-    padding: 6px 12px;
-    background: #000;
-    color: #fff;
-    font-family: var(--font-sans);
-    font-size: 16px;
-    text-align: center;
-  }
+
   html {
     background: #000;
   }
+
   body {
     display: flex;
     flex-direction: column;
@@ -300,7 +312,7 @@ const detailsSegments = isHome
     align-items: center;
     gap: 0.75vw;
     padding: 0.3vh 2vw 0;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(12px, 1.78vw, 24px);
   }
 
@@ -312,6 +324,7 @@ const detailsSegments = isHome
     color: #000;
     text-decoration: none;
   }
+
   .site-window .details-bar .crumb-link:hover {
     background: #000;
     color: #fff;
@@ -321,11 +334,13 @@ const detailsSegments = isHome
     display: inline-flex;
     align-items: center;
   }
+
   .site-window .details-bar .crumb-heart-icon {
     width: 1em;
     height: 1em;
     display: block;
   }
+
   .site-window .details-bar .crumb-heart:hover .crumb-heart-icon {
     filter: invert(1);
   }
@@ -357,13 +372,14 @@ const detailsSegments = isHome
     opacity: 0;
     pointer-events: none;
   }
+
   .back-to-top.visible {
     opacity: 1;
     pointer-events: auto;
   }
 
   /* ── Switch at 768px ── */
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .site-menubar {
       display: none;
     }
@@ -406,4 +422,3 @@ const detailsSegments = isHome
     }
   }
 </style>
-

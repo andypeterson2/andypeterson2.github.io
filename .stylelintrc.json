@@ -1,5 +1,5 @@
 {
-  "extends": "stylelint-config-standard",
+  "extends": ["stylelint-config-standard", "stylelint-config-html/astro"],
   "rules": {
     "color-no-hex": true,
     "declaration-property-value-disallowed-list": {
@@ -8,11 +8,24 @@
     },
     "custom-property-pattern": null,
     "selector-class-pattern": null,
-    "no-descending-specificity": null
+    "no-descending-specificity": null,
+    "selector-pseudo-class-no-unknown": [true, {
+      "ignorePseudoClasses": ["global"]
+    }],
+    "property-no-deprecated": [true, {
+      "ignoreProperties": ["clip"]
+    }],
+    "declaration-property-value-keyword-no-deprecated": null
   },
   "overrides": [
     {
-      "files": ["src/styles/tokens.css", "src/tokens/**/*.css"],
+      "files": ["src/styles/tokens.css", "src/styles/base.css", "src/tokens/**/*.css"],
+      "rules": {
+        "color-no-hex": null
+      }
+    },
+    {
+      "files": ["**/*.astro"],
       "rules": {
         "color-no-hex": null
       }

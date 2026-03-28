@@ -19,9 +19,9 @@ install: ## Install all dependencies
 	    echo "→ npm ci in $$dir"; (cd "$$dir" && npm ci --silent 2>/dev/null || true); \
 	  fi; \
 	done
-	pip install -e packages/flask-core 2>/dev/null || true
+	pip install -e packages/flask-core
 	@for dir in $(PYTHON_PROJECTS); do \
-	  echo "→ pip install -e $$dir"; pip install -e "$$dir[dev]" 2>/dev/null || true; \
+	  echo "→ pip install -e $$dir"; pip install -e "$$dir[dev]"; \
 	done
 	@echo "\n✓ Dependencies installed."
 

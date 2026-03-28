@@ -39,7 +39,13 @@ describe('Page structure validation', () => {
       const content = readFileSync(page, 'utf-8');
       if (page.includes('404') || page.endsWith('pages/index.astro')) continue;
       if (page.includes('resume.astro') || page.includes('cover-letter.astro')) continue;
-      if (page.includes('/projects/') && (page.includes('app.astro') || page.includes('server.astro'))) continue;
+      if (
+        page.includes('/projects/') &&
+        (page.includes('app.astro') ||
+          page.includes('server.astro') ||
+          page.includes('client.astro'))
+      )
+        continue;
       if (page.includes('[')) continue;
       if (page.endsWith('contact.astro')) continue;
       if (page.endsWith('projects/index.astro')) continue;
@@ -50,7 +56,13 @@ describe('Page structure validation', () => {
 
   test('form inputs have labels', () => {
     for (const page of pages) {
-      if (page.includes('/projects/') && (page.includes('app.astro') || page.includes('server.astro'))) continue;
+      if (
+        page.includes('/projects/') &&
+        (page.includes('app.astro') ||
+          page.includes('server.astro') ||
+          page.includes('client.astro'))
+      )
+        continue;
       if (page.includes('/classifiers/')) continue;
       const content = readFileSync(page, 'utf-8');
       const inputs = content.match(/<input[^>]*id="([^"]+)"/g) || [];
@@ -70,7 +82,7 @@ describe('Page structure validation', () => {
 
 describe('Visual regression baseline - component inventory', () => {
   const componentDir = resolve(ROOT, 'src/components');
-  const components = readdirSync(componentDir).filter(f => f.endsWith('.astro'));
+  const components = readdirSync(componentDir).filter((f) => f.endsWith('.astro'));
 
   test('all components use design tokens or System 6 patterns', () => {
     const systemCssComponents = ['Button.astro'];
@@ -80,7 +92,10 @@ describe('Visual regression baseline - component inventory', () => {
       if (content.includes('<style>')) {
         const usesTokens = content.includes('var(--');
         const usesSystem6 = content.includes('Chicago') || content.includes('#000');
-        expect(usesTokens || usesSystem6, `${comp} missing design tokens or System 6 patterns`).toBe(true);
+        expect(
+          usesTokens || usesSystem6,
+          `${comp} missing design tokens or System 6 patterns`,
+        ).toBe(true);
       }
     }
   });
@@ -152,16 +167,9 @@ describe('SEO extras', () => {
 
 describe('Mobile responsive spot-check', () => {
   test('grid layouts use auto-fill/minmax for responsiveness', () => {
-    const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
-    let foundAutoFill = false;
-    for (const page of pages) {
-      const content = readFileSync(page, 'utf-8');
-      if (content.includes('auto-fill')) {
-        foundAutoFill = true;
-        break;
-      }
-    }
-    expect(foundAutoFill).toBe(true);
+    const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
+    expect(baseCss).toContain('auto-fill');
+    expect(baseCss).toContain('minmax');
   });
 });
 
@@ -174,13 +182,14 @@ describe('Internal link consistency', () => {
   test('all nav links point to existing pages', () => {
     const navSection = layoutSrc.split('aria-label="Main navigation"')[1]?.split('</nav>')[0] || '';
     const navLinks = navSection.match(/href="([^"{}]+)"/g) || [];
-    const pageRoutes = pages.map(p => {
+    const pageRoutes = pages.map((p) => {
       const rel = p.replace(resolve(ROOT, 'src/pages'), '');
-      return rel
-        .replace(/\/index\.astro$/, '')
-        .replace(/\.astro$/, '')
-        .replace(/\[.*?\]/, ':dynamic')
-        || '/';
+      return (
+        rel
+          .replace(/\/index\.astro$/, '')
+          .replace(/\.astro$/, '')
+          .replace(/\[.*?\]/, ':dynamic') || '/'
+      );
     });
 
     for (const link of navLinks) {
@@ -188,10 +197,11 @@ describe('Internal link consistency', () => {
       if (href) {
         if (href.includes('.')) continue;
         const normalizedHref = href.replace(/\/$/, '') || '/';
-        const exists = pageRoutes.some(r => r === normalizedHref || r.startsWith(normalizedHref + '/'));
+        const exists = pageRoutes.some(
+          (r) => r === normalizedHref || r.startsWith(normalizedHref + '/'),
+        );
         expect(exists, `Nav link ${href} has no matching page`).toBe(true);
       }
     }
   });
-
 });

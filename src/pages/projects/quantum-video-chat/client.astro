@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Video Chat"
+  breadcrumbs={[
+    { label: 'projects', href: '/projects/' },
+    { label: 'quantum video chat', href: '/projects/quantum-video-chat/' },
+    { label: 'client' },
+  ]}
+>
+  <link slot="head" rel="stylesheet" href="/video-chat/css/style.css" />
+  <meta slot="head" name="site-backend" content="qvc" data-port="5002" data-label="Middleware" />
+  <meta slot="head" name="site-backend" content="qvc-server" data-port="5050" data-label="Server" />
+
+  <!-- App shell -->
+  <div id="app" class="main-screen"></div>
+
+  <!-- Scripts -->
+  <script
+    is:inline
+    src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+    crossorigin="anonymous"
+    integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"></script>
+  <script is:inline src="/video-chat/js/connection.js"></script>
+  <script is:inline src="/video-chat/js/app.js"></script>
+</BaseLayout>

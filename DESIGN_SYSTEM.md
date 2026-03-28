@@ -42,7 +42,6 @@ When a design system component exists, use it instead of raw HTML:
 |----------|-------------|
 | `<button>` | `<Button>` component |
 | `<a>` (styled card) | `<Card href="...">` component |
-| `<span class="tag">` | `<Tag>` component |
 | `<code>` (block) | `<CodeBlock>` component |
 
 Override with an eslint-disable comment + justification when genuinely needed.
