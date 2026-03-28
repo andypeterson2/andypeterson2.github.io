@@ -7,13 +7,16 @@ Monorepo for portfolio site and sub-projects.
 ```
 src/                          Astro 6 portfolio site
 packages/
-  cv/                         LaTeX CV/resume editor (Express)
+  cv/                         [submodule] LaTeX CV/resume editor (Express)
   flask-core/                 Shared Flask CORS/SSL infrastructure
-  nonogram/                   [submodule] Quantum nonogram solver
+  nonogram/                   [submodule] Quantum nonogram solver (Flask + Qiskit)
   quantum-protein-kernel/     [submodule] ML classifier platform (Flask + PyTorch + Qiskit)
-  qvc/                        [submodule] Quantum video chat
-  shared-js/                  Site navigation, theme bootstrap
-  ui-kit/                     [submodule] Design system (50 CSS components, Storybook)
+  qvc/                        [submodule] Quantum video chat (Flask + React + BB84)
+  shared-js/                  Site navigation, service config, theme bootstrap
+  ui-kit/                     [submodule] Design system (CSS components, Storybook)
+scripts/                      CI helpers, manifest generator, scaffolding
+nginx/                        Reverse proxy config for Docker deployment
+tests/                        Vitest test suite (pages, SEO, a11y, design system)
 ```
 
 ## Quick Start
@@ -28,8 +31,19 @@ npm run dev   # starts Astro dev server on localhost:4321
 ## Running Services (Docker)
 
 ```bash
-make docker-up   # starts classifiers:5001, cv-editor:3001
+make docker-up    # starts all services behind nginx on localhost:8080
+make docker-down  # stops all services
 ```
+
+| Service           | Port  | Description                          |
+|-------------------|-------|--------------------------------------|
+| nginx             | 8080  | Reverse proxy (entry point)          |
+| website           | 8000  | Astro static site                    |
+| classifier        | 5001  | Quantum-hybrid ML classifier (SSE)  |
+| nonogram          | 5055  | Nonogram solver (WebSocket)          |
+| videochat-server  | 5050  | QKD backend server                   |
+| videochat-middleware | 5002 | Video chat browser middleware       |
+| cv-editor         | 3000  | CV/resume LaTeX editor               |
 
 ## Testing
 
@@ -37,30 +51,20 @@ make docker-up   # starts classifiers:5001, cv-editor:3001
 make test         # all tests
 make test-py      # Python only (pytest)
 make test-js      # JavaScript only (jest/vitest)
-make test-cv      # single project
-make lint         # ruff + eslint
+make lint         # ruff + eslint + prettier + stylelint
+npm run format    # auto-fix formatting
 ```
-
-## Shared Packages
-
-Three shared packages live under `packages/` and are consumed across the monorepo:
-
-- **ui-kit** -- Design system with ~50 CSS components and a Storybook instance.
-  Imported by the Astro site and all sub-projects for consistent styling.
-- **flask-core** -- Common Flask infrastructure (CORS configuration, SSL setup,
-  shared middleware). Used by `quantum-protein-kernel` and any other Flask service.
-- **shared-js** -- Client-side utilities for site-wide navigation and theme
-  bootstrapping. Bundled into the Astro build and referenced by sub-apps.
 
 ## Tech Stack
 
 | Layer      | Tools                                    |
 |------------|------------------------------------------|
-| Frontend   | Astro 6, TypeScript                      |
+| Frontend   | Astro 6, TypeScript, system.css          |
 | Backend    | Flask 3, Express 4                       |
-| ML / QC    | PyTorch 2.2, Qiskit 2.2                 |
-| Testing    | Jest, Vitest, pytest                     |
-| Infra      | Docker, Nginx, Makefile                  |
+| ML / QC    | PyTorch 2.2, Qiskit 2.2, PennyLane      |
+| Testing    | Vitest, pytest, Jest                     |
+| Infra      | Docker Compose, Nginx, GitHub Actions    |
+| Linting    | ESLint, Prettier, Stylelint, Ruff        |
 
 ## License
 

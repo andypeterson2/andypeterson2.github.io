@@ -12,10 +12,7 @@ const ROOT = resolve(import.meta.dirname!, '..');
 // ---- Navigation (inline in BaseLayout) ----
 
 describe('Nav (inline in BaseLayout)', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('has aria-label for main navigation', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
@@ -60,10 +57,7 @@ describe('URL Routing', () => {
 // ---- Skip-to-Content ----
 
 describe('Skip-to-Content Link', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('skip link exists in layout', () => {
     expect(layoutSrc).toContain('skip-link');
@@ -79,10 +73,7 @@ describe('Skip-to-Content Link', () => {
 // ---- Layout Structure ----
 
 describe('Layout Structure', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('uses system.css window structure', () => {
     expect(layoutSrc).toContain('class="window');
@@ -106,10 +97,7 @@ describe('Layout Structure', () => {
 // ---- Home Page ----
 
 describe('Home Page', () => {
-  const indexSrc = readFileSync(
-    resolve(ROOT, 'src/pages/index.astro'),
-    'utf-8',
-  );
+  const indexSrc = readFileSync(resolve(ROOT, 'src/pages/index.astro'), 'utf-8');
 
   test('uses BaseLayout', () => {
     expect(indexSrc).toContain('BaseLayout');
@@ -128,10 +116,7 @@ describe('Home Page', () => {
 // ---- Projects Page ----
 
 describe('Projects Page', () => {
-  const projectsSrc = readFileSync(
-    resolve(ROOT, 'src/pages/projects/index.astro'),
-    'utf-8',
-  );
+  const projectsSrc = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
 
   test('lists multiple projects', () => {
     const projectsData = readFileSync(resolve(ROOT, 'src/data/projects.ts'), 'utf-8');
@@ -145,9 +130,10 @@ describe('Projects Page', () => {
     expect(projectsSrc).toContain('icon-grid');
   });
 
-  test('uses responsive grid', () => {
-    expect(projectsSrc).toContain('grid-template-columns');
-    expect(projectsSrc).toContain('auto-fill');
+  test('uses responsive grid (via base.css)', () => {
+    const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
+    expect(baseCss).toContain('grid-template-columns');
+    expect(baseCss).toContain('auto-fill');
   });
 
   test('projects link to detail pages', () => {
@@ -159,10 +145,7 @@ describe('Projects Page', () => {
 // ---- Contact Page ----
 
 describe('Contact Page', () => {
-  const contactSrc = readFileSync(
-    resolve(ROOT, 'src/pages/contact.astro'),
-    'utf-8',
-  );
+  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
 
   test('has contact intro with subtitle', () => {
     expect(contactSrc).toContain('contact-intro');
@@ -198,10 +181,7 @@ describe('Accessibility Features', () => {
 // ---- SEO ----
 
 describe('SEO and Meta Tags', () => {
-  const layoutSrc = readFileSync(
-    resolve(ROOT, 'src/layouts/BaseLayout.astro'),
-    'utf-8',
-  );
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('has meta description', () => {
     expect(layoutSrc).toContain('name="description"');

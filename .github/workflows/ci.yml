@@ -48,7 +48,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run build
 
@@ -63,7 +65,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: cd packages/ui-kit && npm ci && npx jest --verbose --roots .
+          cache: npm
+      - run: cd packages/ui-kit && npm ci && npx vitest run
 
   cv-tests:
     needs: changes
@@ -71,9 +74,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
       - run: cd packages/cv/editor && npm ci && npm test
 
   python-lint:
@@ -104,7 +110,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e packages/flask-core
-      - run: cd packages/quantum-protein-kernel && pip install -r requirements.txt && pip install pytest
+      - name: Install CPU-only torch and project deps
+        run: |
+          pip install torch==2.2.2+cpu torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
+          cd packages/quantum-protein-kernel
+          pip install --no-deps -r requirements.txt
+          pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
+          pip install pytest
       - run: cd packages/quantum-protein-kernel && python -m pytest tests/ -v --tb=short
 
   docker-build:
@@ -115,4 +127,4 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - run: docker compose build classifiers
+      - run: docker compose build classifier

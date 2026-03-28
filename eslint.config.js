@@ -29,7 +29,6 @@ export default [
     },
     rules: {
       'design-system/prefer-button': 'warn',
-      'design-system/prefer-tag': 'warn',
     },
   },
 ];

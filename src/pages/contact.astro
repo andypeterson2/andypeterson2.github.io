@@ -6,7 +6,10 @@ import { siteConfig } from '../config/site';
 <BaseLayout title="Contact" description={`Contact ${siteConfig.displayName}`}>
   {siteConfig.email && <meta slot="head" name="contact-email" content={siteConfig.email} />}
   <div class="contact-intro">
-    <p class="subtitle">Open to full-time roles in quantum computing, software engineering, and cybersecurity. Also available for research collaboration.</p>
+    <p class="subtitle">
+      Open to full-time roles in quantum computing, software engineering, and cybersecurity. Also
+      available for research collaboration.
+    </p>
   </div>
 
   <div class="contact-section">
@@ -34,27 +37,43 @@ import { siteConfig } from '../config/site';
   <div class="contact-section">
     <div class="section-rule"><span>Elsewhere</span></div>
     <div class="link-list">
-      {siteConfig.email && (
-        <a href={`mailto:${siteConfig.email}?subject=Hello`} class="contact-link">
-          <img src="/icons/link_light.svg" alt="" class="link-icon" />
-          <span class="link-text">Email</span>
-          <span class="link-detail">{siteConfig.email}</span>
-        </a>
-      )}
-      {siteConfig.github && (
-        <a href={siteConfig.github} class="contact-link" target="_blank" rel="noopener noreferrer">
-          <img src="/icons/code.svg" alt="" class="link-icon" />
-          <span class="link-text">GitHub</span>
-          <span class="link-detail">Source code &amp; contributions</span>
-        </a>
-      )}
-      {siteConfig.linkedin && (
-        <a href={siteConfig.linkedin} class="contact-link" target="_blank" rel="noopener noreferrer">
-          <img src="/icons/link_light.svg" alt="" class="link-icon" />
-          <span class="link-text">LinkedIn</span>
-          <span class="link-detail">Professional profile</span>
-        </a>
-      )}
+      {
+        siteConfig.email && (
+          <a href={`mailto:${siteConfig.email}?subject=Hello`} class="contact-link">
+            <img src="/icons/link_light.svg" alt="" class="link-icon" />
+            <span class="link-text">Email</span>
+            <span class="link-detail">{siteConfig.email}</span>
+          </a>
+        )
+      }
+      {
+        siteConfig.github && (
+          <a
+            href={siteConfig.github}
+            class="contact-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img src="/icons/code.svg" alt="" class="link-icon" />
+            <span class="link-text">GitHub</span>
+            <span class="link-detail">Source code &amp; contributions</span>
+          </a>
+        )
+      }
+      {
+        siteConfig.linkedin && (
+          <a
+            href={siteConfig.linkedin}
+            class="contact-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img src="/icons/link_light.svg" alt="" class="link-icon" />
+            <span class="link-text">LinkedIn</span>
+            <span class="link-detail">Professional profile</span>
+          </a>
+        )
+      }
     </div>
   </div>
 </BaseLayout>
@@ -68,30 +87,40 @@ import { siteConfig } from '../config/site';
       document.getElementById(fieldId)?.classList.add('invalid');
     }
     function clearErrors() {
-      form!.querySelectorAll('.form-error').forEach(el => el.textContent = '');
-      form!.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+      form!.querySelectorAll('.form-error').forEach((el) => (el.textContent = ''));
+      form!.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
     }
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       clearErrors();
-      const name = (form!.querySelector('#contact-name') as HTMLInputElement);
-      const email = (form!.querySelector('#contact-email') as HTMLInputElement);
-      const message = (form!.querySelector('#contact-message') as HTMLTextAreaElement);
+      const name = form!.querySelector('#contact-name') as HTMLInputElement;
+      const email = form!.querySelector('#contact-email') as HTMLInputElement;
+      const message = form!.querySelector('#contact-message') as HTMLTextAreaElement;
       const nameVal = name.value.trim();
       const emailVal = email.value.trim();
       const messageVal = message.value.trim();
       let valid = true;
 
-      if (!nameVal) { showError('contact-name', 'Name is required'); valid = false; }
-      if (!emailVal) { showError('contact-email', 'Email is required'); valid = false; }
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-        showError('contact-email', 'Please enter a valid email'); valid = false;
+      if (!nameVal) {
+        showError('contact-name', 'Name is required');
+        valid = false;
       }
-      if (!messageVal) { showError('contact-message', 'Message is required'); valid = false; }
+      if (!emailVal) {
+        showError('contact-email', 'Email is required');
+        valid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+        showError('contact-email', 'Please enter a valid email');
+        valid = false;
+      }
+      if (!messageVal) {
+        showError('contact-message', 'Message is required');
+        valid = false;
+      }
 
       if (valid) {
-        const recipient = document.querySelector('meta[name="contact-email"]')?.getAttribute('content') || 'acpeters@ucsd.edu';
+        const recipient =
+          document.querySelector('meta[name="contact-email"]')?.getAttribute('content') || '';
         const subject = encodeURIComponent(`Contact from ${nameVal}`);
         const body = encodeURIComponent(`From: ${nameVal} (${emailVal})\n\n${messageVal}`);
         window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
@@ -104,6 +133,7 @@ import { siteConfig } from '../config/site';
   .contact-intro {
     padding: clamp(16px, 3vw, 40px) 0 clamp(8px, 1.5vw, 20px);
   }
+
   .subtitle {
     font-size: clamp(12px, 1.78vw, 24px);
     max-width: 55ch;
@@ -121,15 +151,18 @@ import { siteConfig } from '../config/site';
     gap: clamp(10px, 1.5vw, 20px);
     max-width: 50ch;
   }
+
   .form-field {
     display: flex;
     flex-direction: column;
     gap: clamp(2px, 0.4vw, 6px);
   }
+
   .form-field label {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(11px, 1.5vw, 20px);
   }
+
   .form-field input,
   .form-field textarea {
     font-family: var(--font-sans);
@@ -139,20 +172,24 @@ import { siteConfig } from '../config/site';
     background: #fff;
     outline: none;
   }
+
   .form-field input:focus,
   .form-field textarea:focus {
-    box-shadow: 2px 2px 0 #000;
+    box-shadow: var(--shadow-focus);
   }
+
   .form-field textarea {
     resize: vertical;
   }
+
   .form-field input.invalid,
   .form-field textarea.invalid {
     border-color: #000;
     background: #eee;
   }
+
   .form-error {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(9px, 1.2vw, 16px);
     font-weight: 700;
     min-height: 1.2em;
@@ -160,7 +197,7 @@ import { siteConfig } from '../config/site';
 
   .send-btn {
     align-self: flex-start;
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(12px, 1.78vw, 24px);
     padding: clamp(4px, 0.6vw, 10px) clamp(12px, 1.5vw, 24px);
     background: #fff;
@@ -168,10 +205,12 @@ import { siteConfig } from '../config/site';
     border: 2px solid #000;
     cursor: pointer;
   }
+
   .send-btn:hover {
     background: #000;
     color: #fff;
   }
+
   .send-btn:disabled {
     opacity: 0.6;
     cursor: default;
@@ -183,6 +222,7 @@ import { siteConfig } from '../config/site';
     flex-direction: column;
     gap: clamp(6px, 1vw, 14px);
   }
+
   .contact-link {
     display: flex;
     align-items: center;
@@ -193,23 +233,28 @@ import { siteConfig } from '../config/site';
     border: 2px solid #000;
     max-width: 50ch;
   }
+
   .contact-link:hover {
     background: #000;
     color: #fff;
   }
+
   .contact-link:hover .link-icon {
     filter: invert(1);
   }
+
   .link-icon {
     width: clamp(20px, 2.5vw, 36px);
     height: clamp(20px, 2.5vw, 36px);
     flex-shrink: 0;
   }
+
   .link-text {
-    font-family: 'Chicago', 'ChicagoFLF', sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(12px, 1.78vw, 24px);
     flex-shrink: 0;
   }
+
   .link-detail {
     font-size: clamp(10px, 1.4vw, 18px);
     opacity: 0.6;
