@@ -6,69 +6,15 @@ import { projects } from '../../data/projects';
 
 <BaseLayout title="Projects" description={`Projects by ${siteConfig.displayName}`}>
   <div class="icon-grid">
-    {projects.map((project) => (
-      <a href={`/projects/${project.slug}/`} class="finder-icon">
-        <div class="icon-box">
-          <img src={`/icons/${project.icon}`} alt="" class="icon-glyph" width="64" height="64" />
-        </div>
-        <span class="icon-label">{project.title}</span>
-      </a>
-    ))}
+    {
+      projects.map((project) => (
+        <a href={`/projects/${project.slug}/`} class="finder-icon">
+          <div class="icon-box">
+            <img src={`/icons/${project.icon}`} alt="" class="icon-glyph" width="64" height="64" />
+          </div>
+          <span class="icon-label">{project.title}</span>
+        </a>
+      ))
+    }
   </div>
 </BaseLayout>
-
-<style>
-  .icon-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(clamp(100px, 12vw, 180px), 1fr));
-    gap: clamp(16px, 3vw, 40px);
-    padding: 2vw 0;
-    justify-items: center;
-  }
-
-  .finder-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(4px, 0.5vw, 8px);
-    text-decoration: none;
-    color: #000;
-    padding: clamp(4px, 0.5vw, 8px);
-    cursor: pointer;
-  }
-  .finder-icon:hover .icon-glyph {
-    filter: invert(1);
-  }
-  .finder-icon:hover .icon-label {
-    background: #000;
-    color: #fff;
-  }
-
-  .icon-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .icon-glyph {
-    width: clamp(48px, 5.25vw, 72px);
-    height: clamp(48px, 5.25vw, 72px);
-    display: block;
-  }
-
-  .icon-label {
-    font-family: var(--font-sans);
-    font-size: clamp(12px, 1.78vw, 24px);
-    text-align: center;
-    word-break: break-word;
-    line-height: 1.3;
-    padding: clamp(2px, 0.3vw, 6px) clamp(4px, 0.6vw, 10px);
-    background: #fff;
-  }
-
-  @media (max-width: 480px) {
-    .icon-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-</style>

@@ -17,7 +17,6 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/me': '/',
-    '/me/': '/',
     '/skills': '/',
     '/uses': '/',
     '/blog': '/',
@@ -51,6 +50,10 @@ export default defineConfig({
             const pathRewrites = {
               '/cv/': '/packages/cv/',
               '/qvc/': '/packages/qvc/',
+              // Flask serves static/ contents at the URL root, so
+              // /classifiers/js/… and /classifiers/css/… map into static/.
+              '/classifiers/js/': '/packages/quantum-protein-kernel/classifiers/static/js/',
+              '/classifiers/css/': '/packages/quantum-protein-kernel/classifiers/static/css/',
               '/classifiers/': '/packages/quantum-protein-kernel/classifiers/',
               '/nonogram/': '/packages/nonogram/',
             };
