@@ -336,12 +336,23 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
           <!-- PDF Preview -->
           <div x-show="sidebarMode === 'pdf'" class="cv-sidebar-pdf">
-            <template x-if="pdfUrl">
-              <iframe :src="pdfUrl" class="cv-pdf-iframe" title="PDF preview"></iframe>
-            </template>
-            <template x-if="!pdfUrl">
-              <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
-            </template>
+            <div class="cv-pdf-controls">
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = Math.max(50, pdfZoom - 25)" title="Zoom out">&minus;</button>
+              <span class="cv-pdf-zoom-label" x-text="pdfZoom + '%'"></span>
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = Math.min(300, pdfZoom + 25)" title="Zoom in">+</button>
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = 100" title="Reset zoom">Fit</button>
+              <template x-if="pdfUrl">
+                <a :href="pdfUrl" target="_blank" class="cv-btn cv-btn-xs" title="Open in new tab">&#8599; Pop Out</a>
+              </template>
+            </div>
+            <div class="cv-pdf-scroll">
+              <template x-if="pdfUrl">
+                <iframe :src="pdfUrl" class="cv-pdf-iframe" :style="'width:' + pdfZoom + '%; height:' + pdfZoom + '%'" title="PDF preview"></iframe>
+              </template>
+              <template x-if="!pdfUrl">
+                <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
+              </template>
+            </div>
           </div>
 
           <!-- Variables -->
@@ -422,12 +433,23 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
           <!-- PDF Preview -->
           <div x-show="sidebarMode === 'pdf'" class="cv-sidebar-pdf">
-            <template x-if="pdfUrl">
-              <iframe :src="pdfUrl" class="cv-pdf-iframe" title="PDF preview"></iframe>
-            </template>
-            <template x-if="!pdfUrl">
-              <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
-            </template>
+            <div class="cv-pdf-controls">
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = Math.max(50, pdfZoom - 25)" title="Zoom out">&minus;</button>
+              <span class="cv-pdf-zoom-label" x-text="pdfZoom + '%'"></span>
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = Math.min(300, pdfZoom + 25)" title="Zoom in">+</button>
+              <button class="cv-btn cv-btn-xs" @click="pdfZoom = 100" title="Reset zoom">Fit</button>
+              <template x-if="pdfUrl">
+                <a :href="pdfUrl" target="_blank" class="cv-btn cv-btn-xs" title="Open in new tab">&#8599; Pop Out</a>
+              </template>
+            </div>
+            <div class="cv-pdf-scroll">
+              <template x-if="pdfUrl">
+                <iframe :src="pdfUrl" class="cv-pdf-iframe" :style="'width:' + pdfZoom + '%; height:' + pdfZoom + '%'" title="PDF preview"></iframe>
+              </template>
+              <template x-if="!pdfUrl">
+                <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
+              </template>
+            </div>
           </div>
 
           <!-- Variables reference -->
@@ -970,11 +992,35 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     min-height: 0;
   }
 
-  :global(.cv-pdf-iframe) {
-    width: 100%;
+  :global(.cv-pdf-controls) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-pdf-zoom-label) {
+    font-size: 10px;
+    font-family: monospace;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  :global(.cv-pdf-scroll) {
     flex: 1;
+    overflow: auto;
+    min-height: 0;
+    background: #888;
+  }
+
+  :global(.cv-pdf-iframe) {
     border: none;
-    min-height: 400px;
+    display: block;
+    min-height: 600px;
+    transform-origin: top left;
   }
 
   :global(.cv-sidebar-content) {
