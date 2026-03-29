@@ -68,8 +68,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
       <!-- Right group: import/export -->
       <div class="cv-toolbar-group">
-        <button class="cv-btn cv-btn-sm" @click="exportData()" title="Export JSON">&#8595; Export</button>
-        <button class="cv-btn cv-btn-sm" @click="importData()" title="Import JSON">&#8593; Import</button>
+        <button class="cv-btn cv-btn-sm" @click="exportData()" title="Export JSON">&#8593; Export</button>
+        <button class="cv-btn cv-btn-sm" @click="importData()" title="Import JSON">&#8595; Import</button>
       </div>
     </div>
 
@@ -89,18 +89,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
       <!-- PROFILE TAB -->
       <div x-show="activeTab === 'profile'" class="cv-tab-pane">
+        <!-- Identity -->
+        <h3 class="cv-profile-heading">Identity</h3>
         <div class="cv-profile-grid">
           <label>First Name <input type="text" x-model="personal.firstName" @input="autoSavePersonal('firstName')"></label>
           <label>Last Name <input type="text" x-model="personal.lastName" @input="autoSavePersonal('lastName')"></label>
           <label>Position <input type="text" x-model="personal.position" @input="autoSavePersonal('position')"></label>
           <label>Address <input type="text" x-model="personal.address" @input="autoSavePersonal('address')"></label>
-          <label>Mobile <input type="text" x-model="personal.mobile" @input="autoSavePersonal('mobile')"></label>
-          <label>Email <input type="text" x-model="personal.email" @input="autoSavePersonal('email')"></label>
-          <label>GitHub <input type="text" x-model="personal.github" @input="autoSavePersonal('github')"></label>
-          <label>LinkedIn <input type="text" x-model="personal.linkedin" @input="autoSavePersonal('linkedin')"></label>
-          <label class="cv-profile-full">Quote <span class="cv-hint">(optional)</span>
-            <input type="text" x-model="personal.quote" @input="autoSavePersonal('quote')" placeholder="Leave blank to hide">
-          </label>
+          <label>Date of Birth <input type="text" x-model="personal.dateofbirth" @input="autoSavePersonal('dateofbirth')" placeholder="e.g. January 1, 1990"></label>
           <div class="cv-toggle-row">
             <span>Photo</span>
             <label class="cv-toggle">
@@ -113,6 +109,57 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
               <input type="text" x-model="personal.photoFile" @input="autoSavePersonal('photoFile')" placeholder="e.g. profile">
             </label>
           </template>
+          <label class="cv-profile-full">Quote <span class="cv-hint">(optional)</span>
+            <input type="text" x-model="personal.quote" @input="autoSavePersonal('quote')" placeholder="Leave blank to hide">
+          </label>
+          <label class="cv-profile-full">Extra Info <span class="cv-hint">(custom text shown in header)</span>
+            <input type="text" x-model="personal.extrainfo" @input="autoSavePersonal('extrainfo')" placeholder="Leave blank to hide">
+          </label>
+        </div>
+
+        <!-- Contact -->
+        <h3 class="cv-profile-heading">Contact</h3>
+        <div class="cv-profile-grid">
+          <label>Mobile <input type="text" x-model="personal.mobile" @input="autoSavePersonal('mobile')"></label>
+          <label>Email <input type="text" x-model="personal.email" @input="autoSavePersonal('email')"></label>
+          <label>WhatsApp <input type="text" x-model="personal.whatsapp" @input="autoSavePersonal('whatsapp')" placeholder="Phone number"></label>
+          <label>Skype <input type="text" x-model="personal.skype" @input="autoSavePersonal('skype')" placeholder="Username"></label>
+          <label>Telegram <input type="text" x-model="personal.telegram" @input="autoSavePersonal('telegram')" placeholder="Username"></label>
+        </div>
+
+        <!-- Web & Code -->
+        <h3 class="cv-profile-heading">Web &amp; Code</h3>
+        <div class="cv-profile-grid">
+          <label>Homepage <input type="text" x-model="personal.homepage" @input="autoSavePersonal('homepage')" placeholder="yoursite.com"></label>
+          <label>GitHub <input type="text" x-model="personal.github" @input="autoSavePersonal('github')"></label>
+          <label>LinkedIn <input type="text" x-model="personal.linkedin" @input="autoSavePersonal('linkedin')"></label>
+          <label>GitLab <input type="text" x-model="personal.gitlab" @input="autoSavePersonal('gitlab')"></label>
+          <label>Bitbucket <input type="text" x-model="personal.bitbucket" @input="autoSavePersonal('bitbucket')"></label>
+        </div>
+
+        <!-- Social -->
+        <h3 class="cv-profile-heading">Social</h3>
+        <div class="cv-profile-grid">
+          <label>Twitter <input type="text" x-model="personal.twitter" @input="autoSavePersonal('twitter')" placeholder="Handle"></label>
+          <label>X <span class="cv-hint">(if different from Twitter)</span> <input type="text" x-model="personal.x" @input="autoSavePersonal('x')" placeholder="Handle"></label>
+          <label>Reddit <input type="text" x-model="personal.reddit" @input="autoSavePersonal('reddit')" placeholder="Username"></label>
+          <label>Medium <input type="text" x-model="personal.medium" @input="autoSavePersonal('medium')" placeholder="Username"></label>
+          <label>Xing <input type="text" x-model="personal.xing" @input="autoSavePersonal('xing')" placeholder="Username"></label>
+          <label>Mastodon Instance <input type="text" x-model="personal.mastodonInstance" @input="autoSavePersonal('mastodonInstance')" placeholder="e.g. mastodon.social"></label>
+          <label>Mastodon Username <input type="text" x-model="personal.mastodonName" @input="autoSavePersonal('mastodonName')" placeholder="Username"></label>
+        </div>
+
+        <!-- Academic -->
+        <h3 class="cv-profile-heading">Academic</h3>
+        <div class="cv-profile-grid">
+          <label>ORCID <input type="text" x-model="personal.orcid" @input="autoSavePersonal('orcid')" placeholder="0000-0000-0000-0000"></label>
+          <label>ResearchGate <input type="text" x-model="personal.researchgate" @input="autoSavePersonal('researchgate')" placeholder="Account"></label>
+          <label>Google Scholar ID <input type="text" x-model="personal.googlescholarId" @input="autoSavePersonal('googlescholarId')" placeholder="User ID"></label>
+          <label>Google Scholar Name <input type="text" x-model="personal.googlescholarName" @input="autoSavePersonal('googlescholarName')" placeholder="Display name"></label>
+          <label>Stack Overflow ID <input type="text" x-model="personal.stackoverflowId" @input="autoSavePersonal('stackoverflowId')" placeholder="User ID"></label>
+          <label>Stack Overflow Name <input type="text" x-model="personal.stackoverflowName" @input="autoSavePersonal('stackoverflowName')" placeholder="Display name"></label>
+          <label>Kaggle <input type="text" x-model="personal.kaggle" @input="autoSavePersonal('kaggle')" placeholder="Username"></label>
+          <label>HackerRank <input type="text" x-model="personal.hackerrank" @input="autoSavePersonal('hackerrank')" placeholder="Username"></label>
         </div>
         <!-- Person management when connected -->
         <template x-if="serverConnected && persons.length > 0">
@@ -388,14 +435,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       document.addEventListener("navbar:connect-ready", function (e) {
         if (e.detail.service !== "cv") return;
         _cvWidget = e.detail.widget;
-        connectToBackend(API_BASE).catch(function () {
-          if (_cvWidget) _cvWidget.setStatus("disconnected");
-          // Still init in offline mode
-          var el = document.querySelector(".cv-app");
-          if (el && el._x_dataStack) {
-            el._x_dataStack[0].init();
-          }
-        });
+        // Init in offline mode — user must explicitly click Connect
+        var el = document.querySelector(".cv-app");
+        if (el && el._x_dataStack) {
+          el._x_dataStack[0].init();
+        }
       });
 
       document.addEventListener("navbar:connect", function (e) {
@@ -607,6 +651,23 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   :global(.cv-tab-pane) {
     padding: 0;
+  }
+
+  /* ── Profile section headings ── */
+  :global(.cv-profile-heading) {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 16px;
+    margin: 0;
+    background: #eee;
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+  }
+
+  :global(.cv-profile-heading:first-child) {
+    border-top: none;
   }
 
   /* ── Profile grid - 2 column ── */
