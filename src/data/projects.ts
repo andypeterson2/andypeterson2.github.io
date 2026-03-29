@@ -46,6 +46,20 @@ export const projects: Project[] = [
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
   },
   {
+    title: 'LaTeX Resume Editor',
+    slug: 'latex-resume-editor',
+    description: 'Web-based resume, CV, and cover letter editor with server-side LaTeX compilation.',
+    longDescription:
+      'A full-stack document editor backed by a normalized SQLite database as a single source of truth. Features a granular REST API with JSON Schema validation, debounced autosave, and server-side LaTeX compilation using the awesome-cv class. Supports resume, CV, and cover letter variants with per-document section ordering and resume filtering.',
+    category: 'tools',
+    status: 'active',
+    featured: false,
+    appUrl: '/projects/latex-resume-editor/app/',
+    icon: 'export.svg',
+    screenshots: [],
+    repoUrl: 'https://github.com/andypeterson2/cv',
+  },
+  {
     title: 'Quantum Protein Kernel',
     slug: 'quantum-protein-kernel',
     description:
