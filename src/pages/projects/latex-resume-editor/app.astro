@@ -51,25 +51,25 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <span class="cv-toolbar-label">Jane Doe <span class="cv-hint">(offline)</span></span>
       </template>
 
-      <!-- Center group: doc type selector + compile -->
+      <!-- Center group: doc type selector -->
       <div class="cv-toolbar-group">
         <select class="cv-select" x-model="activeDoc" @change="switchDoc(activeDoc)" aria-label="Document type">
           <option value="cv">CV</option>
           <option value="resume">Resume</option>
           <option value="coverletter">Cover Letter</option>
         </select>
+      </div>
+
+      <!-- Right group: import/export + compile -->
+      <div class="cv-toolbar-group">
+        <button class="cv-btn cv-btn-sm" @click="exportData()" title="Export JSON">&#8593; Export</button>
+        <button class="cv-btn cv-btn-sm" @click="importData()" title="Import JSON">&#8595; Import</button>
         <template x-if="serverConnected">
           <button class="cv-btn cv-btn-primary" @click="compile()" :disabled="compiling">
             <span x-show="!compiling">&#9654; Compile</span>
             <span x-show="compiling">Compiling&hellip;</span>
           </button>
         </template>
-      </div>
-
-      <!-- Right group: import/export -->
-      <div class="cv-toolbar-group">
-        <button class="cv-btn cv-btn-sm" @click="exportData()" title="Export JSON">&#8593; Export</button>
-        <button class="cv-btn cv-btn-sm" @click="importData()" title="Import JSON">&#8595; Import</button>
       </div>
     </div>
 
@@ -161,23 +161,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
           <label>Kaggle <input type="text" x-model="personal.kaggle" @input="autoSavePersonal('kaggle')" placeholder="Username"></label>
           <label>HackerRank <input type="text" x-model="personal.hackerrank" @input="autoSavePersonal('hackerrank')" placeholder="Username"></label>
         </div>
-        <!-- Person management when connected -->
-        <template x-if="serverConnected && persons.length > 0">
-          <div class="cv-person-manage">
-            <h3>People</h3>
-            <template x-for="p in persons" :key="p.id">
-              <div class="cv-person-row">
-                <span x-text="p.name" :class="{ 'cv-bold': p.id === activePersonId }"></span>
-                <div class="cv-person-actions">
-                  <button class="cv-btn cv-btn-xs" @click="renamePerson(p.id)">Rename</button>
-                  <template x-if="p.id !== activePersonId">
-                    <button class="cv-btn cv-btn-xs cv-btn-danger" @click="deletePerson(p.id)">Delete</button>
-                  </template>
-                </div>
-              </div>
-            </template>
-          </div>
-        </template>
+        <!-- Person management is handled via the toolbar dropdown -->
       </div>
 
       <!-- SECTIONS TAB -->
