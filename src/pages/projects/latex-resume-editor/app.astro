@@ -327,44 +327,61 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <!-- Right: Variables sidebar for expanded section -->
+        <!-- Right: Sidebar with PDF/Variables toggle -->
         <aside class="cv-split-sidebar">
-          <div class="cv-sidebar-header">Variables</div>
-          <template x-if="expandedSectionId">
-            <div class="cv-sidebar-content">
-              <div class="cv-metrics-header">
-                <button class="cv-btn cv-btn-xs" @click="addMetricGroup(expandedSectionId)">+ Group</button>
-              </div>
-              <template x-for="[group, mets] in metricGroupsForSection(expandedSectionId)" :key="group">
-                <div class="cv-metric-group">
-                  <div class="cv-metric-group-header">
-                    <span class="cv-metric-group-name" x-text="group" @dblclick="renameMetricGroup(expandedSectionId, group)" title="Double-click to rename"></span>
-                    <div class="cv-metric-group-actions">
-                      <button class="cv-btn cv-btn-xs" @click="addMetric(expandedSectionId, group)">+ Var</button>
-                      <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeMetricGroup(expandedSectionId, group)" title="Remove group">x</button>
+          <div class="cv-sidebar-tabs">
+            <button class="cv-sidebar-tab" :class="{ 'cv-sidebar-tab-active': sidebarMode === 'pdf' }" @click="sidebarMode = 'pdf'">Preview</button>
+            <button class="cv-sidebar-tab" :class="{ 'cv-sidebar-tab-active': sidebarMode === 'variables' }" @click="sidebarMode = 'variables'">Variables</button>
+          </div>
+
+          <!-- PDF Preview -->
+          <div x-show="sidebarMode === 'pdf'" class="cv-sidebar-pdf">
+            <template x-if="pdfUrl">
+              <iframe :src="pdfUrl" class="cv-pdf-iframe" title="PDF preview"></iframe>
+            </template>
+            <template x-if="!pdfUrl">
+              <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
+            </template>
+          </div>
+
+          <!-- Variables -->
+          <div x-show="sidebarMode === 'variables'" class="cv-sidebar-content">
+            <template x-if="expandedSectionId">
+              <div>
+                <div class="cv-metrics-header">
+                  <button class="cv-btn cv-btn-xs" @click="addMetricGroup(expandedSectionId)">+ Group</button>
+                </div>
+                <template x-for="[group, mets] in metricGroupsForSection(expandedSectionId)" :key="group">
+                  <div class="cv-metric-group">
+                    <div class="cv-metric-group-header">
+                      <span class="cv-metric-group-name" x-text="group" @dblclick="renameMetricGroup(expandedSectionId, group)" title="Double-click to rename"></span>
+                      <div class="cv-metric-group-actions">
+                        <button class="cv-btn cv-btn-xs" @click="addMetric(expandedSectionId, group)">+ Var</button>
+                        <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeMetricGroup(expandedSectionId, group)" title="Remove group">x</button>
+                      </div>
+                    </div>
+                    <div class="cv-metrics-grid">
+                      <template x-for="metric in mets" :key="metric.id">
+                        <div class="cv-metric-cell">
+                          <div class="cv-metric-cell-header">
+                            <span class="cv-metric-cmd" x-text="metric.command"></span>
+                            <button class="cv-btn-remove" @click="removeMetric(metric.id)" title="Remove">&times;</button>
+                          </div>
+                          <input type="text" x-model="metric.value" :placeholder="metric.label" @input="dirty = true">
+                        </div>
+                      </template>
                     </div>
                   </div>
-                  <div class="cv-metrics-grid">
-                    <template x-for="metric in mets" :key="metric.id">
-                      <div class="cv-metric-cell">
-                        <div class="cv-metric-cell-header">
-                          <span class="cv-metric-cmd" x-text="metric.command"></span>
-                          <button class="cv-btn-remove" @click="removeMetric(metric.id)" title="Remove">&times;</button>
-                        </div>
-                        <input type="text" x-model="metric.value" :placeholder="metric.label" @input="dirty = true">
-                      </div>
-                    </template>
-                  </div>
-                </div>
-              </template>
-              <template x-if="metricsForSection(expandedSectionId).length === 0">
-                <p class="cv-muted" style="padding:8px 12px">No variables. Click "+ Group" to add.</p>
-              </template>
-            </div>
-          </template>
-          <template x-if="!expandedSectionId">
-            <p class="cv-muted" style="padding:12px">Expand a section to see its variables.</p>
-          </template>
+                </template>
+                <template x-if="metricsForSection(expandedSectionId).length === 0">
+                  <p class="cv-muted" style="padding:8px 12px">No variables. Click "+ Group" to add.</p>
+                </template>
+              </div>
+            </template>
+            <template x-if="!expandedSectionId">
+              <p class="cv-muted" style="padding:12px">Expand a section to see its variables.</p>
+            </template>
+          </div>
         </aside>
       </div>
 
@@ -396,10 +413,25 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <!-- Right: All variables for reference -->
+        <!-- Right: Sidebar with PDF/Variables toggle -->
         <aside class="cv-split-sidebar">
-          <div class="cv-sidebar-header">All Variables</div>
-          <div class="cv-sidebar-content">
+          <div class="cv-sidebar-tabs">
+            <button class="cv-sidebar-tab" :class="{ 'cv-sidebar-tab-active': sidebarMode === 'pdf' }" @click="sidebarMode = 'pdf'">Preview</button>
+            <button class="cv-sidebar-tab" :class="{ 'cv-sidebar-tab-active': sidebarMode === 'variables' }" @click="sidebarMode = 'variables'">Variables</button>
+          </div>
+
+          <!-- PDF Preview -->
+          <div x-show="sidebarMode === 'pdf'" class="cv-sidebar-pdf">
+            <template x-if="pdfUrl">
+              <iframe :src="pdfUrl" class="cv-pdf-iframe" title="PDF preview"></iframe>
+            </template>
+            <template x-if="!pdfUrl">
+              <p class="cv-muted" style="padding:12px">Compile to see a preview.</p>
+            </template>
+          </div>
+
+          <!-- Variables reference -->
+          <div x-show="sidebarMode === 'variables'" class="cv-sidebar-content">
             <template x-for="sec in sections" :key="sec.id">
               <div class="cv-metrics-section-compact">
                 <div class="cv-metrics-section-label" x-text="sec.title"></div>
@@ -856,12 +888,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.cv-split-sidebar) {
-    width: 280px;
-    min-width: 280px;
+    width: 320px;
+    min-width: 320px;
     border-left: 2px solid #000;
     overflow-y: auto;
     background: #f9f9f9;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   :global(.cv-sidebar-header) {
@@ -875,6 +909,60 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     position: sticky;
     top: 0;
     z-index: 1;
+  }
+
+  :global(.cv-sidebar-tabs) {
+    display: flex;
+    border-bottom: 2px solid #000;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #eee;
+  }
+
+  :global(.cv-sidebar-tab) {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: none;
+    border-right: 1px solid #ccc;
+    background: #eee;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    color: #666;
+  }
+
+  :global(.cv-sidebar-tab:last-child) {
+    border-right: none;
+  }
+
+  :global(.cv-sidebar-tab:hover) {
+    background: #ddd;
+    color: #000;
+  }
+
+  :global(.cv-sidebar-tab-active) {
+    background: #fff;
+    color: #000;
+    border-bottom: 2px solid #fff;
+    margin-bottom: -2px;
+  }
+
+  :global(.cv-sidebar-pdf) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  :global(.cv-pdf-iframe) {
+    width: 100%;
+    flex: 1;
+    border: none;
+    min-height: 400px;
   }
 
   :global(.cv-sidebar-content) {

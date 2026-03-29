@@ -103,6 +103,8 @@ function app() {
     darkMode: true,
     dirty: false,
     isJaneDoe: false,
+    sidebarMode: 'pdf',  // 'pdf' or 'variables'
+    pdfUrl: '',
     _nextTempId: -1,
     _documents: { cv: [], resume: [] },
 
@@ -137,10 +139,22 @@ function app() {
         this.isJaneDoe = true;
       }
       this.dirty = false;
+      this.updatePdfUrl();
       this.$nextTick(function() { this.initSortable(); }.bind(this));
     },
 
     // ------ Theme ------
+
+    updatePdfUrl() {
+      if (this.isJaneDoe) {
+        var variant = this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc;
+        this.pdfUrl = '/cv/jane-doe-' + variant + '.pdf';
+      } else if (this.serverConnected) {
+        this.pdfUrl = API_BASE + '/api/pdf/' + this.activeDoc + '?t=' + Date.now();
+      } else {
+        this.pdfUrl = '';
+      }
+    },
 
     toggleTheme() {
       this.darkMode = !this.darkMode;
@@ -559,6 +573,7 @@ function app() {
         }
         this.$nextTick(function() { this.initSortable(); }.bind(this));
       }
+      this.updatePdfUrl();
     },
 
     initSortable() {
@@ -667,8 +682,11 @@ function app() {
         var data = await res.json();
         if (data.success) {
           this.flash(name.charAt(0).toUpperCase() + name.slice(1) + ' compiled', 'success');
+          this.pdfUrl = API_BASE + '/api/pdf/' + name + '?t=' + Date.now();
+          this.sidebarMode = 'pdf';
+          // Also trigger download
           var a = document.createElement('a');
-          a.href = API_BASE + '/api/pdf/' + name + '?t=' + Date.now();
+          a.href = this.pdfUrl;
           a.download = name + '.pdf';
           document.body.appendChild(a);
           a.click();
