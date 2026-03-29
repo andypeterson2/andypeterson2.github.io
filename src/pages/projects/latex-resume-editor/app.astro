@@ -472,7 +472,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
             API_BASE = url;
             var el = document.querySelector(".cv-app");
             if (el && el._x_dataStack) {
-              return el._x_dataStack[0].init();
+              return el._x_dataStack[0].connectToServer();
             }
           })
           .then(function () {
@@ -501,6 +501,18 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       document.addEventListener("navbar:disconnect", function (e) {
         if (e.detail.service !== "cv") return;
         API_BASE = "http://localhost:3001";
+        // Reset to offline Jane Doe mode
+        var el = document.querySelector(".cv-app");
+        if (el && el._x_dataStack) {
+          var app = el._x_dataStack[0];
+          app.serverConnected = false;
+          app.persons = [];
+          app.activePersonId = null;
+          app.loadFromJson(JANE_DOE_DEFAULT);
+          app.isJaneDoe = true;
+          app.dirty = false;
+          app.updatePdfUrl();
+        }
         if (_cvWidget) _cvWidget.setStatus("disconnected");
       });
     })();
