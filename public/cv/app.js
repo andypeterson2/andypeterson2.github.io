@@ -120,6 +120,16 @@ function app() {
 
     async init() {
       this.darkMode = document.documentElement.dataset.theme !== 'light';
+      // Always start offline with Jane Doe — user must click Connect for server data
+      this.serverConnected = false;
+      this.loadFromJson(JANE_DOE_DEFAULT);
+      this.isJaneDoe = true;
+      this.dirty = false;
+      this.updatePdfUrl();
+      this.$nextTick(function() { this.initSortable(); }.bind(this));
+    },
+
+    async connectToServer() {
       try {
         await this.loadPersons();
         this.serverConnected = true;
@@ -133,14 +143,13 @@ function app() {
           this.loadFromJson(await exp.json());
           this.isJaneDoe = false;
         }
+        this.dirty = false;
+        this.updatePdfUrl();
+        this.$nextTick(function() { this.initSortable(); }.bind(this));
       } catch (e) {
         this.serverConnected = false;
-        this.loadFromJson(JANE_DOE_DEFAULT);
-        this.isJaneDoe = true;
+        throw e;
       }
-      this.dirty = false;
-      this.updatePdfUrl();
-      this.$nextTick(function() { this.initSortable(); }.bind(this));
     },
 
     // ------ Theme ------
