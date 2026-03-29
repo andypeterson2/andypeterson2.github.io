@@ -50,6 +50,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <template x-if="!serverConnected">
         <span class="cv-toolbar-label">Jane Doe <span class="cv-hint">(offline)</span></span>
       </template>
+      <template x-if="serverConnected && !isJaneDoe">
+        <button class="cv-btn cv-btn-primary" @click="save()" :disabled="!dirty">
+          Save<span x-show="dirty">*</span>
+        </button>
+      </template>
 
       <!-- Center group: doc type selector -->
       <div class="cv-toolbar-group">
@@ -91,11 +96,11 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <!-- Identity -->
         <h3 class="cv-profile-heading">Identity</h3>
         <div class="cv-profile-grid">
-          <label>First Name <input type="text" x-model="personal.firstName" @input="autoSavePersonal('firstName')"></label>
-          <label>Last Name <input type="text" x-model="personal.lastName" @input="autoSavePersonal('lastName')"></label>
-          <label>Position <input type="text" x-model="personal.position" @input="autoSavePersonal('position')"></label>
-          <label>Address <input type="text" x-model="personal.address" @input="autoSavePersonal('address')"></label>
-          <label>Date of Birth <input type="text" x-model="personal.dateofbirth" @input="autoSavePersonal('dateofbirth')" placeholder="e.g. January 1, 1990"></label>
+          <label>First Name <input type="text" x-model="personal.firstName" @input="dirty = true"></label>
+          <label>Last Name <input type="text" x-model="personal.lastName" @input="dirty = true"></label>
+          <label>Position <input type="text" x-model="personal.position" @input="dirty = true"></label>
+          <label>Address <input type="text" x-model="personal.address" @input="dirty = true"></label>
+          <label>Date of Birth <input type="text" x-model="personal.dateofbirth" @input="dirty = true" placeholder="e.g. January 1, 1990"></label>
           <div class="cv-toggle-row">
             <span>Photo</span>
             <label class="cv-toggle">
@@ -105,60 +110,60 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
           </div>
           <template x-if="personal.photoEnabled === '1'">
             <label>Photo File <span class="cv-hint">(filename)</span>
-              <input type="text" x-model="personal.photoFile" @input="autoSavePersonal('photoFile')" placeholder="e.g. profile">
+              <input type="text" x-model="personal.photoFile" @input="dirty = true" placeholder="e.g. profile">
             </label>
           </template>
           <label class="cv-profile-full">Quote <span class="cv-hint">(optional)</span>
-            <input type="text" x-model="personal.quote" @input="autoSavePersonal('quote')" placeholder="Leave blank to hide">
+            <input type="text" x-model="personal.quote" @input="dirty = true" placeholder="Leave blank to hide">
           </label>
           <label class="cv-profile-full">Extra Info <span class="cv-hint">(custom text shown in header)</span>
-            <input type="text" x-model="personal.extrainfo" @input="autoSavePersonal('extrainfo')" placeholder="Leave blank to hide">
+            <input type="text" x-model="personal.extrainfo" @input="dirty = true" placeholder="Leave blank to hide">
           </label>
         </div>
 
         <!-- Contact -->
         <h3 class="cv-profile-heading">Contact</h3>
         <div class="cv-profile-grid">
-          <label>Mobile <input type="text" x-model="personal.mobile" @input="autoSavePersonal('mobile')"></label>
-          <label>Email <input type="text" x-model="personal.email" @input="autoSavePersonal('email')"></label>
-          <label>WhatsApp <input type="text" x-model="personal.whatsapp" @input="autoSavePersonal('whatsapp')" placeholder="Phone number"></label>
-          <label>Skype <input type="text" x-model="personal.skype" @input="autoSavePersonal('skype')" placeholder="Username"></label>
-          <label>Telegram <input type="text" x-model="personal.telegram" @input="autoSavePersonal('telegram')" placeholder="Username"></label>
+          <label>Mobile <input type="text" x-model="personal.mobile" @input="dirty = true"></label>
+          <label>Email <input type="text" x-model="personal.email" @input="dirty = true"></label>
+          <label>WhatsApp <input type="text" x-model="personal.whatsapp" @input="dirty = true" placeholder="Phone number"></label>
+          <label>Skype <input type="text" x-model="personal.skype" @input="dirty = true" placeholder="Username"></label>
+          <label>Telegram <input type="text" x-model="personal.telegram" @input="dirty = true" placeholder="Username"></label>
         </div>
 
         <!-- Web & Code -->
         <h3 class="cv-profile-heading">Web &amp; Code</h3>
         <div class="cv-profile-grid">
-          <label>Homepage <input type="text" x-model="personal.homepage" @input="autoSavePersonal('homepage')" placeholder="yoursite.com"></label>
-          <label>GitHub <input type="text" x-model="personal.github" @input="autoSavePersonal('github')"></label>
-          <label>LinkedIn <input type="text" x-model="personal.linkedin" @input="autoSavePersonal('linkedin')"></label>
-          <label>GitLab <input type="text" x-model="personal.gitlab" @input="autoSavePersonal('gitlab')"></label>
-          <label>Bitbucket <input type="text" x-model="personal.bitbucket" @input="autoSavePersonal('bitbucket')"></label>
+          <label>Homepage <input type="text" x-model="personal.homepage" @input="dirty = true" placeholder="yoursite.com"></label>
+          <label>GitHub <input type="text" x-model="personal.github" @input="dirty = true"></label>
+          <label>LinkedIn <input type="text" x-model="personal.linkedin" @input="dirty = true"></label>
+          <label>GitLab <input type="text" x-model="personal.gitlab" @input="dirty = true"></label>
+          <label>Bitbucket <input type="text" x-model="personal.bitbucket" @input="dirty = true"></label>
         </div>
 
         <!-- Social -->
         <h3 class="cv-profile-heading">Social</h3>
         <div class="cv-profile-grid">
-          <label>Twitter <input type="text" x-model="personal.twitter" @input="autoSavePersonal('twitter')" placeholder="Handle"></label>
-          <label>X <span class="cv-hint">(if different from Twitter)</span> <input type="text" x-model="personal.x" @input="autoSavePersonal('x')" placeholder="Handle"></label>
-          <label>Reddit <input type="text" x-model="personal.reddit" @input="autoSavePersonal('reddit')" placeholder="Username"></label>
-          <label>Medium <input type="text" x-model="personal.medium" @input="autoSavePersonal('medium')" placeholder="Username"></label>
-          <label>Xing <input type="text" x-model="personal.xing" @input="autoSavePersonal('xing')" placeholder="Username"></label>
-          <label>Mastodon Instance <input type="text" x-model="personal.mastodonInstance" @input="autoSavePersonal('mastodonInstance')" placeholder="e.g. mastodon.social"></label>
-          <label>Mastodon Username <input type="text" x-model="personal.mastodonName" @input="autoSavePersonal('mastodonName')" placeholder="Username"></label>
+          <label>Twitter <input type="text" x-model="personal.twitter" @input="dirty = true" placeholder="Handle"></label>
+          <label>X <span class="cv-hint">(if different from Twitter)</span> <input type="text" x-model="personal.x" @input="dirty = true" placeholder="Handle"></label>
+          <label>Reddit <input type="text" x-model="personal.reddit" @input="dirty = true" placeholder="Username"></label>
+          <label>Medium <input type="text" x-model="personal.medium" @input="dirty = true" placeholder="Username"></label>
+          <label>Xing <input type="text" x-model="personal.xing" @input="dirty = true" placeholder="Username"></label>
+          <label>Mastodon Instance <input type="text" x-model="personal.mastodonInstance" @input="dirty = true" placeholder="e.g. mastodon.social"></label>
+          <label>Mastodon Username <input type="text" x-model="personal.mastodonName" @input="dirty = true" placeholder="Username"></label>
         </div>
 
         <!-- Academic -->
         <h3 class="cv-profile-heading">Academic</h3>
         <div class="cv-profile-grid">
-          <label>ORCID <input type="text" x-model="personal.orcid" @input="autoSavePersonal('orcid')" placeholder="0000-0000-0000-0000"></label>
-          <label>ResearchGate <input type="text" x-model="personal.researchgate" @input="autoSavePersonal('researchgate')" placeholder="Account"></label>
-          <label>Google Scholar ID <input type="text" x-model="personal.googlescholarId" @input="autoSavePersonal('googlescholarId')" placeholder="User ID"></label>
-          <label>Google Scholar Name <input type="text" x-model="personal.googlescholarName" @input="autoSavePersonal('googlescholarName')" placeholder="Display name"></label>
-          <label>Stack Overflow ID <input type="text" x-model="personal.stackoverflowId" @input="autoSavePersonal('stackoverflowId')" placeholder="User ID"></label>
-          <label>Stack Overflow Name <input type="text" x-model="personal.stackoverflowName" @input="autoSavePersonal('stackoverflowName')" placeholder="Display name"></label>
-          <label>Kaggle <input type="text" x-model="personal.kaggle" @input="autoSavePersonal('kaggle')" placeholder="Username"></label>
-          <label>HackerRank <input type="text" x-model="personal.hackerrank" @input="autoSavePersonal('hackerrank')" placeholder="Username"></label>
+          <label>ORCID <input type="text" x-model="personal.orcid" @input="dirty = true" placeholder="0000-0000-0000-0000"></label>
+          <label>ResearchGate <input type="text" x-model="personal.researchgate" @input="dirty = true" placeholder="Account"></label>
+          <label>Google Scholar ID <input type="text" x-model="personal.googlescholarId" @input="dirty = true" placeholder="User ID"></label>
+          <label>Google Scholar Name <input type="text" x-model="personal.googlescholarName" @input="dirty = true" placeholder="Display name"></label>
+          <label>Stack Overflow ID <input type="text" x-model="personal.stackoverflowId" @input="dirty = true" placeholder="User ID"></label>
+          <label>Stack Overflow Name <input type="text" x-model="personal.stackoverflowName" @input="dirty = true" placeholder="Display name"></label>
+          <label>Kaggle <input type="text" x-model="personal.kaggle" @input="dirty = true" placeholder="Username"></label>
+          <label>HackerRank <input type="text" x-model="personal.hackerrank" @input="dirty = true" placeholder="Username"></label>
         </div>
         <!-- Person management is handled via the toolbar dropdown -->
       </div>
@@ -190,12 +195,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
                 <!-- Expanded section content -->
                 <div x-show="sec._expanded && sec.enabled" class="cv-section-body">
-                  <template x-if="sec._data">
-                    <div>
                       <!-- cventries -->
-                      <template x-if="sec._data.type === 'cventries'">
+                      <template x-if="sec.type === 'cventries'">
                         <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                          <template x-for="entry in sec.entries" :key="entry.id">
                             <div class="cv-entry" :class="{ 'cv-dim': !entry.resumeIncluded }">
                               <div class="cv-entry-header">
                                 <strong x-text="entry.fields.organization || entry.fields.position"></strong>
@@ -207,16 +210,16 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                                   <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
                                 </div>
                               </div>
-                              <label>Position <input type="text" x-model="entry.fields.position" @input="autoSaveEntry(entry)"></label>
-                              <label>Organization <input type="text" x-model="entry.fields.organization" @input="autoSaveEntry(entry)"></label>
-                              <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
-                              <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
+                              <label>Position <input type="text" x-model="entry.fields.position" @input="dirty = true"></label>
+                              <label>Organization <input type="text" x-model="entry.fields.organization" @input="dirty = true"></label>
+                              <label>Location <input type="text" x-model="entry.fields.location" @input="dirty = true"></label>
+                              <label>Date <input type="text" x-model="entry.fields.date" @input="dirty = true"></label>
                               <div class="items-list" :data-entry-id="entry.id" :data-sec-id="sec.id">
                                 <strong>Bullet Points</strong>
                                 <template x-for="item in entry.items" :key="item.id">
                                   <div class="cv-item-row" :class="{ 'cv-dim': !item.resumeIncluded }">
                                     <span class="ui-drag-handle cv-drag-sm" aria-hidden="true">&#x2630;</span>
-                                    <textarea x-model="item.content" rows="2" @input="autoSaveItem(item)" aria-label="Bullet point"></textarea>
+                                    <textarea x-model="item.content" rows="2" @input="dirty = true" aria-label="Bullet point"></textarea>
                                     <label class="cv-item-resume" title="Include in Resume">
                                       <span class="cv-badge-sm">R</span>
                                       <input type="checkbox" :checked="item.resumeIncluded" @change="toggleResumeItem(item)">
@@ -233,9 +236,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                       </template>
 
                       <!-- cvskills -->
-                      <template x-if="sec._data.type === 'cvskills'">
+                      <template x-if="sec.type === 'cvskills'">
                         <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                          <template x-for="entry in sec.entries" :key="entry.id">
                             <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
                               <div class="cv-entry-header">
                                 <strong x-text="entry.fields.category"></strong>
@@ -247,8 +250,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                                   <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
                                 </div>
                               </div>
-                              <label>Category <input type="text" x-model="entry.fields.category" @input="autoSaveEntry(entry)"></label>
-                              <label>Skills <input type="text" x-model="entry.fields.skills" @input="autoSaveEntry(entry)"></label>
+                              <label>Category <input type="text" x-model="entry.fields.category" @input="dirty = true"></label>
+                              <label>Skills <input type="text" x-model="entry.fields.skills" @input="dirty = true"></label>
                             </div>
                           </template>
                           <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button></div>
@@ -256,9 +259,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                       </template>
 
                       <!-- cvhonors -->
-                      <template x-if="sec._data.type === 'cvhonors'">
+                      <template x-if="sec.type === 'cvhonors'">
                         <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                          <template x-for="entry in sec.entries" :key="entry.id">
                             <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
                               <div class="cv-entry-header">
                                 <strong x-text="entry.fields.award"></strong>
@@ -270,10 +273,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                                   <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
                                 </div>
                               </div>
-                              <label>Award <input type="text" x-model="entry.fields.award" @input="autoSaveEntry(entry)"></label>
-                              <label>Issuer <input type="text" x-model="entry.fields.issuer" @input="autoSaveEntry(entry)"></label>
-                              <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
-                              <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
+                              <label>Award <input type="text" x-model="entry.fields.award" @input="dirty = true"></label>
+                              <label>Issuer <input type="text" x-model="entry.fields.issuer" @input="dirty = true"></label>
+                              <label>Location <input type="text" x-model="entry.fields.location" @input="dirty = true"></label>
+                              <label>Date <input type="text" x-model="entry.fields.date" @input="dirty = true"></label>
                             </div>
                           </template>
                           <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button></div>
@@ -281,9 +284,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                       </template>
 
                       <!-- cvreferences -->
-                      <template x-if="sec._data.type === 'cvreferences'">
+                      <template x-if="sec.type === 'cvreferences'">
                         <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                          <template x-for="entry in sec.entries" :key="entry.id">
                             <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
                               <div class="cv-entry-header">
                                 <strong x-text="entry.fields.name"></strong>
@@ -295,10 +298,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                                   <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
                                 </div>
                               </div>
-                              <label>Name <input type="text" x-model="entry.fields.name" @input="autoSaveEntry(entry)"></label>
-                              <label>Relation <input type="text" x-model="entry.fields.relation" @input="autoSaveEntry(entry)"></label>
-                              <label>Phone <input type="text" x-model="entry.fields.phone" @input="autoSaveEntry(entry)"></label>
-                              <label>Email <input type="text" x-model="entry.fields.email" @input="autoSaveEntry(entry)"></label>
+                              <label>Name <input type="text" x-model="entry.fields.name" @input="dirty = true"></label>
+                              <label>Relation <input type="text" x-model="entry.fields.relation" @input="dirty = true"></label>
+                              <label>Phone <input type="text" x-model="entry.fields.phone" @input="dirty = true"></label>
+                              <label>Email <input type="text" x-model="entry.fields.email" @input="dirty = true"></label>
                             </div>
                           </template>
                           <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Reference</button></div>
@@ -306,23 +309,18 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                       </template>
 
                       <!-- cvparagraph -->
-                      <template x-if="sec._data.type === 'cvparagraph'">
+                      <template x-if="sec.type === 'cvparagraph'">
                         <div>
-                          <template x-if="sec._data.entries.length > 0">
+                          <template x-if="sec.entries.length > 0">
                             <div>
                               <div class="cv-para-label">CV Text</div>
-                              <textarea x-model="sec._data.entries[0].fields.text" rows="4" class="cv-full-textarea" @input="autoSaveParagraph(sec)" aria-label="CV summary text"></textarea>
+                              <textarea x-model="sec.entries[0].fields.text" rows="4" class="cv-full-textarea" @input="dirty = true" aria-label="CV summary text"></textarea>
                               <div class="cv-para-label">Resume Text <span class="cv-muted">(shorter version)</span></div>
-                              <textarea x-model="sec.resumeParagraphText" @input="autoSaveResumeParagraphText(sec)" rows="3" class="cv-full-textarea" aria-label="Resume summary text"></textarea>
+                              <textarea x-model="sec.resumeParagraphText" @input="dirty = true" rows="3" class="cv-full-textarea" aria-label="Resume summary text"></textarea>
                             </div>
                           </template>
                         </div>
                       </template>
-                    </div>
-                  </template>
-                  <template x-if="!sec._data">
-                    <p class="cv-muted">Loading&hellip;</p>
-                  </template>
                 </div>
               </div>
             </template>
@@ -353,7 +351,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                           <span class="cv-metric-cmd" x-text="metric.command"></span>
                           <button class="cv-btn-remove" @click="removeMetric(metric.id)" title="Remove">&times;</button>
                         </div>
-                        <input type="text" x-model="metric.value" :placeholder="metric.label" @input="autoSaveMetric(metric)">
+                        <input type="text" x-model="metric.value" :placeholder="metric.label" @input="dirty = true">
                       </div>
                     </template>
                   </div>
@@ -376,21 +374,21 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <div class="cv-split-main">
           <div class="cv-coverletter">
             <div class="cv-cl-heading">Recipient</div>
-            <label>Name <input type="text" x-model="coverletter.settings.recipientName" @input="autoSaveCoverletterSetting('recipientName')"></label>
-            <label>Address <textarea x-model="coverletter.settings.recipientAddress" @input="autoSaveCoverletterSetting('recipientAddress')" rows="3"></textarea></label>
+            <label>Name <input type="text" x-model="coverletter.settings.recipientName" @input="dirty = true"></label>
+            <label>Address <textarea x-model="coverletter.settings.recipientAddress" @input="dirty = true" rows="3"></textarea></label>
 
             <div class="cv-cl-heading">Letter Details</div>
-            <label>Title <input type="text" x-model="coverletter.settings.title" @input="autoSaveCoverletterSetting('title')"></label>
-            <label>Opening <input type="text" x-model="coverletter.settings.opening" @input="autoSaveCoverletterSetting('opening')"></label>
-            <label>Closing <input type="text" x-model="coverletter.settings.closing" @input="autoSaveCoverletterSetting('closing')"></label>
-            <label>Enclosure Label <input type="text" x-model="coverletter.settings.enclosureLabel" @input="autoSaveCoverletterSetting('enclosureLabel')"></label>
-            <label>Enclosure Content <input type="text" x-model="coverletter.settings.enclosureContent" @input="autoSaveCoverletterSetting('enclosureContent')"></label>
+            <label>Title <input type="text" x-model="coverletter.settings.title" @input="dirty = true"></label>
+            <label>Opening <input type="text" x-model="coverletter.settings.opening" @input="dirty = true"></label>
+            <label>Closing <input type="text" x-model="coverletter.settings.closing" @input="dirty = true"></label>
+            <label>Enclosure Label <input type="text" x-model="coverletter.settings.enclosureLabel" @input="dirty = true"></label>
+            <label>Enclosure Content <input type="text" x-model="coverletter.settings.enclosureContent" @input="dirty = true"></label>
 
             <div class="cv-cl-heading">Sections</div>
             <template x-for="sec in coverletter.sections" :key="sec.id">
               <div class="cv-entry">
-                <label>Title <input type="text" x-model="sec.title" @input="autoSaveCoverletterSection(sec)"></label>
-                <label>Body <textarea x-model="sec.body" @input="autoSaveCoverletterSection(sec)" rows="6" class="cv-full-textarea"></textarea></label>
+                <label>Title <input type="text" x-model="sec.title" @input="dirty = true"></label>
+                <label>Body <textarea x-model="sec.body" @input="dirty = true" rows="6" class="cv-full-textarea"></textarea></label>
                 <div class="cv-add-row"><button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeCoverletterSection(sec.id)">Remove Section</button></div>
               </div>
             </template>

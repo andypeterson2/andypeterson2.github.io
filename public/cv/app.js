@@ -101,7 +101,10 @@ function app() {
     statusType: '',
     sortable: null,
     darkMode: true,
-    _saveTimers: {},
+    dirty: false,
+    isJaneDoe: false,
+    _nextTempId: -1,
+    _documents: { cv: [], resume: [] },
 
     // New state
     persons: [],
@@ -118,22 +121,23 @@ function app() {
       try {
         await this.loadPersons();
         this.serverConnected = true;
-        await Promise.all([
-          this.loadPersonal(),
-          this.loadMetrics(),
-          this.loadSections(),
-          this.loadDocumentSections('cv'),
-          this.loadCoverletter(),
-        ]);
+        var person = this.persons.find(function(p) { return p.id === this.activePersonId; }.bind(this));
+        if (person && person.name === 'Jane Doe') {
+          this.loadFromJson(JANE_DOE_DEFAULT);
+          this.isJaneDoe = true;
+        } else {
+          var exp = await fetch(API_BASE + '/api/export');
+          if (!exp.ok) throw new Error('Failed to load');
+          this.loadFromJson(await exp.json());
+          this.isJaneDoe = false;
+        }
       } catch (e) {
         this.serverConnected = false;
         this.loadFromJson(JANE_DOE_DEFAULT);
+        this.isJaneDoe = true;
       }
-      this.$watch('activeDoc', function(val) {
-        if (val !== 'coverletter') {
-          this.loadDocumentSections(val);
-        }
-      }.bind(this));
+      this.dirty = false;
+      this.$nextTick(function() { this.initSortable(); }.bind(this));
     },
 
     // ------ Theme ------
@@ -155,17 +159,22 @@ function app() {
 
     async switchPerson(id) {
       if (id === this.activePersonId) return;
+      if (this.dirty && !confirm('You have unsaved changes. Switch anyway?')) return;
       var res = await fetch(API_BASE + '/api/persons/' + id + '/switch', { method: 'POST' });
       if (!res.ok) { this.flash('Failed to switch', 'error'); return; }
       this.activePersonId = id;
-      await Promise.all([
-        this.loadPersonal(),
-        this.loadMetrics(),
-        this.loadSections(),
-        this.loadDocumentSections(this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc),
-        this.loadCoverletter(),
-      ]);
-      this.flash('Switched to ' + (this.persons.find(function(p) { return p.id === id; }) || {}).name, 'success');
+      var person = this.persons.find(function(p) { return p.id === id; });
+      if (person && person.name === 'Jane Doe') {
+        this.loadFromJson(JANE_DOE_DEFAULT);
+        this.isJaneDoe = true;
+      } else {
+        var exp = await fetch(API_BASE + '/api/export');
+        if (exp.ok) this.loadFromJson(await exp.json());
+        this.isJaneDoe = false;
+      }
+      this.dirty = false;
+      this.$nextTick(function() { this.initSortable(); }.bind(this));
+      this.flash('Switched to ' + (person ? person.name : ''), 'success');
     },
 
     async createPerson() {
@@ -211,21 +220,9 @@ function app() {
     // ------ Import / Export ------
 
     async exportData() {
-      if (!this.serverConnected) {
-        var blob = new Blob([JSON.stringify(JANE_DOE_DEFAULT, null, 2)], { type: 'application/json' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'jane-doe.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        return;
-      }
-      var res = await fetch(API_BASE + '/api/export');
-      if (!res.ok) { this.flash('Export failed', 'error'); return; }
-      var data = await res.json();
-      var self = this;
-      var person = this.persons.find(function(p) { return p.id === self.activePersonId; });
-      var name = person ? person.name.toLowerCase().replace(/\s+/g, '-') : 'export';
+      var data = this.toExportJson();
+      var person = this.persons.find(function(p) { return p.id === this.activePersonId; }.bind(this));
+      var name = person ? person.name.toLowerCase().replace(/\s+/g, '-') : (this.isJaneDoe ? 'jane-doe' : 'export');
       var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -240,73 +237,129 @@ function app() {
       var input = document.createElement('input');
       input.type = 'file';
       input.accept = '.json';
-      input.onchange = async function() {
+      input.onchange = function() {
         var file = input.files[0];
         if (!file) return;
-        try {
-          var text = await file.text();
-          var data = JSON.parse(text);
-          if (self.serverConnected) {
-            var res = await fetch(API_BASE + '/api/import', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: text,
-            });
-            if (!res.ok) { self.flash('Import failed', 'error'); return; }
-            await Promise.all([
-              self.loadPersonal(),
-              self.loadMetrics(),
-              self.loadSections(),
-              self.loadDocumentSections(self.activeDoc === 'coverletter' ? 'cv' : self.activeDoc),
-              self.loadCoverletter(),
-            ]);
-            self.flash('Imported', 'success');
-          } else {
+        file.text().then(function(text) {
+          try {
+            var data = JSON.parse(text);
             self.loadFromJson(data);
-            self.flash('Loaded from file', 'success');
+            self.dirty = true;
+            self.$nextTick(function() { self.initSortable(); });
+            self.flash('Imported (not yet saved)', 'success');
+          } catch (e) {
+            self.flash('Invalid JSON file', 'error');
           }
-        } catch (e) {
-          self.flash('Invalid JSON file', 'error');
-        }
+        });
       };
       input.click();
     },
 
-    // ------ Offline data loading ------
+    // ------ Data loading ------
 
     loadFromJson(data) {
-      // Personal
-      this.personal = data.personal || {};
+      this.personal = Object.assign({}, data.personal || {});
+      this.metrics = (data.metrics || []).map(function(m) { return Object.assign({}, m); });
 
-      // Metrics
-      this.metrics = data.metrics || [];
+      this.sections = (data.sections || []).map(function(s) {
+        return {
+          id: s.id, type: s.type, title: s.title,
+          entries: (s.entries || []).map(function(e) {
+            return {
+              id: e.id, fields: Object.assign({}, e.fields),
+              resumeIncluded: e.resumeIncluded !== false,
+              items: (e.items || []).map(function(i) {
+                return { id: i.id, content: i.content, resumeIncluded: i.resumeIncluded !== false };
+              })
+            };
+          })
+        };
+      });
 
-      // Sections
-      this.sections = (data.sections || []).map(function(s) { return { id: s.id, type: s.type, title: s.title }; });
+      this._documents = Object.assign({}, data.documents || { cv: [], resume: [] });
 
-      // Document sections for CV
-      var cvDoc = (data.documents && data.documents.cv) || [];
+      var variantDoc = (this._documents[this.activeDoc] || this._documents.cv || []);
       this.docSections = [];
-      for (var i = 0; i < cvDoc.length; i++) {
-        var ds = cvDoc[i];
-        var sec = data.sections.find(function(s) { return s.id === ds.sectionId; });
+      var self = this;
+      for (var i = 0; i < variantDoc.length; i++) {
+        var ds = variantDoc[i];
+        var sec = self.sections.find(function(s) { return s.id === ds.sectionId; });
         if (!sec) continue;
-        this.docSections.push({
+        self.docSections.push({
           id: sec.id, type: sec.type, title: sec.title,
-          enabled: ds.enabled,
-          resumeParagraphText: ds.resumeParagraphText,
-          _expanded: true,
-          _data: { id: sec.id, type: sec.type, title: sec.title, entries: sec.entries },
+          enabled: ds.enabled !== false,
+          resumeParagraphText: ds.resumeParagraphText || null,
+          _expanded: false,
+          entries: sec.entries
         });
       }
 
-      // Coverletter
       var cl = data.coverletter || {};
       var clSettings = {};
-      for (var key in cl) {
-        if (key !== 'sections') clSettings[key] = cl[key];
+      for (var key in cl) { if (key !== 'sections') clSettings[key] = cl[key]; }
+      this.coverletter = { settings: clSettings, sections: (cl.sections || []).map(function(s) { return Object.assign({}, s); }) };
+    },
+
+    // ------ Export to JSON ------
+
+    toExportJson() {
+      var personal = Object.assign({}, this.personal);
+
+      var sections = this.sections.map(function(s) {
+        return {
+          id: s.id, type: s.type, title: s.title,
+          entries: (s.entries || []).map(function(e, ei) {
+            return {
+              id: e.id, section_id: s.id, sort_order: ei,
+              fields: e.fields, resumeIncluded: e.resumeIncluded,
+              items: (e.items || []).map(function(it, ii) {
+                return { id: it.id, entry_id: e.id, sort_order: ii,
+                  content: it.content, resumeIncluded: it.resumeIncluded };
+              })
+            };
+          })
+        };
+      });
+
+      var metrics = this.metrics.map(function(m) {
+        return { id: m.id, command: m.command, label: m.label,
+          value: m.value, groupName: m.groupName, sectionId: m.sectionId };
+      });
+
+      // Update current variant's doc config from local docSections
+      var docs = {};
+      for (var v in this._documents) { docs[v] = this._documents[v]; }
+      var curVariant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
+      docs[curVariant] = this.docSections.map(function(s, i) {
+        return { sectionId: s.id, enabled: s.enabled,
+          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
+      });
+
+      var coverletter = Object.assign({}, this.coverletter.settings);
+      coverletter.sections = this.coverletter.sections;
+
+      return { personal: personal, sections: sections, metrics: metrics,
+        documents: docs, coverletter: coverletter };
+    },
+
+    // ------ Save ------
+
+    async save() {
+      if (!this.serverConnected || this.isJaneDoe) return;
+      var data = this.toExportJson();
+      var res = await fetch(API_BASE + '/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) { this.flash('Save failed', 'error'); return; }
+      var exp = await fetch(API_BASE + '/api/export');
+      if (exp.ok) {
+        this.loadFromJson(await exp.json());
+        this.$nextTick(function() { this.initSortable(); }.bind(this));
       }
-      this.coverletter = { settings: clSettings, sections: cl.sections || [] };
+      this.dirty = false;
+      this.flash('Saved', 'success');
     },
 
     // ------ Modal system ------
@@ -333,59 +386,14 @@ function app() {
       this.modal = { open: false, title: '', fields: [], resolve: null };
     },
 
-    // ------ Debounced autosave ------
-
-    debounce(key, fn, delay) {
-      if (delay === undefined) delay = 500;
-      clearTimeout(this._saveTimers[key]);
-      this._saveTimers[key] = setTimeout(fn, delay);
-    },
-
     // ------ Personal info ------
 
-    async loadPersonal() {
-      var res = await fetch(API_BASE + '/api/settings?prefix=personal');
-      if (!res.ok) return;
-      var data = await res.json();
-      var p = {};
-      var entries = Object.entries(data);
-      for (var i = 0; i < entries.length; i++) {
-        p[entries[i][0].replace('personal.', '')] = entries[i][1];
-      }
-      this.personal = p;
-    },
-
-    autoSavePersonal(field) {
-      var self = this;
-      this.debounce('personal.' + field, async function() {
-        var body = {};
-        body['personal.' + field] = self.personal[field] || '';
-        await fetch(API_BASE + '/api/settings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        self.flash('Saved', 'success');
-      });
-    },
-
     togglePhoto() {
-      var enabled = this.personal.photoEnabled === '1' ? '0' : '1';
-      this.personal.photoEnabled = enabled;
-      fetch(API_BASE + '/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'personal.photoEnabled': enabled }),
-      });
+      this.personal.photoEnabled = this.personal.photoEnabled === '1' ? '0' : '1';
+      this.dirty = true;
     },
 
     // ------ Metrics ------
-
-    async loadMetrics() {
-      var res = await fetch(API_BASE + '/api/metrics');
-      if (!res.ok) return;
-      this.metrics = await res.json();
-    },
 
     metricsForSection(sectionId) {
       return this.metrics.filter(function(m) { return m.sectionId === sectionId; });
@@ -403,43 +411,27 @@ function app() {
       return Object.entries(groups);
     },
 
-    autoSaveMetric(metric) {
-      var self = this;
-      this.debounce('metric.' + metric.id, async function() {
-        await fetch(API_BASE + '/api/metrics/' + metric.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: metric.value === '' ? null : metric.value }),
-        });
-        self.flash('Saved', 'success');
-      });
-    },
-
     async addMetric(sectionId, groupName) {
       var result = await this.openModal('Add Variable', [
         { name: 'command', label: 'Command name (e.g., myMetric)', value: '' },
         { name: 'label', label: 'Placeholder label', value: '' },
       ]);
       if (!result || !result.command.trim()) return;
-      var res = await fetch(API_BASE + '/api/metrics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          command: result.command.trim(),
-          label: result.label.trim() || result.command.trim(),
-          value: null,
-          groupName: groupName,
-          sectionId: sectionId,
-        }),
+      var cmd = result.command.trim();
+      if (this.metrics.some(function(m) { return m.command === cmd; })) {
+        this.flash('Command already exists', 'error'); return;
+      }
+      this.metrics.push({
+        id: this._nextTempId--, command: cmd,
+        label: result.label.trim() || cmd, value: null,
+        groupName: groupName, sectionId: sectionId
       });
-      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      await this.loadMetrics();
+      this.dirty = true;
     },
 
-    async removeMetric(metricId) {
-      await fetch(API_BASE + '/api/metrics/' + metricId, { method: 'DELETE' });
-      await this.loadMetrics();
+    removeMetric(metricId) {
+      this.metrics = this.metrics.filter(function(m) { return m.id !== metricId; });
+      this.dirty = true;
     },
 
     async addMetricGroup(sectionId) {
@@ -449,28 +441,23 @@ function app() {
         { name: 'label', label: 'Placeholder label', value: '' },
       ]);
       if (!result || !result.groupName.trim() || !result.command.trim()) return;
-      var res = await fetch(API_BASE + '/api/metrics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          command: result.command.trim(),
-          label: result.label.trim() || result.command.trim(),
-          value: null,
-          groupName: result.groupName.trim(),
-          sectionId: sectionId,
-        }),
+      var cmd = result.command.trim();
+      if (this.metrics.some(function(m) { return m.command === cmd; })) {
+        this.flash('Command already exists', 'error'); return;
+      }
+      this.metrics.push({
+        id: this._nextTempId--, command: cmd,
+        label: result.label.trim() || cmd, value: null,
+        groupName: result.groupName.trim(), sectionId: sectionId
       });
-      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      await this.loadMetrics();
+      this.dirty = true;
     },
 
-    async removeMetricGroup(sectionId, groupName) {
-      var toRemove = this.metrics.filter(function(m) { return m.sectionId === sectionId && m.groupName === groupName; });
-      for (var i = 0; i < toRemove.length; i++) {
-        await fetch(API_BASE + '/api/metrics/' + toRemove[i].id, { method: 'DELETE' });
-      }
-      await this.loadMetrics();
+    removeMetricGroup(sectionId, groupName) {
+      this.metrics = this.metrics.filter(function(m) {
+        return !(m.sectionId === sectionId && m.groupName === groupName);
+      });
+      this.dirty = true;
     },
 
     async renameMetricGroup(sectionId, oldGroup) {
@@ -478,21 +465,18 @@ function app() {
         { name: 'groupName', label: 'New group name', value: oldGroup },
       ]);
       if (!result || !result.groupName.trim() || result.groupName.trim() === oldGroup) return;
-      var toRename = this.metrics.filter(function(m) { return m.sectionId === sectionId && m.groupName === oldGroup; });
-      for (var i = 0; i < toRename.length; i++) {
-        await fetch(API_BASE + '/api/metrics/' + toRename[i].id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ groupName: result.groupName.trim() }),
-        });
+      var newName = result.groupName.trim();
+      for (var i = 0; i < this.metrics.length; i++) {
+        if (this.metrics[i].sectionId === sectionId && this.metrics[i].groupName === oldGroup) {
+          this.metrics[i].groupName = newName;
+        }
       }
-      await this.loadMetrics();
+      this.dirty = true;
     },
 
     // ------ Section CRUD ------
 
     async createNewSection() {
-      if (!this.serverConnected) { this.flash('Connect to server first', 'error'); return; }
       var result = await this.openModal('New Section', [
         { name: 'title', label: 'Section Title (e.g. Projects)', value: '' },
         { name: 'type', label: 'Type: cventries, cvskills, cvhonors, cvreferences, cvparagraph', value: 'cventries' },
@@ -502,64 +486,45 @@ function app() {
       if (!id) return;
       var type = result.type.trim();
       var validTypes = ['cventries', 'cvskills', 'cvhonors', 'cvreferences', 'cvparagraph'];
-      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type. Use: ' + validTypes.join(', '), 'error'); return; }
-      var res = await fetch(API_BASE + '/api/sections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, type: type, title: result.title.trim() }),
+      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type', 'error'); return; }
+      if (this.sections.some(function(s) { return s.id === id; })) { this.flash('Section ID already exists', 'error'); return; }
+      var newSec = { id: id, type: type, title: result.title.trim(), entries: [] };
+      this.sections.push(newSec);
+      this.docSections.push({
+        id: id, type: type, title: result.title.trim(),
+        enabled: true, resumeParagraphText: null,
+        _expanded: false, entries: newSec.entries
       });
-      if (res.status === 409) { this.flash('Section ID already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to create section', 'error'); return; }
-      // Add to current document variant
-      var variant = this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc;
-      var currentSections = this.docSections.map(function(s) {
-        return { sectionId: s.id, enabled: s.enabled, resumeParagraphText: s.resumeParagraphText || null };
-      });
-      currentSections.push({ sectionId: id, enabled: true });
-      await fetch(API_BASE + '/api/documents/' + variant, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: currentSections }),
-      });
-      await this.loadSections();
-      await this.loadDocumentSections(variant);
+      this.dirty = true;
       this.flash('Created "' + result.title.trim() + '"', 'success');
     },
 
-    async deleteSection(sectionId) {
-      if (!this.serverConnected) return;
+    deleteSection(sectionId) {
       var sec = this.sections.find(function(s) { return s.id === sectionId; });
-      if (!confirm('Delete section "' + (sec ? sec.title : sectionId) + '"? This will delete all entries, items, and variables in this section.')) return;
-      await fetch(API_BASE + '/api/sections/' + sectionId, { method: 'DELETE' });
+      if (!confirm('Delete "' + (sec ? sec.title : sectionId) + '"?')) return;
+      this.sections = this.sections.filter(function(s) { return s.id !== sectionId; });
+      this.docSections = this.docSections.filter(function(s) { return s.id !== sectionId; });
+      this.metrics = this.metrics.filter(function(m) { return m.sectionId !== sectionId; });
       if (this.expandedSectionId === sectionId) this.expandedSectionId = null;
-      await this.loadSections();
-      await this.loadDocumentSections(this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc);
-      await this.loadMetrics();
-      this.flash('Deleted', 'success');
+      this.dirty = true;
     },
 
     async renameSection(sectionId) {
-      if (!this.serverConnected) return;
       var sec = this.sections.find(function(s) { return s.id === sectionId; });
       var result = await this.openModal('Rename Section', [
         { name: 'title', label: 'New title', value: sec ? sec.title : '' },
       ]);
       if (!result || !result.title.trim()) return;
-      await fetch(API_BASE + '/api/sections/' + sectionId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: result.title.trim() }),
-      });
-      await this.loadSections();
-      await this.loadDocumentSections(this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc);
-      this.flash('Renamed', 'success');
+      if (sec) sec.title = result.title.trim();
+      var ds = this.docSections.find(function(s) { return s.id === sectionId; });
+      if (ds) ds.title = result.title.trim();
+      this.dirty = true;
     },
 
     toggleSectionExpand(sec) {
       sec._expanded = !sec._expanded;
       if (sec._expanded) {
         this.expandedSectionId = sec.id;
-        this.loadSectionData(sec);
       } else {
         if (this.expandedSectionId === sec.id) this.expandedSectionId = null;
       }
@@ -567,42 +532,32 @@ function app() {
 
     // ------ Sections + Document config ------
 
-    async loadSections() {
-      var res = await fetch(API_BASE + '/api/sections');
-      if (!res.ok) return;
-      this.sections = await res.json();
-    },
-
-    async loadDocumentSections(variant) {
-      var res = await fetch(API_BASE + '/api/documents/' + variant);
-      if (!res.ok) return;
-      var data = await res.json();
-      var self = this;
-      this.docSections = [];
-      for (var i = 0; i < data.sections.length; i++) {
-        var ds = data.sections[i];
-        var sec = this.sections.find(function(s) { return s.id === ds.sectionId; });
-        if (!sec) continue;
-        this.docSections.push({
-          id: sec.id, type: sec.type, title: sec.title,
-          enabled: ds.enabled,
-          resumeParagraphText: ds.resumeParagraphText,
-          _expanded: true,
-          _data: null,
-        });
-      }
-      this.$nextTick(function() {
-        self.initSortable();
-        for (var j = 0; j < self.docSections.length; j++) {
-          if (self.docSections[j].enabled) self.loadSectionData(self.docSections[j]);
-        }
-      });
-    },
-
     async switchDoc(name) {
+      // Save current variant's docSections to _documents before switching
+      var oldVariant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
+      this._documents[oldVariant] = this.docSections.map(function(s, i) {
+        return { sectionId: s.id, enabled: s.enabled,
+          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
+      });
+
       this.activeDoc = name;
-      if (name !== 'coverletter' && this.serverConnected) {
-        await this.loadDocumentSections(name);
+      if (name !== 'coverletter') {
+        // Load docSections for new variant from _documents
+        var variantDoc = this._documents[name] || [];
+        this.docSections = [];
+        var self = this;
+        for (var i = 0; i < variantDoc.length; i++) {
+          var ds = variantDoc[i];
+          var sec = self.sections.find(function(s) { return s.id === ds.sectionId; });
+          if (!sec) continue;
+          self.docSections.push({
+            id: sec.id, type: sec.type, title: sec.title,
+            enabled: ds.enabled !== false,
+            resumeParagraphText: ds.resumeParagraphText || null,
+            _expanded: false, entries: sec.entries
+          });
+        }
+        this.$nextTick(function() { this.initSortable(); }.bind(this));
       }
     },
 
@@ -624,254 +579,90 @@ function app() {
       });
     },
 
-    async saveDocumentSections() {
-      var variant = this.activeDoc;
-      var sections = this.docSections.map(function(s) {
-        return {
-          sectionId: s.id,
-          enabled: s.enabled,
-          resumeParagraphText: s.resumeParagraphText || null,
-        };
+    saveDocumentSections() {
+      // Just update local _documents - no server call
+      var variant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
+      this._documents[variant] = this.docSections.map(function(s, i) {
+        return { sectionId: s.id, enabled: s.enabled,
+          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
       });
-      await fetch(API_BASE + '/api/documents/' + variant, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: sections }),
-      });
-      this.flash('Order saved', 'success');
+      this.dirty = true;
     },
 
     toggleSection(index) {
       this.docSections[index].enabled = !this.docSections[index].enabled;
-      this.saveDocumentSections();
-    },
-
-    // ------ Section data (entries + items) ------
-
-    async loadSectionData(sec) {
-      if (sec._data) return;
-      var self = this;
-      var res = await fetch(API_BASE + '/api/sections/' + sec.id);
-      if (!res.ok) return;
-      sec._data = await res.json();
-      if (sec._data.type === 'cventries') {
-        this.$nextTick(function() { self.initBulletSortables(sec); });
-      }
-    },
-
-    initBulletSortables(sec) {
-      this.$nextTick(function() {
-        var allLists = document.querySelectorAll('.items-list[data-sec-id="' + sec.id + '"]');
-        allLists.forEach(function(list) {
-          if (list._sortable) { list._sortable.destroy(); list._sortable = null; }
-          list._sortable = Sortable.create(list, {
-            handle: '.ui-drag-handle',
-            ghostClass: 'ui-sortable-ghost',
-            chosenClass: 'ui-sortable-chosen',
-            draggable: '.item-row',
-            animation: 100,
-            onEnd: function(evt) {
-              var entryId = parseInt(list.dataset.entryId);
-              var entry = sec._data.entries.find(function(e) { return e.id === entryId; });
-              if (!entry) return;
-              var item = entry.items.splice(evt.oldIndex, 1)[0];
-              entry.items.splice(evt.newIndex, 0, item);
-              var ids = entry.items.map(function(i) { return i.id; });
-              fetch(API_BASE + '/api/entries/' + entryId + '/items/order', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: ids }),
-              });
-            },
-          });
-        });
-      });
+      this.dirty = true;
     },
 
     // ------ Entry CRUD ------
 
-    autoSaveEntry(entry) {
-      var self = this;
-      this.debounce('entry.' + entry.id, async function() {
-        await fetch(API_BASE + '/api/entries/' + entry.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: entry.fields }),
-        });
-        self.flash('Saved', 'success');
-      });
-    },
-
     async addEntry(sec) {
       var defaults = {};
-      if (sec.type === 'cventries') {
-        defaults = { position: '', organization: '', location: '', date: '' };
-      } else if (sec.type === 'cvskills') {
-        defaults = { category: '', skills: '' };
-      } else if (sec.type === 'cvhonors') {
-        defaults = { award: '', issuer: '', location: '', date: '' };
-      } else if (sec.type === 'cvreferences') {
-        defaults = { name: '', relation: '', phone: '', email: '' };
-      } else if (sec.type === 'cvparagraph') {
-        defaults = { text: '' };
-      }
-      var res = await fetch(API_BASE + '/api/sections/' + sec.id + '/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: defaults }),
-      });
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      sec._data = null;
-      await this.loadSectionData(sec);
+      if (sec.type === 'cventries') Object.assign(defaults, { position: '', organization: '', location: '', date: '' });
+      else if (sec.type === 'cvskills') Object.assign(defaults, { category: '', skills: '' });
+      else if (sec.type === 'cvhonors') Object.assign(defaults, { award: '', issuer: '', location: '', date: '' });
+      else if (sec.type === 'cvreferences') Object.assign(defaults, { name: '', relation: '', phone: '', email: '' });
+      else if (sec.type === 'cvparagraph') Object.assign(defaults, { text: '' });
+      var newEntry = { id: this._nextTempId--, fields: defaults, resumeIncluded: true, items: [] };
+      sec.entries.push(newEntry);
+      // Also update the master sections array
+      var master = this.sections.find(function(s) { return s.id === sec.id; });
+      if (master && master !== sec) master.entries = sec.entries;
+      this.dirty = true;
     },
 
-    async removeEntry(sec, entryId) {
-      await fetch(API_BASE + '/api/entries/' + entryId, { method: 'DELETE' });
-      sec._data.entries = sec._data.entries.filter(function(e) { return e.id !== entryId; });
+    removeEntry(sec, entryId) {
+      sec.entries = sec.entries.filter(function(e) { return e.id !== entryId; });
+      var master = this.sections.find(function(s) { return s.id === sec.id; });
+      if (master && master !== sec) master.entries = sec.entries;
+      this.dirty = true;
     },
 
     toggleResumeEntry(entry) {
       entry.resumeIncluded = !entry.resumeIncluded;
-      fetch(API_BASE + '/api/entries/' + entry.id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeIncluded: entry.resumeIncluded }),
-      });
+      this.dirty = true;
     },
 
     // ------ Item (bullet) CRUD ------
 
-    autoSaveItem(item) {
-      var self = this;
-      this.debounce('item.' + item.id, async function() {
-        await fetch(API_BASE + '/api/items/' + item.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: item.content }),
-        });
-        self.flash('Saved', 'success');
-      });
+    addItem(entry) {
+      entry.items.push({ id: this._nextTempId--, content: '', resumeIncluded: true });
+      this.dirty = true;
     },
 
-    async addItem(entry) {
-      var res = await fetch(API_BASE + '/api/entries/' + entry.id + '/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: '' }),
-      });
-      if (!res.ok) return;
-      var data = await res.json();
-      entry.items.push({ id: data.id, content: '', resumeIncluded: true, sort_order: entry.items.length, entry_id: entry.id });
-    },
-
-    async removeItem(entry, itemId) {
-      await fetch(API_BASE + '/api/items/' + itemId, { method: 'DELETE' });
+    removeItem(entry, itemId) {
       entry.items = entry.items.filter(function(i) { return i.id !== itemId; });
+      this.dirty = true;
     },
 
     toggleResumeItem(item) {
       item.resumeIncluded = !item.resumeIncluded;
-      fetch(API_BASE + '/api/items/' + item.id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeIncluded: item.resumeIncluded }),
-      });
-    },
-
-    // ------ cvparagraph: autosave text + resume text ------
-
-    autoSaveParagraph(sec) {
-      var entry = sec._data.entries[0];
-      if (!entry) return;
-      var self = this;
-      this.debounce('para.' + entry.id, async function() {
-        await fetch(API_BASE + '/api/entries/' + entry.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: entry.fields }),
-        });
-        self.flash('Saved', 'success');
-      });
-    },
-
-    autoSaveResumeParagraphText(sec) {
-      this.debounce('rpt.' + sec.id, async function() {
-        this.saveDocumentSections();
-      }.bind(this));
+      this.dirty = true;
     },
 
     // ------ Cover letter ------
 
-    async loadCoverletter() {
-      var results = await Promise.all([
-        fetch(API_BASE + '/api/settings?prefix=coverletter'),
-        fetch(API_BASE + '/api/coverletter/sections'),
-      ]);
-      var settingsRes = results[0];
-      var sectionsRes = results[1];
-      if (settingsRes.ok) {
-        var data = await settingsRes.json();
-        var s = {};
-        var entries = Object.entries(data);
-        for (var i = 0; i < entries.length; i++) {
-          s[entries[i][0].replace('coverletter.', '')] = entries[i][1];
-        }
-        this.coverletter.settings = s;
-      }
-      if (sectionsRes.ok) {
-        this.coverletter.sections = await sectionsRes.json();
-      }
-    },
-
-    autoSaveCoverletterSetting(field) {
-      var self = this;
-      this.debounce('cl.' + field, async function() {
-        var body = {};
-        body['coverletter.' + field] = self.coverletter.settings[field] || '';
-        await fetch(API_BASE + '/api/settings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        self.flash('Saved', 'success');
+    addCoverletterSection() {
+      this.coverletter.sections.push({
+        id: this._nextTempId--, sort_order: this.coverletter.sections.length,
+        title: '', body: ''
       });
+      this.dirty = true;
     },
 
-    async addCoverletterSection() {
-      var res = await fetch(API_BASE + '/api/coverletter/sections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '', body: '' }),
-      });
-      if (!res.ok) return;
-      var data = await res.json();
-      this.coverletter.sections.push({ id: data.id, title: '', body: '', sort_order: this.coverletter.sections.length });
-    },
-
-    autoSaveCoverletterSection(sec) {
-      var self = this;
-      this.debounce('clsec.' + sec.id, async function() {
-        await fetch(API_BASE + '/api/coverletter/sections/' + sec.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: sec.title, body: sec.body }),
-        });
-        self.flash('Saved', 'success');
-      });
-    },
-
-    async removeCoverletterSection(secId) {
-      await fetch(API_BASE + '/api/coverletter/sections/' + secId, { method: 'DELETE' });
+    removeCoverletterSection(secId) {
       this.coverletter.sections = this.coverletter.sections.filter(function(s) { return s.id !== secId; });
+      this.dirty = true;
     },
 
     // ------ Compile & PDF ------
 
     async compile() {
-      if (!this.serverConnected) { this.flash('Connect to server to compile', 'error'); return; }
+      if (!this.serverConnected) { this.flash('Connect to server first', 'error'); return; }
       this.compiling = true;
-      var name = this.activeDoc;
       try {
+        if (!this.isJaneDoe) await this.save();
+        var name = this.activeDoc;
         var res = await fetch(API_BASE + '/api/compile/' + name, { method: 'POST' });
         var data = await res.json();
         if (data.success) {
