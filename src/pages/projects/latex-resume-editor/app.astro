@@ -39,7 +39,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <!-- Left group: person selector -->
       <template x-if="serverConnected">
         <div class="cv-toolbar-group">
-          <select class="cv-select" x-model="activePersonId" @change="switchPerson(parseInt($event.target.value))" aria-label="Active person">
+          <select class="cv-select" @change="switchPerson(parseInt($event.target.value))" aria-label="Active person">
             <template x-for="p in persons" :key="p.id">
               <option :value="p.id" x-text="p.name" :selected="p.id === activePersonId"></option>
             </template>
@@ -81,7 +81,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <button class="cv-tab" :class="{ 'cv-tab-active': activeTab === 'profile' }" @click="activeTab = 'profile'" role="tab">Profile</button>
       <button class="cv-tab" :class="{ 'cv-tab-active': activeTab === 'sections' }" @click="activeTab = 'sections'" role="tab">Sections</button>
       <button class="cv-tab" :class="{ 'cv-tab-active': activeTab === 'coverletter' }" @click="activeTab = 'coverletter'" role="tab">Cover Letter</button>
-      <button class="cv-tab" :class="{ 'cv-tab-active': activeTab === 'variables' }" @click="activeTab = 'variables'" role="tab">Variables</button>
     </nav>
 
     <!-- Tab content -->
@@ -165,225 +164,260 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       </div>
 
       <!-- SECTIONS TAB -->
-      <div x-show="activeTab === 'sections'" class="cv-tab-pane">
-        <div id="section-list" class="cv-section-list">
-          <template x-for="(sec, i) in docSections" :key="sec.id">
-            <div class="cv-section" :class="{ 'cv-disabled': !sec.enabled }" :data-sec-id="sec.id">
-              <div class="cv-section-header">
-                <span class="ui-drag-handle" aria-hidden="true">&#x2630;</span>
-                <strong x-text="sec.title"></strong>
-                <label class="cv-section-toggle" title="Include in document">
-                  <input type="checkbox" :checked="sec.enabled" @change="toggleSection(i)" :aria-label="'Enable ' + sec.title">
-                </label>
-                <button class="cv-btn cv-btn-sm" @click="sec._expanded = !sec._expanded; if(sec._expanded) loadSectionData(sec)"
-                  x-text="sec._expanded ? 'Collapse' : 'Expand'"></button>
-              </div>
+      <div x-show="activeTab === 'sections'" class="cv-tab-pane cv-split">
+        <!-- Left: Section list -->
+        <div class="cv-split-main">
+          <!-- Add Section button bar -->
+          <div class="cv-section-toolbar" x-show="serverConnected">
+            <button class="cv-btn cv-btn-sm" @click="createNewSection()">+ Add Section</button>
+          </div>
 
-              <!-- Expanded editor -->
-              <div x-show="sec._expanded && sec.enabled" class="cv-section-body">
-                <template x-if="sec._data">
-                  <div>
-                    <!-- cventries -->
-                    <template x-if="sec._data.type === 'cventries'">
-                      <div>
-                        <template x-for="entry in sec._data.entries" :key="entry.id">
-                          <div class="cv-entry" :class="{ 'cv-dim': !entry.resumeIncluded }">
-                            <div class="cv-entry-header">
-                              <strong x-text="entry.fields.organization || entry.fields.position"></strong>
-                              <div class="cv-entry-actions">
-                                <label class="cv-resume-badge" title="Include in Resume">
-                                  <span class="cv-badge">R</span>
-                                  <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
-                                </label>
-                                <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
-                              </div>
-                            </div>
-                            <label>Position <input type="text" x-model="entry.fields.position" @input="autoSaveEntry(entry)"></label>
-                            <label>Organization <input type="text" x-model="entry.fields.organization" @input="autoSaveEntry(entry)"></label>
-                            <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
-                            <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
-                            <div class="items-list" :data-entry-id="entry.id" :data-sec-id="sec.id">
-                              <strong>Bullet Points</strong>
-                              <template x-for="item in entry.items" :key="item.id">
-                                <div class="cv-item-row" :class="{ 'cv-dim': !item.resumeIncluded }">
-                                  <span class="ui-drag-handle cv-drag-sm" aria-hidden="true">&#x2630;</span>
-                                  <textarea x-model="item.content" rows="2" @input="autoSaveItem(item)" aria-label="Bullet point"></textarea>
-                                  <label class="cv-item-resume" title="Include in Resume">
-                                    <span class="cv-badge-sm">R</span>
-                                    <input type="checkbox" :checked="item.resumeIncluded" @change="toggleResumeItem(item)">
-                                  </label>
-                                  <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeItem(entry, item.id)">x</button>
-                                </div>
-                              </template>
-                              <button class="cv-btn cv-btn-sm" @click="addItem(entry)">+ Add Bullet</button>
-                            </div>
-                          </div>
-                        </template>
-                        <div class="cv-add-row"><button class="cv-btn" @click="addEntry(sec)">+ Add Entry</button></div>
-                      </div>
-                    </template>
-
-                    <!-- cvskills -->
-                    <template x-if="sec._data.type === 'cvskills'">
-                      <div>
-                        <template x-for="entry in sec._data.entries" :key="entry.id">
-                          <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
-                            <div class="cv-entry-header">
-                              <strong x-text="entry.fields.category"></strong>
-                              <div class="cv-entry-actions">
-                                <label class="cv-resume-badge" title="Include in Resume">
-                                  <span class="cv-badge">R</span>
-                                  <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
-                                </label>
-                                <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
-                              </div>
-                            </div>
-                            <label>Category <input type="text" x-model="entry.fields.category" @input="autoSaveEntry(entry)"></label>
-                            <label>Skills <input type="text" x-model="entry.fields.skills" @input="autoSaveEntry(entry)"></label>
-                          </div>
-                        </template>
-                        <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button></div>
-                      </div>
-                    </template>
-
-                    <!-- cvhonors -->
-                    <template x-if="sec._data.type === 'cvhonors'">
-                      <div>
-                        <template x-for="entry in sec._data.entries" :key="entry.id">
-                          <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
-                            <div class="cv-entry-header">
-                              <strong x-text="entry.fields.award"></strong>
-                              <div class="cv-entry-actions">
-                                <label class="cv-resume-badge" title="Include in Resume">
-                                  <span class="cv-badge">R</span>
-                                  <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
-                                </label>
-                                <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
-                              </div>
-                            </div>
-                            <label>Award <input type="text" x-model="entry.fields.award" @input="autoSaveEntry(entry)"></label>
-                            <label>Issuer <input type="text" x-model="entry.fields.issuer" @input="autoSaveEntry(entry)"></label>
-                            <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
-                            <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
-                          </div>
-                        </template>
-                        <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button></div>
-                      </div>
-                    </template>
-
-                    <!-- cvreferences -->
-                    <template x-if="sec._data.type === 'cvreferences'">
-                      <div>
-                        <template x-for="entry in sec._data.entries" :key="entry.id">
-                          <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
-                            <div class="cv-entry-header">
-                              <strong x-text="entry.fields.name"></strong>
-                              <div class="cv-entry-actions">
-                                <label class="cv-resume-badge" title="Include in Resume">
-                                  <span class="cv-badge">R</span>
-                                  <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
-                                </label>
-                                <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
-                              </div>
-                            </div>
-                            <label>Name <input type="text" x-model="entry.fields.name" @input="autoSaveEntry(entry)"></label>
-                            <label>Relation <input type="text" x-model="entry.fields.relation" @input="autoSaveEntry(entry)"></label>
-                            <label>Phone <input type="text" x-model="entry.fields.phone" @input="autoSaveEntry(entry)"></label>
-                            <label>Email <input type="text" x-model="entry.fields.email" @input="autoSaveEntry(entry)"></label>
-                          </div>
-                        </template>
-                        <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Reference</button></div>
-                      </div>
-                    </template>
-
-                    <!-- cvparagraph -->
-                    <template x-if="sec._data.type === 'cvparagraph'">
-                      <div>
-                        <template x-if="sec._data.entries.length > 0">
-                          <div>
-                            <div class="cv-para-label">CV Text</div>
-                            <textarea x-model="sec._data.entries[0].fields.text" rows="4" class="cv-full-textarea" @input="autoSaveParagraph(sec)" aria-label="CV summary text"></textarea>
-                            <div class="cv-para-label">Resume Text <span class="cv-muted">(shorter version)</span></div>
-                            <textarea x-model="sec.resumeParagraphText" @input="autoSaveResumeParagraphText(sec)" rows="3" class="cv-full-textarea" aria-label="Resume summary text"></textarea>
-                          </div>
-                        </template>
-                      </div>
-                    </template>
-                  </div>
-                </template>
-                <template x-if="!sec._data">
-                  <p class="cv-muted">Loading&hellip;</p>
-                </template>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-
-      <!-- COVER LETTER TAB -->
-      <div x-show="activeTab === 'coverletter'" class="cv-tab-pane">
-        <div class="cv-coverletter">
-          <div class="cv-cl-heading">Recipient</div>
-          <label>Name <input type="text" x-model="coverletter.settings.recipientName" @input="autoSaveCoverletterSetting('recipientName')"></label>
-          <label>Address <textarea x-model="coverletter.settings.recipientAddress" @input="autoSaveCoverletterSetting('recipientAddress')" rows="3"></textarea></label>
-
-          <div class="cv-cl-heading">Letter Details</div>
-          <label>Title <input type="text" x-model="coverletter.settings.title" @input="autoSaveCoverletterSetting('title')"></label>
-          <label>Opening <input type="text" x-model="coverletter.settings.opening" @input="autoSaveCoverletterSetting('opening')"></label>
-          <label>Closing <input type="text" x-model="coverletter.settings.closing" @input="autoSaveCoverletterSetting('closing')"></label>
-          <label>Enclosure Label <input type="text" x-model="coverletter.settings.enclosureLabel" @input="autoSaveCoverletterSetting('enclosureLabel')"></label>
-          <label>Enclosure Content <input type="text" x-model="coverletter.settings.enclosureContent" @input="autoSaveCoverletterSetting('enclosureContent')"></label>
-
-          <div class="cv-cl-heading">Sections</div>
-          <template x-for="sec in coverletter.sections" :key="sec.id">
-            <div class="cv-entry">
-              <label>Title <input type="text" x-model="sec.title" @input="autoSaveCoverletterSection(sec)"></label>
-              <label>Body <textarea x-model="sec.body" @input="autoSaveCoverletterSection(sec)" rows="6" class="cv-full-textarea"></textarea></label>
-              <div class="cv-add-row"><button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeCoverletterSection(sec.id)">Remove Section</button></div>
-            </div>
-          </template>
-          <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addCoverletterSection()">+ Add Section</button></div>
-        </div>
-      </div>
-
-      <!-- VARIABLES TAB -->
-      <div x-show="activeTab === 'variables'" class="cv-tab-pane">
-        <template x-for="sec in sections" :key="sec.id">
-          <div class="cv-metrics-section">
-            <h3 x-text="sec.title" class="cv-metrics-section-title"></h3>
-            <div class="cv-metrics-header">
-              <button class="cv-btn cv-btn-xs" @click="addMetricGroup(sec.id)">+ Group</button>
-            </div>
-            <template x-for="[group, mets] in metricGroupsForSection(sec.id)" :key="group">
-              <div class="cv-metric-group">
-                <div class="cv-metric-group-header">
-                  <span class="cv-metric-group-name" x-text="group" @dblclick="renameMetricGroup(sec.id, group)" title="Double-click to rename"></span>
-                  <div class="cv-metric-group-actions">
-                    <button class="cv-btn cv-btn-xs" @click="addMetric(sec.id, group)">+ Var</button>
-                    <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeMetricGroup(sec.id, group)" title="Remove group">x</button>
-                  </div>
+          <div id="section-list" class="cv-section-list">
+            <template x-for="(sec, i) in docSections" :key="sec.id">
+              <div class="cv-section" :class="{ 'cv-disabled': !sec.enabled }" :data-sec-id="sec.id">
+                <div class="cv-section-header">
+                  <span class="ui-drag-handle" aria-hidden="true">&#x2630;</span>
+                  <strong x-text="sec.title" @dblclick="renameSection(sec.id)" title="Double-click to rename" style="cursor:pointer"></strong>
+                  <label class="cv-section-toggle" title="Include in document">
+                    <input type="checkbox" :checked="sec.enabled" @change="toggleSection(i)" :aria-label="'Enable ' + sec.title">
+                  </label>
+                  <button class="cv-btn cv-btn-sm" @click="toggleSectionExpand(sec)"
+                    x-text="sec._expanded ? 'Collapse' : 'Expand'"></button>
+                  <template x-if="serverConnected">
+                    <button class="cv-btn cv-btn-xs cv-btn-danger" @click="deleteSection(sec.id)" title="Delete section">&#x2715;</button>
+                  </template>
                 </div>
-                <div class="cv-metrics-grid">
-                  <template x-for="metric in mets" :key="metric.id">
-                    <div class="cv-metric-cell">
-                      <div class="cv-metric-cell-header">
-                        <span class="cv-metric-cmd" x-text="metric.command"></span>
-                        <button class="cv-btn-remove" @click="removeMetric(metric.id)" title="Remove">&times;</button>
-                      </div>
-                      <input type="text" x-model="metric.value" :placeholder="metric.label" @input="autoSaveMetric(metric)">
+
+                <!-- Expanded section content -->
+                <div x-show="sec._expanded && sec.enabled" class="cv-section-body">
+                  <template x-if="sec._data">
+                    <div>
+                      <!-- cventries -->
+                      <template x-if="sec._data.type === 'cventries'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div class="cv-entry" :class="{ 'cv-dim': !entry.resumeIncluded }">
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.organization || entry.fields.position"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
+                                  </label>
+                                  <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
+                                </div>
+                              </div>
+                              <label>Position <input type="text" x-model="entry.fields.position" @input="autoSaveEntry(entry)"></label>
+                              <label>Organization <input type="text" x-model="entry.fields.organization" @input="autoSaveEntry(entry)"></label>
+                              <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
+                              <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
+                              <div class="items-list" :data-entry-id="entry.id" :data-sec-id="sec.id">
+                                <strong>Bullet Points</strong>
+                                <template x-for="item in entry.items" :key="item.id">
+                                  <div class="cv-item-row" :class="{ 'cv-dim': !item.resumeIncluded }">
+                                    <span class="ui-drag-handle cv-drag-sm" aria-hidden="true">&#x2630;</span>
+                                    <textarea x-model="item.content" rows="2" @input="autoSaveItem(item)" aria-label="Bullet point"></textarea>
+                                    <label class="cv-item-resume" title="Include in Resume">
+                                      <span class="cv-badge-sm">R</span>
+                                      <input type="checkbox" :checked="item.resumeIncluded" @change="toggleResumeItem(item)">
+                                    </label>
+                                    <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeItem(entry, item.id)">x</button>
+                                  </div>
+                                </template>
+                                <button class="cv-btn cv-btn-sm" @click="addItem(entry)">+ Add Bullet</button>
+                              </div>
+                            </div>
+                          </template>
+                          <div class="cv-add-row"><button class="cv-btn" @click="addEntry(sec)">+ Add Entry</button></div>
+                        </div>
+                      </template>
+
+                      <!-- cvskills -->
+                      <template x-if="sec._data.type === 'cvskills'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.category"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
+                                  </label>
+                                  <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
+                                </div>
+                              </div>
+                              <label>Category <input type="text" x-model="entry.fields.category" @input="autoSaveEntry(entry)"></label>
+                              <label>Skills <input type="text" x-model="entry.fields.skills" @input="autoSaveEntry(entry)"></label>
+                            </div>
+                          </template>
+                          <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button></div>
+                        </div>
+                      </template>
+
+                      <!-- cvhonors -->
+                      <template x-if="sec._data.type === 'cvhonors'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.award"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
+                                  </label>
+                                  <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
+                                </div>
+                              </div>
+                              <label>Award <input type="text" x-model="entry.fields.award" @input="autoSaveEntry(entry)"></label>
+                              <label>Issuer <input type="text" x-model="entry.fields.issuer" @input="autoSaveEntry(entry)"></label>
+                              <label>Location <input type="text" x-model="entry.fields.location" @input="autoSaveEntry(entry)"></label>
+                              <label>Date <input type="text" x-model="entry.fields.date" @input="autoSaveEntry(entry)"></label>
+                            </div>
+                          </template>
+                          <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button></div>
+                        </div>
+                      </template>
+
+                      <!-- cvreferences -->
+                      <template x-if="sec._data.type === 'cvreferences'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div class="cv-entry cv-entry-compact" :class="{ 'cv-dim': !entry.resumeIncluded }">
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.name"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input type="checkbox" :checked="entry.resumeIncluded" @change="toggleResumeEntry(entry)">
+                                  </label>
+                                  <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeEntry(sec, entry.id)">Remove</button>
+                                </div>
+                              </div>
+                              <label>Name <input type="text" x-model="entry.fields.name" @input="autoSaveEntry(entry)"></label>
+                              <label>Relation <input type="text" x-model="entry.fields.relation" @input="autoSaveEntry(entry)"></label>
+                              <label>Phone <input type="text" x-model="entry.fields.phone" @input="autoSaveEntry(entry)"></label>
+                              <label>Email <input type="text" x-model="entry.fields.email" @input="autoSaveEntry(entry)"></label>
+                            </div>
+                          </template>
+                          <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addEntry(sec)">+ Add Reference</button></div>
+                        </div>
+                      </template>
+
+                      <!-- cvparagraph -->
+                      <template x-if="sec._data.type === 'cvparagraph'">
+                        <div>
+                          <template x-if="sec._data.entries.length > 0">
+                            <div>
+                              <div class="cv-para-label">CV Text</div>
+                              <textarea x-model="sec._data.entries[0].fields.text" rows="4" class="cv-full-textarea" @input="autoSaveParagraph(sec)" aria-label="CV summary text"></textarea>
+                              <div class="cv-para-label">Resume Text <span class="cv-muted">(shorter version)</span></div>
+                              <textarea x-model="sec.resumeParagraphText" @input="autoSaveResumeParagraphText(sec)" rows="3" class="cv-full-textarea" aria-label="Resume summary text"></textarea>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
                     </div>
+                  </template>
+                  <template x-if="!sec._data">
+                    <p class="cv-muted">Loading&hellip;</p>
                   </template>
                 </div>
               </div>
             </template>
-            <template x-if="metricsForSection(sec.id).length === 0">
-              <p class="cv-muted">No variables for this section.</p>
+          </div>
+        </div>
+
+        <!-- Right: Variables sidebar for expanded section -->
+        <aside class="cv-split-sidebar">
+          <div class="cv-sidebar-header">Variables</div>
+          <template x-if="expandedSectionId">
+            <div class="cv-sidebar-content">
+              <div class="cv-metrics-header">
+                <button class="cv-btn cv-btn-xs" @click="addMetricGroup(expandedSectionId)">+ Group</button>
+              </div>
+              <template x-for="[group, mets] in metricGroupsForSection(expandedSectionId)" :key="group">
+                <div class="cv-metric-group">
+                  <div class="cv-metric-group-header">
+                    <span class="cv-metric-group-name" x-text="group" @dblclick="renameMetricGroup(expandedSectionId, group)" title="Double-click to rename"></span>
+                    <div class="cv-metric-group-actions">
+                      <button class="cv-btn cv-btn-xs" @click="addMetric(expandedSectionId, group)">+ Var</button>
+                      <button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeMetricGroup(expandedSectionId, group)" title="Remove group">x</button>
+                    </div>
+                  </div>
+                  <div class="cv-metrics-grid">
+                    <template x-for="metric in mets" :key="metric.id">
+                      <div class="cv-metric-cell">
+                        <div class="cv-metric-cell-header">
+                          <span class="cv-metric-cmd" x-text="metric.command"></span>
+                          <button class="cv-btn-remove" @click="removeMetric(metric.id)" title="Remove">&times;</button>
+                        </div>
+                        <input type="text" x-model="metric.value" :placeholder="metric.label" @input="autoSaveMetric(metric)">
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <template x-if="metricsForSection(expandedSectionId).length === 0">
+                <p class="cv-muted" style="padding:8px 12px">No variables. Click "+ Group" to add.</p>
+              </template>
+            </div>
+          </template>
+          <template x-if="!expandedSectionId">
+            <p class="cv-muted" style="padding:12px">Expand a section to see its variables.</p>
+          </template>
+        </aside>
+      </div>
+
+      <!-- COVER LETTER TAB -->
+      <div x-show="activeTab === 'coverletter'" class="cv-tab-pane cv-split">
+        <!-- Left: Cover letter content -->
+        <div class="cv-split-main">
+          <div class="cv-coverletter">
+            <div class="cv-cl-heading">Recipient</div>
+            <label>Name <input type="text" x-model="coverletter.settings.recipientName" @input="autoSaveCoverletterSetting('recipientName')"></label>
+            <label>Address <textarea x-model="coverletter.settings.recipientAddress" @input="autoSaveCoverletterSetting('recipientAddress')" rows="3"></textarea></label>
+
+            <div class="cv-cl-heading">Letter Details</div>
+            <label>Title <input type="text" x-model="coverletter.settings.title" @input="autoSaveCoverletterSetting('title')"></label>
+            <label>Opening <input type="text" x-model="coverletter.settings.opening" @input="autoSaveCoverletterSetting('opening')"></label>
+            <label>Closing <input type="text" x-model="coverletter.settings.closing" @input="autoSaveCoverletterSetting('closing')"></label>
+            <label>Enclosure Label <input type="text" x-model="coverletter.settings.enclosureLabel" @input="autoSaveCoverletterSetting('enclosureLabel')"></label>
+            <label>Enclosure Content <input type="text" x-model="coverletter.settings.enclosureContent" @input="autoSaveCoverletterSetting('enclosureContent')"></label>
+
+            <div class="cv-cl-heading">Sections</div>
+            <template x-for="sec in coverletter.sections" :key="sec.id">
+              <div class="cv-entry">
+                <label>Title <input type="text" x-model="sec.title" @input="autoSaveCoverletterSection(sec)"></label>
+                <label>Body <textarea x-model="sec.body" @input="autoSaveCoverletterSection(sec)" rows="6" class="cv-full-textarea"></textarea></label>
+                <div class="cv-add-row"><button class="cv-btn cv-btn-xs cv-btn-danger" @click="removeCoverletterSection(sec.id)">Remove Section</button></div>
+              </div>
+            </template>
+            <div class="cv-add-row"><button class="cv-btn cv-btn-sm" @click="addCoverletterSection()">+ Add Section</button></div>
+          </div>
+        </div>
+
+        <!-- Right: All variables for reference -->
+        <aside class="cv-split-sidebar">
+          <div class="cv-sidebar-header">All Variables</div>
+          <div class="cv-sidebar-content">
+            <template x-for="sec in sections" :key="sec.id">
+              <div class="cv-metrics-section-compact">
+                <div class="cv-metrics-section-label" x-text="sec.title"></div>
+                <template x-for="metric in metricsForSection(sec.id)" :key="metric.id">
+                  <div class="cv-metric-ref">
+                    <code class="cv-metric-cmd-sm" x-text="'\\' + metric.command"></code>
+                    <span class="cv-metric-val-sm" x-text="metric.value || '(empty)'" :class="{ 'cv-dim': !metric.value }"></span>
+                  </div>
+                </template>
+                <template x-if="metricsForSection(sec.id).length === 0">
+                  <span class="cv-muted" style="font-size:10px;padding:0 8px">No variables</span>
+                </template>
+              </div>
             </template>
           </div>
-        </template>
-        <template x-if="sections.length === 0">
-          <p class="cv-muted">No sections yet.</p>
-        </template>
+        </aside>
       </div>
 
     </div>
@@ -631,10 +665,17 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   :global(.cv-tab-pane) {
     padding: 0;
+  }
+
+  :global(.cv-tab-pane.cv-split) {
+    flex: 1;
+    min-height: 0;
   }
 
   /* ── Profile section headings ── */
@@ -802,21 +843,87 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     outline: 2px solid #06c;
   }
 
-  /* ── Variables tab - metrics section grouping ── */
-  :global(.cv-metrics-section) {
-    border-bottom: 2px solid #000;
-    padding: 0;
+  /* ── Split panel layout ── */
+  :global(.cv-split) {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
-  :global(.cv-metrics-section-title) {
-    font-size: 12px;
+  :global(.cv-split-main) {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  :global(.cv-split-sidebar) {
+    width: 280px;
+    min-width: 280px;
+    border-left: 2px solid #000;
+    overflow-y: auto;
+    background: #f9f9f9;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-sidebar-header) {
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 8px 12px;
-    margin: 0;
     background: #eee;
+    border-bottom: 2px solid #000;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  :global(.cv-sidebar-content) {
+    padding: 0;
+  }
+
+  /* Section toolbar (add section button) */
+  :global(.cv-section-toolbar) {
+    padding: 8px 12px;
     border-bottom: 1px solid #ccc;
+    background: #f5f5f5;
+  }
+
+  /* Cover letter all-metrics reference sidebar */
+  :global(.cv-metrics-section-compact) {
+    border-bottom: 1px solid #ccc;
+    padding: 6px 0;
+  }
+
+  :global(.cv-metrics-section-label) {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 12px;
+    color: #666;
+  }
+
+  :global(.cv-metric-ref) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 12px;
+    font-size: 11px;
+  }
+
+  :global(.cv-metric-cmd-sm) {
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #333;
+  }
+
+  :global(.cv-metric-val-sm) {
+    font-size: 11px;
+    color: #000;
+    text-align: right;
   }
 
   :global(.cv-metrics-header) {
@@ -1237,6 +1344,18 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     :global(.cv-toolbar) {
       gap: 6px;
       padding: 4px 8px;
+    }
+
+    :global(.cv-split) {
+      flex-direction: column;
+    }
+
+    :global(.cv-split-sidebar) {
+      width: 100%;
+      min-width: 0;
+      max-height: 40vh;
+      border-left: none;
+      border-top: 2px solid #000;
     }
   }
 </style>

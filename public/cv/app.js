@@ -107,6 +107,7 @@ function app() {
     persons: [],
     activePersonId: null,
     activeTab: 'sections',
+    expandedSectionId: null,
     serverConnected: false,
 
     // Modal state
@@ -486,6 +487,82 @@ function app() {
         });
       }
       await this.loadMetrics();
+    },
+
+    // ------ Section CRUD ------
+
+    async createNewSection() {
+      if (!this.serverConnected) { this.flash('Connect to server first', 'error'); return; }
+      var result = await this.openModal('New Section', [
+        { name: 'title', label: 'Section Title (e.g. Projects)', value: '' },
+        { name: 'type', label: 'Type: cventries, cvskills, cvhonors, cvreferences, cvparagraph', value: 'cventries' },
+      ]);
+      if (!result || !result.title.trim()) return;
+      var id = result.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      if (!id) return;
+      var type = result.type.trim();
+      var validTypes = ['cventries', 'cvskills', 'cvhonors', 'cvreferences', 'cvparagraph'];
+      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type. Use: ' + validTypes.join(', '), 'error'); return; }
+      var res = await fetch(API_BASE + '/api/sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, type: type, title: result.title.trim() }),
+      });
+      if (res.status === 409) { this.flash('Section ID already exists', 'error'); return; }
+      if (!res.ok) { this.flash('Failed to create section', 'error'); return; }
+      // Add to current document variant
+      var variant = this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc;
+      var currentSections = this.docSections.map(function(s) {
+        return { sectionId: s.id, enabled: s.enabled, resumeParagraphText: s.resumeParagraphText || null };
+      });
+      currentSections.push({ sectionId: id, enabled: true });
+      await fetch(API_BASE + '/api/documents/' + variant, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: currentSections }),
+      });
+      await this.loadSections();
+      await this.loadDocumentSections(variant);
+      this.flash('Created "' + result.title.trim() + '"', 'success');
+    },
+
+    async deleteSection(sectionId) {
+      if (!this.serverConnected) return;
+      var sec = this.sections.find(function(s) { return s.id === sectionId; });
+      if (!confirm('Delete section "' + (sec ? sec.title : sectionId) + '"? This will delete all entries, items, and variables in this section.')) return;
+      await fetch(API_BASE + '/api/sections/' + sectionId, { method: 'DELETE' });
+      if (this.expandedSectionId === sectionId) this.expandedSectionId = null;
+      await this.loadSections();
+      await this.loadDocumentSections(this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc);
+      await this.loadMetrics();
+      this.flash('Deleted', 'success');
+    },
+
+    async renameSection(sectionId) {
+      if (!this.serverConnected) return;
+      var sec = this.sections.find(function(s) { return s.id === sectionId; });
+      var result = await this.openModal('Rename Section', [
+        { name: 'title', label: 'New title', value: sec ? sec.title : '' },
+      ]);
+      if (!result || !result.title.trim()) return;
+      await fetch(API_BASE + '/api/sections/' + sectionId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: result.title.trim() }),
+      });
+      await this.loadSections();
+      await this.loadDocumentSections(this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc);
+      this.flash('Renamed', 'success');
+    },
+
+    toggleSectionExpand(sec) {
+      sec._expanded = !sec._expanded;
+      if (sec._expanded) {
+        this.expandedSectionId = sec.id;
+        this.loadSectionData(sec);
+      } else {
+        if (this.expandedSectionId === sec.id) this.expandedSectionId = null;
+      }
     },
 
     // ------ Sections + Document config ------
