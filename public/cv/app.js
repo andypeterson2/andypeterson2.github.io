@@ -105,6 +105,7 @@ function app() {
     isJaneDoe: false,
     sidebarMode: 'pdf',  // 'pdf' or 'variables'
     pdfUrl: '',
+    pdfZoom: 100,
     _nextTempId: -1,
     _documents: { cv: [], resume: [] },
 
