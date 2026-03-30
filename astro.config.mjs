@@ -10,19 +10,9 @@ export default defineConfig({
   integrations: [sitemap()],
   site: process.env.SITE_URL || 'https://andypeterson.dev',
   redirects: {
-    '/nonograms.html': '/projects',
-    '/nonograms': '/projects',
-    '/quantumvideo.html': '/projects',
-    '/quantumvideo': '/projects',
     '/underconstruction.html': '/',
     '/underconstruction': '/',
-    '/me': '/',
-    '/skills': '/',
-    '/uses': '/',
-    '/blog': '/',
-    '/Current-Resume.pdf': '/',
     '/resume': '/',
-    '/cover-letter': '/',
   },
   vite: {
     server: {

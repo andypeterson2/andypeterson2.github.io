@@ -8,8 +8,10 @@
         "/projects/latex-resume-editor/app/"
       ],
       "settings": {
-        "formFactor": "desktop",
-        "screenEmulation": { "disabled": true }
+        "formFactor": "mobile",
+        "throttling": {
+          "cpuSlowdownMultiplier": 4
+        }
       },
       "numberOfRuns": 1
     },
