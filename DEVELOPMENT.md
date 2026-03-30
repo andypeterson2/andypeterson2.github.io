@@ -36,7 +36,7 @@ Sub-projects with Flask or Express backends can be run two ways:
 | cv-editor             | 3000 | HTTP             |
 | nonogram              | 5055 | HTTP + WebSocket |
 | videochat-server      | 5050 | HTTP + WebSocket |
-| videochat-middleware   | 5002 | HTTP + Socket.IO |
+| videochat-client-a    | 5002 | HTTP + Socket.IO |
 
 ### Service URL Resolution
 
