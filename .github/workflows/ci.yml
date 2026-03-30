@@ -172,7 +172,8 @@ jobs:
       - name: Create required .env files
         run: |
           echo "ASTRO_PORT=8000" > .env
-          for pkg in packages/quantum-protein-kernel packages/nonogram packages/qvc packages/cv; do
+          echo "CLASSIFIER_PORT=5001" > packages/quantum-protein-kernel/.env
+          for pkg in packages/nonogram packages/qvc packages/cv; do
             touch "$pkg/.env"
           done
       - run: docker compose build classifier

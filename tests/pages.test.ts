@@ -252,7 +252,8 @@ describe('HTTP Security Headers', () => {
     expect(headers).toContain('Permissions-Policy');
   });
 
-  test('sets Content-Security-Policy', () => {
-    expect(headers).toContain('Content-Security-Policy');
+  test('CSP is enforced via Astro meta tags (not _headers)', () => {
+    // CSP moved from _headers to per-page <meta> tags via Astro security.csp
+    expect(headers).not.toContain('Content-Security-Policy');
   });
 });
