@@ -1129,11 +1129,7 @@ import { siteConfig } from '../../../config/site';
 </BaseLayout>
 
 <style>
-  /* ── Hide site chrome: title bar and breadcrumb bar ── */
-  :global(.site-window:has(.cv-app) > .title-bar) {
-    display: none !important;
-  }
-
+  /* ── Hide breadcrumb bar from site chrome ── */
   :global(.site-window:has(.cv-app) > .details-bar) {
     display: none !important;
   }
