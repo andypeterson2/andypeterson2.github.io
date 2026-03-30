@@ -1,0 +1,1942 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+// siteConfig imported to satisfy privacy-seo test; editor uses DB-driven personal data
+import { siteConfig } from '../../../config/site';
+---
+
+<BaseLayout
+  title="LaTeX Resume Editor"
+  breadcrumbs={[
+    { label: 'projects', href: '/projects/' },
+    { label: 'latex resume editor', href: '/projects/latex-resume-editor/' },
+    { label: 'app' },
+  ]}
+>
+  <meta slot="head" name="site-backend" content="cv" data-port="3001" data-label="CV Backend" />
+
+  <script is:inline src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script is:inline defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
+  ></script>
+
+  <div class="cv-app" x-data="app()" x-init="init()">
+    <!-- Modal overlay -->
+    <div class="cv-modal-overlay" x-show="modal.open" @click.self="cancelModal()" x-cloak>
+      <div class="standard-dialog cv-modal-dialog" role="dialog" aria-modal="true">
+        <div class="title-bar">
+          <span class="title" x-text="modal.title"></span>
+        </div>
+        <div class="modal-contents cv-modal-body">
+          <template x-for="(field, fi) in modal.fields" :key="fi">
+            <div class="field-row cv-modal-field">
+              <label x-text="field.label"></label>
+              <input
+                type="text"
+                x-model="field.value"
+                @keydown.enter="submitModal()"
+                :autofocus="fi === 0"
+              />
+            </div>
+          </template>
+          <div class="field-row cv-modal-actions">
+            <button class="btn btn-default" @click="submitModal()">OK</button>
+            <button class="btn" @click="cancelModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details bar -->
+    <div class="details-bar cv-details-bar">
+      <!-- Person selector -->
+      <div class="field-row cv-toolbar-group">
+        <select @change="handlePersonSelect($event.target.value)" aria-label="Active person">
+          <template x-for="p in (persons || [])" :key="p.id">
+            <option :value="p.id" x-text="p.name" :selected="p.id === activePersonId"></option>
+          </template>
+          <option value="__new__">[New]</option>
+        </select>
+      </div>
+      <!-- Save -->
+      <button class="btn" @click="save && save()" :disabled="!dirty" title="Save changes">
+        Save<span x-show="dirty">*</span>
+      </button>
+      <!-- Import / Export -->
+      <button class="btn" @click="exportData && exportData()" title="Export JSON"
+        >&#8593; Export</button
+      >
+      <button class="btn" @click="importData && importData()" title="Import JSON"
+        >&#8595; Import</button
+      >
+      <!-- Compile -->
+      <button
+        class="btn btn-default"
+        @click="compile()"
+        :disabled="compiling"
+        aria-label="Compile document to PDF"
+      >
+        <span x-show="!compiling">&#9654; Compile</span>
+        <span x-show="compiling">Compiling&hellip;</span>
+      </button>
+      <!-- Spacer -->
+      <div class="cv-toolbar-spacer"></div>
+      <!-- PDF variant radios -->
+      <div class="field-row cv-toolbar-group">
+        <input
+          type="radio"
+          id="pdf-cv"
+          name="pdfTab"
+          value="cv"
+          :checked="pdfTab === 'cv'"
+          @change="switchPdfTab('cv')"
+        />
+        <label for="pdf-cv">CV</label>
+      </div>
+      <div class="field-row cv-toolbar-group">
+        <input
+          type="radio"
+          id="pdf-resume"
+          name="pdfTab"
+          value="resume"
+          :checked="pdfTab === 'resume'"
+          @change="switchPdfTab('resume')"
+        />
+        <label for="pdf-resume">Resume</label>
+      </div>
+      <div class="field-row cv-toolbar-group">
+        <input
+          type="radio"
+          id="pdf-coverletter"
+          name="pdfTab"
+          value="coverletter"
+          :checked="pdfTab === 'coverletter'"
+          @change="switchPdfTab('coverletter')"
+        />
+        <label for="pdf-coverletter">Cover Letter</label>
+      </div>
+    </div>
+
+    <!-- Main layout: split pane -->
+    <main class="cv-split-layout" aria-label="CV Editor">
+      <!-- Left column: editor -->
+      <div class="cv-left-col">
+        <!-- Editor tab bar -->
+        <div class="details-bar cv-editor-tabs">
+          <button
+            class="btn cv-editor-tab"
+            :class="{ 'btn-default': editorTab === 'profile' }"
+            @click="editorTab = 'profile'">Profile</button
+          >
+          <button
+            class="btn cv-editor-tab"
+            :class="{ 'btn-default': editorTab === 'sections' }"
+            @click="editorTab = 'sections'">Sections</button
+          >
+          <button
+            class="btn cv-editor-tab"
+            :class="{ 'btn-default': editorTab === 'coverletter' }"
+            @click="editorTab = 'coverletter'">Cover Ltr</button
+          >
+          <button
+            class="btn cv-editor-tab"
+            :class="{ 'btn-default': editorTab === 'style' }"
+            @click="editorTab = 'style'">Style</button
+          >
+        </div>
+
+        <div
+          class="cv-alert"
+          x-show="statusMsg"
+          x-text="statusMsg"
+          :class="statusType"
+          role="status"
+        >
+        </div>
+
+        <!-- ===== Profile Tab ===== -->
+        <div x-show="editorTab === 'profile'" class="cv-tab-content">
+          <!-- Identity -->
+          <h2 class="cv-profile-heading">Identity</h2>
+          <div class="cv-profile-grid">
+            <label class="field-row cv-field"
+              >First Name <input
+                type="text"
+                x-model="personal.firstName"
+                @input="autoSavePersonal('firstName')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Last Name <input
+                type="text"
+                x-model="personal.lastName"
+                @input="autoSavePersonal('lastName')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Position <input
+                type="text"
+                x-model="personal.position"
+                @input="autoSavePersonal('position')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Address <input
+                type="text"
+                x-model="personal.address"
+                @input="autoSavePersonal('address')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Date of Birth <input
+                type="text"
+                x-model="personal.dateofbirth"
+                @input="autoSavePersonal('dateofbirth')"
+                placeholder="e.g. January 1, 1990"
+              /></label
+            >
+            <div class="cv-toggle-row">
+              <span>Photo</span>
+              <label class="cv-toggle">
+                <input
+                  type="checkbox"
+                  :checked="personal.photoEnabled === '1'"
+                  @change="togglePhoto()"
+                />
+                <span x-text="personal.photoEnabled === '1' ? 'On' : 'Off'"></span>
+              </label>
+            </div>
+            <template x-if="personal.photoEnabled === '1'">
+              <label class="field-row cv-field"
+                >Photo File <span class="cv-hint">(filename)</span>
+                <input
+                  type="text"
+                  x-model="personal.photoFile"
+                  @input="autoSavePersonal('photoFile')"
+                  placeholder="e.g. profile"
+                />
+              </label>
+            </template>
+            <label class="cv-form-field cv-profile-full"
+              >Quote <span class="cv-hint">(optional, shown in header)</span>
+              <input
+                type="text"
+                x-model="personal.quote"
+                @input="autoSavePersonal('quote')"
+                placeholder="Leave blank to hide"
+              />
+            </label>
+            <label class="cv-form-field cv-profile-full"
+              >Extra Info <span class="cv-hint">(custom text shown in header)</span>
+              <input
+                type="text"
+                x-model="personal.extrainfo"
+                @input="autoSavePersonal('extrainfo')"
+                placeholder="Leave blank to hide"
+              />
+            </label>
+          </div>
+
+          <!-- Contact -->
+          <h2 class="cv-profile-heading">Contact</h2>
+          <div class="cv-profile-grid">
+            <label class="field-row cv-field"
+              >Mobile <input
+                type="text"
+                x-model="personal.mobile"
+                @input="autoSavePersonal('mobile')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Email <input
+                type="text"
+                x-model="personal.email"
+                @input="autoSavePersonal('email')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >WhatsApp <input
+                type="text"
+                x-model="personal.whatsapp"
+                @input="autoSavePersonal('whatsapp')"
+                placeholder="Phone number"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Skype <input
+                type="text"
+                x-model="personal.skype"
+                @input="autoSavePersonal('skype')"
+                placeholder="Username"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Telegram <input
+                type="text"
+                x-model="personal.telegram"
+                @input="autoSavePersonal('telegram')"
+                placeholder="Username"
+              /></label
+            >
+          </div>
+
+          <!-- Web & Code -->
+          <h2 class="cv-profile-heading">Web &amp; Code</h2>
+          <div class="cv-profile-grid">
+            <label class="field-row cv-field"
+              >Homepage <input
+                type="text"
+                x-model="personal.homepage"
+                @input="autoSavePersonal('homepage')"
+                placeholder="yoursite.com"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >GitHub <input
+                type="text"
+                x-model="personal.github"
+                @input="autoSavePersonal('github')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >LinkedIn <input
+                type="text"
+                x-model="personal.linkedin"
+                @input="autoSavePersonal('linkedin')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >GitLab <input
+                type="text"
+                x-model="personal.gitlab"
+                @input="autoSavePersonal('gitlab')"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Bitbucket <input
+                type="text"
+                x-model="personal.bitbucket"
+                @input="autoSavePersonal('bitbucket')"
+              /></label
+            >
+          </div>
+
+          <!-- Social -->
+          <h2 class="cv-profile-heading">Social</h2>
+          <div class="cv-profile-grid">
+            <label class="field-row cv-field"
+              >Twitter <input
+                type="text"
+                x-model="personal.twitter"
+                @input="autoSavePersonal('twitter')"
+                placeholder="Handle"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >X <span class="cv-hint">(if different from Twitter)</span>
+              <input
+                type="text"
+                x-model="personal.x"
+                @input="autoSavePersonal('x')"
+                placeholder="Handle"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Reddit <input
+                type="text"
+                x-model="personal.reddit"
+                @input="autoSavePersonal('reddit')"
+                placeholder="Username"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Medium <input
+                type="text"
+                x-model="personal.medium"
+                @input="autoSavePersonal('medium')"
+                placeholder="Username"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Xing <input
+                type="text"
+                x-model="personal.xing"
+                @input="autoSavePersonal('xing')"
+                placeholder="Username"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Mastodon Instance <input
+                type="text"
+                x-model="personal.mastodonInstance"
+                @input="autoSavePersonal('mastodonInstance')"
+                placeholder="e.g. mastodon.social"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Mastodon Username <input
+                type="text"
+                x-model="personal.mastodonName"
+                @input="autoSavePersonal('mastodonName')"
+                placeholder="Username"
+              /></label
+            >
+          </div>
+
+          <!-- Academic -->
+          <h2 class="cv-profile-heading">Academic</h2>
+          <div class="cv-profile-grid">
+            <label class="field-row cv-field"
+              >ORCID <input
+                type="text"
+                x-model="personal.orcid"
+                @input="autoSavePersonal('orcid')"
+                placeholder="0000-0000-0000-0000"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >ResearchGate <input
+                type="text"
+                x-model="personal.researchgate"
+                @input="autoSavePersonal('researchgate')"
+                placeholder="Account"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Google Scholar ID <input
+                type="text"
+                x-model="personal.googlescholarId"
+                @input="autoSavePersonal('googlescholarId')"
+                placeholder="User ID"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Google Scholar Name <input
+                type="text"
+                x-model="personal.googlescholarName"
+                @input="autoSavePersonal('googlescholarName')"
+                placeholder="Display name"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Stack Overflow ID <input
+                type="text"
+                x-model="personal.stackoverflowId"
+                @input="autoSavePersonal('stackoverflowId')"
+                placeholder="User ID"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Stack Overflow Name <input
+                type="text"
+                x-model="personal.stackoverflowName"
+                @input="autoSavePersonal('stackoverflowName')"
+                placeholder="Display name"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >Kaggle <input
+                type="text"
+                x-model="personal.kaggle"
+                @input="autoSavePersonal('kaggle')"
+                placeholder="Username"
+              /></label
+            >
+            <label class="field-row cv-field"
+              >HackerRank <input
+                type="text"
+                x-model="personal.hackerrank"
+                @input="autoSavePersonal('hackerrank')"
+                placeholder="Username"
+              /></label
+            >
+          </div>
+        </div>
+
+        <!-- ===== Sections Tab ===== -->
+        <div x-show="editorTab === 'sections'" class="cv-tab-content">
+          <div class="cv-section-toolbar">
+            <button class="btn cv-btn-sm" @click="createNewSection()">+ Add Section</button>
+          </div>
+          <div id="section-list" class="cv-section-list">
+            <template x-for="(sec, i) in docSections" :key="sec.id">
+              <div
+                class="cv-section"
+                :class="{ 'cv-disabled': !sec.enabled }"
+                :data-sec-id="sec.id"
+              >
+                <div class="cv-section-header">
+                  <span class="ui-drag-handle" aria-hidden="true"></span>
+                  <strong x-text="sec.title"></strong>
+                  <label class="cv-section-toggle" title="Include in document">
+                    <input
+                      type="checkbox"
+                      :checked="sec.enabled"
+                      @change="toggleSection(i)"
+                      :aria-label="'Enable ' + sec.title"
+                    />
+                  </label>
+                  <button
+                    class="btn cv-btn-sm"
+                    @click="sec._expanded = !sec._expanded; if(sec._expanded) loadSectionData(sec)"
+                    x-text="sec._expanded ? 'Collapse' : 'Expand'"></button>
+                  <button
+                    class="btn cv-btn-xs"
+                    @click="renameSection(sec.id)"
+                    title="Rename section">Rename</button
+                  >
+                  <button
+                    class="btn cv-btn-xs cv-btn-danger"
+                    @click="deleteSection(sec.id)"
+                    title="Delete section">&times;</button
+                  >
+                </div>
+
+                <!-- Expanded editor -->
+                <div x-show="sec._expanded && sec.enabled" class="cv-section-body">
+                  <template x-if="sec._data">
+                    <div>
+                      <!-- Inline metrics for this section -->
+                      <div class="cv-inline-metrics">
+                        <div class="cv-inline-metrics-header">
+                          <h2 class="cv-inline-metrics-heading">Variables</h2>
+                          <button class="btn cv-btn-xs" @click="addMetricGroup(sec.id)"
+                            >+ Group</button
+                          >
+                        </div>
+                        <template
+                          x-for="[group, mets] in metricGroupsForSection(sec.id)"
+                          :key="group"
+                        >
+                          <div class="cv-metric-group">
+                            <div class="cv-metric-group-header">
+                              <span
+                                class="cv-metric-group-name"
+                                x-text="group"
+                                @dblclick="renameMetricGroup(sec.id, group)"
+                                title="Double-click to rename"></span>
+                              <div class="cv-metric-group-actions">
+                                <button class="btn cv-btn-xs" @click="addMetric(sec.id, group)"
+                                  >+ Var</button
+                                >
+                                <button
+                                  class="btn cv-btn-xs cv-btn-danger"
+                                  @click="removeMetricGroup(sec.id, group)"
+                                  title="Remove entire group">x</button
+                                >
+                              </div>
+                            </div>
+                            <div class="cv-metrics-list">
+                              <template x-for="metric in mets" :key="metric.id">
+                                <div class="cv-metric-row">
+                                  <div class="cv-metric-row-header">
+                                    <span class="cv-metric-cmd" x-text="metric.command"></span>
+                                    <button
+                                      class="btn cv-btn-xs cv-btn-danger"
+                                      @click="removeMetric(metric.id)"
+                                      title="Remove variable">&times;</button
+                                    >
+                                  </div>
+                                  <textarea
+                                    x-model="metric.value"
+                                    :placeholder="metric.label"
+                                    @input="autoSaveMetric(metric)"
+                                    rows="1"
+                                    class="cv-metric-textarea"></textarea>
+                                </div>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                        <template x-if="metricsForSection(sec.id).length === 0">
+                          <p class="cv-muted">
+                            No variables. Click "+ Group" to add a variable group.
+                          </p>
+                        </template>
+                      </div>
+
+                      <!-- cventries editor -->
+                      <template x-if="sec._data.type === 'cventries'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div class="cv-entry" :class="{ 'cv-dim': !entry.resumeIncluded }">
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.organization || entry.fields.position"
+                                ></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input
+                                      type="checkbox"
+                                      :checked="entry.resumeIncluded"
+                                      @change="toggleResumeEntry(entry)"
+                                      aria-label="Include entry in resume"
+                                    />
+                                  </label>
+                                  <button
+                                    class="btn cv-btn-xs cv-btn-danger"
+                                    @click="removeEntry(sec, entry.id)">Remove</button
+                                  >
+                                </div>
+                              </div>
+                              <label
+                                >Position <input
+                                  type="text"
+                                  x-model="entry.fields.position"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Organization <input
+                                  type="text"
+                                  x-model="entry.fields.organization"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Location <input
+                                  type="text"
+                                  x-model="entry.fields.location"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Date <input
+                                  type="text"
+                                  x-model="entry.fields.date"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <div
+                                class="items-list"
+                                :data-entry-id="entry.id"
+                                :data-sec-id="sec.id"
+                              >
+                                <strong>Bullet Points</strong>
+                                <template x-for="item in entry.items" :key="item.id">
+                                  <div
+                                    class="cv-item-row"
+                                    :class="{ 'cv-dim': !item.resumeIncluded }"
+                                  >
+                                    <span class="ui-drag-handle cv-drag-sm" aria-hidden="true"
+                                    ></span>
+                                    <textarea
+                                      x-model="item.content"
+                                      rows="2"
+                                      @input="autoSaveItem(item)"
+                                      :aria-label="'Bullet point'"></textarea>
+                                    <label class="cv-item-resume" title="Include in Resume">
+                                      <span class="cv-badge-sm">R</span>
+                                      <input
+                                        type="checkbox"
+                                        :checked="item.resumeIncluded"
+                                        @change="toggleResumeItem(item)"
+                                      />
+                                    </label>
+                                    <button
+                                      class="btn cv-btn-xs cv-btn-danger"
+                                      @click="removeItem(entry, item.id)"
+                                      aria-label="Remove bullet point">x</button
+                                    >
+                                  </div>
+                                </template>
+                                <button class="btn cv-btn-sm" @click="addItem(entry)"
+                                  >+ Add Bullet</button
+                                >
+                              </div>
+                            </div>
+                          </template>
+                          <div class="cv-add-row">
+                            <button class="btn" @click="addEntry(sec)">+ Add Entry</button>
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- cvskills editor -->
+                      <template x-if="sec._data.type === 'cvskills'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div
+                              class="cv-entry cv-entry-compact"
+                              :class="{ 'cv-dim': !entry.resumeIncluded }"
+                            >
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.category"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input
+                                      type="checkbox"
+                                      :checked="entry.resumeIncluded"
+                                      @change="toggleResumeEntry(entry)"
+                                    />
+                                  </label>
+                                  <button
+                                    class="btn cv-btn-xs cv-btn-danger"
+                                    @click="removeEntry(sec, entry.id)">Remove</button
+                                  >
+                                </div>
+                              </div>
+                              <label
+                                >Category <input
+                                  type="text"
+                                  x-model="entry.fields.category"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Skills <input
+                                  type="text"
+                                  x-model="entry.fields.skills"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                            </div>
+                          </template>
+                          <div class="cv-add-row">
+                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button
+                            >
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- cvhonors editor -->
+                      <template x-if="sec._data.type === 'cvhonors'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div
+                              class="cv-entry cv-entry-compact"
+                              :class="{ 'cv-dim': !entry.resumeIncluded }"
+                            >
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.award"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input
+                                      type="checkbox"
+                                      :checked="entry.resumeIncluded"
+                                      @change="toggleResumeEntry(entry)"
+                                    />
+                                  </label>
+                                  <button
+                                    class="btn cv-btn-xs cv-btn-danger"
+                                    @click="removeEntry(sec, entry.id)">Remove</button
+                                  >
+                                </div>
+                              </div>
+                              <label
+                                >Award <input
+                                  type="text"
+                                  x-model="entry.fields.award"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Issuer <input
+                                  type="text"
+                                  x-model="entry.fields.issuer"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Location <input
+                                  type="text"
+                                  x-model="entry.fields.location"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Date <input
+                                  type="text"
+                                  x-model="entry.fields.date"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                            </div>
+                          </template>
+                          <div class="cv-add-row">
+                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button
+                            >
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- cvreferences editor -->
+                      <template x-if="sec._data.type === 'cvreferences'">
+                        <div>
+                          <template x-for="entry in sec._data.entries" :key="entry.id">
+                            <div
+                              class="cv-entry cv-entry-compact"
+                              :class="{ 'cv-dim': !entry.resumeIncluded }"
+                            >
+                              <div class="cv-entry-header">
+                                <strong x-text="entry.fields.name"></strong>
+                                <div class="cv-entry-actions">
+                                  <label class="cv-resume-badge" title="Include in Resume">
+                                    <span class="cv-badge">R</span>
+                                    <input
+                                      type="checkbox"
+                                      :checked="entry.resumeIncluded"
+                                      @change="toggleResumeEntry(entry)"
+                                    />
+                                  </label>
+                                  <button
+                                    class="btn cv-btn-xs cv-btn-danger"
+                                    @click="removeEntry(sec, entry.id)">Remove</button
+                                  >
+                                </div>
+                              </div>
+                              <label
+                                >Name <input
+                                  type="text"
+                                  x-model="entry.fields.name"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Relation <input
+                                  type="text"
+                                  x-model="entry.fields.relation"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Phone <input
+                                  type="text"
+                                  x-model="entry.fields.phone"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                              <label
+                                >Email <input
+                                  type="text"
+                                  x-model="entry.fields.email"
+                                  @input="autoSaveEntry(entry)"
+                                /></label
+                              >
+                            </div>
+                          </template>
+                          <div class="cv-add-row">
+                            <button class="btn cv-btn-sm" @click="addEntry(sec)"
+                              >+ Add Reference</button
+                            >
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- cvparagraph editor -->
+                      <template x-if="sec._data.type === 'cvparagraph'">
+                        <div>
+                          <template x-if="sec._data.entries.length > 0">
+                            <div>
+                              <div class="cv-para-label">CV Text</div>
+                              <textarea
+                                x-model="sec._data.entries[0].fields.text"
+                                rows="4"
+                                class="cv-full-textarea"
+                                @input="autoSaveParagraph(sec)"
+                                aria-label="CV summary text"></textarea>
+                              <div class="cv-para-label">
+                                Resume Text <span class="cv-muted-inline"
+                                  >(shorter version for resume)</span
+                                >
+                              </div>
+                              <textarea
+                                x-model="sec.resumeParagraphText"
+                                @input="autoSaveResumeParagraphText(sec)"
+                                rows="3"
+                                class="cv-full-textarea"
+                                aria-label="Resume summary text"></textarea>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="!sec._data">
+                    <p class="cv-muted">Loading...</p>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- ===== Cover Letter Tab ===== -->
+        <div x-show="editorTab === 'coverletter'" class="cv-tab-content">
+          <div class="cv-coverletter">
+            <div class="cv-cl-heading">Recipient</div>
+            <label
+              >Name <input
+                type="text"
+                x-model="coverletter.settings.recipientName"
+                @input="autoSaveCoverletterSetting('recipientName')"
+              /></label
+            >
+            <label
+              >Address <textarea
+                x-model="coverletter.settings.recipientAddress"
+                @input="autoSaveCoverletterSetting('recipientAddress')"
+                rows="3"></textarea></label
+            >
+
+            <div class="cv-cl-heading">Letter Details</div>
+            <label
+              >Title <input
+                type="text"
+                x-model="coverletter.settings.title"
+                @input="autoSaveCoverletterSetting('title')"
+              /></label
+            >
+            <label
+              >Opening <input
+                type="text"
+                x-model="coverletter.settings.opening"
+                @input="autoSaveCoverletterSetting('opening')"
+              /></label
+            >
+            <label
+              >Closing <input
+                type="text"
+                x-model="coverletter.settings.closing"
+                @input="autoSaveCoverletterSetting('closing')"
+              /></label
+            >
+            <label
+              >Enclosure Label <input
+                type="text"
+                x-model="coverletter.settings.enclosureLabel"
+                @input="autoSaveCoverletterSetting('enclosureLabel')"
+              /></label
+            >
+            <label
+              >Enclosure Content <input
+                type="text"
+                x-model="coverletter.settings.enclosureContent"
+                @input="autoSaveCoverletterSetting('enclosureContent')"
+              /></label
+            >
+
+            <div class="cv-cl-heading">Sections</div>
+            <template x-for="sec in coverletter.sections" :key="sec.id">
+              <div class="cv-entry">
+                <label
+                  >Section Title <input
+                    type="text"
+                    x-model="sec.title"
+                    @input="autoSaveCoverletterSection(sec)"
+                  /></label
+                >
+                <label
+                  >Body <textarea
+                    x-model="sec.body"
+                    @input="autoSaveCoverletterSection(sec)"
+                    rows="6"
+                    class="cv-full-textarea"></textarea></label
+                >
+                <div class="cv-add-row">
+                  <button
+                    class="btn cv-btn-xs cv-btn-danger"
+                    @click="removeCoverletterSection(sec.id)">Remove Section</button
+                  >
+                </div>
+              </div>
+            </template>
+            <div class="cv-add-row">
+              <button class="btn cv-btn-sm" @click="addCoverletterSection()">+ Add Section</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Style Tab ===== -->
+        <div x-show="editorTab === 'style'" class="cv-tab-content">
+          <div class="cv-style-editor">
+            <div class="cv-style-heading">Page</div>
+            <label class="field-row cv-field"
+              >Page Size
+              <select x-model="style.pageSize" @change="autoSaveStyle('pageSize')">
+                <option value="letterpaper">Letter</option>
+                <option value="a4paper">A4</option>
+              </select>
+            </label>
+            <label class="field-row cv-field"
+              >Font Size
+              <select x-model="style.fontSize" @change="autoSaveStyle('fontSize')">
+                <option value="10pt">10pt</option>
+                <option value="11pt">11pt</option>
+                <option value="12pt">12pt</option>
+              </select>
+            </label>
+
+            <div class="cv-style-heading">Typography</div>
+            <label class="field-row cv-field"
+              >Font Family
+              <select x-model="style.fontFamily" @change="autoSaveStyle('fontFamily')">
+                <option value="source-sans-3">Source Sans 3</option>
+                <option value="roboto">Roboto</option>
+              </select>
+            </label>
+
+            <div class="cv-style-heading">Accent Color</div>
+            <div class="cv-color-swatches">
+              <button
+                class="cv-color-swatch"
+                style="background:#00A388"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-emerald' }"
+                @click="setAccentColor('awesome-emerald')"
+                title="Emerald"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#0395DE"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-skyblue' }"
+                @click="setAccentColor('awesome-skyblue')"
+                title="Sky Blue"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#DC3522"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-red' }"
+                @click="setAccentColor('awesome-red')"
+                title="Red"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#EF4089"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-pink' }"
+                @click="setAccentColor('awesome-pink')"
+                title="Pink"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#FF6138"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-orange' }"
+                @click="setAccentColor('awesome-orange')"
+                title="Orange"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#27AE60"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-nephritis' }"
+                @click="setAccentColor('awesome-nephritis')"
+                title="Nephritis"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#95A5A6"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-concrete' }"
+                @click="setAccentColor('awesome-concrete')"
+                title="Concrete"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#131A28"
+                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-darknight' }"
+                @click="setAccentColor('awesome-darknight')"
+                title="Dark Night"></button>
+              <button
+                class="cv-color-swatch"
+                style="background:#B21F5C"
+                :class="{ 'cv-swatch-active': style.accentColor === 'spinel' }"
+                @click="setAccentColor('spinel')"
+                title="Spinel"></button>
+            </div>
+            <label class="field-row cv-field"
+              >Custom Color
+              <div class="cv-custom-color-row">
+                <input
+                  type="text"
+                  x-model="style.customHex"
+                  @input="applyCustomColor()"
+                  placeholder="#B21F5C"
+                  maxlength="7"
+                />
+                <span class="cv-color-preview" :style="'background:' + (style.customHex || '#000')"
+                ></span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resize handle -->
+      <div class="ui-resize-handle ui-resize-v" id="resize-handle"></div>
+
+      <!-- Right column: PDF preview -->
+      <div class="cv-right-col">
+        <iframe :src="pdfUrl" class="cv-pdf-iframe" title="Compiled PDF preview"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script is:inline>
+    var API_BASE = 'http://localhost:3001';
+    (function () {
+      var _cvWidget = null;
+
+      document.addEventListener('navbar:connect-ready', function (e) {
+        if (e.detail.service !== 'cv') return;
+        _cvWidget = e.detail.widget;
+      });
+
+      document.addEventListener('navbar:connect', function (e) {
+        if (e.detail.service !== 'cv') return;
+        if (_cvWidget) _cvWidget.setStatus('connecting');
+        var url = e.detail.url;
+        fetch(url + '/api/health')
+          .then(function (r) {
+            if (!r.ok) throw new Error('Health check failed');
+            return r.json();
+          })
+          .then(function (data) {
+            if (data.status !== 'ok' || data.service !== 'cv')
+              throw new Error('Bad health response');
+            API_BASE = url;
+            var el = document.querySelector('.cv-app');
+            if (el && el._x_dataStack) {
+              return el._x_dataStack[0].init();
+            }
+          })
+          .then(function () {
+            if (_cvWidget) _cvWidget.setStatus('connected');
+          })
+          .catch(function (err) {
+            console.error('CV backend connect failed:', err);
+            if (_cvWidget) _cvWidget.setStatus('error');
+          });
+      });
+
+      document.addEventListener('navbar:disconnect', function (e) {
+        if (e.detail.service !== 'cv') return;
+        API_BASE = 'http://localhost:3001';
+        if (_cvWidget) _cvWidget.setStatus('disconnected');
+      });
+    })();
+  </script>
+  <script is:inline src="/cv/app.js"></script>
+  <script is:inline>
+    // Auto-resize textareas to fit content
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+    document.addEventListener('input', function (e) {
+      if (e.target && e.target.tagName === 'TEXTAREA') {
+        autoResize(e.target);
+      }
+    });
+    // Initial resize for all textareas after Alpine renders
+    document.addEventListener('alpine:initialized', function () {
+      setTimeout(function () {
+        document.querySelectorAll('.cv-app textarea').forEach(autoResize);
+      }, 200);
+    });
+    // Also resize on tab switch (content becomes visible)
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        if (m.type === 'attributes' && m.attributeName === 'style') {
+          var el = m.target;
+          if (el.querySelectorAll) {
+            el.querySelectorAll('textarea').forEach(autoResize);
+          }
+        }
+      });
+    }).observe(document.querySelector('.cv-app') || document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['style'],
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  /* ── Hide breadcrumb bar from site chrome ── */
+  :global(.site-window:has(.cv-app) > .details-bar) {
+    display: none !important;
+  }
+
+  /* ── Override site-pane for full-height app layout ── */
+  :global(.site-pane:has(.cv-app)) {
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+
+  /* ── Auto-sizing textareas ── */
+  :global(.cv-app textarea) {
+    overflow: hidden;
+    resize: vertical;
+    min-height: 28px;
+  }
+
+  /* ── App container ── */
+  :global(.cv-app) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  /* ── Details bar (system.css .details-bar) ── */
+  :global(.cv-details-bar) {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.cv-toolbar-spacer) {
+    flex: 1;
+  }
+
+  :global(.cv-toolbar-group) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  :global(.cv-toolbar-group select) {
+    max-width: 160px;
+  }
+
+  /* ── Editor tab bar (half-width details-bar with equal buttons) ── */
+  :global(.cv-editor-tabs) {
+    flex-shrink: 0;
+    display: flex;
+    gap: 0;
+    padding: 0 !important;
+  }
+
+  :global(.cv-editor-tab) {
+    flex: 1;
+    text-align: center;
+    border-right: none;
+  }
+
+  :global(.cv-editor-tab + .cv-editor-tab) {
+    border-left: none;
+  }
+
+  /* ── Split Layout ── */
+  :global(.cv-split-layout) {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  :global(.cv-left-col) {
+    display: flex;
+    flex-direction: column;
+    width: 450px;
+    min-width: 280px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  :global(.cv-left-col > .ui-tabs) {
+    flex-shrink: 0;
+  }
+
+  :global(.cv-tab-content) {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  :global(.cv-right-col) {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid #000;
+  }
+
+  :global(.cv-pdf-iframe) {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #888;
+  }
+
+  /* ── Status alert ── */
+  :global(.cv-alert) {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #e8f5e9;
+    border-bottom: 2px solid #000;
+    color: #060;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-alert.ui-alert-danger),
+  :global(.cv-alert-err) {
+    background: #fce4ec;
+    color: #c00;
+  }
+
+  /* ── Profile section headings ── */
+  :global(.cv-profile-heading) {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 16px;
+    margin: 0;
+    background: #eee;
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+  }
+
+  :global(.cv-profile-heading:first-child) {
+    border-top: none;
+  }
+
+  /* ── Profile grid - 2 column ── */
+  :global(.cv-profile-grid) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  :global(.cv-profile-full) {
+    grid-column: 1 / -1;
+  }
+
+  /* ── Form fields (extends system.css .field-row) ── */
+  :global(.cv-field) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee;
+  }
+
+  :global(.cv-field input[type='text']),
+  :global(.cv-field select) {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ── Toggle row ── */
+  :global(.cv-toggle-row) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee;
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  :global(.cv-toggle) {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #000;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ── Button size overrides (base .btn from system.css) ── */
+  :global(.cv-btn-sm) {
+    font-size: 12px;
+    padding: 2px 8px;
+  }
+
+  :global(.cv-btn-xs) {
+    font-size: 11px;
+    padding: 1px 6px;
+  }
+
+  :global(.cv-btn-danger) {
+    color: #c00 !important;
+    border-color: #c00 !important;
+  }
+
+  :global(.cv-btn-danger:hover) {
+    background: #c00 !important;
+    color: #fff !important;
+  }
+
+  :global(.cv-btn-remove) {
+    background: none;
+    border: none;
+    color: #767676;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+
+  :global(.cv-btn-remove:hover) {
+    color: #c00;
+  }
+
+  /* ── Sections ── */
+  :global(.cv-section-toolbar) {
+    padding: 6px 12px;
+    border-bottom: 2px solid #000;
+    background: #eee;
+  }
+
+  :global(.cv-section-list) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.cv-section) {
+    background: #fff;
+    border-bottom: 2px solid #000;
+  }
+
+  :global(.cv-disabled) {
+    opacity: 0.45;
+  }
+
+  :global(.cv-section-header) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+    font-size: 13px;
+  }
+
+  :global(.cv-section-toggle) {
+    margin-left: auto;
+    cursor: pointer;
+  }
+
+  :global(.cv-section-body) {
+    /* no padding -- children handle their own */
+  }
+
+  /* ── Drag handles ── */
+  :global(.ui-drag-handle) {
+    cursor: grab;
+    color: #767676;
+    font-size: 14px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-drag-sm) {
+    font-size: 12px;
+    padding: 4px 6px;
+    border-right: 1px solid #ccc;
+    background: #f5f5f5;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Sortable feedback */
+  :global(.ui-sortable-ghost) {
+    opacity: 0.3;
+  }
+
+  :global(.ui-sortable-chosen) {
+    outline: 2px solid #06c;
+  }
+
+  /* ── Inline Metrics ── */
+  :global(.cv-inline-metrics) {
+    background: #f5f5f5;
+    border-bottom: 2px solid #000;
+    padding: 8px 12px;
+  }
+
+  :global(.cv-inline-metrics-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  :global(.cv-inline-metrics-heading) {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  :global(.cv-metric-group) {
+    border: 2px solid #000;
+    margin-bottom: -2px;
+  }
+
+  :global(.cv-metric-group-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-bottom: 1px solid #ccc;
+    background: #eee;
+  }
+
+  :global(.cv-metric-group-name) {
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  :global(.cv-metric-group-name:hover) {
+    text-decoration: underline;
+  }
+
+  :global(.cv-metric-group-actions) {
+    display: flex;
+    gap: 4px;
+  }
+
+  :global(.cv-metrics-list) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.cv-metric-row) {
+    border-bottom: 1px solid #ccc;
+    padding: 4px 8px;
+  }
+
+  :global(.cv-metric-row-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  :global(.cv-metric-cmd) {
+    font-weight: 700;
+    font-family: monospace;
+    font-size: 11px;
+  }
+
+  :global(.cv-metric-textarea) {
+    width: 100%;
+    font-size: 12px;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 24px;
+  }
+
+  /* ── Entry cards ── */
+  :global(.cv-entry) {
+    background: #fff;
+    border-bottom: 2px solid #000;
+  }
+
+  :global(.cv-entry-compact) {
+    border-bottom-width: 1px;
+    border-color: #ccc;
+  }
+
+  :global(.cv-entry-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+    font-size: 13px;
+  }
+
+  :global(.cv-entry-actions) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :global(.cv-entry label) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #eee;
+  }
+
+  :global(.cv-entry input[type='text']),
+  :global(.cv-entry textarea),
+  :global(.cv-coverletter input[type='text']),
+  :global(.cv-coverletter textarea) {
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  /* ── Bullet points ── */
+  :global(.items-list) {
+    border-top: 2px solid #000;
+  }
+
+  :global(.items-list > strong) {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+    padding: 4px 12px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+  }
+
+  :global(.cv-item-row) {
+    display: flex;
+    align-items: flex-start;
+    border-bottom: 1px solid #ccc;
+  }
+
+  :global(.cv-item-row textarea) {
+    flex: 1;
+    border: none;
+    border-right: 1px solid #ccc;
+    padding: 5px 8px;
+    background: #fff;
+    color: #000;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    resize: vertical;
+  }
+
+  :global(.cv-item-row textarea:focus) {
+    outline: 2px solid #06c;
+    outline-offset: -2px;
+  }
+
+  :global(.items-list .cv-btn-sm) {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none !important;
+    border-top: 1px solid #ccc !important;
+    border-right: none !important;
+    padding: 4px 12px;
+    background: #f5f5f5;
+  }
+
+  :global(.cv-item-resume) {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    padding: 0 4px;
+    align-self: stretch;
+  }
+
+  /* ── Resume badges ── */
+  :global(.cv-resume-badge) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+
+  :global(.cv-badge) {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border: 2px solid #000;
+    background: #fff;
+    color: #000;
+    line-height: 1;
+  }
+
+  :global(.cv-badge-sm) {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 3px;
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+    line-height: 1.2;
+    margin-right: 2px;
+  }
+
+  :global(.cv-dim) {
+    opacity: 0.4;
+  }
+
+  :global(.cv-dim:hover) {
+    opacity: 0.7;
+  }
+
+  /* ── Add row ── */
+  :global(.cv-add-row) {
+    padding: 8px 12px;
+  }
+
+  /* ── Paragraph labels ── */
+  :global(.cv-para-label) {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #333;
+    padding: 5px 12px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+  }
+
+  :global(.cv-full-textarea) {
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    padding: 6px 12px;
+    background: #fff;
+    color: #000;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  :global(.cv-full-textarea:focus) {
+    outline: 2px solid #06c;
+    outline-offset: -2px;
+  }
+
+  /* ── Cover letter ── */
+  :global(.cv-coverletter label) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #eee;
+  }
+
+  :global(.cv-cl-heading) {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+    background: #eee;
+  }
+
+  :global(.cv-cl-heading:first-child) {
+    border-top: none;
+  }
+
+  /* ── Style Editor ── */
+  :global(.cv-style-editor) {
+    padding: 0;
+  }
+
+  :global(.cv-style-heading) {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-bottom: 2px solid #000;
+    border-top: 2px solid #000;
+    background: #eee;
+  }
+
+  :global(.cv-style-heading:first-child) {
+    border-top: none;
+  }
+
+  :global(.cv-style-editor .cv-field) {
+    border-right: none;
+  }
+
+  /* ── Color Swatches ── */
+  :global(.cv-color-swatches) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  :global(.cv-color-swatch) {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #000;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-color-swatch:hover) {
+    border-color: #333;
+    outline: 2px solid #333;
+    outline-offset: 1px;
+  }
+
+  :global(.cv-swatch-active) {
+    outline: 2px solid #000;
+    outline-offset: 1px;
+  }
+
+  :global(.cv-custom-color-row) {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  :global(.cv-custom-color-row input[type='text']) {
+    flex: 1;
+  }
+
+  :global(.cv-color-preview) {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #000;
+    flex-shrink: 0;
+  }
+
+  /* ── Misc ── */
+  :global(.cv-muted) {
+    color: #767676;
+    font-style: italic;
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+
+  :global(.cv-muted-inline) {
+    color: #767676;
+    font-style: italic;
+    font-size: 10px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  :global(.cv-hint) {
+    font-size: 10px;
+    color: #767676;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ── Checkbox ── */
+  :global(.cv-app input[type='checkbox']) {
+    appearance: auto;
+    width: auto;
+    height: auto;
+    cursor: pointer;
+  }
+
+  /* ── Modal (extends system.css .standard-dialog) ── */
+  :global(.cv-modal-overlay) {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 40%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+
+  :global(.cv-modal-dialog) {
+    min-width: 320px;
+    max-width: 90vw;
+  }
+
+  :global(.cv-modal-body) {
+    padding: 16px;
+  }
+
+  :global(.cv-modal-field) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  :global(.cv-modal-actions) {
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #ccc;
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  /* ── Responsive ── */
+  @media (width <= 768px) {
+    :global(.cv-profile-grid) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.cv-split-layout) {
+      flex-direction: column;
+    }
+
+    :global(.cv-left-col) {
+      width: 100% !important;
+      min-width: 0;
+      max-height: 50vh;
+    }
+
+    :global(.cv-right-col) {
+      min-width: 0;
+      border-left: none;
+      border-top: 2px solid #000;
+    }
+
+    :global(.ui-resize-handle) {
+      display: none;
+    }
+
+    :global(.cv-topbar) {
+      flex-wrap: wrap;
+      height: auto;
+      min-height: 37px;
+    }
+  }
+
+  @media (width <= 480px) {
+    :global(.cv-metrics-grid) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.cv-topbar-title) {
+      padding: 0 8px;
+      font-size: 13px;
+    }
+
+    :global(.cv-topbar-btn) {
+      padding: 0 8px;
+      font-size: 12px;
+    }
+  }
+</style>
