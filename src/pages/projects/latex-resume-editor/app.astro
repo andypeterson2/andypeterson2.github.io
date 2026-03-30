@@ -45,12 +45,7 @@ import { siteConfig } from '../../../config/site';
       </div>
     </div>
 
-    <!-- Title bar (system.css) -->
-    <div class="title-bar cv-title-bar">
-      <span class="title">CV Editor</span>
-    </div>
-
-    <!-- Details bar (system.css) -->
+    <!-- Details bar -->
     <div class="details-bar cv-details-bar">
       <!-- Person selector -->
       <div class="field-row cv-toolbar-group">
@@ -1098,9 +1093,51 @@ import { siteConfig } from '../../../config/site';
     })();
   </script>
   <script is:inline src="/cv/app.js"></script>
+  <script is:inline>
+    // Auto-resize textareas to fit content
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+    document.addEventListener('input', function (e) {
+      if (e.target && e.target.tagName === 'TEXTAREA') {
+        autoResize(e.target);
+      }
+    });
+    // Initial resize for all textareas after Alpine renders
+    document.addEventListener('alpine:initialized', function () {
+      setTimeout(function () {
+        document.querySelectorAll('.cv-app textarea').forEach(autoResize);
+      }, 200);
+    });
+    // Also resize on tab switch (content becomes visible)
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        if (m.type === 'attributes' && m.attributeName === 'style') {
+          var el = m.target;
+          if (el.querySelectorAll) {
+            el.querySelectorAll('textarea').forEach(autoResize);
+          }
+        }
+      });
+    }).observe(document.querySelector('.cv-app') || document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['style'],
+    });
+  </script>
 </BaseLayout>
 
 <style>
+  /* ── Hide site chrome: title bar and breadcrumb bar ── */
+  :global(.site-window:has(.cv-app) > .title-bar) {
+    display: none !important;
+  }
+
+  :global(.site-window:has(.cv-app) > .details-bar) {
+    display: none !important;
+  }
+
   /* ── Override site-pane for full-height app layout ── */
   :global(.site-pane:has(.cv-app)) {
     padding: 0 !important;
@@ -1115,6 +1152,13 @@ import { siteConfig } from '../../../config/site';
     display: none !important;
   }
 
+  /* ── Auto-sizing textareas ── */
+  :global(.cv-app textarea) {
+    overflow: hidden;
+    resize: vertical;
+    min-height: 28px;
+  }
+
   /* ── App container ── */
   :global(.cv-app) {
     display: flex;
@@ -1124,11 +1168,6 @@ import { siteConfig } from '../../../config/site';
     font-family: var(--font-ui);
     font-size: 13px;
     overflow: hidden;
-  }
-
-  /* ── Title bar (system.css .title-bar) ── */
-  :global(.cv-title-bar) {
-    flex-shrink: 0;
   }
 
   /* ── Details bar (system.css .details-bar) ── */
