@@ -1,404 +1,78 @@
-var JANE_DOE_DEFAULT = {
-  personal: {
-    firstName: 'Jane', lastName: 'Doe',
-    position: 'Senior Software Engineer',
-    address: '123 Main Street, Anytown, ST 12345',
-    mobile: '(555) 123-4567', email: 'jane.doe@example.com',
-    homepage: 'janedoe.dev',
-    github: 'janedoe', linkedin: 'janedoe', gitlab: 'janedoe',
-    twitter: 'janedoe', orcid: '0000-0001-2345-6789',
-    quote: 'Building the future, one commit at a time.',
-    photoEnabled: '0', photoFile: '',
-  },
-  sections: [
-    {
-      id: 'summary', type: 'cvparagraph', title: 'Summary',
-      entries: [{ id: 1, section_id: 'summary', sort_order: 0, resumeIncluded: true,
-        fields: { text: 'Experienced software engineer with over 6 years of experience building scalable web applications and distributed systems. Passionate about clean code, mentoring, and continuous learning.' },
-        items: [] }]
-    },
-    {
-      id: 'experience', type: 'cventries', title: 'Experience',
-      entries: [
-        { id: 2, section_id: 'experience', sort_order: 0, resumeIncluded: true,
-          fields: { position: 'Senior Software Engineer', organization: 'Acme Technologies', location: 'San Francisco, CA', date: '2022 -- Present' },
-          items: [
-            { id: 1, entry_id: 2, sort_order: 0, content: 'Led migration of monolithic architecture to microservices, reducing deployment time by 60%', resumeIncluded: true },
-            { id: 2, entry_id: 2, sort_order: 1, content: 'Mentored team of 4 junior engineers through code reviews and pair programming sessions', resumeIncluded: true },
-          ]
-        },
-        { id: 3, section_id: 'experience', sort_order: 1, resumeIncluded: true,
-          fields: { position: 'Software Engineer', organization: 'Widget Corp', location: 'Austin, TX', date: '2019 -- 2022' },
-          items: [
-            { id: 3, entry_id: 3, sort_order: 0, content: 'Designed and implemented RESTful API serving 10,000 requests per second', resumeIncluded: true },
-            { id: 4, entry_id: 3, sort_order: 1, content: 'Developed automated testing pipeline reducing QA cycle from 2 weeks to 3 days', resumeIncluded: true },
-          ]
-        }
-      ]
-    },
-    {
-      id: 'education', type: 'cventries', title: 'Education',
-      entries: [
-        { id: 4, section_id: 'education', sort_order: 0, resumeIncluded: true,
-          fields: { position: 'B.S. Computer Science', organization: 'State University', location: 'Anytown, ST', date: '2015 -- 2019' },
-          items: [
-            { id: 5, entry_id: 4, sort_order: 0, content: 'Graduated magna cum laude, GPA 3.8/4.0', resumeIncluded: true },
-          ]
-        }
-      ]
-    },
-    {
-      id: 'skills', type: 'cvskills', title: 'Skills',
-      entries: [
-        { id: 5, section_id: 'skills', sort_order: 0, resumeIncluded: true, fields: { category: 'Languages', skills: 'JavaScript, Python, Go, Rust, SQL' }, items: [] },
-        { id: 6, section_id: 'skills', sort_order: 1, resumeIncluded: true, fields: { category: 'Frameworks', skills: 'React, Node.js, Express, Django' }, items: [] },
-        { id: 7, section_id: 'skills', sort_order: 2, resumeIncluded: true, fields: { category: 'Tools', skills: 'Docker, Kubernetes, Git, CI/CD, AWS' }, items: [] },
-      ]
-    },
-  ],
-  metrics: [
-    { id: 1, command: 'projectCount', label: 'Projects', value: '15', groupName: 'General', sectionId: 'experience' },
-    { id: 2, command: 'yearsExperience', label: 'Years', value: '6', groupName: 'General', sectionId: 'experience' },
-  ],
-  documents: {
-    cv: [
-      { sectionId: 'summary', enabled: true, sortOrder: 0, resumeParagraphText: null },
-      { sectionId: 'experience', enabled: true, sortOrder: 1, resumeParagraphText: null },
-      { sectionId: 'education', enabled: true, sortOrder: 2, resumeParagraphText: null },
-      { sectionId: 'skills', enabled: true, sortOrder: 3, resumeParagraphText: null },
-    ],
-    resume: [
-      { sectionId: 'summary', enabled: true, sortOrder: 0, resumeParagraphText: 'Software engineer with 6 years of experience in web applications and distributed systems.' },
-      { sectionId: 'experience', enabled: true, sortOrder: 1, resumeParagraphText: null },
-      { sectionId: 'skills', enabled: true, sortOrder: 2, resumeParagraphText: null },
-    ]
-  },
-  coverletter: {
-    recipientName: 'Hiring Manager',
-    recipientAddress: '456 Corporate Ave, Business City, ST 67890',
-    title: 'Application for Software Engineer Position',
-    opening: 'Dear Hiring Manager,',
-    closing: 'Sincerely,',
-    enclosureLabel: 'Attached',
-    enclosureContent: 'Resume, Portfolio',
-    sections: [
-      { id: 1, sort_order: 0, title: 'Introduction', body: 'I am writing to express my interest in the Software Engineer position at your company. With over six years of experience in building scalable systems, I am confident I would be a strong addition to your team.' },
-      { id: 2, sort_order: 1, title: 'Experience', body: 'In my current role at Acme Technologies, I have led the migration of a monolithic application to a microservices architecture, resulting in significant improvements in deployment speed and system reliability.' },
-    ]
-  }
-};
-
 function app() {
   return {
-    activeDoc: 'cv',
+    editorTab: 'sections',
+    pdfTab: 'cv',
     sections: [],
     docSections: [],
     personal: {},
     metrics: [],
     coverletter: { settings: {}, sections: [] },
+    style: {
+      pageSize: 'letterpaper',
+      fontSize: '11pt',
+      accentColor: 'spinel',
+      fontFamily: 'source-sans-3',
+      customHex: '',
+    },
     compiling: false,
+    compiledPdfs: { resume: '', cv: '', coverletter: '' },
     statusMsg: '',
     statusType: '',
+    pdfUrl: '',
     sortable: null,
     darkMode: true,
     dirty: false,
+    serverConnected: false,
     isJaneDoe: false,
-    sidebarMode: 'pdf',  // 'pdf' or 'variables'
-    pdfUrl: '',
-    pdfZoom: 100,
-    _nextTempId: -1,
-    _documents: { cv: [], resume: [] },
-
-    // New state
     persons: [],
     activePersonId: null,
-    activeTab: 'sections',
-    expandedSectionId: null,
-    serverConnected: false,
+    _saveTimers: {},
 
     // Modal state
     modal: { open: false, title: '', fields: [], resolve: null },
 
     async init() {
       this.darkMode = document.documentElement.dataset.theme !== 'light';
-      // Always start offline with Jane Doe — user must click Connect for server data
-      this.serverConnected = false;
-      this.loadFromJson(JANE_DOE_DEFAULT);
-      this.isJaneDoe = true;
-      this.dirty = false;
-      this.updatePdfUrl();
-      this.$nextTick(function() { this.initSortable(); }.bind(this));
-    },
+      await Promise.all([
+        this.loadPersonal(),
+        this.loadMetrics(),
+        this.loadSections(),
+        this.loadDocumentSections('cv'),
+        this.loadCoverletter(),
+        this.loadStyle(),
+        this.loadPersons(),
+      ]);
+      this.serverConnected = true;
 
-    async connectToServer() {
-      try {
-        await this.loadPersons();
-        this.serverConnected = true;
-        var person = this.persons.find(function(p) { return p.id === this.activePersonId; }.bind(this));
-        if (person && person.name === 'Jane Doe') {
-          this.loadFromJson(JANE_DOE_DEFAULT);
-          this.isJaneDoe = true;
-        } else {
-          var exp = await fetch(API_BASE + '/api/export');
-          if (!exp.ok) throw new Error('Failed to load');
-          this.loadFromJson(await exp.json());
-          this.isJaneDoe = false;
+      // Init resize handle
+      this.$nextTick(() => {
+        var handle = document.getElementById('resize-handle');
+        var left = handle && handle.previousElementSibling;
+        var container = handle && handle.parentElement;
+        if (handle && left && container && window.UIKit && UIKit.initResize) {
+          UIKit.initResize(handle, left, container, { min: 280, max: 800, default: 450, key: 'cv-editor-split' });
         }
-        this.dirty = false;
-        this.updatePdfUrl();
-        this.$nextTick(function() { this.initSortable(); }.bind(this));
-      } catch (e) {
-        this.serverConnected = false;
-        throw e;
-      }
+      });
     },
 
     // ------ Theme ------
-
-    updatePdfUrl() {
-      if (this.isJaneDoe) {
-        var variant = this.activeDoc === 'coverletter' ? 'cv' : this.activeDoc;
-        this.pdfUrl = '/cv/jane-doe-' + variant + '.pdf';
-      } else if (this.serverConnected) {
-        this.pdfUrl = API_BASE + '/api/pdf/' + this.activeDoc + '?t=' + Date.now();
-      } else {
-        this.pdfUrl = '';
-      }
-    },
 
     toggleTheme() {
       this.darkMode = !this.darkMode;
       if (window.__setTheme) window.__setTheme(this.darkMode ? 'dark' : 'light');
     },
 
-    // ------ Persons ------
-
-    async loadPersons() {
-      var res = await fetch(API_BASE + '/api/persons');
-      if (!res.ok) throw new Error('Failed to load persons');
-      var data = await res.json();
-      this.persons = data.persons;
-      this.activePersonId = data.activePersonId;
-    },
-
-    async switchPerson(id) {
-      if (id === this.activePersonId) return;
-      if (this.dirty && !confirm('You have unsaved changes. Switch anyway?')) return;
-      var res = await fetch(API_BASE + '/api/persons/' + id + '/switch', { method: 'POST' });
-      if (!res.ok) { this.flash('Failed to switch', 'error'); return; }
-      this.activePersonId = id;
-      var person = this.persons.find(function(p) { return p.id === id; });
-      if (person && person.name === 'Jane Doe') {
-        this.loadFromJson(JANE_DOE_DEFAULT);
-        this.isJaneDoe = true;
-      } else {
-        var exp = await fetch(API_BASE + '/api/export');
-        if (exp.ok) this.loadFromJson(await exp.json());
-        this.isJaneDoe = false;
-      }
-      this.dirty = false;
-      this.$nextTick(function() { this.initSortable(); }.bind(this));
-      this.flash('Switched to ' + (person ? person.name : ''), 'success');
-    },
-
-    async createPerson() {
-      var result = await this.openModal('New Person', [
-        { name: 'name', label: 'Name', value: '' },
-      ]);
-      if (!result || !result.name.trim()) return;
-      var res = await fetch(API_BASE + '/api/persons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: result.name.trim() }),
-      });
-      if (res.status === 409) { this.flash('Name already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to create', 'error'); return; }
-      await this.loadPersons();
-      this.flash('Created ' + result.name.trim(), 'success');
-    },
-
-    async deletePerson(id) {
-      if (id === this.activePersonId) { this.flash('Cannot delete active person', 'error'); return; }
-      var person = this.persons.find(function(p) { return p.id === id; });
-      if (!confirm('Delete "' + (person ? person.name : '') + '"?')) return;
-      await fetch(API_BASE + '/api/persons/' + id, { method: 'DELETE' });
-      await this.loadPersons();
-      this.flash('Deleted', 'success');
-    },
-
-    async renamePerson(id) {
-      var person = this.persons.find(function(p) { return p.id === id; });
-      var result = await this.openModal('Rename Person', [
-        { name: 'name', label: 'Name', value: person ? person.name : '' },
-      ]);
-      if (!result || !result.name.trim()) return;
-      var res = await fetch(API_BASE + '/api/persons/' + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: result.name.trim() }),
-      });
-      if (res.status === 409) { this.flash('Name already exists', 'error'); return; }
-      await this.loadPersons();
-    },
-
-    // ------ Import / Export ------
-
-    async exportData() {
-      var data = this.toExportJson();
-      var person = this.persons.find(function(p) { return p.id === this.activePersonId; }.bind(this));
-      var name = person ? person.name.toLowerCase().replace(/\s+/g, '-') : (this.isJaneDoe ? 'jane-doe' : 'export');
-      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name + '.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      this.flash('Exported', 'success');
-    },
-
-    importData() {
-      var self = this;
-      var input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = function() {
-        var file = input.files[0];
-        if (!file) return;
-        file.text().then(function(text) {
-          try {
-            var data = JSON.parse(text);
-            self.loadFromJson(data);
-            self.dirty = true;
-            self.$nextTick(function() { self.initSortable(); });
-            self.flash('Imported (not yet saved)', 'success');
-          } catch (e) {
-            self.flash('Invalid JSON file', 'error');
-          }
-        });
-      };
-      input.click();
-    },
-
-    // ------ Data loading ------
-
-    loadFromJson(data) {
-      this.personal = Object.assign({}, data.personal || {});
-      this.metrics = (data.metrics || []).map(function(m) { return Object.assign({}, m); });
-
-      this.sections = (data.sections || []).map(function(s) {
-        return {
-          id: s.id, type: s.type, title: s.title,
-          entries: (s.entries || []).map(function(e) {
-            return {
-              id: e.id, fields: Object.assign({}, e.fields),
-              resumeIncluded: e.resumeIncluded !== false,
-              items: (e.items || []).map(function(i) {
-                return { id: i.id, content: i.content, resumeIncluded: i.resumeIncluded !== false };
-              })
-            };
-          })
-        };
-      });
-
-      this._documents = Object.assign({}, data.documents || { cv: [], resume: [] });
-
-      var variantDoc = (this._documents[this.activeDoc] || this._documents.cv || []);
-      this.docSections = [];
-      var self = this;
-      for (var i = 0; i < variantDoc.length; i++) {
-        var ds = variantDoc[i];
-        var sec = self.sections.find(function(s) { return s.id === ds.sectionId; });
-        if (!sec) continue;
-        self.docSections.push({
-          id: sec.id, type: sec.type, title: sec.title,
-          enabled: ds.enabled !== false,
-          resumeParagraphText: ds.resumeParagraphText || null,
-          _expanded: false,
-          entries: sec.entries
-        });
-      }
-
-      var cl = data.coverletter || {};
-      var clSettings = {};
-      for (var key in cl) { if (key !== 'sections') clSettings[key] = cl[key]; }
-      this.coverletter = { settings: clSettings, sections: (cl.sections || []).map(function(s) { return Object.assign({}, s); }) };
-    },
-
-    // ------ Export to JSON ------
-
-    toExportJson() {
-      var personal = Object.assign({}, this.personal);
-
-      var sections = this.sections.map(function(s) {
-        return {
-          id: s.id, type: s.type, title: s.title,
-          entries: (s.entries || []).map(function(e, ei) {
-            return {
-              id: e.id, section_id: s.id, sort_order: ei,
-              fields: e.fields, resumeIncluded: e.resumeIncluded,
-              items: (e.items || []).map(function(it, ii) {
-                return { id: it.id, entry_id: e.id, sort_order: ii,
-                  content: it.content, resumeIncluded: it.resumeIncluded };
-              })
-            };
-          })
-        };
-      });
-
-      var metrics = this.metrics.map(function(m) {
-        return { id: m.id, command: m.command, label: m.label,
-          value: m.value, groupName: m.groupName, sectionId: m.sectionId };
-      });
-
-      // Update current variant's doc config from local docSections
-      var docs = {};
-      for (var v in this._documents) { docs[v] = this._documents[v]; }
-      var curVariant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
-      docs[curVariant] = this.docSections.map(function(s, i) {
-        return { sectionId: s.id, enabled: s.enabled,
-          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
-      });
-
-      var coverletter = Object.assign({}, this.coverletter.settings);
-      coverletter.sections = this.coverletter.sections;
-
-      return { personal: personal, sections: sections, metrics: metrics,
-        documents: docs, coverletter: coverletter };
-    },
-
-    // ------ Save ------
-
-    async save() {
-      if (!this.serverConnected || this.isJaneDoe) return;
-      var data = this.toExportJson();
-      var res = await fetch(API_BASE + '/api/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) { this.flash('Save failed', 'error'); return; }
-      var exp = await fetch(API_BASE + '/api/export');
-      if (exp.ok) {
-        this.loadFromJson(await exp.json());
-        this.$nextTick(function() { this.initSortable(); }.bind(this));
-      }
-      this.dirty = false;
-      this.flash('Saved', 'success');
-    },
-
     // ------ Modal system ------
 
     openModal(title, fields) {
-      var self = this;
-      return new Promise(function(resolve) {
-        self.modal = { open: true, title: title, fields: fields.map(function(f) { return { name: f.name, label: f.label, value: f.value || '' }; }), resolve: resolve };
+      return new Promise((resolve) => {
+        this.modal = { open: true, title, fields: fields.map(f => ({ ...f, value: f.value || '' })), resolve };
       });
     },
 
     submitModal() {
-      var result = {};
-      for (var i = 0; i < this.modal.fields.length; i++) {
-        var f = this.modal.fields[i];
+      const result = {};
+      for (const f of this.modal.fields) {
         result[f.name] = f.value;
       }
       this.modal.resolve(result);
@@ -410,297 +84,496 @@ function app() {
       this.modal = { open: false, title: '', fields: [], resolve: null };
     },
 
+    // ------ Debounced autosave ------
+
+    debounce(key, fn, delay = 500) {
+      clearTimeout(this._saveTimers[key]);
+      this._saveTimers[key] = setTimeout(fn, delay);
+    },
+
+    // ------ PDF tab switching ------
+
+    switchPdfTab(name) {
+      this.pdfTab = name;
+      if (this.compiledPdfs[name]) {
+        this.pdfUrl = this.compiledPdfs[name];
+      } else {
+        this.pdfUrl = '';
+      }
+    },
+
     // ------ Personal info ------
 
+    async loadPersonal() {
+      const res = await fetch(API_BASE + '/api/settings?prefix=personal');
+      if (!res.ok) return;
+      const data = await res.json();
+      const p = {};
+      for (const [key, value] of Object.entries(data)) {
+        p[key.replace('personal.', '')] = value;
+      }
+      this.personal = p;
+    },
+
+    autoSavePersonal(field) {
+      this.debounce('personal.' + field, async () => {
+        await fetch(API_BASE + '/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ['personal.' + field]: this.personal[field] || '' }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
     togglePhoto() {
-      this.personal.photoEnabled = this.personal.photoEnabled === '1' ? '0' : '1';
-      this.dirty = true;
+      const enabled = this.personal.photoEnabled === '1' ? '0' : '1';
+      this.personal.photoEnabled = enabled;
+      fetch(API_BASE + '/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'personal.photoEnabled': enabled }),
+      });
+    },
+
+    // ------ Style settings ------
+
+    async loadStyle() {
+      const res = await fetch(API_BASE + '/api/settings?prefix=style');
+      if (!res.ok) return;
+      const data = await res.json();
+      for (const [key, value] of Object.entries(data)) {
+        const field = key.replace('style.', '');
+        if (field in this.style) {
+          this.style[field] = value;
+        }
+      }
+    },
+
+    autoSaveStyle(field) {
+      this.debounce('style.' + field, async () => {
+        await fetch(API_BASE + '/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ['style.' + field]: this.style[field] || '' }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
+    setAccentColor(preset) {
+      this.style.accentColor = preset;
+      this.style.customHex = '';
+      this.autoSaveStyle('accentColor');
+    },
+
+    applyCustomColor() {
+      const hex = this.style.customHex.trim();
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        this.style.accentColor = hex;
+        this.autoSaveStyle('accentColor');
+      }
     },
 
     // ------ Metrics ------
 
+    async loadMetrics() {
+      const res = await fetch(API_BASE + '/api/metrics');
+      if (!res.ok) return;
+      this.metrics = await res.json();
+    },
+
     metricsForSection(sectionId) {
-      return this.metrics.filter(function(m) { return m.sectionId === sectionId; });
+      return this.metrics.filter(m => m.sectionId === sectionId);
     },
 
     metricGroupsForSection(sectionId) {
-      var metrics = this.metricsForSection(sectionId);
-      var groups = {};
-      for (var i = 0; i < metrics.length; i++) {
-        var m = metrics[i];
-        var g = m.groupName || 'Ungrouped';
+      const metrics = this.metricsForSection(sectionId);
+      const groups = {};
+      for (const m of metrics) {
+        const g = m.groupName || 'Ungrouped';
         if (!groups[g]) groups[g] = [];
         groups[g].push(m);
       }
       return Object.entries(groups);
     },
 
+    autoSaveMetric(metric) {
+      this.debounce('metric.' + metric.id, async () => {
+        await fetch(API_BASE + '/api/metrics/' + metric.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value: metric.value === '' ? null : metric.value }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
     async addMetric(sectionId, groupName) {
-      var result = await this.openModal('Add Variable', [
+      const result = await this.openModal('Add Variable', [
         { name: 'command', label: 'Command name (e.g., myMetric)', value: '' },
         { name: 'label', label: 'Placeholder label', value: '' },
       ]);
       if (!result || !result.command.trim()) return;
-      var cmd = result.command.trim();
-      if (this.metrics.some(function(m) { return m.command === cmd; })) {
-        this.flash('Command already exists', 'error'); return;
-      }
-      this.metrics.push({
-        id: this._nextTempId--, command: cmd,
-        label: result.label.trim() || cmd, value: null,
-        groupName: groupName, sectionId: sectionId
+      const res = await fetch(API_BASE + '/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: result.command.trim(),
+          label: result.label.trim() || result.command.trim(),
+          value: null,
+          groupName,
+          sectionId,
+        }),
       });
-      this.dirty = true;
+      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
+      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
+      await this.loadMetrics();
     },
 
-    removeMetric(metricId) {
-      this.metrics = this.metrics.filter(function(m) { return m.id !== metricId; });
-      this.dirty = true;
+    async removeMetric(metricId) {
+      await fetch(API_BASE + '/api/metrics/' + metricId, { method: 'DELETE' });
+      await this.loadMetrics();
     },
 
     async addMetricGroup(sectionId) {
-      var result = await this.openModal('New Variable Group', [
+      const result = await this.openModal('New Variable Group', [
         { name: 'groupName', label: 'Group name', value: '' },
         { name: 'command', label: 'First variable command name', value: '' },
         { name: 'label', label: 'Placeholder label', value: '' },
       ]);
       if (!result || !result.groupName.trim() || !result.command.trim()) return;
-      var cmd = result.command.trim();
-      if (this.metrics.some(function(m) { return m.command === cmd; })) {
-        this.flash('Command already exists', 'error'); return;
-      }
-      this.metrics.push({
-        id: this._nextTempId--, command: cmd,
-        label: result.label.trim() || cmd, value: null,
-        groupName: result.groupName.trim(), sectionId: sectionId
+      const res = await fetch(API_BASE + '/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: result.command.trim(),
+          label: result.label.trim() || result.command.trim(),
+          value: null,
+          groupName: result.groupName.trim(),
+          sectionId,
+        }),
       });
-      this.dirty = true;
+      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
+      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
+      await this.loadMetrics();
     },
 
-    removeMetricGroup(sectionId, groupName) {
-      this.metrics = this.metrics.filter(function(m) {
-        return !(m.sectionId === sectionId && m.groupName === groupName);
-      });
-      this.dirty = true;
+    async removeMetricGroup(sectionId, groupName) {
+      const toRemove = this.metrics.filter(m => m.sectionId === sectionId && m.groupName === groupName);
+      for (const m of toRemove) {
+        await fetch(API_BASE + '/api/metrics/' + m.id, { method: 'DELETE' });
+      }
+      await this.loadMetrics();
     },
 
     async renameMetricGroup(sectionId, oldGroup) {
-      var result = await this.openModal('Rename Group', [
+      const result = await this.openModal('Rename Group', [
         { name: 'groupName', label: 'New group name', value: oldGroup },
       ]);
       if (!result || !result.groupName.trim() || result.groupName.trim() === oldGroup) return;
-      var newName = result.groupName.trim();
-      for (var i = 0; i < this.metrics.length; i++) {
-        if (this.metrics[i].sectionId === sectionId && this.metrics[i].groupName === oldGroup) {
-          this.metrics[i].groupName = newName;
-        }
+      const toRename = this.metrics.filter(m => m.sectionId === sectionId && m.groupName === oldGroup);
+      for (const m of toRename) {
+        await fetch(API_BASE + '/api/metrics/' + m.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ groupName: result.groupName.trim() }),
+        });
       }
-      this.dirty = true;
-    },
-
-    // ------ Section CRUD ------
-
-    async createNewSection() {
-      var result = await this.openModal('New Section', [
-        { name: 'title', label: 'Section Title (e.g. Projects)', value: '' },
-        { name: 'type', label: 'Type: cventries, cvskills, cvhonors, cvreferences, cvparagraph', value: 'cventries' },
-      ]);
-      if (!result || !result.title.trim()) return;
-      var id = result.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      if (!id) return;
-      var type = result.type.trim();
-      var validTypes = ['cventries', 'cvskills', 'cvhonors', 'cvreferences', 'cvparagraph'];
-      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type', 'error'); return; }
-      if (this.sections.some(function(s) { return s.id === id; })) { this.flash('Section ID already exists', 'error'); return; }
-      var newSec = { id: id, type: type, title: result.title.trim(), entries: [] };
-      this.sections.push(newSec);
-      this.docSections.push({
-        id: id, type: type, title: result.title.trim(),
-        enabled: true, resumeParagraphText: null,
-        _expanded: false, entries: newSec.entries
-      });
-      this.dirty = true;
-      this.flash('Created "' + result.title.trim() + '"', 'success');
-    },
-
-    deleteSection(sectionId) {
-      var sec = this.sections.find(function(s) { return s.id === sectionId; });
-      if (!confirm('Delete "' + (sec ? sec.title : sectionId) + '"?')) return;
-      this.sections = this.sections.filter(function(s) { return s.id !== sectionId; });
-      this.docSections = this.docSections.filter(function(s) { return s.id !== sectionId; });
-      this.metrics = this.metrics.filter(function(m) { return m.sectionId !== sectionId; });
-      if (this.expandedSectionId === sectionId) this.expandedSectionId = null;
-      this.dirty = true;
-    },
-
-    async renameSection(sectionId) {
-      var sec = this.sections.find(function(s) { return s.id === sectionId; });
-      var result = await this.openModal('Rename Section', [
-        { name: 'title', label: 'New title', value: sec ? sec.title : '' },
-      ]);
-      if (!result || !result.title.trim()) return;
-      if (sec) sec.title = result.title.trim();
-      var ds = this.docSections.find(function(s) { return s.id === sectionId; });
-      if (ds) ds.title = result.title.trim();
-      this.dirty = true;
-    },
-
-    toggleSectionExpand(sec) {
-      sec._expanded = !sec._expanded;
-      if (sec._expanded) {
-        this.expandedSectionId = sec.id;
-      } else {
-        if (this.expandedSectionId === sec.id) this.expandedSectionId = null;
-      }
+      await this.loadMetrics();
     },
 
     // ------ Sections + Document config ------
 
-    async switchDoc(name) {
-      // Save current variant's docSections to _documents before switching
-      var oldVariant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
-      this._documents[oldVariant] = this.docSections.map(function(s, i) {
-        return { sectionId: s.id, enabled: s.enabled,
-          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
-      });
+    async loadSections() {
+      const res = await fetch(API_BASE + '/api/sections');
+      if (!res.ok) return;
+      this.sections = await res.json();
+    },
 
-      this.activeDoc = name;
-      if (name !== 'coverletter') {
-        // Load docSections for new variant from _documents
-        var variantDoc = this._documents[name] || [];
-        this.docSections = [];
-        var self = this;
-        for (var i = 0; i < variantDoc.length; i++) {
-          var ds = variantDoc[i];
-          var sec = self.sections.find(function(s) { return s.id === ds.sectionId; });
-          if (!sec) continue;
-          self.docSections.push({
-            id: sec.id, type: sec.type, title: sec.title,
-            enabled: ds.enabled !== false,
-            resumeParagraphText: ds.resumeParagraphText || null,
-            _expanded: false, entries: sec.entries
-          });
-        }
-        this.$nextTick(function() { this.initSortable(); }.bind(this));
+    async loadDocumentSections(variant) {
+      const res = await fetch(API_BASE + '/api/documents/' + variant);
+      if (!res.ok) return;
+      const data = await res.json();
+      this.docSections = [];
+      for (const ds of data.sections) {
+        const sec = this.sections.find(s => s.id === ds.sectionId);
+        if (!sec) continue;
+        this.docSections.push({
+          ...sec,
+          enabled: ds.enabled,
+          resumeParagraphText: ds.resumeParagraphText,
+          _expanded: true,
+          _data: null,
+        });
       }
-      this.updatePdfUrl();
+      this.$nextTick(() => {
+        this.initSortable();
+        for (const sec of this.docSections) {
+          if (sec.enabled) this.loadSectionData(sec);
+        }
+      });
     },
 
     initSortable() {
       if (this.sortable) this.sortable.destroy();
-      var el = document.getElementById('section-list');
+      const el = document.getElementById('section-list');
       if (!el) return;
-      var self = this;
       this.sortable = Sortable.create(el, {
         handle: '.ui-drag-handle',
         ghostClass: 'ui-sortable-ghost',
         chosenClass: 'ui-sortable-chosen',
         animation: 150,
-        onEnd: function(evt) {
-          var item = self.docSections.splice(evt.oldIndex, 1)[0];
-          self.docSections.splice(evt.newIndex, 0, item);
-          self.saveDocumentSections();
+        onEnd: (evt) => {
+          const item = this.docSections.splice(evt.oldIndex, 1)[0];
+          this.docSections.splice(evt.newIndex, 0, item);
+          this.saveDocumentSections();
         },
       });
     },
 
-    saveDocumentSections() {
-      // Just update local _documents - no server call
-      var variant = (this.activeDoc === 'coverletter') ? 'cv' : this.activeDoc;
-      this._documents[variant] = this.docSections.map(function(s, i) {
-        return { sectionId: s.id, enabled: s.enabled,
-          sortOrder: i, resumeParagraphText: s.resumeParagraphText || null };
+    async saveDocumentSections() {
+      const sections = this.docSections.map(s => ({
+        sectionId: s.id,
+        enabled: s.enabled,
+        resumeParagraphText: s.resumeParagraphText || null,
+      }));
+      // Save for the current pdfTab variant (or cv by default)
+      const variant = this.pdfTab === 'coverletter' ? 'cv' : this.pdfTab;
+      await fetch(API_BASE + '/api/documents/' + variant, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections }),
       });
-      this.dirty = true;
+      this.flash('Order saved', 'success');
     },
 
     toggleSection(index) {
       this.docSections[index].enabled = !this.docSections[index].enabled;
-      this.dirty = true;
+      this.saveDocumentSections();
+    },
+
+    // ------ Section data (entries + items) ------
+
+    async loadSectionData(sec) {
+      if (sec._data) return;
+      const res = await fetch(API_BASE + '/api/sections/' + sec.id);
+      if (!res.ok) return;
+      sec._data = await res.json();
+      if (sec._data.type === 'cventries') {
+        this.$nextTick(() => this.initBulletSortables(sec));
+      }
+    },
+
+    initBulletSortables(sec) {
+      this.$nextTick(() => {
+        const allLists = document.querySelectorAll(`.items-list[data-sec-id="${sec.id}"]`);
+        allLists.forEach(list => {
+          if (list._sortable) { list._sortable.destroy(); list._sortable = null; }
+          list._sortable = Sortable.create(list, {
+            handle: '.ui-drag-handle',
+            ghostClass: 'ui-sortable-ghost',
+            chosenClass: 'ui-sortable-chosen',
+            draggable: '.item-row',
+            animation: 100,
+            onEnd: (evt) => {
+              const entryId = parseInt(list.dataset.entryId);
+              const entry = sec._data.entries.find(e => e.id === entryId);
+              if (!entry) return;
+              const item = entry.items.splice(evt.oldIndex, 1)[0];
+              entry.items.splice(evt.newIndex, 0, item);
+              const ids = entry.items.map(i => i.id);
+              fetch(API_BASE + '/api/entries/' + entryId + '/items/order', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+              });
+            },
+          });
+        });
+      });
     },
 
     // ------ Entry CRUD ------
 
-    async addEntry(sec) {
-      var defaults = {};
-      if (sec.type === 'cventries') Object.assign(defaults, { position: '', organization: '', location: '', date: '' });
-      else if (sec.type === 'cvskills') Object.assign(defaults, { category: '', skills: '' });
-      else if (sec.type === 'cvhonors') Object.assign(defaults, { award: '', issuer: '', location: '', date: '' });
-      else if (sec.type === 'cvreferences') Object.assign(defaults, { name: '', relation: '', phone: '', email: '' });
-      else if (sec.type === 'cvparagraph') Object.assign(defaults, { text: '' });
-      var newEntry = { id: this._nextTempId--, fields: defaults, resumeIncluded: true, items: [] };
-      sec.entries.push(newEntry);
-      // Also update the master sections array
-      var master = this.sections.find(function(s) { return s.id === sec.id; });
-      if (master && master !== sec) master.entries = sec.entries;
-      this.dirty = true;
+    autoSaveEntry(entry) {
+      this.debounce('entry.' + entry.id, async () => {
+        await fetch(API_BASE + '/api/entries/' + entry.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: entry.fields }),
+        });
+        this.flash('Saved', 'success');
+      });
     },
 
-    removeEntry(sec, entryId) {
-      sec.entries = sec.entries.filter(function(e) { return e.id !== entryId; });
-      var master = this.sections.find(function(s) { return s.id === sec.id; });
-      if (master && master !== sec) master.entries = sec.entries;
-      this.dirty = true;
+    async addEntry(sec) {
+      const defaults = {};
+      if (sec.type === 'cventries') {
+        Object.assign(defaults, { position: '', organization: '', location: '', date: '' });
+      } else if (sec.type === 'cvskills') {
+        Object.assign(defaults, { category: '', skills: '' });
+      } else if (sec.type === 'cvhonors') {
+        Object.assign(defaults, { award: '', issuer: '', location: '', date: '' });
+      } else if (sec.type === 'cvreferences') {
+        Object.assign(defaults, { name: '', relation: '', phone: '', email: '' });
+      } else if (sec.type === 'cvparagraph') {
+        Object.assign(defaults, { text: '' });
+      }
+      const res = await fetch(API_BASE + '/api/sections/' + sec.id + '/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: defaults }),
+      });
+      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
+      sec._data = null;
+      await this.loadSectionData(sec);
+    },
+
+    async removeEntry(sec, entryId) {
+      await fetch(API_BASE + '/api/entries/' + entryId, { method: 'DELETE' });
+      sec._data.entries = sec._data.entries.filter(e => e.id !== entryId);
     },
 
     toggleResumeEntry(entry) {
       entry.resumeIncluded = !entry.resumeIncluded;
-      this.dirty = true;
+      fetch(API_BASE + '/api/entries/' + entry.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeIncluded: entry.resumeIncluded }),
+      });
     },
 
     // ------ Item (bullet) CRUD ------
 
-    addItem(entry) {
-      entry.items.push({ id: this._nextTempId--, content: '', resumeIncluded: true });
-      this.dirty = true;
+    autoSaveItem(item) {
+      this.debounce('item.' + item.id, async () => {
+        await fetch(API_BASE + '/api/items/' + item.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: item.content }),
+        });
+        this.flash('Saved', 'success');
+      });
     },
 
-    removeItem(entry, itemId) {
-      entry.items = entry.items.filter(function(i) { return i.id !== itemId; });
-      this.dirty = true;
+    async addItem(entry) {
+      const res = await fetch(API_BASE + '/api/entries/' + entry.id + '/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '' }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      entry.items.push({ id: data.id, content: '', resumeIncluded: true, sort_order: entry.items.length, entry_id: entry.id });
+    },
+
+    async removeItem(entry, itemId) {
+      await fetch(API_BASE + '/api/items/' + itemId, { method: 'DELETE' });
+      entry.items = entry.items.filter(i => i.id !== itemId);
     },
 
     toggleResumeItem(item) {
       item.resumeIncluded = !item.resumeIncluded;
-      this.dirty = true;
+      fetch(API_BASE + '/api/items/' + item.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeIncluded: item.resumeIncluded }),
+      });
+    },
+
+    // ------ cvparagraph: autosave text + resume text ------
+
+    autoSaveParagraph(sec) {
+      const entry = sec._data.entries[0];
+      if (!entry) return;
+      this.debounce('para.' + entry.id, async () => {
+        await fetch(API_BASE + '/api/entries/' + entry.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: entry.fields }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
+    autoSaveResumeParagraphText(sec) {
+      this.debounce('rpt.' + sec.id, async () => {
+        this.saveDocumentSections();
+      });
     },
 
     // ------ Cover letter ------
 
-    addCoverletterSection() {
-      this.coverletter.sections.push({
-        id: this._nextTempId--, sort_order: this.coverletter.sections.length,
-        title: '', body: ''
-      });
-      this.dirty = true;
+    async loadCoverletter() {
+      const [settingsRes, sectionsRes] = await Promise.all([
+        fetch(API_BASE + '/api/settings?prefix=coverletter'),
+        fetch(API_BASE + '/api/coverletter/sections'),
+      ]);
+      if (settingsRes.ok) {
+        const data = await settingsRes.json();
+        const s = {};
+        for (const [key, value] of Object.entries(data)) {
+          s[key.replace('coverletter.', '')] = value;
+        }
+        this.coverletter.settings = s;
+      }
+      if (sectionsRes.ok) {
+        this.coverletter.sections = await sectionsRes.json();
+      }
     },
 
-    removeCoverletterSection(secId) {
-      this.coverletter.sections = this.coverletter.sections.filter(function(s) { return s.id !== secId; });
-      this.dirty = true;
+    autoSaveCoverletterSetting(field) {
+      this.debounce('cl.' + field, async () => {
+        await fetch(API_BASE + '/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ['coverletter.' + field]: this.coverletter.settings[field] || '' }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
+    async addCoverletterSection() {
+      const res = await fetch(API_BASE + '/api/coverletter/sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '', body: '' }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      this.coverletter.sections.push({ id: data.id, title: '', body: '', sort_order: this.coverletter.sections.length });
+    },
+
+    autoSaveCoverletterSection(sec) {
+      this.debounce('clsec.' + sec.id, async () => {
+        await fetch(API_BASE + '/api/coverletter/sections/' + sec.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: sec.title, body: sec.body }),
+        });
+        this.flash('Saved', 'success');
+      });
+    },
+
+    async removeCoverletterSection(secId) {
+      await fetch(API_BASE + '/api/coverletter/sections/' + secId, { method: 'DELETE' });
+      this.coverletter.sections = this.coverletter.sections.filter(s => s.id !== secId);
     },
 
     // ------ Compile & PDF ------
 
     async compile() {
-      if (!this.serverConnected) { this.flash('Connect to server first', 'error'); return; }
       this.compiling = true;
+      const name = this.pdfTab;
       try {
-        if (!this.isJaneDoe) await this.save();
-        var name = this.activeDoc;
-        var res = await fetch(API_BASE + '/api/compile/' + name, { method: 'POST' });
-        var data = await res.json();
+        const res = await fetch(API_BASE + '/api/compile/' + name, { method: 'POST' });
+        const data = await res.json();
         if (data.success) {
           this.flash(name.charAt(0).toUpperCase() + name.slice(1) + ' compiled', 'success');
-          this.pdfUrl = API_BASE + '/api/pdf/' + name + '?t=' + Date.now();
-          this.sidebarMode = 'pdf';
-          // Also trigger download
-          var a = document.createElement('a');
-          a.href = this.pdfUrl;
-          a.download = name + '.pdf';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          const url = API_BASE + '/api/pdf/' + name + '?t=' + Date.now();
+          this.compiledPdfs[name] = url;
+          this.pdfUrl = url;
         } else {
           this.flash('Compilation failed - check console', 'error');
           console.error(data.log);
@@ -711,14 +584,122 @@ function app() {
       this.compiling = false;
     },
 
+    // ------ Person management ------
+
+    async loadPersons() {
+      try {
+        var res = await fetch(API_BASE + '/api/persons');
+        if (!res.ok) return;
+        var data = await res.json();
+        this.persons = data.persons || [];
+        this.activePersonId = data.activePersonId;
+      } catch (e) { /* offline */ }
+    },
+
+    async handlePersonSelect(value) {
+      if (value === '__new__') {
+        await this.createPerson();
+        return;
+      }
+      var id = parseInt(value);
+      if (!isNaN(id)) {
+        await this.switchPerson(id);
+      }
+    },
+
+    async createPerson() {
+      var result = await this.openModal('New Person', [
+        { name: 'name', label: 'Person name', value: '' },
+      ]);
+      if (!result || !result.name.trim()) return;
+      var res = await fetch(API_BASE + '/api/persons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: result.name.trim() }),
+      });
+      if (res.status === 409) { this.flash('Name already exists', 'error'); return; }
+      if (!res.ok) { this.flash('Failed to create', 'error'); return; }
+      var data = await res.json();
+      await this.loadPersons();
+      await this.switchPerson(data.id);
+    },
+
+    async switchPerson(id) {
+      if (id === this.activePersonId) return;
+      if (this.dirty && !confirm('You have unsaved changes. Switch anyway?')) return;
+      var res = await fetch(API_BASE + '/api/persons/' + id + '/switch', { method: 'POST' });
+      if (!res.ok) { this.flash('Failed to switch', 'error'); return; }
+      this.activePersonId = id;
+      await this.init();
+      this.dirty = false;
+    },
+
+    // ------ Save ------
+
+    async save() {
+      try {
+        var data = await fetch(API_BASE + '/api/export');
+        if (!data.ok) throw new Error('Export failed');
+        // Re-import triggers a full reload
+        this.dirty = false;
+        this.flash('Saved', 'success');
+      } catch (e) {
+        this.flash('Save failed', 'error');
+      }
+    },
+
+    // ------ Import / Export ------
+
+    async exportData() {
+      try {
+        var res = await fetch(API_BASE + '/api/export');
+        if (!res.ok) throw new Error('Export failed');
+        var data = await res.json();
+        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = (this.personal.firstName || 'export') + '-cv-data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.flash('Exported', 'success');
+      } catch (e) {
+        this.flash('Export failed', 'error');
+      }
+    },
+
+    async importData() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async () => {
+        var file = input.files[0];
+        if (!file) return;
+        try {
+          var text = await file.text();
+          var data = JSON.parse(text);
+          var res = await fetch(API_BASE + '/api/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) throw new Error('Import failed');
+          await this.init();
+          this.flash('Imported', 'success');
+        } catch (e) {
+          this.flash('Import failed: ' + e.message, 'error');
+        }
+      };
+      input.click();
+    },
+
     // ------ UI helpers ------
 
     flash(msg, type) {
       this.statusMsg = msg;
       this.statusType = type === 'success' ? 'ui-alert-success' : type === 'error' ? 'ui-alert-danger' : '';
       clearTimeout(this._flashTimer);
-      var self = this;
-      this._flashTimer = setTimeout(function() { self.statusMsg = ''; }, 3000);
+      this._flashTimer = setTimeout(() => { this.statusMsg = ''; }, 3000);
     },
   };
 }
