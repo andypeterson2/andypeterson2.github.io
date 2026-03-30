@@ -682,8 +682,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                             </div>
                           </template>
                           <div class="cv-add-row">
-                            <button class="btn cv-btn-sm" @click="addEntry(sec)"
-                              >+ Add Skill</button>
+                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button
+                            >
                           </div>
                         </div>
                       </template>
@@ -744,8 +744,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                             </div>
                           </template>
                           <div class="cv-add-row">
-                            <button class="btn cv-btn-sm" @click="addEntry(sec)"
-                              >+ Add Honor</button>
+                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button
+                            >
                           </div>
                         </div>
                       </template>
@@ -807,7 +807,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                           </template>
                           <div class="cv-add-row">
                             <button class="btn cv-btn-sm" @click="addEntry(sec)"
-                              >+ Add Reference</button>
+                              >+ Add Reference</button
+                            >
                           </div>
                         </div>
                       </template>
@@ -826,7 +827,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                                 aria-label="CV summary text"></textarea>
                               <div class="cv-para-label">
                                 Resume Text <span class="cv-muted-inline"
-                                  >(shorter version for resume)</span>
+                                  >(shorter version for resume)</span
+                                >
                               </div>
                               <textarea
                                 x-model="sec.resumeParagraphText"
@@ -924,7 +926,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
                 <div class="cv-add-row">
                   <button
                     class="btn cv-btn-xs cv-btn-danger"
-                    @click="removeCoverletterSection(sec.id)">Remove Section</button>
+                    @click="removeCoverletterSection(sec.id)">Remove Section</button
+                  >
                 </div>
               </div>
             </template>
