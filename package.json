@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -16,7 +19,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.1",
-    "astro": "^6.0.8"
+    "astro": "^6.1.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
