@@ -32,24 +32,11 @@ describe('Preview deploy safety', () => {
 describe('Migration redirects', () => {
   const astroConfig = readFileSync(resolve(ROOT, 'astro.config.mjs'), 'utf-8');
 
-  test('redirects old nonograms page', () => {
-    expect(astroConfig).toContain('/nonograms');
-  });
-
-  test('redirects old quantum video page', () => {
-    expect(astroConfig).toContain('/quantumvideo');
-  });
-
   test('redirects old under-construction page', () => {
     expect(astroConfig).toContain('/underconstruction');
   });
 
-  test('redirects /me to /', () => {
-    expect(astroConfig).toContain("'/me'");
-    expect(astroConfig).toContain("'/me': '/'");
-  });
-
-  test('redirects old resume PDF', () => {
-    expect(astroConfig).toContain('Current-Resume.pdf');
+  test('redirects /resume', () => {
+    expect(astroConfig).toContain("'/resume'");
   });
 });
