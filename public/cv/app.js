@@ -283,6 +283,65 @@ function app() {
       await this.loadMetrics();
     },
 
+    // ------ Section CRUD ------
+
+    async createNewSection() {
+      var result = await this.openModal('New Section', [
+        { name: 'title', label: 'Section title', value: '' },
+        { name: 'type', label: 'Type (cventries, cvskills, cvhonors, cvreferences, cvparagraph)', value: 'cventries' },
+      ]);
+      if (!result || !result.title.trim()) return;
+      var id = result.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (!id) { this.flash('Invalid title', 'error'); return; }
+      var validTypes = ['cventries', 'cvskills', 'cvhonors', 'cvreferences', 'cvparagraph'];
+      var type = result.type.trim();
+      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type', 'error'); return; }
+      var res = await fetch(API_BASE + '/api/sections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, type: type, title: result.title.trim() }),
+      });
+      if (!res.ok) { this.flash('Failed to create section', 'error'); return; }
+      // Add to document sections
+      await this.loadSections();
+      var docSections = this.docSections.map(function(s) {
+        return { sectionId: s.id, enabled: s.enabled, resumeParagraphText: s.resumeParagraphText || null };
+      });
+      docSections.push({ sectionId: id, enabled: true });
+      await fetch(API_BASE + '/api/documents/cv', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: docSections }),
+      });
+      await this.loadDocumentSections('cv');
+      this.flash('Section created', 'success');
+    },
+
+    async deleteSection(sectionId) {
+      if (!confirm('Delete this section and all its entries?')) return;
+      var res = await fetch(API_BASE + '/api/sections/' + sectionId, { method: 'DELETE' });
+      if (!res.ok) { this.flash('Failed to delete', 'error'); return; }
+      await this.loadSections();
+      await this.loadDocumentSections('cv');
+      await this.loadMetrics();
+      this.flash('Section deleted', 'success');
+    },
+
+    async renameSection(sectionId) {
+      var sec = this.docSections.find(function(s) { return s.id === sectionId; });
+      var result = await this.openModal('Rename Section', [
+        { name: 'title', label: 'New title', value: sec ? sec.title : '' },
+      ]);
+      if (!result || !result.title.trim()) return;
+      await fetch(API_BASE + '/api/sections/' + sectionId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: result.title.trim() }),
+      });
+      await this.loadSections();
+      await this.loadDocumentSections('cv');
+    },
+
     // ------ Sections + Document config ------
 
     async loadSections() {
