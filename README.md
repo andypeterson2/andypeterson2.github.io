@@ -42,7 +42,7 @@ make docker-down  # stops all services
 | classifier        | 5001  | Quantum-hybrid ML classifier (SSE)  |
 | nonogram          | 5055  | Nonogram solver (WebSocket)          |
 | videochat-server  | 5050  | QKD backend server                   |
-| videochat-middleware | 5002 | Video chat browser middleware       |
+| videochat-client-a  | 5002 | Video chat browser middleware       |
 | cv-editor         | 3000  | CV/resume LaTeX editor               |
 
 ## Testing
