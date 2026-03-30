@@ -176,4 +176,4 @@ jobs:
           for pkg in packages/nonogram packages/qvc packages/cv; do
             touch "$pkg/.env"
           done
-      - run: docker compose build classifier
+      - run: CLASSIFIER_PORT=5001 ASTRO_PORT=8000 docker compose build classifier
