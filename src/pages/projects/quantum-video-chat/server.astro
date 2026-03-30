@@ -10,7 +10,13 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     { label: 'server' },
   ]}
 >
-  <meta slot="head" name="site-backend" content="qvc-server" data-port="5050" data-label="Server" />
+  <meta
+    slot="head"
+    name="site-backend"
+    content="qvc-server"
+    data-port="5050"
+    data-label="Signaling"
+  />
   <link slot="head" rel="preconnect" href="https://fonts.googleapis.com" />
   <link
     slot="head"
@@ -21,7 +27,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   <div id="dashboard">
     <!-- Top bar -->
     <header id="topbar" role="banner">
-      <span id="topbar-title">QVC Server</span>
+      <span id="topbar-title">QVC Signaling</span>
       <div class="topbar-divider" aria-hidden="true"></div>
       <div class="stats-row" aria-label="Server status">
         <div class="stat">
@@ -31,66 +37,52 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </div>
         <span class="stat-sep" aria-hidden="true">&middot;</span>
         <div class="stat">
-          <span class="s-label">State</span><span class="s-value" id="c-state" aria-live="polite"
+          <span class="s-label">Status</span><span class="s-value" id="c-state" aria-live="polite"
             >&mdash;</span
           >
         </div>
         <span class="stat-sep" aria-hidden="true">&middot;</span>
         <div class="stat">
-          <span class="s-label">Users</span><span class="s-value" id="c-users" aria-live="polite"
+          <span class="s-label">Rooms</span><span class="s-value" id="c-rooms" aria-live="polite"
             >&mdash;</span
           >
         </div>
         <span class="stat-sep" aria-hidden="true">&middot;</span>
         <div class="stat">
-          <span class="s-label">Calls</span><span class="s-value" id="c-calls" aria-live="polite"
+          <span class="s-label">Peers</span><span class="s-value" id="c-peers" aria-live="polite"
             >&mdash;</span
           >
         </div>
-      </div>
-      <div class="topbar-divider" aria-hidden="true"></div>
-      <div id="config-inline" aria-label="Server configuration">
-        <span>IP</span><span class="cfg-val" id="cfg-ip">&mdash;</span>
-        <span>&middot;</span>
-        <span>REST</span><span class="cfg-val" id="cfg-rest">&mdash;</span>
-        <span>&middot;</span>
-        <span>WS</span><span class="cfg-val" id="cfg-ws">&mdash;</span>
       </div>
       <div class="topbar-spacer"></div>
       <div id="topbar-error" role="alert" aria-live="assertive"></div>
-      <button
-        type="button"
-        class="topbar-btn topbar-btn-danger"
-        id="shutdown-btn"
-        aria-label="Shut down the server">Shutdown</button
-      >
     </header>
 
-    <!-- Middle row: users | events -->
+    <!-- Middle row: rooms | peers | events -->
     <div id="middle-row">
-      <section class="panel" aria-label="Connected users">
-        <p class="panel-title">Users</p>
-        <div id="users-error" role="alert" aria-live="assertive"></div>
-        <div class="panel-scroll" id="users-container">
-          <p class="empty">No users connected.</p>
+      <section class="panel" aria-label="Active rooms">
+        <p class="panel-title">Rooms</p>
+        <div id="rooms-error" role="alert" aria-live="assertive"></div>
+        <div class="panel-scroll" id="rooms-container">
+          <p class="empty">No active rooms.</p>
         </div>
       </section>
-      <section class="panel" aria-label="Recent events">
-        <p class="panel-title">Recent Events</p>
-        <div id="events-error" role="alert" aria-live="assertive"></div>
-        <div class="panel-scroll" id="events-container"><p class="empty">No events yet.</p></div>
+      <section class="panel" aria-label="Connected peers">
+        <p class="panel-title">Peers</p>
+        <div id="peers-error" role="alert" aria-live="assertive"></div>
+        <div class="panel-scroll" id="peers-container">
+          <p class="empty">No connected peers.</p>
+        </div>
       </section>
     </div>
 
-    <!-- Logs -->
-    <section id="log-section" aria-label="Server logs">
+    <!-- Events -->
+    <section id="log-section" aria-label="Recent events">
       <div id="log-header">
-        <span id="log-section-title">Logs</span>
-        <span id="log-file"></span>
-        <div id="logs-error" role="alert" aria-live="assertive"></div>
+        <span id="log-section-title">Events</span>
       </div>
-      <div id="log-viewer" role="log" aria-label="Server log output" aria-live="off" tabindex="0">
-      </div>
+      <div class="panel-scroll" id="events-container"><p class="empty">No events yet.</p></div>
+      <div id="events-error" role="alert" aria-live="assertive"></div>
     </section>
   </div>
 
