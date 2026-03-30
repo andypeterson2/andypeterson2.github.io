@@ -80,7 +80,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - run: cd packages/cv/editor && npm ci && npm test
+      - run: cd packages/cv/editor && npm install && npm test
 
   python-lint:
     needs: changes
@@ -169,4 +169,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Create required .env files
+        run: |
+          echo "ASTRO_PORT=8000" > .env
+          for pkg in packages/quantum-protein-kernel packages/nonogram packages/qvc packages/cv; do
+            touch "$pkg/.env"
+          done
       - run: docker compose build classifier
