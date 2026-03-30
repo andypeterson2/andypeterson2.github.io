@@ -25,10 +25,9 @@ test.describe('ServerConnectModal', () => {
   test('nonogram app has backend meta tags', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
 
-    // Check the meta tags were rendered
-    const serviceMeta = page.locator('meta[name="site-backend-service"]');
-    const portMeta = page.locator('meta[name="site-backend-port"]');
-    await expect(serviceMeta).toHaveAttribute('content', 'nonogram');
-    await expect(portMeta).toHaveAttribute('content', '5055');
+    // Check the meta tag was rendered (unified site-backend format)
+    const backendMeta = page.locator('meta[name="site-backend"]');
+    await expect(backendMeta).toHaveAttribute('content', 'nonogram');
+    await expect(backendMeta).toHaveAttribute('data-port', '5055');
   });
 });
