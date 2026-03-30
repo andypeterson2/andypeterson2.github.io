@@ -7,7 +7,39 @@ import path from 'path';
 const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  devToolbar: { enabled: false },
   integrations: [sitemap()],
+  security: {
+    csp: {
+      algorithm: 'SHA-256',
+      scriptDirective: {
+        resources: [
+          "'self'",
+          'https://cdn.socket.io',
+          'https://unpkg.com',
+          'https://plausible.io',
+          'https://cdn.jsdelivr.net',
+        ],
+      },
+      styleDirective: {
+        resources: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://unpkg.com',
+        ],
+      },
+      directives: [
+        "default-src 'self'",
+        "font-src 'self' https://unpkg.com",
+        "img-src 'self' data:",
+        "connect-src 'self' ws: wss: http://localhost:* https://plausible.io",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self' mailto:",
+        "frame-ancestors 'none'",
+      ],
+    },
+  },
   site: process.env.SITE_URL || 'https://andypeterson.dev',
   redirects: {
     '/underconstruction.html': '/',

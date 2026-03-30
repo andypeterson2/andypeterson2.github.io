@@ -11,8 +11,7 @@ import ClassifierApp from '../../../components/ClassifierApp.astro';
     { label: 'app' },
   ]}
 >
-  <meta slot="head" name="site-backend-service" content="classifiers" />
-  <meta slot="head" name="site-backend-port" content="5001" />
+  <meta slot="head" name="site-backend" content="classifiers" data-port="5001" data-label="Classifier Backend" />
 
   <ClassifierApp />
 </BaseLayout>

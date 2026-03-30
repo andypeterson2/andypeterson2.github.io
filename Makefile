@@ -2,7 +2,7 @@
         docker-build docker-up docker-down clean
 
 PYTHON_PROJECTS := packages/quantum-protein-kernel
-JS_PROJECTS     := packages/ui-kit packages/cv
+JS_PROJECTS     := packages/ui-kit packages/cv/editor packages/nonogram/website packages/qvc
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -28,18 +28,18 @@ install: ## Install all dependencies
 test: test-py test-js ## Run all tests
 
 test-py: ## Python tests (pytest)
-	@for dir in $(PYTHON_PROJECTS); do \
+	@fail=0; for dir in $(PYTHON_PROJECTS); do \
 	  echo "\n=== pytest $$dir ==="; \
-	  (cd "$$dir" && python -m pytest tests/ -v --tb=short) || true; \
-	done
+	  (cd "$$dir" && python -m pytest tests/ -v --tb=short) || fail=1; \
+	done; exit $$fail
 
 test-js: ## JavaScript tests (jest/vitest)
-	npm test || true
-	@for dir in $(JS_PROJECTS); do \
+	npm test
+	@fail=0; for dir in $(JS_PROJECTS); do \
 	  if [ -f "$$dir/package.json" ] && grep -q '"test"' "$$dir/package.json"; then \
-	    echo "\n=== test $$dir ==="; (cd "$$dir" && npm test) || true; \
+	    echo "\n=== test $$dir ==="; (cd "$$dir" && npm test) || fail=1; \
 	  fi; \
-	done
+	done; exit $$fail
 
 lint: lint-py lint-js ## Lint everything
 
