@@ -173,7 +173,7 @@ jobs:
         run: |
           echo "ASTRO_PORT=8000" > .env
           echo "CLASSIFIER_PORT=5001" > packages/quantum-protein-kernel/.env
-          for pkg in packages/nonogram packages/qvc packages/cv; do
-            touch "$pkg/.env"
-          done
+          echo "NONOGRAM_PORT=8001" > packages/nonogram/.env
+          echo "QVC_SERVER_PORT=8002" > packages/qvc/.env
+          touch packages/cv/.env
       - run: CLASSIFIER_PORT=5001 ASTRO_PORT=8000 docker compose build classifier
