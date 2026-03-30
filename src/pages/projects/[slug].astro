@@ -47,8 +47,8 @@ const relatedProjects = projects
     <div class="hero-screenshot">
       <div class="screenshot-viewer" data-auto="true">
         <div class="screenshot-controls">
-          <div class="arrow-left" role="button" aria-label="Previous screenshot" tabindex="0"></div>
-          <div class="arrow-right" role="button" aria-label="Next screenshot" tabindex="0"></div>
+          <button type="button" class="arrow-left" aria-label="Previous screenshot"></button>
+          <button type="button" class="arrow-right" aria-label="Next screenshot"></button>
         </div>
         <div class="screenshot-stage">
           {
@@ -160,6 +160,16 @@ const relatedProjects = projects
       show(current + 1);
     });
 
+    viewer.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        stopAuto();
+        show(current - 1);
+      } else if (e.key === 'ArrowRight') {
+        stopAuto();
+        show(current + 1);
+      }
+    });
+
     startAuto();
   }
 </script>
@@ -167,19 +177,15 @@ const relatedProjects = projects
 <style>
   /* ── Hero ── */
   .project-hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(8px, 1vw, 16px) clamp(16px, 3vw, 40px);
     padding: clamp(16px, 3vw, 40px) 0 clamp(12px, 2vw, 28px);
   }
 
-  .project-hero::after {
-    content: '';
-    display: table;
-    clear: both;
-  }
-
   .hero-screenshot {
-    float: left;
     width: clamp(160px, 22vw, 320px);
-    margin: 0 clamp(16px, 3vw, 40px) clamp(8px, 1vw, 16px) 0;
+    flex-shrink: 0;
   }
 
   .screenshot-viewer {
@@ -201,10 +207,14 @@ const relatedProjects = projects
   .arrow-right {
     position: absolute;
     top: 0;
+    padding: 0;
+    background: none;
+    outline: none;
     width: 0;
     height: 0;
     border-top: calc(clamp(10px, 1.4vw, 18px) / 2) solid transparent;
     border-bottom: calc(clamp(10px, 1.4vw, 18px) / 2) solid transparent;
+    cursor: pointer;
   }
 
   .arrow-left {
