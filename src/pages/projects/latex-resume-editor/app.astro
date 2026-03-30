@@ -1206,10 +1206,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     border-left: 2px solid #000;
   }
 
-  :global(.cv-left-col > .ui-tabs) {
-    flex-shrink: 0;
-  }
-
   :global(.cv-pdf-iframe) {
     flex: 1;
     width: 100%;
@@ -1569,7 +1565,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.cv-item-row textarea:focus) {
-    outline: 2px solid #06c inset;
+    box-shadow: inset 0 0 0 2px #06c;
   }
 
   :global(.items-list .cv-btn-sm) {
@@ -1666,7 +1662,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.cv-full-textarea:focus) {
-    outline: 2px solid #06c inset;
+    box-shadow: inset 0 0 0 2px #06c;
   }
 
   /* ── Cover letter ── */
