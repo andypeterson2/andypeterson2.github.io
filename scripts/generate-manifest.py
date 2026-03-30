@@ -93,17 +93,9 @@ def main():
         m_pin = re.search(
             r'<meta\s+name="site-nav-pin"\s+content="([^"]*)"', html, re.IGNORECASE
         )
-        # New format: <meta name="site-backend" content="svc" data-port="8080" data-label="...">
+        # <meta name="site-backend" content="svc" data-port="8080" data-label="...">
         m_backend_new = re.search(
             r'<meta\s+name="site-backend"\s+content="([^"]*)"(?:\s+data-port="(\d+)")?', html, re.IGNORECASE
-        )
-        # Legacy: <meta name="site-backend-service" content="...">
-        m_backend_svc = m_backend_new or re.search(
-            r'<meta\s+name="site-backend-service"\s+content="([^"]*)"', html, re.IGNORECASE
-        )
-        # Legacy: <meta name="site-backend-port" content="...">
-        m_backend_port = re.search(
-            r'<meta\s+name="site-backend-port"\s+content="([^"]*)"', html, re.IGNORECASE
         )
         # Fallback to <title> for the label
         m_title = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE)
@@ -121,15 +113,9 @@ def main():
             entry["icon"] = icon
         if pin:
             entry["pin"] = pin
-        if m_backend_svc:
-            svc_name = m_backend_svc.group(1).strip()
-            # New format has data-port in group(2); legacy uses separate meta tag
-            if m_backend_new and m_backend_new.group(2):
-                port = int(m_backend_new.group(2))
-            elif m_backend_port:
-                port = int(m_backend_port.group(1).strip())
-            else:
-                port = 8080
+        if m_backend_new:
+            svc_name = m_backend_new.group(1).strip()
+            port = int(m_backend_new.group(2)) if m_backend_new.group(2) else 8080
             entry["backend"] = {
                 "service": svc_name,
                 "defaultPort": port,

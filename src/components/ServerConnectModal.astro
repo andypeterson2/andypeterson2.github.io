@@ -3,10 +3,8 @@
  * Server-connect modal — adds nav items and connection dialogs for each
  * backend service declared on the page.
  *
- * Supports two meta-tag formats:
- *   New:  <meta name="site-backend" content="service-key" data-port="8080" data-label="Label">
- *   Old:  <meta name="site-backend-service" content="service-key">
- *         <meta name="site-backend-port" content="8080">
+ * Meta-tag format:
+ *   <meta name="site-backend" content="service-key" data-port="8080" data-label="Label">
  *
  * Each service gets its own navbar item (with status dot), dropdown, and modal.
  */
@@ -28,22 +26,6 @@
         port: parseInt(m.getAttribute('data-port') || '8080') || 8080,
         label: m.getAttribute('data-label') || 'Server',
       });
-    }
-
-    // Legacy fallback: <meta name="site-backend-service"> + <meta name="site-backend-port">
-    if (backends.length === 0) {
-      var sm = document.querySelector('meta[name="site-backend-service"]');
-      var pm = document.querySelector('meta[name="site-backend-port"]');
-      if (sm) {
-        var svc = sm.getAttribute('content') || '';
-        if (svc) {
-          backends.push({
-            service: svc,
-            port: parseInt((pm && pm.getAttribute('content')) || '8080') || 8080,
-            label: 'Server',
-          });
-        }
-      }
     }
 
     if (backends.length === 0) return;
