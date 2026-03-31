@@ -445,7 +445,7 @@ import { siteConfig } from '../config/site';
   .timeline::before {
     content: '';
     position: absolute;
-    left: clamp(36px, 4.5vw, 54px);
+    left: clamp(56px, 7vw, 80px);
     top: 8px;
     bottom: 8px;
     width: 1px;
@@ -454,8 +454,8 @@ import { siteConfig } from '../config/site';
 
   .timeline-entry {
     display: grid;
-    grid-template-columns: clamp(36px, 4.5vw, 54px) 1fr;
-    gap: clamp(12px, 1.8vw, 22px);
+    grid-template-columns: clamp(56px, 7vw, 80px) 1fr;
+    gap: clamp(14px, 2vw, 24px);
     padding-bottom: clamp(20px, 3vw, 36px);
     position: relative;
   }
@@ -467,7 +467,7 @@ import { siteConfig } from '../config/site';
   .timeline-entry::after {
     content: '';
     position: absolute;
-    left: clamp(36px, 4.5vw, 54px);
+    left: clamp(56px, 7vw, 80px);
     top: 8px;
     width: 7px;
     height: 7px;
@@ -484,7 +484,7 @@ import { siteConfig } from '../config/site';
 
   .timeline-date {
     font-family: var(--font-mono);
-    font-size: clamp(8px, 0.9vw, 11px);
+    font-size: clamp(9px, 1.1vw, 13px);
     opacity: 0.5;
     text-align: right;
     line-height: 1.4;
