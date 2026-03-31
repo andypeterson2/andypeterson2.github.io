@@ -24,20 +24,20 @@ const relatedProjects = projects
   <div class="project-hero">
     {
       (project.appUrl || project.appLinks || project.repoUrl) && (
-        <div class="details-bar hero-actions">
+        <div class="project-buttons">
           {project.appLinks
             ? project.appLinks.map((link: { label: string; href: string }) => (
-                <a href={link.href} class="btn">
+                <a href={link.href} class="project-btn">
                   {link.label}
                 </a>
               ))
             : project.appUrl && (
-                <a href={project.appUrl} class="btn">
+                <a href={project.appUrl} class="project-btn">
                   Launch App
                 </a>
               )}
           {project.repoUrl && (
-            <a href={project.repoUrl} class="btn" target="_blank" rel="noopener noreferrer">
+            <a href={project.repoUrl} class="project-btn" target="_blank" rel="noopener noreferrer">
               View Source
             </a>
           )}
@@ -279,17 +279,27 @@ const relatedProjects = projects
     margin-bottom: clamp(10px, 1.5vw, 20px);
   }
 
-  .hero-actions {
-    justify-content: flex-start;
+  .project-buttons {
+    display: flex;
+    flex-wrap: wrap;
     gap: clamp(4px, 0.6vw, 8px);
     margin-bottom: clamp(8px, 1.5vw, 20px);
   }
 
-  .hero-actions .btn {
-    font-size: clamp(9px, 1.2vw, 14px);
-    padding: clamp(2px, 0.3vw, 4px) clamp(6px, 0.8vw, 12px);
-    min-height: 0;
-    height: auto;
+  .project-btn {
+    font-family: var(--font-ui);
+    font-size: clamp(10px, 1.3vw, 14px);
+    padding: clamp(3px, 0.4vw, 6px) clamp(8px, 1vw, 14px);
+    border: 2px solid #000;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .project-btn:hover {
+    background: #000;
+    color: #fff;
   }
 
   /* ── Sections ── */
