@@ -16,7 +16,6 @@ jobs:
       qpk: ${{ steps.filter.outputs.qpk }}
       ui-kit: ${{ steps.filter.outputs.ui-kit }}
       cv: ${{ steps.filter.outputs.cv }}
-      flask-core: ${{ steps.filter.outputs.flask-core }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -34,8 +33,6 @@ jobs:
               - 'packages/ui-kit/**'
             cv:
               - 'packages/cv/**'
-            flask-core:
-              - 'packages/flask-core/**'
 
   astro-build:
     needs: changes
