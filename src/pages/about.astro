@@ -41,6 +41,8 @@ import { siteConfig } from '../config/site';
               target="_blank"
               rel="noopener noreferrer">GitHub</a
             >
+            <a href="/resume.pdf" class="btn">Resume</a>
+            <a href="/cv/" class="btn">CV</a>
           </div>
         </div>
       </div>
@@ -95,7 +97,6 @@ import { siteConfig } from '../config/site';
           <div class="skill-group-label">Quantum</div>
           <div class="skill-tags">
             <span class="tag">Qiskit</span>
-            <span class="tag">PennyLane</span>
             <span class="tag">BB84</span>
             <span class="tag">QAOA</span>
             <span class="tag">Grover</span>
@@ -143,10 +144,6 @@ import { siteConfig } from '../config/site';
             <span class="tag">Computer Vision</span>
           </div>
         </div>
-      </section>
-
-      <section class="sidebar-section">
-        <a href="/resume.pdf" class="resume-btn">Download Resume</a>
       </section>
     </aside>
 
@@ -319,10 +316,16 @@ import { siteConfig } from '../config/site';
   }
 
   .bio-contact {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: clamp(3px, 0.4vw, 5px);
     width: 100%;
+  }
+
+  .bio-contact .btn {
+    text-align: center;
+    font-size: clamp(8px, 0.9vw, 11px);
+    padding: clamp(2px, 0.3vw, 4px) 0;
   }
 
   /* ── Two-column grid ── */
@@ -417,24 +420,6 @@ import { siteConfig } from '../config/site';
     line-height: 1.6;
   }
 
-  /* Resume button */
-  .resume-btn {
-    display: block;
-    font-family: var(--font-ui);
-    font-size: clamp(10px, 1.3vw, 14px);
-    border: 2px solid #000;
-    padding: clamp(4px, 0.5vw, 7px) clamp(10px, 1.2vw, 16px);
-    text-decoration: none;
-    color: #000;
-    background: #fff;
-    text-align: center;
-  }
-
-  .resume-btn:hover {
-    background: #000;
-    color: #fff;
-  }
-
   /* ── Timeline ── */
   .timeline {
     display: flex;
@@ -445,7 +430,7 @@ import { siteConfig } from '../config/site';
   .timeline::before {
     content: '';
     position: absolute;
-    left: clamp(56px, 7vw, 80px);
+    left: clamp(62px, 8vw, 90px);
     top: 8px;
     bottom: 8px;
     width: 1px;
@@ -454,8 +439,8 @@ import { siteConfig } from '../config/site';
 
   .timeline-entry {
     display: grid;
-    grid-template-columns: clamp(56px, 7vw, 80px) 1fr;
-    gap: clamp(14px, 2vw, 24px);
+    grid-template-columns: clamp(62px, 8vw, 90px) 1fr;
+    gap: clamp(16px, 2.5vw, 28px);
     padding-bottom: clamp(20px, 3vw, 36px);
     position: relative;
   }
@@ -467,7 +452,7 @@ import { siteConfig } from '../config/site';
   .timeline-entry::after {
     content: '';
     position: absolute;
-    left: clamp(56px, 7vw, 80px);
+    left: clamp(62px, 8vw, 90px);
     top: 8px;
     width: 7px;
     height: 7px;
@@ -480,6 +465,7 @@ import { siteConfig } from '../config/site';
     flex-direction: column;
     align-items: flex-end;
     padding-top: 2px;
+    padding-right: clamp(6px, 1vw, 12px);
   }
 
   .timeline-date {
