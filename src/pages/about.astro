@@ -15,7 +15,7 @@ import { siteConfig } from '../config/site';
       <span>Quantum Researcher · Security Engineer · Software Architect</span>
       <span>Perris, CA</span>
     </div>
-    <div class="window-pane bio-body">
+    <div class="bio-body">
       <div class="bio-card">
         <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
         <div class="bio-name">Andrew Peterson</div>
@@ -280,6 +280,7 @@ import { siteConfig } from '../config/site';
   .bio-body {
     font-size: clamp(13px, 1.6vw, 18px);
     line-height: 1.65;
+    padding: clamp(8px, 1.2vw, 16px);
   }
 
   .bio-card {
@@ -434,7 +435,7 @@ import { siteConfig } from '../config/site';
   .timeline::before {
     content: '';
     position: absolute;
-    left: clamp(44px, 5.5vw, 64px);
+    left: clamp(36px, 4.5vw, 54px);
     top: 8px;
     bottom: 8px;
     width: 1px;
@@ -443,7 +444,7 @@ import { siteConfig } from '../config/site';
 
   .timeline-entry {
     display: grid;
-    grid-template-columns: clamp(44px, 5.5vw, 64px) 1fr;
+    grid-template-columns: clamp(36px, 4.5vw, 54px) 1fr;
     gap: clamp(12px, 1.8vw, 22px);
     padding-bottom: clamp(20px, 3vw, 36px);
     position: relative;
@@ -456,7 +457,7 @@ import { siteConfig } from '../config/site';
   .timeline-entry::after {
     content: '';
     position: absolute;
-    left: clamp(44px, 5.5vw, 64px);
+    left: clamp(36px, 4.5vw, 54px);
     top: 8px;
     width: 7px;
     height: 7px;
