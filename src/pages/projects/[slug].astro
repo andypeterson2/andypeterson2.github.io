@@ -24,20 +24,20 @@ const relatedProjects = projects
   <div class="project-hero">
     {
       (project.appUrl || project.appLinks || project.repoUrl) && (
-        <div class="hero-actions">
+        <div class="details-bar hero-actions">
           {project.appLinks
             ? project.appLinks.map((link: { label: string; href: string }) => (
-                <a href={link.href} class="action-btn">
+                <a href={link.href} class="btn">
                   {link.label}
                 </a>
               ))
             : project.appUrl && (
-                <a href={project.appUrl} class="action-btn">
+                <a href={project.appUrl} class="btn">
                   Launch App
                 </a>
               )}
           {project.repoUrl && (
-            <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
+            <a href={project.repoUrl} class="btn" target="_blank" rel="noopener noreferrer">
               View Source
             </a>
           )}
@@ -280,26 +280,16 @@ const relatedProjects = projects
   }
 
   .hero-actions {
-    display: flex;
-    gap: clamp(8px, 1vw, 16px);
-    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: clamp(4px, 0.6vw, 8px);
     margin-bottom: clamp(8px, 1.5vw, 20px);
   }
 
-  .action-btn {
-    font-family: var(--font-ui);
-    font-size: clamp(12px, 1.78vw, 24px);
-    padding: clamp(4px, 0.6vw, 10px) clamp(12px, 1.5vw, 24px);
-    border: 2px solid #000;
-    background: #fff;
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .action-btn:hover {
-    background: #000;
-    color: #fff;
+  .hero-actions .btn {
+    font-size: clamp(9px, 1.2vw, 14px);
+    padding: clamp(2px, 0.3vw, 4px) clamp(6px, 0.8vw, 12px);
+    min-height: 0;
+    height: auto;
   }
 
   /* ── Sections ── */
