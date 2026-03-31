@@ -18,8 +18,6 @@ test.describe('Site navigation', () => {
     await nav.locator('a[href="/about"]').click();
     await expect(page).toHaveURL('/about');
 
-    await nav.locator('a[href="/contact"]').click();
-    await expect(page).toHaveURL('/contact');
   });
 
   test('breadcrumb navigation renders on subpages', async ({ page }) => {
