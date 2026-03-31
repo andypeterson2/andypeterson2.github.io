@@ -22,9 +22,11 @@ import { siteConfig } from '../config/site';
           <span class="title">Me</span>
           <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
         </div>
+        <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
+        <div class="details-bar bio-details-bar">
+          <span>Andrew Peterson</span>
+        </div>
         <div class="bio-card-body">
-          <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
-          <div class="bio-name">Andrew Peterson</div>
           <div class="bio-contact">
             <a href="mailto:acpeters@ucsd.edu" class="btn">Email</a>
             <a
@@ -312,11 +314,8 @@ import { siteConfig } from '../config/site';
     display: block;
   }
 
-  .bio-name {
-    font-family: var(--font-ui);
-    font-size: clamp(11px, 1.3vw, 15px);
-    font-weight: 700;
-    line-height: 1.3;
+  .bio-details-bar {
+    justify-content: center;
   }
 
   .bio-contact {
