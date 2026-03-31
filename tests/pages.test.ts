@@ -122,7 +122,7 @@ describe('Projects Page', () => {
     const projectsData = readFileSync(resolve(ROOT, 'src/data/projects.ts'), 'utf-8');
     expect(projectsData).toContain('Quantum Video Chat');
     expect(projectsData).toContain('Quantum Nonogram Solver');
-    expect(projectsData).toContain('Quantum Protein Kernel');
+    expect(projectsData).toContain('Quantum ML Classifier Platform');
   });
 
   test('uses finder-icon grid layout', () => {
