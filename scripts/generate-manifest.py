@@ -2,7 +2,6 @@
 """Scan for sub-apps and generate site-manifest.json."""
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -131,9 +130,8 @@ def main():
 
     out = root / "site-manifest.json"
     out.write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"site-manifest.json: {len(apps)} apps")
-    for a in apps:
-        print(f"  {a['path']:25s} {a['title']}")
+    for _a in apps:
+        pass
 
 
 if __name__ == "__main__":
