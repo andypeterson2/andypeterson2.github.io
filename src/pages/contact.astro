@@ -7,8 +7,7 @@ import { siteConfig } from '../config/site';
   {siteConfig.email && <meta slot="head" name="contact-email" content={siteConfig.email} />}
   <div class="contact-intro">
     <p class="subtitle">
-      Open to full-time roles in quantum computing, software engineering, and cybersecurity. Also
-      available for research collaboration.
+      Open to work and research collaboration.
     </p>
   </div>
 
@@ -136,7 +135,6 @@ import { siteConfig } from '../config/site';
 
   .subtitle {
     font-size: clamp(12px, 1.78vw, 24px);
-    max-width: 55ch;
     line-height: 1.5;
   }
 
@@ -170,6 +168,7 @@ import { siteConfig } from '../config/site';
     padding: clamp(4px, 0.5vw, 8px);
     border: 2px solid #000;
     background: #fff;
+    color: #000;
     outline: none;
   }
 
