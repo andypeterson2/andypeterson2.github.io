@@ -33,31 +33,6 @@ const featured = projects.filter((p) => p.featured);
     </div>
     <a href="/projects/" class="view-all">View All Projects →</a>
   </div>
-
-  <div class="home-section">
-    <div class="section-rule"><span>Quick Links</span></div>
-    <div class="link-row">
-      {
-        siteConfig.github && (
-          <a href={siteConfig.github} class="quick-link" target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
-        )
-      }
-      {
-        siteConfig.linkedin && (
-          <a
-            href={siteConfig.linkedin}
-            class="quick-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
-          </a>
-        )
-      }
-    </div>
-  </div>
 </BaseLayout>
 
 <style>
@@ -91,26 +66,6 @@ const featured = projects.filter((p) => p.featured);
   }
 
   .view-all:hover {
-    background: #000;
-    color: #fff;
-  }
-
-  .link-row {
-    display: flex;
-    gap: clamp(12px, 2vw, 28px);
-    flex-wrap: wrap;
-  }
-
-  .quick-link {
-    font-family: var(--font-ui);
-    font-size: clamp(12px, 1.78vw, 24px);
-    color: #000;
-    text-decoration: none;
-    padding: clamp(2px, 0.3vw, 6px) clamp(6px, 0.8vw, 14px);
-    border: 2px solid #000;
-  }
-
-  .quick-link:hover {
     background: #000;
     color: #fff;
   }
