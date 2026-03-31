@@ -16,23 +16,30 @@ import { siteConfig } from '../config/site';
       <span>Perris, CA</span>
     </div>
     <div class="bio-body">
-      <div class="bio-card">
-        <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
-        <div class="bio-name">Andrew Peterson</div>
-        <div class="bio-contact">
-          <a href="mailto:acpeters@ucsd.edu" class="btn">Email</a>
-          <a
-            href="https://linkedin.com/in/i-am-andy-peterson"
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer">LinkedIn</a
-          >
-          <a
-            href="https://github.com/andypeterson2"
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer">GitHub</a
-          >
+      <div class="bio-card window">
+        <div class="title-bar">
+          <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+          <span class="title">Me</span>
+          <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+        </div>
+        <div class="bio-card-body">
+          <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
+          <div class="bio-name">Andrew Peterson</div>
+          <div class="bio-contact">
+            <a href="mailto:acpeters@ucsd.edu" class="btn">Email</a>
+            <a
+              href="https://linkedin.com/in/i-am-andy-peterson"
+              class="btn"
+              target="_blank"
+              rel="noopener noreferrer">LinkedIn</a
+            >
+            <a
+              href="https://github.com/andypeterson2"
+              class="btn"
+              target="_blank"
+              rel="noopener noreferrer">GitHub</a
+            >
+          </div>
         </div>
       </div>
       <p>
@@ -283,21 +290,25 @@ import { siteConfig } from '../config/site';
     padding: clamp(8px, 1.2vw, 16px);
   }
 
-  .bio-card {
+  .bio-card.window {
     float: left;
+    margin: 0 clamp(12px, 2vw, 24px) clamp(8px, 1vw, 12px) 0;
+    width: clamp(120px, 24%, 170px);
+    min-width: 0;
+  }
+
+  .bio-card-body {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: clamp(6px, 0.8vw, 10px);
     text-align: center;
-    margin: 0 clamp(12px, 2vw, 24px) clamp(8px, 1vw, 12px) 0;
-    width: clamp(100px, 20%, 150px);
+    padding: clamp(6px, 0.8vw, 10px);
   }
 
   .bio-headshot {
     width: 100%;
     height: auto;
-    border: 2px solid #000;
     display: block;
   }
 
