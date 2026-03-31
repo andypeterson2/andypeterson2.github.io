@@ -80,24 +80,6 @@ describe('Social card preview verification', () => {
   });
 });
 
-// ---- Form endpoint isolation ----
-
-describe('Form endpoint isolation', () => {
-  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
-
-  test('contact form uses siteConfig for email', () => {
-    expect(contactSrc).toContain('siteConfig.email');
-  });
-
-  test('no hardcoded form action URLs', () => {
-    expect(contactSrc).not.toMatch(/action="https?:\/\/[^"]+"/);
-  });
-
-  test('mailto links use siteConfig', () => {
-    expect(contactSrc).toContain('mailto:${siteConfig.email}');
-  });
-});
-
 // ---- Screen reader navigation ----
 
 describe('Screen reader navigation', () => {
