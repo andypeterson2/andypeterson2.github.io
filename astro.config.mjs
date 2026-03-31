@@ -26,11 +26,12 @@ export default defineConfig({
           "'self'",
           "'unsafe-inline'",
           'https://unpkg.com',
+          'https://cdn.jsdelivr.net',
         ],
       },
       directives: [
         "default-src 'self'",
-        "font-src 'self' https://unpkg.com",
+        "font-src 'self' https://unpkg.com https://cdn.jsdelivr.net",
         "img-src 'self' data:",
         "connect-src 'self' ws: wss: http://localhost:* https://plausible.io",
         "object-src 'none'",
