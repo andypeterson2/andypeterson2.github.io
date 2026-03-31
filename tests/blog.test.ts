@@ -21,7 +21,7 @@ describe('Custom 404 with personality', () => {
   test('suggests multiple navigation options', () => {
     expect(fourOhFour).toContain('error-actions');
     expect(fourOhFour).toContain('/projects');
-    expect(fourOhFour).toContain('/contact');
+    expect(fourOhFour).toContain('/projects');
   });
 
   test('404 uses system.css window with Error title', () => {

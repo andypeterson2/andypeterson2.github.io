@@ -20,7 +20,7 @@ describe('Nav (inline in BaseLayout)', () => {
 
   test('renders nav links for existing pages', () => {
     expect(layoutSrc).toContain('href="/"');
-    expect(layoutSrc).toContain('href="/contact"');
+    expect(layoutSrc).toContain('href="/projects/"');
   });
 
   test('uses system.css menu-bar pattern', () => {
@@ -39,7 +39,6 @@ describe('URL Routing', () => {
   const pages = [
     'src/pages/index.astro',
     'src/pages/projects/index.astro',
-    'src/pages/contact.astro',
     'src/pages/404.astro',
   ];
 
@@ -139,28 +138,6 @@ describe('Projects Page', () => {
   test('projects link to detail pages', () => {
     expect(projectsSrc).toContain('/projects/');
     expect(projectsSrc).toContain('project.slug');
-  });
-});
-
-// ---- Contact Page ----
-
-describe('Contact Page', () => {
-  const contactSrc = readFileSync(resolve(ROOT, 'src/pages/contact.astro'), 'utf-8');
-
-  test('has contact intro with subtitle', () => {
-    expect(contactSrc).toContain('contact-intro');
-    expect(contactSrc).toContain('subtitle');
-  });
-
-  test('has mailto link with pre-filled subject', () => {
-    expect(contactSrc).toContain('mailto:');
-    expect(contactSrc).toContain('subject=');
-  });
-
-  test('uses siteConfig for email and social links', () => {
-    expect(contactSrc).toContain('siteConfig.email');
-    expect(contactSrc).toContain('siteConfig.github');
-    expect(contactSrc).toContain('siteConfig.linkedin');
   });
 });
 

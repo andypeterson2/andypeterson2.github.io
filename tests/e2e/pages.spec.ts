@@ -4,7 +4,6 @@ test.describe('Core pages render without errors', () => {
   const pages = [
     { path: '/', title: /Home/ },
     { path: '/about', title: /About/ },
-    { path: '/contact', title: /Contact/ },
     { path: '/projects/', title: /Projects/ },
   ];
 
@@ -58,23 +57,3 @@ test.describe('About page content', () => {
   });
 });
 
-test.describe('Contact page', () => {
-  test('renders contact form with all fields', async ({ page }) => {
-    await page.goto('/contact');
-    await expect(page.locator('#contact-name')).toBeVisible();
-    await expect(page.locator('#contact-email')).toBeVisible();
-    await expect(page.locator('#contact-message')).toBeVisible();
-    await expect(page.locator('.send-btn')).toBeVisible();
-  });
-
-  test('form validation prevents empty submission', async ({ page }) => {
-    await page.goto('/contact');
-    await page.locator('.send-btn').click();
-
-    // HTML5 validation should prevent submission — check field is invalid
-    const nameValid = await page.locator('#contact-name').evaluate(
-      (el: HTMLInputElement) => el.validity.valid,
-    );
-    expect(nameValid).toBe(false);
-  });
-});

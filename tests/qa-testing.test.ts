@@ -47,7 +47,6 @@ describe('Page structure validation', () => {
       )
         continue;
       if (page.includes('[')) continue;
-      if (page.endsWith('contact.astro')) continue;
       if (page.endsWith('projects/index.astro')) continue;
       if (page.includes('/classifiers/')) continue;
       expect(content, `${page} missing h1`).toContain('<h1');
