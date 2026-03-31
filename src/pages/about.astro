@@ -7,9 +7,7 @@ import { siteConfig } from '../config/site';
   <!-- Bio -->
   <div class="window bio-window">
     <div class="title-bar">
-
       <h1 class="title">Intro</h1>
-
     </div>
     <div class="details-bar">
       <span>Software Developer</span>
@@ -18,17 +16,16 @@ import { siteConfig } from '../config/site';
     <div class="bio-body">
       <div class="bio-card window">
         <div class="title-bar">
-    
           <span class="title">Me</span>
-    
         </div>
-        <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
+        <img src="/headshot.png" alt={siteConfig.displayName} class="bio-headshot" />
         <div class="details-bar bio-details-bar">
-          <span>Andrew Peterson</span>
+          <span>{siteConfig.displayName}</span>
         </div>
       </div>
       <p>
-        Recent <strong>UC San Diego</strong> Computer Science graduate. I spent two and a half years as a
+        Recent <strong>UC San Diego</strong> Computer Science graduate. I spent two and a half years as
+        a
         <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong>, building
         quantum-secured video communications, quantum search algorithms, and machine learning
         classification pipelines.
@@ -45,15 +42,15 @@ import { siteConfig } from '../config/site';
         that lets people solve problems without asking for help.
       </p>
       <div class="bio-contact">
-        <a href="mailto:acpeters@ucsd.edu" class="btn"><i class="bi bi-envelope"></i> Email</a>
+        <a href={`mailto:${siteConfig.email}`} class="btn"><i class="bi bi-envelope"></i> Email</a>
         <a
-          href="https://linkedin.com/in/i-am-andy-peterson"
+          href={`https://linkedin.com/in/${siteConfig.linkedin}`}
           class="btn"
           target="_blank"
           rel="noopener noreferrer"><i class="bi bi-linkedin"></i> LinkedIn</a
         >
         <a
-          href="https://github.com/andypeterson2"
+          href={`https://github.com/${siteConfig.github}`}
           class="btn"
           target="_blank"
           rel="noopener noreferrer"><i class="bi bi-github"></i> GitHub</a
@@ -70,9 +67,7 @@ import { siteConfig } from '../config/site';
     <aside class="sidebar">
       <div class="window sidebar-window">
         <div class="title-bar">
-    
           <h2 class="title">Education</h2>
-    
         </div>
         <div class="window-body">
           <div class="sidebar-entry">
@@ -85,9 +80,7 @@ import { siteConfig } from '../config/site';
 
       <div class="window sidebar-window">
         <div class="title-bar">
-    
           <h2 class="title">Certifications</h2>
-    
         </div>
         <div class="window-body">
           <div class="sidebar-entry">
@@ -103,9 +96,7 @@ import { siteConfig } from '../config/site';
 
       <div class="window sidebar-window">
         <div class="title-bar">
-    
           <h2 class="title">Skills</h2>
-    
         </div>
         <div class="window-body">
           <div class="skill-group">
@@ -159,123 +150,120 @@ import { siteConfig } from '../config/site';
     <!-- Right: Timeline -->
     <div class="window timeline-window">
       <div class="title-bar">
-  
         <h2 class="title">Experience</h2>
-  
       </div>
       <div class="timeline">
         <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2022 – 2024</div>
+          <div class="timeline-meta">
+            <div class="timeline-date">2022 – 2024</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">Research Intern</div>
+            <div class="timeline-org">Qualcomm Institute (CALIT2) · San Diego, CA</div>
+            <ul class="timeline-bullets">
+              <li>
+                Built a frame-level encryption pipeline for live video with sub-millisecond latency
+                overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable
+                Streams).
+              </li>
+              <li>
+                Simulated a noisy quantum channel (Poisson photon source, fiber attenuation,
+                detector modeling) to validate protocol correctness — used to verify eavesdrop
+                detection via error rate anomalies.
+              </li>
+              <li>Presented algorithmic research to IBM's VP of Quantum during campus visit.</li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">Research Intern</div>
-          <div class="timeline-org">Qualcomm Institute (CALIT2) · San Diego, CA</div>
-          <ul class="timeline-bullets">
-            <li>
-              Built a frame-level encryption pipeline for live video with sub-millisecond latency
-              overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).
-            </li>
-            <li>
-              Simulated a noisy quantum channel (Poisson photon source, fiber attenuation, detector
-              modeling) to validate protocol correctness — used to verify eavesdrop detection via
-              error rate anomalies.
-            </li>
-            <li>
-              Presented algorithmic research to IBM's VP of Quantum during campus visit.
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2021 – 2024</div>
+        <div class="timeline-entry">
+          <div class="timeline-meta">
+            <div class="timeline-date">2021 – 2024</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">Co-Founder / President</div>
+            <div class="timeline-org">Quantum Computing at UC, San Diego (QCSD)</div>
+            <ul class="timeline-bullets">
+              <li>
+                Co-founded to fill a gap in undergraduate quantum computing education at UCSD.
+                Restructured processes and formalized handoffs before graduating — org survived
+                complete leadership turnover and is now nationally chartered as QCSA.
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">Co-Founder / President</div>
-          <div class="timeline-org">Quantum Computing at UC, San Diego (QCSD)</div>
-          <ul class="timeline-bullets">
-            <li>
-              Co-founded to fill a gap in undergraduate quantum computing education at UCSD.
-              Restructured processes and formalized handoffs before graduating — org survived
-              complete leadership turnover and is now nationally chartered as QCSA.
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2020 – 2023</div>
+        <div class="timeline-entry">
+          <div class="timeline-meta">
+            <div class="timeline-date">2020 – 2023</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">President / Competition Committee</div>
+            <div class="timeline-org">ACM Cyber at UCSD</div>
+            <ul class="timeline-bullets">
+              <li>
+                As President, maintained org engagement through full COVID lockdown when most
+                student orgs lost momentum.
+              </li>
+              <li>
+                Centralized documentation for the 500-member org in Notion with role-based
+                least-privilege access controls.
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">President / Competition Committee</div>
-          <div class="timeline-org">ACM Cyber at UCSD</div>
-          <ul class="timeline-bullets">
-            <li>
-              As President, maintained org engagement through full COVID lockdown when most student
-              orgs lost momentum.
-            </li>
-            <li>
-              Centralized documentation for the 500-member org in Notion with role-based
-              least-privilege access controls.
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2020 – 2022</div>
+        <div class="timeline-entry">
+          <div class="timeline-meta">
+            <div class="timeline-date">2020 – 2022</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">Web Developer</div>
+            <div class="timeline-org">RIT Esports · Remote</div>
+            <ul class="timeline-bullets">
+              <li>
+                Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active
+                visitors across 6 varsity esports teams with 99.9% uptime.
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">Web Developer</div>
-          <div class="timeline-org">RIT Esports · Remote</div>
-          <ul class="timeline-bullets">
-            <li>
-              Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active
-              visitors across 6 varsity esports teams with 99.9% uptime.
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2020 – 2022</div>
+        <div class="timeline-entry">
+          <div class="timeline-meta">
+            <div class="timeline-date">2020 – 2022</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">Co-Founder</div>
+            <div class="timeline-org">San Diego CTF</div>
+            <ul class="timeline-bullets">
+              <li>
+                Co-founded San Diego's largest annual cybersecurity competition — hundreds of
+                competitors across 20+ countries, running for two annual iterations.
+              </li>
+              <li>
+                Built the Discord bot submission interface (Discord.JS) used by all competitors
+                across both years — zero onboarding friction.
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">Co-Founder</div>
-          <div class="timeline-org">San Diego CTF</div>
-          <ul class="timeline-bullets">
-            <li>
-              Co-founded San Diego's largest annual cybersecurity competition — hundreds of
-              competitors across 20+ countries, running for two annual iterations.
-            </li>
-            <li>
-              Built the Discord bot submission interface (Discord.JS) used by all competitors
-              across both years — zero onboarding friction.
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="timeline-entry">
-        <div class="timeline-meta">
-          <div class="timeline-date">2020 – 2021</div>
+        <div class="timeline-entry">
+          <div class="timeline-meta">
+            <div class="timeline-date">2020 – 2021</div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-role">Tutor / IT Lead</div>
+            <div class="timeline-org">Mathnasium · Southern California</div>
+            <ul class="timeline-bullets">
+              <li>
+                Sole IT resource for transitioning the center to remote operations during COVID-19,
+                keeping ~25 client families and ~15 active students connected.
+              </li>
+            </ul>
+          </div>
         </div>
-        <div class="timeline-content">
-          <div class="timeline-role">Tutor / IT Lead</div>
-          <div class="timeline-org">Mathnasium · Southern California</div>
-          <ul class="timeline-bullets">
-            <li>
-              Sole IT resource for transitioning the center to remote operations during COVID-19,
-              keeping ~25 client families and ~15 active students connected.
-            </li>
-          </ul>
-        </div>
-      </div>
       </div>
     </div>
   </div>
@@ -519,7 +507,7 @@ import { siteConfig } from '../config/site';
   }
 
   /* ── Responsive ── */
-  @media (max-width: 480px) {
+  @media (width <= 480px) {
     .about-grid {
       grid-template-columns: 1fr;
     }

@@ -11,13 +11,12 @@ const featured = projects.filter((p) => p.featured);
     <div class="home-intro">
       <h2 class="greeting">Welcome to Andy's desk.</h2>
       <p class="bio">
-        I build software that works under pressure — real-time systems, research
-        prototypes, and the infrastructure that holds them together.
+        I build software that works under pressure — real-time systems, research prototypes, and the
+        infrastructure that holds them together.
       </p>
       <p class="bio">
-        I'm a recent <strong>UC San Diego</strong> graduate with two years of
-        quantum computing research at <strong>Qualcomm Institute</strong>,
-        co-founder of <strong>San Diego CTF</strong> and the
+        I'm a recent <strong>UC San Diego</strong> graduate with two years of quantum computing research
+        at <strong>Qualcomm Institute</strong>, co-founder of <strong>San Diego CTF</strong> and the
         <strong>Quantum Computing Student Association</strong> at UC San Diego.
       </p>
       <div class="home-actions">
@@ -38,14 +37,16 @@ const featured = projects.filter((p) => p.featured);
         </div>
         <div class="window-pane projects-pane">
           <div class="icon-grid">
-            {featured.map((project) => (
-              <a href={`/projects/${project.slug}/`} class="finder-icon">
-                <div class="icon-box">
-                  <img src={`/icons/${project.icon}`} alt="" class="icon-glyph" />
-                </div>
-                <span class="icon-label">{project.title}</span>
-              </a>
-            ))}
+            {
+              featured.map((project) => (
+                <a href={`/projects/${project.slug}/`} class="finder-icon">
+                  <div class="icon-box">
+                    <img src={`/icons/${project.icon}`} alt="" class="icon-glyph" />
+                  </div>
+                  <span class="icon-label">{project.title}</span>
+                </a>
+              ))
+            }
           </div>
         </div>
       </div>
@@ -185,7 +186,7 @@ const featured = projects.filter((p) => p.featured);
   }
 
   /* ── Mobile: stack columns ── */
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .home-grid {
       grid-template-columns: 1fr;
     }
