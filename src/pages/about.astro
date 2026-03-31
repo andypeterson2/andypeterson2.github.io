@@ -16,22 +16,60 @@ import { siteConfig } from '../config/site';
       <span>Perris, CA</span>
     </div>
     <div class="window-pane bio-body">
-      <p>
-        Recent <strong>UC San Diego</strong> graduate passionate about making
-        <strong>high-level technical ideas</strong> usable and understandable to as many people as possible.
-      </p>
-      <p>
-        I co-founded <strong>San Diego CTF</strong> and the
-        <strong>Quantum Computing Student Association at UC San Diego</strong>, led remote learning
-        infrastructure during COVID, and handled training and documentation for two student orgs. On
-        the research side, I spent two years at the <strong>Qualcomm Institute</strong> on
-        <strong>quantum-secured communications</strong>, <strong>quantum algorithms</strong>, and
-        <strong>quantum machine learning</strong>.
-      </p>
-      <p>
-        I'm looking for roles where the <strong>technical and human sides both matter</strong> — building
-        scalable, secure, and usable solutions while communicating ideas clearly.
-      </p>
+      <div class="bio-split">
+        <div class="bio-text">
+          <p>
+            Recent <strong>UC San Diego</strong> graduate passionate about making
+            <strong>high-level technical ideas</strong> usable and understandable to as many people as
+            possible.
+          </p>
+          <p>
+            I co-founded <strong>San Diego CTF</strong> and the
+            <strong>Quantum Computing Student Association at UC San Diego</strong>, led remote
+            learning infrastructure during COVID, and handled training and documentation for two
+            student orgs. On the research side, I spent two years at the
+            <strong>Qualcomm Institute</strong> on
+            <strong>quantum-secured communications</strong>, <strong>quantum algorithms</strong>,
+            and <strong>quantum machine learning</strong>.
+          </p>
+          <p>
+            I'm looking for roles where the
+            <strong>technical and human sides both matter</strong> — building scalable, secure, and usable
+            solutions while communicating ideas clearly.
+          </p>
+        </div>
+        <div class="bio-card">
+          <div class="bio-headshot" aria-label="Headshot placeholder"></div>
+          <div class="bio-name">{siteConfig.displayName}</div>
+          <ul class="bio-contact">
+            {
+              siteConfig.email && (
+                <li>
+                  <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>
+                </li>
+              )
+            }
+            {
+              siteConfig.linkedin && (
+                <li>
+                  <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">
+                    LinkedIn
+                  </a>
+                </li>
+              )
+            }
+            {
+              siteConfig.github && (
+                <li>
+                  <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">
+                    GitHub
+                  </a>
+                </li>
+              )
+            }
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -260,6 +298,62 @@ import { siteConfig } from '../config/site';
   .bio-body {
     font-size: clamp(13px, 1.6vw, 18px);
     line-height: 1.65;
+  }
+
+  .bio-split {
+    display: grid;
+    grid-template-columns: 1fr clamp(120px, 22%, 180px);
+    gap: clamp(16px, 3vw, 36px);
+    align-items: start;
+  }
+
+  .bio-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .bio-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(6px, 0.8vw, 10px);
+    text-align: center;
+  }
+
+  .bio-headshot {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #ccc;
+    border: 2px solid #000;
+  }
+
+  .bio-name {
+    font-family: var(--font-ui);
+    font-size: clamp(11px, 1.3vw, 15px);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .bio-contact {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 0.3vw, 4px);
+  }
+
+  .bio-contact a {
+    font-family: var(--font-mono);
+    font-size: clamp(8px, 0.9vw, 11px);
+    color: #000;
+    text-decoration: none;
+    word-break: break-all;
+  }
+
+  .bio-contact a:hover {
+    text-decoration: underline;
   }
 
   /* ── Two-column grid ── */
