@@ -19,21 +19,21 @@ import { siteConfig } from '../config/site';
       <div class="bio-card">
         <img src="/headshot.png" alt="Andrew Peterson" class="bio-headshot" />
         <div class="bio-name">Andrew Peterson</div>
-        <ul class="bio-contact">
-          <li><a href="mailto:acpeters@ucsd.edu">acpeters@ucsd.edu</a></li>
-          <li>
-            <a
-              href="https://linkedin.com/in/i-am-andy-peterson"
-              target="_blank"
-              rel="noopener noreferrer">LinkedIn</a
-            >
-          </li>
-          <li>
-            <a href="https://github.com/andypeterson2" target="_blank" rel="noopener noreferrer"
-              >GitHub</a
-            >
-          </li>
-        </ul>
+        <div class="bio-contact">
+          <a href="mailto:acpeters@ucsd.edu" class="btn">Email</a>
+          <a
+            href="https://linkedin.com/in/i-am-andy-peterson"
+            class="btn"
+            target="_blank"
+            rel="noopener noreferrer">LinkedIn</a
+          >
+          <a
+            href="https://github.com/andypeterson2"
+            class="btn"
+            target="_blank"
+            rel="noopener noreferrer">GitHub</a
+          >
+        </div>
       </div>
       <p>
         Recent <strong>UC San Diego</strong> graduate passionate about making
@@ -308,24 +308,10 @@ import { siteConfig } from '../config/site';
   }
 
   .bio-contact {
-    list-style: none;
-    margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: clamp(2px, 0.3vw, 4px);
-  }
-
-  .bio-contact a {
-    font-family: var(--font-mono);
-    font-size: clamp(8px, 0.9vw, 11px);
-    color: #000;
-    text-decoration: none;
-    word-break: break-all;
-  }
-
-  .bio-contact a:hover {
-    text-decoration: underline;
+    gap: clamp(3px, 0.4vw, 5px);
+    width: 100%;
   }
 
   /* ── Two-column grid ── */
