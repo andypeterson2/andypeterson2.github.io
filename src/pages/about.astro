@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PullQuote from '../components/PullQuote.astro';
 import { siteConfig } from '../config/site';
 ---
 
@@ -9,11 +8,11 @@ import { siteConfig } from '../config/site';
   <div class="window bio-window">
     <div class="title-bar">
       <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
-      <h1 class="title">{siteConfig.displayName}</h1>
+      <h1 class="title">Intro</h1>
       <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
     </div>
     <div class="details-bar">
-      <span>Intro</span>
+      <span>Quantum Researcher · Security Engineer · Software Architect</span>
       <span>La Jolla, CA</span>
     </div>
     <div class="window-pane bio-body">
@@ -25,10 +24,10 @@ import { siteConfig } from '../config/site';
       <p>
         I've done that in a few different contexts: I ran the remote learning transition at a
         tutoring center during COVID, handled training and documentation for two student
-        organizations I helped lead, and co-founded both San Diego CTF (where I built the
-        competition infrastructure from the ground up) and the Quantum Computer Student Association
-        at UC San Diego, which enables university involvement in quantum computing education,
-        research, and awareness.
+        organizations I helped lead, and co-founded both San Diego CTF, where I built the
+        competition infrastructure from the ground up, and Quantum Computer Student Association at
+        UC San Diego (f.k.a. Quantum Computing at UC San Diego), which enables university
+        involvement in quantum computing education, research, and awareness.
       </p>
       <p>
         On the research side, I spent two years at the Qualcomm Institute working on quantum-secured
@@ -42,8 +41,6 @@ import { siteConfig } from '../config/site';
       </p>
     </div>
   </div>
-
-  <PullQuote cite="Rick Ord">Start early, start often.</PullQuote>
 
   <!-- Two-column layout -->
   <div class="about-grid">
