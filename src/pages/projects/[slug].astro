@@ -177,15 +177,13 @@ const relatedProjects = projects
 <style>
   /* ── Hero ── */
   .project-hero {
-    display: flex;
-    flex-wrap: wrap;
-    gap: clamp(8px, 1vw, 16px) clamp(16px, 3vw, 40px);
     padding: clamp(16px, 3vw, 40px) 0 clamp(12px, 2vw, 28px);
   }
 
   .hero-screenshot {
+    float: left;
     width: clamp(160px, 22vw, 320px);
-    flex-shrink: 0;
+    margin: 0 clamp(12px, 2vw, 24px) clamp(8px, 1vw, 12px) 0;
   }
 
   .screenshot-viewer {
@@ -284,7 +282,6 @@ const relatedProjects = projects
     flex-wrap: wrap;
     gap: clamp(4px, 0.6vw, 8px);
     margin-bottom: clamp(8px, 1.5vw, 20px);
-    width: 100%;
   }
 
   .project-btn {
@@ -396,12 +393,10 @@ const relatedProjects = projects
   }
 
   @media (width <= 600px) {
-    .project-hero {
-      flex-direction: column;
-    }
-
     .hero-screenshot {
+      float: none;
       width: 100%;
+      margin-right: 0;
     }
   }
 </style>
