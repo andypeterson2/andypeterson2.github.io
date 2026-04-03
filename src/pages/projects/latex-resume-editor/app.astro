@@ -14,11 +14,40 @@ import { siteConfig } from '../../../config/site';
 >
   <meta slot="head" name="site-backend" content="cv" data-port="3001" data-label="CV Backend" />
 
-  <script is:inline src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script is:inline defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
   ></script>
 
   <div class="cv-app" x-data="app()" x-init="init()">
+    <!-- Mobile view switcher (visible ≤768px only) -->
+    <div class="cv-mobile-toolbar" x-cloak>
+      <select class="cv-mobile-view-select"
+        :value="mobileView"
+        @change="setMobileView($event.target.value)">
+        <option value="editor">Editor</option>
+        <option value="cv">CV</option>
+        <option value="resume">Resume</option>
+        <option value="coverletter">Cover Letter</option>
+      </select>
+      <div style="position:relative">
+        <button class="btn cv-mobile-file-btn"
+          @click="mobileFileMenu = !mobileFileMenu"
+          aria-label="File menu">
+          <img src="https://unpkg.com/lucide-static@1.7.0/icons/menu.svg" alt="" width="18" height="18" />
+        </button>
+        <div class="cv-mobile-file-dropdown" x-show="mobileFileMenu" @click.outside="mobileFileMenu = false" @click="mobileFileMenu = false" x-cloak>
+          <button @click="createPerson()">New</button>
+          <button @click="openPerson()">Open</button>
+          <button @click="renamePerson()">Rename</button>
+          <hr />
+          <button @click="save()">Save</button>
+          <button @click="exportData()">Export JSON</button>
+          <button @click="importData()">Import JSON</button>
+          <hr />
+          <button @click="compile()">Compile</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal overlay -->
     <div class="cv-modal-overlay" x-show="modal.open" @click.self="cancelModal()" x-cloak>
       <div class="standard-dialog cv-modal-dialog" role="dialog" aria-modal="true">
@@ -29,96 +58,47 @@ import { siteConfig } from '../../../config/site';
           <template x-for="(field, fi) in modal.fields" :key="fi">
             <div class="field-row cv-modal-field">
               <label x-text="field.label"></label>
-              <input
-                type="text"
-                x-model="field.value"
-                @keydown.enter="submitModal()"
-                :autofocus="fi === 0"
-              />
+              <template x-if="field.options">
+                <select x-model="field.value" :autofocus="fi === 0">
+                  <template x-for="opt in field.options" :key="opt.value">
+                    <option :value="opt.value" x-text="opt.label"></option>
+                  </template>
+                </select>
+              </template>
+              <template x-if="!field.options">
+                <input
+                  type="text"
+                  x-model="field.value"
+                  @keydown.enter="submitModal()"
+                  @input="validateModalField(field)"
+                  :autofocus="fi === 0"
+                />
+              </template>
+              <span class="cv-modal-error" x-show="field.error" x-text="field.error"></span>
             </div>
           </template>
           <div class="field-row cv-modal-actions">
-            <button class="btn btn-default" @click="submitModal()">OK</button>
+            <button class="btn btn-default" @click="submitModal()" :disabled="modalHasErrors()">OK</button>
             <button class="btn" @click="cancelModal()">Cancel</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Details bar -->
-    <div class="details-bar cv-details-bar">
-      <!-- Person selector -->
-      <div class="field-row cv-toolbar-group">
-        <select @change="handlePersonSelect($event.target.value)" aria-label="Active person">
-          <template x-for="p in (persons || [])" :key="p.id">
-            <option :value="p.id" x-text="p.name" :selected="p.id === activePersonId"></option>
-          </template>
-          <option value="__new__">[New]</option>
-        </select>
-      </div>
-      <!-- Save -->
-      <button class="btn" @click="save && save()" :disabled="!dirty" title="Save changes">
-        Save<span x-show="dirty">*</span>
-      </button>
-      <!-- Import / Export -->
-      <button class="btn" @click="exportData && exportData()" title="Export JSON"
-        >&#8593; Export</button
-      >
-      <button class="btn" @click="importData && importData()" title="Import JSON"
-        >&#8595; Import</button
-      >
-      <!-- Compile -->
-      <button
-        class="btn btn-default"
-        @click="compile()"
-        :disabled="compiling"
-        aria-label="Compile document to PDF"
-      >
-        <span x-show="!compiling">&#9654; Compile</span>
-        <span x-show="compiling">Compiling&hellip;</span>
-      </button>
-      <!-- Spacer -->
-      <div class="cv-toolbar-spacer"></div>
-      <!-- PDF variant radios -->
-      <div class="field-row cv-toolbar-group">
-        <input
-          type="radio"
-          id="pdf-cv"
-          name="pdfTab"
-          value="cv"
-          :checked="pdfTab === 'cv'"
-          @change="switchPdfTab('cv')"
-        />
-        <label for="pdf-cv">CV</label>
-      </div>
-      <div class="field-row cv-toolbar-group">
-        <input
-          type="radio"
-          id="pdf-resume"
-          name="pdfTab"
-          value="resume"
-          :checked="pdfTab === 'resume'"
-          @change="switchPdfTab('resume')"
-        />
-        <label for="pdf-resume">Resume</label>
-      </div>
-      <div class="field-row cv-toolbar-group">
-        <input
-          type="radio"
-          id="pdf-coverletter"
-          name="pdfTab"
-          value="coverletter"
-          :checked="pdfTab === 'coverletter'"
-          @change="switchPdfTab('coverletter')"
-        />
-        <label for="pdf-coverletter">Cover Letter</label>
-      </div>
-    </div>
-
     <!-- Main layout: split pane -->
-    <main class="cv-split-layout" aria-label="CV Editor">
+    <main class="cv-split-layout"
+      :class="{
+        'cv-readonly': !serverConnected,
+        'cv-mobile-show-editor': mobileView === 'editor',
+        'cv-mobile-show-pdf': mobileView !== 'editor'
+      }"
+      aria-label="CV Editor">
       <!-- Left column: editor -->
       <div class="cv-left-col">
+        <div class="window cv-inner-window">
+          <div class="title-bar">
+            <span class="title">Editor</span>
+          </div>
         <!-- Editor tab bar -->
         <div class="details-bar cv-editor-tabs">
           <button
@@ -134,7 +114,7 @@ import { siteConfig } from '../../../config/site';
           <button
             class="btn cv-editor-tab"
             :class="{ 'btn-default': editorTab === 'coverletter' }"
-            @click="editorTab = 'coverletter'">Cover Ltr</button
+            @click="editorTab = 'coverletter'">Letter</button
           >
           <button
             class="btn cv-editor-tab"
@@ -143,709 +123,212 @@ import { siteConfig } from '../../../config/site';
           >
         </div>
 
-        <div
-          class="cv-alert"
-          x-show="statusMsg"
-          x-text="statusMsg"
-          :class="statusType"
-          role="status"
-        >
+        <!-- ===== Universal Toolbar ===== -->
+        <div class="cv-section-toolbar">
+          <img class="cv-toolbar-icon" src="https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg" alt="Expand All" title="Expand All" width="28" height="28"
+            @click="expandAll()" />
+          <img class="cv-toolbar-icon" src="https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg" alt="Collapse All" title="Collapse All" width="28" height="28"
+            @click="collapseAll()" />
+          <img class="cv-toolbar-icon" src="https://unpkg.com/lucide-static@1.7.0/icons/undo-2.svg" alt="Undo" title="Undo" width="28" height="28"
+            @click="undo()" :style="canUndo() ? '' : 'opacity:0.15;pointer-events:none'" />
+          <img class="cv-toolbar-icon" src="https://unpkg.com/lucide-static@1.7.0/icons/redo-2.svg" alt="Redo" title="Redo" width="28" height="28"
+            @click="redo()" :style="canRedo() ? '' : 'opacity:0.15;pointer-events:none'" />
+          <img class="cv-toolbar-icon" src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="Add section" title="Add section" width="28" height="28"
+            @click="createNewSection()" x-show="editorTab === 'sections' && serverConnected" />
+          <span class="cv-save-dot"
+            :class="{ 'cv-save-disconnected': saveState === 'disconnected', 'cv-save-unsaved': saveState === 'unsaved', 'cv-save-saved': saveState === 'saved', 'cv-save-error': saveState === 'error' }"
+            :title="saveState === 'disconnected' ? 'Not connected' : saveState === 'error' ? 'Save error' : saveState === 'unsaved' ? 'Unsaved changes' : 'All saved'"
+          ></span>
         </div>
 
         <!-- ===== Profile Tab ===== -->
         <div x-show="editorTab === 'profile'" class="cv-tab-content">
           <!-- Identity -->
-          <h2 class="cv-profile-heading">Identity</h2>
-          <div class="cv-profile-grid">
-            <label class="field-row cv-field"
-              >First Name <input
-                type="text"
-                x-model="personal.firstName"
-                @input="autoSavePersonal('firstName')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Last Name <input
-                type="text"
-                x-model="personal.lastName"
-                @input="autoSavePersonal('lastName')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Position <input
-                type="text"
-                x-model="personal.position"
-                @input="autoSavePersonal('position')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Address <input
-                type="text"
-                x-model="personal.address"
-                @input="autoSavePersonal('address')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Date of Birth <input
-                type="text"
-                x-model="personal.dateofbirth"
-                @input="autoSavePersonal('dateofbirth')"
-                placeholder="e.g. January 1, 1990"
-              /></label
-            >
-            <div class="cv-toggle-row">
-              <span>Photo</span>
-              <label class="cv-toggle">
-                <input
-                  type="checkbox"
-                  :checked="personal.photoEnabled === '1'"
-                  @change="togglePhoto()"
-                />
-                <span x-text="personal.photoEnabled === '1' ? 'On' : 'Off'"></span>
-              </label>
-            </div>
-            <template x-if="personal.photoEnabled === '1'">
-              <label class="field-row cv-field"
-                >Photo File <span class="cv-hint">(filename)</span>
-                <input
-                  type="text"
-                  x-model="personal.photoFile"
-                  @input="autoSavePersonal('photoFile')"
-                  placeholder="e.g. profile"
-                />
+          <h2 class="cv-node-header" @click="_panels.identity = !_panels.identity" :aria-expanded="_panels.identity">
+            <img class="cv-node-expand-icon" :src="_panels.identity ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+            <span style="flex:1">Identity</span>
+            <button class="cv-node-edit" @click.stop="openAddIdentityExtra()" x-show="serverConnected && availableIdentityExtras().length > 0" title="Add field" aria-label="Add field">
+              <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="14" height="14" />
+            </button>
+          </h2>
+          <div class="cv-node-fields" x-show="_panels.identity" :inert="!serverConnected">
+            <label>First Name <input type="text" x-model="personal.firstName" @input="autoSavePersonal('firstName')" @focus="snapshotField('personal', 'firstName')" @blur="commitField('personal', 'firstName')" /></label>
+            <label>Last Name <input type="text" x-model="personal.lastName" @input="autoSavePersonal('lastName')" @focus="snapshotField('personal', 'lastName')" @blur="commitField('personal', 'lastName')" /></label>
+            <label>Position <input type="text" x-model="personal.position" @input="autoSavePersonal('position')" @focus="snapshotField('personal', 'position')" @blur="commitField('personal', 'position')" /></label>
+            <label>Address <input type="text" x-model="personal.address" @input="autoSavePersonal('address')" @focus="snapshotField('personal', 'address')" @blur="commitField('personal', 'address')" /></label>
+            <template x-for="key in identityExtras" :key="key">
+              <label>
+                <div class="cv-extra-label"><span x-text="identityExtra(key).label"></span><img class="cv-toolbar-icon cv-link-remove" src="https://unpkg.com/lucide-static@1.7.0/icons/x.svg" width="10" height="10" alt="Remove" title="Remove" @click.prevent="removeIdentityExtra(key)" /></div>
+                <template x-if="key === 'photo'">
+                  <div class="cv-link-multi">
+                    <label class="cv-toggle" @click.stop><input type="checkbox" :checked="personal.photoEnabled === '1'" @change="togglePhoto()" /><span x-text="personal.photoEnabled === '1' ? 'On' : 'Off'"></span></label>
+                    <input type="text" x-model="personal.photoFile" @input="autoSavePersonal('photoFile')" @focus="snapshotField('personal', 'photoFile')" @blur="commitField('personal', 'photoFile')" placeholder="filename" x-show="personal.photoEnabled === '1'" />
+                  </div>
+                </template>
+                <template x-if="key !== 'photo'">
+                  <input type="text" x-model="personal[key]" @input="autoSavePersonal(key)" @focus="snapshotField('personal', key)" @blur="commitField('personal', key)" :placeholder="identityExtra(key).placeholder" />
+                </template>
               </label>
             </template>
-            <label class="cv-form-field cv-profile-full"
-              >Quote <span class="cv-hint">(optional, shown in header)</span>
-              <input
-                type="text"
-                x-model="personal.quote"
-                @input="autoSavePersonal('quote')"
-                placeholder="Leave blank to hide"
-              />
-            </label>
-            <label class="cv-form-field cv-profile-full"
-              >Extra Info <span class="cv-hint">(custom text shown in header)</span>
-              <input
-                type="text"
-                x-model="personal.extrainfo"
-                @input="autoSavePersonal('extrainfo')"
-                placeholder="Leave blank to hide"
-              />
-            </label>
           </div>
 
           <!-- Contact -->
-          <h2 class="cv-profile-heading">Contact</h2>
-          <div class="cv-profile-grid">
-            <label class="field-row cv-field"
-              >Mobile <input
-                type="text"
-                x-model="personal.mobile"
-                @input="autoSavePersonal('mobile')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Email <input
-                type="text"
-                x-model="personal.email"
-                @input="autoSavePersonal('email')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >WhatsApp <input
-                type="text"
-                x-model="personal.whatsapp"
-                @input="autoSavePersonal('whatsapp')"
-                placeholder="Phone number"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Skype <input
-                type="text"
-                x-model="personal.skype"
-                @input="autoSavePersonal('skype')"
-                placeholder="Username"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Telegram <input
-                type="text"
-                x-model="personal.telegram"
-                @input="autoSavePersonal('telegram')"
-                placeholder="Username"
-              /></label
-            >
+          <h2 class="cv-node-header" @click="_panels.contact = !_panels.contact" :aria-expanded="_panels.contact">
+            <img class="cv-node-expand-icon" :src="_panels.contact ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+            Contact
+          </h2>
+          <div class="cv-node-fields" x-show="_panels.contact" :inert="!serverConnected">
+            <label>Mobile <input type="text" x-model="personal.mobile" @input="autoSavePersonal('mobile')" @focus="snapshotField('personal', 'mobile')" @blur="commitField('personal', 'mobile')" /></label>
+            <label>Email <input type="text" x-model="personal.email" @input="autoSavePersonal('email')" @focus="snapshotField('personal', 'email')" @blur="commitField('personal', 'email')" /></label>
           </div>
 
-          <!-- Web & Code -->
-          <h2 class="cv-profile-heading">Web &amp; Code</h2>
-          <div class="cv-profile-grid">
-            <label class="field-row cv-field"
-              >Homepage <input
-                type="text"
-                x-model="personal.homepage"
-                @input="autoSavePersonal('homepage')"
-                placeholder="yoursite.com"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >GitHub <input
-                type="text"
-                x-model="personal.github"
-                @input="autoSavePersonal('github')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >LinkedIn <input
-                type="text"
-                x-model="personal.linkedin"
-                @input="autoSavePersonal('linkedin')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >GitLab <input
-                type="text"
-                x-model="personal.gitlab"
-                @input="autoSavePersonal('gitlab')"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Bitbucket <input
-                type="text"
-                x-model="personal.bitbucket"
-                @input="autoSavePersonal('bitbucket')"
-              /></label
-            >
-          </div>
-
-          <!-- Social -->
-          <h2 class="cv-profile-heading">Social</h2>
-          <div class="cv-profile-grid">
-            <label class="field-row cv-field"
-              >Twitter <input
-                type="text"
-                x-model="personal.twitter"
-                @input="autoSavePersonal('twitter')"
-                placeholder="Handle"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >X <span class="cv-hint">(if different from Twitter)</span>
-              <input
-                type="text"
-                x-model="personal.x"
-                @input="autoSavePersonal('x')"
-                placeholder="Handle"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Reddit <input
-                type="text"
-                x-model="personal.reddit"
-                @input="autoSavePersonal('reddit')"
-                placeholder="Username"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Medium <input
-                type="text"
-                x-model="personal.medium"
-                @input="autoSavePersonal('medium')"
-                placeholder="Username"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Xing <input
-                type="text"
-                x-model="personal.xing"
-                @input="autoSavePersonal('xing')"
-                placeholder="Username"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Mastodon Instance <input
-                type="text"
-                x-model="personal.mastodonInstance"
-                @input="autoSavePersonal('mastodonInstance')"
-                placeholder="e.g. mastodon.social"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Mastodon Username <input
-                type="text"
-                x-model="personal.mastodonName"
-                @input="autoSavePersonal('mastodonName')"
-                placeholder="Username"
-              /></label
-            >
-          </div>
-
-          <!-- Academic -->
-          <h2 class="cv-profile-heading">Academic</h2>
-          <div class="cv-profile-grid">
-            <label class="field-row cv-field"
-              >ORCID <input
-                type="text"
-                x-model="personal.orcid"
-                @input="autoSavePersonal('orcid')"
-                placeholder="0000-0000-0000-0000"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >ResearchGate <input
-                type="text"
-                x-model="personal.researchgate"
-                @input="autoSavePersonal('researchgate')"
-                placeholder="Account"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Google Scholar ID <input
-                type="text"
-                x-model="personal.googlescholarId"
-                @input="autoSavePersonal('googlescholarId')"
-                placeholder="User ID"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Google Scholar Name <input
-                type="text"
-                x-model="personal.googlescholarName"
-                @input="autoSavePersonal('googlescholarName')"
-                placeholder="Display name"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Stack Overflow ID <input
-                type="text"
-                x-model="personal.stackoverflowId"
-                @input="autoSavePersonal('stackoverflowId')"
-                placeholder="User ID"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Stack Overflow Name <input
-                type="text"
-                x-model="personal.stackoverflowName"
-                @input="autoSavePersonal('stackoverflowName')"
-                placeholder="Display name"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >Kaggle <input
-                type="text"
-                x-model="personal.kaggle"
-                @input="autoSavePersonal('kaggle')"
-                placeholder="Username"
-              /></label
-            >
-            <label class="field-row cv-field"
-              >HackerRank <input
-                type="text"
-                x-model="personal.hackerrank"
-                @input="autoSavePersonal('hackerrank')"
-                placeholder="Username"
-              /></label
-            >
+          <!-- Links -->
+          <h2 class="cv-node-header" @click="_panels.links = !_panels.links" :aria-expanded="_panels.links">
+            <img class="cv-node-expand-icon" :src="_panels.links ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+            <span style="flex:1">Links</span>
+            <button class="cv-node-edit" @click.stop="openAddLink()" x-show="serverConnected && availableLinks().length > 0" title="Add link" aria-label="Add link">
+              <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="14" height="14" />
+            </button>
+          </h2>
+          <div class="cv-node-fields" x-show="_panels.links" :inert="!serverConnected">
+            <template x-for="key in personalLinks" :key="key">
+              <label>
+                <div class="cv-extra-label"><span x-text="catalogEntry(key).label"></span><img class="cv-toolbar-icon cv-link-remove" src="https://unpkg.com/lucide-static@1.7.0/icons/x.svg" width="10" height="10" alt="Remove" title="Remove" @click.prevent="removeLink(key)" /></div>
+                <template x-if="catalogEntry(key).args === 1">
+                  <input type="text" x-model="personal[key]" @input="autoSavePersonal(key)" @focus="snapshotField('personal', key)" @blur="commitField('personal', key)" :placeholder="catalogEntry(key).placeholder" />
+                </template>
+                <template x-if="catalogEntry(key).args === 2">
+                  <div class="cv-link-multi">
+                    <input type="text" x-model="personal[catalogEntry(key).fields[0]]" @input="autoSavePersonal(catalogEntry(key).fields[0])" @focus="snapshotField('personal', catalogEntry(key).fields[0])" @blur="commitField('personal', catalogEntry(key).fields[0])" :placeholder="catalogEntry(key).placeholders[0]" />
+                    <input type="text" x-model="personal[catalogEntry(key).fields[1]]" @input="autoSavePersonal(catalogEntry(key).fields[1])" @focus="snapshotField('personal', catalogEntry(key).fields[1])" @blur="commitField('personal', catalogEntry(key).fields[1])" :placeholder="catalogEntry(key).placeholders[1]" />
+                  </div>
+                </template>
+              </label>
+            </template>
+            <div x-show="personalLinks.length === 0" class="cv-muted" style="padding:8px 12px">No links added. Use + above to add one.</div>
           </div>
         </div>
 
         <!-- ===== Sections Tab ===== -->
         <div x-show="editorTab === 'sections'" class="cv-tab-content">
-          <div class="cv-section-toolbar">
-            <button class="btn cv-btn-sm" @click="createNewSection()">+ Add Section</button>
-          </div>
-          <div id="section-list" class="cv-section-list">
+          <div id="section-list" class="cv-node-list">
             <template x-for="(sec, i) in docSections" :key="sec.id">
-              <div
-                class="cv-section"
-                :class="{ 'cv-disabled': !sec.enabled }"
-                :data-sec-id="sec.id"
-              >
-                <div class="cv-section-header">
-                  <span class="ui-drag-handle" aria-hidden="true"></span>
-                  <strong x-text="sec.title"></strong>
-                  <label class="cv-section-toggle" title="Include in document">
-                    <input
-                      type="checkbox"
-                      :checked="sec.enabled"
-                      @change="toggleSection(i)"
-                      :aria-label="'Enable ' + sec.title"
-                    />
-                  </label>
-                  <button
-                    class="btn cv-btn-sm"
-                    @click="sec._expanded = !sec._expanded; if(sec._expanded) loadSectionData(sec)"
-                    x-text="sec._expanded ? 'Collapse' : 'Expand'"></button>
-                  <button
-                    class="btn cv-btn-xs"
-                    @click="renameSection(sec.id)"
-                    title="Rename section">Rename</button
-                  >
-                  <button
-                    class="btn cv-btn-xs cv-btn-danger"
-                    @click="deleteSection(sec.id)"
-                    title="Delete section">&times;</button
-                  >
+              <!-- ══ DEPTH 0: Section ══ -->
+              <div class="cv-node" data-depth="0" :class="{ 'cv-node-excluded': !sec.enabled }">
+                <div class="cv-node-header"
+                  @click="sec._expanded = !sec._expanded; if(sec._expanded) loadSectionData(sec)"
+                  :aria-expanded="sec._expanded"
+                >
+                  <span class="cv-node-arrows" @click.stop>
+                    <button class="cv-node-arrow" @click="moveSection(i, -1)" :disabled="i === 0" title="Move up" aria-label="Move up">&uarr;</button>
+                    <button class="cv-node-arrow" @click="moveSection(i, 1)" :disabled="i === docSections.length - 1" title="Move down" aria-label="Move down">&darr;</button>
+                  </span>
+                  <img class="cv-node-expand-icon" :src="sec._expanded ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+                  <span class="cv-node-title-display" x-text="sec.title"></span>
+                  <button class="cv-node-edit" @click.stop="renameSection(sec.id)" title="Rename section">
+                    <img src="https://unpkg.com/lucide-static@1.7.0/icons/pencil.svg" alt="Rename" width="14" height="14" />
+                  </button>
+                  <button class="cv-node-edit" @click.stop="addEntry(sec)" title="Add entry" aria-label="Add entry" x-show="sec._expanded && sec._data && !SECTION_TYPES[sec._data?.type]?.isParagraph">
+                    <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="14" height="14" />
+                  </button>
+                  <button class="cv-node-toggle" @click.stop="sec.enabled = !sec.enabled; toggleSection(i)">
+                    <img :src="sec.enabled ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="16" height="16" class="cv-toggle-icon" />
+                  </button>
+                  <button class="cv-node-delete" @click.stop="deleteSection(sec.id)" title="Delete section" aria-label="Delete">&times;</button>
                 </div>
 
-                <!-- Expanded editor -->
-                <div x-show="sec._expanded && sec.enabled" class="cv-section-body">
+                <div x-show="sec._expanded" class="cv-node-body" :inert="!serverConnected">
                   <template x-if="sec._data">
                     <div>
-                      <!-- Inline metrics for this section -->
-                      <div class="cv-inline-metrics">
-                        <div class="cv-inline-metrics-header">
-                          <h2 class="cv-inline-metrics-heading">Variables</h2>
-                          <button class="btn cv-btn-xs" @click="addMetricGroup(sec.id)"
-                            >+ Group</button
-                          >
-                        </div>
-                        <template
-                          x-for="[group, mets] in metricGroupsForSection(sec.id)"
-                          :key="group"
-                        >
-                          <div class="cv-metric-group">
-                            <div class="cv-metric-group-header">
-                              <span
-                                class="cv-metric-group-name"
-                                x-text="group"
-                                @dblclick="renameMetricGroup(sec.id, group)"
-                                title="Double-click to rename"></span>
-                              <div class="cv-metric-group-actions">
-                                <button class="btn cv-btn-xs" @click="addMetric(sec.id, group)"
-                                  >+ Var</button
-                                >
-                                <button
-                                  class="btn cv-btn-xs cv-btn-danger"
-                                  @click="removeMetricGroup(sec.id, group)"
-                                  title="Remove entire group">x</button
-                                >
+                      <!-- ── Entries (all types except cvparagraph) ── -->
+                      <template x-if="!SECTION_TYPES[sec._data.type]?.isParagraph">
+                        <div class="cv-node-children">
+                          <template x-for="(entry, entryIdx) in sec._data.entries" :key="entry.id">
+                            <!-- ══ DEPTH 1: Entry ══ -->
+                            <div class="cv-node" data-depth="1" :class="{ 'cv-node-excluded': !entry.resumeIncluded }">
+                              <div class="cv-node-header" @click="entry._expanded = !entry._expanded" :aria-expanded="entry._expanded">
+                                <span class="cv-node-arrows" @click.stop>
+                                  <button class="cv-node-arrow" @click="moveEntry(sec, entryIdx, -1)" :disabled="entryIdx === 0" title="Move up" aria-label="Move up">&uarr;</button>
+                                  <button class="cv-node-arrow" @click="moveEntry(sec, entryIdx, 1)" :disabled="entryIdx === sec._data.entries.length - 1" title="Move down" aria-label="Move down">&darr;</button>
+                                </span>
+                                <img class="cv-node-expand-icon" :src="entry._expanded ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="12" height="12" />
+                                <span class="cv-node-title-display" x-show="!entry._editing" x-text="getSectionTitle(sec.type, entry.fields)"></span>
+                                <input x-show="entry._editing" x-ref="entryTitleInput" type="text" class="cv-node-title"
+                                  :value="entry.fields[getSectionTitleField(sec.type)] || ''"
+                                  @click.stop
+                                  @keydown.enter="$event.target.blur()"
+                                  @blur="
+                                    entry._editing = false;
+                                    const field = getSectionTitleField(sec.type);
+                                    if (field) entry.fields[field] = $event.target.value;
+                                    autoSaveEntry(entry);
+                                  " />
+                                <button class="cv-node-edit" @click.stop="entry._editing = !entry._editing; if(entry._editing) $nextTick(() => $refs.entryTitleInput?.focus())" title="Edit name">
+                                  <img src="https://unpkg.com/lucide-static@1.7.0/icons/pencil.svg" alt="Edit" width="14" height="14" />
+                                </button>
+                                <button class="cv-node-edit" @click.stop="addItem(entry)" title="Add item" aria-label="Add item" x-show="entry._expanded">
+                                  <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="12" height="12" />
+                                </button>
+                                <button class="cv-node-toggle" @click.stop="entry.resumeIncluded = !entry.resumeIncluded; toggleResumeEntry(entry)">
+                                  <img :src="entry.resumeIncluded ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="14" height="14" class="cv-toggle-icon" />
+                                </button>
+                                <button class="cv-node-delete" @click.stop="removeEntry(sec, entry.id)" aria-label="Delete">&times;</button>
                               </div>
-                            </div>
-                            <div class="cv-metrics-list">
-                              <template x-for="metric in mets" :key="metric.id">
-                                <div class="cv-metric-row">
-                                  <div class="cv-metric-row-header">
-                                    <span class="cv-metric-cmd" x-text="metric.command"></span>
-                                    <button
-                                      class="btn cv-btn-xs cv-btn-danger"
-                                      @click="removeMetric(metric.id)"
-                                      title="Remove variable">&times;</button
-                                    >
-                                  </div>
-                                  <textarea
-                                    x-model="metric.value"
-                                    :placeholder="metric.label"
-                                    @input="autoSaveMetric(metric)"
-                                    rows="1"
-                                    class="cv-metric-textarea"></textarea>
-                                </div>
-                              </template>
-                            </div>
-                          </div>
-                        </template>
-                        <template x-if="metricsForSection(sec.id).length === 0">
-                          <p class="cv-muted">
-                            No variables. Click "+ Group" to add a variable group.
-                          </p>
-                        </template>
-                      </div>
 
-                      <!-- cventries editor -->
-                      <template x-if="sec._data.type === 'cventries'">
-                        <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
-                            <div class="cv-entry" :class="{ 'cv-dim': !entry.resumeIncluded }">
-                              <div class="cv-entry-header">
-                                <strong x-text="entry.fields.organization || entry.fields.position"
-                                ></strong>
-                                <div class="cv-entry-actions">
-                                  <label class="cv-resume-badge" title="Include in Resume">
-                                    <span class="cv-badge">R</span>
-                                    <input
-                                      type="checkbox"
-                                      :checked="entry.resumeIncluded"
-                                      @change="toggleResumeEntry(entry)"
-                                      aria-label="Include entry in resume"
-                                    />
-                                  </label>
-                                  <button
-                                    class="btn cv-btn-xs cv-btn-danger"
-                                    @click="removeEntry(sec, entry.id)">Remove</button
-                                  >
-                                </div>
-                              </div>
-                              <label
-                                >Position <input
-                                  type="text"
-                                  x-model="entry.fields.position"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Organization <input
-                                  type="text"
-                                  x-model="entry.fields.organization"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Location <input
-                                  type="text"
-                                  x-model="entry.fields.location"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Date <input
-                                  type="text"
-                                  x-model="entry.fields.date"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <div
-                                class="items-list"
-                                :data-entry-id="entry.id"
-                                :data-sec-id="sec.id"
-                              >
-                                <strong>Bullet Points</strong>
-                                <template x-for="item in entry.items" :key="item.id">
-                                  <div
-                                    class="cv-item-row"
-                                    :class="{ 'cv-dim': !item.resumeIncluded }"
-                                  >
-                                    <span class="ui-drag-handle cv-drag-sm" aria-hidden="true"
-                                    ></span>
-                                    <textarea
-                                      x-model="item.content"
-                                      rows="2"
-                                      @input="autoSaveItem(item)"
-                                      :aria-label="'Bullet point'"></textarea>
-                                    <label class="cv-item-resume" title="Include in Resume">
-                                      <span class="cv-badge-sm">R</span>
-                                      <input
-                                        type="checkbox"
-                                        :checked="item.resumeIncluded"
-                                        @change="toggleResumeItem(item)"
-                                      />
+                              <div x-show="entry._expanded" class="cv-node-body">
+                                <!-- Type-specific fields -->
+                                <div class="cv-node-fields">
+                                  <template x-for="field in (SECTION_TYPES[sec.type]?.fields || [])" :key="field.key">
+                                    <label>
+                                      <span x-text="field.label"></span>
+                                      <input type="text" :value="entry.fields[field.key]"
+                                        @input="entry.fields[field.key] = $event.target.value; autoSaveEntry(entry)" />
                                     </label>
-                                    <button
-                                      class="btn cv-btn-xs cv-btn-danger"
-                                      @click="removeItem(entry, item.id)"
-                                      aria-label="Remove bullet point">x</button
-                                    >
+                                  </template>
+                                </div>
+
+                                <!-- Child items (bullets) — only for cventries -->
+                                <template x-if="SECTION_TYPES[sec.type]?.hasItems">
+                                  <div>
+                                    <label class="cv-node-children-label" x-text="(SECTION_TYPES[sec.type]?.itemLabel || 'Bullet') + ' Points'"></label>
+                                    <div class="cv-node-children">
+                                    <template x-for="(item, itemIdx) in entry.items" :key="item.id">
+                                      <!-- ══ DEPTH 2: Item ══ -->
+                                      <div class="cv-node" data-depth="2" :class="{ 'cv-node-excluded': !item.resumeIncluded }">
+                                        <div class="cv-node-header" @click="item._expanded = !item._expanded" :aria-expanded="item._expanded">
+                                          <span class="cv-node-arrows" @click.stop>
+                                            <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, -1)" :disabled="itemIdx === 0" title="Move up" aria-label="Move up">&uarr;</button>
+                                            <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, 1)" :disabled="itemIdx === entry.items.length - 1" title="Move down" aria-label="Move down">&darr;</button>
+                                          </span>
+                                          <img class="cv-node-expand-icon" :src="item._expanded ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="10" height="10" />
+                                          <input type="text" class="cv-node-title" x-model="item.title"
+                                            @input="autoSaveItemTitle(item)" @click.stop placeholder="(untitled bullet)" :readonly="!serverConnected" />
+                                          <button class="cv-node-toggle" @click.stop="item.resumeIncluded = !item.resumeIncluded; toggleResumeItem(item)">
+                                            <img :src="item.resumeIncluded ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="12" height="12" class="cv-toggle-icon" />
+                                          </button>
+                                          <button class="cv-node-delete" @click.stop="removeItem(entry, item.id)" aria-label="Delete">&times;</button>
+                                        </div>
+                                        <div x-show="item._expanded" class="cv-node-body">
+                                          <textarea x-model="item.content" rows="2" @input="autoSaveItem(item)" :aria-label="'Bullet point'" class="cv-full-textarea"></textarea>
+                                        </div>
+                                      </div>
+                                    </template>
+                                    </div>
                                   </div>
                                 </template>
-                                <button class="btn cv-btn-sm" @click="addItem(entry)"
-                                  >+ Add Bullet</button
-                                >
                               </div>
                             </div>
                           </template>
-                          <div class="cv-add-row">
-                            <button class="btn" @click="addEntry(sec)">+ Add Entry</button>
-                          </div>
                         </div>
                       </template>
 
-                      <!-- cvskills editor -->
-                      <template x-if="sec._data.type === 'cvskills'">
-                        <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
-                            <div
-                              class="cv-entry cv-entry-compact"
-                              :class="{ 'cv-dim': !entry.resumeIncluded }"
-                            >
-                              <div class="cv-entry-header">
-                                <strong x-text="entry.fields.category"></strong>
-                                <div class="cv-entry-actions">
-                                  <label class="cv-resume-badge" title="Include in Resume">
-                                    <span class="cv-badge">R</span>
-                                    <input
-                                      type="checkbox"
-                                      :checked="entry.resumeIncluded"
-                                      @change="toggleResumeEntry(entry)"
-                                    />
-                                  </label>
-                                  <button
-                                    class="btn cv-btn-xs cv-btn-danger"
-                                    @click="removeEntry(sec, entry.id)">Remove</button
-                                  >
-                                </div>
-                              </div>
-                              <label
-                                >Category <input
-                                  type="text"
-                                  x-model="entry.fields.category"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Skills <input
-                                  type="text"
-                                  x-model="entry.fields.skills"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                            </div>
-                          </template>
-                          <div class="cv-add-row">
-                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Skill</button
-                            >
-                          </div>
-                        </div>
-                      </template>
-
-                      <!-- cvhonors editor -->
-                      <template x-if="sec._data.type === 'cvhonors'">
-                        <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
-                            <div
-                              class="cv-entry cv-entry-compact"
-                              :class="{ 'cv-dim': !entry.resumeIncluded }"
-                            >
-                              <div class="cv-entry-header">
-                                <strong x-text="entry.fields.award"></strong>
-                                <div class="cv-entry-actions">
-                                  <label class="cv-resume-badge" title="Include in Resume">
-                                    <span class="cv-badge">R</span>
-                                    <input
-                                      type="checkbox"
-                                      :checked="entry.resumeIncluded"
-                                      @change="toggleResumeEntry(entry)"
-                                    />
-                                  </label>
-                                  <button
-                                    class="btn cv-btn-xs cv-btn-danger"
-                                    @click="removeEntry(sec, entry.id)">Remove</button
-                                  >
-                                </div>
-                              </div>
-                              <label
-                                >Award <input
-                                  type="text"
-                                  x-model="entry.fields.award"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Issuer <input
-                                  type="text"
-                                  x-model="entry.fields.issuer"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Location <input
-                                  type="text"
-                                  x-model="entry.fields.location"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Date <input
-                                  type="text"
-                                  x-model="entry.fields.date"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                            </div>
-                          </template>
-                          <div class="cv-add-row">
-                            <button class="btn cv-btn-sm" @click="addEntry(sec)">+ Add Honor</button
-                            >
-                          </div>
-                        </div>
-                      </template>
-
-                      <!-- cvreferences editor -->
-                      <template x-if="sec._data.type === 'cvreferences'">
-                        <div>
-                          <template x-for="entry in sec._data.entries" :key="entry.id">
-                            <div
-                              class="cv-entry cv-entry-compact"
-                              :class="{ 'cv-dim': !entry.resumeIncluded }"
-                            >
-                              <div class="cv-entry-header">
-                                <strong x-text="entry.fields.name"></strong>
-                                <div class="cv-entry-actions">
-                                  <label class="cv-resume-badge" title="Include in Resume">
-                                    <span class="cv-badge">R</span>
-                                    <input
-                                      type="checkbox"
-                                      :checked="entry.resumeIncluded"
-                                      @change="toggleResumeEntry(entry)"
-                                    />
-                                  </label>
-                                  <button
-                                    class="btn cv-btn-xs cv-btn-danger"
-                                    @click="removeEntry(sec, entry.id)">Remove</button
-                                  >
-                                </div>
-                              </div>
-                              <label
-                                >Name <input
-                                  type="text"
-                                  x-model="entry.fields.name"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Relation <input
-                                  type="text"
-                                  x-model="entry.fields.relation"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Phone <input
-                                  type="text"
-                                  x-model="entry.fields.phone"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                              <label
-                                >Email <input
-                                  type="text"
-                                  x-model="entry.fields.email"
-                                  @input="autoSaveEntry(entry)"
-                                /></label
-                              >
-                            </div>
-                          </template>
-                          <div class="cv-add-row">
-                            <button class="btn cv-btn-sm" @click="addEntry(sec)"
-                              >+ Add Reference</button
-                            >
-                          </div>
-                        </div>
-                      </template>
-
-                      <!-- cvparagraph editor -->
-                      <template x-if="sec._data.type === 'cvparagraph'">
-                        <div>
+                      <!-- ── cvparagraph (special case) ── -->
+                      <template x-if="SECTION_TYPES[sec._data.type]?.isParagraph">
+                        <div class="cv-node-children">
                           <template x-if="sec._data.entries.length > 0">
-                            <div>
-                              <div class="cv-para-label">CV Text</div>
-                              <textarea
-                                x-model="sec._data.entries[0].fields.text"
-                                rows="4"
-                                class="cv-full-textarea"
-                                @input="autoSaveParagraph(sec)"
-                                aria-label="CV summary text"></textarea>
-                              <div class="cv-para-label">
-                                Resume Text <span class="cv-muted-inline"
-                                  >(shorter version for resume)</span
-                                >
-                              </div>
-                              <textarea
-                                x-model="sec.resumeParagraphText"
-                                @input="autoSaveResumeParagraphText(sec)"
-                                rows="3"
-                                class="cv-full-textarea"
-                                aria-label="Resume summary text"></textarea>
+                            <div class="cv-node-fields">
+                              <textarea x-model="sec._data.entries[0].fields.text" rows="4" class="cv-full-textarea"
+                                @input="autoSaveParagraph(sec)" aria-label="Text"></textarea>
                             </div>
                           </template>
                         </div>
@@ -863,192 +346,158 @@ import { siteConfig } from '../../../config/site';
 
         <!-- ===== Cover Letter Tab ===== -->
         <div x-show="editorTab === 'coverletter'" class="cv-tab-content">
-          <div class="cv-coverletter">
-            <div class="cv-cl-heading">Recipient</div>
-            <label
-              >Name <input
-                type="text"
-                x-model="coverletter.settings.recipientName"
-                @input="autoSaveCoverletterSetting('recipientName')"
-              /></label
-            >
-            <label
-              >Address <textarea
-                x-model="coverletter.settings.recipientAddress"
-                @input="autoSaveCoverletterSetting('recipientAddress')"
-                rows="3"></textarea></label
-            >
+          <div class="cv-coverletter" :inert="!serverConnected">
+            <div class="cv-node-header" @click="_panels.clRecipient = !_panels.clRecipient" :aria-expanded="_panels.clRecipient">
+              <img class="cv-node-expand-icon" :src="_panels.clRecipient ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+              Recipient
+            </div>
+            <div class="cv-node-fields" x-show="_panels.clRecipient">
+              <label>Name <input type="text" x-model="coverletter.settings.recipientName" @input="autoSaveCoverletterSetting('recipientName')" @focus="snapshotField('coverletter.settings', 'recipientName')" @blur="commitField('coverletter.settings', 'recipientName')" /></label>
+              <label>Address <textarea x-model="coverletter.settings.recipientAddress" @input="autoSaveCoverletterSetting('recipientAddress')" @focus="snapshotField('coverletter.settings', 'recipientAddress')" @blur="commitField('coverletter.settings', 'recipientAddress')" rows="3"></textarea></label>
+            </div>
 
-            <div class="cv-cl-heading">Letter Details</div>
-            <label
-              >Title <input
-                type="text"
-                x-model="coverletter.settings.title"
-                @input="autoSaveCoverletterSetting('title')"
-              /></label
-            >
-            <label
-              >Opening <input
-                type="text"
-                x-model="coverletter.settings.opening"
-                @input="autoSaveCoverletterSetting('opening')"
-              /></label
-            >
-            <label
-              >Closing <input
-                type="text"
-                x-model="coverletter.settings.closing"
-                @input="autoSaveCoverletterSetting('closing')"
-              /></label
-            >
-            <label
-              >Enclosure Label <input
-                type="text"
-                x-model="coverletter.settings.enclosureLabel"
-                @input="autoSaveCoverletterSetting('enclosureLabel')"
-              /></label
-            >
-            <label
-              >Enclosure Content <input
-                type="text"
-                x-model="coverletter.settings.enclosureContent"
-                @input="autoSaveCoverletterSetting('enclosureContent')"
-              /></label
-            >
+            <div class="cv-node-header" @click="_panels.clDetails = !_panels.clDetails" :aria-expanded="_panels.clDetails">
+              <img class="cv-node-expand-icon" :src="_panels.clDetails ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+              Letter Details
+            </div>
+            <div class="cv-node-fields" x-show="_panels.clDetails">
+              <label>Title <input type="text" x-model="coverletter.settings.title" @input="autoSaveCoverletterSetting('title')" @focus="snapshotField('coverletter.settings', 'title')" @blur="commitField('coverletter.settings', 'title')" /></label>
+              <label>Opening <input type="text" x-model="coverletter.settings.opening" @input="autoSaveCoverletterSetting('opening')" @focus="snapshotField('coverletter.settings', 'opening')" @blur="commitField('coverletter.settings', 'opening')" /></label>
+              <label>Closing <input type="text" x-model="coverletter.settings.closing" @input="autoSaveCoverletterSetting('closing')" @focus="snapshotField('coverletter.settings', 'closing')" @blur="commitField('coverletter.settings', 'closing')" /></label>
+              <label>Enclosure Label <input type="text" x-model="coverletter.settings.enclosureLabel" @input="autoSaveCoverletterSetting('enclosureLabel')" @focus="snapshotField('coverletter.settings', 'enclosureLabel')" @blur="commitField('coverletter.settings', 'enclosureLabel')" /></label>
+              <label>Enclosure Content <input type="text" x-model="coverletter.settings.enclosureContent" @input="autoSaveCoverletterSetting('enclosureContent')" @focus="snapshotField('coverletter.settings', 'enclosureContent')" @blur="commitField('coverletter.settings', 'enclosureContent')" /></label>
+            </div>
 
-            <div class="cv-cl-heading">Sections</div>
+            <div class="cv-node-header" @click="_panels.clSections = !_panels.clSections" :aria-expanded="_panels.clSections">
+              <img class="cv-node-expand-icon" :src="_panels.clSections ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />
+              <span style="flex:1">Sections</span>
+              <button class="cv-node-edit" @click.stop="addCoverletterSection()" title="Add section" aria-label="Add section">
+                <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="14" height="14" />
+              </button>
+            </div>
             <template x-for="sec in coverletter.sections" :key="sec.id">
-              <div class="cv-entry">
-                <label
-                  >Section Title <input
-                    type="text"
-                    x-model="sec.title"
-                    @input="autoSaveCoverletterSection(sec)"
-                  /></label
-                >
-                <label
-                  >Body <textarea
-                    x-model="sec.body"
-                    @input="autoSaveCoverletterSection(sec)"
-                    rows="6"
-                    class="cv-full-textarea"></textarea></label
-                >
-                <div class="cv-add-row">
-                  <button
-                    class="btn cv-btn-xs cv-btn-danger"
-                    @click="removeCoverletterSection(sec.id)">Remove Section</button
-                  >
+              <div class="cv-node" data-depth="1">
+                <div class="cv-node-fields">
+                  <label>Section Title <input type="text" x-model="sec.title" @input="autoSaveCoverletterSection(sec)" /></label>
+                  <label>Body <textarea x-model="sec.body" @input="autoSaveCoverletterSection(sec)" rows="6" class="cv-full-textarea"></textarea></label>
+                </div>
+                <div class="cv-node-add">
+                  <button class="cv-node-delete" @click="removeCoverletterSection(sec.id)" aria-label="Delete">&times;</button>
                 </div>
               </div>
             </template>
-            <div class="cv-add-row">
-              <button class="btn cv-btn-sm" @click="addCoverletterSection()">+ Add Section</button>
-            </div>
           </div>
         </div>
 
         <!-- ===== Style Tab ===== -->
         <div x-show="editorTab === 'style'" class="cv-tab-content">
-          <div class="cv-style-editor">
-            <div class="cv-style-heading">Page</div>
-            <label class="field-row cv-field"
-              >Page Size
-              <select x-model="style.pageSize" @change="autoSaveStyle('pageSize')">
-                <option value="letterpaper">Letter</option>
-                <option value="a4paper">A4</option>
-              </select>
-            </label>
-            <label class="field-row cv-field"
-              >Font Size
-              <select x-model="style.fontSize" @change="autoSaveStyle('fontSize')">
-                <option value="10pt">10pt</option>
-                <option value="11pt">11pt</option>
-                <option value="12pt">12pt</option>
-              </select>
-            </label>
+          <div class="cv-style-editor" :inert="!serverConnected">
 
-            <div class="cv-style-heading">Typography</div>
-            <label class="field-row cv-field"
-              >Font Family
-              <select x-model="style.fontFamily" @change="autoSaveStyle('fontFamily')">
-                <option value="source-sans-3">Source Sans 3</option>
-                <option value="roboto">Roboto</option>
-              </select>
-            </label>
-
-            <div class="cv-style-heading">Accent Color</div>
-            <div class="cv-color-swatches">
-              <button
-                class="cv-color-swatch"
-                style="background:#00A388"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-emerald' }"
-                @click="setAccentColor('awesome-emerald')"
-                title="Emerald"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#0395DE"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-skyblue' }"
-                @click="setAccentColor('awesome-skyblue')"
-                title="Sky Blue"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#DC3522"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-red' }"
-                @click="setAccentColor('awesome-red')"
-                title="Red"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#EF4089"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-pink' }"
-                @click="setAccentColor('awesome-pink')"
-                title="Pink"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#FF6138"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-orange' }"
-                @click="setAccentColor('awesome-orange')"
-                title="Orange"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#27AE60"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-nephritis' }"
-                @click="setAccentColor('awesome-nephritis')"
-                title="Nephritis"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#95A5A6"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-concrete' }"
-                @click="setAccentColor('awesome-concrete')"
-                title="Concrete"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#131A28"
-                :class="{ 'cv-swatch-active': style.accentColor === 'awesome-darknight' }"
-                @click="setAccentColor('awesome-darknight')"
-                title="Dark Night"></button>
-              <button
-                class="cv-color-swatch"
-                style="background:#B21F5C"
-                :class="{ 'cv-swatch-active': style.accentColor === 'spinel' }"
-                @click="setAccentColor('spinel')"
-                title="Spinel"></button>
+            <!-- Page -->
+            <div class="cv-node-header" @click="_panels.stPage = !_panels.stPage" :aria-expanded="_panels.stPage"><img class="cv-node-expand-icon" :src="_panels.stPage ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Page</div>
+            <div class="cv-node-fields" x-show="_panels.stPage">
+              <label>Page Size
+                <select x-model="style.pageSize" @change="autoSaveStyle('pageSize')">
+                  <option value="letterpaper">Letter</option>
+                  <option value="a4paper">A4</option>
+                </select>
+              </label>
             </div>
-            <label class="field-row cv-field"
-              >Custom Color
-              <div class="cv-custom-color-row">
-                <input
-                  type="text"
-                  x-model="style.customHex"
-                  @input="applyCustomColor()"
-                  placeholder="#B21F5C"
-                  maxlength="7"
-                />
-                <span class="cv-color-preview" :style="'background:' + (style.customHex || '#000')"
-                ></span>
+
+            <!-- Typography -->
+            <div class="cv-node-header" @click="_panels.stTypography = !_panels.stTypography" :aria-expanded="_panels.stTypography"><img class="cv-node-expand-icon" :src="_panels.stTypography ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Typography</div>
+            <div class="cv-node-fields" x-show="_panels.stTypography">
+              <label>Font Family
+                <select x-model="style.fontFamily" @change="autoSaveStyle('fontFamily')">
+                  <option value="source-sans-3">Source Sans 3</option>
+                  <option value="roboto">Roboto</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- Accent Color -->
+            <div class="cv-node-header" @click="_panels.stAccent = !_panels.stAccent" :aria-expanded="_panels.stAccent"><img class="cv-node-expand-icon" :src="_panels.stAccent ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Accent Color</div>
+            <div x-show="_panels.stAccent">
+              <div class="cv-color-swatches">
+                <template x-for="c in ACCENT_COLORS" :key="c.key">
+                  <button class="cv-color-swatch" :style="'background:' + c.hex"
+                    :class="{ 'cv-swatch-active': style.accentColor === c.key }"
+                    @click="setAccentColor(c.key)" :title="c.label"></button>
+                </template>
+                <label class="cv-color-swatch cv-swatch-custom"
+                  :style="'background:' + (style.customHex || '#000')"
+                  :class="{ 'cv-swatch-active': style.accentColor === 'custom' }"
+                  title="Custom color">
+                  <img src="https://unpkg.com/lucide-static@1.7.0/icons/paintbrush.svg" alt="" width="14" height="14" style="filter:invert(1);opacity:0.8" />
+                  <input type="color" class="cv-color-input-hidden" :value="style.customHex || '#B21F5C'"
+                    @input="style.customHex = $event.target.value; applyCustomColor()" />
+                </label>
               </div>
-            </label>
+            </div>
+
+            <!-- Margins -->
+            <div class="cv-node-header" @click="_panels.stMargins = !_panels.stMargins" :aria-expanded="_panels.stMargins"><img class="cv-node-expand-icon" :src="_panels.stMargins ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Margins</div>
+            <div x-show="_panels.stMargins">
+            <div class="cv-spacing-row"><label>Left &amp; Right</label><input type="number" step="any" x-model.number="spacing.horizontalMargin.num" @input="autoSaveSpacing('horizontalMargin')" @focus="snapshotField('spacing', 'horizontalMargin')" @blur="commitField('spacing', 'horizontalMargin')" /><select class="cv-unit-select" x-model="spacing.horizontalMargin.unit" @change="autoSaveSpacing('horizontalMargin')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Top</label><input type="number" step="any" x-model.number="spacing.marginTop.num" @input="autoSaveSpacing('marginTop')" @focus="snapshotField('spacing', 'marginTop')" @blur="commitField('spacing', 'marginTop')" /><select class="cv-unit-select" x-model="spacing.marginTop.unit" @change="autoSaveSpacing('marginTop')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Bottom</label><input type="number" step="any" x-model.number="spacing.marginBottom.num" @input="autoSaveSpacing('marginBottom')" @focus="snapshotField('spacing', 'marginBottom')" @blur="commitField('spacing', 'marginBottom')" /><select class="cv-unit-select" x-model="spacing.marginBottom.unit" @change="autoSaveSpacing('marginBottom')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Footskip</label><input type="number" step="any" x-model.number="spacing.footskip.num" @input="autoSaveSpacing('footskip')" @focus="snapshotField('spacing', 'footskip')" @blur="commitField('spacing', 'footskip')" /><select class="cv-unit-select" x-model="spacing.footskip.unit" @change="autoSaveSpacing('footskip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Header Spacing -->
+            <div class="cv-node-header" @click="_panels.stHeaderSpacing = !_panels.stHeaderSpacing" :aria-expanded="_panels.stHeaderSpacing"><img class="cv-node-expand-icon" :src="_panels.stHeaderSpacing ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Header Spacing</div>
+            <div x-show="_panels.stHeaderSpacing">
+            <div class="cv-spacing-row"><label>Name &amp; Position Gap</label><input type="number" step="any" x-model.number="spacing.headerLineGap.num" @input="autoSaveSpacing('headerLineGap')" @focus="snapshotField('spacing', 'headerLineGap')" @blur="commitField('spacing', 'headerLineGap')" /><select class="cv-unit-select" x-model="spacing.headerLineGap.unit" @change="autoSaveSpacing('headerLineGap')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>After Address</label><input type="number" step="any" x-model.number="spacing.headerAfterAddressSkip.num" @input="autoSaveSpacing('headerAfterAddressSkip')" @focus="snapshotField('spacing', 'headerAfterAddressSkip')" @blur="commitField('spacing', 'headerAfterAddressSkip')" /><select class="cv-unit-select" x-model="spacing.headerAfterAddressSkip.unit" @change="autoSaveSpacing('headerAfterAddressSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>After Social</label><input type="number" step="any" x-model.number="spacing.headerAfterSocialSkip.num" @input="autoSaveSpacing('headerAfterSocialSkip')" @focus="snapshotField('spacing', 'headerAfterSocialSkip')" @blur="commitField('spacing', 'headerAfterSocialSkip')" /><select class="cv-unit-select" x-model="spacing.headerAfterSocialSkip.unit" @change="autoSaveSpacing('headerAfterSocialSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>After Quote</label><input type="number" step="any" x-model.number="spacing.headerAfterQuoteSkip.num" @input="autoSaveSpacing('headerAfterQuoteSkip')" @focus="snapshotField('spacing', 'headerAfterQuoteSkip')" @blur="commitField('spacing', 'headerAfterQuoteSkip')" /><select class="cv-unit-select" x-model="spacing.headerAfterQuoteSkip.unit" @change="autoSaveSpacing('headerAfterQuoteSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Section Spacing -->
+            <div class="cv-node-header" @click="_panels.stSectionSpacing = !_panels.stSectionSpacing" :aria-expanded="_panels.stSectionSpacing"><img class="cv-node-expand-icon" :src="_panels.stSectionSpacing ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Section Spacing</div>
+            <div x-show="_panels.stSectionSpacing">
+            <div class="cv-spacing-row"><label>Section Top</label><input type="number" step="any" x-model.number="spacing.sectionTopSkip.num" @input="autoSaveSpacing('sectionTopSkip')" @focus="snapshotField('spacing', 'sectionTopSkip')" @blur="commitField('spacing', 'sectionTopSkip')" /><select class="cv-unit-select" x-model="spacing.sectionTopSkip.unit" @change="autoSaveSpacing('sectionTopSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Content Top</label><input type="number" step="any" x-model.number="spacing.sectionContentTopSkip.num" @input="autoSaveSpacing('sectionContentTopSkip')" @focus="snapshotField('spacing', 'sectionContentTopSkip')" @blur="commitField('spacing', 'sectionContentTopSkip')" /><select class="cv-unit-select" x-model="spacing.sectionContentTopSkip.unit" @change="autoSaveSpacing('sectionContentTopSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Entry &amp; Skills Spacing -->
+            <div class="cv-node-header" @click="_panels.stEntrySpacing = !_panels.stEntrySpacing" :aria-expanded="_panels.stEntrySpacing"><img class="cv-node-expand-icon" :src="_panels.stEntrySpacing ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Entry &amp; Skills Spacing</div>
+            <div x-show="_panels.stEntrySpacing">
+            <div class="cv-spacing-row"><label>Content Top Adjust</label><input type="number" step="any" x-model.number="spacing.contentTopAdjust.num" @input="autoSaveSpacing('contentTopAdjust')" @focus="snapshotField('spacing', 'contentTopAdjust')" @blur="commitField('spacing', 'contentTopAdjust')" /><select class="cv-unit-select" x-model="spacing.contentTopAdjust.unit" @change="autoSaveSpacing('contentTopAdjust')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Skills Col Sep</label><input type="number" step="any" x-model.number="spacing.skillsColSep.num" @input="autoSaveSpacing('skillsColSep')" @focus="snapshotField('spacing', 'skillsColSep')" @blur="commitField('spacing', 'skillsColSep')" /><select class="cv-unit-select" x-model="spacing.skillsColSep.unit" @change="autoSaveSpacing('skillsColSep')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Bullet Spacing -->
+            <div class="cv-node-header" @click="_panels.stBulletSpacing = !_panels.stBulletSpacing" :aria-expanded="_panels.stBulletSpacing"><img class="cv-node-expand-icon" :src="_panels.stBulletSpacing ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Bullet Spacing</div>
+            <div x-show="_panels.stBulletSpacing">
+            <div class="cv-spacing-row"><label>Items Top</label><input type="number" step="any" x-model.number="spacing.itemsTopSkip.num" @input="autoSaveSpacing('itemsTopSkip')" @focus="snapshotField('spacing', 'itemsTopSkip')" @blur="commitField('spacing', 'itemsTopSkip')" /><select class="cv-unit-select" x-model="spacing.itemsTopSkip.unit" @change="autoSaveSpacing('itemsTopSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Items Bottom</label><input type="number" step="any" x-model.number="spacing.itemsBottomSkip.num" @input="autoSaveSpacing('itemsBottomSkip')" @focus="snapshotField('spacing', 'itemsBottomSkip')" @blur="commitField('spacing', 'itemsBottomSkip')" /><select class="cv-unit-select" x-model="spacing.itemsBottomSkip.unit" @change="autoSaveSpacing('itemsBottomSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Items Left</label><input type="number" step="any" x-model.number="spacing.itemsLeftMargin.num" @input="autoSaveSpacing('itemsLeftMargin')" @focus="snapshotField('spacing', 'itemsLeftMargin')" @blur="commitField('spacing', 'itemsLeftMargin')" /><select class="cv-unit-select" x-model="spacing.itemsLeftMargin.unit" @change="autoSaveSpacing('itemsLeftMargin')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Paragraph Spacing -->
+            <div class="cv-node-header" @click="_panels.stParagraphSpacing = !_panels.stParagraphSpacing" :aria-expanded="_panels.stParagraphSpacing"><img class="cv-node-expand-icon" :src="_panels.stParagraphSpacing ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Paragraph Spacing</div>
+            <div x-show="_panels.stParagraphSpacing">
+            <div class="cv-spacing-row"><label>Top Adjust</label><input type="number" step="any" x-model.number="spacing.paragraphTopAdjust.num" @input="autoSaveSpacing('paragraphTopAdjust')" @focus="snapshotField('spacing', 'paragraphTopAdjust')" @blur="commitField('spacing', 'paragraphTopAdjust')" /><select class="cv-unit-select" x-model="spacing.paragraphTopAdjust.unit" @change="autoSaveSpacing('paragraphTopAdjust')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Bottom</label><input type="number" step="any" x-model.number="spacing.paragraphBottomSkip.num" @input="autoSaveSpacing('paragraphBottomSkip')" @focus="snapshotField('spacing', 'paragraphBottomSkip')" @blur="commitField('spacing', 'paragraphBottomSkip')" /><select class="cv-unit-select" x-model="spacing.paragraphBottomSkip.unit" @change="autoSaveSpacing('paragraphBottomSkip')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
+            <!-- Font Sizes -->
+            <div class="cv-node-header" @click="_panels.stFontSizes = !_panels.stFontSizes" :aria-expanded="_panels.stFontSizes"><img class="cv-node-expand-icon" :src="_panels.stFontSizes ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="14" height="14" />Font Sizes</div>
+            <div x-show="_panels.stFontSizes">
+            <div class="cv-spacing-row"><label>Header Name</label><input type="number" step="any" x-model.number="fonts.headerNameSize.num" @input="autoSaveFonts('headerNameSize')" @focus="snapshotField('fonts', 'headerNameSize')" @blur="commitField('fonts', 'headerNameSize')" /><select class="cv-unit-select" x-model="fonts.headerNameSize.unit" @change="autoSaveFonts('headerNameSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Header Position</label><input type="number" step="any" x-model.number="fonts.headerPositionSize.num" @input="autoSaveFonts('headerPositionSize')" @focus="snapshotField('fonts', 'headerPositionSize')" @blur="commitField('fonts', 'headerPositionSize')" /><select class="cv-unit-select" x-model="fonts.headerPositionSize.unit" @change="autoSaveFonts('headerPositionSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Header Social</label><input type="number" step="any" x-model.number="fonts.headerSocialSize.num" @input="autoSaveFonts('headerSocialSize')" @focus="snapshotField('fonts', 'headerSocialSize')" @blur="commitField('fonts', 'headerSocialSize')" /><select class="cv-unit-select" x-model="fonts.headerSocialSize.unit" @change="autoSaveFonts('headerSocialSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Secondary Text</label><input type="number" step="any" x-model.number="fonts.secondaryTextSize.num" @input="autoSaveFonts('secondaryTextSize')" @focus="snapshotField('fonts', 'secondaryTextSize')" @blur="commitField('fonts', 'secondaryTextSize')" /><select class="cv-unit-select" x-model="fonts.secondaryTextSize.unit" @change="autoSaveFonts('secondaryTextSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Content Text</label><input type="number" step="any" x-model.number="fonts.contentTextSize.num" @input="autoSaveFonts('contentTextSize')" @focus="snapshotField('fonts', 'contentTextSize')" @blur="commitField('fonts', 'contentTextSize')" /><select class="cv-unit-select" x-model="fonts.contentTextSize.unit" @change="autoSaveFonts('contentTextSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Item Title</label><input type="number" step="any" x-model.number="fonts.itemTitleSize.num" @input="autoSaveFonts('itemTitleSize')" @focus="snapshotField('fonts', 'itemTitleSize')" @blur="commitField('fonts', 'itemTitleSize')" /><select class="cv-unit-select" x-model="fonts.itemTitleSize.unit" @change="autoSaveFonts('itemTitleSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Section Title</label><input type="number" step="any" x-model.number="fonts.sectionTitleSize.num" @input="autoSaveFonts('sectionTitleSize')" @focus="snapshotField('fonts', 'sectionTitleSize')" @blur="commitField('fonts', 'sectionTitleSize')" /><select class="cv-unit-select" x-model="fonts.sectionTitleSize.unit" @change="autoSaveFonts('sectionTitleSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            <div class="cv-spacing-row"><label>Subsection</label><input type="number" step="any" x-model.number="fonts.subsectionTitleSize.num" @input="autoSaveFonts('subsectionTitleSize')" @focus="snapshotField('fonts', 'subsectionTitleSize')" @blur="commitField('fonts', 'subsectionTitleSize')" /><select class="cv-unit-select" x-model="fonts.subsectionTitleSize.unit" @change="autoSaveFonts('subsectionTitleSize')"><option value="pt">pt</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ex">ex</option><option value="em">em</option><option value="bp">bp</option><option value="pc">pc</option><option value="dd">dd</option><option value="cc">cc</option><option value="sp">sp</option><option value="mu">mu</option></select></div>
+            </div>
+
           </div>
         </div>
+        </div><!-- .cv-inner-window -->
       </div>
 
       <!-- Resize handle -->
@@ -1056,10 +505,182 @@ import { siteConfig } from '../../../config/site';
 
       <!-- Right column: PDF preview -->
       <div class="cv-right-col">
-        <iframe :src="pdfUrl" class="cv-pdf-iframe" title="Compiled PDF preview"></iframe>
+        <div class="window cv-inner-window">
+          <div class="title-bar">
+            <span class="title" x-text="((persons.find(function(p){return p.id===activePersonId})||{}).name || 'Profile') + ' — ' + ({cv:'CV',resume:'Resume',coverletter:'Cover Letter'}[pdfTab] || 'PDF')"></span>
+          </div>
+          <div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
+            <iframe :src="pdfUrl" class="cv-pdf-iframe" title="Compiled PDF preview"></iframe>
+            <div x-show="compiling" class="cv-compile-overlay">
+              <div class="cv-compile-spinner"></div>
+              <span>Compiling&hellip;</span>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
+
+  <script is:inline>
+    // ── File menu (injected into navbar before CV Backend) ──
+    (function () {
+      function _cvApp() {
+        var el = document.querySelector('.cv-app');
+        return el && el._x_dataStack ? el._x_dataStack[0] : null;
+      }
+
+      function createNavMenu(className, labelText, menuItems) {
+        var menuLi = document.createElement('li');
+        menuLi.setAttribute('role', 'menu-item');
+        menuLi.setAttribute('aria-haspopup', 'true');
+        menuLi.setAttribute('tabindex', '0');
+        menuLi.className = className;
+        menuLi.style.cursor = 'pointer';
+
+        var label = document.createElement('span');
+        label.textContent = labelText;
+        label.style.pointerEvents = 'none';
+        menuLi.appendChild(label);
+
+        var _open = false;
+        menuLi.addEventListener('mousedown', function (e) {
+          if (_open) {
+            e.preventDefault();
+            menuLi.blur();
+            _open = false;
+          }
+        });
+        menuLi.addEventListener('focus', function () { _open = true; });
+        menuLi.addEventListener('blur', function () { _open = false; });
+
+        var subUl = document.createElement('ul');
+        subUl.setAttribute('role', 'menu');
+
+        for (var i = 0; i < menuItems.length; i++) {
+          var li = document.createElement('li');
+          li.setAttribute('role', 'menu-item');
+          var a = document.createElement('a');
+          a.href = '#';
+          a.textContent = menuItems[i].text;
+          (function (fn, parent) {
+            a.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              fn();
+              parent.blur();
+            });
+            a.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fn();
+                parent.blur();
+              }
+            });
+          })(menuItems[i].action, menuLi);
+          li.appendChild(a);
+          subUl.appendChild(li);
+        }
+
+        menuLi.appendChild(subUl);
+        return menuLi;
+      }
+
+      function initNavMenus() {
+        var ul = document.querySelector('.site-menubar ul[role="menu-bar"]');
+        if (!ul || ul.querySelector('.cv-file-nav')) return;
+
+        var serverItem = ul.querySelector('.server-nav-item');
+
+        // File menu — dynamically built to include person list under Open
+        var fileMenuLi = document.createElement('li');
+        fileMenuLi.setAttribute('role', 'menu-item');
+        fileMenuLi.setAttribute('aria-haspopup', 'true');
+        fileMenuLi.setAttribute('tabindex', '0');
+        fileMenuLi.className = 'cv-file-nav';
+        fileMenuLi.style.cursor = 'pointer';
+        var fileLabel = document.createElement('span');
+        fileLabel.textContent = 'File';
+        fileLabel.style.pointerEvents = 'none';
+        fileMenuLi.appendChild(fileLabel);
+        var _fOpen = false;
+        fileMenuLi.addEventListener('mousedown', function (e) {
+          if (_fOpen) { e.preventDefault(); fileMenuLi.blur(); _fOpen = false; }
+        });
+        fileMenuLi.addEventListener('focus', function () { _fOpen = true; buildFileSubmenu(); });
+        fileMenuLi.addEventListener('blur', function () { _fOpen = false; });
+        var fileSubUl = document.createElement('ul');
+        fileSubUl.setAttribute('role', 'menu');
+        fileMenuLi.appendChild(fileSubUl);
+
+        function addFileItem(ul, text, action) {
+          var li = document.createElement('li');
+          li.setAttribute('role', 'menu-item');
+          var a = document.createElement('a');
+          a.href = '#';
+          a.textContent = text;
+          a.addEventListener('mousedown', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            action();
+            fileMenuLi.blur();
+          });
+          li.appendChild(a);
+          ul.appendChild(li);
+        }
+
+        function addFileSep(ul) {
+          var sep = document.createElement('li');
+          sep.style.borderTop = '1px solid #ccc';
+          sep.style.margin = '2px 0';
+          ul.appendChild(sep);
+        }
+
+        function buildFileSubmenu() {
+          var app = _cvApp();
+          fileSubUl.innerHTML = '';
+          addFileItem(fileSubUl, 'New', function () { if (app) app.createPerson(); });
+          addFileItem(fileSubUl, 'Open', function () { if (app) app.openPerson(); });
+          addFileItem(fileSubUl, 'Rename', function () { if (app) app.renamePerson(); });
+          addFileSep(fileSubUl);
+          addFileItem(fileSubUl, 'Save', function () { if (app && app.save) app.save(); });
+          addFileItem(fileSubUl, 'Export JSON', function () { if (app && app.exportData) app.exportData(); });
+          addFileItem(fileSubUl, 'Import JSON', function () { if (app && app.importData) app.importData(); });
+          addFileSep(fileSubUl);
+          addFileItem(fileSubUl, 'Compile', function () { if (app && app.compile) app.compile(); });
+        }
+
+        var fileMenu = fileMenuLi;
+
+        // View menu
+        var viewMenu = createNavMenu('cv-view-nav', 'View', [
+          { text: 'CV', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('cv'); } },
+          { text: 'Resume', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('resume'); } },
+          { text: 'Cover Letter', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('coverletter'); } },
+        ]);
+
+        if (serverItem) {
+          ul.insertBefore(viewMenu, serverItem);
+          ul.insertBefore(fileMenu, viewMenu);
+        } else {
+          ul.appendChild(fileMenu);
+          ul.appendChild(viewMenu);
+        }
+      }
+
+      // Wait for ServerConnectModal to inject its item first
+      document.addEventListener('navbar:connect-ready', function () {
+        setTimeout(initNavMenus, 0);
+      });
+
+      // Fallback if no backend meta tag exists
+      if (!document.querySelector('meta[name="site-backend"]')) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initNavMenus);
+        } else {
+          initNavMenus();
+        }
+      }
+    })();
+  </script>
 
   <script is:inline>
     var API_BASE = '';
@@ -1101,10 +722,30 @@ import { siteConfig } from '../../../config/site';
       document.addEventListener('navbar:disconnect', function (e) {
         if (e.detail.service !== 'cv') return;
         API_BASE = '';
+        var el = document.querySelector('.cv-app');
+        if (el && el._x_dataStack) el._x_dataStack[0].serverConnected = false;
         if (_cvWidget) _cvWidget.setStatus('disconnected');
+      });
+
+      document.addEventListener('navbar:dismiss', function (e) {
+        if (e.detail.service !== 'cv') return;
+        var el = document.querySelector('.cv-app');
+        if (el && el._x_dataStack) el._x_dataStack[0].init();
       });
     })();
   </script>
+  <script is:inline src="/cv/section-types.js"></script>
+  <script is:inline src="/cv/seed-data.js"></script>
+  <script is:inline src="/cv/social-catalog.js"></script>
+  <script is:inline src="/cv/api.js"></script>
+  <script is:inline src="/cv/api-paths.js"></script>
+  <script is:inline src="/cv/utils.js"></script>
+  <script is:inline src="/cv/app-personal.js"></script>
+  <script is:inline src="/cv/app-style.js"></script>
+  <script is:inline src="/cv/app-sections.js"></script>
+  <script is:inline src="/cv/app-coverletter.js"></script>
+  <script is:inline src="/cv/app-persons.js"></script>
+  <script is:inline src="/cv/app-compile.js"></script>
   <script is:inline src="/cv/app.js"></script>
   <script is:inline>
     // Auto-resize textareas to fit content
@@ -1142,11 +783,6 @@ import { siteConfig } from '../../../config/site';
 </BaseLayout>
 
 <style>
-  /* ── Hide breadcrumb bar from site chrome ── */
-  :global(.site-window:has(.cv-app) > .details-bar) {
-    display: none !important;
-  }
-
   /* ── Override site-pane for full-height app layout ── */
   :global(.site-pane:has(.cv-app)) {
     padding: 0 !important;
@@ -1168,8 +804,22 @@ import { siteConfig } from '../../../config/site';
     min-height: 28px;
   }
 
-  /* ── App container ── */
+  /* ── Design tokens ── */
   :global(.cv-app) {
+    --cv-label-size: 11px;
+    --cv-label-color: #555;
+    --cv-label-weight: 500;
+    --cv-label-transform: uppercase;
+    --cv-label-spacing: 0.04em;
+    --cv-field-padding: 5px 12px;
+    --cv-border-subtle: 1px solid #eee;
+    --cv-border-section: 1px solid #ccc;
+    --cv-border-strong: 2px solid #000;
+    --cv-icon-opacity: 0.4;
+    --cv-icon-hover-opacity: 0.8;
+    --cv-header-bg: #eee;
+    --cv-header-size: 13px;
+
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -1179,29 +829,7 @@ import { siteConfig } from '../../../config/site';
     overflow: hidden;
   }
 
-  /* ── Details bar (system.css .details-bar) ── */
-  :global(.cv-details-bar) {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    flex-wrap: wrap;
-  }
 
-  :global(.cv-toolbar-spacer) {
-    flex: 1;
-  }
-
-  :global(.cv-toolbar-group) {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-
-  :global(.cv-toolbar-group select) {
-    max-width: 160px;
-  }
 
   /* ── Editor tab bar (half-width details-bar with equal buttons) ── */
   :global(.cv-editor-tabs) {
@@ -1238,21 +866,61 @@ import { siteConfig } from '../../../config/site';
     overflow: hidden;
   }
 
-  :global(.cv-left-col > .ui-tabs) {
-    flex-shrink: 0;
-  }
-
-  :global(.cv-tab-content) {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-  }
-
   :global(.cv-right-col) {
     flex: 1;
     min-width: 200px;
     display: flex;
     flex-direction: column;
+  }
+
+  :global(.cv-readonly) {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :global(.cv-readonly) input[type="text"],
+  :global(.cv-readonly) input[type="number"],
+  :global(.cv-readonly) textarea {
+    opacity: 0.6;
+  }
+
+  :global(.cv-readonly) .cv-node-title {
+    opacity: 1;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  :global(.cv-readonly) input[type="checkbox"],
+  :global(.cv-readonly) select:not(.cv-unit-select),
+  :global(.cv-readonly) .cv-node-delete,
+  :global(.cv-readonly) .cv-node-arrows {
+    display: none;
+  }
+
+
+  :global(.cv-inner-window) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    box-shadow: none;
+    margin: 0;
+    border: 2px solid #000;
+  }
+
+  :global(.cv-inner-window > .title-bar) {
+    flex-shrink: 0;
+  }
+
+  :global(.cv-tab-content) {
+    flex: 1;
+    overflow-y: scroll;
+    min-height: 0;
+    direction: rtl;
+  }
+  :global(.cv-tab-content) > * {
+    direction: ltr;
     border-left: 2px solid #000;
   }
 
@@ -1263,84 +931,31 @@ import { siteConfig } from '../../../config/site';
     background: #888;
   }
 
-  /* ── Status alert ── */
-  :global(.cv-alert) {
-    padding: 6px 12px;
-    font-size: 12px;
-    background: #e8f5e9;
-    border-bottom: 2px solid #000;
-    color: #060;
-    flex-shrink: 0;
-  }
-
-  :global(.cv-alert.ui-alert-danger),
-  :global(.cv-alert-err) {
-    background: #fce4ec;
-    color: #c00;
-  }
-
-  /* ── Profile section headings ── */
-  :global(.cv-profile-heading) {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 8px 16px;
-    margin: 0;
-    background: #eee;
-    border-bottom: 2px solid #000;
-    border-top: 2px solid #000;
-  }
-
-  :global(.cv-profile-heading:first-child) {
-    border-top: none;
-  }
-
-  /* ── Profile grid - 2 column ── */
-  :global(.cv-profile-grid) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-  }
-
-  :global(.cv-profile-full) {
-    grid-column: 1 / -1;
-  }
-
-  /* ── Form fields (extends system.css .field-row) ── */
-  :global(.cv-field) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
-    padding: 6px 12px;
-    font-size: 11px;
-    font-weight: 500;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid #eee;
-    border-right: 1px solid #eee;
-  }
-
-  :global(.cv-field input[type='text']),
-  :global(.cv-field select) {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* ── Toggle row ── */
-  :global(.cv-toggle-row) {
+  :global(.cv-compile-overlay) {
+    position: absolute;
+    inset: 0;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    padding: 6px 12px;
-    border-bottom: 1px solid #eee;
-    border-right: 1px solid #eee;
-    font-size: 11px;
-    font-weight: 500;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font-size: 1rem;
+    z-index: 1;
+  }
+
+  :global(.cv-compile-spinner) {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: cv-spin 0.7s linear infinite;
+  }
+
+  @keyframes cv-spin {
+    to { transform: rotate(360deg); }
   }
 
   :global(.cv-toggle) {
@@ -1354,39 +969,30 @@ import { siteConfig } from '../../../config/site';
     letter-spacing: 0;
   }
 
-  /* ── Button size overrides (base .btn from system.css) ── */
-  :global(.cv-btn-sm) {
-    font-size: 12px;
-    padding: 2px 8px;
+  /* ── Link / dynamic rows ── */
+  :global(.cv-link-multi) {
+    display: flex;
+    flex: 1;
+    gap: 6px;
+    min-width: 0;
+    align-items: center;
   }
-
-  :global(.cv-btn-xs) {
-    font-size: 11px;
-    padding: 1px 6px;
+  :global(.cv-link-multi input[type='text']) {
+    flex: 1;
+    min-width: 0;
   }
-
-  :global(.cv-btn-danger) {
-    color: #c00 !important;
-    border-color: #c00 !important;
+  :global(.cv-extra-label) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-
-  :global(.cv-btn-danger:hover) {
-    background: #c00 !important;
-    color: #fff !important;
-  }
-
-  :global(.cv-btn-remove) {
-    background: none;
-    border: none;
-    color: #767676;
+  :global(.cv-link-remove) {
     cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0 2px;
+    opacity: var(--cv-icon-opacity);
+    flex-shrink: 0;
   }
-
-  :global(.cv-btn-remove:hover) {
-    color: #c00;
+  :global(.cv-link-remove:hover) {
+    opacity: var(--cv-icon-hover-opacity);
   }
 
   /* ── Sections ── */
@@ -1394,314 +1000,280 @@ import { siteConfig } from '../../../config/site';
     padding: 6px 12px;
     border-bottom: 2px solid #000;
     background: #eee;
-  }
-
-  :global(.cv-section-list) {
-    display: flex;
-    flex-direction: column;
-  }
-
-  :global(.cv-section) {
-    background: #fff;
-    border-bottom: 2px solid #000;
-  }
-
-  :global(.cv-disabled) {
-    opacity: 0.45;
-  }
-
-  :global(.cv-section-header) {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #eee;
-    border-bottom: 1px solid #ccc;
-    font-size: 13px;
-  }
-
-  :global(.cv-section-toggle) {
-    margin-left: auto;
-    cursor: pointer;
-  }
-
-  :global(.cv-section-body) {
-    /* no padding -- children handle their own */
-  }
-
-  /* ── Drag handles ── */
-  :global(.ui-drag-handle) {
-    cursor: grab;
-    color: #767676;
-    font-size: 14px;
-    user-select: none;
-    flex-shrink: 0;
-  }
-
-  :global(.cv-drag-sm) {
-    font-size: 12px;
-    padding: 4px 6px;
-    border-right: 1px solid #ccc;
-    background: #f5f5f5;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-  }
-
-  /* Sortable feedback */
-  :global(.ui-sortable-ghost) {
-    opacity: 0.3;
-  }
-
-  :global(.ui-sortable-chosen) {
-    outline: 2px solid #06c;
-  }
-
-  /* ── Inline Metrics ── */
-  :global(.cv-inline-metrics) {
-    background: #f5f5f5;
-    border-bottom: 2px solid #000;
-    padding: 8px 12px;
-  }
-
-  :global(.cv-inline-metrics-header) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-
-  :global(.cv-inline-metrics-heading) {
-    font-size: 13px;
-    font-weight: 700;
-    margin: 0;
-  }
-
-  :global(.cv-metric-group) {
-    border: 2px solid #000;
-    margin-bottom: -2px;
-  }
-
-  :global(.cv-metric-group-header) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 8px;
-    border-bottom: 1px solid #ccc;
-    background: #eee;
-  }
-
-  :global(.cv-metric-group-name) {
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  :global(.cv-metric-group-name:hover) {
-    text-decoration: underline;
-  }
-
-  :global(.cv-metric-group-actions) {
-    display: flex;
-    gap: 4px;
-  }
-
-  :global(.cv-metrics-list) {
-    display: flex;
-    flex-direction: column;
-  }
-
-  :global(.cv-metric-row) {
-    border-bottom: 1px solid #ccc;
-    padding: 4px 8px;
-  }
-
-  :global(.cv-metric-row-header) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2px;
-  }
-
-  :global(.cv-metric-cmd) {
-    font-weight: 700;
-    font-family: monospace;
-    font-size: 11px;
-  }
-
-  :global(.cv-metric-textarea) {
-    width: 100%;
-    font-size: 12px;
-    box-sizing: border-box;
-    resize: vertical;
-    min-height: 24px;
-  }
-
-  /* ── Entry cards ── */
-  :global(.cv-entry) {
-    background: #fff;
-    border-bottom: 2px solid #000;
-  }
-
-  :global(.cv-entry-compact) {
-    border-bottom-width: 1px;
-    border-color: #ccc;
-  }
-
-  :global(.cv-entry-header) {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 12px;
-    background: #eee;
-    border-bottom: 1px solid #ccc;
-    font-size: 13px;
-  }
-
-  :global(.cv-entry-actions) {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-shrink: 0;
   }
 
-  :global(.cv-entry label) {
+  :global(.cv-toolbar-icon) {
+    opacity: var(--cv-icon-opacity);
+    cursor: pointer;
+  }
+  :global(.cv-toolbar-icon:hover) {
+    opacity: var(--cv-icon-hover-opacity);
+  }
+
+  :global(.cv-save-dot) {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-save-disconnected) {
+    background: #999;
+  }
+
+  :global(.cv-save-unsaved) {
+    background: #da0;
+  }
+
+  :global(.cv-save-saved) {
+    background: #3a3;
+  }
+
+  :global(.cv-save-error) {
+    background: #d33;
+  }
+
+  /* ══ Unified Node System ══ */
+  :global(.cv-node-list) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.cv-node) {
+    background: #fff;
+  }
+
+  :global(.cv-node[data-depth="0"]) {
+    border-bottom: 2px solid #000;
+  }
+
+  :global(.cv-node[data-depth="1"]) {
+    border-bottom: 2px solid #000;
+  }
+
+  :global(.cv-node[data-depth="2"]) {
+    border-bottom: 1px solid #ccc;
+  }
+
+  :global(.cv-node-excluded) {
+    opacity: 0.45;
+  }
+
+  :global(.cv-node-excluded:hover) {
+    opacity: 0.7;
+  }
+
+  /* ── Node header ── */
+  :global(.cv-node-header) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--cv-header-bg);
+    border-bottom: var(--cv-border-section);
+    font-family: inherit;
+    font-size: var(--cv-header-size);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  :global(.cv-node[data-depth="0"]) > :global(.cv-node-header) {
+    padding: 8px 12px;
+  }
+
+  :global(.cv-node[data-depth="2"]) > :global(.cv-node-header) {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  /* ── Node title input ── */
+  :global(.cv-node-title) {
+    font-weight: 700;
+    font-size: 14px;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 2px 4px;
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+  }
+
+  :global(.cv-node-title:hover:not([readonly])) {
+    border-color: #ccc;
+  }
+
+  :global(.cv-node-title:focus:not([readonly])) {
+    border-color: #06c;
+    background: #fff;
+    outline: none;
+  }
+
+  :global(.cv-node-title[readonly]) {
+    cursor: default;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :global(.cv-node[data-depth="2"]) :global(.cv-node-title) {
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  /* ── Node title display (derived, for entries) ── */
+  :global(.cv-node-title-display) {
+    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.cv-node-edit) {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    opacity: var(--cv-icon-opacity);
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.cv-node-edit:hover) {
+    opacity: var(--cv-icon-hover-opacity);
+  }
+
+  /* ── Node toggle ── */
+  :global(.cv-node-toggle) {
+    margin-left: auto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+  }
+
+  /* ── Node arrows ── */
+  :global(.cv-node-arrows) {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+
+  :global(.cv-node-arrow) {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+    padding: 0;
+    color: #666;
+  }
+
+  :global(.cv-node-arrow:hover:not(:disabled)) {
+    color: #000;
+  }
+
+  :global(.cv-node-arrow:disabled) {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  :global(.cv-node[data-depth="2"]) :global(.cv-node-arrow) {
+    font-size: 8px;
+  }
+
+  /* ── Node delete ── */
+  :global(.cv-node-delete) {
+    background: none;
+    border: none;
+    color: #c00;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  :global(.cv-node-delete:hover) {
+    color: #600;
+  }
+
+  /* ── Node fields (type-specific editors) ── */
+  :global(.cv-node-fields) label {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 5px 12px;
+    padding: var(--cv-field-padding);
+    font-size: var(--cv-label-size);
+    font-weight: var(--cv-label-weight);
+    color: var(--cv-label-color);
+    text-transform: var(--cv-label-transform);
+    letter-spacing: var(--cv-label-spacing);
+    border-bottom: var(--cv-border-subtle);
+  }
+
+  :global(.cv-node-fields) input[type='text'],
+  :global(.cv-node-fields) textarea,
+  :global(.cv-node-fields) select {
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  /* ── Node children + add button ── */
+  :global(.cv-node-children) {
+    margin-left: 22px;
+    position: relative;
+  }
+
+  :global(.cv-node-children)::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 0;
+    bottom: 0;
+    width: 22px;
+    background:
+      linear-gradient(45deg, #000 25%, transparent 0, transparent 75%, #000 0, #000) 0 0 / 4px 4px,
+      linear-gradient(45deg, #000 25%, transparent 0, transparent 75%, #000 0, #000) 2px 2px / 4px 4px
+      #fff;
+    border-top: 2px solid #000;
+    border-right: 2px solid #000;
+    box-sizing: border-box;
+  }
+
+  :global(.cv-node-children-label) {
+    display: block;
+    padding: 5px 12px 2px;
     font-size: 11px;
     font-weight: 500;
     color: #555;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    border-bottom: 1px solid #eee;
   }
 
-  :global(.cv-entry input[type='text']),
-  :global(.cv-entry textarea),
-  :global(.cv-coverletter input[type='text']),
-  :global(.cv-coverletter textarea) {
-    width: 100%;
-    resize: vertical;
-    box-sizing: border-box;
-  }
-
-  /* ── Bullet points ── */
-  :global(.items-list) {
-    border-top: 2px solid #000;
-  }
-
-  :global(.items-list > strong) {
-    display: block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #555;
-    padding: 4px 12px;
-    background: #eee;
-    border-bottom: 1px solid #ccc;
-  }
-
-  :global(.cv-item-row) {
-    display: flex;
-    align-items: flex-start;
-    border-bottom: 1px solid #ccc;
-  }
-
-  :global(.cv-item-row textarea) {
-    flex: 1;
-    border: none;
-    border-right: 1px solid #ccc;
-    padding: 5px 8px;
-    background: #fff;
-    color: #000;
-    font-size: 13px;
-    font-family: var(--font-ui);
-    resize: vertical;
-  }
-
-  :global(.cv-item-row textarea:focus) {
-    outline: 2px solid #06c;
-    outline-offset: -2px;
-  }
-
-  :global(.items-list .cv-btn-sm) {
-    display: block;
-    width: 100%;
-    text-align: left;
-    border: none !important;
-    border-top: 1px solid #ccc !important;
-    border-right: none !important;
-    padding: 4px 12px;
-    background: #f5f5f5;
-  }
-
-  :global(.cv-item-resume) {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    cursor: pointer;
+  :global(.cv-node-expand-icon) {
+    opacity: var(--cv-icon-opacity);
     flex-shrink: 0;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    padding: 0 4px;
-    align-self: stretch;
+    pointer-events: none;
   }
 
-  /* ── Resume badges ── */
-  :global(.cv-resume-badge) {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
+
+  /* ── Visibility toggle icon ── */
+  :global(.cv-toggle-icon) {
+    opacity: var(--cv-icon-opacity);
   }
 
-  :global(.cv-badge) {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 4px;
-    border: 2px solid #000;
-    background: #fff;
-    color: #000;
-    line-height: 1;
-  }
-
-  :global(.cv-badge-sm) {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 0 3px;
-    border: 1px solid #000;
-    background: #fff;
-    color: #000;
-    line-height: 1.2;
-    margin-right: 2px;
-  }
-
-  :global(.cv-dim) {
-    opacity: 0.4;
-  }
-
-  :global(.cv-dim:hover) {
-    opacity: 0.7;
-  }
-
-  /* ── Add row ── */
-  :global(.cv-add-row) {
-    padding: 8px 12px;
-  }
-
-  /* ── Paragraph labels ── */
-  :global(.cv-para-label) {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #333;
-    padding: 5px 12px;
-    background: #eee;
-    border-bottom: 1px solid #ccc;
+  :global(.cv-node-toggle:hover) :global(.cv-toggle-icon) {
+    opacity: var(--cv-icon-hover-opacity);
   }
 
   :global(.cv-full-textarea) {
@@ -1723,58 +1295,12 @@ import { siteConfig } from '../../../config/site';
     outline-offset: -2px;
   }
 
-  /* ── Cover letter ── */
-  :global(.cv-coverletter label) {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 5px 12px;
-    font-size: 11px;
-    font-weight: 500;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid #eee;
-  }
-
-  :global(.cv-cl-heading) {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 6px 12px;
-    border-bottom: 2px solid #000;
-    border-top: 2px solid #000;
-    background: #eee;
-  }
-
-  :global(.cv-cl-heading:first-child) {
-    border-top: none;
-  }
 
   /* ── Style Editor ── */
   :global(.cv-style-editor) {
     padding: 0;
   }
 
-  :global(.cv-style-heading) {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 6px 12px;
-    border-bottom: 2px solid #000;
-    border-top: 2px solid #000;
-    background: #eee;
-  }
-
-  :global(.cv-style-heading:first-child) {
-    border-top: none;
-  }
-
-  :global(.cv-style-editor .cv-field) {
-    border-right: none;
-  }
 
   /* ── Color Swatches ── */
   :global(.cv-color-swatches) {
@@ -1805,45 +1331,58 @@ import { siteConfig } from '../../../config/site';
     outline-offset: 1px;
   }
 
-  :global(.cv-custom-color-row) {
+  :global(.cv-swatch-custom) {
     display: flex;
-    gap: 8px;
     align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  :global(.cv-color-input-hidden) {
+    position: absolute;
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    pointer-events: none;
   }
 
-  :global(.cv-custom-color-row input[type='text']) {
+  :global(.cv-spacing-row) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 12px;
+  }
+  :global(.cv-spacing-row label) {
     flex: 1;
+    font-size: 11px;
+    min-width: 0;
   }
-
-  :global(.cv-color-preview) {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #000;
+  :global(.cv-spacing-row input[type='text']),
+  :global(.cv-spacing-row input[type='number']) {
+    width: 48px;
     flex-shrink: 0;
+    font-size: 11px;
+    text-align: right;
+    -moz-appearance: textfield;
   }
-
+  :global(.cv-spacing-row input[type='number']::-webkit-inner-spin-button),
+  :global(.cv-spacing-row input[type='number']::-webkit-outer-spin-button) {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  :global(.cv-unit-select) {
+    width: 52px;
+    flex-shrink: 0;
+    font-size: 10px;
+    padding: 1px 14px 1px 4px;
+  }
   /* ── Misc ── */
   :global(.cv-muted) {
     color: #767676;
     font-style: italic;
     font-size: 12px;
     padding: 4px 12px;
-  }
-
-  :global(.cv-muted-inline) {
-    color: #767676;
-    font-style: italic;
-    font-size: 10px;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  :global(.cv-hint) {
-    font-size: 10px;
-    color: #767676;
-    font-style: italic;
-    text-transform: none;
-    letter-spacing: 0;
   }
 
   /* ── Checkbox ── */
@@ -1883,6 +1422,11 @@ import { siteConfig } from '../../../config/site';
     color: #555;
   }
 
+  :global(.cv-modal-error) {
+    font-size: 11px;
+    color: #c00;
+  }
+
   :global(.cv-modal-actions) {
     justify-content: flex-end;
     gap: 8px;
@@ -1891,12 +1435,77 @@ import { siteConfig } from '../../../config/site';
     margin-top: 4px;
   }
 
+  /* ── Mobile toolbar (hidden on desktop) ── */
+  :global(.cv-mobile-toolbar) {
+    display: none;
+  }
+
   /* ── Responsive ── */
   @media (width <= 768px) {
-    :global(.cv-profile-grid) {
-      grid-template-columns: 1fr;
+    :global(.cv-mobile-toolbar) {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--cv-header-bg);
+      border-bottom: 2px solid #000;
+      flex-shrink: 0;
     }
 
+    :global(.cv-mobile-view-select) {
+      flex: 1;
+      font-size: clamp(0.875rem, 4vw, 1.25rem);
+      height: 36px;
+      font-family: inherit;
+    }
+
+    :global(.cv-mobile-file-btn) {
+      height: 36px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 2px solid #000;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    :global(.cv-mobile-file-dropdown) {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      z-index: 200;
+      background: #fff;
+      border: 2px solid #000;
+      min-width: 160px;
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+    }
+
+    :global(.cv-mobile-file-dropdown button) {
+      display: block;
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      background: none;
+      text-align: left;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    :global(.cv-mobile-file-dropdown button:hover) {
+      background: #000;
+      color: #fff;
+    }
+
+    :global(.cv-mobile-file-dropdown hr) {
+      margin: 2px 0;
+      border: none;
+      border-top: 1px solid #ccc;
+    }
+
+    /* Layout: single full-screen view */
     :global(.cv-split-layout) {
       flex-direction: column;
     }
@@ -1904,7 +1513,6 @@ import { siteConfig } from '../../../config/site';
     :global(.cv-left-col) {
       width: 100% !important;
       min-width: 0;
-      max-height: 50vh;
     }
 
     :global(.cv-right-col) {
@@ -1917,26 +1525,24 @@ import { siteConfig } from '../../../config/site';
       display: none;
     }
 
-    :global(.cv-topbar) {
-      flex-wrap: wrap;
-      height: auto;
-      min-height: 37px;
+    /* Editor view: hide PDF */
+    :global(.cv-mobile-show-editor .cv-left-col) {
+      flex: 1;
+      max-height: none;
+    }
+
+    :global(.cv-mobile-show-editor .cv-right-col) {
+      display: none;
+    }
+
+    /* PDF view: hide editor */
+    :global(.cv-mobile-show-pdf .cv-left-col) {
+      display: none;
+    }
+
+    :global(.cv-mobile-show-pdf .cv-right-col) {
+      flex: 1;
     }
   }
 
-  @media (width <= 480px) {
-    :global(.cv-metrics-grid) {
-      grid-template-columns: 1fr;
-    }
-
-    :global(.cv-topbar-title) {
-      padding: 0 8px;
-      font-size: 13px;
-    }
-
-    :global(.cv-topbar-btn) {
-      padding: 0 8px;
-      font-size: 12px;
-    }
-  }
 </style>

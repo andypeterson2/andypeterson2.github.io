@@ -1,58 +1,239 @@
+// JANE_DOE seed data loaded from /cv/seed-data.js
+// Mixin functions loaded from /cv/app-*.js
+
 function app() {
-  return {
-    editorTab: 'sections',
+  const mixins = [
+    appPersonal(),
+    appStyle(),
+    appSections(),
+    appCoverletter(),
+    appPersons(),
+    appCompile(),
+  ];
+
+  const base = {
+    editorTab: 'profile',
     pdfTab: 'cv',
-    sections: [],
-    docSections: [],
-    personal: {},
-    metrics: [],
-    coverletter: { settings: {}, sections: [] },
-    style: {
-      pageSize: 'letterpaper',
-      fontSize: '11pt',
-      accentColor: 'spinel',
-      fontFamily: 'source-sans-3',
-      customHex: '',
-    },
-    compiling: false,
-    compiledPdfs: { resume: '', cv: '', coverletter: '' },
-    statusMsg: '',
-    statusType: '',
-    pdfUrl: '',
-    sortable: null,
+    mobileView: 'editor',
+    mobileFileMenu: false,
+    saveState: 'disconnected',
     darkMode: true,
     dirty: false,
     serverConnected: false,
     isJaneDoe: false,
-    persons: [],
-    activePersonId: null,
     _saveTimers: {},
+
+    // Undo/redo state
+    _undoStack: [],
+    _redoStack: [],
+    _maxUndoDepth: 100,
+    _focusSnapshot: null,
+
+    // Section collapse state
+    _panels: {
+      identity: true, contact: true, links: true,
+      clRecipient: true, clDetails: true, clSections: true,
+      stPage: true, stTypography: true, stAccent: true,
+      stMargins: true, stHeaderSpacing: true, stSectionSpacing: true,
+      stEntrySpacing: true, stBulletSpacing: true, stParagraphSpacing: true, stFontSizes: true,
+    },
 
     // Modal state
     modal: { open: false, title: '', fields: [], resolve: null },
 
     async init() {
       this.darkMode = document.documentElement.dataset.theme !== 'light';
+      if (!API_BASE) {
+        this.loadDemo();
+        return;
+      }
+      // Backend connected — load catalogs then data
+      await this.loadCatalog();
       await Promise.all([
         this.loadPersonal(),
-        this.loadMetrics(),
         this.loadSections(),
-        this.loadDocumentSections('cv'),
         this.loadCoverletter(),
         this.loadStyle(),
+        this.loadSpacing(),
+        this.loadFonts(),
         this.loadPersons(),
       ]);
+      await this.loadDocumentSections('cv');
       this.serverConnected = true;
+      this.saveState = 'saved';
+      this.isJaneDoe = false;
 
       // Init resize handle
       this.$nextTick(() => {
-        var handle = document.getElementById('resize-handle');
-        var left = handle && handle.previousElementSibling;
-        var container = handle && handle.parentElement;
+        const handle = document.getElementById('resize-handle');
+        const left = handle && handle.previousElementSibling;
+        const container = handle && handle.parentElement;
         if (handle && left && container && window.UIKit && UIKit.initResize) {
           UIKit.initResize(handle, left, container, { min: 280, max: 800, default: 450, key: 'cv-editor-split' });
         }
       });
+
+      // Warn before leaving with unsaved changes
+      if (this._beforeUnloadFn) window.removeEventListener('beforeunload', this._beforeUnloadFn);
+      const self = this;
+      this._beforeUnloadFn = function(e) { if (self.dirty) { e.preventDefault(); e.returnValue = ''; } };
+      window.addEventListener('beforeunload', this._beforeUnloadFn);
+    },
+
+    loadDemo() {
+      this.personal = Object.assign({}, JANE_DOE.personal);
+      this.sections = JANE_DOE.sections.map(function(s) {
+        return { id: s.id, type: s.type, title: s.title };
+      });
+      this.docSections = [];
+      for (let i = 0; i < JANE_DOE.documents.cv.length; i++) {
+        const ds = JANE_DOE.documents.cv[i];
+        const sec = JANE_DOE.sections.find(function(s) { return s.id === ds.sectionId; });
+        if (!sec) continue;
+        this.docSections.push({
+          id: sec.id, type: sec.type, title: sec.title,
+          enabled: ds.enabled,
+          resumeParagraphText: ds.resumeParagraphText || null,
+          _expanded: true,
+          _data: { type: sec.type, entries: deepClone(sec.entries) },
+        });
+      }
+      // Stamp _expanded on entries and items
+      for (let j = 0; j < this.docSections.length; j++) {
+        const d = this.docSections[j];
+        if (!d._data) continue;
+        for (let k = 0; k < d._data.entries.length; k++) {
+          d._data.entries[k]._expanded = true;
+          d._data.entries[k]._editing = false;
+          const items = d._data.entries[k].items || [];
+          for (let m = 0; m < items.length; m++) {
+            items[m]._expanded = true;
+          }
+        }
+      }
+      this.coverletter = {
+        settings: Object.assign({}, JANE_DOE.coverletter.settings),
+        sections: deepClone(JANE_DOE.coverletter.sections),
+      };
+      this.persons = [{ id: 1, name: 'Jane Doe' }];
+      this.activePersonId = 1;
+      this.isJaneDoe = true;
+      this.serverConnected = false;
+      this.saveState = 'disconnected';
+      this.dirty = false;
+      this.loadIdentityExtras();
+      this.loadPersonalLinks();
+    },
+
+    // ------ Expand / Collapse all ------
+
+    expandAll() {
+      this.docSections.forEach(s => {
+        s._expanded = true;
+        this.loadSectionData(s);
+        if (s._data) s._data.entries.forEach(function(e) {
+          e._expanded = true;
+          e.items.forEach(function(i) { i._expanded = true; });
+        });
+      });
+      for (let key in this._panels) {
+        this._panels[key] = true;
+      }
+    },
+
+    collapseAll() {
+      this.docSections.forEach(function(s) {
+        s._expanded = false;
+        if (s._data) s._data.entries.forEach(function(e) {
+          e._expanded = false;
+          e.items.forEach(function(i) { i._expanded = false; });
+        });
+      });
+      for (let key in this._panels) {
+        this._panels[key] = false;
+      }
+    },
+
+    // ------ Catalog sync ------
+
+    async loadCatalog() {
+      try {
+        const res = await cvApi.get(API.catalog);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.socialCatalog) SOCIAL_CATALOG = data.socialCatalog;
+        if (data.latexUnits) LATEX_UNITS = data.latexUnits;
+        if (data.identityExtras) IDENTITY_EXTRAS = data.identityExtras;
+        if (data.accentColors) ACCENT_COLORS = data.accentColors;
+        this.LATEX_UNITS = LATEX_UNITS;
+        this.ACCENT_COLORS = ACCENT_COLORS;
+      } catch (e) { /* offline — use static fallbacks */ }
+    },
+
+    // ------ Undo / Redo ------
+
+    pushUndo(entry) {
+      this._undoStack.push(entry);
+      if (this._undoStack.length > this._maxUndoDepth) this._undoStack.shift();
+      this._redoStack = [];
+      this.dirty = true;
+    },
+
+    canUndo() { return this._undoStack.length > 0; },
+    canRedo() { return this._redoStack.length > 0; },
+
+    undo() {
+      if (!this.canUndo()) return;
+      const entry = this._undoStack.pop();
+      this._redoStack.push(entry);
+      this._applyUndoEntry(entry, false);
+    },
+
+    redo() {
+      if (!this.canRedo()) return;
+      const entry = this._redoStack.pop();
+      this._undoStack.push(entry);
+      this._applyUndoEntry(entry, true);
+    },
+
+    _applyUndoEntry(entry, isRedo) {
+      const value = isRedo ? entry.newValue : entry.oldValue;
+      if (entry.target && entry.field) {
+        this[entry.target][entry.field] = value;
+        if (entry.target === 'personal') this.autoSavePersonal(entry.field);
+        else if (entry.target === 'style') this.autoSaveStyle(entry.field);
+        else if (entry.target === 'spacing') this.autoSaveSpacing(entry.field);
+        else if (entry.target === 'fonts') this.autoSaveFonts(entry.field);
+        else if (entry.target === 'coverletter.settings') {
+          this.coverletter.settings[entry.field] = value;
+          this.autoSaveCoverletterSetting(entry.field);
+        }
+      }
+    },
+
+    // Snapshot a field value on focus, commit undo entry on blur
+    snapshotField(target, field) {
+      const val = target === 'coverletter.settings' ? this.coverletter.settings[field] : this[target][field];
+      this._focusSnapshot = { target: target, field: field, value: deepClone(val) };
+    },
+
+    commitField(target, field) {
+      if (!this._focusSnapshot || this._focusSnapshot.target !== target || this._focusSnapshot.field !== field) return;
+      const oldVal = this._focusSnapshot.value;
+      const newVal = target === 'coverletter.settings' ? this.coverletter.settings[field] : this[target][field];
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        this.pushUndo({ target: target, field: field, oldValue: oldVal, newValue: deepClone(newVal) });
+      }
+      this._focusSnapshot = null;
+    },
+
+    // ------ Mobile view ------
+
+    setMobileView(view) {
+      this.mobileView = view;
+      if (view !== 'editor') {
+        this.switchPdfTab(view);
+      }
     },
 
     // ------ Theme ------
@@ -62,15 +243,43 @@ function app() {
       if (window.__setTheme) window.__setTheme(this.darkMode ? 'dark' : 'light');
     },
 
+    // ------ Modal helpers ------
+
+    _selectField(name, label, items, opts) {
+      const valueKey = (opts && opts.valueKey) || 'key';
+      const labelKey = (opts && opts.labelKey) || 'label';
+      const defaultValue = opts && opts.defaultValue;
+      const options = items.map(item => ({
+        value: String(typeof item[valueKey] !== 'undefined' ? item[valueKey] : item),
+        label: String(typeof item[labelKey] !== 'undefined' ? item[labelKey] : item),
+      }));
+      return { name, label, value: defaultValue || (options[0] && options[0].value) || '', options };
+    },
+
     // ------ Modal system ------
 
     openModal(title, fields) {
       return new Promise((resolve) => {
-        this.modal = { open: true, title, fields: fields.map(f => ({ ...f, value: f.value || '' })), resolve };
+        this.modal = {
+          open: true, title, resolve,
+          fields: fields.map(f => ({ ...f, value: f.value || '', error: null, validate: f.validate || null })),
+        };
       });
     },
 
+    validateModalField(field) {
+      clearTimeout(this._modalValidateTimer);
+      this._modalValidateTimer = setTimeout(() => {
+        field.error = field.validate ? field.validate(field.value) : null;
+      }, 150);
+    },
+
+    modalHasErrors() {
+      return this.modal.fields.some(function(f) { return f.error; });
+    },
+
     submitModal() {
+      if (this.modalHasErrors()) return;
       const result = {};
       for (const f of this.modal.fields) {
         result[f.name] = f.value;
@@ -86,679 +295,16 @@ function app() {
 
     // ------ Debounced autosave ------
 
-    debounce(key, fn, delay = 500) {
+    debounce(key, fn, delay) {
+      if (!this.serverConnected) return;
+      this.saveState = 'unsaved';
       clearTimeout(this._saveTimers[key]);
-      this._saveTimers[key] = setTimeout(fn, delay);
-    },
-
-    // ------ PDF tab switching ------
-
-    switchPdfTab(name) {
-      this.pdfTab = name;
-      if (this.compiledPdfs[name]) {
-        this.pdfUrl = this.compiledPdfs[name];
-      } else {
-        this.pdfUrl = '';
-      }
-    },
-
-    // ------ Personal info ------
-
-    async loadPersonal() {
-      const res = await fetch(API_BASE + '/api/settings?prefix=personal');
-      if (!res.ok) return;
-      const data = await res.json();
-      const p = {};
-      for (const [key, value] of Object.entries(data)) {
-        p[key.replace('personal.', '')] = value;
-      }
-      this.personal = p;
-    },
-
-    autoSavePersonal(field) {
-      this.debounce('personal.' + field, async () => {
-        await fetch(API_BASE + '/api/settings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ['personal.' + field]: this.personal[field] || '' }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    togglePhoto() {
-      const enabled = this.personal.photoEnabled === '1' ? '0' : '1';
-      this.personal.photoEnabled = enabled;
-      fetch(API_BASE + '/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 'personal.photoEnabled': enabled }),
-      });
-    },
-
-    // ------ Style settings ------
-
-    async loadStyle() {
-      const res = await fetch(API_BASE + '/api/settings?prefix=style');
-      if (!res.ok) return;
-      const data = await res.json();
-      for (const [key, value] of Object.entries(data)) {
-        const field = key.replace('style.', '');
-        if (field in this.style) {
-          this.style[field] = value;
-        }
-      }
-    },
-
-    autoSaveStyle(field) {
-      this.debounce('style.' + field, async () => {
-        await fetch(API_BASE + '/api/settings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ['style.' + field]: this.style[field] || '' }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    setAccentColor(preset) {
-      this.style.accentColor = preset;
-      this.style.customHex = '';
-      this.autoSaveStyle('accentColor');
-    },
-
-    applyCustomColor() {
-      const hex = this.style.customHex.trim();
-      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-        this.style.accentColor = hex;
-        this.autoSaveStyle('accentColor');
-      }
-    },
-
-    // ------ Metrics ------
-
-    async loadMetrics() {
-      const res = await fetch(API_BASE + '/api/metrics');
-      if (!res.ok) return;
-      this.metrics = await res.json();
-    },
-
-    metricsForSection(sectionId) {
-      return this.metrics.filter(m => m.sectionId === sectionId);
-    },
-
-    metricGroupsForSection(sectionId) {
-      const metrics = this.metricsForSection(sectionId);
-      const groups = {};
-      for (const m of metrics) {
-        const g = m.groupName || 'Ungrouped';
-        if (!groups[g]) groups[g] = [];
-        groups[g].push(m);
-      }
-      return Object.entries(groups);
-    },
-
-    autoSaveMetric(metric) {
-      this.debounce('metric.' + metric.id, async () => {
-        await fetch(API_BASE + '/api/metrics/' + metric.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: metric.value === '' ? null : metric.value }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    async addMetric(sectionId, groupName) {
-      const result = await this.openModal('Add Variable', [
-        { name: 'command', label: 'Command name (e.g., myMetric)', value: '' },
-        { name: 'label', label: 'Placeholder label', value: '' },
-      ]);
-      if (!result || !result.command.trim()) return;
-      const res = await fetch(API_BASE + '/api/metrics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          command: result.command.trim(),
-          label: result.label.trim() || result.command.trim(),
-          value: null,
-          groupName,
-          sectionId,
-        }),
-      });
-      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      await this.loadMetrics();
-    },
-
-    async removeMetric(metricId) {
-      await fetch(API_BASE + '/api/metrics/' + metricId, { method: 'DELETE' });
-      await this.loadMetrics();
-    },
-
-    async addMetricGroup(sectionId) {
-      const result = await this.openModal('New Variable Group', [
-        { name: 'groupName', label: 'Group name', value: '' },
-        { name: 'command', label: 'First variable command name', value: '' },
-        { name: 'label', label: 'Placeholder label', value: '' },
-      ]);
-      if (!result || !result.groupName.trim() || !result.command.trim()) return;
-      const res = await fetch(API_BASE + '/api/metrics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          command: result.command.trim(),
-          label: result.label.trim() || result.command.trim(),
-          value: null,
-          groupName: result.groupName.trim(),
-          sectionId,
-        }),
-      });
-      if (res.status === 409) { this.flash('Command already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      await this.loadMetrics();
-    },
-
-    async removeMetricGroup(sectionId, groupName) {
-      const toRemove = this.metrics.filter(m => m.sectionId === sectionId && m.groupName === groupName);
-      for (const m of toRemove) {
-        await fetch(API_BASE + '/api/metrics/' + m.id, { method: 'DELETE' });
-      }
-      await this.loadMetrics();
-    },
-
-    async renameMetricGroup(sectionId, oldGroup) {
-      const result = await this.openModal('Rename Group', [
-        { name: 'groupName', label: 'New group name', value: oldGroup },
-      ]);
-      if (!result || !result.groupName.trim() || result.groupName.trim() === oldGroup) return;
-      const toRename = this.metrics.filter(m => m.sectionId === sectionId && m.groupName === oldGroup);
-      for (const m of toRename) {
-        await fetch(API_BASE + '/api/metrics/' + m.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ groupName: result.groupName.trim() }),
-        });
-      }
-      await this.loadMetrics();
-    },
-
-    // ------ Section CRUD ------
-
-    async createNewSection() {
-      var result = await this.openModal('New Section', [
-        { name: 'title', label: 'Section title', value: '' },
-        { name: 'type', label: 'Type (cventries, cvskills, cvhonors, cvreferences, cvparagraph)', value: 'cventries' },
-      ]);
-      if (!result || !result.title.trim()) return;
-      var id = result.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      if (!id) { this.flash('Invalid title', 'error'); return; }
-      var validTypes = ['cventries', 'cvskills', 'cvhonors', 'cvreferences', 'cvparagraph'];
-      var type = result.type.trim();
-      if (validTypes.indexOf(type) === -1) { this.flash('Invalid type', 'error'); return; }
-      var res = await fetch(API_BASE + '/api/sections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, type: type, title: result.title.trim() }),
-      });
-      if (!res.ok) { this.flash('Failed to create section', 'error'); return; }
-      // Add to document sections
-      await this.loadSections();
-      var docSections = this.docSections.map(function(s) {
-        return { sectionId: s.id, enabled: s.enabled, resumeParagraphText: s.resumeParagraphText || null };
-      });
-      docSections.push({ sectionId: id, enabled: true });
-      await fetch(API_BASE + '/api/documents/cv', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: docSections }),
-      });
-      await this.loadDocumentSections('cv');
-      this.flash('Section created', 'success');
-    },
-
-    async deleteSection(sectionId) {
-      if (!confirm('Delete this section and all its entries?')) return;
-      var res = await fetch(API_BASE + '/api/sections/' + sectionId, { method: 'DELETE' });
-      if (!res.ok) { this.flash('Failed to delete', 'error'); return; }
-      await this.loadSections();
-      await this.loadDocumentSections('cv');
-      await this.loadMetrics();
-      this.flash('Section deleted', 'success');
-    },
-
-    async renameSection(sectionId) {
-      var sec = this.docSections.find(function(s) { return s.id === sectionId; });
-      var result = await this.openModal('Rename Section', [
-        { name: 'title', label: 'New title', value: sec ? sec.title : '' },
-      ]);
-      if (!result || !result.title.trim()) return;
-      await fetch(API_BASE + '/api/sections/' + sectionId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: result.title.trim() }),
-      });
-      await this.loadSections();
-      await this.loadDocumentSections('cv');
-    },
-
-    // ------ Sections + Document config ------
-
-    async loadSections() {
-      const res = await fetch(API_BASE + '/api/sections');
-      if (!res.ok) return;
-      this.sections = await res.json();
-    },
-
-    async loadDocumentSections(variant) {
-      const res = await fetch(API_BASE + '/api/documents/' + variant);
-      if (!res.ok) return;
-      const data = await res.json();
-      this.docSections = [];
-      for (const ds of data.sections) {
-        const sec = this.sections.find(s => s.id === ds.sectionId);
-        if (!sec) continue;
-        this.docSections.push({
-          ...sec,
-          enabled: ds.enabled,
-          resumeParagraphText: ds.resumeParagraphText,
-          _expanded: true,
-          _data: null,
-        });
-      }
-      this.$nextTick(() => {
-        this.initSortable();
-        for (const sec of this.docSections) {
-          if (sec.enabled) this.loadSectionData(sec);
-        }
-      });
-    },
-
-    initSortable() {
-      if (this.sortable) this.sortable.destroy();
-      const el = document.getElementById('section-list');
-      if (!el) return;
-      this.sortable = Sortable.create(el, {
-        handle: '.ui-drag-handle',
-        ghostClass: 'ui-sortable-ghost',
-        chosenClass: 'ui-sortable-chosen',
-        animation: 150,
-        onEnd: (evt) => {
-          const item = this.docSections.splice(evt.oldIndex, 1)[0];
-          this.docSections.splice(evt.newIndex, 0, item);
-          this.saveDocumentSections();
-        },
-      });
-    },
-
-    async saveDocumentSections() {
-      const sections = this.docSections.map(s => ({
-        sectionId: s.id,
-        enabled: s.enabled,
-        resumeParagraphText: s.resumeParagraphText || null,
-      }));
-      // Save for the current pdfTab variant (or cv by default)
-      const variant = this.pdfTab === 'coverletter' ? 'cv' : this.pdfTab;
-      await fetch(API_BASE + '/api/documents/' + variant, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections }),
-      });
-      this.flash('Order saved', 'success');
-    },
-
-    toggleSection(index) {
-      this.docSections[index].enabled = !this.docSections[index].enabled;
-      this.saveDocumentSections();
-    },
-
-    // ------ Section data (entries + items) ------
-
-    async loadSectionData(sec) {
-      if (sec._data) return;
-      const res = await fetch(API_BASE + '/api/sections/' + sec.id);
-      if (!res.ok) return;
-      sec._data = await res.json();
-      if (sec._data.type === 'cventries') {
-        this.$nextTick(() => this.initBulletSortables(sec));
-      }
-    },
-
-    initBulletSortables(sec) {
-      this.$nextTick(() => {
-        const allLists = document.querySelectorAll(`.items-list[data-sec-id="${sec.id}"]`);
-        allLists.forEach(list => {
-          if (list._sortable) { list._sortable.destroy(); list._sortable = null; }
-          list._sortable = Sortable.create(list, {
-            handle: '.ui-drag-handle',
-            ghostClass: 'ui-sortable-ghost',
-            chosenClass: 'ui-sortable-chosen',
-            draggable: '.item-row',
-            animation: 100,
-            onEnd: (evt) => {
-              const entryId = parseInt(list.dataset.entryId);
-              const entry = sec._data.entries.find(e => e.id === entryId);
-              if (!entry) return;
-              const item = entry.items.splice(evt.oldIndex, 1)[0];
-              entry.items.splice(evt.newIndex, 0, item);
-              const ids = entry.items.map(i => i.id);
-              fetch(API_BASE + '/api/entries/' + entryId + '/items/order', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids }),
-              });
-            },
-          });
-        });
-      });
-    },
-
-    // ------ Entry CRUD ------
-
-    autoSaveEntry(entry) {
-      this.debounce('entry.' + entry.id, async () => {
-        await fetch(API_BASE + '/api/entries/' + entry.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: entry.fields }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    async addEntry(sec) {
-      const defaults = {};
-      if (sec.type === 'cventries') {
-        Object.assign(defaults, { position: '', organization: '', location: '', date: '' });
-      } else if (sec.type === 'cvskills') {
-        Object.assign(defaults, { category: '', skills: '' });
-      } else if (sec.type === 'cvhonors') {
-        Object.assign(defaults, { award: '', issuer: '', location: '', date: '' });
-      } else if (sec.type === 'cvreferences') {
-        Object.assign(defaults, { name: '', relation: '', phone: '', email: '' });
-      } else if (sec.type === 'cvparagraph') {
-        Object.assign(defaults, { text: '' });
-      }
-      const res = await fetch(API_BASE + '/api/sections/' + sec.id + '/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: defaults }),
-      });
-      if (!res.ok) { this.flash('Failed to add', 'error'); return; }
-      sec._data = null;
-      await this.loadSectionData(sec);
-    },
-
-    async removeEntry(sec, entryId) {
-      await fetch(API_BASE + '/api/entries/' + entryId, { method: 'DELETE' });
-      sec._data.entries = sec._data.entries.filter(e => e.id !== entryId);
-    },
-
-    toggleResumeEntry(entry) {
-      entry.resumeIncluded = !entry.resumeIncluded;
-      fetch(API_BASE + '/api/entries/' + entry.id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeIncluded: entry.resumeIncluded }),
-      });
-    },
-
-    // ------ Item (bullet) CRUD ------
-
-    autoSaveItem(item) {
-      this.debounce('item.' + item.id, async () => {
-        await fetch(API_BASE + '/api/items/' + item.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: item.content }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    async addItem(entry) {
-      const res = await fetch(API_BASE + '/api/entries/' + entry.id + '/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: '' }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      entry.items.push({ id: data.id, content: '', resumeIncluded: true, sort_order: entry.items.length, entry_id: entry.id });
-    },
-
-    async removeItem(entry, itemId) {
-      await fetch(API_BASE + '/api/items/' + itemId, { method: 'DELETE' });
-      entry.items = entry.items.filter(i => i.id !== itemId);
-    },
-
-    toggleResumeItem(item) {
-      item.resumeIncluded = !item.resumeIncluded;
-      fetch(API_BASE + '/api/items/' + item.id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeIncluded: item.resumeIncluded }),
-      });
-    },
-
-    // ------ cvparagraph: autosave text + resume text ------
-
-    autoSaveParagraph(sec) {
-      const entry = sec._data.entries[0];
-      if (!entry) return;
-      this.debounce('para.' + entry.id, async () => {
-        await fetch(API_BASE + '/api/entries/' + entry.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: entry.fields }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    autoSaveResumeParagraphText(sec) {
-      this.debounce('rpt.' + sec.id, async () => {
-        this.saveDocumentSections();
-      });
-    },
-
-    // ------ Cover letter ------
-
-    async loadCoverletter() {
-      const [settingsRes, sectionsRes] = await Promise.all([
-        fetch(API_BASE + '/api/settings?prefix=coverletter'),
-        fetch(API_BASE + '/api/coverletter/sections'),
-      ]);
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        const s = {};
-        for (const [key, value] of Object.entries(data)) {
-          s[key.replace('coverletter.', '')] = value;
-        }
-        this.coverletter.settings = s;
-      }
-      if (sectionsRes.ok) {
-        this.coverletter.sections = await sectionsRes.json();
-      }
-    },
-
-    autoSaveCoverletterSetting(field) {
-      this.debounce('cl.' + field, async () => {
-        await fetch(API_BASE + '/api/settings', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ['coverletter.' + field]: this.coverletter.settings[field] || '' }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    async addCoverletterSection() {
-      const res = await fetch(API_BASE + '/api/coverletter/sections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '', body: '' }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      this.coverletter.sections.push({ id: data.id, title: '', body: '', sort_order: this.coverletter.sections.length });
-    },
-
-    autoSaveCoverletterSection(sec) {
-      this.debounce('clsec.' + sec.id, async () => {
-        await fetch(API_BASE + '/api/coverletter/sections/' + sec.id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: sec.title, body: sec.body }),
-        });
-        this.flash('Saved', 'success');
-      });
-    },
-
-    async removeCoverletterSection(secId) {
-      await fetch(API_BASE + '/api/coverletter/sections/' + secId, { method: 'DELETE' });
-      this.coverletter.sections = this.coverletter.sections.filter(s => s.id !== secId);
-    },
-
-    // ------ Compile & PDF ------
-
-    async compile() {
-      this.compiling = true;
-      const name = this.pdfTab;
-      try {
-        const res = await fetch(API_BASE + '/api/compile/' + name, { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          this.flash(name.charAt(0).toUpperCase() + name.slice(1) + ' compiled', 'success');
-          const url = API_BASE + '/api/pdf/' + name + '?t=' + Date.now();
-          this.compiledPdfs[name] = url;
-          this.pdfUrl = url;
-        } else {
-          this.flash('Compilation failed - check console', 'error');
-          console.error(data.log);
-        }
-      } catch (e) {
-        this.flash('Compilation error', 'error');
-      }
-      this.compiling = false;
-    },
-
-    // ------ Person management ------
-
-    async loadPersons() {
-      try {
-        var res = await fetch(API_BASE + '/api/persons');
-        if (!res.ok) return;
-        var data = await res.json();
-        this.persons = data.persons || [];
-        this.activePersonId = data.activePersonId;
-      } catch (e) { /* offline */ }
-    },
-
-    async handlePersonSelect(value) {
-      if (value === '__new__') {
-        await this.createPerson();
-        return;
-      }
-      var id = parseInt(value);
-      if (!isNaN(id)) {
-        await this.switchPerson(id);
-      }
-    },
-
-    async createPerson() {
-      var result = await this.openModal('New Person', [
-        { name: 'name', label: 'Person name', value: '' },
-      ]);
-      if (!result || !result.name.trim()) return;
-      var res = await fetch(API_BASE + '/api/persons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: result.name.trim() }),
-      });
-      if (res.status === 409) { this.flash('Name already exists', 'error'); return; }
-      if (!res.ok) { this.flash('Failed to create', 'error'); return; }
-      var data = await res.json();
-      await this.loadPersons();
-      await this.switchPerson(data.id);
-    },
-
-    async switchPerson(id) {
-      if (id === this.activePersonId) return;
-      if (this.dirty && !confirm('You have unsaved changes. Switch anyway?')) return;
-      var res = await fetch(API_BASE + '/api/persons/' + id + '/switch', { method: 'POST' });
-      if (!res.ok) { this.flash('Failed to switch', 'error'); return; }
-      this.activePersonId = id;
-      await this.init();
-      this.dirty = false;
-    },
-
-    // ------ Save ------
-
-    async save() {
-      try {
-        var data = await fetch(API_BASE + '/api/export');
-        if (!data.ok) throw new Error('Export failed');
-        // Re-import triggers a full reload
-        this.dirty = false;
-        this.flash('Saved', 'success');
-      } catch (e) {
-        this.flash('Save failed', 'error');
-      }
-    },
-
-    // ------ Import / Export ------
-
-    async exportData() {
-      try {
-        var res = await fetch(API_BASE + '/api/export');
-        if (!res.ok) throw new Error('Export failed');
-        var data = await res.json();
-        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = (this.personal.firstName || 'export') + '-cv-data.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        this.flash('Exported', 'success');
-      } catch (e) {
-        this.flash('Export failed', 'error');
-      }
-    },
-
-    async importData() {
-      var input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = async () => {
-        var file = input.files[0];
-        if (!file) return;
-        try {
-          var text = await file.text();
-          var data = JSON.parse(text);
-          var res = await fetch(API_BASE + '/api/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
-          if (!res.ok) throw new Error('Import failed');
-          await this.init();
-          this.flash('Imported', 'success');
-        } catch (e) {
-          this.flash('Import failed: ' + e.message, 'error');
-        }
-      };
-      input.click();
-    },
-
-    // ------ UI helpers ------
-
-    flash(msg, type) {
-      this.statusMsg = msg;
-      this.statusType = type === 'success' ? 'ui-alert-success' : type === 'error' ? 'ui-alert-danger' : '';
-      clearTimeout(this._flashTimer);
-      this._flashTimer = setTimeout(() => { this.statusMsg = ''; }, 3000);
+      this._saveTimers[key] = setTimeout(fn, delay || 500);
     },
   };
+
+  for (let i = 0; i < mixins.length; i++) {
+    Object.assign(base, mixins[i]);
+  }
+  return base;
 }
