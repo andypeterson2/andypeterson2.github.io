@@ -226,6 +226,11 @@
 
       function closeModal() {
         if (modalOverlay) modalOverlay.style.display = 'none';
+        if (!connState.connected) {
+          document.dispatchEvent(
+            new CustomEvent('navbar:dismiss', { detail: { service: service } }),
+          );
+        }
       }
 
       function doConnect() {
@@ -248,6 +253,7 @@
         document.dispatchEvent(
           new CustomEvent('navbar:disconnect', { detail: { service: service } }),
         );
+        openModal();
       }
 
       function updateNav() {
