@@ -41,6 +41,9 @@ function app() {
     // Modal state
     modal: { open: false, title: '', fields: [], resolve: null },
 
+    // Section picker state
+    sectionPicker: { open: false, selected: 'experience', title: 'Experience', resolve: null },
+
     async init() {
       this.darkMode = document.documentElement.dataset.theme !== 'light';
       if (!API_BASE) {
@@ -291,6 +294,41 @@ function app() {
     cancelModal() {
       this.modal.resolve(null);
       this.modal = { open: false, title: '', fields: [], resolve: null };
+    },
+
+    // ------ Section picker ------
+
+    latexTypeFor(type) {
+      var t = SECTION_TYPES[type];
+      return t ? t.latexType : type;
+    },
+
+    openSectionPicker() {
+      return new Promise((resolve) => {
+        this.sectionPicker = {
+          open: true,
+          selected: 'experience',
+          title: SECTION_TYPES['experience'].label,
+          resolve: resolve,
+        };
+      });
+    },
+
+    selectPreset(key) {
+      this.sectionPicker.selected = key;
+      this.sectionPicker.title = SECTION_TYPES[key].label;
+    },
+
+    submitSectionPicker() {
+      const title = this.sectionPicker.title.trim();
+      if (!title) return;
+      this.sectionPicker.resolve({ type: this.sectionPicker.selected, title: title });
+      this.sectionPicker = { open: false, selected: 'experience', title: 'Experience', resolve: null };
+    },
+
+    cancelSectionPicker() {
+      this.sectionPicker.resolve(null);
+      this.sectionPicker = { open: false, selected: 'experience', title: 'Experience', resolve: null };
     },
 
     // ------ Debounced autosave ------
