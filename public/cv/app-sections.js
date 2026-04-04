@@ -6,17 +6,23 @@ function appSections() {
     // ------ Section CRUD ------
 
     async createNewSection() {
-      const result = await this.openModal('New Section', [
-        { name: 'title', label: 'Section title', value: '' },
-        { name: 'type', label: 'Type (cventries, cvskills, cvhonors, cvreferences, cvparagraph)', value: 'cventries' },
-      ]);
+      const result = await this.openSectionPicker();
       if (!result || !result.title.trim()) return;
-      const id = result.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      if (!id) { console.error('Invalid title'); this.saveState = 'error'; return; }
-      const type = result.type.trim();
+      const title = result.title.trim();
+      const type = result.type;
+      var baseId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (!baseId) { console.error('Invalid title'); this.saveState = 'error'; return; }
       if (VALID_SECTION_TYPES.indexOf(type) === -1) { console.error('Invalid type'); this.saveState = 'error'; return; }
-      const res = await cvApi.post(API.sections, { id: id, type: type, title: result.title.trim() });
+      var id = baseId;
+      var existing = this.sections.map(function(s) { return s.id; });
+      var suffix = 2;
+      while (existing.indexOf(id) !== -1) { id = baseId + '-' + suffix; suffix++; }
+      const res = await cvApi.post(API.sections, { id: id, type: type, title: title });
       if (!res.ok) { console.error('Failed to create section'); this.saveState = 'error'; return; }
+      // Auto-create first empty entry
+      const defaults = getDefaultFields(type);
+      await cvApi.post(API.sectionEntries(id), { fields: defaults });
+      // Add to document and reload
       await this.loadSections();
       const docSections = this.docSections.map(function(s) {
         return { sectionId: s.id, enabled: s.enabled, resumeParagraphText: s.resumeParagraphText || null };
