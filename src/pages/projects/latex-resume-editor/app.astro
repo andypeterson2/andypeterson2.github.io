@@ -85,6 +85,63 @@ import { siteConfig } from '../../../config/site';
       </div>
     </div>
 
+    <!-- Section picker modal -->
+    <div class="cv-modal-overlay" x-show="sectionPicker.open" @click.self="cancelSectionPicker()" x-cloak>
+      <div class="standard-dialog cv-modal-dialog cv-picker-dialog" role="dialog" aria-modal="true">
+        <div class="title-bar">
+          <span class="title">New Section</span>
+        </div>
+        <div class="modal-contents cv-modal-body">
+          <div class="field-row cv-modal-field">
+            <label>Title</label>
+            <input type="text" x-model="sectionPicker.title" @keydown.enter="submitSectionPicker()" autofocus />
+          </div>
+          <div class="cv-picker-list" role="radiogroup" aria-label="Section type">
+            <details class="cv-picker-group" open>
+              <summary class="cv-picker-category">Roles &amp; Experience</summary>
+              <template x-for="preset in getPresetsByCategory().roles" :key="preset.key">
+                <button class="cv-picker-item" role="radio"
+                  :aria-checked="sectionPicker.selected === preset.key"
+                  :class="{ 'cv-picker-selected': sectionPicker.selected === preset.key }"
+                  :title="preset.description"
+                  @click="selectPreset(preset.key)"
+                  x-text="preset.label">
+                </button>
+              </template>
+            </details>
+            <details class="cv-picker-group" open>
+              <summary class="cv-picker-category">Achievements</summary>
+              <template x-for="preset in getPresetsByCategory().achievements" :key="preset.key">
+                <button class="cv-picker-item" role="radio"
+                  :aria-checked="sectionPicker.selected === preset.key"
+                  :class="{ 'cv-picker-selected': sectionPicker.selected === preset.key }"
+                  :title="preset.description"
+                  @click="selectPreset(preset.key)"
+                  x-text="preset.label">
+                </button>
+              </template>
+            </details>
+            <details class="cv-picker-group" open>
+              <summary class="cv-picker-category">Other</summary>
+              <template x-for="preset in getPresetsByCategory().other" :key="preset.key">
+                <button class="cv-picker-item" role="radio"
+                  :aria-checked="sectionPicker.selected === preset.key"
+                  :class="{ 'cv-picker-selected': sectionPicker.selected === preset.key }"
+                  :title="preset.description"
+                  @click="selectPreset(preset.key)"
+                  x-text="preset.label">
+                </button>
+              </template>
+            </details>
+          </div>
+          <div class="field-row cv-modal-actions">
+            <button class="btn btn-default" @click="submitSectionPicker()">OK</button>
+            <button class="btn" @click="cancelSectionPicker()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main layout: split pane -->
     <main class="cv-split-layout"
       :class="{
@@ -266,9 +323,6 @@ import { siteConfig } from '../../../config/site';
                                 <button class="cv-node-edit" @click.stop="entry._editing = !entry._editing; if(entry._editing) $nextTick(() => $refs.entryTitleInput?.focus())" title="Edit name">
                                   <img src="https://unpkg.com/lucide-static@1.7.0/icons/pencil.svg" alt="Edit" width="14" height="14" />
                                 </button>
-                                <button class="cv-node-edit" @click.stop="addItem(entry)" title="Add item" aria-label="Add item" x-show="entry._expanded">
-                                  <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="12" height="12" />
-                                </button>
                                 <button class="cv-node-toggle" @click.stop="entry.resumeIncluded = !entry.resumeIncluded; toggleResumeEntry(entry)">
                                   <img :src="entry.resumeIncluded ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="14" height="14" class="cv-toggle-icon" />
                                 </button>
@@ -281,8 +335,18 @@ import { siteConfig } from '../../../config/site';
                                   <template x-for="field in (SECTION_TYPES[sec.type]?.fields || [])" :key="field.key">
                                     <label>
                                       <span x-text="field.label"></span>
-                                      <input type="text" :value="entry.fields[field.key]"
-                                        @input="entry.fields[field.key] = $event.target.value; autoSaveEntry(entry)" />
+                                      <template x-if="field.options">
+                                        <select :value="entry.fields[field.key]"
+                                          @change="entry.fields[field.key] = $event.target.value; autoSaveEntry(entry)">
+                                          <template x-for="opt in field.options" :key="opt">
+                                            <option :value="opt" x-text="opt || '—'" :selected="entry.fields[field.key] === opt"></option>
+                                          </template>
+                                        </select>
+                                      </template>
+                                      <template x-if="!field.options">
+                                        <input type="text" :value="entry.fields[field.key]"
+                                          @input="entry.fields[field.key] = $event.target.value; autoSaveEntry(entry)" />
+                                      </template>
                                     </label>
                                   </template>
                                 </div>
@@ -290,27 +354,25 @@ import { siteConfig } from '../../../config/site';
                                 <!-- Child items (bullets) — only for cventries -->
                                 <template x-if="SECTION_TYPES[sec.type]?.hasItems">
                                   <div>
-                                    <label class="cv-node-children-label" x-text="(SECTION_TYPES[sec.type]?.itemLabel || 'Bullet') + ' Points'"></label>
+                                    <div class="cv-node-children-header">
+                                      <label class="cv-node-children-label" x-text="(SECTION_TYPES[sec.type]?.itemLabel || 'Bullet') + ' Points'"></label>
+                                      <button class="cv-node-edit" @click.stop="addItem(entry)" title="Add item" aria-label="Add item">
+                                        <img src="https://unpkg.com/lucide-static@1.7.0/icons/plus.svg" alt="" width="14" height="14" />
+                                      </button>
+                                    </div>
                                     <div class="cv-node-children">
                                     <template x-for="(item, itemIdx) in entry.items" :key="item.id">
-                                      <!-- ══ DEPTH 2: Item ══ -->
-                                      <div class="cv-node" data-depth="2" :class="{ 'cv-node-excluded': !item.resumeIncluded }">
-                                        <div class="cv-node-header" @click="item._expanded = !item._expanded" :aria-expanded="item._expanded">
-                                          <span class="cv-node-arrows" @click.stop>
-                                            <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, -1)" :disabled="itemIdx === 0" title="Move up" aria-label="Move up">&uarr;</button>
-                                            <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, 1)" :disabled="itemIdx === entry.items.length - 1" title="Move down" aria-label="Move down">&darr;</button>
-                                          </span>
-                                          <img class="cv-node-expand-icon" :src="item._expanded ? 'https://unpkg.com/lucide-static@1.7.0/icons/minimize-2.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/maximize-2.svg'" alt="" width="10" height="10" />
-                                          <input type="text" class="cv-node-title" x-model="item.title"
-                                            @input="autoSaveItemTitle(item)" @click.stop placeholder="(untitled bullet)" :readonly="!serverConnected" />
-                                          <button class="cv-node-toggle" @click.stop="item.resumeIncluded = !item.resumeIncluded; toggleResumeItem(item)">
-                                            <img :src="item.resumeIncluded ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="12" height="12" class="cv-toggle-icon" />
-                                          </button>
-                                          <button class="cv-node-delete" @click.stop="removeItem(entry, item.id)" aria-label="Delete">&times;</button>
-                                        </div>
-                                        <div x-show="item._expanded" class="cv-node-body">
-                                          <textarea x-model="item.content" rows="2" @input="autoSaveItem(item)" :aria-label="'Bullet point'" class="cv-full-textarea"></textarea>
-                                        </div>
+                                      <!-- ══ DEPTH 2: Item (flat row) ══ -->
+                                      <div class="cv-item-row" :class="{ 'cv-node-excluded': !item.resumeIncluded }">
+                                        <span class="cv-node-arrows">
+                                          <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, -1)" :disabled="itemIdx === 0" title="Move up" aria-label="Move up">&uarr;</button>
+                                          <button class="cv-node-arrow" @click="moveItem(entry, itemIdx, 1)" :disabled="itemIdx === entry.items.length - 1" title="Move down" aria-label="Move down">&darr;</button>
+                                        </span>
+                                        <textarea x-model="item.content" rows="1" @input="autoSaveItem(item); $event.target.style.height = 'auto'; $event.target.style.height = $event.target.scrollHeight + 'px'" :aria-label="'Bullet point'" class="cv-item-textarea" :readonly="!serverConnected" placeholder="Enter bullet point..."></textarea>
+                                        <button class="cv-node-toggle" @click.stop="item.resumeIncluded = !item.resumeIncluded; toggleResumeItem(item)">
+                                          <img :src="item.resumeIncluded ? 'https://unpkg.com/lucide-static@1.7.0/icons/eye.svg' : 'https://unpkg.com/lucide-static@1.7.0/icons/eye-off.svg'" alt="Toggle resume inclusion" width="12" height="12" class="cv-toggle-icon" />
+                                        </button>
+                                        <button class="cv-node-delete" @click.stop="removeItem(entry, item.id)" aria-label="Delete">&times;</button>
                                       </div>
                                     </template>
                                     </div>
@@ -1250,14 +1312,60 @@ import { siteConfig } from '../../../config/site';
     box-sizing: border-box;
   }
 
+  :global(.cv-node-children-header) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px 2px;
+  }
+
+  :global(.cv-node-children-header .cv-node-edit) {
+    padding: 0;
+    opacity: 0.5;
+  }
+
+  :global(.cv-node-children-header .cv-node-edit:hover) {
+    opacity: 1;
+  }
+
   :global(.cv-node-children-label) {
     display: block;
-    padding: 5px 12px 2px;
     font-size: 11px;
     font-weight: 500;
     color: #555;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  :global(.cv-item-row) {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 3px 8px 3px 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  :global(.cv-item-row:last-child) {
+    border-bottom: none;
+  }
+
+
+  :global(.cv-item-textarea) {
+    flex: 1;
+    min-height: 24px;
+    resize: none;
+    overflow: hidden;
+    font-family: Chicago_12;
+    font-size: 18px;
+    padding: 2px 4px;
+    line-height: 1.4;
+    box-sizing: border-box;
+  }
+
+  :global(.cv-item-row .cv-node-toggle),
+  :global(.cv-item-row .cv-node-delete) {
+    flex-shrink: 0;
+    align-self: center;
   }
 
   :global(.cv-node-expand-icon) {
@@ -1433,6 +1541,67 @@ import { siteConfig } from '../../../config/site';
     border-top: 1px solid #ccc;
     padding-top: 12px;
     margin-top: 4px;
+  }
+
+  /* ── Section picker ── */
+  :global(.cv-picker-dialog) {
+    max-width: 420px;
+    width: 90vw;
+  }
+
+  :global(.cv-picker-list) {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 2px solid #000;
+    margin: 8px 0;
+    background: #fff;
+  }
+
+  :global(.cv-picker-group) {
+    border-bottom: 1px solid #ccc;
+  }
+
+  :global(.cv-picker-category) {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    color: #666;
+    background: #f0f0f0;
+    cursor: pointer;
+    list-style-type: none;
+  }
+
+  :global(.cv-picker-category::-webkit-details-marker) {
+    display: none;
+  }
+
+  :global(.cv-picker-category::marker) {
+    content: none;
+  }
+
+  :global(.cv-picker-item) {
+    display: block;
+    width: 100%;
+    padding: 6px 10px 6px 24px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+
+  :global(.cv-picker-item:hover) {
+    background: #e8e8e8;
+  }
+
+  :global(.cv-picker-item.cv-picker-selected) {
+    background: #000;
+    color: #fff;
   }
 
   /* ── Mobile toolbar (hidden on desktop) ── */
