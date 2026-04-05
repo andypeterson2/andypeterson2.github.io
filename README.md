@@ -8,7 +8,6 @@ Monorepo for portfolio site and sub-projects.
 src/                          Astro 6 portfolio site
 packages/
   cv/                         [submodule] LaTeX CV/resume editor (Express)
-  flask-core/                 Shared Flask CORS/SSL infrastructure
   nonogram/                   [submodule] Quantum nonogram solver (Flask + Qiskit)
   quantum-protein-kernel/     [submodule] ML classifier platform (Flask + PyTorch + Qiskit)
   qvc/                        [submodule] Quantum video chat (Flask + React + BB84)
@@ -16,7 +15,7 @@ packages/
   ui-kit/                     [submodule] Design system (CSS components, Storybook)
 scripts/                      CI helpers, manifest generator, scaffolding
 nginx/                        Reverse proxy config for Docker deployment
-tests/                        Vitest test suite (pages, SEO, a11y, design system)
+tests/                        Vitest + Playwright + pytest test suites
 ```
 
 ## Quick Start
@@ -43,7 +42,7 @@ make docker-down  # stops all services
 | nonogram          | 5055  | Nonogram solver (WebSocket)          |
 | videochat-server  | 5050  | QKD backend server                   |
 | videochat-client-a  | 5002 | Video chat browser middleware       |
-| cv-editor         | 3000  | CV/resume LaTeX editor               |
+| cv-editor         | 3001  | CV/resume LaTeX editor               |
 
 ## Testing
 

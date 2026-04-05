@@ -11,9 +11,12 @@ node_modules/
 
 # Build output
 dist/
-site-manifest.json
 *.log
+*.json.log
 *.aux
+logs/
+coverage/
+playwright-report/
 
 # Python
 __pycache__/
