@@ -14,15 +14,33 @@ services:
     container_name: website
     profiles: ["dev"]
     image: node:22-slim
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
     command: sh -c "npm install && npx astro dev --host 0.0.0.0 --port ${ASTRO_PORT}"
     ports:
       - "127.0.0.1:${ASTRO_PORT}:${ASTRO_PORT}"
     environment:
       SITE_URL: "http://localhost:${ASTRO_PORT}"
+      NODE_ENV: development
     volumes:
       - .:/app
       - website_node_modules:/app/node_modules
     working_dir: /app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${ASTRO_PORT} || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "1"
+          memory: 512M
 
 volumes:
   website_node_modules:

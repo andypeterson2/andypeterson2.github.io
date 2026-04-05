@@ -19,9 +19,9 @@ install: ## Install all dependencies
 	    echo "→ npm ci in $$dir"; (cd "$$dir" && npm ci --silent 2>/dev/null || true); \
 	  fi; \
 	done
-	pip install -e packages/flask-core
+	python3 -m venv .venv 2>/dev/null || true
 	@for dir in $(PYTHON_PROJECTS); do \
-	  echo "→ pip install -e $$dir"; pip install -e "$$dir[dev]"; \
+	  echo "→ pip install -e $$dir"; . .venv/bin/activate && pip install -e "$$dir[dev]"; \
 	done
 	@echo "\n✓ Dependencies installed."
 
@@ -44,7 +44,7 @@ test-js: ## JavaScript tests (jest/vitest)
 lint: lint-py lint-js ## Lint everything
 
 lint-py: ## Ruff lint
-	ruff check packages/quantum-protein-kernel/classifiers packages/flask-core/src
+	ruff check packages/quantum-protein-kernel/classifiers
 
 lint-js: ## ESLint (if configured)
 	npm run lint

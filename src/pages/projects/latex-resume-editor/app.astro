@@ -15,6 +15,8 @@ import { siteConfig } from '../../../config/site';
   <meta slot="head" name="site-backend" content="cv" data-port="3001" data-label="CV Backend" />
 
   <script is:inline defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
+    integrity="sha384-X9kJyAubVxnP0hcA+AMMs21U445qsnqhnUF8EBlEpP3a42Kh/JwWjlv2ZcvGfphb"
+    crossorigin="anonymous"
   ></script>
 
   <div class="cv-app" x-data="app()" x-init="init()">
@@ -698,7 +700,7 @@ import { siteConfig } from '../../../config/site';
 
         function buildFileSubmenu() {
           var app = _cvApp();
-          fileSubUl.innerHTML = '';
+          fileSubUl.replaceChildren();
           addFileItem(fileSubUl, 'New', function () { if (app) app.createPerson(); });
           addFileItem(fileSubUl, 'Open', function () { if (app) app.openPerson(); });
           addFileItem(fileSubUl, 'Rename', function () { if (app) app.renamePerson(); });

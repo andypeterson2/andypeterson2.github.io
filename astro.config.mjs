@@ -24,7 +24,6 @@ export default defineConfig({
       styleDirective: {
         resources: [
           "'self'",
-          "'unsafe-inline'",
           'https://unpkg.com',
           'https://cdn.jsdelivr.net',
         ],
@@ -33,7 +32,7 @@ export default defineConfig({
         "default-src 'self'",
         "font-src 'self' https://unpkg.com https://cdn.jsdelivr.net",
         "img-src 'self' data:",
-        "connect-src 'self' ws: wss: http://localhost:* https://plausible.io",
+        `connect-src 'self' https://plausible.io${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self' mailto:",
@@ -106,11 +105,17 @@ export default defineConfig({
                     '.json': 'application/json',
                     '.png': 'image/png',
                     '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.webp': 'image/webp',
                     '.svg': 'image/svg+xml',
                     '.ico': 'image/x-icon',
+                    '.gif': 'image/gif',
                     '.woff': 'font/woff',
                     '.woff2': 'font/woff2',
                     '.ttf': 'font/ttf',
+                    '.wasm': 'application/wasm',
+                    '.webm': 'video/webm',
+                    '.mp4': 'video/mp4',
                   };
                   res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
                   fs.createReadStream(target).pipe(res);
