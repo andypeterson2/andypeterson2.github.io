@@ -19,7 +19,12 @@ jobs:
           python-version: '3.12'
 
       - name: Generate manifest
-        run: python3 scripts/generate-manifest.py
+        run: |
+          python3 scripts/generate-manifest.py
+          if [ $? -ne 0 ]; then
+            echo "::error::Manifest generation failed"
+            exit 1
+          fi
 
       - name: Commit manifest if changed
         run: |

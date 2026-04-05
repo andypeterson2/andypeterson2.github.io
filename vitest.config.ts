@@ -9,6 +9,13 @@ export default defineConfig({
       exclude: ['src/env.d.ts'],
       reporter: ['text', 'html'],
       reportsDirectory: 'coverage',
+      all: true,
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
     },
   },
 });

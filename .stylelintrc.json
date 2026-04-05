@@ -1,7 +1,6 @@
 {
   "extends": ["stylelint-config-standard", "stylelint-config-html/astro"],
   "rules": {
-    "color-no-hex": true,
     "declaration-property-value-disallowed-list": {
       "border-radius": ["/^[4-9]px/", "/^[1-9]\\d+px/"],
       "box-shadow": ["/^(?!none|0|var\\()/"]
@@ -17,20 +16,7 @@
     }],
     "declaration-property-value-keyword-no-deprecated": null
   },
-  "overrides": [
-    {
-      "files": ["src/styles/tokens.css", "src/styles/base.css", "src/tokens/**/*.css"],
-      "rules": {
-        "color-no-hex": null
-      }
-    },
-    {
-      "files": ["**/*.astro"],
-      "rules": {
-        "color-no-hex": null
-      }
-    }
-  ],
+  "overrides": [],
   "ignoreFiles": [
     "node_modules/**",
     "dist/**",

@@ -46,6 +46,18 @@ When a design system component exists, use it instead of raw HTML:
 
 Override with an eslint-disable comment + justification when genuinely needed.
 
+### ESLint Design System Plugin
+
+A custom ESLint plugin (`scripts/eslint-plugin-design-system.js`) enforces
+component usage in page and layout files:
+
+- **`prefer-button`** (warn) -- flags raw `<button>` elements in pages/layouts;
+  use the `<Button>` component instead.
+
+The plugin only applies to `src/pages/**/*.astro` and `src/layouts/**/*.astro`.
+Files in `src/components/` are excluded to avoid false positives inside component
+implementations.
+
 ## New Component Checklist
 
 1. Define in `src/components/` as an Astro component

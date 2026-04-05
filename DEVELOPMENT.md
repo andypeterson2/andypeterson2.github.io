@@ -33,7 +33,7 @@ Sub-projects with Flask or Express backends can be run two ways:
 | Service               | Port | Protocol         |
 |-----------------------|------|------------------|
 | classifiers           | 5001 | HTTP + SSE       |
-| cv-editor             | 3000 | HTTP             |
+| cv-editor             | 3001 | HTTP             |
 | nonogram              | 5055 | HTTP + WebSocket |
 | videochat-server      | 5050 | HTTP + WebSocket |
 | videochat-client-a    | 5002 | HTTP + Socket.IO |
@@ -84,3 +84,63 @@ npm run format    # auto-fix formatting
 
 Run `make test && make lint` before pushing to catch issues early.
 CI will run the same checks on your pull request.
+
+## UI Kit Storybook
+
+To develop or preview design system components:
+
+```bash
+cd packages/ui-kit
+npm install
+npm run storybook    # opens Storybook on localhost:6006
+```
+
+## Adding a New Backend Service
+
+To integrate a new Python (Flask) or Node (Express) backend service:
+
+1. Create the package under `packages/<name>/` (or add as a submodule).
+2. Add a `docker-compose.yml` in the package directory with the service definition.
+   Bind ports to `127.0.0.1` only. Include a healthcheck.
+3. Add an `include:` entry in the root `docker-compose.yml` pointing to your
+   compose file and `.env`.
+4. Register the route in `astro.config.mjs`: add the path prefix to `subPaths`
+   and add a rewrite entry in `pathRewrites` if needed.
+5. Add an entry to `site-manifest.json` via `<meta name="site-backend">` tags
+   in your app page, or manually.
+6. Add the project to CI path-filter in `.github/workflows/ci.yml`.
+7. Add build/test targets to the `Makefile`.
+8. Document the port in this file's Service Ports table.
+
+## Troubleshooting
+
+### Submodules not initialized
+```bash
+git submodule update --init --recursive
+# Or re-clone with: git clone --recursive <url>
+```
+
+### Wrong Node.js version
+This project requires **Node >= 22**. Use nvm to switch:
+```bash
+nvm install 22
+nvm use 22
+```
+
+### Wrong Python version
+Backend services require **Python 3.12**. Use pyenv if needed:
+```bash
+pyenv install 3.12
+pyenv local 3.12
+```
+
+### Docker port conflicts
+If ports are already in use, check `.env` files in each package directory
+and adjust the port variables (`CLASSIFIER_PORT`, `NONOGRAM_PORT`,
+`QVC_SERVER_PORT`, `ASTRO_PORT`).
+
+### Stale build artifacts
+```bash
+make clean
+npm run build
+```

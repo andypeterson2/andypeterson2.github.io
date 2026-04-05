@@ -236,7 +236,8 @@
       function doConnect() {
         var host = hostInput ? hostInput.value.trim() || 'localhost' : 'localhost';
         var port = portInput ? parseInt(portInput.value) || defaultPort : defaultPort;
-        var url = 'http://' + host + ':' + port;
+        var proto = location.protocol === 'https:' ? 'https://' : 'http://';
+        var url = proto + host + ':' + port;
         connState.connected = true;
         updateNav();
         closeModal();
@@ -280,7 +281,8 @@
           getUrl: function () {
             var h = hostInput ? hostInput.value.trim() || 'localhost' : 'localhost';
             var p = portInput ? parseInt(portInput.value) || defaultPort : defaultPort;
-            return 'http://' + h + ':' + p;
+            var proto = location.protocol === 'https:' ? 'https://' : 'http://';
+            return proto + h + ':' + p;
           },
           setStatus: function (status) {
             connState.status = status;
