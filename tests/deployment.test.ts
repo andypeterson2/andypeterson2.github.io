@@ -27,6 +27,18 @@ describe('Preview deploy safety', () => {
   });
 });
 
+// ---- CI security audit ----
+
+describe('CI security audit', () => {
+  const ciYml = readFileSync(resolve(ROOT, '.github/workflows/ci.yml'), 'utf-8');
+
+  test('npm audit does not silently swallow failures', () => {
+    const auditLine = ciYml.split('\n').find((l) => l.includes('npm audit'));
+    expect(auditLine).toBeDefined();
+    expect(auditLine).not.toContain('|| true');
+  });
+});
+
 // ---- Migration redirects ----
 
 describe('Migration redirects', () => {
