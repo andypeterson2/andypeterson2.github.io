@@ -23,9 +23,12 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).toContain('href="/projects/"');
   });
 
-  test('uses system.css menu-bar pattern', () => {
-    expect(layoutSrc).toContain('role="menu-bar"');
-    expect(layoutSrc).toContain('role="menu-item"');
+  test('uses valid ARIA menubar pattern', () => {
+    expect(layoutSrc).toContain('role="menubar"');
+    expect(layoutSrc).toContain('role="menuitem"');
+    // Make sure the old invalid values are gone
+    expect(layoutSrc).not.toContain('role="menu-bar"');
+    expect(layoutSrc).not.toContain('role="menu-item"');
   });
 
   test('nav has border bottom', () => {
