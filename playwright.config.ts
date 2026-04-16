@@ -7,6 +7,13 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+  expect: {
+    // Visual regression tolerance: small anti-aliasing / font-hinting drift OK
+    toHaveScreenshot: {
+      maxDiffPixels: 100,
+      threshold: 0.2,
+    },
+  },
   use: {
     baseURL: 'http://localhost:4321',
     trace: 'on-first-retry',
