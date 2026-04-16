@@ -1,0 +1,51 @@
+<section class="card">
+  <h2 class="card-title">Train</h2>
+  <label for="model-type">Model</label>
+  <select id="model-type"></select>
+
+  <div id="model-info-details" class="hidden">
+    <div id="model-info-panel"></div>
+  </div>
+
+  <label for="model-name">Name</label>
+  <input id="model-name" type="text" placeholder="auto" />
+
+  <label for="epochs">Epochs</label>
+  <input id="epochs" type="number" value="10" min="1" />
+
+  <label for="batch-size">Batch size</label>
+  <input id="batch-size" type="number" value="64" min="1" />
+
+  <label for="lr">Learning rate</label>
+  <input id="lr" type="number" value="0.01" step="0.001" min="0" />
+
+  <details class="advanced-toggle">
+    <summary>Advanced</summary>
+    <label for="patience">Patience (early stop)</label>
+    <input id="patience" type="number" placeholder="disabled" min="1" />
+
+    <label for="val-gap">Val every N batches</label>
+    <input id="val-gap" type="number" value="50" min="1" />
+
+    <label for="teacher-select">Distill from</label>
+    <select id="teacher-select">
+      <option value="">-- none --</option>
+    </select>
+
+    <div id="distill-row" class="hidden">
+      <label for="distill-weight">Distill weight (alpha)</label>
+      <input id="distill-weight" type="number" value="0.5" step="0.1" min="0" max="1" />
+    </div>
+  </details>
+
+  <button id="train-btn" type="button" class="btn btn-primary btn-block">&#9654; Train</button>
+</section>
+
+<style>
+  .advanced-toggle summary {
+    cursor: pointer;
+    font-size: clamp(9px, 1.1vw, 13px);
+    font-weight: 600;
+    margin: 6px 0 4px;
+  }
+</style>

@@ -1,0 +1,63 @@
+<div id="log-drawer" class="log-drawer">
+  <div id="log-handle" class="log-handle" aria-label="Resize log panel">Log</div>
+  <pre id="log-terminal" class="log-terminal"></pre>
+</div>
+
+<style>
+  .log-drawer {
+    border-top: 2px solid #000;
+    background: #fff;
+    max-height: 30vh;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .log-drawer.open {
+    max-height: 50vh;
+  }
+
+  .log-handle {
+    padding: 2px 8px;
+    font-size: clamp(8px, 1vw, 12px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #eee;
+    cursor: pointer;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .log-terminal {
+    font-family: monospace;
+    font-size: clamp(8px, 1vw, 12px);
+    padding: 4px 8px;
+    overflow-y: auto;
+    max-height: calc(30vh - 24px);
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  :global(.log-entry) {
+    display: flex;
+    gap: 8px;
+    line-height: 1.4;
+  }
+
+  :global(.log-time) {
+    color: #999;
+    flex-shrink: 0;
+  }
+
+  :global(.log-msg) {
+    color: #333;
+  }
+
+  :global(.log-ok) {
+    color: var(--color-success);
+  }
+
+  :global(.log-err) {
+    color: var(--color-danger);
+  }
+</style>
