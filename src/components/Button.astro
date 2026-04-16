@@ -1,12 +1,20 @@
 ---
 interface Props {
+  /** Visual style variant. 'primary' uses bold beveled border (btn-default). */
   variant?: 'primary' | 'secondary' | 'ghost';
+  /** Button size. Defaults to 'md'. */
   size?: 'sm' | 'md' | 'lg';
+  /** If provided, renders as an anchor tag instead of button. */
   href?: string;
+  /** Additional CSS classes. */
   class?: string;
+  /** HTML button type attribute. */
   type?: 'button' | 'submit' | 'reset';
+  /** Disables the button. */
   disabled?: boolean;
+  /** Accessible label for screen readers. */
   'aria-label'?: string;
+  /** HTML id attribute. */
   id?: string;
 }
 

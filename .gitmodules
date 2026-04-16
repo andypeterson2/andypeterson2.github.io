@@ -1,25 +1,20 @@
 [submodule "packages/ui-kit"]
 	path = packages/ui-kit
 	url = https://github.com/andypeterson2/ui-kit.git
-	branch = main
 	shallow = true
 [submodule "packages/nonogram"]
 	path = packages/nonogram
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver.git
-	branch = main
 	shallow = true
 [submodule "packages/quantum-protein-kernel"]
 	path = packages/quantum-protein-kernel
 	url = https://github.com/andypeterson2/quantum-machine-learning.git
-	branch = main
 	shallow = true
 [submodule "packages/qvc"]
 	path = packages/qvc
 	url = https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat.git
-	branch = main
 	shallow = true
 [submodule "packages/cv"]
 	path = packages/cv
 	url = https://github.com/andypeterson2/cv.git
-	branch = main
 	shallow = true
