@@ -15,7 +15,7 @@
     return t.split(/\s*[—–|]\s*/)[0].trim() || "Page";
   }
 
-  /* ── Build the system.css role="menu-bar" nav matching Nav.astro ── */
+  /* ── Build the system.css role="menubar" nav matching Nav.astro ── */
   function build() {
     var currentPath = location.pathname;
 
@@ -23,17 +23,17 @@
     var wrapper = document.createElement("div");
     wrapper.className = "ui-navbar-wrapper";
 
-    // --- system.css nav with role="menu-bar" ---
+    // --- system.css nav with role="menubar" ---
     var nav = document.createElement("nav");
     nav.className = "ui-navbar site-navbar";
     nav.setAttribute("aria-label", "Site navigation");
 
     var ul = document.createElement("ul");
-    ul.setAttribute("role", "menu-bar");
+    ul.setAttribute("role", "menubar");
 
     // 1. Heart icon (home link)
     var heartLi = document.createElement("li");
-    heartLi.setAttribute("role", "menu-item");
+    heartLi.setAttribute("role", "menuitem");
     heartLi.setAttribute("aria-haspopup", "false");
     heartLi.className = "heart-item";
     var heartA = document.createElement("a");
@@ -48,7 +48,7 @@
 
     // 2. About (submenu)
     var aboutLi = document.createElement("li");
-    aboutLi.setAttribute("role", "menu-item");
+    aboutLi.setAttribute("role", "menuitem");
     aboutLi.setAttribute("aria-haspopup", "true");
     aboutLi.tabIndex = 0;
     aboutLi.textContent = "About";
@@ -58,7 +58,7 @@
       { href: "/about/", label: "About" },
     ].forEach(function (item) {
       var li = document.createElement("li");
-      li.setAttribute("role", "menu-item");
+      li.setAttribute("role", "menuitem");
       var a = document.createElement("a");
       a.href = item.href;
       a.textContent = item.label;
@@ -70,7 +70,7 @@
 
     // 3. Projects (submenu)
     var projectsLi = document.createElement("li");
-    projectsLi.setAttribute("role", "menu-item");
+    projectsLi.setAttribute("role", "menuitem");
     projectsLi.setAttribute("aria-haspopup", "true");
     projectsLi.tabIndex = 0;
     projectsLi.textContent = "Projects";
@@ -78,7 +78,7 @@
     projectsUl.setAttribute("role", "menu");
     projectLinks.forEach(function (item) {
       var li = document.createElement("li");
-      li.setAttribute("role", "menu-item");
+      li.setAttribute("role", "menuitem");
       var a = document.createElement("a");
       a.href = item.href;
       a.textContent = item.label;
@@ -90,7 +90,7 @@
 
     // 4. Contact
     var contactLi = document.createElement("li");
-    contactLi.setAttribute("role", "menu-item");
+    contactLi.setAttribute("role", "menuitem");
     contactLi.setAttribute("aria-haspopup", "false");
     var contactA = document.createElement("a");
     contactA.href = "/contact";
