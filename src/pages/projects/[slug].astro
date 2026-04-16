@@ -83,7 +83,7 @@ const relatedProjects = projects
         <div class="related-list">
           {relatedProjects.map((rp) => (
             <a href={`/projects/${rp.slug}/`} class="related-item">
-              <img src={`/icons/${rp.icon}`} alt="" class="related-icon" />
+              <img src={`/icons/${rp.icon}`} alt={rp.title} class="related-icon" />
               <div class="related-info">
                 <span class="related-title">{rp.title}</span>
                 <span class="related-desc">{rp.description}</span>
