@@ -132,13 +132,15 @@ describe('SectionLabel Component', () => {
 
 describe('Site Configuration', () => {
   const siteSrc = readFileSync(resolve(ROOT, 'src/config/site.ts'), 'utf-8');
+  const libSrc = readFileSync(resolve(ROOT, 'src/lib/site-config.ts'), 'utf-8');
 
   test('reads from environment variables', () => {
     expect(siteSrc).toContain('import.meta.env');
   });
 
   test('defines SiteConfig interface', () => {
-    expect(siteSrc).toContain('interface SiteConfig');
+    // Interface moved to src/lib/site-config.ts; site.ts re-exports it.
+    expect(libSrc).toContain('interface SiteConfig');
   });
 
   test('exports siteConfig', () => {
@@ -146,7 +148,7 @@ describe('Site Configuration', () => {
   });
 
   test('has displayName field', () => {
-    expect(siteSrc).toContain('displayName');
+    expect(libSrc).toContain('displayName');
   });
 });
 
