@@ -47,7 +47,7 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high || true
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - name: Check name leakage
         run: bash scripts/check-name-leakage.sh
