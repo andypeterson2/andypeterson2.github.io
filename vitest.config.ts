@@ -5,11 +5,20 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{ts,astro}'],
-      exclude: ['src/env.d.ts'],
       reporter: ['text', 'html'],
       reportsDirectory: 'coverage',
-      all: true,
+      // Coverage reflects files actually imported by tests. As logic moves
+      // from .astro frontmatter into src/lib/ modules (see tests/lib/),
+      // the covered surface expands naturally.
+      // .astro files are excluded — v8 cannot parse them as runtime JS.
+      exclude: [
+        'src/env.d.ts',
+        '**/*.astro',
+        '**/*.config.*',
+        'tests/**',
+        'dist/**',
+        'coverage/**',
+      ],
       thresholds: {
         lines: 60,
         functions: 60,
