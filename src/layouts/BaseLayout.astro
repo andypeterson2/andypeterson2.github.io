@@ -45,6 +45,14 @@ if (customBreadcrumbs) {
   }
 }
 
+// Render a single breadcrumb segment as the appropriate element
+function renderSegment(seg: { text?: string; bold: boolean; href?: string; isHeart?: boolean }) {
+  if (seg.bold) return { tag: 'span' as const, class: 'crumb-sep', text: seg.text };
+  if (seg.isHeart) return { tag: 'a' as const, href: seg.href, class: 'crumb-link crumb-heart', isHeart: true };
+  if (seg.href) return { tag: 'a' as const, href: seg.href, class: 'crumb-link', text: seg.text };
+  return { tag: 'span' as const, text: seg.text };
+}
+
 // Details bar text
 const detailsSegments = isHome
   ? [
@@ -156,21 +164,19 @@ const detailsSegments = isHome
         </div>
         <div class="details-bar">
           {
-            detailsSegments.map((seg) =>
-              seg.bold ? (
-                <span class="crumb-sep">{seg.text}</span>
-              ) : seg.isHeart ? (
-                <a href={seg.href} class="crumb-link crumb-heart">
-                  <img src="/icons/heart_light.svg" alt="Home" class="crumb-heart-icon" />
-                </a>
-              ) : seg.href ? (
-                <a href={seg.href} class="crumb-link">
-                  {seg.text}
-                </a>
-              ) : (
-                <span>{seg.text}</span>
-              ),
-            )
+            detailsSegments.map((seg) => {
+              const r = renderSegment(seg);
+              if (r.isHeart) {
+                return (
+                  <a href={r.href} class={r.class}>
+                    <img src="/icons/heart_light.svg" alt="Home" class="crumb-heart-icon" />
+                  </a>
+                );
+              }
+              return r.tag === 'a'
+                ? <a href={r.href} class={r.class}>{r.text}</a>
+                : <span class={r.class}>{r.text}</span>;
+            })
           }
         </div>
         <slot name="details-bar" />
