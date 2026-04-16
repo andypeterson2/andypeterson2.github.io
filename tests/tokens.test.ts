@@ -149,3 +149,38 @@ describe('Site Configuration', () => {
     expect(siteSrc).toContain('displayName');
   });
 });
+
+// ---- Semantic color tokens ----
+
+describe('Semantic color tokens', () => {
+  const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
+
+  test('defines --color-success with a non-black value', () => {
+    const match = tokensCss.match(/--color-success:\s*([^;]+)/);
+    expect(match).toBeTruthy();
+    expect(match![1].trim()).not.toBe('#000');
+  });
+
+  test('defines --color-warning with a non-black value', () => {
+    const match = tokensCss.match(/--color-warning:\s*([^;]+)/);
+    expect(match).toBeTruthy();
+    expect(match![1].trim()).not.toBe('#000');
+  });
+
+  test('defines --color-danger with a non-black value', () => {
+    const match = tokensCss.match(/--color-danger:\s*([^;]+)/);
+    expect(match).toBeTruthy();
+    expect(match![1].trim()).not.toBe('#000');
+  });
+});
+
+// ---- Token compliance in components ----
+
+describe('Design token compliance', () => {
+  test('ClassifierApp uses token variables for semantic colors', () => {
+    const src = readFileSync(resolve(ROOT, 'src/components/ClassifierApp.astro'), 'utf-8');
+    expect(src).not.toMatch(/color:\s*#16a34a/);
+    expect(src).not.toMatch(/color:\s*#d97706/);
+    expect(src).not.toMatch(/color:\s*#dc2626/);
+  });
+});

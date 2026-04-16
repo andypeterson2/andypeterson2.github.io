@@ -39,6 +39,17 @@ describe('CI security audit', () => {
   });
 });
 
+// ---- Docker configuration ----
+
+describe('Docker configuration', () => {
+  test('Dockerfile uses multi-stage build', () => {
+    const dockerfile = readFileSync(resolve(ROOT, 'Dockerfile'), 'utf-8');
+    const fromLines = dockerfile.match(/^FROM /gm) || [];
+    expect(fromLines.length).toBeGreaterThanOrEqual(2);
+    expect(dockerfile).toContain(' AS ');
+  });
+});
+
 // ---- Migration redirects ----
 
 describe('Migration redirects', () => {

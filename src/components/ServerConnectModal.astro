@@ -266,6 +266,9 @@
           if (s === 'connected') dot.classList.add('sn-green');
           else if (s === 'connecting' || s === 'degraded') dot.classList.add('sn-yellow');
           else if (s === 'disconnected' || s === 'error') dot.classList.add('sn-red');
+          var statusLabels = { connected: 'Connected', connecting: 'Connecting', degraded: 'Degraded', disconnected: 'Disconnected', error: 'Error', idle: 'Idle' };
+          dot.setAttribute('aria-label', (statusLabels[s] || 'Idle') + ' — ' + label);
+          dot.setAttribute('role', 'status');
         }
         if (connState.connected) {
           serverLi.setAttribute('aria-haspopup', 'true');
