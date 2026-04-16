@@ -20,7 +20,8 @@ import { siteConfig } from '../../../config/site';
   ></script>
 
   <div class="cv-app" x-data="app()" x-init="init()">
-    <!-- Mobile view switcher (visible ≤768px only) -->
+    <!-- Mobile view switcher (visible ≤768px only).
+         File actions live in the Settings tab — access them by switching to Editor view. -->
     <div class="cv-mobile-toolbar" x-cloak>
       <select class="cv-mobile-view-select"
         :value="mobileView"
@@ -30,24 +31,6 @@ import { siteConfig } from '../../../config/site';
         <option value="resume">Resume</option>
         <option value="coverletter">Cover Letter</option>
       </select>
-      <div style="position:relative">
-        <button class="btn cv-mobile-file-btn"
-          @click="mobileFileMenu = !mobileFileMenu"
-          aria-label="File menu">
-          <img src="https://unpkg.com/lucide-static@1.7.0/icons/menu.svg" alt="" width="18" height="18" />
-        </button>
-        <div class="cv-mobile-file-dropdown" x-show="mobileFileMenu" @click.outside="mobileFileMenu = false" @click="mobileFileMenu = false" x-cloak>
-          <button @click="createPerson()">New</button>
-          <button @click="openPerson()">Open</button>
-          <button @click="renamePerson()">Rename</button>
-          <hr />
-          <button @click="save()">Save</button>
-          <button @click="exportData()">Export JSON</button>
-          <button @click="importData()">Import JSON</button>
-          <hr />
-          <button @click="compile()">Compile</button>
-        </div>
-      </div>
     </div>
 
     <!-- Modal overlay -->
@@ -179,6 +162,11 @@ import { siteConfig } from '../../../config/site';
             class="btn cv-editor-tab"
             :class="{ 'btn-default': editorTab === 'style' }"
             @click="editorTab = 'style'">Style</button
+          >
+          <button
+            class="btn cv-editor-tab"
+            :class="{ 'btn-default': editorTab === 'settings' }"
+            @click="editorTab = 'settings'">Settings</button
           >
         </div>
 
@@ -561,6 +549,49 @@ import { siteConfig } from '../../../config/site';
 
           </div>
         </div>
+
+        <!-- ===== Settings Tab ===== -->
+        <div x-show="editorTab === 'settings'" class="cv-tab-content">
+          <div class="cv-settings-editor">
+            <h2 class="cv-node-header cv-settings-heading">Document</h2>
+            <div class="cv-settings-buttons">
+              <button class="btn" type="button" @click="createPerson()">New</button>
+              <button class="btn" type="button" @click="openPerson()">Open</button>
+              <button class="btn" type="button" @click="renamePerson()" :disabled="!serverConnected">Rename</button>
+            </div>
+
+            <h2 class="cv-node-header cv-settings-heading">Save &amp; Export</h2>
+            <div class="cv-settings-buttons">
+              <button class="btn" type="button" @click="save()" :disabled="!serverConnected">Save</button>
+              <button class="btn" type="button" @click="exportData()">Export JSON</button>
+              <button class="btn" type="button" @click="importData()">Import JSON</button>
+            </div>
+
+            <h2 class="cv-node-header cv-settings-heading">Compile</h2>
+            <div class="cv-settings-buttons">
+              <button class="btn" type="button" @click="compile()" :disabled="!serverConnected">Compile PDF</button>
+            </div>
+
+            <h2 class="cv-node-header cv-settings-heading">View</h2>
+            <div class="cv-settings-radio-group" role="radiogroup" aria-label="Active document">
+              <label class="cv-settings-radio">
+                <input type="radio" name="pdfView" value="cv"
+                  :checked="pdfTab === 'cv'" @change="switchPdfTab('cv')" />
+                <span>CV</span>
+              </label>
+              <label class="cv-settings-radio">
+                <input type="radio" name="pdfView" value="resume"
+                  :checked="pdfTab === 'resume'" @change="switchPdfTab('resume')" />
+                <span>Resume</span>
+              </label>
+              <label class="cv-settings-radio">
+                <input type="radio" name="pdfView" value="coverletter"
+                  :checked="pdfTab === 'coverletter'" @change="switchPdfTab('coverletter')" />
+                <span>Cover Letter</span>
+              </label>
+            </div>
+          </div>
+        </div>
         </div><!-- .cv-inner-window -->
       </div>
 
@@ -585,166 +616,6 @@ import { siteConfig } from '../../../config/site';
     </main>
   </div>
 
-  <script is:inline>
-    // ── File menu (injected into navbar before CV Backend) ──
-    (function () {
-      function _cvApp() {
-        var el = document.querySelector('.cv-app');
-        return el && el._x_dataStack ? el._x_dataStack[0] : null;
-      }
-
-      function createNavMenu(className, labelText, menuItems) {
-        var menuLi = document.createElement('li');
-        menuLi.setAttribute('role', 'menuitem');
-        menuLi.setAttribute('aria-haspopup', 'true');
-        menuLi.setAttribute('tabindex', '0');
-        menuLi.className = className;
-        menuLi.style.cursor = 'pointer';
-
-        var label = document.createElement('span');
-        label.textContent = labelText;
-        label.style.pointerEvents = 'none';
-        menuLi.appendChild(label);
-
-        var _open = false;
-        menuLi.addEventListener('mousedown', function (e) {
-          if (_open) {
-            e.preventDefault();
-            menuLi.blur();
-            _open = false;
-          }
-        });
-        menuLi.addEventListener('focus', function () { _open = true; });
-        menuLi.addEventListener('blur', function () { _open = false; });
-
-        var subUl = document.createElement('ul');
-        subUl.setAttribute('role', 'menu');
-
-        for (var i = 0; i < menuItems.length; i++) {
-          var li = document.createElement('li');
-          li.setAttribute('role', 'menuitem');
-          var a = document.createElement('a');
-          a.href = '#';
-          a.textContent = menuItems[i].text;
-          (function (fn, parent) {
-            a.addEventListener('mousedown', function (e) {
-              e.preventDefault();
-              e.stopPropagation();
-              fn();
-              parent.blur();
-            });
-            a.addEventListener('keydown', function (e) {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                fn();
-                parent.blur();
-              }
-            });
-          })(menuItems[i].action, menuLi);
-          li.appendChild(a);
-          subUl.appendChild(li);
-        }
-
-        menuLi.appendChild(subUl);
-        return menuLi;
-      }
-
-      function initNavMenus() {
-        var ul = document.querySelector('.site-menubar ul[role="menubar"]');
-        if (!ul || ul.querySelector('.cv-file-nav')) return;
-
-        var serverItem = ul.querySelector('.server-nav-item');
-
-        // File menu — dynamically built to include person list under Open
-        var fileMenuLi = document.createElement('li');
-        fileMenuLi.setAttribute('role', 'menuitem');
-        fileMenuLi.setAttribute('aria-haspopup', 'true');
-        fileMenuLi.setAttribute('tabindex', '0');
-        fileMenuLi.className = 'cv-file-nav';
-        fileMenuLi.style.cursor = 'pointer';
-        var fileLabel = document.createElement('span');
-        fileLabel.textContent = 'File';
-        fileLabel.style.pointerEvents = 'none';
-        fileMenuLi.appendChild(fileLabel);
-        var _fOpen = false;
-        fileMenuLi.addEventListener('mousedown', function (e) {
-          if (_fOpen) { e.preventDefault(); fileMenuLi.blur(); _fOpen = false; }
-        });
-        fileMenuLi.addEventListener('focus', function () { _fOpen = true; buildFileSubmenu(); });
-        fileMenuLi.addEventListener('blur', function () { _fOpen = false; });
-        var fileSubUl = document.createElement('ul');
-        fileSubUl.setAttribute('role', 'menu');
-        fileMenuLi.appendChild(fileSubUl);
-
-        function addFileItem(ul, text, action) {
-          var li = document.createElement('li');
-          li.setAttribute('role', 'menuitem');
-          var a = document.createElement('a');
-          a.href = '#';
-          a.textContent = text;
-          a.addEventListener('mousedown', function (e) {
-            e.preventDefault(); e.stopPropagation();
-            action();
-            fileMenuLi.blur();
-          });
-          li.appendChild(a);
-          ul.appendChild(li);
-        }
-
-        function addFileSep(ul) {
-          var sep = document.createElement('li');
-          sep.style.borderTop = '1px solid #ccc';
-          sep.style.margin = '2px 0';
-          ul.appendChild(sep);
-        }
-
-        function buildFileSubmenu() {
-          var app = _cvApp();
-          fileSubUl.replaceChildren();
-          addFileItem(fileSubUl, 'New', function () { if (app) app.createPerson(); });
-          addFileItem(fileSubUl, 'Open', function () { if (app) app.openPerson(); });
-          addFileItem(fileSubUl, 'Rename', function () { if (app) app.renamePerson(); });
-          addFileSep(fileSubUl);
-          addFileItem(fileSubUl, 'Save', function () { if (app && app.save) app.save(); });
-          addFileItem(fileSubUl, 'Export JSON', function () { if (app && app.exportData) app.exportData(); });
-          addFileItem(fileSubUl, 'Import JSON', function () { if (app && app.importData) app.importData(); });
-          addFileSep(fileSubUl);
-          addFileItem(fileSubUl, 'Compile', function () { if (app && app.compile) app.compile(); });
-        }
-
-        var fileMenu = fileMenuLi;
-
-        // View menu
-        var viewMenu = createNavMenu('cv-view-nav', 'View', [
-          { text: 'CV', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('cv'); } },
-          { text: 'Resume', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('resume'); } },
-          { text: 'Cover Letter', action: function () { var a = _cvApp(); if (a) a.switchPdfTab('coverletter'); } },
-        ]);
-
-        if (serverItem) {
-          ul.insertBefore(viewMenu, serverItem);
-          ul.insertBefore(fileMenu, viewMenu);
-        } else {
-          ul.appendChild(fileMenu);
-          ul.appendChild(viewMenu);
-        }
-      }
-
-      // Wait for ServerConnectModal to inject its item first
-      document.addEventListener('navbar:connect-ready', function () {
-        setTimeout(initNavMenus, 0);
-      });
-
-      // Fallback if no backend meta tag exists
-      if (!document.querySelector('meta[name="site-backend"]')) {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initNavMenus);
-        } else {
-          initNavMenus();
-        }
-      }
-    })();
-  </script>
 
   <script is:inline>
     var API_BASE = '';
@@ -911,6 +782,42 @@ import { siteConfig } from '../../../config/site';
 
   :global(.cv-editor-tab + .cv-editor-tab) {
     border-left: none;
+  }
+
+  /* ── Settings tab ── */
+  :global(.cv-settings-editor) {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  :global(.cv-settings-heading) {
+    margin: 0;
+    cursor: default;
+  }
+
+  :global(.cv-settings-buttons) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  :global(.cv-settings-radio-group) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  :global(.cv-settings-radio) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  :global(.cv-settings-radio input) {
+    margin: 0;
   }
 
   /* ── Split Layout ── */
