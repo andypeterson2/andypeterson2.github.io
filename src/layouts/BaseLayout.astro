@@ -3,11 +3,12 @@ import { siteConfig } from '../config/site';
 import '../styles/tokens.css';
 import '../styles/base.css';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
-
-interface Crumb {
-  label: string;
-  href?: string;
-}
+import {
+  buildBreadcrumbs,
+  buildDetailsSegments,
+  renderSegment,
+  type Crumb,
+} from '../lib/breadcrumbs';
 
 interface Props {
   title?: string;
@@ -25,47 +26,10 @@ const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
 const windowTitle = title || siteConfig.title;
 
-// Auto-generate breadcrumbs from URL path (unless custom ones provided)
 const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isHome = pathname === '/';
-let breadcrumbs: Crumb[] = [];
-
-if (customBreadcrumbs) {
-  breadcrumbs = customBreadcrumbs;
-} else if (!isHome) {
-  const segments = pathname.split('/').filter(Boolean);
-  for (let i = 0; i < segments.length; i++) {
-    const isLast = i === segments.length - 1;
-    const href = '/' + segments.slice(0, i + 1).join('/') + '/';
-    const label =
-      isLast && title
-        ? title
-        : segments[i].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    breadcrumbs.push({ label, href: isLast ? undefined : href });
-  }
-}
-
-// Render a single breadcrumb segment as the appropriate element
-function renderSegment(seg: { text?: string; bold: boolean; href?: string; isHeart?: boolean }) {
-  if (seg.bold) return { tag: 'span' as const, class: 'crumb-sep', text: seg.text };
-  if (seg.isHeart) return { tag: 'a' as const, href: seg.href, class: 'crumb-link crumb-heart', isHeart: true };
-  if (seg.href) return { tag: 'a' as const, href: seg.href, class: 'crumb-link', text: seg.text };
-  return { tag: 'span' as const, text: seg.text };
-}
-
-// Details bar text
-const detailsSegments = isHome
-  ? [
-      { text: '~', bold: false, href: '/', isHeart: true },
-      { text: '/', bold: true },
-    ]
-  : [
-      { text: '~', bold: false, href: '/', isHeart: true },
-      ...breadcrumbs.flatMap((crumb, i) => [
-        { text: '/', bold: true },
-        { text: crumb.label.toLowerCase(), bold: false, href: crumb.href },
-      ]),
-    ];
+const breadcrumbs = buildBreadcrumbs(pathname, title, customBreadcrumbs);
+const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
 ---
 
 <!doctype html>
