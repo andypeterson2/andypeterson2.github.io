@@ -1,0 +1,38 @@
+<!-- Session models -->
+<section class="card">
+  <h2 class="card-title">Models</h2>
+  <div id="session-models"></div>
+  <button id="ensemble-btn" type="button" class="btn btn-block hidden">Ensemble</button>
+</section>
+
+<!-- Saved models -->
+<section class="card">
+  <h2 class="card-title">Saved</h2>
+  <div class="row">
+    <select id="saved-select"><option value="">-- no saved models --</option></select>
+    <button id="refresh-saved-btn" class="btn btn-sm" aria-label="Refresh">&#8635;</button>
+  </div>
+  <button id="import-btn" type="button" class="btn btn-block" disabled>Import</button>
+</section>
+
+<style>
+  :global(.model-row) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+  }
+
+  :global(.model-name) {
+    font-weight: 600;
+  }
+
+  :global(.model-tag) {
+    font-size: clamp(8px, 1vw, 12px);
+    padding: 1px 5px;
+    border: 1px solid #999;
+    color: #666;
+  }
+</style>
