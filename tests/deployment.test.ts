@@ -27,6 +27,25 @@ describe('Preview deploy safety', () => {
   });
 });
 
+// ---- Test:integration script ----
+
+describe('Integration test script', () => {
+  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
+
+  test('package.json defines test:integration script', () => {
+    expect(pkg.scripts['test:integration']).toBeDefined();
+  });
+
+  test('test:integration runs astro build before integration tests', () => {
+    expect(pkg.scripts['test:integration']).toContain('astro build');
+    expect(pkg.scripts['test:integration']).toContain('vitest.integration.config.ts');
+  });
+
+  test('vitest.integration.config.ts exists', () => {
+    expect(existsSync(resolve(ROOT, 'vitest.integration.config.ts'))).toBe(true);
+  });
+});
+
 // ---- CI security audit ----
 
 describe('CI security audit', () => {
