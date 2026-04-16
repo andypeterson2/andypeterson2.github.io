@@ -26,6 +26,7 @@
     "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
+    "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.1.0",
     "eslint-plugin-astro": "^1.6.0",
     "postcss-html": "^1.8.1",
@@ -35,6 +36,6 @@
     "stylelint-config-html": "^1.1.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.4"
   }
 }
