@@ -50,6 +50,31 @@ describe('Docker configuration', () => {
   });
 });
 
+// ---- Submodule configuration ----
+
+describe('Submodule configuration', () => {
+  test('submodules do not track branch tip', () => {
+    const gitmodules = readFileSync(resolve(ROOT, '.gitmodules'), 'utf-8');
+    expect(gitmodules).not.toContain('branch = main');
+  });
+});
+
+// ---- Security scanning ----
+
+describe('Security scanning', () => {
+  test('CodeQL workflow exists', () => {
+    expect(existsSync(resolve(ROOT, '.github/workflows/codeql.yml'))).toBe(true);
+  });
+});
+
+// ---- Documentation ----
+
+describe('Package documentation', () => {
+  test('shared-js package has README', () => {
+    expect(existsSync(resolve(ROOT, 'packages/shared-js/README.md'))).toBe(true);
+  });
+});
+
 // ---- Migration redirects ----
 
 describe('Migration redirects', () => {
