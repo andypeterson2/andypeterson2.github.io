@@ -184,3 +184,13 @@ describe('Design token compliance', () => {
     expect(src).not.toMatch(/color:\s*#dc2626/);
   });
 });
+
+// ---- JSDoc documentation ----
+
+describe('Component prop documentation', () => {
+  test('Button.astro props have JSDoc comments', () => {
+    const src = readFileSync(resolve(ROOT, 'src/components/Button.astro'), 'utf-8');
+    const propsBlock = src.split('interface Props')[1]?.split('}')[0] || '';
+    expect(propsBlock).toContain('/**');
+  });
+});
