@@ -41,7 +41,7 @@ const featured = projects.filter((p) => p.featured);
               featured.map((project) => (
                 <a href={`/projects/${project.slug}/`} class="finder-icon">
                   <div class="icon-box">
-                    <img src={`/icons/${project.icon}`} alt="" class="icon-glyph" />
+                    <img src={`/icons/${project.icon}`} alt={project.title} class="icon-glyph" />
                   </div>
                   <span class="icon-label">{project.title}</span>
                 </a>

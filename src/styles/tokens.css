@@ -19,9 +19,10 @@
   --color-accent: #000;
   --color-accent-hover: #000;
   --color-accent-muted: #eee;
-  --color-success: #000;
-  --color-warn: #000;
-  --color-danger: #000;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-warn: #d97706;
+  --color-danger: #dc2626;
 
   /* ── font — Geneva for body, Chicago for window chrome only ── */
   --font-sans: 'Geneva_9', 'Geneva', system-ui, sans-serif;
