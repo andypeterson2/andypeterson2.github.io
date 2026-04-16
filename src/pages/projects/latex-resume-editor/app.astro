@@ -595,7 +595,7 @@ import { siteConfig } from '../../../config/site';
 
       function createNavMenu(className, labelText, menuItems) {
         var menuLi = document.createElement('li');
-        menuLi.setAttribute('role', 'menu-item');
+        menuLi.setAttribute('role', 'menuitem');
         menuLi.setAttribute('aria-haspopup', 'true');
         menuLi.setAttribute('tabindex', '0');
         menuLi.className = className;
@@ -622,7 +622,7 @@ import { siteConfig } from '../../../config/site';
 
         for (var i = 0; i < menuItems.length; i++) {
           var li = document.createElement('li');
-          li.setAttribute('role', 'menu-item');
+          li.setAttribute('role', 'menuitem');
           var a = document.createElement('a');
           a.href = '#';
           a.textContent = menuItems[i].text;
@@ -650,14 +650,14 @@ import { siteConfig } from '../../../config/site';
       }
 
       function initNavMenus() {
-        var ul = document.querySelector('.site-menubar ul[role="menu-bar"]');
+        var ul = document.querySelector('.site-menubar ul[role="menubar"]');
         if (!ul || ul.querySelector('.cv-file-nav')) return;
 
         var serverItem = ul.querySelector('.server-nav-item');
 
         // File menu — dynamically built to include person list under Open
         var fileMenuLi = document.createElement('li');
-        fileMenuLi.setAttribute('role', 'menu-item');
+        fileMenuLi.setAttribute('role', 'menuitem');
         fileMenuLi.setAttribute('aria-haspopup', 'true');
         fileMenuLi.setAttribute('tabindex', '0');
         fileMenuLi.className = 'cv-file-nav';
@@ -678,7 +678,7 @@ import { siteConfig } from '../../../config/site';
 
         function addFileItem(ul, text, action) {
           var li = document.createElement('li');
-          li.setAttribute('role', 'menu-item');
+          li.setAttribute('role', 'menuitem');
           var a = document.createElement('a');
           a.href = '#';
           a.textContent = text;
