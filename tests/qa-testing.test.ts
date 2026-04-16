@@ -204,3 +204,45 @@ describe('Internal link consistency', () => {
     }
   });
 });
+
+// ---- Accessibility: meaningful alt text ----
+
+describe('Accessibility: meaningful alt text', () => {
+  test('home page project icons have descriptive alt text', () => {
+    const src = readFileSync(resolve(ROOT, 'src/pages/index.astro'), 'utf-8');
+    const iconImgs = src.match(/<img[^>]*class="icon-glyph"[^>]*>/g) || [];
+    expect(iconImgs.length).toBeGreaterThan(0);
+    for (const tag of iconImgs) {
+      expect(tag, 'Icon image on home page has empty alt text').not.toMatch(/alt=""/);
+    }
+  });
+
+  test('projects listing icons have descriptive alt text', () => {
+    const src = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
+    const iconImgs = src.match(/<img[^>]*class="icon-glyph"[^>]*>/g) || [];
+    expect(iconImgs.length).toBeGreaterThan(0);
+    for (const tag of iconImgs) {
+      expect(tag, 'Icon image on projects page has empty alt text').not.toMatch(/alt=""/);
+    }
+  });
+
+  test('related project icons have descriptive alt text', () => {
+    const src = readFileSync(resolve(ROOT, 'src/pages/projects/[slug].astro'), 'utf-8');
+    const relatedIcons = src.match(/<img[^>]*class="related-icon"[^>]*>/g) || [];
+    expect(relatedIcons.length).toBeGreaterThan(0);
+    for (const tag of relatedIcons) {
+      expect(tag, 'Related project icon has empty alt text').not.toMatch(/alt=""/);
+    }
+  });
+});
+
+// ---- Accessibility: color-only indicators ----
+
+describe('Accessibility: color-only indicators', () => {
+  test('server connection status dots have accessible labels', () => {
+    const src = readFileSync(resolve(ROOT, 'src/components/ServerConnectModal.astro'), 'utf-8');
+    // Status dots must update aria-label when connection state changes
+    expect(src).toMatch(/aria-label/);
+    expect(src).toMatch(/dot.*aria-label|aria-label.*dot/s);
+  });
+});
