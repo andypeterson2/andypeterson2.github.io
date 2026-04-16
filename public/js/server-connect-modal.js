@@ -35,11 +35,11 @@
     var uid = 'sn-' + service.replace(/[^a-z0-9]/gi, '-');
 
     function init() {
-      var ul = document.querySelector('.site-menubar ul[role="menu-bar"]');
+      var ul = document.querySelector('.site-menubar ul[role="menubar"]');
       if (!ul) return;
 
       serverLi = document.createElement('li');
-      serverLi.setAttribute('role', 'menu-item');
+      serverLi.setAttribute('role', 'menuitem');
       serverLi.setAttribute('aria-haspopup', 'false');
       serverLi.style.cursor = 'pointer';
       serverLi.className = 'server-nav-item';
@@ -58,7 +58,7 @@
       serverSubUl.style.display = 'none';
 
       var reconnLi = document.createElement('li');
-      reconnLi.setAttribute('role', 'menu-item');
+      reconnLi.setAttribute('role', 'menuitem');
       var reconnA = document.createElement('a');
       reconnA.href = '#';
       reconnA.textContent = 'Re-connect';
@@ -71,7 +71,7 @@
       serverSubUl.appendChild(reconnLi);
 
       var disconnLi = document.createElement('li');
-      disconnLi.setAttribute('role', 'menu-item');
+      disconnLi.setAttribute('role', 'menuitem');
       var disconnA = document.createElement('a');
       disconnA.href = '#';
       disconnA.textContent = 'Disconnect';
