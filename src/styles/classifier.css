@@ -1,0 +1,66 @@
+/* Shared styles for the classifier app sub-components.
+   Imported globally from ClassifierApp.astro so they apply across all child components. */
+
+#classifier-app .card {
+  border: 2px solid #000;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+#classifier-app .card-title {
+  font-size: clamp(11px, 1.5vw, 18px);
+  font-weight: 700;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#classifier-app label {
+  display: block;
+  font-size: clamp(9px, 1.1vw, 13px);
+  font-weight: 600;
+  margin: 4px 0 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#classifier-app select,
+#classifier-app input[type='number'],
+#classifier-app input[type='text'] {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: clamp(9px, 1.2vw, 14px);
+  padding: 3px 6px;
+  border: 1.5px solid #000;
+  background: #fff;
+}
+
+#classifier-app .btn {
+  font-family: var(--font-ui);
+  font-size: clamp(9px, 1.2vw, 14px);
+  padding: 3px 10px;
+  border: 2px solid #000;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+}
+
+#classifier-app .btn:hover { background: #000; color: #fff; }
+#classifier-app .btn-primary { background: #000; color: #fff; }
+#classifier-app .btn-primary:hover { background: #333; }
+#classifier-app .btn-danger { color: #c00; }
+#classifier-app .btn-danger:hover { background: #c00; color: #fff; }
+#classifier-app .btn-block { display: block; width: 100%; margin-top: 6px; }
+#classifier-app .btn-sm { font-size: clamp(8px, 1vw, 12px); padding: 2px 6px; }
+#classifier-app .btn:disabled { opacity: 0.4; cursor: default; }
+
+#classifier-app .row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+#classifier-app .row select { flex: 1; min-width: 0; }
+
+#classifier-app .hidden { display: none !important; }

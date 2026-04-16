@@ -240,7 +240,8 @@ describe('Accessibility: meaningful alt text', () => {
 
 describe('Accessibility: color-only indicators', () => {
   test('server connection status dots have accessible labels', () => {
-    const src = readFileSync(resolve(ROOT, 'src/components/ServerConnectModal.astro'), 'utf-8');
+    // The logic lives in the extracted JS module, not inline in the Astro component
+    const src = readFileSync(resolve(ROOT, 'public/js/server-connect-modal.js'), 'utf-8');
     // Status dots must update aria-label when connection state changes
     expect(src).toMatch(/aria-label/);
     expect(src).toMatch(/dot.*aria-label|aria-label.*dot/s);
