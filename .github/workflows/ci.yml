@@ -16,6 +16,8 @@ jobs:
       qpk: ${{ steps.filter.outputs.qpk }}
       ui-kit: ${{ steps.filter.outputs.ui-kit }}
       cv: ${{ steps.filter.outputs.cv }}
+      nonogram: ${{ steps.filter.outputs.nonogram }}
+      qvc: ${{ steps.filter.outputs.qvc }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -33,6 +35,10 @@ jobs:
               - 'packages/ui-kit/**'
             cv:
               - 'packages/cv/**'
+            nonogram:
+              - 'packages/nonogram/**'
+            qvc:
+              - 'packages/qvc/**'
 
   astro-build:
     needs: changes
@@ -121,8 +127,132 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: packages/cv/editor/package-lock.json
-      - run: cd packages/cv/editor && npm ci && npm test
+          cache-dependency-path: |
+            packages/cv/editor/package-lock.json
+            packages/cv/mcp-server/package-lock.json
+      - name: Editor unit + integration tests (coverage gate)
+        run: cd packages/cv/editor && npm ci && npm run test:coverage
+      - name: MCP server unit tests
+        run: cd packages/cv/mcp-server && npm ci && npm test
+      - name: MCP server end-to-end smoke (boots the editor on a temp DB)
+        run: cd packages/cv/mcp-server && npm run test:smoke
+
+  build-pdf:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Compile CV / resume / cover-letter PDFs
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: packages/cv
+          root_file: |
+            cv.tex
+            resume.tex
+            coverletter.tex
+          latexmk_use_lualatex: true
+          pre_compile: |
+            apk add --no-cache curl unzip fontconfig
+            mkdir -p /usr/share/fonts/source-sans /usr/share/fonts/roboto
+            curl -fsSL -o /tmp/source-sans.zip "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/OTF-source-sans-3.052R.zip"
+            unzip -o /tmp/source-sans.zip -d /tmp/source-sans
+            find /tmp/source-sans -name '*.otf' -exec cp {} /usr/share/fonts/source-sans/ \;
+            curl -fsSL -o /tmp/roboto.zip "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-android.zip"
+            unzip -o /tmp/roboto.zip -d /tmp/roboto
+            find /tmp/roboto -name '*.ttf' -exec cp {} /usr/share/fonts/roboto/ \;
+            fc-cache -f
+            rm -rf /tmp/source-sans.zip /tmp/source-sans /tmp/roboto.zip /tmp/roboto
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdfs
+          path: |
+            packages/cv/cv.pdf
+            packages/cv/resume.pdf
+            packages/cv/coverletter.pdf
+          retention-days: 7
+
+  nonogram-tests:
+    needs: changes
+    if: needs.changes.outputs.nonogram == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install nonogram (+ dev extras)
+        run: cd packages/nonogram && pip install -e ".[dev]"
+      - name: Run tests
+        run: cd packages/nonogram && pytest tests/ -v --tb=short -m "not slow"
+
+  nonogram-lint:
+    needs: changes
+    if: needs.changes.outputs.nonogram == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: cd packages/nonogram && ruff check .
+
+  nonogram-docker:
+    needs: changes
+    if: needs.changes.outputs.nonogram == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: cd packages/nonogram && docker build .
+
+  qvc-tests:
+    needs: changes
+    if: needs.changes.outputs.qvc == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QVC_DEVELOPMENT: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Python lint + signaling tests
+        run: |
+          cd packages/qvc
+          pip install ruff pytest pytest-timeout
+          ruff check signaling/ tests/signaling/
+          pip install -r signaling/requirements.txt
+          python -m pytest tests/signaling/ -v --tb=short --timeout=60
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: JS tests
+        run: cd packages/qvc && npm install && npx vitest run
+      - name: Docker build + health check
+        run: |
+          cd packages/qvc
+          docker build -f Dockerfile.server -t qvc-signaling .
+          docker run -d --name qvc-signaling-test \
+            -e QVC_SERVER_REST_PORT=5050 -e QVC_HOST=0.0.0.0 -e SIO_ASYNC_MODE=eventlet \
+            -p 5050:5050 qvc-signaling
+          sleep 5
+          curl -sf http://localhost:5050/admin/status || (docker logs qvc-signaling-test && exit 1)
+          docker stop qvc-signaling-test
 
   python-lint:
     needs: changes
