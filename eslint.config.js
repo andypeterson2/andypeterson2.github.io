@@ -46,4 +46,24 @@ export default [
       'design-system/prefer-button': 'warn',
     },
   },
+  {
+    // Superproject-owned shared browser scripts (classic <script> files, not
+    // modules). Lint without the type-aware config (they have no tsconfig).
+    files: ['packages/shared-js/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'script',
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    },
+  },
 ];

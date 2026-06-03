@@ -57,6 +57,22 @@ async function setupMocks(page: Page) {
   // Inject the mock BEFORE any page scripts run (bypasses SRI)
   await page.addInitScript(SOCKETIO_STUB);
 
+  // Headless browsers have no camera/mic. Stub getUserMedia so the connect flow
+  // (navbar:connect → getLocalMedia → connectToSignaling → io()) can proceed and
+  // the socket event handlers are actually registered + exercised.
+  await page.addInitScript(() => {
+    const fake = () => {
+      const c = document.createElement('canvas');
+      c.width = 320;
+      c.height = 240;
+      c.getContext('2d');
+      return c.captureStream(5);
+    };
+    if (navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia = async () => fake();
+    }
+  });
+
   // Intercept Socket.IO CDN so the real library doesn't overwrite our mock
   await page.route(/socket\.io.*\.js/, async (route) => {
     await route.fulfill({
@@ -76,11 +92,27 @@ async function setupMocks(page: Page) {
   });
 }
 
-async function getSocket(page: Page) {
-  return page.evaluate(() => {
+async function waitForSocket(page: Page) {
+  // Deterministic readiness signal: the app has called the mocked io() and
+  // registered its socket. Replaces fixed post-goto sleeps (web-first waiting).
+  await page.waitForFunction(() => {
     const sockets = (window as any).__mockSockets;
-    return sockets && sockets.length > 0;
+    return Array.isArray(sockets) && sockets.length > 0;
   });
+}
+
+async function driveConnect(page: Page) {
+  // Drive the real connect path: the navbar connect modal dispatches this event,
+  // after which the app opens the (mocked) socket. Then wait for that socket to
+  // exist instead of sleeping — so the event handlers below run for real.
+  await page.evaluate(() => {
+    document.dispatchEvent(
+      new CustomEvent('navbar:connect', {
+        detail: { service: 'qvc-server', url: 'http://localhost:9999' },
+      }),
+    );
+  });
+  await waitForSocket(page);
 }
 
 async function fireMockEvent(page: Page, event: string, ...args: unknown[]) {
@@ -137,7 +169,7 @@ test.describe('QVC Client — app shell', () => {
     });
     await page.goto('/projects/quantum-video-chat/client/');
     expect(scriptSrcs.some((s) => s.includes('socket.io'))).toBe(true);
-    expect(scriptSrcs.some((s) => s.includes('connection.js'))).toBe(true);
+    expect(scriptSrcs.some((s) => s.includes('server-connect-modal.js'))).toBe(true);
     expect(scriptSrcs.some((s) => s.includes('app.js'))).toBe(true);
   });
 });
@@ -151,88 +183,72 @@ test.describe('QVC Client — mocked connection flow', () => {
 
   test('io() mock is installed on the page', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
-
-    // Verify the mock io() function replaced the real one
-    const ioIsMocked = await page.evaluate(
-      () => typeof (window as any).io === 'function' && !!(window as any).__mockSockets,
-    );
-    expect(ioIsMocked).toBe(true);
+    // The init script installs the mock before any page script and the CDN is
+    // intercepted, so the real lib never overwrites it. Poll instead of sleeping.
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => typeof (window as any).io === 'function' && !!(window as any).__mockSockets,
+        ),
+      )
+      .toBe(true);
   });
 
   test('app shell survives when socket events fire', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    // Fire events that would come from middleware
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    // fireMockEvent runs the handlers synchronously inside page.evaluate, so the
+    // auto-waiting toBeVisible() assertion below is a sufficient post-condition.
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
 
-    await page.waitForTimeout(200);
     await expect(page.locator('#app')).toBeVisible();
   });
 
   test('app handles room-id event without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
     await fireMockEvent(page, 'room-id', { room: 'test-room-42' });
 
-    await page.waitForTimeout(300);
     await expect(page.locator('#app')).toBeVisible();
   });
 
   test('app handles server-error without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'server-error', {
-      message: 'Connection refused',
-    });
-    await page.waitForTimeout(200);
+    await fireMockEvent(page, 'server-error', { message: 'Connection refused' });
+
     await expect(page.locator('#app')).toBeVisible();
   });
 
   test('app handles peer-disconnected without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
     await fireMockEvent(page, 'room-id', { room: 'test-room-42' });
-    await page.waitForTimeout(200);
     await fireMockEvent(page, 'peer-disconnected');
-    await page.waitForTimeout(200);
 
     await expect(page.locator('#app')).toBeVisible();
   });
 
   test('app handles QBER update without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
     await fireMockEvent(page, 'room-id', { room: 'test-room-42' });
-    await page.waitForTimeout(200);
 
     await fireMockEvent(page, 'qber-update', {
       qber: 0.05,
@@ -241,24 +257,18 @@ test.describe('QVC Client — mocked connection flow', () => {
       keys_exchanged: 10,
       eavesdropper_detected: false,
     });
-    await page.waitForTimeout(200);
+
     await expect(page.locator('#app')).toBeVisible();
   });
 
-  test('app handles eavesdropper detection without crashing', async ({
-    page,
-  }) => {
+  test('app handles eavesdropper detection without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
     await fireMockEvent(page, 'room-id', { room: 'test-room-42' });
-    await page.waitForTimeout(200);
 
     await fireMockEvent(page, 'qber-update', {
       qber: 0.35,
@@ -267,22 +277,18 @@ test.describe('QVC Client — mocked connection flow', () => {
       keys_exchanged: 3,
       eavesdropper_detected: true,
     });
-    await page.waitForTimeout(200);
+
     await expect(page.locator('#app')).toBeVisible();
   });
 
   test('app handles video frame without crashing', async ({ page }) => {
     await page.goto('/projects/quantum-video-chat/client/');
-    await page.waitForTimeout(500);
+    await driveConnect(page);
 
-    await fireMockEvent(page, 'welcome', {
-      client_id: 'test-client',
-      heartbeat_interval: 25,
-    });
+    await fireMockEvent(page, 'welcome', { client_id: 'test-client', heartbeat_interval: 25 });
     await fireMockEvent(page, 'server-connected');
     await fireMockEvent(page, 'user-registered', { userId: 'test-user-1' });
     await fireMockEvent(page, 'room-id', { room: 'test-room-42' });
-    await page.waitForTimeout(300);
 
     // Small fake frame (2x2 BGR)
     await fireMockEvent(page, 'frame', {
@@ -298,7 +304,7 @@ test.describe('QVC Client — mocked connection flow', () => {
         ],
       ],
     });
-    await page.waitForTimeout(200);
+
     await expect(page.locator('#app')).toBeVisible();
   });
 });
