@@ -14,8 +14,15 @@ jobs:
     permissions:
       security-events: write
     strategy:
+      fail-fast: false
       matrix:
-        language: [javascript-typescript]
+        # build-mode: none — both languages are interpreted, so no build step is needed.
+        # Python sources live in the submodules, hence submodules: recursive below.
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,4 +30,7 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
       - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

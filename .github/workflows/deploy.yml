@@ -1,7 +1,13 @@
 name: Deploy to GitHub Pages
 
+# Gated on CI: this runs only after the "CI" workflow finishes on main, and the
+# build job below is guarded on a successful conclusion — so a red build cannot
+# deploy. Deploy-on-every-push-to-main is preserved (CI itself runs on every such
+# push). workflow_dispatch stays available for manual redeploys.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -16,11 +22,15 @@ concurrency:
 
 jobs:
   build:
+    # Manual runs always build; workflow_run-triggered runs only when CI passed.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          # Deploy exactly the commit CI validated (falls back to the dispatched ref).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
