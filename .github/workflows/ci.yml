@@ -138,6 +138,31 @@ jobs:
       - name: MCP server end-to-end smoke (boots the editor on a temp DB)
         run: cd packages/cv/mcp-server && npm run test:smoke
 
+  cv-contract:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: packages/cv/editor/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pytest-timeout
+      - name: Run the CV REST contract tests against a live editor
+        run: |
+          cd packages/cv/editor && npm ci
+          PORT=3099 HOST=127.0.0.1 CV_DB_PATH="$RUNNER_TEMP/cv-contract.db" CV_EMBED_OFFLINE=1 node server.js &
+          curl --retry 40 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:3099/api/health
+          cd "$GITHUB_WORKSPACE"
+          CV_EDITOR_URL=http://127.0.0.1:3099 python -m pytest tests/contracts/test_cv_api.py -v --timeout=60
+
   build-pdf:
     needs: changes
     if: needs.changes.outputs.cv == 'true'
