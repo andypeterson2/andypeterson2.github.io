@@ -1,11 +1,13 @@
-"""Docker Compose smoke tests.
+"""Docker Compose smoke tests — full stack behind the nginx reverse proxy.
 
-These tests verify that all services start up and respond to health checks
-when running under Docker Compose. They are designed to be run after
-`make docker-up` or `docker compose up -d`.
+These verify every service responds through nginx on :8080. They REQUIRE the
+nginx-fronted integration stack (nginx + website + classifier + nonogram + qvc +
+cv-editor); that front-proxy compose was removed in the monorepo migration, so
+absent it these auto-skip. Per-service health is otherwise covered by the
+per-package CI jobs (qpk-tests, nonogram-tests, qvc-tests) and cv-tests/cv-contract.
 
-Run with:  pytest tests/smoke/ -v --timeout=60
-Skip if:   Docker services are not running (tests auto-skip)
+Run with:  pytest tests/smoke/ -v --timeout=60   (after `docker compose up -d`)
+Skip if:   nginx is not listening on :8080 (tests auto-skip)
 """
 import os
 import socket
@@ -22,7 +24,7 @@ SERVICES = {
     "classifier": {"path": "/classifier/health", "expect_status": 200},
     "nonogram": {"path": "/nonogram/api/config", "expect_status": 200},
     "qvc-middleware": {"path": "/videochat/api/health", "expect_status": 200},
-    "cv-editor": {"path": "/cv/api/documents", "expect_status": 200},
+    "cv-editor": {"path": "/cv/api/health", "expect_status": 200},
 }
 
 
@@ -104,11 +106,11 @@ class TestServiceResponses:
             assert "status" in data
             assert data["status"] == "ok"
 
-    def test_cv_editor_documents_list(self):
-        status, body = http_get("/cv/api/documents")
+    def test_cv_editor_health(self):
+        status, body = http_get("/cv/api/health")
         if status == 200:
             data = json.loads(body)
-            assert isinstance(data, (list, dict))
+            assert data.get("status") == "ok"
 
 
 @docker_required
