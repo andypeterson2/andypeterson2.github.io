@@ -46,12 +46,14 @@ test.describe('Projects index', () => {
 test.describe('About page content', () => {
   test('has bio section with name', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.locator('.bio-window .title')).toBeVisible();
+    // Scope to the bio window's own title bar — nested cards also carry .title.
+    await expect(page.locator('.bio-window > .title-bar .title')).toBeVisible();
   });
 
   test('has section labels', async ({ page }) => {
     await page.goto('/about');
-    const sections = page.locator('.section-label-text');
+    // Section labels are the window title-bar headings (Education, Skills, …).
+    const sections = page.locator('.about-grid .sidebar-window .title-bar .title');
     const count = await sections.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
