@@ -3,6 +3,7 @@
 !.git*
 !.env.example
 !.prettierrc
+!.prettierignore
 !.stylelintrc.json
 !.github/
 
