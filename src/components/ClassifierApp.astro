@@ -45,9 +45,13 @@ import '../styles/classifier.css';
   }
 
   .left-col {
-    overflow-y: auto; padding: 8px; flex-shrink: 0;
+    overflow-y: auto;
+    padding: 8px;
+    flex-shrink: 0;
     border-right: 2px solid #000;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .right-col {
@@ -67,10 +71,23 @@ import '../styles/classifier.css';
     flex-shrink: 0;
   }
 
-  .resize-handle:hover { background: #999; }
+  .resize-handle:hover {
+    background: #999;
+  }
+
   @media (width <= 768px) {
-    .split-layout { flex-direction: column; }
-    .left-col { border-right: none; border-bottom: 2px solid #000; width: 100% !important; }
-    .resize-handle { display: none; }
+    .split-layout {
+      flex-direction: column;
+    }
+
+    .left-col {
+      border-right: none;
+      border-bottom: 2px solid #000;
+      width: 100% !important;
+    }
+
+    .resize-handle {
+      display: none;
+    }
   }
 </style>

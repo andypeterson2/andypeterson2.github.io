@@ -8,9 +8,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       reportsDirectory: 'coverage',
-      // Coverage reflects files actually imported by tests. As logic moves
-      // from .astro frontmatter into src/lib/ modules (see tests/lib/),
-      // the covered surface expands naturally.
+      // Count the whole testable logic surface (src/lib/**), not just files an
+      // existing test happens to import — otherwise an untested new module is
+      // invisible to the gate. Vitest v4's coverage.include defaults to
+      // "files imported during the test run", so this glob is what makes the
+      // thresholds meaningful. .astro/pages/components stay out (v8 can't parse
+      // .astro, and they're covered by e2e, not unit tests).
+      include: ['src/lib/**/*.{ts,js}'],
       // .astro files are excluded — v8 cannot parse them as runtime JS.
       exclude: [
         'src/env.d.ts',
