@@ -132,7 +132,7 @@ jobs:
             packages/cv/editor/package-lock.json
             packages/cv/mcp-server/package-lock.json
       - name: Editor unit + integration tests (coverage gate)
-        run: cd packages/cv/editor && npm ci && npm run test:coverage
+        run: cd packages/cv/editor && npm ci --omit=optional && npm run test:coverage
       - name: MCP server unit tests
         run: cd packages/cv/mcp-server && npm ci && npm test
       - name: MCP server end-to-end smoke (boots the editor on a temp DB)
@@ -157,7 +157,7 @@ jobs:
       - run: pip install pytest pytest-timeout
       - name: Run the CV REST contract tests against a live editor
         run: |
-          cd packages/cv/editor && npm ci
+          cd packages/cv/editor && npm ci --omit=optional
           PORT=3099 HOST=127.0.0.1 CV_DB_PATH="$RUNNER_TEMP/cv-contract.db" CV_EMBED_OFFLINE=1 node server.js &
           curl --retry 40 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:3099/api/health
           cd "$GITHUB_WORKSPACE"
