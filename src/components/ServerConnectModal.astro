@@ -10,8 +10,12 @@
  */
 ---
 
-<!-- ServiceConfig first, so the modal can persist/share backend URLs with standalone apps. -->
-<script is:inline src="/js/service-config.js"></script>
+<!-- ServiceConfig first (jsDelivr-from-GitHub, same origin the standalone apps use), so the
+     modal can persist/share backend URLs with them. -->
+<script
+  is:inline
+  src="https://cdn.jsdelivr.net/gh/andypeterson2/andypeterson2.github.io@main/packages/shared-js/service-config.js"
+></script>
 <script is:inline src="/js/server-connect-modal.js"></script>
 
 <style is:global>
