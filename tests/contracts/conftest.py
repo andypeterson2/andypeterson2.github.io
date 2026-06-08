@@ -1,9 +1,14 @@
-"""Contract tests require backend dependencies (Flask, etc.).
+"""Live-HTTP API contract tests.
 
-These tests import directly from backend packages and validate API
-response shapes. They require Python 3.10+ because the backend code
-uses PEP 604 union types (e.g., `str | None`).
+Each test module points its ``<SERVICE>_URL`` env var (``CV_EDITOR_URL`` /
+``NONOGRAM_URL`` / ``CLASSIFIERS_URL`` / ``QVC_SIGNALING_URL``) at a running
+backend and validates real HTTP responses against the JSON Schemas in
+``docs/api-contract/schemas/``. Tests auto-skip when the service is unreachable,
+so the suite is safe to run with only some backends up.
 
-Run with: python -m pytest tests/contracts/ -v
-Skip on CI if backend deps are not installed.
+Requires ``jsonschema`` (the suite skips entirely if it is not installed).
+
+Run, e.g.::
+
+    NONOGRAM_URL=http://127.0.0.1:5055 python -m pytest tests/contracts/ -v
 """

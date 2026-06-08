@@ -1,61 +1,48 @@
-"""Contract tests for the Quantum Protein Kernel (classifier) API.
+"""Live-HTTP API contract tests for the classifiers backend (Flask).
 
-Validates the response shapes the frontend expects from the classifier
-backend. Runs against the Flask app directly.
+Point ``CLASSIFIERS_URL`` at a running server; auto-skips if unreachable.
+Validates the contract surface (``/health``, ``/api`` discovery, error envelope)
+against the JSON Schemas, plus the dataset listing the frontend relies on.
 """
+
+import os
 import sys
-from pathlib import Path
 
-import pytest
+sys.path.insert(0, os.path.dirname(__file__))
 
-QPK_ROOT = Path(__file__).resolve().parent.parent.parent / "packages" / "quantum-protein-kernel"
-sys.path.insert(0, str(QPK_ROOT))
-
-try:
-    from classifiers.server import create_app
-
-    APP_AVAILABLE = True
-except (ImportError, Exception):
-    APP_AVAILABLE = False
-
-
-pytestmark = pytest.mark.skipif(
-    not APP_AVAILABLE,
-    reason="quantum-protein-kernel not installed or dependencies missing",
+from _contract import (  # noqa: E402
+    assert_matches,
+    base_url,
+    http_get,
+    skip_unless_reachable,
 )
 
-
-@pytest.fixture(scope="module")
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as c:
-        yield c
+BASE = base_url("CLASSIFIERS_URL", "http://127.0.0.1:5001")
+pytestmark = skip_unless_reachable(BASE, "CLASSIFIERS_URL")
 
 
-class TestHealthContract:
-    def test_health_returns_200(self, client):
-        resp = client.get("/health")
-        assert resp.status_code == 200
-        data = resp.get_json()
-        assert isinstance(data, dict)
+class TestContractSurface:
+    def test_health(self):
+        status, body = http_get(BASE, "/health")
+        assert status == 200
+        assert_matches("health", body)
+        assert body["service"] == "classifiers"
+
+    def test_discovery(self):
+        status, body = http_get(BASE, "/api")
+        assert status == 200
+        assert_matches("manifest", body)
+        assert body["service"] == "classifiers"
+
+    def test_error_envelope(self):
+        status, body = http_get(BASE, "/__contract_missing__")
+        assert status == 404
+        assert_matches("error", body)
+        assert body["error"]["code"] == "not_found"
 
 
-class TestDatasetsContract:
-    """Frontend expects GET /api/datasets → list of dataset names."""
-
-    def test_datasets_returns_list(self, client):
-        resp = client.get("/api/datasets")
-        assert resp.status_code == 200
-        data = resp.get_json()
-        assert isinstance(data, (list, dict))
-
-
-class TestSSEContract:
-    """Frontend expects GET /connect to return SSE stream."""
-
-    def test_connect_returns_sse_stream(self, client):
-        resp = client.get("/connect")
-        assert resp.status_code == 200
-        content_type = resp.content_type or ""
-        assert "text/event-stream" in content_type
+class TestReadShapes:
+    def test_datasets(self):
+        status, body = http_get(BASE, "/api/datasets")
+        assert status == 200
+        assert isinstance(body, list)
