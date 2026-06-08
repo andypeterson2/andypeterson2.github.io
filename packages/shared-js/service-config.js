@@ -21,25 +21,27 @@
  * Exposes `window.ServiceConfig`.
  */
 (function (root) {
-  "use strict";
+  'use strict';
 
-  var STORAGE_KEY = "service-config";
+  var STORAGE_KEY = 'service-config';
   var _params = new URLSearchParams(root.location.search);
   var _stored = {};
-  try { _stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (_) {}
+  try {
+    _stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch (_) {}
 
   function _save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(_stored));
   }
 
   function _normalise(url) {
-    if (!url) return "";
+    if (!url) return '';
     url = url.trim();
-    if (!url) return "";
+    if (!url) return '';
     // Strip trailing slash
-    if (url.endsWith("/")) url = url.slice(0, -1);
+    if (url.endsWith('/')) url = url.slice(0, -1);
     // Add protocol if missing
-    if (!/^https?:\/\//.test(url)) url = "https://" + url;
+    if (!/^https?:\/\//.test(url)) url = 'https://' + url;
     return url;
   }
 
@@ -57,7 +59,7 @@
         if (url) return url;
       }
       if (_stored[name]) return _stored[name];
-      return _normalise(defaultUrl) || "";
+      return _normalise(defaultUrl) || '';
     },
 
     /**
@@ -103,7 +105,7 @@
         if (url) return url;
       }
       // 2. Unified backend param (?backend=host:port)
-      var backendParam = _params.get("backend");
+      var backendParam = _params.get('backend');
       if (backendParam) {
         var url2 = _normalise(backendParam);
         if (url2) return url2;
@@ -111,7 +113,7 @@
       // 3. localStorage
       if (_stored[name]) return _stored[name];
       // 4. Default
-      return _normalise(defaultUrl) || "";
+      return _normalise(defaultUrl) || '';
     },
 
     /**
