@@ -26,9 +26,10 @@ test.describe('Responsive layout', () => {
     for (const width of [375, 768, 1280]) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto('/');
+      // Scope to the site window's own chrome — page content has its own windows.
       await expect(page.locator('.site-window')).toBeVisible();
-      await expect(page.locator('.title-bar')).toBeVisible();
-      await expect(page.locator('.details-bar')).toBeVisible();
+      await expect(page.locator('.site-window > .title-bar')).toBeVisible();
+      await expect(page.locator('.site-window > .details-bar')).toBeVisible();
     }
   });
 });
