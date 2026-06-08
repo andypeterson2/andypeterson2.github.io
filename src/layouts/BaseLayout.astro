@@ -137,9 +137,13 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
                   </a>
                 );
               }
-              return r.tag === 'a'
-                ? <a href={r.href} class={r.class}>{r.text}</a>
-                : <span class={r.class}>{r.text}</span>;
+              return r.tag === 'a' ? (
+                <a href={r.href} class={r.class}>
+                  {r.text}
+                </a>
+              ) : (
+                <span class={r.class}>{r.text}</span>
+              );
             })
           }
         </div>
