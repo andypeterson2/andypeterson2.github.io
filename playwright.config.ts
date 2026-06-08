@@ -24,14 +24,14 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // firefox + webkit are slower; run them only in full sweeps (E2E_ALL_BROWSERS=1,
+    // e.g. a nightly or workflow_dispatch run) so PR feedback stays fast on chromium.
+    ...(process.env.E2E_ALL_BROWSERS === '1'
+      ? [
+          { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+          { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+        ]
+      : []),
   ],
   webServer: {
     command: 'npm run dev',

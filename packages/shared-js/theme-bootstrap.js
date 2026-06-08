@@ -10,18 +10,18 @@
  *   <link rel="stylesheet" href="/shared/ui-kit/ui-kit-core.css">
  */
 (function () {
-  "use strict";
+  'use strict';
 
-  var THEME_KEY = "sm-theme";       // "dark" | "light"
+  var THEME_KEY = 'sm-theme'; // "dark" | "light"
 
   var stored = localStorage.getItem(THEME_KEY);
   var theme;
   if (stored) {
     theme = stored;
   } else if (typeof matchMedia !== 'undefined') {
-    theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   } else {
-    theme = "light";
+    theme = 'light';
   }
 
   document.documentElement.dataset.theme = theme;
@@ -38,7 +38,7 @@
   };
 
   // Sync across tabs/windows on the same domain.
-  window.addEventListener("storage", function (e) {
+  window.addEventListener('storage', function (e) {
     if (e.key === THEME_KEY && e.newValue) {
       document.documentElement.dataset.theme = e.newValue;
     }

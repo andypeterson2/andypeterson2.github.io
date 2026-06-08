@@ -1,13 +1,30 @@
 version: 2
+# NOTE: this repo's packages/* are git submodules — their package.json files are
+# NOT visible here (only the gitlink commit is tracked). Dependabot can therefore
+# only update the root manifest from this config. Each submodule carries its own
+# .github/dependabot.yml in its origin repo (see packages/cv/.github/dependabot.yml).
 updates:
+  # Root portfolio (Astro site) npm dependencies
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    groups:
+      # Collapse low-risk bumps into a single PR to cut review noise; majors stay separate.
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
 
+  # Actions pinned in the root workflows
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
