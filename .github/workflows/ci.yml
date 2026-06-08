@@ -158,7 +158,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pytest pytest-timeout
+      - run: pip install pytest pytest-timeout jsonschema
       - name: Run the CV REST contract tests against a live editor
         run: |
           cd packages/cv/editor && npm ci --omit=optional
@@ -247,6 +247,26 @@ jobs:
           submodules: recursive
       - run: cd packages/nonogram && docker build .
 
+  nonogram-contract:
+    needs: changes
+    if: needs.changes.outputs.nonogram == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pytest-timeout jsonschema
+      - name: Boot nonogram and run live-HTTP contract tests
+        run: |
+          cd packages/nonogram && pip install -e ".[dev]"
+          PORT=5055 NONOGRAM_HOST=127.0.0.1 python -c "from tools.webapp import app, socketio; socketio.run(app, host='127.0.0.1', port=5055, allow_unsafe_werkzeug=True)" &
+          curl --retry 60 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5055/health
+          cd "$GITHUB_WORKSPACE"
+          NONOGRAM_URL=http://127.0.0.1:5055 python -m pytest tests/contracts/test_nonogram_api.py -v --timeout=60
+
   qvc-tests:
     needs: changes
     if: needs.changes.outputs.qvc == 'true'
@@ -284,6 +304,27 @@ jobs:
           curl -sf http://localhost:5050/admin/status || (docker logs qvc-signaling-test && exit 1)
           docker stop qvc-signaling-test
 
+  qvc-contract:
+    needs: changes
+    if: needs.changes.outputs.qvc == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest pytest-timeout jsonschema
+      - name: Boot the signaling server and run live-HTTP contract tests
+        run: |
+          cd packages/qvc && pip install -r signaling/requirements.txt
+          python -c "from signaling.server import create_app; a, _, _ = create_app(); a.run(host='127.0.0.1', port=5050)" &
+          curl --retry 40 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5050/health
+          cd "$GITHUB_WORKSPACE"
+          QVC_SIGNALING_URL=http://127.0.0.1:5050 python -m pytest tests/contracts/test_qvc_api.py -v --timeout=60
+
   python-lint:
     needs: changes
     if: >-
@@ -320,6 +361,33 @@ jobs:
           pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
           pip install pytest
       - run: cd packages/quantum-protein-kernel && python -m pytest tests/ -v --tb=short
+
+  classifiers-contract:
+    needs: changes
+    if: needs.changes.outputs.qpk == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install CPU-only torch and project deps
+        run: |
+          pip install torch==2.2.2+cpu torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
+          cd packages/quantum-protein-kernel
+          pip install --no-deps -r requirements.txt
+          pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
+          pip install pytest pytest-timeout jsonschema
+      - name: Boot classifiers and run live-HTTP contract tests
+        run: |
+          cd packages/quantum-protein-kernel
+          CLASSIFIERS_PORT=5001 python -c "from classifiers.server import create_app; create_app().run(host='127.0.0.1', port=5001)" &
+          curl --retry 90 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5001/health
+          cd "$GITHUB_WORKSPACE"
+          CLASSIFIERS_URL=http://127.0.0.1:5001 python -m pytest tests/contracts/test_classifier_api.py -v --timeout=120
 
   lighthouse-desktop:
     needs: [changes, astro-build]
