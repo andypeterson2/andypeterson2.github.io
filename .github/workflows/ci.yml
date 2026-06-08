@@ -131,8 +131,12 @@ jobs:
           cache-dependency-path: |
             packages/cv/editor/package-lock.json
             packages/cv/mcp-server/package-lock.json
+      # Do NOT add --omit=optional here: Vitest 4 runs on rolldown, whose
+      # platform-specific native binding ships as an OPTIONAL dependency.
+      # Omitting it breaks vitest startup ("Cannot find native binding").
+      # The lock is regenerated with npm 10 so a plain `npm ci` syncs cleanly.
       - name: Editor unit + integration tests (coverage gate)
-        run: cd packages/cv/editor && npm ci --omit=optional && npm run test:coverage
+        run: cd packages/cv/editor && npm ci && npm run test:coverage
       - name: MCP server unit tests
         run: cd packages/cv/mcp-server && npm ci && npm test
       - name: MCP server end-to-end smoke (boots the editor on a temp DB)
