@@ -14,6 +14,7 @@ from _contract import (  # noqa: E402
     assert_matches,
     base_url,
     http_get,
+    http_post,
     skip_unless_reachable,
 )
 
@@ -46,3 +47,31 @@ class TestReadShapes:
         status, body = http_get(BASE, "/api/datasets")
         assert status == 200
         assert isinstance(body, list)
+
+
+class TestSyncRoutes:
+    """Synchronous train/evaluate are reachable over plain HTTP (no SSE)."""
+
+    def _a_dataset(self):
+        status, datasets = http_get(BASE, "/api/datasets")
+        assert status == 200 and datasets, "no datasets registered"
+        return datasets[0]["name"]
+
+    def test_train_sync_rejects_unknown_model(self):
+        # Exercises /d/<dataset>/train/sync + validation without a real training run.
+        ds = self._a_dataset()
+        status, body = http_post(
+            BASE, f"/d/{ds}/train/sync", {"model_type": "__nonexistent__", "epochs": 1}
+        )
+        assert status == 400
+        assert_matches("error", body)
+
+    def test_evaluate_sync_reachable(self):
+        # Fresh server has no trained models -> 400 envelope; otherwise 200 {results}.
+        ds = self._a_dataset()
+        status, body = http_post(BASE, f"/d/{ds}/evaluate/sync", {})
+        assert status in (200, 400)
+        if status == 400:
+            assert_matches("error", body)
+        else:
+            assert isinstance(body["results"], dict)

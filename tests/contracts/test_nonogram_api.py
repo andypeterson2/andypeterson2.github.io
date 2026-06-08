@@ -60,3 +60,29 @@ class TestReadShapes:
         assert status == 200
         assert isinstance(body["grid"], list)
         assert isinstance(body["grid"][0], list)
+
+
+class TestSyncRoutes:
+    """Synchronous equivalents return the result over plain HTTP (no Socket.IO)."""
+
+    def test_classical_sync(self):
+        status, body = http_post(
+            BASE,
+            "/api/solve/classical/sync",
+            {"row_clues": [[1], [1]], "col_clues": [[1], [1]]},
+        )
+        assert status == 200
+        assert isinstance(body["solutions"], list)
+        assert body["rows"] == 2
+        assert body["cols"] == 2
+
+    def test_quantum_sync(self):
+        status, body = http_post(
+            BASE,
+            "/api/solve/quantum/sync",
+            {"row_clues": [[1], [1]], "col_clues": [[1], [1]]},
+        )
+        assert status == 200
+        assert isinstance(body["counts"], dict)
+        assert body["rows"] == 2
+        assert body["cols"] == 2
