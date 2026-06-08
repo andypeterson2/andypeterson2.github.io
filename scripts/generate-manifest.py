@@ -114,11 +114,12 @@ def main():
             entry["pin"] = pin
         if m_backend_new:
             svc_name = m_backend_new.group(1).strip()
-            port = int(m_backend_new.group(2)) if m_backend_new.group(2) else 8080
-            entry["backend"] = {
-                "service": svc_name,
-                "defaultPort": port,
-            }
+            backend = {"service": svc_name}
+            # data-port is optional; when omitted the manifest carries no port and
+            # clients fall back to ServiceConfig / their own default.
+            if m_backend_new.group(2):
+                backend["defaultPort"] = int(m_backend_new.group(2))
+            entry["backend"] = backend
         apps.append(entry)
 
     # Root first, then alphabetical
