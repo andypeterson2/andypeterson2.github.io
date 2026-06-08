@@ -187,6 +187,20 @@
       hostInput = dialog.querySelector('#' + uid + '-host');
       portInput = dialog.querySelector('#' + uid + '-port');
 
+      // Seed from any previously-saved ServiceConfig URL (shared with standalone apps).
+      if (window.ServiceConfig && window.ServiceConfig.get) {
+        var savedUrl = window.ServiceConfig.get(service, '');
+        if (savedUrl) {
+          try {
+            var u = new URL(savedUrl);
+            if (u.hostname) hostInput.value = u.hostname;
+            if (u.port) portInput.value = u.port;
+          } catch (_e) {
+            /* ignore a malformed saved URL */
+          }
+        }
+      }
+
       dialog.querySelector('[data-action="cancel"]').addEventListener('click', closeModal);
       dialog.querySelector('[data-action="connect"]').addEventListener('click', doConnect);
       dialog.querySelector('form').addEventListener('submit', function (e) {
@@ -225,6 +239,8 @@
       var port = portInput ? parseInt(portInput.value) || defaultPort : defaultPort;
       var proto = location.protocol === 'https:' ? 'https://' : 'http://';
       var url = proto + host + ':' + port;
+      // Persist + share with standalone apps (same localStorage-backed ServiceConfig).
+      if (window.ServiceConfig && window.ServiceConfig.set) window.ServiceConfig.set(service, url);
       connState.connected = true;
       updateNav();
       closeModal();
