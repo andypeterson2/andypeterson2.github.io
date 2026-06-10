@@ -31,11 +31,14 @@ EXCLUDED_PARTS = {"_astro", "_image", "_server-islands"}
 def main():
     scan_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "dist"
     if not scan_dir.is_dir():
+        # No build present (e.g. the pre-commit hook running before a build, or a
+        # fresh clone). Skip rather than block — CI regenerates from a fresh build.
         print(
-            f"::error::scan dir not found: {scan_dir} — run `npm run build` first",
+            f"site-manifest.json: skipped — no {scan_dir}/ "
+            f"(run `npm run build` to refresh)",
             file=sys.stderr,
         )
-        sys.exit(1)
+        return
 
     apps = []
     for index_html in sorted(scan_dir.rglob("index.html")):
