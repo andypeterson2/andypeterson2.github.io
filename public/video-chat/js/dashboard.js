@@ -54,6 +54,15 @@
   // ── API ──
   function apiFetch(path) {
     if (!_baseUrl) return Promise.reject(new Error('Not connected'));
+    // Prefer SiteContract so 4xx/5xx surface the { error: { code, message } } envelope.
+    if (window.SiteContract && window.SiteContract.request) {
+      return window.SiteContract.request(_baseUrl + path).then(function (r) {
+        if (!r.ok) {
+          throw new Error(r.error.code ? r.error.code + ': ' + r.error.message : r.error.message);
+        }
+        return r.data;
+      });
+    }
     return fetch(_baseUrl + path).then(function (r) {
       if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
       return r.json();

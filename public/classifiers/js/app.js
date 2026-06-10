@@ -38,6 +38,20 @@ async function apiFetch(url, opts) {
   return fetch(url, opts);
 }
 
+/**
+ * Extract a "code: message" string from a parsed contract error envelope
+ * ({ error: { code, message } }), or null when the body carries no error.
+ * @param {*} data - parsed JSON response body
+ * @returns {?string}
+ */
+function envelopeError(data) {
+  if (!data || !data.error) return null;
+  if (typeof data.error === "object") {
+    return (data.error.code ? data.error.code + ": " : "") + (data.error.message || "request failed");
+  }
+  return String(data.error);
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 /**
@@ -749,7 +763,8 @@ importBtn.addEventListener("click", async () => {
   try {
     const res  = await apiFetch(`${BASE}/models/disk/${encodeURIComponent(filename)}/load`, { method: "POST" });
     const data = await res.json();
-    if (!res.ok || data.error) return;
+    const errMsg = !res.ok ? envelopeError(data) || `HTTP ${res.status}` : envelopeError(data);
+    if (errMsg) { addLog(`Import failed — ${errMsg}`, "err"); return; }
     state.models[data.name] = {
       model_type:  data.model_type,
       epochs:      data.epochs,
@@ -777,7 +792,9 @@ document.addEventListener("click", async (e) => {
   try {
     const res  = await apiFetch(`${BASE}/models/${encodeURIComponent(exportName)}/export`, { method: "POST" });
     const data = await res.json();
-    if (res.ok && !data.error) await loadSavedModels();
+    const errMsg = !res.ok ? envelopeError(data) || `HTTP ${res.status}` : envelopeError(data);
+    if (errMsg) { addLog(`Export failed — ${errMsg}`, "err"); return; }
+    await loadSavedModels();
   } catch (_) { /* silent */ } finally {
     btn.disabled = false;
   }
@@ -815,7 +832,7 @@ ensembleBtn.addEventListener("click", async () => {
     });
     const data = await res.json();
     if (data.error) {
-      addLog(`Ensemble error: ${data.error.message || data.error}`, "err");
+      addLog(`Ensemble error — ${envelopeError(data)}`, "err");
       return;
     }
     addLog(`Ensemble accuracy: ${(data.accuracy * 100).toFixed(1)}%`, "ok");

@@ -63,8 +63,14 @@ async function consumeSSE(url, body, onStatus, onDone, onError) {
     return;
   }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    onError((err.error && err.error.message) || err.error || res.statusText);
+    // Surface the contract error envelope { error: { code, message } } when present.
+    const body = await res.json().catch(() => null);
+    const env = body && body.error;
+    if (env && typeof env === "object") {
+      onError((env.code ? env.code + ": " : "") + (env.message || "request failed"));
+    } else {
+      onError((body && body.error) || res.statusText || "HTTP " + res.status);
+    }
     return;
   }
   const reader  = res.body.getReader();
