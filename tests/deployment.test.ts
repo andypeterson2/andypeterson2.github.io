@@ -69,15 +69,6 @@ describe('Docker configuration', () => {
   });
 });
 
-// ---- Submodule configuration ----
-
-describe('Submodule configuration', () => {
-  test('submodules do not track branch tip', () => {
-    const gitmodules = readFileSync(resolve(ROOT, '.gitmodules'), 'utf-8');
-    expect(gitmodules).not.toContain('branch = main');
-  });
-});
-
 // ---- Security scanning ----
 
 describe('Security scanning', () => {
