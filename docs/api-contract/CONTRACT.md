@@ -74,7 +74,7 @@ Three of four already read these; cv's hard-coded fallback list in `editor/serve
 
 ## Per-service summary
 
-Ports are the canonical defaults; they are configurable via `PORT`/env and discovered by the frontend through `site-manifest.json` + `ServiceConfig`.
+Ports are the canonical defaults, configurable via `PORT`/env. The frontend resolves each backend's URL at runtime via `ServiceConfig` — URL param > `localStorage` > the per-page `<meta name="site-backend" data-port>` default, which is the authored source of truth for the port. `site-manifest.json` is a generated catalog of app entry points (built by `scripts/generate-manifest.py`), not the runtime port source.
 
 | Service | Lang | Default port | Streaming layer | Sync routes added (Phase B) |
 |---|---|---|---|---|
