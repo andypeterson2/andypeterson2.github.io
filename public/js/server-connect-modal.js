@@ -30,6 +30,8 @@
     var hostInput = null;
     var portInput = null;
     var widget = null;
+    var stopHealthPoll = null;
+    var appManaged = false;
 
     // Unique IDs to avoid collisions when multiple backends exist
     var uid = 'sn-' + service.replace(/[^a-z0-9]/gi, '-');
@@ -234,6 +236,29 @@
       }
     }
 
+    // ── Drive the status dot from the backend's /health contract endpoint ──
+    function onPollStatus(status) {
+      connState.status = status;
+      connState.connected = status === 'connected' || status === 'degraded';
+      updateNav();
+    }
+
+    function stopHealthPolling() {
+      if (stopHealthPoll) {
+        stopHealthPoll();
+        stopHealthPoll = null;
+      }
+    }
+
+    function startHealthPolling(url) {
+      stopHealthPolling();
+      // An app that reports its own status (via widget.setStatus) owns the dot; defer to it.
+      if (appManaged) return;
+      if (window.SiteContract && window.SiteContract.pollHealth) {
+        stopHealthPoll = window.SiteContract.pollHealth(url, onPollStatus, { intervalMs: 15000 });
+      }
+    }
+
     function doConnect() {
       var host = hostInput ? hostInput.value.trim() || 'localhost' : 'localhost';
       var port = portInput ? parseInt(portInput.value) || defaultPort : defaultPort;
@@ -241,7 +266,9 @@
       var url = proto + host + ':' + port;
       // Persist + share with standalone apps (same localStorage-backed ServiceConfig).
       if (window.ServiceConfig && window.ServiceConfig.set) window.ServiceConfig.set(service, url);
+      appManaged = false;
       connState.connected = true;
+      connState.status = 'connecting';
       updateNav();
       closeModal();
       document.dispatchEvent(
@@ -249,10 +276,16 @@
           detail: { service: service, host: host, port: port, url: url },
         }),
       );
+      // Poll /health so the dot reflects real reachability for every backend. Apps that
+      // manage their own status (e.g. classifiers SSE) take over via widget.setStatus.
+      startHealthPolling(url);
     }
 
     function doDisconnect() {
+      stopHealthPolling();
+      appManaged = false;
       connState.connected = false;
+      connState.status = 'idle';
       updateNav();
       document.dispatchEvent(
         new CustomEvent('navbar:disconnect', { detail: { service: service } }),
@@ -291,6 +324,9 @@
           return proto + h + ':' + p;
         },
         setStatus: function (status) {
+          // An app reporting its own status owns the dot — stop the generic health poll.
+          appManaged = true;
+          stopHealthPolling();
           connState.status = status;
           if (status === 'connected' || status === 'degraded') connState.connected = true;
           else connState.connected = false;
