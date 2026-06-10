@@ -753,13 +753,13 @@ function handleJoin(e) {
   let _widget = null;
 
   document.addEventListener('navbar:connect-ready', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     _widget = e.detail.widget;
     _widget.setStatus(state.connected ? 'connected' : 'idle');
   });
 
   document.addEventListener('navbar:connect', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     const url = e.detail.url || `http://${e.detail.host}:${e.detail.port}`;
     state.signalingUrl = url;
     if (_widget) _widget.setStatus('connecting');
@@ -783,7 +783,7 @@ function handleJoin(e) {
   });
 
   document.addEventListener('navbar:disconnect', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     if (socket) socket.disconnect();
     state.connected = false;
     state.signalingUrl = '';

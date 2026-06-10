@@ -20,7 +20,7 @@ from _contract import (  # noqa: E402
     skip_unless_reachable,
 )
 
-BASE = base_url("CV_EDITOR_URL", "http://127.0.0.1:3000")
+BASE = base_url("CV_EDITOR_URL", "http://127.0.0.1:3001")
 pytestmark = skip_unless_reachable(BASE, "CV_EDITOR_URL")
 
 
