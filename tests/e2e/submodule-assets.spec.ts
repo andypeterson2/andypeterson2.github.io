@@ -1,48 +1,40 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Verify that static assets served from submodule directories via
- * the Vite middleware in astro.config.mjs respond correctly.
- *
- * These paths are rewritten by the serve-subprojects plugin:
- *   /classifiers/js/... -> packages/quantum-protein-kernel/classifiers/static/js/...
- *   /nonogram/...       -> packages/nonogram/...
- *   /cv/...             -> packages/cv/...
- *   /qvc/...            -> packages/qvc/...
- *   /packages/...       -> served directly
+ * Each sub-app's frontend is vendored under public/<app>/ and served at the site root
+ * by Astro. (The former serve-subprojects Vite middleware that rewrote /nonogram/,
+ * /qvc/, etc. to submodule directories was removed in Phase E — assets now live in
+ * public/ and are served directly, so there is no directory-index rewriting.)
  */
 
-test.describe('Submodule static asset serving', () => {
-  test('classifier JS files are served', async ({ request }) => {
-    const response = await request.get('/classifiers/js/app.js');
-    expect(response.status()).toBe(200);
-    expect(response.headers()['content-type']).toContain('javascript');
-  });
+test.describe('Vendored sub-app asset serving', () => {
+  const assets = [
+    // classifiers (quantum-protein-kernel) embed
+    '/classifiers/js/app.js',
+    '/classifiers/js/connection.js',
+    '/classifiers/js/sse.js',
+    '/classifiers/js/chart.js',
+    // nonogram embed
+    '/nonogram/js/app.js',
+    // qvc embed (vendored under /video-chat/)
+    '/video-chat/js/app.js',
+    '/video-chat/js/dashboard.js',
+    // cv editor embed
+    '/cv/api.js',
+    // shared, same-origin portal scripts
+    '/js/contract-client.js',
+    '/js/server-connect-modal.js',
+  ];
 
-  test('classifier supporting scripts are served', async ({ request }) => {
-    for (const file of ['connection.js', 'sse.js', 'chart.js']) {
-      const response = await request.get(`/classifiers/js/${file}`);
-      expect(response.status(), `/classifiers/js/${file}`).toBe(200);
-    }
-  });
+  for (const path of assets) {
+    test(`serves ${path}`, async ({ request }) => {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200);
+      expect(response.headers()['content-type'], path).toContain('javascript');
+    });
+  }
 
-  test('nonogram index HTML is served', async ({ request }) => {
-    const response = await request.get('/nonogram/');
-    expect([200, 301, 302]).toContain(response.status());
-  });
-
-  test('cv index is served', async ({ request }) => {
-    const response = await request.get('/packages/cv/');
-    // CV may be a directory listing or have its own index
-    expect([200, 301, 302, 404]).toContain(response.status());
-  });
-
-  test('qvc index is served', async ({ request }) => {
-    const response = await request.get('/qvc/');
-    expect([200, 301, 302]).toContain(response.status());
-  });
-
-  test('non-existent submodule path returns 404', async ({ request }) => {
+  test('non-existent asset returns 404', async ({ request }) => {
     const response = await request.get('/classifiers/js/does-not-exist.js');
     expect(response.status()).toBe(404);
   });
