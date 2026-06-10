@@ -16,17 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # build-mode: none — both languages are interpreted, so no build step is needed.
-        # Python sources live in the submodules, hence submodules: recursive below.
+        # build-mode: none — JS/TS is interpreted, so no build step is needed.
+        # The portal is JS/TS only; each app repo runs its own CodeQL (incl. Python).
         include:
           - language: javascript-typescript
             build-mode: none
-          - language: python
-            build-mode: none
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}

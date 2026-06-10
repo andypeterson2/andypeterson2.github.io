@@ -6,48 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+# The portal is now a single standalone Astro app — each sub-app lives in its own
+# repo with its own CI, and its built frontend is vendored under public/<app>/.
+# So CI here only lints, tests, builds, and e2e-checks the portal (no submodules).
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    outputs:
-      website: ${{ steps.filter.outputs.website }}
-      qpk: ${{ steps.filter.outputs.qpk }}
-      ui-kit: ${{ steps.filter.outputs.ui-kit }}
-      cv: ${{ steps.filter.outputs.cv }}
-      nonogram: ${{ steps.filter.outputs.nonogram }}
-      qvc: ${{ steps.filter.outputs.qvc }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            website:
-              - 'src/**'
-              - 'astro.config.mjs'
-              - 'package.json'
-              - 'packages/shared-js/**'
-            qpk:
-              - 'packages/quantum-protein-kernel/**'
-            ui-kit:
-              - 'packages/ui-kit/**'
-            cv:
-              - 'packages/cv/**'
-            nonogram:
-              - 'packages/nonogram/**'
-            qvc:
-              - 'packages/qvc/**'
-
   astro-build:
-    needs: changes
-    if: needs.changes.outputs.website == 'true' || needs.changes.outputs.ui-kit == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -78,8 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -102,296 +66,35 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  ui-kit-tests:
-    needs: changes
-    if: needs.changes.outputs.ui-kit == 'true'
+  contract-schemas:
+    # The live-HTTP contract tests run in each app's own repo (they boot a backend).
+    # The portal keeps the canonical written contract and verifies the schemas are
+    # well-formed JSON Schemas — no backend needed.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: cd packages/ui-kit && npm ci && npx vitest run
-
-  cv-tests:
-    needs: changes
-    if: needs.changes.outputs.cv == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: |
-            packages/cv/editor/package-lock.json
-            packages/cv/mcp-server/package-lock.json
-      # Do NOT add --omit=optional here: Vitest 4 runs on rolldown, whose
-      # platform-specific native binding ships as an OPTIONAL dependency.
-      # Omitting it breaks vitest startup ("Cannot find native binding").
-      # The lock is regenerated with npm 10 so a plain `npm ci` syncs cleanly.
-      - name: Editor unit + integration tests (coverage gate)
-        run: cd packages/cv/editor && npm ci && npm run test:coverage
-      - name: MCP server unit tests
-        run: cd packages/cv/mcp-server && npm ci && npm test
-      - name: MCP server end-to-end smoke (boots the editor on a temp DB)
-        run: cd packages/cv/mcp-server && npm run test:smoke
-
-  cv-contract:
-    needs: changes
-    if: needs.changes.outputs.cv == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: packages/cv/editor/package-lock.json
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pytest pytest-timeout jsonschema
-      - name: Run the CV REST contract tests against a live editor
+      - run: pip install jsonschema
+      - name: Validate API-contract JSON Schemas
         run: |
-          cd packages/cv/editor && npm ci --omit=optional
-          PORT=3099 HOST=127.0.0.1 CV_DB_PATH="$RUNNER_TEMP/cv-contract.db" CV_EMBED_OFFLINE=1 node server.js &
-          curl --retry 40 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:3099/api/health
-          cd "$GITHUB_WORKSPACE"
-          CV_EDITOR_URL=http://127.0.0.1:3099 python -m pytest tests/contracts/test_cv_api.py -v --timeout=60
-
-  build-pdf:
-    needs: changes
-    if: needs.changes.outputs.cv == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Compile CV / resume / cover-letter PDFs
-        uses: xu-cheng/latex-action@v3
-        with:
-          working_directory: packages/cv
-          root_file: |
-            cv.tex
-            resume.tex
-            coverletter.tex
-          latexmk_use_lualatex: true
-          pre_compile: |
-            apk add --no-cache curl unzip fontconfig
-            mkdir -p /usr/share/fonts/source-sans /usr/share/fonts/roboto
-            curl -fsSL -o /tmp/source-sans.zip "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/OTF-source-sans-3.052R.zip"
-            unzip -o /tmp/source-sans.zip -d /tmp/source-sans
-            find /tmp/source-sans -name '*.otf' -exec cp {} /usr/share/fonts/source-sans/ \;
-            curl -fsSL -o /tmp/roboto.zip "https://github.com/googlefonts/roboto/releases/download/v2.138/roboto-android.zip"
-            unzip -o /tmp/roboto.zip -d /tmp/roboto
-            find /tmp/roboto -name '*.ttf' -exec cp {} /usr/share/fonts/roboto/ \;
-            fc-cache -f
-            rm -rf /tmp/source-sans.zip /tmp/source-sans /tmp/roboto.zip /tmp/roboto
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cv-pdfs
-          path: |
-            packages/cv/cv.pdf
-            packages/cv/resume.pdf
-            packages/cv/coverletter.pdf
-          retention-days: 7
-
-  nonogram-tests:
-    needs: changes
-    if: needs.changes.outputs.nonogram == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install nonogram (+ dev extras)
-        run: cd packages/nonogram && pip install -e ".[dev]"
-      - name: Run tests
-        run: cd packages/nonogram && pytest tests/ -v --tb=short -m "not slow"
-
-  nonogram-lint:
-    needs: changes
-    if: needs.changes.outputs.nonogram == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install ruff
-      - run: cd packages/nonogram && ruff check .
-
-  nonogram-docker:
-    needs: changes
-    if: needs.changes.outputs.nonogram == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - run: cd packages/nonogram && docker build .
-
-  nonogram-contract:
-    needs: changes
-    if: needs.changes.outputs.nonogram == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pytest pytest-timeout jsonschema
-      - name: Boot nonogram and run live-HTTP contract tests
-        run: |
-          cd packages/nonogram && pip install -e ".[dev]"
-          PORT=5055 NONOGRAM_HOST=127.0.0.1 python -c "from tools.webapp import app, socketio; socketio.run(app, host='127.0.0.1', port=5055, allow_unsafe_werkzeug=True)" &
-          curl --retry 60 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5055/health
-          cd "$GITHUB_WORKSPACE"
-          NONOGRAM_URL=http://127.0.0.1:5055 python -m pytest tests/contracts/test_nonogram_api.py -v --timeout=60
-
-  qvc-tests:
-    needs: changes
-    if: needs.changes.outputs.qvc == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      QVC_DEVELOPMENT: "true"
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Python lint + signaling tests
-        run: |
-          cd packages/qvc
-          pip install ruff pytest pytest-timeout
-          ruff check signaling/ tests/signaling/
-          pip install -r signaling/requirements.txt
-          python -m pytest tests/signaling/ -v --tb=short --timeout=60
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: JS tests
-        run: cd packages/qvc && npm install && npx vitest run
-      - name: Docker build + health check
-        run: |
-          cd packages/qvc
-          docker build -f Dockerfile.server -t qvc-signaling .
-          docker run -d --name qvc-signaling-test \
-            -e QVC_SERVER_REST_PORT=5050 -e QVC_HOST=0.0.0.0 -e SIO_ASYNC_MODE=eventlet \
-            -p 5050:5050 qvc-signaling
-          sleep 5
-          curl -sf http://localhost:5050/admin/status || (docker logs qvc-signaling-test && exit 1)
-          docker stop qvc-signaling-test
-
-  qvc-contract:
-    needs: changes
-    if: needs.changes.outputs.qvc == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install pytest pytest-timeout jsonschema
-      - name: Boot the signaling server and run live-HTTP contract tests
-        run: |
-          cd packages/qvc && pip install -r signaling/requirements.txt
-          python -c "from signaling.server import create_app; a, _, _ = create_app(); a.run(host='127.0.0.1', port=5050)" &
-          curl --retry 40 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5050/health
-          cd "$GITHUB_WORKSPACE"
-          QVC_SIGNALING_URL=http://127.0.0.1:5050 python -m pytest tests/contracts/test_qvc_api.py -v --timeout=60
-
-  python-lint:
-    needs: changes
-    if: >-
-      needs.changes.outputs.qpk == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install ruff
-      - run: ruff check packages/quantum-protein-kernel/classifiers
-
-  qpk-tests:
-    needs: changes
-    if: needs.changes.outputs.qpk == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install CPU-only torch and project deps
-        run: |
-          pip install torch==2.2.2+cpu torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
-          cd packages/quantum-protein-kernel
-          pip install --no-deps -r requirements.txt
-          pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
-          pip install pytest
-      - run: cd packages/quantum-protein-kernel && python -m pytest tests/ -v --tb=short
-
-  classifiers-contract:
-    needs: changes
-    if: needs.changes.outputs.qpk == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install CPU-only torch and project deps
-        run: |
-          pip install torch==2.2.2+cpu torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
-          cd packages/quantum-protein-kernel
-          pip install --no-deps -r requirements.txt
-          pip install numpy==1.26.4 Pillow==12.1.1 flask==3.0.2 flask-cors==6.0.2 mistune==3.2.0 scikit-learn==1.8.0
-          pip install pytest pytest-timeout jsonschema
-      - name: Boot classifiers and run live-HTTP contract tests
-        run: |
-          cd packages/quantum-protein-kernel
-          CLASSIFIERS_PORT=5001 python -c "from classifiers.server import create_app; create_app().run(host='127.0.0.1', port=5001)" &
-          curl --retry 90 --retry-delay 1 --retry-connrefused -sf http://127.0.0.1:5001/health
-          cd "$GITHUB_WORKSPACE"
-          CLASSIFIERS_URL=http://127.0.0.1:5001 python -m pytest tests/contracts/test_classifier_api.py -v --timeout=120
+          python3 - <<'PY'
+          import glob, json, sys
+          from jsonschema import Draft202012Validator
+          bad = 0
+          for f in sorted(glob.glob("docs/api-contract/schemas/*.json")):
+              try:
+                  Draft202012Validator.check_schema(json.load(open(f)))
+                  print(f"ok  {f}")
+              except Exception as e:
+                  print(f"BAD {f}: {e}")
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          PY
 
   lighthouse-desktop:
-    needs: [changes, astro-build]
-    if: needs.changes.outputs.website == 'true' || needs.changes.outputs.ui-kit == 'true'
+    needs: astro-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -407,8 +110,7 @@ jobs:
           configPath: .lighthouserc.json
 
   lighthouse-mobile:
-    needs: [changes, astro-build]
-    if: needs.changes.outputs.website == 'true' || needs.changes.outputs.ui-kit == 'true'
+    needs: astro-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -422,20 +124,3 @@ jobs:
           uploadArtifacts: true
           artifactName: lighthouse-mobile-results
           configPath: .lighthouserc.mobile.json
-
-  docker-build:
-    needs: changes
-    if: needs.changes.outputs.qpk == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Create required .env files
-        run: |
-          echo "ASTRO_PORT=8000" > .env
-          echo "CLASSIFIER_PORT=5001" > packages/quantum-protein-kernel/.env
-          echo "NONOGRAM_PORT=8001" > packages/nonogram/.env
-          echo "QVC_SERVER_PORT=8002" > packages/qvc/.env
-          touch packages/cv/.env
-      - run: CLASSIFIER_PORT=5001 ASTRO_PORT=8000 docker compose build classifier

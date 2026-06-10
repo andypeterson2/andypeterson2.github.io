@@ -28,7 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           # Deploy exactly the commit CI validated (falls back to the dispatched ref).
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
