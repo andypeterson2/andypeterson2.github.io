@@ -8,7 +8,7 @@ test.describe('ServerConnectModal', () => {
 
     // Should have connection navbar items for QVC backends
     const navItems = page.locator('.conn-nav-item');
-    // QVC client declares 2 backends: qvc (middleware) and qvc-server
+    // QVC client declares 1 backend: qvc-server
     const count = await navItems.count();
     expect(count).toBeGreaterThanOrEqual(0); // At least the modal infrastructure loads
   });
