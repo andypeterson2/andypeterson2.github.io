@@ -1,4 +1,14 @@
 (function () {
+  // One-time migration: the qvc signaling service key was renamed qvc-server → qvc to
+  // match the API contract slug. Carry any saved URL forward so existing users stay connected.
+  if (window.ServiceConfig && window.ServiceConfig.get) {
+    var _oldQvc = window.ServiceConfig.get('qvc-server', '');
+    if (_oldQvc && !window.ServiceConfig.isConfigured('qvc')) {
+      window.ServiceConfig.set('qvc', _oldQvc);
+      window.ServiceConfig.remove('qvc-server');
+    }
+  }
+
   // ── Collect backend service definitions ──────────────────────────
   var backends = [];
 

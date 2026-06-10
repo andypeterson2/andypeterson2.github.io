@@ -8,12 +8,12 @@
 
   // ── Navbar integration ──
   document.addEventListener('navbar:connect-ready', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     _navWidget = e.detail.widget;
   });
 
   document.addEventListener('navbar:connect', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     _baseUrl = e.detail.url.replace(/\/+$/, '');
     _connected = true;
     if (_navWidget) _navWidget.setStatus('connecting');
@@ -27,7 +27,7 @@
   });
 
   document.addEventListener('navbar:disconnect', function(e) {
-    if (e.detail.service !== 'qvc-server') return;
+    if (e.detail.service !== 'qvc') return;
     _connected = false;
     _baseUrl = '';
     stopPolling();

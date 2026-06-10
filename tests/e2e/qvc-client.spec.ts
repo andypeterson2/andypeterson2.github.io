@@ -108,7 +108,7 @@ async function driveConnect(page: Page) {
   await page.evaluate(() => {
     document.dispatchEvent(
       new CustomEvent('navbar:connect', {
-        detail: { service: 'qvc-server', url: 'http://localhost:9999' },
+        detail: { service: 'qvc', url: 'http://localhost:9999' },
       }),
     );
   });
