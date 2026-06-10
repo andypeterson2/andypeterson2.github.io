@@ -49,7 +49,7 @@ function _readWithTimeout(reader, ms) {
  * @param {Function} onDone   - Called once when a "done" event arrives.
  * @param {Function} onError  - Called once when an "error" event arrives.
  */
-async function consumeSSE(url, body, onStatus, onDone, onError) {
+async function consumeSSE(url, body, onStatus, onDone, onError, syncUrl) {
   var _fetch = typeof apiFetch === "function" ? apiFetch : fetch;
   var res;
   try {
@@ -63,19 +63,21 @@ async function consumeSSE(url, body, onStatus, onDone, onError) {
     return;
   }
   if (!res.ok) {
-    // Surface the contract error envelope { error: { code, message } } when present.
-    const body = await res.json().catch(() => null);
-    const env = body && body.error;
-    if (env && typeof env === "object") {
-      onError((env.code ? env.code + ": " : "") + (env.message || "request failed"));
-    } else {
-      onError((body && body.error) || res.statusText || "HTTP " + res.status);
-    }
+    // Surface the contract error envelope { error: { code, message } }, or fall back to
+    // the synchronous REST route when one is provided.
+    const errBody = await res.json().catch(() => null);
+    const env = errBody && errBody.error;
+    const msg = env && typeof env === "object"
+      ? (env.code ? env.code + ": " : "") + (env.message || "request failed")
+      : (errBody && errBody.error) || res.statusText || "HTTP " + res.status;
+    if (syncUrl) { await _consumeSync(syncUrl, body, onStatus, onDone, onError, msg); return; }
+    onError(msg);
     return;
   }
   const reader  = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
+  let doneSeen = false;
   try {
     while (true) {
       const { value, done } = await _readWithTimeout(reader, _SSE_READ_TIMEOUT);
@@ -90,12 +92,41 @@ async function consumeSSE(url, body, onStatus, onDone, onError) {
         if (!json) continue;
         const event = JSON.parse(json);
         if      (event.type === "status")  onStatus(event.msg);
-        else if (event.type === "done")    onDone(event);
+        else if (event.type === "done")    { doneSeen = true; onDone(event); }
         else if (event.type === "error")   onError(event.msg);
         else if (event.type === "history" || event.type === "ablation_result") onStatus(event);
       }
     }
   } catch (e) {
+    // Stream died mid-flight: if no 'done' arrived and a sync route exists, finish synchronously.
+    if (syncUrl && !doneSeen) { await _consumeSync(syncUrl, body, onStatus, onDone, onError, e.message); return; }
     onError(e.message || "Stream error");
   }
+}
+
+/**
+ * Fallback for {@link consumeSSE}: run the operation via its synchronous REST route and
+ * deliver the result to onDone. The sync response shape matches the SSE "done" payload.
+ *
+ * @param {string}   syncUrl - The /...sync REST endpoint.
+ * @param {Object}   body    - Same JSON body the stream would have used.
+ * @param {Function} onStatus
+ * @param {Function} onDone
+ * @param {Function} onError
+ * @param {string}   [reason] - Why the stream was unavailable (shown to the user).
+ */
+async function _consumeSync(syncUrl, body, onStatus, onDone, onError, reason) {
+  if (!(window.SiteContract && window.SiteContract.request)) {
+    onError(reason || "Live stream unavailable");
+    return;
+  }
+  onStatus("Live updates unavailable" + (reason ? " (" + reason + ")" : "") + " — running synchronously…");
+  const r = await window.SiteContract.request(syncUrl, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(body),
+    timeoutMs: 0,
+  });
+  if (r.ok) onDone(r.data);
+  else onError((r.error.code ? r.error.code + ": " : "") + r.error.message);
 }

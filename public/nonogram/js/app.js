@@ -62,6 +62,8 @@ document.addEventListener("navbar:disconnect", e => {
 });
 
 function bindSocket(s) {
+  s.on("connect",      () => { if (_navWidget) _navWidget.setStatus("connected"); });
+  s.on("disconnect",   () => { if (_navWidget) _navWidget.setStatus("disconnected"); });
   s.on("status",       ({ msg, level }) => setStatus(msg, level));
   s.on("busy",         ({ busy }) => setBusy(busy));
   s.on("cl_done",      App.renderClassical);
@@ -71,6 +73,46 @@ function bindSocket(s) {
     setStatus("Error: " + message, "err");
     setBusy(false);
   });
+}
+
+// Launch the streaming benchmark; results arrive via Socket.IO (bench_done). We only
+// surface an immediate HTTP error (e.g. solver_busy / invalid_clues) from the envelope.
+function streamBenchmark(body) {
+  const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+  if (window.SiteContract && window.SiteContract.request) {
+    window.SiteContract.request(window.API_BASE + "/api/benchmark", { ...init, timeoutMs: 0 }).then(r => {
+      if (!r.ok) App.setStatus("Benchmark error — " + (r.error.code ? r.error.code + ": " : "") + r.error.message, "err");
+    });
+  } else {
+    fetch(window.API_BASE + "/api/benchmark", init);
+  }
+}
+
+// Socket.IO unavailable — complete the benchmark over the synchronous REST route and
+// render the result with the same renderer the live bench_done event uses.
+async function runBenchmarkSync(body) {
+  if (!(window.SiteContract && window.SiteContract.request)) {
+    App.setStatus("Solver connection unavailable.", "err");
+    return;
+  }
+  App.setBusy(true);
+  App.setStatus("Live solver offline — running benchmark synchronously…");
+  try {
+    const r = await window.SiteContract.request(window.API_BASE + "/api/benchmark/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      timeoutMs: 0,
+    });
+    if (r.ok) {
+      App.renderBenchmark(r.data);
+      App.setStatus("Benchmark complete (synchronous).", "ok");
+    } else {
+      App.setStatus("Benchmark error — " + (r.error.code ? r.error.code + ": " : "") + r.error.message, "err");
+    }
+  } finally {
+    App.setBusy(false);
+  }
 }
 
 // ── Init ───────────────────────────────────────────────────────
@@ -97,28 +139,16 @@ function init() {
     }
   });
 
-  // Benchmark button
+  // Benchmark button — live Socket.IO stream when connected, synchronous REST fallback otherwise.
   $("btn-bench").addEventListener("click", () => {
     if (state.busy) return;
+    if (!window.API_BASE) { App.setStatus("Connect to a solver first.", "err"); return; }
     App.clearSolverResults();
     const puzzle = App.getCurrentPuzzle();
     const trials = Math.max(1, parseInt($("trials-input").value, 10) || 1);
-    const benchInit = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...puzzle, trials }),
-    };
-    // Results stream back over Socket.IO (bench_done); here we only surface an immediate
-    // HTTP error (e.g. solver_busy / invalid_clues) from the contract error envelope.
-    if (window.SiteContract && window.SiteContract.request) {
-      window.SiteContract.request(API_BASE + "/api/benchmark", { ...benchInit, timeoutMs: 0 }).then((r) => {
-        if (!r.ok) {
-          App.setStatus("Benchmark error — " + (r.error.code ? r.error.code + ": " : "") + r.error.message, "err");
-        }
-      });
-    } else {
-      fetch(API_BASE + "/api/benchmark", benchInit);
-    }
+    const body = { ...puzzle, trials };
+    if (socket && socket.connected) streamBenchmark(body);
+    else runBenchmarkSync(body);
   });
 
   // Editor action buttons
