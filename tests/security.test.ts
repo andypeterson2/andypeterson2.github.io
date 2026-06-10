@@ -8,8 +8,10 @@ import { resolve } from 'path';
 const ROOT = resolve(import.meta.dirname!, '..');
 
 describe('XSS prevention', () => {
+  // The classifier frontend is vendored under public/ (its source lives in the
+  // quantum-machine-learning repo); test the asset we actually ship.
   const appJs = readFileSync(
-    resolve(ROOT, 'packages/quantum-protein-kernel/classifiers/static/js/app.js'),
+    resolve(ROOT, 'public/classifiers/js/app.js'),
     'utf-8',
   );
 
