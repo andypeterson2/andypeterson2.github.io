@@ -1,15 +1,7 @@
-include:
-  - path: packages/quantum-protein-kernel/docker-compose.yml
-    env_file: packages/quantum-protein-kernel/.env
-  - path: packages/nonogram/docker-compose.yml
-    env_file: packages/nonogram/.env
-  - path: packages/qvc/docker-compose.yml
-    env_file: packages/qvc/.env
-  - path: packages/cv/docker-compose.yml
-    env_file: packages/cv/.env
-
 services:
   # ── Astro dev server (only with DEV profile) ───────────────────────
+  # Backends are no longer part of this repo — run each app from its own clone
+  # and point the portal at it with ?backend=… (see DEVELOPMENT.md).
   website:
     container_name: website
     profiles: ["dev"]
