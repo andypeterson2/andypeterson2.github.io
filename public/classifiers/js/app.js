@@ -568,7 +568,8 @@ async function runEvaluate() {
     (err) => {
       evalStatus.textContent = `Error: ${err}`;
       setTimeout(() => evalProgress.classList.add("hidden"), 2000);
-    }
+    },
+    `${BASE}/evaluate/sync`
   );
 }
 
@@ -673,7 +674,8 @@ trainBtn.addEventListener("click", async () => {
       buildSessionModelsList();
       modelNameInput.value = defaultName(document.getElementById("model-type").value);
     },
-    (err) => { addLog(`Error: ${err}`, "err"); }
+    (err) => { addLog(`Error: ${err}`, "err"); },
+    `${BASE}/train/sync`
   );
 
   trainBtn.disabled = false;
