@@ -19,11 +19,11 @@
   - `/underconstruction.html` -> `/`
   - `/underconstruction` -> `/`
   - `/resume` -> `/`
-- **Custom Vite Plugin (`serve-subprojects`):**
-  - Dev middleware that serves sub-project static directories at their expected paths: `/nonogram/`, `/classifiers/`, `/cv/`, `/qvc/`, `/packages/`, `/lib/`, `/shared/`, `/site-manifest.json`
-  - Handles path rewriting for legacy routes (e.g. `/classifiers/` -> `/packages/quantum-protein-kernel/classifiers/`)
-  - Serves `index.html` for directory requests
-  - Sets MIME types for `.html`, `.css`, `.js`, `.mjs`, `.json`, `.png`, `.jpg`, `.svg`, `.ico`, `.woff`, `.woff2`, `.ttf`
+- **Content Security Policy:** declared via the `security.csp` block (see the Security section below).
+- **Sub-app delivery:** each sub-app is vendored as static assets under `public/<app>/`
+  (`public/nonogram/`, `public/classifiers/`, `public/video-chat/`, `public/cv/`) and embedded by
+  the Astro pages in `src/pages/projects/**`. The former `serve-subprojects` dev middleware was
+  removed (Phase E) — no path-rewriting glue remains.
 
 **TypeScript Configuration (`tsconfig.json`):**
 - Extends: `astro/tsconfigs/strict`
@@ -68,7 +68,7 @@
 All four are marked `active` and `featured`. Each has a custom icon, description, longDescription, and optional screenshots and appLinks arrays.
 
 **`site-manifest.json`** is auto-generated and registers sub-apps with metadata:
-- CV Editor (`/packages/cv/website/`, pen-to-square icon, backend port 3000)
+- CV Editor (`/packages/cv/website/`, pen-to-square icon, backend port 3001)
 - Nonogram (`/packages/nonogram/website/`, puzzle-piece icon, backend port 5055)
 - QKD Video Chat (`/packages/qvc/website/client/`)
 
@@ -185,11 +185,11 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 | Directive | Sources |
 |-----------|---------|
 | `script-src` | `'self'`, `cdn.socket.io`, `unpkg.com`, `plausible.io`, `cdn.jsdelivr.net` |
-| `style-src` | `'self'`, `'unsafe-inline'`, `unpkg.com` |
+| `style-src` | `'self'`, `unpkg.com`, `cdn.jsdelivr.net` |
 | `default-src` | `'self'` |
-| `font-src` | `'self'`, `unpkg.com` |
+| `font-src` | `'self'`, `unpkg.com`, `cdn.jsdelivr.net` |
 | `img-src` | `'self'`, `data:` |
-| `connect-src` | `'self'`, `ws:`, `wss:`, `localhost`, websocket |
+| `connect-src` | `'self'`, `plausible.io` (+ `http://localhost:*`, `ws://localhost:*`, `wss://localhost:*` in dev only) |
 | `object-src` | `'none'` |
 | `base-uri` | `'self'` |
 | `form-action` | `'self'`, `mailto:` |
@@ -428,7 +428,7 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 |---------|-------------|
 | Astro dev server | 4321 |
 | Classifiers (QPK) | 5001 |
-| CV Editor | 3000 |
+| CV Editor | 3001 |
 | Nonogram | 5055 |
 | Video Chat Server | 5050 |
 | Video Chat Client A | 5002 |

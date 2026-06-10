@@ -8,9 +8,9 @@ Start the Astro dev server:
 npm run dev
 ```
 
-This launches Astro on `localhost:4321`. A custom Vite plugin in `astro.config.mjs`
-serves sub-apps at their respective paths (`/classifiers/`, `/cv/`,
-`/nonogram/`, `/qvc/`), so the full site is navigable from a single dev server.
+This launches Astro on `localhost:4321`. Each sub-app is vendored as static assets
+under `public/<app>/` and embedded by the Astro pages in `src/pages/projects/**`, so
+the full site is navigable from a single dev server (no custom dev middleware required).
 
 ## Backend Services
 
@@ -50,6 +50,19 @@ this priority chain:
 
 This lets you point any sub-app at a local backend without code changes.
 
+## Backend API Contract
+
+Every backend (`cv`, `nonogram`, `classifiers`, `qvc`) implements one uniform HTTP
+contract — see [`docs/api-contract/CONTRACT.md`](docs/api-contract/CONTRACT.md):
+
+- `GET /health` → `{status, service, version, uptime_s}` — the portal polls this to drive
+  the live status dot beside each backend in the menubar (`window.SiteContract`).
+- `GET /api` → discovery manifest `{service, version, endpoints[], streaming[]}`.
+- Failures use the envelope `{error: {code, message, details?}}`; the HTTP status carries the class.
+- Streaming operations (Socket.IO/SSE) also expose synchronous `/...sync` REST variants
+  (e.g. nonogram `/api/solve/{classical,quantum}/sync`, classifiers `/d/<ds>/train|evaluate/sync`);
+  the frontend falls back to these when the live transport is unavailable.
+
 ## Submodules
 
 Five packages are Git submodules: `cv`, `nonogram`, `quantum-protein-kernel`, `qvc`, `ui-kit`.
@@ -66,7 +79,9 @@ Or clone with `--recursive` from the start. `make setup` handles this automatica
 1. Create a directory under `packages/` (or add as a submodule).
 2. Add build/test targets to the `Makefile`.
 3. If the project runs as a service, add it to `docker-compose.yml` and `nginx/nginx.conf`.
-4. Register the route in `astro.config.mjs` by adding the path to `subPaths` and `pathRewrites`.
+4. Vendor the app's static assets under `public/<name>/` and add an Astro page under
+   `src/pages/projects/<slug>/` that embeds it and declares its backend with a
+   `<meta name="site-backend" content="<service>" data-port="<port>">` tag.
 5. Add the project to the CI workflow (`.github/workflows/ci.yml`) -- CI is path-filtered,
    so define which paths should trigger its tests.
 6. Add an entry to `src/data/projects.ts` (typed by the `Project` interface) so it appears on the portfolio site.
@@ -104,8 +119,9 @@ To integrate a new Python (Flask) or Node (Express) backend service:
    Bind ports to `127.0.0.1` only. Include a healthcheck.
 3. Add an `include:` entry in the root `docker-compose.yml` pointing to your
    compose file and `.env`.
-4. Register the route in `astro.config.mjs`: add the path prefix to `subPaths`
-   and add a rewrite entry in `pathRewrites` if needed.
+4. Embed the app from an Astro page under `src/pages/projects/` and declare the backend
+   with a `<meta name="site-backend" content="<service>" data-port="<port>">` tag (this is
+   what the connect-modal and `scripts/generate-manifest.py` read).
 5. Add an entry to `site-manifest.json` via `<meta name="site-backend">` tags
    in your app page, or manually.
 6. Add the project to CI path-filter in `.github/workflows/ci.yml`.
