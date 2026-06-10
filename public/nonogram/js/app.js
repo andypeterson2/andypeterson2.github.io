@@ -103,11 +103,22 @@ function init() {
     App.clearSolverResults();
     const puzzle = App.getCurrentPuzzle();
     const trials = Math.max(1, parseInt($("trials-input").value, 10) || 1);
-    fetch(API_BASE + "/api/benchmark", {
+    const benchInit = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...puzzle, trials }),
-    });
+    };
+    // Results stream back over Socket.IO (bench_done); here we only surface an immediate
+    // HTTP error (e.g. solver_busy / invalid_clues) from the contract error envelope.
+    if (window.SiteContract && window.SiteContract.request) {
+      window.SiteContract.request(API_BASE + "/api/benchmark", { ...benchInit, timeoutMs: 0 }).then((r) => {
+        if (!r.ok) {
+          App.setStatus("Benchmark error — " + (r.error.code ? r.error.code + ": " : "") + r.error.message, "err");
+        }
+      });
+    } else {
+      fetch(API_BASE + "/api/benchmark", benchInit);
+    }
   });
 
   // Editor action buttons
