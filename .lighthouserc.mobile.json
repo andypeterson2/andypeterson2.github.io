@@ -7,8 +7,7 @@
         "/about/",
         "/projects/",
         "/projects/latex-resume-editor/app/",
-        "/projects/quantum-nonogram-solver/app/",
-        "/projects/quantum-video-chat/client/"
+        "/projects/quantum-nonogram-solver/app/"
       ],
       "settings": {
         "formFactor": "mobile",
