@@ -1,6 +1,6 @@
 ## Quantum Protein Kernel
 
-**Package location:** `packages/quantum-protein-kernel`
+**Source repo:** [`andypeterson2/quantum-machine-learning`](https://github.com/andypeterson2/quantum-machine-learning) — API-only backend. The portal owns the frontend under `public/classifiers/`.
 
 <a id="qpk-overview"></a>
 ### Overview
