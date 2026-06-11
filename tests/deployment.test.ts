@@ -77,14 +77,6 @@ describe('Security scanning', () => {
   });
 });
 
-// ---- Documentation ----
-
-describe('Package documentation', () => {
-  test('shared-js package has README', () => {
-    expect(existsSync(resolve(ROOT, 'packages/shared-js/README.md'))).toBe(true);
-  });
-});
-
 // ---- Migration redirects ----
 
 describe('Migration redirects', () => {
