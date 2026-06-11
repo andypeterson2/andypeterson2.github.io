@@ -20,7 +20,7 @@
   - `/underconstruction` -> `/`
   - `/resume` -> `/`
 - **Content Security Policy:** declared via the `security.csp` block (see the Security section below).
-- **Sub-app delivery:** each sub-app is vendored as static assets under `public/<app>/`
+- **Sub-app delivery:** each sub-app's frontend is owned as static assets under `public/<app>/`
   (`public/nonogram/`, `public/classifiers/`, `public/video-chat/`, `public/cv/`) and embedded by
   the Astro pages in `src/pages/projects/**`. The former `serve-subprojects` dev middleware was
   removed (Phase E) — no path-rewriting glue remains.
