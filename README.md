@@ -1,20 +1,20 @@
 # andypeterson.dev
 
 Standalone [Astro](https://astro.build) portal for andypeterson.dev. Each sub-project
-lives in its own repository; the portal embeds their built frontends (vendored under
-`public/<app>/`) and talks to their optional backends over a shared HTTP API contract.
+lives in its own repository; the portal owns their built frontends under `public/<app>/`
+and talks to their optional backends over a shared HTTP API contract.
 
 ## Directory Structure
 
 ```
 src/                      Astro 6 portal (pages, layouts, components, styles)
-public/                   Served as-is, including vendored sub-app frontends:
-  classifiers/ nonogram/ video-chat/ cv/   built JS/CSS from each app repo
-  vendor/ui-kit/                           ui-kit runtime (icons.js, ui-kit.js)
+public/                   Served as-is, including owned sub-app frontends:
+  classifiers/ nonogram/ video-chat/ cv/   each app's frontend JS/CSS
+  ui-kit/                                  ui-kit runtime (icons.js, ui-kit.js)
   js/                                      portal scripts (contract client, modal)
 packages/shared-js/       Shared browser scripts (service config, nav, theme bootstrap)
 docs/api-contract/        The written API contract (CONTRACT.md + JSON schemas)
-scripts/                  Manifest generator, vendor-app.sh, CI helpers
+scripts/                  Manifest generator, CI helpers
 tests/                    Vitest (unit) + Playwright (e2e)
 ```
 
@@ -50,16 +50,11 @@ it with a query param — e.g.
 `packages/shared-js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
 localStorage, or the page's default port).
 
-## Refreshing vendored assets
+## Frontends
 
-Each app's built frontend is committed under `public/<app>/`. To re-vendor from an
-app's own repo:
-
-```bash
-scripts/vendor-app.sh <classifiers|nonogram|video-chat|ui-kit>   # or: all
-```
-
-(cv's frontend is maintained in this repo and is not synced.) Review the diff, then commit.
+Each sub-app's frontend is **owned by this repo** under `public/<app>/` and edited here
+directly (no submodules, no vendoring). Backends live in their own repos; the frontend
+talks to them over the API contract.
 
 ## Testing
 

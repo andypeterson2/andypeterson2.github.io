@@ -1,4 +1,4 @@
-.PHONY: help setup install test test-e2e lint build vendor \
+.PHONY: help setup install test test-e2e lint build \
         docker-build docker-up docker-down clean
 
 help: ## Show available targets
@@ -21,9 +21,6 @@ lint: ## Lint (eslint + prettier + stylelint)
 
 build: ## Build the Astro site
 	npm run build
-
-vendor: ## Refresh all vendored app frontends from their repos
-	scripts/vendor-app.sh all
 
 docker-build: ## Build the portal Docker image
 	docker compose build
