@@ -8,7 +8,7 @@
  * Priority order:  URL parameter  >  localStorage  >  default
  *
  * Usage:
- *   <script src="shared-js/service-config.js"></script>
+ *   <script src="/js/service-config.js"></script>
  *   <script>
  *     const base = ServiceConfig.get("nonogram", "http://localhost:5055");
  *     fetch(`${base}/api/grid`, ...);
