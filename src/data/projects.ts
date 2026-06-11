@@ -24,10 +24,7 @@ export const projects: Project[] = [
     category: 'quantum',
     status: 'active',
     featured: true,
-    appLinks: [
-      { label: 'Launch Client', href: '/projects/quantum-video-chat/client/' },
-      { label: 'Launch Server', href: '/projects/quantum-video-chat/server/' },
-    ],
+    appUrl: 'https://quantum-interns-at-qualcomm-institiute.github.io/Quantum-Video-Chat/',
     icon: 'video_dark.svg',
     screenshots: [],
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',

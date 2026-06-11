@@ -59,22 +59,6 @@
     {
       "path": "/projects/quantum-video-chat/",
       "title": "Quantum Video Chat"
-    },
-    {
-      "path": "/projects/quantum-video-chat/client/",
-      "title": "Video Chat",
-      "backend": {
-        "service": "qvc",
-        "defaultPort": 5050
-      }
-    },
-    {
-      "path": "/projects/quantum-video-chat/server/",
-      "title": "Video Chat Server",
-      "backend": {
-        "service": "qvc",
-        "defaultPort": 5050
-      }
     }
   ]
 }
