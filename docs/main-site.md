@@ -289,15 +289,10 @@ E2E spec files:
 | `qvc-client.spec.ts` | QVC client tests |
 | `server-connect.spec.ts` | Server connection modal tests |
 
-**Contract Tests (Python, `tests/contracts/`):**
-
-| File | Service |
-|------|---------|
-| `test_classifier_api.py` | Quantum protein classifier API response shapes |
-| `test_cv_api.py` | CV editor backend API response shapes |
-| `test_nonogram_api.py` | Nonogram API response shapes |
-| `test_qvc_api.py` | Video chat API response shapes |
-| `conftest.py` | Imports directly from backend packages, requires Python 3.10+ |
+**Contract Tests (Python):** each backend now owns its own contract test in its repo
+(`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend.
+The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them
+in the `contract-schemas` CI job.
 
 **Smoke Tests (Python, `tests/smoke/`):**
 - `test_docker_services.py` — Docker container health checks
