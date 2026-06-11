@@ -2,9 +2,8 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Each sub-app's frontend is vendored under public/<app>/ and served at the site root
- * by Astro. (The former serve-subprojects Vite middleware that rewrote /nonogram/,
- * /qvc/, etc. to submodule directories was removed in Phase E — assets now live in
- * public/ and are served directly, so there is no directory-index rewriting.)
+ * by Astro — assets live in public/ and are served directly, with no submodules and no
+ * dev middleware. This spec asserts the vendored entry-point assets are reachable.
  */
 
 test.describe('Vendored sub-app asset serving', () => {
@@ -21,6 +20,9 @@ test.describe('Vendored sub-app asset serving', () => {
     '/video-chat/js/dashboard.js',
     // cv editor embed
     '/cv/api.js',
+    // ui-kit runtime (vendored; defines the global UIKit before the embeds)
+    '/vendor/ui-kit/icons.js',
+    '/vendor/ui-kit/ui-kit.js',
     // shared, same-origin portal scripts
     '/js/contract-client.js',
     '/js/server-connect-modal.js',

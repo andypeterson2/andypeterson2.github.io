@@ -1,14 +1,15 @@
 # Contributing
 
-## Monorepo Workflow
+## Workflow
 
 - Branch from `main` and open PRs back to `main`.
-- Run `make test` before pushing to verify nothing is broken.
-- CI is path-filtered: only the projects affected by your changes are tested,
-  so builds stay fast.
-- Changes to shared packages (`packages/ui-kit`, `packages/shared-js`) trigger
-  downstream tests for all consumers. Keep this in mind when modifying shared
-  code -- a small change can have wide impact.
+- Run `make test && make lint` before pushing.
+- CI lints, unit-tests, builds, runs Playwright e2e, validates the API-contract JSON
+  schemas, and checks Lighthouse budgets.
+- Sub-app code lives in its own repository; this repo holds the portal plus each app's
+  vendored frontend under `public/<app>/`. To pull in upstream app changes, refresh the
+  vendored assets with `scripts/vendor-app.sh <app>` and commit the result (review the
+  diff — the committed assets are what ships).
 
 ## Design System
 
