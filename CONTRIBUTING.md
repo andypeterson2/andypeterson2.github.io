@@ -6,10 +6,9 @@
 - Run `make test && make lint` before pushing.
 - CI lints, unit-tests, builds, runs Playwright e2e, validates the API-contract JSON
   schemas, and checks Lighthouse budgets.
-- Sub-app code lives in its own repository; this repo holds the portal plus each app's
-  vendored frontend under `public/<app>/`. To pull in upstream app changes, refresh the
-  vendored assets with `scripts/vendor-app.sh <app>` and commit the result (review the
-  diff — the committed assets are what ships).
+- Sub-app backends live in their own repositories; this repo **owns** each app's frontend
+  under `public/<app>/` (edit it here directly) and talks to the backends over the API
+  contract.
 
 ## Design System
 
