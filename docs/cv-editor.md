@@ -1,6 +1,6 @@
 ## CV Editor
 
-**Package location:** `packages/cv`
+**Source repo:** [`andypeterson2/cv`](https://github.com/andypeterson2/cv) — API-only backend. The portal owns the frontend under `public/cv/`.
 
 <a id="cv-overview"></a>
 ### Overview
