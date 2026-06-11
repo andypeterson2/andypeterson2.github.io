@@ -10,12 +10,9 @@
  */
 ---
 
-<!-- ServiceConfig first (jsDelivr-from-GitHub, same origin the standalone apps use), so the
-     modal can persist/share backend URLs with them. -->
-<script
-  is:inline
-  src="https://cdn.jsdelivr.net/gh/andypeterson2/andypeterson2.github.io@main/packages/shared-js/service-config.js"
-></script>
+<!-- ServiceConfig (same-origin) — resolves/persists each backend's URL
+     (URL param > localStorage > default), shared with the app frontends. -->
+<script is:inline src="/js/service-config.js"></script>
 <!-- SiteContract (same-origin) — health/discovery/error-envelope client the modal uses
      to drive status dots from each backend's /health endpoint. -->
 <script is:inline src="/js/contract-client.js"></script>
