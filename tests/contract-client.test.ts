@@ -4,7 +4,7 @@
  * The client is a browser IIFE that attaches to `window`; here we shim `window`
  * to globalThis, eval the file, then exercise it against a real local HTTP stub
  * that speaks the backend API contract (health / discovery / error envelope).
- * This mirrors the live-HTTP checks in tests/contracts/_contract.py.
+ * This mirrors the live-HTTP contract tests each backend runs in its own repo.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'fs';
