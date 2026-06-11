@@ -10,7 +10,7 @@
  * This module is the single chokepoint the portal uses to talk to backends: it parses
  * the error envelope, normalises /health for the status dots, probes /api for sync-route
  * capability, and polls /health on an interval. It mirrors the parsing done by the
- * live-HTTP contract tests in tests/contracts/_contract.py.
+ * live-HTTP contract tests each backend runs in its own repo.
  *
  * Loaded same-origin from /js/contract-client.js (no CDN), so it is available in local
  * dev and the static build immediately. Exposes `window.SiteContract`.
