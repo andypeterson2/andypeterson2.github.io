@@ -1,0 +1,80 @@
+{
+  "apps": [
+    {
+      "path": "/",
+      "title": "Home"
+    },
+    {
+      "path": "/about/",
+      "title": "About"
+    },
+    {
+      "path": "/classifiers/",
+      "title": "Classifier",
+      "backend": {
+        "service": "classifiers",
+        "defaultPort": 5001
+      }
+    },
+    {
+      "path": "/projects/",
+      "title": "Projects"
+    },
+    {
+      "path": "/projects/latex-resume-editor/",
+      "title": "LaTeX Resume Editor"
+    },
+    {
+      "path": "/projects/latex-resume-editor/app/",
+      "title": "LaTeX Resume Editor",
+      "backend": {
+        "service": "cv",
+        "defaultPort": 3001
+      }
+    },
+    {
+      "path": "/projects/quantum-nonogram-solver/",
+      "title": "Quantum Nonogram Solver"
+    },
+    {
+      "path": "/projects/quantum-nonogram-solver/app/",
+      "title": "Nonogram Solver",
+      "backend": {
+        "service": "nonogram",
+        "defaultPort": 5055
+      }
+    },
+    {
+      "path": "/projects/quantum-protein-kernel/",
+      "title": "Quantum ML Classifier Platform"
+    },
+    {
+      "path": "/projects/quantum-protein-kernel/app/",
+      "title": "Classifier",
+      "backend": {
+        "service": "classifiers",
+        "defaultPort": 5001
+      }
+    },
+    {
+      "path": "/projects/quantum-video-chat/",
+      "title": "Quantum Video Chat"
+    },
+    {
+      "path": "/projects/quantum-video-chat/client/",
+      "title": "Video Chat",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5050
+      }
+    },
+    {
+      "path": "/projects/quantum-video-chat/server/",
+      "title": "Video Chat Server",
+      "backend": {
+        "service": "qvc",
+        "defaultPort": 5050
+      }
+    }
+  ]
+}
