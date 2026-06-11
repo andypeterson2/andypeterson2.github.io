@@ -2,161 +2,110 @@
 
 ## Local Development Workflow
 
-Start the Astro dev server:
+Requires **Node ≥ 22** (`nvm use 22`). Start the Astro dev server:
 
 ```bash
 npm run dev
 ```
 
-This launches Astro on `localhost:4321`. Each sub-app is vendored as static assets
-under `public/<app>/` and embedded by the Astro pages in `src/pages/projects/**`, so
-the full site is navigable from a single dev server (no custom dev middleware required).
+This launches Astro on `localhost:4321`. Each sub-app's frontend is vendored as static
+assets under `public/<app>/` and embedded by the Astro pages in `src/pages/projects/**`,
+so the full site is navigable from a single dev server — no custom dev middleware, no
+submodules.
 
 ## Backend Services
 
-Sub-projects with Flask or Express backends can be run two ways:
+The portal is static and works without any backend. To exercise a sub-app's live backend,
+clone its repo and run it (see that repo's README), then point the portal at it.
 
-1. **Individually** -- start a single service from its directory:
-   ```bash
-   cd packages/quantum-protein-kernel && python -m classifiers
-   cd packages/cv/editor && npm start
-   cd packages/nonogram && python -m nonogram
-   ```
-
-2. **All at once via Docker**:
-   ```bash
-   make docker-up   # starts all 8 services behind nginx on :8080
-   ```
-
-### Service Ports
-
-| Service               | Port | Protocol         |
-|-----------------------|------|------------------|
-| classifiers           | 5001 | HTTP + SSE       |
-| cv-editor             | 3001 | HTTP             |
-| nonogram              | 5055 | HTTP + WebSocket |
-| videochat-server      | 5050 | HTTP + WebSocket |
-| videochat-client-a    | 5002 | HTTP + Socket.IO |
+| App | Repo | Default port |
+|-----|------|--------------|
+| classifiers | [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) | 5001 (HTTP + SSE) |
+| cv editor | [cv](https://github.com/andypeterson2/cv) | 3001 (HTTP) |
+| nonogram | [quantum-nonogram-solver](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver) | 5055 (HTTP + WebSocket) |
+| qvc signaling | [Quantum-Video-Chat](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat) | 5050 (HTTP + WebSocket) |
 
 ### Service URL Resolution
 
-Backend URLs are resolved at runtime by `packages/shared-js/service-config.js` using
-this priority chain:
+Backend URLs are resolved at runtime by `packages/shared-js/service-config.js`:
 
 1. **URL parameters** -- e.g. `?classifiers=http://localhost:5001`
 2. **Unified backend param** -- `?backend=http://host:port` (applies to all services)
 3. **localStorage** -- previously saved overrides
-4. **Defaults** -- hard-coded fallback URLs
+4. **Defaults** -- the page's `<meta name="site-backend" data-port>` value
 
-This lets you point any sub-app at a local backend without code changes.
+So you can point any sub-app at a local backend without code changes — e.g.
+`http://localhost:4321/classifiers/?backend=http://localhost:5001`.
 
 ## Backend API Contract
 
-Every backend (`cv`, `nonogram`, `classifiers`, `qvc`) implements one uniform HTTP
-contract — see [`docs/api-contract/CONTRACT.md`](docs/api-contract/CONTRACT.md):
+Every backend implements one uniform HTTP contract — the canonical, language-agnostic
+spec lives here in [`docs/api-contract/CONTRACT.md`](docs/api-contract/CONTRACT.md):
 
 - `GET /health` → `{status, service, version, uptime_s}` — the portal polls this to drive
   the live status dot beside each backend in the menubar (`window.SiteContract`).
 - `GET /api` → discovery manifest `{service, version, endpoints[], streaming[]}`.
 - Failures use the envelope `{error: {code, message, details?}}`; the HTTP status carries the class.
-- Streaming operations (Socket.IO/SSE) also expose synchronous `/...sync` REST variants
-  (e.g. nonogram `/api/solve/{classical,quantum}/sync`, classifiers `/d/<ds>/train|evaluate/sync`);
+- Streaming operations (Socket.IO/SSE) also expose synchronous `/...sync` REST variants;
   the frontend falls back to these when the live transport is unavailable.
 
-## Submodules
+The live-HTTP contract tests run in each app's own repo (they boot a backend). CI here
+validates that the JSON schemas under `docs/api-contract/schemas/` are well-formed.
 
-Five packages are Git submodules: `cv`, `nonogram`, `quantum-protein-kernel`, `qvc`, `ui-kit`.
-After cloning, initialize them:
+## Vendored frontends
+
+Each sub-app's built frontend is committed under `public/<app>/` and served statically.
+Refresh it from the app's own repo with:
 
 ```bash
-git submodule update --init --recursive
+scripts/vendor-app.sh <classifiers|nonogram|video-chat|ui-kit>          # or: all
+scripts/vendor-app.sh classifiers --from ../quantum-machine-learning    # use a local clone
 ```
 
-Or clone with `--recursive` from the start. `make setup` handles this automatically.
+The committed assets are the source of truth for what ships, so a refresh is a real
+content change to review and test before committing. (cv's frontend is maintained here
+directly and is intentionally not synced.)
 
 ## Adding a New Project
 
-1. Create a directory under `packages/` (or add as a submodule).
-2. Add build/test targets to the `Makefile`.
-3. If the project runs as a service, add it to `docker-compose.yml` and `nginx/nginx.conf`.
-4. Vendor the app's static assets under `public/<name>/` and add an Astro page under
-   `src/pages/projects/<slug>/` that embeds it and declares its backend with a
-   `<meta name="site-backend" content="<service>" data-port="<port>">` tag.
-5. Add the project to the CI workflow (`.github/workflows/ci.yml`) -- CI is path-filtered,
-   so define which paths should trigger its tests.
-6. Add an entry to `src/data/projects.ts` (typed by the `Project` interface) so it appears on the portfolio site.
-7. Run `python scripts/generate-manifest.py` to update the site manifest.
+1. Build the project in its own repo and vendor its frontend under `public/<slug>/`
+   (add a `scripts/vendor-app.sh` entry for it).
+2. Add an Astro page under `src/pages/projects/<slug>/` that embeds the assets and, if it
+   has a backend, declares it with `<meta name="site-backend" content="<service>" data-port="<port>">`.
+3. Add an entry to `src/data/projects.ts` (typed by the `Project` interface).
+4. Run `npm run build && python3 scripts/generate-manifest.py dist` to refresh the manifest
+   (the pre-commit hook also regenerates it from the latest build).
 
 ## Running Tests
 
 ```bash
-make test         # everything
-make test-py      # Python (pytest)
-make test-js      # JavaScript (jest/vitest)
-make lint         # ruff + eslint + prettier + stylelint
-npm run format    # auto-fix formatting
+make test       # vitest unit tests
+make test-e2e   # playwright e2e
+make lint       # eslint + prettier + stylelint
+npm run format  # auto-fix formatting
 ```
 
-Run `make test && make lint` before pushing to catch issues early.
-CI will run the same checks on your pull request.
+Run `make test && make lint` before pushing. CI runs the same checks on your PR.
 
-## UI Kit Storybook
+## UI Kit (design system)
 
-To develop or preview design system components:
-
-```bash
-cd packages/ui-kit
-npm install
-npm run storybook    # opens Storybook on localhost:6006
-```
-
-## Adding a New Backend Service
-
-To integrate a new Python (Flask) or Node (Express) backend service:
-
-1. Create the package under `packages/<name>/` (or add as a submodule).
-2. Add a `docker-compose.yml` in the package directory with the service definition.
-   Bind ports to `127.0.0.1` only. Include a healthcheck.
-3. Add an `include:` entry in the root `docker-compose.yml` pointing to your
-   compose file and `.env`.
-4. Embed the app from an Astro page under `src/pages/projects/` and declare the backend
-   with a `<meta name="site-backend" content="<service>" data-port="<port>">` tag (this is
-   what the connect-modal and `scripts/generate-manifest.py` read).
-5. Add an entry to `site-manifest.json` via `<meta name="site-backend">` tags
-   in your app page, or manually.
-6. Add the project to CI path-filter in `.github/workflows/ci.yml`.
-7. Add build/test targets to the `Makefile`.
-8. Document the port in this file's Service Ports table.
+The design system lives in its own repo, [andypeterson2/ui-kit](https://github.com/andypeterson2/ui-kit).
+Its runtime (`icons.js`, `ui-kit.js`) is vendored to `public/vendor/ui-kit/`; refresh it with
+`scripts/vendor-app.sh ui-kit`. To develop components with Storybook, clone that repo and run
+`npm install && npm run storybook`.
 
 ## Troubleshooting
 
-### Submodules not initialized
-```bash
-git submodule update --init --recursive
-# Or re-clone with: git clone --recursive <url>
-```
-
 ### Wrong Node.js version
-This project requires **Node >= 22**. Use nvm to switch:
+This project requires **Node >= 22**:
 ```bash
-nvm install 22
-nvm use 22
-```
-
-### Wrong Python version
-Backend services require **Python 3.12**. Use pyenv if needed:
-```bash
-pyenv install 3.12
-pyenv local 3.12
+nvm install 22 && nvm use 22
 ```
 
 ### Docker port conflicts
-If ports are already in use, check `.env` files in each package directory
-and adjust the port variables (`CLASSIFIER_PORT`, `NONOGRAM_PORT`,
-`QVC_SERVER_PORT`, `ASTRO_PORT`).
+The dev container uses `ASTRO_PORT` (see `.env`). Adjust it if the port is in use.
 
 ### Stale build artifacts
 ```bash
-make clean
-npm run build
+make clean && npm run build
 ```
