@@ -8,7 +8,7 @@ Requires **Node ≥ 22** (`nvm use 22`). Start the Astro dev server:
 npm run dev
 ```
 
-This launches Astro on `localhost:4321`. Each sub-app's frontend is vendored as static
+This launches Astro on `localhost:4321`. Each sub-app's frontend is owned by this repo and served as static
 assets under `public/<app>/` and embedded by the Astro pages in `src/pages/projects/**`,
 so the full site is navigable from a single dev server — no custom dev middleware, no
 submodules.
@@ -52,24 +52,15 @@ spec lives here in [`docs/api-contract/CONTRACT.md`](docs/api-contract/CONTRACT.
 The live-HTTP contract tests run in each app's own repo (they boot a backend). CI here
 validates that the JSON schemas under `docs/api-contract/schemas/` are well-formed.
 
-## Vendored frontends
+## Frontends
 
-Each sub-app's built frontend is committed under `public/<app>/` and served statically.
-Refresh it from the app's own repo with:
-
-```bash
-scripts/vendor-app.sh <classifiers|nonogram|video-chat|ui-kit>          # or: all
-scripts/vendor-app.sh classifiers --from ../quantum-machine-learning    # use a local clone
-```
-
-The committed assets are the source of truth for what ships, so a refresh is a real
-content change to review and test before committing. (cv's frontend is maintained here
-directly and is intentionally not synced.)
+Each sub-app's frontend is **owned by this repo** under `public/<app>/` and served
+statically — edit it here directly. Backends live in their own repos; the frontend talks
+to them over the API contract.
 
 ## Adding a New Project
 
-1. Build the project in its own repo and vendor its frontend under `public/<slug>/`
-   (add a `scripts/vendor-app.sh` entry for it).
+1. Add its frontend under `public/<slug>/` (owned here, edited directly).
 2. Add an Astro page under `src/pages/projects/<slug>/` that embeds the assets and, if it
    has a backend, declares it with `<meta name="site-backend" content="<service>" data-port="<port>">`.
 3. Add an entry to `src/data/projects.ts` (typed by the `Project` interface).
@@ -90,8 +81,8 @@ Run `make test && make lint` before pushing. CI runs the same checks on your PR.
 ## UI Kit (design system)
 
 The design system lives in its own repo, [andypeterson2/ui-kit](https://github.com/andypeterson2/ui-kit).
-Its runtime (`icons.js`, `ui-kit.js`) is vendored to `public/vendor/ui-kit/`; refresh it with
-`scripts/vendor-app.sh ui-kit`. To develop components with Storybook, clone that repo and run
+Its runtime (`icons.js`, `ui-kit.js`) is owned by this repo at `public/ui-kit/`. To develop
+components with Storybook, clone that repo and run
 `npm install && npm run storybook`.
 
 ## Troubleshooting
