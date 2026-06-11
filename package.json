@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^6.1.2"
+    "astro": "^6.4.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
