@@ -2,7 +2,7 @@
 
 The four project backends — **cv**, **nonogram**, **classifiers** (quantum-protein-kernel), and **qvc** — each run as a standalone HTTP service that **functions with no frontend**. This document plus the JSON Schemas in [`schemas/`](./schemas/) are the cross-repo source of truth for the conventions every backend shares.
 
-Because the backends live in **separate submodule repos** and **two languages** (cv is Node/Express; the others are Python/Flask), the contract cannot be a shared code import. Instead it is this written artifact, enforced at runtime by the live-HTTP tests in [`tests/contracts/`](../../tests/contracts/), which validate real responses against [`schemas/`](./schemas/) and gate CI.
+Because the backends live in **separate repos** and **two languages** (cv is Node/Express; the others are Python/Flask), the contract cannot be a shared code import. Instead it is this written artifact: the portal owns the canonical [`schemas/`](./schemas/), and **each app's own CI** enforces it — a `tests/contract/` live-HTTP test boots the service and validates real responses against a vendored copy of the schemas.
 
 ## Conventions
 
@@ -87,8 +87,8 @@ Ports are the canonical defaults, configurable via `PORT`/env. The frontend reso
 
 ## Enforcement
 
-- `tests/contracts/test_{cv,nonogram,classifier,qvc}_api.py` hit each **live** backend over HTTP (`<SERVICE>_URL` env, `is_<service>_running()` guard, `skipif` when down) and validate `/health`, `/api`, the error envelope, and the new `/sync` routes against [`schemas/`](./schemas/) via `jsonschema`.
-- CI runs one gated job per backend (`dorny/paths-filter` scopes it to the changed submodule), each booting the service on a temp port, curling `/health`, then running its contract test. These jobs are **required**, so removing or breaking a route fails the PR.
+- Each app repo has its own `tests/contract/test_<service>_api.py` that hits its **live** backend over HTTP (`<SERVICE>_URL` env, `skipif` when down) and validates `/health`, `/api`, the error envelope, and the `/sync` routes against a vendored copy of [`schemas/`](./schemas/) via `jsonschema`.
+- Each app's CI runs a `contract` job that boots the service on a temp port, curls `/health`, then runs that contract test — so removing or breaking a route fails that app's PR. The portal's CI separately validates that the canonical schemas are well-formed JSON Schemas.
 
 ## Versioning
 
