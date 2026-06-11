@@ -50,7 +50,11 @@ document.addEventListener("navbar:connect", e => {
   if (e.detail.service !== "nonogram") return;
   if (_navWidget) _navWidget.setStatus("connecting");
   if (socket) socket.disconnect();
-  socket = io(e.detail.url);
+  // e.detail.url is <gateway-origin>/nonogram. Socket.IO needs the ORIGIN plus an
+  // explicit path — a path segment in the URL would otherwise be parsed as a
+  // namespace, not routed through the gateway's /nonogram prefix.
+  const u = new URL(e.detail.url);
+  socket = io(u.origin, { path: u.pathname.replace(/\/$/, "") + "/socket.io" });
   window.API_BASE = e.detail.url;
   bindSocket(socket);
 });

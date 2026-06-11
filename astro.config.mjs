@@ -28,7 +28,7 @@ export default defineConfig({
         "default-src 'self'",
         "font-src 'self' https://unpkg.com https://cdn.jsdelivr.net",
         "img-src 'self' data:",
-        `connect-src 'self' https://plausible.io${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
+        `connect-src 'self' https://plausible.io https://api.andypeterson.dev wss://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self' mailto:",

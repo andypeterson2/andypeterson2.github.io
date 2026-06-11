@@ -30,7 +30,47 @@ import '../styles/classifier.css';
 <script is:inline src="/classifiers/js/connection.js"></script>
 <script is:inline src="/classifiers/js/sse.js"></script>
 <script is:inline src="/classifiers/js/chart.js"></script>
-<script is:inline src="/classifiers/js/app.js"></script>
+<!--
+  app.js expects two globals the old Flask template used to inject: API_BASE and a
+  per-dataset UI_CONFIG. The portal embed has neither (so it previously threw at
+  load). Bootstrap them: resolve the gateway base, fetch the dataset list + the
+  first dataset's config from the backend, then load app.js.
+-->
+<script is:inline>
+  function bootClassifier() {
+    (async function () {
+    var base =
+      window.ServiceConfig && window.ServiceConfig.serviceBase
+        ? window.ServiceConfig.serviceBase('classifiers')
+        : '';
+    window.API_BASE = base;
+    try {
+      var datasets = await fetch(base + '/api/datasets').then(function (r) {
+        return r.json();
+      });
+      var name = datasets && datasets[0] && datasets[0].name;
+      if (name) {
+        var cfg = await fetch(base + '/api/datasets/' + name + '/config').then(function (r) {
+          return r.json();
+        });
+        window.UI_CONFIG = cfg.ui_config;
+      }
+    } catch (e) {
+      console.error('[classifiers] failed to load dataset UI config', e);
+    }
+    var s = document.createElement('script');
+    s.src = '/classifiers/js/app.js';
+    s.async = false;
+    document.body.appendChild(s);
+    })();
+  }
+  // Defer until service-config.js has loaded (it's loaded later via ServerConnectModal).
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootClassifier);
+  } else {
+    bootClassifier();
+  }
+</script>
 
 <style>
   #classifier-app {

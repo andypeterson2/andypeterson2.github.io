@@ -123,6 +123,28 @@
 
       buildModal();
       dispatchReady();
+      autoConnect();
+    }
+
+    // Auto-connect to the gateway on load. The backend URL is now fixed (one front
+    // door at <apiOrigin>/<service>), so there's no host/port for the user to enter —
+    // the modal stays available only as a dev override (Re-connect). This fires the
+    // same navbar:connect event the manual flow does, after the app's listeners are
+    // registered (init runs on DOMContentLoaded).
+    function autoConnect() {
+      var url =
+        window.ServiceConfig && window.ServiceConfig.serviceBase
+          ? window.ServiceConfig.serviceBase(service)
+          : '';
+      if (!url) return;
+      appManaged = false;
+      connState.connected = true;
+      connState.status = 'connecting';
+      updateNav();
+      document.dispatchEvent(
+        new CustomEvent('navbar:connect', { detail: { service: service, url: url } }),
+      );
+      startHealthPolling(url);
     }
 
     function buildModal() {

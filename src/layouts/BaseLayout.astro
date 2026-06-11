@@ -38,6 +38,11 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={pageDescription} />
+    {/* The single fixed API origin (the gateway). Apps call <origin>/<app>. */}
+    <meta
+      name="site-api-origin"
+      content={import.meta.env.DEV ? 'http://localhost:9000' : 'https://api.andypeterson.dev'}
+    />
     {isPreviewDeploy && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
     <link rel="canonical" href={canonicalUrl.href} />
