@@ -1,6 +1,6 @@
 ## Quantum Video Chat (QVC)
 
-**Package location:** `packages/qvc`
+**Source repo:** [`Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat`](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat) — a standalone full-stack app (client + signaling). Not embedded in the portal; linked out as a project card.
 
 <a id="qvc-overview"></a>
 ### Overview
