@@ -32,8 +32,13 @@ const relatedProjects = projects
                 </a>
               ))
             : project.appUrl && (
-                <a href={project.appUrl} class="project-btn">
-                  Launch App
+                <a
+                  href={project.appUrl}
+                  class="project-btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Launch App ↗
                 </a>
               )}
           {project.repoUrl && (

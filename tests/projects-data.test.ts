@@ -64,10 +64,13 @@ describe('projects.ts data integrity', () => {
     expect(featured.length).toBeGreaterThan(0);
   });
 
-  test('appUrl paths start with / if present', () => {
+  test('appUrl is an internal path or an external http(s) URL if present', () => {
     for (const p of projects) {
       if (p.appUrl) {
-        expect(p.appUrl, `${p.slug} appUrl doesn't start with /`).toMatch(/^\//);
+        expect(
+          p.appUrl,
+          `${p.slug} appUrl must be an internal path (/...) or an external http(s) URL`,
+        ).toMatch(/^(\/|https?:\/\/)/);
       }
     }
   });
