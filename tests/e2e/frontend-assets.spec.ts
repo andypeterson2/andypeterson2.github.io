@@ -15,8 +15,6 @@ test.describe('Owned frontend asset serving', () => {
     '/classifiers/js/chart.js',
     // nonogram embed
     '/nonogram/js/app.js',
-    // qvc embed (under /video-chat/)
-    '/video-chat/js/app.js',
     // cv editor embed
     '/cv/api.js',
     // ui-kit runtime (owned; defines the global UIKit before the embeds)
