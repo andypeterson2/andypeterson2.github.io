@@ -1,6 +1,6 @@
 ## Nonogram Solver
 
-**Package location:** `packages/nonogram`
+**Source repo:** [`Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver`](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver) — API-only backend. The portal owns the frontend under `public/nonogram/`.
 
 <a id="nonogram-overview"></a>
 ### Overview

@@ -60,17 +60,14 @@
 
 | Project | Slug | Category | App URL | Package Dir | Repo |
 |---------|------|----------|---------|-------------|------|
-| Quantum Video Chat | `quantum-video-chat` | — | `/projects/quantum-video-chat/client/` + `/server/` | `qvc` | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
+| Quantum Video Chat | `quantum-video-chat` | — | external link-out (standalone app) | `qvc` | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
 | Quantum Nonogram Solver | `quantum-nonogram-solver` | — | `/projects/quantum-nonogram-solver/app/` | `nonogram` | `Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver` |
 | Quantum ML Classifier Platform | `quantum-protein-kernel` | — | `/projects/quantum-protein-kernel/app/` | `quantum-protein-kernel` | `andypeterson2/quantum-machine-learning` |
 | LaTeX Resume Editor | `latex-resume-editor` | — | `/projects/latex-resume-editor/app/` | `cv` | `andypeterson2/cv` |
 
 All four are marked `active` and `featured`. Each has a custom icon, description, longDescription, and optional screenshots and appLinks arrays.
 
-**`site-manifest.json`** is auto-generated and registers sub-apps with metadata:
-- CV Editor (`/packages/cv/website/`, pen-to-square icon, backend port 3001)
-- Nonogram (`/packages/nonogram/website/`, puzzle-piece icon, backend port 5055)
-- QKD Video Chat (`/packages/qvc/website/client/`)
+**`site-manifest.json`** is auto-generated (`scripts/generate-manifest.py`) and catalogs the portal's app entry points with metadata (icon, backend port). It is a generated artifact, not the runtime port source — each page's `<meta name="site-backend" data-port>` is the authored default.
 
 ---
 
@@ -318,60 +315,43 @@ Both configs test URLs: `/`, `/projects/`, `/projects/latex-resume-editor/app/`
 <a id="cicd-pipelines"></a>
 ### CI/CD Pipelines
 
-**`.github/workflows/ci.yml`** — Continuous Integration:
+**`.github/workflows/ci.yml`** — Continuous Integration (portal-only; each sub-app has its own CI in its own repo):
 
 Triggers: push to `main`, pull requests.
 
-**Job 1: `changes`**
-- Uses `dorny/paths-filter` to detect which subprojects changed
-- Filters: `website` (src/, astro.config, package.json, packages/shared-js/), `qpk`, `ui-kit`, `cv`
+**Job 1: `astro-build`** (Node 22)
+- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, name-leakage check (`scripts/check-name-leakage.sh`), `npm test -- --coverage`, `npm run build`
+- Uploads `coverage/` and `dist/` as artifacts
 
-**Job 2: `astro-build`** (Node 22)
-- Condition: website or ui-kit changed
-- Steps: checkout (with submodules), `npm ci`, `npm run lint`, `npm test`, `npm run build`
+**Job 2: `e2e-tests`** (Node 22, needs `astro-build`)
+- Installs Playwright Chromium, downloads the `dist/` artifact, runs `npx playwright test` (PR runs are Chromium-only; firefox/webkit in full sweeps)
 
-**Job 3: `ui-kit-tests`** (Node 22)
-- Condition: ui-kit changed
-- Steps: `cd packages/ui-kit && npm ci && npx vitest run`
+**Job 3: `contract-schemas`** (Python 3.12)
+- Validates every `docs/api-contract/schemas/*.json` is a well-formed JSON Schema (`jsonschema` Draft 2020-12). The live-HTTP contract tests live in each app's own repo.
 
-**Job 4: `cv-tests`** (Node 22)
-- Condition: cv changed
-- Steps: `cd packages/cv/editor && npm install && npm test`
+**Job 4: `lighthouse-desktop`** (needs `astro-build`)
+- `treosh/lighthouse-ci-action@v12` against the built `dist/` with `.lighthouserc.json`
 
-**Job 5: `python-lint`** (Python 3.12)
-- Condition: qpk changed
-- Steps: `pip install ruff`, `ruff check packages/quantum-protein-kernel/classifiers`
+**Job 5: `lighthouse-mobile`** (needs `astro-build`)
+- Same, with `.lighthouserc.mobile.json`
 
-**Job 6: `qpk-tests`** (Python 3.12)
-- Condition: qpk changed
-- Steps: installs CPU-only PyTorch + deps, runs pytest
-
-**Job 7: `lighthouse-desktop`** (Node 22)
-- Condition: website or ui-kit changed (runs after `astro-build`)
-- Uses `treosh/lighthouse-ci-action@v12` with `.lighthouserc.json`
-
-**Job 8: `lighthouse-mobile`** (Node 22)
-- Same condition, uses `.lighthouserc.mobile.json`
-
-**Job 9: `docker-build`**
-- Condition: qpk changed
-- Creates `.env` files, builds classifier Docker image
+**`.github/workflows/codeql.yml`** — CodeQL static analysis (`analyze` job) on a language matrix.
 
 ---
 
 **`.github/workflows/deploy.yml`** — GitHub Pages Deployment:
 
-Triggers: push to `main`, manual dispatch.
+Triggers: `workflow_run` after the **CI** workflow completes on `main` (deploys only when CI passed), plus manual `workflow_dispatch`.
 
 | Step | Action |
 |------|--------|
-| Checkout | Recursive submodules |
+| Checkout | The CI-validated commit (`workflow_run.head_sha`); no submodules |
 | Setup Node | v22, npm caching |
 | Build | `npm ci && npm run build` |
-| Upload | `dist/` as Pages artifact |
+| Upload | `dist/` via `actions/upload-pages-artifact@v3` |
 | Deploy | `actions/deploy-pages@v4` |
 
-Permissions: `pages: write`, `id-token: write`
+Permissions: `pages: write`, `id-token: write`, `contents: read`
 
 ---
 
@@ -401,11 +381,7 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 <a id="docker--local-development"></a>
 ### Docker & Local Development
 
-**`docker-compose.yml`** (root) includes sub-compose files:
-- `packages/quantum-protein-kernel/docker-compose.yml`
-- `packages/nonogram/docker-compose.yml`
-- `packages/qvc/docker-compose.yml`
-- `packages/cv/docker-compose.yml`
+**`docker-compose.yml`** (root) defines only the portal dev container — backends are no longer in this repo; run each app from its own clone and point the portal at it with `?backend=…`.
 
 **Website service (dev profile only):**
 
@@ -430,7 +406,7 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 
 **URL Resolution Priority Chain:** URL params -> unified `?backend=` param -> localStorage -> defaults
 
-**Submodules:** 5 git submodules (cv, nonogram, quantum-protein-kernel, qvc, ui-kit)
+**No submodules:** the portal is standalone — each app lives in its own repo and is consumed only as an HTTP API (its built frontend is owned under `public/<app>/`).
 
 ---
 
@@ -439,24 +415,16 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 
 | Target | Description |
 |--------|-------------|
-| `make setup` | Initialize git submodules + install all dependencies |
-| `make install` | `npm ci` + pip install for all projects |
-| `make test` | Run all tests (Python + JavaScript) |
-| `make test-py` | Python tests via pytest |
-| `make test-js` | JavaScript tests via npm/jest/vitest |
-| `make lint` | Ruff + ESLint linting |
-| `make lint-py` | Ruff on specific directories |
-| `make lint-js` | ESLint (if configured) |
-| `make build` | `astro build` |
-| `make test-<project>` | Test a single project (generic pattern) |
-| `make docker-build` | Build all Docker images |
-| `make docker-up` | Start all services |
-| `make docker-down` | Stop all services |
-| `make clean` | Remove build artifacts and cache directories |
-
-Project definitions:
-- `PYTHON_PROJECTS`: `packages/quantum-protein-kernel`
-- `JS_PROJECTS`: `packages/ui-kit`, `packages/cv/editor`, `packages/nonogram/website`, `packages/qvc`
+| `make setup` | Install dependencies (`npm ci`; requires Node ≥22) |
+| `make install` | `npm ci` |
+| `make test` | Unit tests (vitest) |
+| `make test-e2e` | End-to-end tests (playwright) |
+| `make lint` | eslint + prettier + stylelint |
+| `make build` | Build the Astro site |
+| `make docker-build` | Build the portal Docker image |
+| `make docker-up` | Start the portal dev container (profile: dev) |
+| `make docker-down` | Stop containers |
+| `make clean` | Remove `dist`/`.astro` |
 
 ---
 
@@ -468,7 +436,7 @@ Project definitions:
 | ESLint | 10.1.0 | TypeScript, TSX, Astro files |
 | Prettier | 3.8.1 | TypeScript, TSX, Astro, CSS |
 | Stylelint | 17.5.0 | CSS, Astro files |
-| Ruff | latest | Python (quantum-protein-kernel, nonogram, qvc) |
+| Ruff | latest | Python (`scripts/`, `tests/smoke/`) |
 
 **ESLint Configuration (`eslint.config.js`):**
 - Uses `eslint-plugin-astro` (recommended config)
