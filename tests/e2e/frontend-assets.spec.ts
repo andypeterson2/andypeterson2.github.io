@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Each sub-app's frontend is vendored under public/<app>/ and served at the site root
- * by Astro — assets live in public/ and are served directly, with no submodules and no
- * dev middleware. This spec asserts the vendored entry-point assets are reachable.
+ * Each sub-app's frontend is owned by this repo under public/<app>/ and served at the
+ * site root by Astro — no submodules, no dev middleware, no vendoring. This spec asserts
+ * the frontend entry-point assets are reachable.
  */
 
-test.describe('Vendored sub-app asset serving', () => {
+test.describe('Owned frontend asset serving', () => {
   const assets = [
     // classifiers (quantum-protein-kernel) embed
     '/classifiers/js/app.js',
@@ -15,14 +15,13 @@ test.describe('Vendored sub-app asset serving', () => {
     '/classifiers/js/chart.js',
     // nonogram embed
     '/nonogram/js/app.js',
-    // qvc embed (vendored under /video-chat/)
+    // qvc embed (under /video-chat/)
     '/video-chat/js/app.js',
-    '/video-chat/js/dashboard.js',
     // cv editor embed
     '/cv/api.js',
-    // ui-kit runtime (vendored; defines the global UIKit before the embeds)
-    '/vendor/ui-kit/icons.js',
-    '/vendor/ui-kit/ui-kit.js',
+    // ui-kit runtime (owned; defines the global UIKit before the embeds)
+    '/ui-kit/icons.js',
+    '/ui-kit/ui-kit.js',
     // shared, same-origin portal scripts
     '/js/contract-client.js',
     '/js/server-connect-modal.js',
