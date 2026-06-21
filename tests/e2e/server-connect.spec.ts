@@ -93,14 +93,11 @@ test.describe('ServerConnectModal + SiteContract', () => {
     expect(seen).toContain('connected');
   });
 
-  test('connect flow turns the dot green end-to-end (cv embed)', async ({ page }) => {
-    // The cv embed validates the backend via /api/health on connect; the modal also polls
-    // /health. Answer both so the full nav-item → modal → Connect → green-dot path is exercised.
+  test('auto-connects to the fixed gateway origin and turns the dot green on load (cv embed)', async ({ page }) => {
+    // With one fixed front door, the app auto-fires navbar:connect on load — no modal.
+    // The cv embed re-runs init() over /api/* on connect, so mock the backend broadly
+    // (list endpoints → [], health → the envelope, everything else → {}).
     const healthBody = JSON.stringify({ status: 'ok', service: 'cv', version: '1.0.0', uptime_s: 4 });
-    // The cv embed re-runs init() on connect, which loads its whole data layer over
-    // /api/* — so the backend must be mocked broadly (not just /health), else those
-    // fetches reject against the dead default port and the handler's .catch trips the
-    // dot red. List endpoints return [], everything else {}; health returns the envelope.
     await page.route('**/api/**', (route) => {
       const path = new URL(route.request().url()).pathname;
       let body = '{}';
@@ -112,10 +109,28 @@ test.describe('ServerConnectModal + SiteContract', () => {
     await page.route('**/health', (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: healthBody }),
     );
+    // Capture the navbar:connect the modal auto-fires (dispatched on document during init).
+    await page.addInitScript(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__connects = [];
+      document.addEventListener('navbar:connect', (e) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__connects.push((e as CustomEvent).detail),
+      );
+    });
+
     await page.goto('/projects/latex-resume-editor/app/');
     const navItem = page.locator('.server-nav-item');
-    await navItem.first().click(); // opens the connect modal (defaults to localhost:3001)
-    await page.locator('.sn-modal [data-action="connect"]').click();
+    // The dot goes green WITHOUT opening the modal — auto-connect drove the whole flow.
     await expect(navItem.locator('.sn-dot')).toHaveClass(/sn-green/, { timeout: 8000 });
+
+    // …and it fired with the fixed gateway base (…/cv), not a manually-entered host.
+    const connects = await page.evaluate(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      () => (window as any).__connects as Array<{ service: string; url: string }>,
+    );
+    expect(connects.length).toBeGreaterThan(0);
+    expect(connects[connects.length - 1].service).toBe('cv');
+    expect(connects[connects.length - 1].url).toMatch(/\/cv$/);
   });
 });
