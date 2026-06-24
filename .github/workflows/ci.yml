@@ -21,6 +21,8 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run lint
+      - name: Install poppler-utils (pdftotext — for the committed-PDF PII scan)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Check name leakage
         run: bash scripts/check-name-leakage.sh
         env:
