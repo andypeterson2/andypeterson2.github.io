@@ -12,7 +12,7 @@ public/                   Served as-is, including owned sub-app frontends:
   classifiers/ nonogram/ video-chat/ cv/   each app's frontend JS/CSS
   ui-kit/                                  ui-kit runtime (icons.js, ui-kit.js)
   js/                                      portal scripts (contract client, modal)
-packages/shared-js/       Shared browser scripts (service config, nav, theme bootstrap)
+public/js/       Shared browser scripts (service config, nav, theme bootstrap)
 docs/api-contract/        The written API contract (CONTRACT.md + JSON schemas)
 scripts/                  Manifest generator, CI helpers
 tests/                    Vitest (unit) + Playwright (e2e)
@@ -47,7 +47,7 @@ The portal is static and deploys without any backend. To exercise a sub-app's li
 backend, clone its repo and run it (see that repo's README), then point the portal at
 it with a query param — e.g.
 `http://localhost:4321/classifiers/?backend=http://localhost:5001`.
-`packages/shared-js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
+`public/js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
 localStorage, or the page's default port).
 
 ## Frontends

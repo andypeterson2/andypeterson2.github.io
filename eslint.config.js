@@ -49,7 +49,7 @@ export default [
   {
     // Superproject-owned shared browser scripts (classic <script> files, not
     // modules). Lint without the type-aware config (they have no tsconfig).
-    files: ['packages/shared-js/**/*.js'],
+    files: ['public/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'script',
