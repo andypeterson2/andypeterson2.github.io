@@ -27,7 +27,7 @@ clone its repo and run it (see that repo's README), then point the portal at it.
 
 ### Service URL Resolution
 
-Backend URLs are resolved at runtime by `packages/shared-js/service-config.js`:
+Backend URLs are resolved at runtime by `public/js/service-config.js`:
 
 1. **URL parameters** -- e.g. `?classifiers=http://localhost:5001`
 2. **Unified backend param** -- `?backend=http://host:port` (applies to all services)
