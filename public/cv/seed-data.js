@@ -1,6 +1,6 @@
 /**
  * Frontend seed/demo data for the CV editor.
- * Derived from the canonical JANE_DOE_DATA in packages/cv/editor/lib/seed-data.js.
+ * Derived from the canonical JANE_DOE_DATA in the andypeterson2/cv repo (editor/lib/seed-data.js).
  *
  * The coverletter is restructured into { settings, sections } to match
  * the frontend's coverletter model shape.
