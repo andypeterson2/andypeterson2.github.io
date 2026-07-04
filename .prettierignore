@@ -1,10 +1,5 @@
 dist/
 node_modules/
-# Submodules carry their own formatting config; shared-js is superproject-owned and IS formatted.
-packages/cv/
-packages/nonogram/
-packages/quantum-protein-kernel/
-packages/qvc/
-packages/ui-kit/
+# (no submodules — app frontends are vendored under public/<app>/)
 package-lock.json
 *.md

@@ -10,12 +10,13 @@ var cvApi = {
   },
 
   get: function (path) {
-    return fetch(this._base() + path);
+    return fetch(this._base() + path, { credentials: 'include' });
   },
 
   post: function (path, body) {
     return fetch(this._base() + path, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
@@ -24,6 +25,7 @@ var cvApi = {
   put: function (path, body) {
     return fetch(this._base() + path, {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
@@ -32,13 +34,14 @@ var cvApi = {
   patch: function (path, body) {
     return fetch(this._base() + path, {
       method: 'PATCH',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
   },
 
   del: function (path) {
-    return fetch(this._base() + path, { method: 'DELETE' });
+    return fetch(this._base() + path, { method: 'DELETE', credentials: 'include' });
   },
 
   /**

@@ -1,8 +1,7 @@
 version: 2
-# NOTE: this repo's packages/* are git submodules — their package.json files are
-# NOT visible here (only the gitlink commit is tracked). Dependabot can therefore
-# only update the root manifest from this config. Each submodule carries its own
-# .github/dependabot.yml in its origin repo (see packages/cv/.github/dependabot.yml).
+# This repo is the standalone Astro portal (no submodules). App frontends are vendored
+# under public/<app>/; their backends live in separate repos with their own dependabot.
+# Here we only update the root site manifest + pinned Actions.
 updates:
   # Root portfolio (Astro site) npm dependencies
   - package-ecosystem: npm

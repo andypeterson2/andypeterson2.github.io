@@ -1853,6 +1853,25 @@ import { siteConfig } from '../../../config/site';
     (function () {
       var _cvWidget = null;
 
+      // Owner-only behind Cloudflare Access: if the backend is unreachable (most
+      // likely "not signed in"), surface a Google sign-in that returns here.
+      var ACCESS_LOGIN =
+        'https://api.andypeterson.dev/cdn-cgi/access/login/api.andypeterson.dev?redirect_url=' +
+        encodeURIComponent(location.href);
+      function showSignIn() {
+        if (document.getElementById('cv-signin-banner')) return;
+        var b = document.createElement('div');
+        b.id = 'cv-signin-banner';
+        b.style.cssText =
+          'position:fixed;top:0;left:0;right:0;z-index:99999;padding:8px 12px;text-align:center;' +
+          'background:#111;color:#fff;font:14px/1.4 system-ui,sans-serif';
+        b.innerHTML =
+          '<a href="' +
+          ACCESS_LOGIN +
+          '" style="color:#7ab7ff">Sign in with Google</a> to try the editor (demo). Full access is owner-only.';
+        document.body.appendChild(b);
+      }
+
       document.addEventListener('navbar:connect-ready', function (e) {
         if (e.detail.service !== 'cv') return;
         _cvWidget = e.detail.widget;
@@ -1862,7 +1881,7 @@ import { siteConfig } from '../../../config/site';
         if (e.detail.service !== 'cv') return;
         if (_cvWidget) _cvWidget.setStatus('connecting');
         var url = e.detail.url;
-        fetch(url + '/api/health')
+        fetch(url + '/api/health', { credentials: 'include' })
           .then(function (r) {
             if (!r.ok) throw new Error('Health check failed');
             return r.json();
@@ -1882,6 +1901,7 @@ import { siteConfig } from '../../../config/site';
           .catch(function (err) {
             console.error('CV backend connect failed:', err);
             if (_cvWidget) _cvWidget.setStatus('error');
+            showSignIn(); // most likely cause behind Access: not signed in
           });
       });
 
