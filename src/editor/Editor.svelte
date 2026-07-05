@@ -38,7 +38,15 @@
         {/if}
       </div>
       <div class="statusbar">
-        <span>{editor.saveState === 'demo' ? 'demo · read-only' : `✓ ${editor.saveState}`} · {editor.variant}</span>
+        <span
+          >{editor.connected
+            ? editor.dirty
+              ? '● unsaved'
+              : '✓ saved'
+            : editor.dirty
+              ? 'demo · unsaved (local)'
+              : 'demo'} · {editor.variant}</span
+        >
         <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
     </div>
