@@ -1,18 +1,49 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
   import Document from './components/Document.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
+
+  // Auto-probe the live backend once mounted (client-only). Signed-in owner →
+  // real CV; anyone else → stays on the local demo + a sign-in offer.
+  onMount(() => {
+    editor.connect();
+  });
 </script>
 
 <div class="stage">
   <div class="menubar">
     <span class="mark">◆</span><strong>CV&nbsp;Editor</strong>
     <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span>
-    <span class="right"><span><span class="dot" class:live={editor.connected}></span>{editor.connected ? 'connected' : 'demo'}</span></span>
+    <span class="right">
+      <button
+        class="conn"
+        onclick={() => editor.connect()}
+        disabled={editor.connecting}
+        title="Connect to the live backend"
+      >
+        <span class="dot" class:live={editor.connected} class:busy={editor.connecting}></span>{editor.connecting
+          ? 'connecting…'
+          : editor.connected
+            ? 'connected'
+            : 'demo'}
+      </button>
+    </span>
   </div>
+
+  {#if editor.connectError === 'signin' && !editor.connected}
+    <div class="signin">
+      <span
+        >Local demo — <a href={editor.signInUrl()}>Sign in with Google</a> to connect to the live editor.</span
+      >
+      <button class="dismiss" aria-label="Dismiss" onclick={() => (editor.connectError = null)}
+        >×</button
+      >
+    </div>
+  {/if}
 
   <div class="workspace">
     <div class="toolbar">
@@ -61,6 +92,12 @@
   .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-weight: 400; }
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #c0392b; border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
   .dot.live { background: var(--live); }
+  .dot.busy { background: #d9a520; }
+  .conn { font: inherit; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+  .conn:disabled { cursor: default; }
+  .signin { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px; background: var(--ink); color: var(--paper); font-size: 12.5px; }
+  .signin a { color: #9ec7ff; font-weight: 700; }
+  .dismiss { background: none; border: 0; color: var(--paper); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }
   .workspace { max-width: 1040px; margin: 0 auto; padding: 26px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }

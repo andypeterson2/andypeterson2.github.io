@@ -2,6 +2,7 @@
 import type { Person, Selection, Section, Entry } from './types';
 import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
+import { api } from './api';
 
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
@@ -12,6 +13,8 @@ class EditorState {
   previewOpen = $state(false);
   variant = $state('Master');
   dirty = $state(false);
+  connecting = $state(false);
+  connectError = $state<null | 'signin' | 'offline'>(null);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -79,6 +82,31 @@ class EditorState {
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
     this.dirty = false;
+  }
+
+  /** Try to load the active person from the live backend (read-only). */
+  async connect() {
+    if (this.connecting) return;
+    this.connecting = true;
+    this.connectError = null;
+    const res = await api.fetchActivePerson();
+    this.connecting = false;
+    if (res.ok && res.data) {
+      this.loadPerson(res.data);
+    } else if (res.error?.code === 'auth_required') {
+      this.connectError = 'signin';
+    } else {
+      this.connectError = 'offline';
+    }
+  }
+
+  /** Cloudflare Access login that returns to this page once signed in. */
+  signInUrl(): string {
+    const here = typeof location !== 'undefined' ? location.href : '/';
+    return (
+      'https://api.andypeterson.dev/cdn-cgi/access/login/api.andypeterson.dev?redirect_url=' +
+      encodeURIComponent(here)
+    );
   }
 }
 
