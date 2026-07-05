@@ -20,7 +20,9 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^6.4.6"
+    "@astrojs/svelte": "^8.1.2",
+    "astro": "^6.4.6",
+    "svelte": "^5.56.4"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
