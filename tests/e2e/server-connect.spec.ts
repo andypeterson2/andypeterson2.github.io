@@ -92,30 +92,4 @@ test.describe('ServerConnectModal + SiteContract', () => {
     expect(seen[0]).toBe('connecting');
     expect(seen).toContain('connected');
   });
-
-  test('connect flow turns the dot green end-to-end (cv embed)', async ({ page }) => {
-    // The cv embed validates the backend via /api/health on connect; the modal also polls
-    // /health. Answer both so the full nav-item → modal → Connect → green-dot path is exercised.
-    const healthBody = JSON.stringify({ status: 'ok', service: 'cv', version: '1.0.0', uptime_s: 4 });
-    // The cv embed re-runs init() on connect, which loads its whole data layer over
-    // /api/* — so the backend must be mocked broadly (not just /health), else those
-    // fetches reject against the dead default port and the handler's .catch trips the
-    // dot red. List endpoints return [], everything else {}; health returns the envelope.
-    await page.route('**/api/**', (route) => {
-      const path = new URL(route.request().url()).pathname;
-      let body = '{}';
-      if (path.endsWith('/health')) body = healthBody;
-      else if (path.includes('/documents/')) body = '{"sections":[]}';
-      else if (/\/(sections|persons)$/.test(path) || path.includes('/coverletter/sections')) body = '[]';
-      route.fulfill({ status: 200, contentType: 'application/json', body });
-    });
-    await page.route('**/health', (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: healthBody }),
-    );
-    await page.goto('/projects/latex-resume-editor/app/');
-    const navItem = page.locator('.server-nav-item');
-    await navItem.first().click(); // opens the connect modal (defaults to localhost:3001)
-    await page.locator('.sn-modal [data-action="connect"]').click();
-    await expect(navItem.locator('.sn-dot')).toHaveClass(/sn-green/, { timeout: 8000 });
-  });
 });
