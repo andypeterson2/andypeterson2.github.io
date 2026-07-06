@@ -91,14 +91,21 @@ class EditorState {
     this.connecting = true;
     this.connectError = null;
     const res = await api.fetchActivePerson();
-    this.connecting = false;
     if (res.ok && res.data) {
+      this.connecting = false;
       this.loadPerson(res.data);
-    } else if (res.error?.code === 'auth_required') {
+      return;
+    }
+    // Not loaded. A not-signed-in request 302s to the Access login on another
+    // origin, surfacing as a network/CORS error — so probe the public health
+    // endpoint to tell "needs sign-in" (gateway reachable) from a real outage.
+    if (res.error?.code === 'auth_required') {
       this.connectError = 'signin';
     } else {
-      this.connectError = 'offline';
+      const health = await api.health();
+      this.connectError = health.ok ? 'signin' : 'offline';
     }
+    this.connecting = false;
   }
 
   /**
