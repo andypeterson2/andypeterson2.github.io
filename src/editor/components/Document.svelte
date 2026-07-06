@@ -38,6 +38,12 @@
     }
   }
 
+  const hl = $derived(editor.highlightTag);
+  function matches(e: { tags: string[]; items: { tags: string[] }[] }): boolean {
+    if (!hl) return true;
+    return e.tags.includes(hl) || e.items.some((i) => i.tags.includes(hl));
+  }
+
   // Scroll a newly-created section into view once it renders.
   $effect(() => {
     const id = editor.scrollTarget;
@@ -97,6 +103,7 @@
         {:else if pe}
           <div
             class="para entry-hit"
+            class:dim={hl && !matches(pe)}
             role="button"
             tabindex="0"
             onclick={() => pick(section.id, pe.id)}
@@ -114,6 +121,7 @@
           {:else}
             <div
               class="skill entry-hit"
+              class:dim={hl && !matches(e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -133,6 +141,7 @@
           {:else}
             <div
               class="entry"
+              class:dim={hl && !matches(e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -155,6 +164,7 @@
           {:else}
             <div
               class="entry"
+              class:dim={hl && !matches(e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -177,6 +187,7 @@
           {:else}
             <div
               class="entry"
+              class:dim={hl && !matches(e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -383,6 +394,10 @@
   .doc-head:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 1px;
+  }
+  .dim {
+    opacity: 0.28;
+    transition: opacity 0.15s;
   }
   .entry-line {
     display: flex;
