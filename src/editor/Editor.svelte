@@ -3,6 +3,9 @@
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
   import Document from './components/Document.svelte';
+  import Drawer from './components/Drawer.svelte';
+  import StyleDrawer from './components/StyleDrawer.svelte';
+  import LayoutsDrawer from './components/LayoutsDrawer.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -70,11 +73,16 @@
         {/if}
       </span>
       <span class="field">Variant <span class="popup">{editor.variant} ▾</span></span>
-      <button class="btn icon" title="Variant settings">⚙</button>
+      <button
+        class="btn icon"
+        class:on={editor.openDrawer === 'variant'}
+        title="Variant settings"
+        onclick={() => (editor.openDrawer = 'variant')}>⚙</button
+      >
       <span class="sp"></span>
-      <button class="btn">Tags</button>
-      <button class="btn">Layout</button>
-      <button class="btn">Style</button>
+      <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
+      <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
+      <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
       <button class="btn" class:on={editor.previewOpen} onclick={() => editor.togglePreview()}>◱ Preview</button>
     </div>
 
@@ -105,10 +113,25 @@
       </div>
     </div>
   </div>
+
+  {#if editor.openDrawer === 'style'}
+    <Drawer title="Style"><StyleDrawer /></Drawer>
+  {:else if editor.openDrawer === 'layouts'}
+    <Drawer title="Layouts"><LayoutsDrawer /></Drawer>
+  {:else if editor.openDrawer === 'tags'}
+    <Drawer title="Tags"
+      ><p class="soon">Tag management — add/remove tags on entries + the catalog — is the next drawer.</p></Drawer
+    >
+  {:else if editor.openDrawer === 'variant'}
+    <Drawer title="Variant"
+      ><p class="soon">Variants + the variant lens (dim excluded content in place) are coming next.</p></Drawer
+    >
+  {/if}
 </div>
 
 <style>
   .stage { min-height: 100vh; padding-bottom: 34px; }
+  .soon { font-size: 13px; line-height: 1.6; color: #55534e; margin: 0; }
   .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
   .mark { font-size: 15px; }
   .menu { font-weight: 400; }
