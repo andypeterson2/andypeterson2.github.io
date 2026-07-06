@@ -92,9 +92,11 @@
       <div class="statusbar">
         <span
           >{editor.connected
-            ? editor.dirty
-              ? '● unsaved'
-              : '✓ saved'
+            ? editor.saveState === 'saving'
+              ? 'saving…'
+              : editor.saveState === 'error'
+                ? '⚠ save failed'
+                : '✓ saved'
             : editor.dirty
               ? 'demo · unsaved (local)'
               : 'demo'} · {editor.variant}</span

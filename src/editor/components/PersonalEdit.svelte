@@ -33,7 +33,7 @@
         <input
           class="in"
           bind:value={editor.person.personal[f.key]}
-          oninput={() => editor.edited()}
+          oninput={() => editor.savePersonal(f.key)}
         />
       </label>
     {/each}

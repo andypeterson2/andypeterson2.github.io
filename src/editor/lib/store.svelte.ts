@@ -1,5 +1,5 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
-import type { Person, Selection, Section, Entry } from './types';
+import type { Person, Selection, Section, Entry, Item } from './types';
 import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
@@ -30,37 +30,102 @@ class EditorState {
     this.selection = { kind: 'none' };
   }
 
-  /** Flag unsaved edits. (Autosave to the API lands in a later increment.) */
+  /** Flag unsaved edits (used in demo, where there's no backend to save to). */
   edited() {
     this.dirty = true;
   }
 
-  // ---- content mutations (reactive — Svelte $state proxies are deep) ----
-  addEntry(section: Section) {
+  private timers: Record<string, ReturnType<typeof setTimeout>> = {};
+  private debounce(key: string, fn: () => void, delay = 600) {
+    clearTimeout(this.timers[key]);
+    this.timers[key] = setTimeout(fn, delay);
+  }
+  private settle(ok: boolean) {
+    this.saveState = ok ? 'saved' : 'error';
+  }
+
+  // ---- debounced field autosave (connected only; demo stays local) ----
+  saveEntry(entry: Entry) {
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.debounce(`entry.${entry.id}`, () => {
+      void api.updateEntry(entry.id, entry.fields).then((r) => this.settle(r.ok));
+    });
+  }
+  saveItem(item: Item) {
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.debounce(`item.${item.id}`, () => {
+      void api
+        .updateItem(item.id, { content: item.content, title: item.title ?? '' })
+        .then((r) => this.settle(r.ok));
+    });
+  }
+  savePersonal(key: string) {
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    const pid = this.activePersonId;
+    this.saveState = 'saving';
+    this.debounce(`personal.${key}`, () => {
+      void api
+        .updatePersonal(pid, { [key]: this.person.personal[key] ?? '' })
+        .then((r) => this.settle(r.ok));
+    });
+  }
+
+  // ---- content mutations (persist immediately when connected) ----
+  async addEntry(section: Section) {
     const entry: Entry = {
       id: this.seq++,
       fields: defaultFields(section.type),
       items: [],
       tags: [],
     };
+    const tempId = entry.id;
     section.entries.push(entry);
-    this.select({ kind: 'entry', sectionId: section.id, entryId: entry.id });
-    this.edited();
+    this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const res = await api.createEntry(section.id, entry.fields);
+    if (res.ok && res.data) {
+      entry.id = res.data.id; // reconcile temp id → server id
+      if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
+        this.selection = { kind: 'entry', sectionId: section.id, entryId: res.data.id };
+      }
+    }
+    this.settle(res.ok);
   }
-  deleteEntry(section: Section, entryId: number) {
+  async deleteEntry(section: Section, entryId: number) {
     section.entries = section.entries.filter((e) => e.id !== entryId);
     this.clearSelection();
-    this.edited();
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.deleteEntry(entryId)).ok);
   }
-  addBullet(entry: Entry) {
-    entry.items.push({ id: this.seq++, content: '', tags: [] });
-    this.edited();
+  async addBullet(entry: Entry) {
+    const item: Item = { id: this.seq++, content: '', title: '', tags: [] };
+    entry.items.push(item);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const res = await api.createItem(entry.id, { content: '', title: '' });
+    if (res.ok && res.data) item.id = res.data.id;
+    this.settle(res.ok);
   }
-  deleteBullet(entry: Entry, itemId: number) {
+  async deleteBullet(entry: Entry, itemId: number) {
     entry.items = entry.items.filter((i) => i.id !== itemId);
-    this.edited();
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.deleteItem(itemId)).ok);
   }
   addSection(type: string) {
+    // Section creation isn't persisted yet — demo-only (the picker is hidden when
+    // connected). Existing sections' entries/bullets are fully editable.
     const s: Section = {
       id: `s-${this.seq++}`,
       type,
@@ -68,12 +133,7 @@ class EditorState {
       entries: [],
     };
     this.person.sections.push(s);
-    this.edited();
-  }
-  deleteSection(sectionId: Section['id']) {
-    this.person.sections = this.person.sections.filter((s) => s.id !== sectionId);
-    this.clearSelection();
-    this.edited();
+    this.dirty = true;
   }
 
   togglePreview() {
