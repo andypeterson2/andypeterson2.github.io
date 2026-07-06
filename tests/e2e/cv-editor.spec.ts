@@ -25,9 +25,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route('**/api/**', (route) => route.abort());
     await page.goto('/projects/latex-resume-editor/app/');
 
-    await page.locator('.entry').first().click();
+    // Retry the click until the island has hydrated and the handler is live
+    // (the demo document is server-rendered, so the entry exists before hydration).
     const inline = page.locator('.doc .edit');
-    await expect(inline).toBeVisible();
+    await expect(async () => {
+      await page.locator('.entry').first().click();
+      await expect(inline).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+
     // Role fields + the collapse control for an experience entry.
     await expect(inline.locator('.lbl', { hasText: 'Position' })).toBeVisible();
     await expect(inline.locator('button', { hasText: 'Done' })).toBeVisible();
