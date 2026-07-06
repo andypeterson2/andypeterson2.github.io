@@ -43,7 +43,12 @@
               {#each f.options as opt (opt)}<option value={opt}>{opt || '—'}</option>{/each}
             </select>
           {:else}
-            <input class="in" bind:value={entry.fields[f.key]} oninput={() => editor.saveEntry(entry)} />
+            <input
+              class="in"
+              placeholder={f.label}
+              bind:value={entry.fields[f.key]}
+              oninput={() => editor.saveEntry(entry)}
+            />
           {/if}
         </label>
       {/each}
