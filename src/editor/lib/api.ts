@@ -95,20 +95,21 @@ export class CvApi {
 
   private async req<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
     try {
+      // redirect:'follow' (the default): an AUTHENTICATED request can pass
+      // through an Access redirect before landing on its 200, so we must follow
+      // it. (redirect:'manual' stops at that hop and misreads a signed-in user
+      // as signed-out.) A NOT-signed-in request 302s to the IdP on another
+      // origin and fails CORS on the follow → a network_error the caller
+      // classifies via a health probe.
       const res = await fetch(`${this.base}/api${path}`, {
         credentials: 'include',
-        // Access answers an unauthenticated request with a 302 to the IdP. With
-        // redirect:'manual' the browser surfaces it as an opaqueredirect instead
-        // of chasing it cross-origin and logging a CORS error — that's our
-        // "not signed in" signal.
-        redirect: 'manual',
         headers: init.body ? { 'Content-Type': 'application/json' } : undefined,
         ...init,
       });
-      if (res.type === 'opaqueredirect' || res.status === 401 || res.status === 403) {
+      if (res.status === 401 || res.status === 403) {
         return {
           ok: false,
-          status: res.status || 0,
+          status: res.status,
           error: { code: 'auth_required', message: 'Sign-in required' },
         };
       }
