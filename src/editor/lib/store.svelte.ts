@@ -29,6 +29,15 @@ class EditorState {
   activePersonId = $state<number | null>(null);
   /** a section id the document should scroll into view (set on create) */
   scrollTarget = $state<number | string | null>(null);
+  openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style'>(null);
+  style = $state({
+    accentColor: 'spinel',
+    customHex: '',
+    pageSize: 'letterpaper',
+    fontSize: '11pt',
+  });
+  layouts = $state<{ id: string; name: string; status: string }[]>([]);
+  defaultLayout = $state<string | null>(null);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -183,6 +192,44 @@ class EditorState {
     this.saveState = 'saving';
     const ids = this.person.sections.map((s) => s.id);
     this.settle((await api.reorderSections(this.activePersonId, ids)).ok);
+  }
+
+  // ---- drawers: global style + layouts ----
+  async loadStyle() {
+    if (!this.connected) return;
+    const res = await api.getSettings('style');
+    if (!res.ok || !res.data) return;
+    for (const [k, v] of Object.entries(res.data)) {
+      const field = k.replace(/^style\./, '');
+      if (field in this.style && typeof v === 'string') {
+        (this.style as Record<string, string>)[field] = v;
+      }
+    }
+  }
+  saveStyle(field: 'accentColor' | 'customHex' | 'pageSize' | 'fontSize') {
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.debounce(`style.${field}`, () => {
+      void api
+        .patchSettings({ [`style.${field}`]: this.style[field] })
+        .then((r) => this.settle(r.ok));
+    });
+  }
+  async loadLayouts() {
+    if (!this.connected) return;
+    const res = await api.getLayouts();
+    if (res.ok && res.data) {
+      this.layouts = res.data.layouts ?? [];
+      this.defaultLayout = res.data.default ?? null;
+    }
+  }
+  async chooseLayout(id: string) {
+    this.defaultLayout = id;
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.setDefaultLayout(id)).ok);
   }
 
   togglePreview() {
