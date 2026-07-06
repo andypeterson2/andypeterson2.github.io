@@ -292,6 +292,20 @@ export class CvApi {
   setDefaultLayout(id: string) {
     return this.req('/layouts/default', { method: 'PUT', body: JSON.stringify({ layout_id: id }) });
   }
+
+  // ---- tags on entries + items ----
+  addEntryTags(entryId: number, tags: string[]) {
+    return this.req(`/entries/${entryId}/tags`, { method: 'POST', body: JSON.stringify({ tags }) });
+  }
+  removeEntryTag(entryId: number, tag: string) {
+    return this.req(`/entries/${entryId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+  }
+  addItemTags(itemId: number, tags: string[]) {
+    return this.req(`/items/${itemId}/tags`, { method: 'POST', body: JSON.stringify({ tags }) });
+  }
+  removeItemTag(itemId: number, tag: string) {
+    return this.req(`/items/${itemId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new CvApi();

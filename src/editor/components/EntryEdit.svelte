@@ -5,6 +5,7 @@
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
   import { sortable } from '../lib/sortable';
+  import TagChips from './TagChips.svelte';
   import type { Entry, Section } from '../lib/types';
 
   let { section, entry }: { section: Section; entry: Entry } = $props();
@@ -55,6 +56,15 @@
       {/each}
     </div>
 
+    <div class="tags-row">
+      <span class="tags-lbl">Tags</span>
+      <TagChips
+        tags={entry.tags}
+        onAdd={(t) => editor.addEntryTags(entry, [t])}
+        onRemove={(t) => editor.removeEntryTag(entry, t)}
+      />
+    </div>
+
     {#if def?.hasItems}
       <div class="bl-wrap" use:sortable={{ onReorder: (f, t) => editor.reorderItems(entry, f, t) }}>
         {#each entry.items as it (it.id)}
@@ -80,6 +90,11 @@
                 bind:value={it.content}
                 oninput={() => editor.saveItem(it)}
               ></textarea>
+              <TagChips
+                tags={it.tags}
+                onAdd={(t) => editor.addItemTags(it, [t])}
+                onRemove={(t) => editor.removeItemTag(it, t)}
+              />
             </div>
             <button
               class="mini danger x"
@@ -151,6 +166,20 @@
     display: flex;
     flex-direction: column;
     gap: 9px;
+  }
+  .tags-row {
+    display: grid;
+    grid-template-columns: 116px 1fr;
+    align-items: start;
+    gap: 12px;
+    margin-top: 11px;
+  }
+  .tags-lbl {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #4a4944;
+    padding-top: 3px;
   }
   .fld {
     display: grid;
