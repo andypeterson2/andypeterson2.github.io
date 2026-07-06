@@ -26,11 +26,7 @@
     },
     {
       "path": "/projects/latex-resume-editor/app/",
-      "title": "LaTeX Resume Editor",
-      "backend": {
-        "service": "cv",
-        "defaultPort": 3001
-      }
+      "title": "LaTeX Resume Editor"
     },
     {
       "path": "/projects/quantum-nonogram-solver/",
