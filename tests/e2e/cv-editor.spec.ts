@@ -155,4 +155,82 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.statusbar')).toContainText('saved', { timeout: 5000 });
     expect(putBody?.fields?.position).toBe('Lead 50\\%');
   });
+
+  test('creates a section against the backend when connected', async ({ page }) => {
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 11, fields: { position: 'x' }, tags: [], items: [] }],
+        },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    let postBody: { slug?: string; type?: string; title?: string } | null = null;
+    await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) => {
+      postBody = r.request().postDataJSON();
+      return r.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 99 }),
+      });
+    });
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    await page.locator('.add-section').click();
+    await page.locator('.picker .pick').filter({ hasText: 'Skills' }).first().click();
+
+    await expect.poll(() => postBody?.type).toBe('skills');
+    expect(postBody?.slug).toBe('skills');
+    await expect(page.locator('.sec-head h2').filter({ hasText: 'Skills' })).toBeVisible();
+  });
+
+  test('deletes a section via the backend (confirmed)', async ({ page }) => {
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        { id: 2, type: 'experience', title: 'Experience', entries: [] },
+        { id: 3, type: 'skills', title: 'Skills', entries: [] },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    let deletedPath: string | null = null;
+    await page.route(/\/cv\/api\/sections\/\d+$/, (r) => {
+      deletedPath = new URL(r.request().url()).pathname;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    page.on('dialog', (d) => void d.accept());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    const exp = page.locator('.sec').filter({ hasText: 'Experience' }).first();
+    await exp.locator('.tool.danger').click();
+
+    await expect.poll(() => deletedPath).toContain('/sections/2');
+    await expect(page.locator('.sec-head h2').filter({ hasText: 'Experience' })).toHaveCount(0);
+  });
 });
