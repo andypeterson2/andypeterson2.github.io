@@ -274,4 +274,27 @@ test.describe('CV editor (document-first rewrite)', () => {
     await entries.nth(1).dragTo(entries.nth(0));
     await expect.poll(() => orderBody?.ids).toEqual([12, 11]);
   });
+
+  test('toolbar opens and closes the drawers', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    // Style drawer — accent swatches; close box dismisses.
+    await page.getByRole('button', { name: 'Style', exact: true }).click();
+    await expect(page.locator('.drawer')).toContainText('Accent color');
+    await expect(page.locator('.drawer .swatch')).toHaveCount(9);
+    await page.locator('.drawer .close').click();
+    await expect(page.locator('.drawer')).toHaveCount(0);
+
+    // Layouts drawer — Escape dismisses.
+    await page.getByRole('button', { name: 'Layout', exact: true }).click();
+    await expect(page.locator('.drawer')).toContainText('LaTeX template');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.drawer')).toHaveCount(0);
+
+    // Tags placeholder.
+    await page.getByRole('button', { name: 'Tags', exact: true }).click();
+    await expect(page.locator('.drawer')).toContainText('next drawer');
+  });
 });

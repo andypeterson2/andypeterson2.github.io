@@ -275,6 +275,23 @@ export class CvApi {
       body: JSON.stringify({ ids }),
     });
   }
+
+  // ---- global settings (style/spacing/fonts) + layouts ----
+  getSettings(prefix: string) {
+    return this.req<Record<string, unknown>>(`/settings?prefix=${prefix}`);
+  }
+  patchSettings(patch: Record<string, string>) {
+    return this.req('/settings', { method: 'PATCH', body: JSON.stringify(patch) });
+  }
+  getLayouts() {
+    return this.req<{
+      layouts: { id: string; name: string; status: string }[];
+      default: string | null;
+    }>('/layouts');
+  }
+  setDefaultLayout(id: string) {
+    return this.req('/layouts/default', { method: 'PUT', body: JSON.stringify({ layout_id: id }) });
+  }
 }
 
 export const api = new CvApi();
