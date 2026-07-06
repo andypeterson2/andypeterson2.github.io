@@ -69,8 +69,25 @@ function untex(s: string | undefined): string {
     .replace(/\\\$/g, '$')
     .replace(/\\#/g, '#')
     .replace(/\\_/g, '_')
-    .replace(/\s*--\s*/g, ' – ')
-    .replace(/~/g, ' ');
+    .replace(/--/g, '–');
+}
+/** Inverse of untex — display text → LaTeX, for writes. Negative lookbehind
+ *  avoids double-escaping anything already escaped. Keep this the exact mirror
+ *  of untex so read→edit→write round-trips are lossless. */
+function tex(s: string): string {
+  if (!s) return '';
+  return s
+    .replace(/(?<!\\)%/g, '\\%')
+    .replace(/(?<!\\)&/g, '\\&')
+    .replace(/(?<!\\)\$/g, '\\$')
+    .replace(/(?<!\\)#/g, '\\#')
+    .replace(/(?<!\\)_/g, '\\_')
+    .replace(/–/g, '--');
+}
+function texFields(fields: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fields)) out[k] = tex(v);
+  return out;
 }
 
 function mapItem(it: RawMasterItem): Item {
@@ -190,6 +207,46 @@ export class CvApi {
       return { ok: false, status: loaded.status, error: loaded.error };
     }
     return { ok: true, status: 200, data: { person: loaded.data, persons } };
+  }
+
+  // ---- writes (display text is LaTeX-escaped on the way out) ----
+  updateEntry(id: number, fields: Record<string, string>) {
+    return this.req(`/entries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ fields: texFields(fields) }),
+    });
+  }
+  updateItem(id: number, patch: { content?: string; title?: string }) {
+    const body: Record<string, string> = {};
+    if (patch.content !== undefined) body.content = tex(patch.content);
+    if (patch.title !== undefined) body.title = tex(patch.title);
+    return this.req(`/items/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+  }
+  updatePersonal(pid: number, patch: Record<string, string>) {
+    const body: Record<string, string> = {};
+    for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
+    return this.req(`/persons/${pid}/personal`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  }
+  createEntry(sectionId: number | string, fields: Record<string, string>) {
+    return this.req<{ id: number }>(`/sections/${sectionId}/entries`, {
+      method: 'POST',
+      body: JSON.stringify({ fields: texFields(fields) }),
+    });
+  }
+  deleteEntry(id: number) {
+    return this.req(`/entries/${id}`, { method: 'DELETE' });
+  }
+  createItem(entryId: number, item: { content: string; title?: string }) {
+    return this.req<{ id: number }>(`/entries/${entryId}/items`, {
+      method: 'POST',
+      body: JSON.stringify({ content: tex(item.content), title: tex(item.title ?? '') }),
+    });
+  }
+  deleteItem(id: number) {
+    return this.req(`/items/${id}`, { method: 'DELETE' });
   }
 }
 

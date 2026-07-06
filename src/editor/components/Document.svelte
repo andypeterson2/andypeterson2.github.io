@@ -160,8 +160,10 @@
     </section>
   {/each}
 
-  <div class="add-wrap">
-    {#if picking}
+  {#if !editor.connected}
+    <!-- Section creation isn't persisted yet — demo-only for now. -->
+    <div class="add-wrap">
+      {#if picking}
       <div class="picker">
         {#each Object.entries(presets) as [cat, items] (cat)}
           <div class="pick-cat">{cat}</div>
@@ -176,8 +178,9 @@
       </div>
     {:else}
       <button class="add-section" onclick={() => (picking = true)}>＋ Add section</button>
-    {/if}
-  </div>
+      {/if}
+    </div>
+  {/if}
 </article>
 
 <style>

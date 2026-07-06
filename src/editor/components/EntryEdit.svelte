@@ -31,7 +31,7 @@
       rows="5"
       placeholder="Write your summary…"
       bind:value={entry.fields.text}
-      oninput={() => editor.edited()}
+      oninput={() => editor.saveEntry(entry)}
     ></textarea>
   {:else}
     <div class="fields">
@@ -39,11 +39,11 @@
         <label class="fld">
           <span class="lbl">{f.label}</span>
           {#if f.options}
-            <select class="in" bind:value={entry.fields[f.key]} onchange={() => editor.edited()}>
+            <select class="in" bind:value={entry.fields[f.key]} onchange={() => editor.saveEntry(entry)}>
               {#each f.options as opt (opt)}<option value={opt}>{opt || '—'}</option>{/each}
             </select>
           {:else}
-            <input class="in" bind:value={entry.fields[f.key]} oninput={() => editor.edited()} />
+            <input class="in" bind:value={entry.fields[f.key]} oninput={() => editor.saveEntry(entry)} />
           {/if}
         </label>
       {/each}
@@ -59,14 +59,14 @@
                 class="in bl-title"
                 placeholder="lead-in (optional)"
                 bind:value={it.title}
-                oninput={() => editor.edited()}
+                oninput={() => editor.saveItem(it)}
               />
               <textarea
                 class="in bl-content"
                 rows="2"
                 placeholder={`${def.itemLabel ?? 'Bullet'} text…`}
                 bind:value={it.content}
-                oninput={() => editor.edited()}
+                oninput={() => editor.saveItem(it)}
               ></textarea>
             </div>
             <button
