@@ -28,8 +28,13 @@
     }
   }
   function chooseSection(type: string) {
-    editor.addSection(type);
+    void editor.addSection(type);
     picking = false;
+  }
+  function confirmDelete(section: Section) {
+    if (window.confirm(`Delete the "${section.title}" section and everything in it?`)) {
+      void editor.deleteSection(section.id);
+    }
   }
 </script>
 
@@ -56,6 +61,7 @@
         <h2>{section.title}</h2>
         <span class="sec-tools">
           <button class="tool" title="Add entry" aria-label="Add entry" onclick={() => editor.addEntry(section)}>＋</button>
+          <button class="tool danger" title="Delete section" aria-label="Delete section" onclick={() => confirmDelete(section)}>×</button>
         </span>
       </div>
 
@@ -160,10 +166,8 @@
     </section>
   {/each}
 
-  {#if !editor.connected}
-    <!-- Section creation isn't persisted yet — demo-only for now. -->
-    <div class="add-wrap">
-      {#if picking}
+  <div class="add-wrap">
+    {#if picking}
       <div class="picker">
         {#each Object.entries(presets) as [cat, items] (cat)}
           <div class="pick-cat">{cat}</div>
@@ -178,9 +182,8 @@
       </div>
     {:else}
       <button class="add-section" onclick={() => (picking = true)}>＋ Add section</button>
-      {/if}
-    </div>
-  {/if}
+    {/if}
+  </div>
 </article>
 
 <style>
@@ -253,6 +256,10 @@
   .tool:hover {
     border-color: var(--ink);
     color: var(--ink);
+  }
+  .tool.danger:hover {
+    border-color: #9c2b3f;
+    color: #9c2b3f;
   }
   .para {
     font-size: 14px;

@@ -248,6 +248,15 @@ export class CvApi {
   deleteItem(id: number) {
     return this.req(`/items/${id}`, { method: 'DELETE' });
   }
+  createSection(pid: number, section: { slug: string; type: string; title: string }) {
+    return this.req<{ id: number }>(`/persons/${pid}/sections`, {
+      method: 'POST',
+      body: JSON.stringify(section),
+    });
+  }
+  deleteSection(id: number | string) {
+    return this.req(`/sections/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const api = new CvApi();
