@@ -293,8 +293,51 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer')).toHaveCount(0);
 
-    // Tags placeholder.
+    // Tags drawer — the spotlight note; close box dismisses.
     await page.getByRole('button', { name: 'Tags', exact: true }).click();
-    await expect(page.locator('.drawer')).toContainText('next drawer');
+    await expect(page.locator('.drawer')).toContainText('spotlight where it');
+    await page.locator('.drawer .close').click();
+    await expect(page.locator('.drawer')).toHaveCount(0);
+  });
+
+  test('tags drawer spotlights matching entries; chips edit tags inline', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    // The demo profile's baked-in vocabulary surfaces with usage counts
+    // (#backend sits on 2 entries + 2 bullets → 4).
+    await page.getByRole('button', { name: 'Tags', exact: true }).click();
+    const drawer = page.locator('.drawer');
+    const backendRow = drawer.locator('.row', { hasText: 'backend' });
+    await expect(backendRow).toContainText('4');
+
+    // Spotlight #backend: entries carrying it stay lit, the untagged summary dims.
+    await backendRow.click();
+    await expect(page.locator('.doc .para')).toHaveClass(/dim/);
+    await expect(page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' })).not.toHaveClass(
+      /dim/,
+    );
+
+    // Clearing the spotlight restores everything.
+    await drawer.locator('.clear').click();
+    await expect(page.locator('.doc .para')).not.toHaveClass(/dim/);
+    await page.keyboard.press('Escape');
+    await expect(drawer).toHaveCount(0);
+
+    // Inline chips: open an untagged entry and add + remove a tag.
+    const inline = page.locator('.doc .edit');
+    await expect(async () => {
+      await page.locator('.entry').filter({ hasText: 'State University' }).click();
+      await expect(inline).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+
+    const tagIn = inline.locator('.tags-row .tag-in');
+    await tagIn.fill('honors');
+    await tagIn.press('Enter');
+    await expect(inline.locator('.tags-row .chip')).toContainText('#honors');
+
+    await inline.locator('.tags-row .chip .cx').click();
+    await expect(inline.locator('.tags-row .chip')).toHaveCount(0);
   });
 });

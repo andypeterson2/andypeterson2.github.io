@@ -6,6 +6,7 @@
   import Drawer from './components/Drawer.svelte';
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
+  import TagsDrawer from './components/TagsDrawer.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -119,9 +120,7 @@
   {:else if editor.openDrawer === 'layouts'}
     <Drawer title="Layouts"><LayoutsDrawer /></Drawer>
   {:else if editor.openDrawer === 'tags'}
-    <Drawer title="Tags"
-      ><p class="soon">Tag management — add/remove tags on entries + the catalog — is the next drawer.</p></Drawer
-    >
+    <Drawer title="Tags"><TagsDrawer /></Drawer>
   {:else if editor.openDrawer === 'variant'}
     <Drawer title="Variant"
       ><p class="soon">Variants + the variant lens (dim excluded content in place) are coming next.</p></Drawer

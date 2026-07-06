@@ -41,6 +41,21 @@ class EditorState {
   defaultLayout = $state<string | null>(null);
   /** accent hex the document themes with — mirrors the Style drawer live. */
   accentHex = $derived(resolveAccent(this.style.accentColor, this.style.customHex));
+  /** a tag to spotlight — entries without it dim in the document. */
+  highlightTag = $state<string | null>(null);
+  /** the profile's tag vocabulary with usage counts (derived from content). */
+  tagVocab = $derived.by(() => {
+    const counts = new Map<string, number>();
+    for (const s of this.person.sections) {
+      for (const e of s.entries) {
+        for (const t of e.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+        for (const it of e.items) for (const t of it.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => a.tag.localeCompare(b.tag));
+  });
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -233,6 +248,40 @@ class EditorState {
     if (!this.connected) return;
     this.saveState = 'saving';
     this.settle((await api.setDefaultLayout(id)).ok);
+  }
+
+  // ---- tags on entries + bullets (optimistic; persisted when connected) ----
+  async addEntryTags(entry: Entry, tags: string[]) {
+    const fresh = tags.map((t) => t.trim()).filter((t) => t && !entry.tags.includes(t));
+    if (!fresh.length) return;
+    entry.tags = [...entry.tags, ...fresh];
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.addEntryTags(entry.id, fresh)).ok);
+  }
+  async removeEntryTag(entry: Entry, tag: string) {
+    entry.tags = entry.tags.filter((t) => t !== tag);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.removeEntryTag(entry.id, tag)).ok);
+  }
+  async addItemTags(item: Item, tags: string[]) {
+    const fresh = tags.map((t) => t.trim()).filter((t) => t && !item.tags.includes(t));
+    if (!fresh.length) return;
+    item.tags = [...item.tags, ...fresh];
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.addItemTags(item.id, fresh)).ok);
+  }
+  async removeItemTag(item: Item, tag: string) {
+    item.tags = item.tags.filter((t) => t !== tag);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.removeItemTag(item.id, tag)).ok);
   }
 
   togglePreview() {
