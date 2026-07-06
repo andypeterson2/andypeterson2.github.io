@@ -48,4 +48,61 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Sign-in is a button that opens the Access login popup (no hand-built URL).
     await expect(banner.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
   });
+
+  test('loads and renders a real profile when authenticated', async ({ page }) => {
+    // The reworked backend is id-addressable: GET /persons lists profiles,
+    // GET /persons/:pid returns the full master. Mock both and assert the mapper
+    // renders the profile's name + entries (not the demo).
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: {
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        position: 'Analyst',
+        email: 'ada@example.com',
+      },
+      sections: [
+        {
+          id: 1,
+          type: 'summary',
+          title: 'Summary',
+          entries: [{ id: 10, fields: { text: 'Pioneer of computing.' }, items: [], tags: [] }],
+        },
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [
+            {
+              id: 11,
+              fields: {
+                position: 'Analyst',
+                organization: 'Analytical Engine Co',
+                location: 'London',
+                date: '1843',
+              },
+              tags: ['math'],
+              items: [{ id: 100, title: 'Notes', content: 'Wrote the first algorithm.', tags: [] }],
+            },
+          ],
+        },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    await page.goto('/projects/latex-resume-editor/app/');
+
+    await expect(page.locator('.conn')).toContainText('connected');
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.locator('.doc')).toContainText('Analytical Engine Co');
+    await expect(page.locator('.doc')).toContainText('Wrote the first algorithm');
+  });
 });

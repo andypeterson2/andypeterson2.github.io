@@ -2,7 +2,7 @@
 import type { Person, Selection, Section, Entry } from './types';
 import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
-import { api } from './api';
+import { api, type PersonMeta } from './api';
 
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
@@ -16,6 +16,9 @@ class EditorState {
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
   signingIn = $state(false);
+  /** Profiles available to the signed-in identity (empty in demo). */
+  persons = $state<PersonMeta[]>([]);
+  activePersonId = $state<number | null>(null);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -85,15 +88,17 @@ class EditorState {
     this.dirty = false;
   }
 
-  /** Try to load the active person from the live backend (read-only). */
+  /** Try to load a profile from the live backend (read-only). */
   async connect() {
     if (this.connecting) return;
     this.connecting = true;
     this.connectError = null;
-    const res = await api.fetchActivePerson();
+    const res = await api.fetchActive();
     if (res.ok && res.data) {
       this.connecting = false;
-      this.loadPerson(res.data);
+      this.persons = res.data.persons;
+      this.activePersonId = res.data.person.id;
+      this.loadPerson(res.data.person);
       return;
     }
     // Not loaded. A not-signed-in request 302s to the Access login on another
@@ -106,6 +111,16 @@ class EditorState {
       this.connectError = health.ok ? 'signin' : 'offline';
     }
     this.connecting = false;
+  }
+
+  /** Switch to another profile (the toolbar picker). */
+  async selectPerson(pid: number) {
+    if (pid === this.activePersonId) return;
+    const res = await api.fetchPerson(pid);
+    if (res.ok && res.data) {
+      this.activePersonId = pid;
+      this.loadPerson(res.data);
+    }
   }
 
   /**
@@ -130,15 +145,11 @@ class EditorState {
     const poll = setInterval(() => {
       void (async () => {
         tries += 1;
-        const res = await api.fetchActivePerson();
-        if (res.ok && res.data) {
+        await this.connect();
+        if (this.connected || tries >= 40 || popup.closed) {
           clearInterval(poll);
           this.signingIn = false;
-          this.loadPerson(res.data);
-          if (!popup.closed) popup.close();
-        } else if (tries >= 40 || popup.closed) {
-          clearInterval(poll);
-          this.signingIn = false;
+          if (this.connected && !popup.closed) popup.close();
         }
       })();
     }, 2500);

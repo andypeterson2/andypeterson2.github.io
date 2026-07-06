@@ -39,7 +39,7 @@
 
   {#if editor.signingIn}
     <div class="signin">
-      <span>Signing in… complete the Google login in the popup window.</span>
+      <span>Signing in… finish the Google login in the new tab — the editor connects automatically.</span>
     </div>
   {:else if editor.connectError === 'signin' && !editor.connected}
     <div class="signin">
@@ -55,7 +55,20 @@
 
   <div class="workspace">
     <div class="toolbar">
-      <span class="field">Profile <span class="popup">{fullName} ▾</span></span>
+      <span class="field"
+        >Profile
+        {#if editor.persons.length > 1}
+          <select
+            class="popup sel"
+            value={editor.activePersonId}
+            onchange={(e) => editor.selectPerson(Number(e.currentTarget.value))}
+          >
+            {#each editor.persons as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+          </select>
+        {:else}
+          <span class="popup">{fullName} ▾</span>
+        {/if}
+      </span>
       <span class="field">Variant <span class="popup">{editor.variant} ▾</span></span>
       <button class="btn icon" title="Variant settings">⚙</button>
       <span class="sp"></span>
@@ -111,6 +124,7 @@
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
   .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
+  .sel { cursor: pointer; max-width: 190px; color: var(--ink); }
   .btn { font-size: 12.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
   .btn.icon { padding: 5px 9px; font-size: 14px; }
   .btn.on { background: var(--ink); color: var(--paper); }
