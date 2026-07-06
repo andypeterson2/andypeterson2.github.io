@@ -1,19 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
-
-  // Awesome-CV accent palette (mirrors public/cv/social/accent list).
-  const ACCENT_COLORS = [
-    { key: 'awesome-emerald', hex: '#00a388', label: 'Emerald' },
-    { key: 'awesome-skyblue', hex: '#0395de', label: 'Sky Blue' },
-    { key: 'awesome-red', hex: '#dc3522', label: 'Red' },
-    { key: 'awesome-pink', hex: '#ef4089', label: 'Pink' },
-    { key: 'awesome-orange', hex: '#ff6138', label: 'Orange' },
-    { key: 'awesome-nephritis', hex: '#27ae60', label: 'Nephritis' },
-    { key: 'awesome-concrete', hex: '#95a5a6', label: 'Concrete' },
-    { key: 'awesome-darknight', hex: '#131a28', label: 'Dark Night' },
-    { key: 'spinel', hex: '#b21f5c', label: 'Spinel' },
-  ];
+  import { ACCENT_COLORS } from '../lib/accent';
 
   onMount(() => {
     void editor.loadStyle();
