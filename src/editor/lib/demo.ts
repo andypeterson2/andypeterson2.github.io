@@ -1,0 +1,132 @@
+import type { Person } from './types';
+
+// The demo résumé rendered when not connected to a backend (see design doc §4).
+// Deliberately a FICTIONAL persona — this file is committed to a public repo with
+// a PII-leakage CI gate. Real data only ever arrives at runtime from the API.
+export const DEMO_PERSON: Person = {
+  id: 0,
+  name: 'Sample',
+  personal: {
+    firstName: 'Jordan',
+    lastName: 'Rivera',
+    position: 'Senior Software Engineer',
+    email: 'jordan.rivera@example.com',
+    address: 'Portland, OR',
+    github: 'jrivera',
+    linkedin: 'jrivera',
+  },
+  sections: [
+    {
+      id: 's1',
+      type: 'summary',
+      title: 'Summary',
+      entries: [
+        {
+          id: 1,
+          fields: {
+            text: 'Senior engineer focused on backend systems, developer tooling, and getting the boring parts right. Six years shipping web platforms end to end.',
+          },
+          items: [],
+          tags: [],
+        },
+      ],
+    },
+    {
+      id: 's2',
+      type: 'experience',
+      title: 'Experience',
+      entries: [
+        {
+          id: 2,
+          tags: ['backend'],
+          fields: {
+            position: 'Senior Software Engineer',
+            organization: 'Acme Technologies',
+            location: 'Portland, OR',
+            date: '2022 – Present',
+          },
+          items: [
+            {
+              id: 1,
+              title: 'Microservices migration',
+              content: 'Led the monolith → microservices migration, cutting deploy time 60%.',
+              tags: ['backend', 'infra'],
+            },
+            {
+              id: 2,
+              content: 'Mentored four engineers through design reviews and pairing.',
+              tags: ['management'],
+            },
+          ],
+        },
+        {
+          id: 3,
+          tags: ['backend'],
+          fields: {
+            position: 'Software Engineer',
+            organization: 'Widget Co',
+            location: 'Austin, TX',
+            date: '2019 – 2022',
+          },
+          items: [
+            {
+              id: 3,
+              content: 'Designed a REST API serving 10,000 requests per second.',
+              tags: ['backend', 'apis'],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 's3',
+      type: 'skills',
+      title: 'Skills',
+      entries: [
+        {
+          id: 4,
+          fields: {
+            category: 'Languages',
+            skills: 'JavaScript, TypeScript, Python, Go, Rust, SQL',
+          },
+          items: [],
+          tags: [],
+        },
+        {
+          id: 5,
+          fields: { category: 'Frameworks', skills: 'React, Svelte, Node.js, Express, Astro' },
+          items: [],
+          tags: [],
+        },
+        {
+          id: 6,
+          fields: {
+            category: 'Infrastructure',
+            skills: 'Docker, Cloudflare Workers, Railway, GitHub Actions',
+          },
+          items: [],
+          tags: [],
+        },
+      ],
+    },
+    {
+      id: 's4',
+      type: 'education',
+      title: 'Education',
+      entries: [
+        {
+          id: 7,
+          fields: {
+            program: 'B.S.',
+            major: 'Computer Science',
+            organization: 'State University',
+            location: 'Anytown, ST',
+            date: '2015 – 2019',
+          },
+          items: [],
+          tags: [],
+        },
+      ],
+    },
+  ],
+};
