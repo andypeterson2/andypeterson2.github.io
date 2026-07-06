@@ -45,9 +45,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     const banner = page.locator('.signin');
     await expect(banner).toBeVisible();
-    await expect(banner.locator('a', { hasText: 'Sign in with Google' })).toHaveAttribute(
-      'href',
-      /cdn-cgi\/access\/login\/api\.andypeterson\.dev\?redirect_url=/,
-    );
+    // Sign-in is a button that opens the Access login popup (no hand-built URL).
+    await expect(banner.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
   });
 });
