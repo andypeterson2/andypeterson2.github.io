@@ -123,17 +123,29 @@ class EditorState {
     this.saveState = 'saving';
     this.settle((await api.deleteItem(itemId)).ok);
   }
-  addSection(type: string) {
-    // Section creation isn't persisted yet — demo-only (the picker is hidden when
-    // connected). Existing sections' entries/bullets are fully editable.
-    const s: Section = {
-      id: `s-${this.seq++}`,
-      type,
-      title: SECTION_TYPES[type].label,
-      entries: [],
-    };
-    this.person.sections.push(s);
+  async addSection(type: string) {
+    // Section-type keys are valid slugs (^[a-z0-9_-]+$); dedup against existing.
+    const existing = new Set(this.person.sections.map((s) => s.slug).filter(Boolean));
+    let slug = type;
+    let n = 2;
+    while (existing.has(slug)) slug = `${type}-${n++}`;
+    const title = SECTION_TYPES[type].label;
+    const section: Section = { id: this.seq++, slug, type, title, entries: [] };
+    this.person.sections.push(section);
     this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    this.saveState = 'saving';
+    const res = await api.createSection(this.activePersonId, { slug, type, title });
+    if (res.ok && res.data) section.id = res.data.id; // reconcile temp id → server id
+    this.settle(res.ok);
+  }
+  async deleteSection(sectionId: Section['id']) {
+    this.person.sections = this.person.sections.filter((s) => s.id !== sectionId);
+    this.clearSelection();
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.deleteSection(sectionId)).ok);
   }
 
   togglePreview() {
