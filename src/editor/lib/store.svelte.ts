@@ -3,6 +3,7 @@ import type { Person, Selection, Section, Entry, Item } from './types';
 import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
+import { resolveAccent } from './accent';
 
 /** Immutably move an array item from one index to another. */
 function move<T>(arr: T[], from: number, to: number): T[] {
@@ -38,6 +39,8 @@ class EditorState {
   });
   layouts = $state<{ id: string; name: string; status: string }[]>([]);
   defaultLayout = $state<string | null>(null);
+  /** accent hex the document themes with — mirrors the Style drawer live. */
+  accentHex = $derived(resolveAccent(this.style.accentColor, this.style.customHex));
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 

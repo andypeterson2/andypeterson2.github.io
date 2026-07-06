@@ -49,7 +49,7 @@
   });
 </script>
 
-<article class="doc">
+<article class="doc" style="--accent: {editor.accentHex}">
   {#if personalSel}
     <PersonalEdit />
   {:else}
@@ -276,7 +276,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: #3a3934;
+    color: var(--accent, #3a3934);
     margin: 0;
   }
   .sec-tools {
