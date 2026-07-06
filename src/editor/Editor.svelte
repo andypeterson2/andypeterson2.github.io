@@ -22,22 +22,30 @@
       <button
         class="conn"
         onclick={() => editor.connect()}
-        disabled={editor.connecting}
+        disabled={editor.connecting || editor.signingIn}
         title="Connect to the live backend"
       >
-        <span class="dot" class:live={editor.connected} class:busy={editor.connecting}></span>{editor.connecting
-          ? 'connecting…'
-          : editor.connected
-            ? 'connected'
-            : 'demo'}
+        <span class="dot" class:live={editor.connected} class:busy={editor.connecting || editor.signingIn}
+        ></span>{editor.signingIn
+          ? 'signing in…'
+          : editor.connecting
+            ? 'connecting…'
+            : editor.connected
+              ? 'connected'
+              : 'demo'}
       </button>
     </span>
   </div>
 
-  {#if editor.connectError === 'signin' && !editor.connected}
+  {#if editor.signingIn}
+    <div class="signin">
+      <span>Signing in… complete the Google login in the popup window.</span>
+    </div>
+  {:else if editor.connectError === 'signin' && !editor.connected}
     <div class="signin">
       <span
-        >Local demo — <a href={editor.signInUrl()}>Sign in with Google</a> to connect to the live editor.</span
+        >Local demo — <button class="link" onclick={() => editor.signIn()}>Sign in with Google</button
+        > to connect to the live editor.</span
       >
       <button class="dismiss" aria-label="Dismiss" onclick={() => (editor.connectError = null)}
         >×</button
@@ -96,7 +104,8 @@
   .conn { font: inherit; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
   .conn:disabled { cursor: default; }
   .signin { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px; background: var(--ink); color: var(--paper); font-size: 12.5px; }
-  .signin a { color: #9ec7ff; font-weight: 700; }
+  .signin a,
+  .signin .link { color: #9ec7ff; font-weight: 700; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
   .dismiss { background: none; border: 0; color: var(--paper); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }
   .workspace { max-width: 1040px; margin: 0 auto; padding: 26px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }

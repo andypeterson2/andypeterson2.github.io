@@ -15,6 +15,7 @@ class EditorState {
   dirty = $state(false);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
+  signingIn = $state(false);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -100,13 +101,40 @@ class EditorState {
     }
   }
 
-  /** Cloudflare Access login that returns to this page once signed in. */
-  signInUrl(): string {
-    const here = typeof location !== 'undefined' ? location.href : '/';
-    return (
-      'https://api.andypeterson.dev/cdn-cgi/access/login/api.andypeterson.dev?redirect_url=' +
-      encodeURIComponent(here)
-    );
+  /**
+   * Sign in via Cloudflare Access. A hand-built /cdn-cgi/access/login URL can't
+   * be matched to the app, and Access won't redirect cross-domain back to the
+   * GitHub-Pages editor anyway. Instead open the protected API in a popup so
+   * Cloudflare runs its own login on api.andypeterson.dev, then poll until the
+   * session cookie lets us load the real CV.
+   */
+  signIn() {
+    if (typeof window === 'undefined') return;
+    const loginUrl = 'https://api.andypeterson.dev/cv/api/persons';
+    const popup = window.open(loginUrl, 'cv-access-login', 'width=540,height=680');
+    if (!popup) {
+      // Popup blocked — fall back to a full-page login (browser back returns here).
+      window.location.href = loginUrl;
+      return;
+    }
+    this.signingIn = true;
+    this.connectError = null;
+    let tries = 0;
+    const poll = setInterval(() => {
+      void (async () => {
+        tries += 1;
+        const res = await api.fetchActivePerson();
+        if (res.ok && res.data) {
+          clearInterval(poll);
+          this.signingIn = false;
+          this.loadPerson(res.data);
+          if (!popup.closed) popup.close();
+        } else if (tries >= 40 || popup.closed) {
+          clearInterval(poll);
+          this.signingIn = false;
+        }
+      })();
+    }, 2500);
   }
 }
 
