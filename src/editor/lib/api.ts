@@ -2,14 +2,13 @@
 // Access). The Access cookie rides along via credentials:'include'. READS ONLY
 // for now; writes land in a later increment.
 //
-// The backend is active-person + resource oriented (there is no single
-// person-tree endpoint): GET /persons gives the active id + names, personal
-// info comes from /settings?prefix=personal (flat `personal.*` keys), the
-// document's ordered/enabled sections from /documents/:variant, and each
-// section's entries+items from /sections/:id. `fetchActivePerson()` composes
-// those into the editor's Person shape. Contract mirrored from
-// public/cv/api-paths.js + app-*.js.
-import type { Person, Section, Entry, Item, Personal } from './types';
+// The backend is id-addressable — there is NO active-person/session state.
+// GET /persons lists profiles ({id,name}); GET /persons/:pid returns that
+// profile's full "master" (person + personal + sections→entries→items→tags,
+// variants, tag vocab) in one shot. The gateway tiers access: an allowlisted
+// (owner) Access identity gets every profile; anyone else gets the public demo
+// profile only. Contract: cv/editor/routes/persons.js + lib/db.js#getMaster.
+import type { Person, Personal, Item, Entry } from './types';
 
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
@@ -22,45 +21,45 @@ export interface ApiResult<T> {
   error?: ApiError;
 }
 
-// ---- raw shapes as returned by the cv backend ----
-interface RawItem {
+export interface PersonMeta {
+  id: number;
+  name: string;
+}
+export interface ActiveLoad {
+  person: Person;
+  persons: PersonMeta[];
+}
+
+// ---- raw shapes as returned by GET /persons/:pid (getMaster) ----
+interface RawMasterItem {
   id: number;
   title?: string;
   content?: string;
-  sort_order?: number;
+  tags?: string[];
 }
-interface RawEntry {
+interface RawMasterEntry {
   id: number;
   fields?: Record<string, string>;
-  items?: RawItem[];
-  sort_order?: number;
+  items?: RawMasterItem[];
+  tags?: string[];
 }
-interface RawSectionData {
-  type?: string;
-  entries?: RawEntry[];
-}
-interface RawSectionMeta {
+interface RawMasterSection {
   id: number | string;
+  slug?: string;
   type: string;
   title: string;
+  entries?: RawMasterEntry[];
 }
-interface RawPersonsResp {
-  persons: { id: number; name: string }[];
-  activePersonId: number;
-}
-interface RawDocRef {
-  sectionId: number | string;
-  enabled?: boolean;
-  sortOrder?: number;
-}
-interface RawDocResp {
-  sections: RawDocRef[];
+interface RawMaster {
+  person: { id: number; name: string };
+  personal?: Record<string, string>;
+  sections?: RawMasterSection[];
 }
 
 /**
- * Minimal LaTeX→text for display. NOTE: this is intentionally one-directional
- * for the read-only increment. When writes are wired, it MUST be paired with
- * the inverse (text→LaTeX) on the way out, or round-trips will corrupt data.
+ * Minimal LaTeX→text for display. NOTE: intentionally one-directional for the
+ * read-only increment. When writes are wired it MUST be paired with the inverse
+ * (text→LaTeX) on the way out, or round-trips will corrupt data.
  */
 function untex(s: string | undefined): string {
   if (!s) return '';
@@ -74,20 +73,30 @@ function untex(s: string | undefined): string {
     .replace(/~/g, ' ');
 }
 
-function mapItems(items: RawItem[] = []): Item[] {
-  return [...items]
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((it) => ({ id: it.id, title: untex(it.title), content: untex(it.content), tags: [] }));
+function mapItem(it: RawMasterItem): Item {
+  return { id: it.id, title: untex(it.title), content: untex(it.content), tags: it.tags ?? [] };
 }
-function mapEntry(e: RawEntry): Entry {
+function mapEntry(e: RawMasterEntry): Entry {
   const fields: Record<string, string> = {};
   for (const [k, v] of Object.entries(e.fields ?? {})) fields[k] = untex(v);
-  return { id: e.id, fields, items: mapItems(e.items), tags: [] };
+  return { id: e.id, fields, items: (e.items ?? []).map(mapItem), tags: e.tags ?? [] };
 }
-function stripPersonalPrefix(flat: Record<string, string>): Personal {
-  const p: Record<string, string> = {};
-  for (const [k, v] of Object.entries(flat ?? {})) p[k.replace(/^personal\./, '')] = untex(v);
-  return p as Personal;
+/** GET /persons/:pid (getMaster) → the editor's Person. Rows arrive pre-ordered. */
+function mapMaster(m: RawMaster): Person {
+  const personal: Record<string, string> = {};
+  for (const [k, v] of Object.entries(m.personal ?? {})) personal[k] = untex(v);
+  return {
+    id: m.person.id,
+    name: m.person.name,
+    personal: personal as Personal,
+    sections: (m.sections ?? []).map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      type: s.type,
+      title: s.title,
+      entries: (s.entries ?? []).map(mapEntry),
+    })),
+  };
 }
 
 export class CvApi {
@@ -135,77 +144,52 @@ export class CvApi {
   health() {
     return this.req<{ status: string; service: string }>('/health');
   }
-  getPersons() {
-    return this.req<RawPersonsResp>('/persons');
+  listPersons() {
+    return this.req<{ persons: PersonMeta[] }>('/persons');
   }
-  getPersonal() {
-    return this.req<Record<string, string>>('/settings?prefix=personal');
+  private getMaster(pid: number | string) {
+    return this.req<RawMaster>(`/persons/${pid}`);
   }
-  getSections() {
-    return this.req<RawSectionMeta[]>('/sections');
-  }
-  getDocument(variant: string) {
-    return this.req<RawDocResp>(`/documents/${variant}`);
-  }
-  getSectionData(id: number | string) {
-    return this.req<RawSectionData>(`/sections/${id}`);
+
+  /** Load one profile by id and map it to the editor's Person shape. */
+  async fetchPerson(pid: number | string): Promise<ApiResult<Person>> {
+    const res = await this.getMaster(pid);
+    if (!res.ok || !res.data) {
+      return {
+        ok: false,
+        status: res.status,
+        error: res.error ?? { code: 'load_failed', message: 'Could not load profile' },
+      };
+    }
+    return { ok: true, status: 200, data: mapMaster(res.data) };
   }
 
   /**
-   * Assemble the active person's full 'cv' document into the editor's Person
-   * shape. Returns an `auth_required` error when the caller isn't signed into
-   * Access, so the UI can offer a sign-in and fall back to the local demo.
+   * List the accessible profiles and load a default (the most recently created).
+   * Returns `auth_required` when not signed into Access, so the UI can offer a
+   * sign-in and fall back to the local demo.
    */
-  async fetchActivePerson(): Promise<ApiResult<Person>> {
-    const persons = await this.getPersons();
-    if (!persons.ok || !persons.data) {
-      return { ok: false, status: persons.status, error: persons.error };
+  async fetchActive(): Promise<ApiResult<ActiveLoad>> {
+    const list = await this.listPersons();
+    if (!list.ok || !list.data) {
+      return { ok: false, status: list.status, error: list.error };
     }
-
-    const [personal, sections, doc] = await Promise.all([
-      this.getPersonal(),
-      this.getSections(),
-      this.getDocument('cv'),
-    ]);
-    if (!sections.ok || !sections.data) {
+    const persons = list.data.persons ?? [];
+    if (!persons.length) {
       return {
         ok: false,
-        status: sections.status,
-        error: sections.error ?? { code: 'load_failed', message: 'Could not load sections' },
+        status: 404,
+        error: { code: 'no_persons', message: 'No profiles available' },
       };
     }
-
-    const meta = sections.data;
-    const refs: RawDocRef[] =
-      doc.ok && doc.data?.sections?.length
-        ? doc.data.sections
-            .filter((r) => r.enabled !== false)
-            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-        : meta.map((s, i) => ({ sectionId: s.id, sortOrder: i }));
-
-    const datas = await Promise.all(refs.map((r) => this.getSectionData(r.sectionId)));
-    const outSections: Section[] = refs.map((r, i) => {
-      const m = meta.find((s) => String(s.id) === String(r.sectionId));
-      const d = datas[i].ok ? datas[i].data : undefined;
-      const entries = [...(d?.entries ?? [])].sort(
-        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-      );
-      return {
-        id: r.sectionId,
-        type: m?.type ?? d?.type ?? 'summary',
-        title: m?.title ?? '',
-        entries: entries.map(mapEntry),
-      };
-    });
-
-    const activeId = persons.data.activePersonId ?? 0;
-    const person: Person = {
-      id: activeId,
-      name: persons.data.persons.find((p) => p.id === activeId)?.name ?? '',
-      personal: personal.ok && personal.data ? stripPersonalPrefix(personal.data) : {},
-      sections: outSections,
-    };
-    return { ok: true, status: 200, data: person };
+    // Default to the most recently created (highest id) profile; the user can
+    // switch via the profile picker.
+    const pid = persons[persons.length - 1].id;
+    const loaded = await this.fetchPerson(pid);
+    if (!loaded.ok || !loaded.data) {
+      return { ok: false, status: loaded.status, error: loaded.error };
+    }
+    return { ok: true, status: 200, data: { person: loaded.data, persons } };
   }
 }
 
