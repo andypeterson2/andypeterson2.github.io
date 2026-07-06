@@ -105,4 +105,54 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).toContainText('Analytical Engine Co');
     await expect(page.locator('.doc')).toContainText('Wrote the first algorithm');
   });
+
+  test('autosaves an edited field to the backend, LaTeX-escaped', async ({ page }) => {
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [
+            {
+              id: 11,
+              fields: { position: 'Analyst', organization: 'Acme', location: '', date: '' },
+              tags: [],
+              items: [],
+            },
+          ],
+        },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    let putBody: { fields?: Record<string, string> } | null = null;
+    await page.route(/\/cv\/api\/entries\/11$/, (r) => {
+      putBody = r.request().postDataJSON();
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    const inline = page.locator('.doc .edit');
+    await expect(async () => {
+      await page.locator('.entry').first().click();
+      await expect(inline).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+
+    // Edit Position with a '%' → debounced PUT /entries/11 with it escaped to '\%'.
+    await inline.locator('.fld').first().locator('input').fill('Lead 50%');
+    await expect(page.locator('.statusbar')).toContainText('saved', { timeout: 5000 });
+    expect(putBody?.fields?.position).toBe('Lead 50\\%');
+  });
 });
