@@ -3,6 +3,7 @@
   import { typeDef, entryLead, hasBullets, presetsByCategory } from '../lib/section-types';
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
+  import { sortable } from '../lib/sortable';
   import type { Section } from '../lib/types';
 
   const person = $derived(editor.person);
@@ -64,10 +65,24 @@
     </div>
   {/if}
 
+  <div class="sections" use:sortable={{ onReorder: (f, t) => editor.reorderSections(f, t) }}>
   {#each person.sections as section (section.id)}
     {@const def = typeDef(section.type)}
-    <section class="sec" id={`sec-${section.id}`}>
+    <section
+      class="sec"
+      data-sortable
+      id={`sec-${section.id}`}
+      use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
+    >
       <div class="sec-head">
+        <button
+          class="grip"
+          data-drag-handle
+          draggable="true"
+          title="Drag to reorder section"
+          aria-label="Reorder section"
+          onclick={(e) => e.stopPropagation()}>⠿</button
+        >
         <h2>{section.title}</h2>
         <span class="sec-tools">
           <button class="tool" title="Add entry" aria-label="Add entry" onclick={() => editor.addEntry(section)}>＋</button>
@@ -101,6 +116,9 @@
               class="skill entry-hit"
               role="button"
               tabindex="0"
+              draggable="true"
+              data-drag-handle
+              data-sortable
               onclick={() => pick(section.id, e.id)}
               onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
             >
@@ -117,6 +135,9 @@
               class="entry"
               role="button"
               tabindex="0"
+              draggable="true"
+              data-drag-handle
+              data-sortable
               onclick={() => pick(section.id, e.id)}
               onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
             >
@@ -136,6 +157,9 @@
               class="entry"
               role="button"
               tabindex="0"
+              draggable="true"
+              data-drag-handle
+              data-sortable
               onclick={() => pick(section.id, e.id)}
               onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
             >
@@ -155,6 +179,9 @@
               class="entry"
               role="button"
               tabindex="0"
+              draggable="true"
+              data-drag-handle
+              data-sortable
               onclick={() => pick(section.id, e.id)}
               onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
             >
@@ -181,6 +208,7 @@
       {/if}
     </section>
   {/each}
+  </div>
 
   <div class="add-wrap">
     {#if picking}
@@ -238,8 +266,8 @@
   }
   .sec-head {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 6px;
     margin-bottom: 8px;
   }
   .sec-head h2 {
@@ -252,8 +280,38 @@
     margin: 0;
   }
   .sec-tools {
+    margin-left: auto;
     opacity: 0.35;
     transition: opacity 0.12s;
+  }
+  .grip {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1;
+    color: var(--dim);
+    background: none;
+    border: 0;
+    padding: 2px 4px;
+    cursor: grab;
+    opacity: 0.3;
+    transition: opacity 0.12s;
+  }
+  .sec:hover .grip {
+    opacity: 0.85;
+  }
+  .grip:hover {
+    opacity: 1;
+  }
+  .grip:active {
+    cursor: grabbing;
+  }
+  :global([data-dragging]) {
+    opacity: 0.4;
+  }
+  :global([data-over]) {
+    outline: 2px dashed var(--dim);
+    outline-offset: 2px;
+    border-radius: 6px;
   }
   .sec:hover .sec-tools {
     opacity: 1;
