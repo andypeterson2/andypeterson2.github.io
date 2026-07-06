@@ -4,6 +4,14 @@ import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
 
+/** Immutably move an array item from one index to another. */
+function move<T>(arr: T[], from: number, to: number): T[] {
+  const next = [...arr];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(DEMO_PERSON);
@@ -149,6 +157,32 @@ class EditorState {
     if (!this.connected) return;
     this.saveState = 'saving';
     this.settle((await api.deleteSection(sectionId)).ok);
+  }
+
+  // ---- drag reorder (persist the new id order) ----
+  async reorderEntries(section: Section, from: number, to: number) {
+    section.entries = move(section.entries, from, to);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const ids = section.entries.map((e) => e.id);
+    this.settle((await api.reorderEntries(section.id, ids)).ok);
+  }
+  async reorderItems(entry: Entry, from: number, to: number) {
+    entry.items = move(entry.items, from, to);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const ids = entry.items.map((i) => i.id);
+    this.settle((await api.reorderItems(entry.id, ids)).ok);
+  }
+  async reorderSections(from: number, to: number) {
+    this.person.sections = move(this.person.sections, from, to);
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    this.saveState = 'saving';
+    const ids = this.person.sections.map((s) => s.id);
+    this.settle((await api.reorderSections(this.activePersonId, ids)).ok);
   }
 
   togglePreview() {

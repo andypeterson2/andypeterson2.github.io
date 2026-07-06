@@ -233,4 +233,45 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect.poll(() => deletedPath).toContain('/sections/2');
     await expect(page.locator('.sec-head h2').filter({ hasText: 'Experience' })).toHaveCount(0);
   });
+
+  test('drag-reorders entries and persists the new id order', async ({ page }) => {
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [
+            { id: 11, fields: { position: 'First', organization: 'Alpha' }, tags: [], items: [] },
+            { id: 12, fields: { position: 'Second', organization: 'Beta' }, tags: [], items: [] },
+          ],
+        },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    let orderBody: { ids?: number[] } | null = null;
+    await page.route(/\/cv\/api\/sections\/2\/entries\/order$/, (r) => {
+      orderBody = r.request().postDataJSON();
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    const entries = page.locator('.sec .entry');
+    await expect(entries).toHaveCount(2);
+    // Drag the 2nd entry (Beta / id 12) onto the 1st (Alpha / id 11) → [12, 11].
+    await entries.nth(1).dragTo(entries.nth(0));
+    await expect.poll(() => orderBody?.ids).toEqual([12, 11]);
+  });
 });

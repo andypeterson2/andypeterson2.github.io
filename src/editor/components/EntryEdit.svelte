@@ -4,6 +4,7 @@
   // paragraph → textarea; everything else → labelled fields (+ bullets when hasItems).
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
+  import { sortable } from '../lib/sortable';
   import type { Entry, Section } from '../lib/types';
 
   let { section, entry }: { section: Section; entry: Entry } = $props();
@@ -55,10 +56,16 @@
     </div>
 
     {#if def?.hasItems}
-      <div class="bl-wrap">
+      <div class="bl-wrap" use:sortable={{ onReorder: (f, t) => editor.reorderItems(entry, f, t) }}>
         {#each entry.items as it (it.id)}
-          <div class="bl">
-            <span class="bl-mark">•</span>
+          <div class="bl" data-sortable>
+            <button
+              class="grip bl-grip"
+              data-drag-handle
+              draggable="true"
+              title="Drag to reorder bullet"
+              aria-label="Reorder bullet">⠿</button
+            >
             <div class="bl-ins">
               <input
                 class="in bl-title"
@@ -188,10 +195,22 @@
     gap: 8px;
     align-items: flex-start;
   }
-  .bl-mark {
-    font-size: 15px;
+  .grip {
+    font-family: var(--sans);
+    font-size: 12px;
     line-height: 1.7;
     color: var(--dim);
+    background: none;
+    border: 0;
+    padding: 2px;
+    cursor: grab;
+    opacity: 0.4;
+  }
+  .grip:hover {
+    opacity: 1;
+  }
+  .grip:active {
+    cursor: grabbing;
   }
   .bl-ins {
     flex: 1;

@@ -257,6 +257,24 @@ export class CvApi {
   deleteSection(id: number | string) {
     return this.req(`/sections/${id}`, { method: 'DELETE' });
   }
+  reorderEntries(sectionId: number | string, ids: (number | string)[]) {
+    return this.req(`/sections/${sectionId}/entries/order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids }),
+    });
+  }
+  reorderItems(entryId: number, ids: number[]) {
+    return this.req(`/entries/${entryId}/items/order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids }),
+    });
+  }
+  reorderSections(pid: number, ids: (number | string)[]) {
+    return this.req(`/persons/${pid}/sections/order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids }),
+    });
+  }
 }
 
 export const api = new CvApi();
