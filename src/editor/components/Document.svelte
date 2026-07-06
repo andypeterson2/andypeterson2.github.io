@@ -36,6 +36,16 @@
       void editor.deleteSection(section.id);
     }
   }
+
+  // Scroll a newly-created section into view once it renders.
+  $effect(() => {
+    const id = editor.scrollTarget;
+    if (id == null) return;
+    editor.scrollTarget = null;
+    requestAnimationFrame(() => {
+      document.getElementById(`sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 </script>
 
 <article class="doc">
@@ -56,7 +66,7 @@
 
   {#each person.sections as section (section.id)}
     {@const def = typeDef(section.type)}
-    <section class="sec">
+    <section class="sec" id={`sec-${section.id}`}>
       <div class="sec-head">
         <h2>{section.title}</h2>
         <span class="sec-tools">
@@ -162,6 +172,12 @@
             </div>
           {/if}
         {/each}
+      {/if}
+
+      {#if !def?.isParagraph && section.entries.length === 0}
+        <button class="empty" onclick={() => editor.addEntry(section)}
+          >＋ Add {def?.entryLabel?.toLowerCase() ?? 'entry'}</button
+        >
       {/if}
     </section>
   {/each}
