@@ -32,6 +32,7 @@
         <span class="lbl">{f.label}</span>
         <input
           class="in"
+          placeholder={f.label}
           bind:value={editor.person.personal[f.key]}
           oninput={() => editor.savePersonal(f.key)}
         />

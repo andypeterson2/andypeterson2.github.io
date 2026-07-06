@@ -19,6 +19,8 @@ class EditorState {
   /** Profiles available to the signed-in identity (empty in demo). */
   persons = $state<PersonMeta[]>([]);
   activePersonId = $state<number | null>(null);
+  /** a section id the document should scroll into view (set on create) */
+  scrollTarget = $state<number | string | null>(null);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -132,6 +134,7 @@ class EditorState {
     const title = SECTION_TYPES[type].label;
     const section: Section = { id: this.seq++, slug, type, title, entries: [] };
     this.person.sections.push(section);
+    this.scrollTarget = section.id;
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     this.saveState = 'saving';
