@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { gotoEditor } from './helpers';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -36,12 +37,10 @@ async function mockAdaWithVariant(page: Page) {
   );
 }
 
-/** Open the variant drawer (retrying past hydration) and pick a variant by name. */
+/** Open the variant drawer and pick a variant by name. */
 async function selectVariant(page: Page, name: string | RegExp) {
-  await expect(async () => {
-    await page.locator('.toolbar .variant-btn').click();
-    await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
-  }).toPass({ timeout: 8000 });
+  await page.locator('.toolbar .variant-btn').click();
+  await expect(page.locator('.drawer')).toBeVisible();
   await page.locator('.drawer .opt').filter({ hasText: name }).click();
   await page.keyboard.press('Escape');
 }
@@ -54,7 +53,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('renders the full-bleed shell and the demo profile', async ({ page }) => {
     // Backend unreachable → editor stays on the local demo.
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
 
     // Island hydrated: the System-6 menubar is present.
     await expect(page.locator('.menubar')).toContainText('Editor');
@@ -68,15 +67,12 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('clicking an entry opens the type-aware inline editor', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
 
-    // Retry the click until the island has hydrated and the handler is live
-    // (the demo document is server-rendered, so the entry exists before hydration).
+    // gotoEditor waited for hydration, so the entry's click handler is live.
     const inline = page.locator('.doc .edit');
-    await expect(async () => {
-      await page.locator('.entry').first().click();
-      await expect(inline).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.entry').first().click();
+    await expect(inline).toBeVisible();
 
     // Role fields + the collapse control for an experience entry.
     await expect(inline.locator('.lbl', { hasText: 'Position' })).toBeVisible();
@@ -86,7 +82,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('offers Access sign-in when the backend requires auth', async ({ page }) => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe.
     await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
 
     const banner = page.locator('.signin');
     await expect(banner).toBeVisible();
@@ -143,7 +139,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
 
     await expect(page.locator('.conn')).toContainText('connected');
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
@@ -186,14 +182,12 @@ test.describe('CV editor (document-first rewrite)', () => {
       putBody = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     const inline = page.locator('.doc .edit');
-    await expect(async () => {
-      await page.locator('.entry').first().click();
-      await expect(inline).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.entry').first().click();
+    await expect(inline).toBeVisible();
 
     // Edit Position with a '%' → debounced PUT /entries/11 with it escaped to '\%'.
     await inline.locator('.fld').first().locator('input').fill('Lead 50%');
@@ -233,7 +227,7 @@ test.describe('CV editor (document-first rewrite)', () => {
         body: JSON.stringify({ id: 99 }),
       });
     });
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();
@@ -269,7 +263,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
     page.on('dialog', (d) => void d.accept());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     const exp = page.locator('.sec').filter({ hasText: 'Experience' }).first();
@@ -310,7 +304,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       orderBody = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     const entries = page.locator('.sec .entry');
@@ -322,16 +316,12 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('toolbar opens and closes the drawers', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
-    // Style drawer — accent swatches; close box dismisses. Retry the first open
-    // until the island hydrates (the toolbar is server-rendered before its
-    // handlers attach), so this doesn't race a cold dev-server compile.
-    await expect(async () => {
-      await page.getByRole('button', { name: 'Style', exact: true }).click();
-      await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    // Style drawer — accent swatches; close box dismisses.
+    await page.getByRole('button', { name: 'Style', exact: true }).click();
+    await expect(page.locator('.drawer')).toBeVisible();
     await expect(page.locator('.drawer')).toContainText('Accent color');
     await expect(page.locator('.drawer .swatch')).toHaveCount(9);
     await page.locator('.drawer .close').click();
@@ -352,17 +342,14 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('tags drawer spotlights matching entries; chips edit tags inline', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
-    // (#backend sits on 2 entries + 2 bullets → 4). Retry the open until the
-    // island has hydrated (the toolbar is server-rendered before its handlers).
+    // (#backend sits on 2 entries + 2 bullets → 4).
     const drawer = page.locator('.drawer');
-    await expect(async () => {
-      await page.getByRole('button', { name: 'Tags', exact: true }).click();
-      await expect(drawer).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.getByRole('button', { name: 'Tags', exact: true }).click();
+    await expect(drawer).toBeVisible();
     const backendRow = drawer.locator('.row', { hasText: 'backend' });
     await expect(backendRow).toContainText('4');
 
@@ -381,10 +368,8 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Inline chips: open an untagged entry and add + remove a tag.
     const inline = page.locator('.doc .edit');
-    await expect(async () => {
-      await page.locator('.entry').filter({ hasText: 'State University' }).click();
-      await expect(inline).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.entry').filter({ hasText: 'State University' }).click();
+    await expect(inline).toBeVisible();
 
     const tagIn = inline.locator('.tags-row .tag-in');
     await tagIn.fill('honors');
@@ -397,16 +382,13 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('the variant drawer applies a lens that dims excluded content', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
-    // Open the Variants drawer from the toolbar popup. Retry until the island
-    // hydrates so the click's handler is live.
+    // Open the Variants drawer from the toolbar popup.
     const drawer = page.locator('.drawer');
-    await expect(async () => {
-      await page.locator('.toolbar .variant-btn').click();
-      await expect(drawer).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.toolbar .variant-btn').click();
+    await expect(drawer).toBeVisible();
     await expect(drawer).toContainText('lens on your main');
     // The demo ships two variants with live "shows X of Y" counts.
     await expect(drawer.locator('.opt').filter({ hasText: 'Backend Engineer' })).toContainText(
@@ -439,13 +421,11 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('the preview pane prompts to connect in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
-    await expect(async () => {
-      await page.getByRole('button', { name: /Preview/ }).click();
-      await expect(page.locator('.preview')).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.getByRole('button', { name: /Preview/ }).click();
+    await expect(page.locator('.preview')).toBeVisible();
     await expect(page.locator('.preview')).toContainText('connect to compile');
     await expect(page.locator('.preview .pv-btn')).toBeDisabled();
   });
@@ -457,7 +437,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       pdfHits += 1;
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
     });
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -488,7 +468,7 @@ test.describe('CV editor (document-first rewrite)', () => {
         }),
       }),
     );
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -502,14 +482,12 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     const drawer = page.locator('.drawer');
-    await expect(async () => {
-      await page.locator('.toolbar .profile-btn').click();
-      await expect(drawer).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.toolbar .profile-btn').click();
+    await expect(drawer).toBeVisible();
     await expect(drawer).toContainText('Profiles live on the server');
     await expect(drawer.getByRole('button', { name: /Sign in/ })).toBeVisible();
   });
@@ -581,14 +559,12 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     page.on('dialog', (d) => void d.accept());
 
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
-    await expect(async () => {
-      await page.locator('.toolbar .profile-btn').click();
-      await expect(drawer).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.toolbar .profile-btn').click();
+    await expect(drawer).toBeVisible();
     await expect(drawer.locator('.opt')).toHaveCount(1);
 
     // Create → a new empty profile appears, is selected, and loads (blank doc-head).
@@ -664,14 +640,12 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
     page.on('dialog', (d) => void d.accept());
 
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
-    await expect(async () => {
-      await page.locator('.toolbar .profile-btn').click();
-      await expect(drawer).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.toolbar .profile-btn').click();
+    await expect(drawer).toBeVisible();
 
     // Delete the only profile → the connected empty state (NOT a sign-in prompt).
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
@@ -690,19 +664,16 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     const sectionTitles = page.locator('.doc .sec h2');
     await expect(sectionTitles.first()).toHaveText('Summary');
 
-    // Move the first section (Summary) down; retry the focus+press until the
-    // island hydrates and the grip's keydown handler is live.
-    await expect(async () => {
-      await page.locator('.doc .sec-head .grip').first().focus();
-      await page.keyboard.press('Alt+ArrowDown');
-      await expect(sectionTitles.first()).toHaveText('Experience', { timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    // Move the first section (Summary) down.
+    await page.locator('.doc .sec-head .grip').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect(sectionTitles.first()).toHaveText('Experience');
     // Announced to screen readers, and focus follows the moved section's grip
     // (so repeated presses keep moving it).
     await expect(page.locator('.sr-only[aria-live]')).toContainText('Section moved to position 2');
@@ -720,7 +691,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     // The demo ships a cover-letter variant, labelled as such in the drawer.
@@ -802,7 +773,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
 
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     await selectVariant(page, 'Cover Letter');
@@ -820,14 +791,12 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('exports the résumé as import-compatible JSON (works offline)', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
 
     // Confirm the island has hydrated (its click handlers are live) before export.
     const inline = page.locator('.doc .edit');
-    await expect(async () => {
-      await page.locator('.entry').first().click();
-      await expect(inline).toBeVisible({ timeout: 500 });
-    }).toPass({ timeout: 8000 });
+    await page.locator('.entry').first().click();
+    await expect(inline).toBeVisible();
     await page.keyboard.press('Escape');
 
     // Export downloads a JSON file with the backend's import-compatible shape.
@@ -869,7 +838,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) =>
       r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' }),
     );
-    await page.goto('/projects/latex-resume-editor/app/');
+    await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();

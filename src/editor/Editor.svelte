@@ -14,14 +14,19 @@
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
 
+  // Flips true once mounted → the stage gets `data-hydrated`, a deterministic
+  // signal that event handlers are live (tests wait for it instead of racing).
+  let hydrated = $state(false);
+
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
   onMount(() => {
+    hydrated = true;
     editor.connect();
   });
 </script>
 
-<div class="stage">
+<div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
     <span class="mark">◆</span><strong>CV&nbsp;Editor</strong>
