@@ -52,14 +52,7 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <button
-        class="del"
-        disabled={editor.persons.length <= 1}
-        onclick={() => confirmDelete(meta)}>Delete profile</button
-      >
-      {#if editor.persons.length <= 1}
-        <p class="hint">The last profile can't be deleted.</p>
-      {/if}
+      <button class="del" onclick={() => confirmDelete(meta)}>Delete profile</button>
     </div>
   {/if}
 {/if}
@@ -176,19 +169,8 @@
     cursor: pointer;
     box-shadow: 1px 1px 0 #9c2b3f;
   }
-  .del:disabled {
-    opacity: 0.4;
-    cursor: default;
-    box-shadow: none;
-  }
-  .del:not(:disabled):active {
+  .del:active {
     transform: translate(1px, 1px);
     box-shadow: none;
-  }
-  .hint {
-    font-size: 11px;
-    line-height: 1.5;
-    color: #6b6960;
-    margin: 0;
   }
 </style>

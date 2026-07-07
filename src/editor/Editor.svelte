@@ -95,7 +95,19 @@
     <div class="window">
       <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
       <div class="wbody" class:split={editor.previewOpen}>
-        <div class="doc-scroll"><Document /></div>
+        <div class="doc-scroll">
+          {#if editor.noProfiles}
+            <div class="no-profiles">
+              <p class="np-title">No profiles yet</p>
+              <p class="np-sub">Create your first résumé profile to start editing.</p>
+              <button class="np-btn" onclick={() => editor.addPerson()}
+                >＋ Create your first profile</button
+              >
+            </div>
+          {:else}
+            <Document />
+          {/if}
+        </div>
         {#if editor.previewOpen}
           <div class="preview">
             <div class="pv-bar">
@@ -206,6 +218,11 @@
   .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
   .doc-scroll { max-height: min(70vh, 640px); overflow: auto; background: var(--paper); }
+  .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
+  .np-title { font-family: var(--serif); font-size: 22px; font-weight: 700; color: #3a3934; margin: 0; }
+  .np-sub { font-size: 13.5px; color: #55534e; margin: 0 0 10px; }
+  .np-btn { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
+  .np-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
   .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: 12px; font-weight: 700; }
   .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 400; }
