@@ -21,6 +21,7 @@
 </script>
 
 <div class="stage">
+  <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
     <span class="mark">◆</span><strong>CV&nbsp;Editor</strong>
     <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span>
@@ -171,6 +172,7 @@
 
 <style>
   .stage { min-height: 100vh; padding-bottom: 34px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
   .mark { font-size: 15px; }
   .menu { font-weight: 400; }

@@ -604,4 +604,34 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drawer.locator('.opt')).toHaveCount(1);
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
   });
+
+  test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    const sectionTitles = page.locator('.doc .sec h2');
+    await expect(sectionTitles.first()).toHaveText('Summary');
+
+    // Move the first section (Summary) down; retry the focus+press until the
+    // island hydrates and the grip's keydown handler is live.
+    await expect(async () => {
+      await page.locator('.doc .sec-head .grip').first().focus();
+      await page.keyboard.press('Alt+ArrowDown');
+      await expect(sectionTitles.first()).toHaveText('Experience', { timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    // Announced to screen readers, and focus follows the moved section's grip
+    // (so repeated presses keep moving it).
+    await expect(page.locator('.sr-only[aria-live]')).toContainText('Section moved to position 2');
+    await expect(page.locator('.doc .sec').nth(1).locator('.sec-head .grip')).toBeFocused();
+
+    // Entries reorder from the focused row itself (no separate grip).
+    const firstEntry = page.locator('.doc .sec').first().locator('.entry').first();
+    const firstEntryText = ((await firstEntry.locator('.entry-title').textContent()) ?? '').trim();
+    await firstEntry.focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect(
+      page.locator('.doc .sec').first().locator('.entry-title').nth(1),
+    ).toHaveText(firstEntryText);
+  });
 });

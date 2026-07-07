@@ -4,7 +4,7 @@
   // paragraph → textarea; everything else → labelled fields (+ bullets when hasItems).
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
-  import { sortable } from '../lib/sortable';
+  import { sortable, reorderKeydown } from '../lib/sortable';
   import TagChips from './TagChips.svelte';
   import type { Entry, Section } from '../lib/types';
 
@@ -67,14 +67,19 @@
 
     {#if def?.hasItems}
       <div class="bl-wrap" use:sortable={{ onReorder: (f, t) => editor.reorderItems(entry, f, t) }}>
-        {#each entry.items as it (it.id)}
+        {#each entry.items as it, iIdx (it.id)}
           <div class="bl" data-sortable>
             <button
               class="grip bl-grip"
               data-drag-handle
               draggable="true"
-              title="Drag to reorder bullet"
-              aria-label="Reorder bullet">⠿</button
+              title="Drag, or press Alt+↑/↓ to reorder"
+              aria-label="Reorder bullet"
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+              onkeydown={(ev) =>
+                reorderKeydown(ev, iIdx, entry.items.length, (f, t) =>
+                  editor.reorderItems(entry, f, t),
+                )}>⠿</button
             >
             <div class="bl-ins">
               <input
