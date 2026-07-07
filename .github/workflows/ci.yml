@@ -54,7 +54,14 @@ jobs:
           cache: npm
       - run: npm ci
       # PR runs use chromium only (fast feedback); firefox/webkit run in full sweeps.
-      - run: npx playwright install --with-deps chromium
+      - name: Install Playwright browser + system deps
+        run: |
+          # The runner ships pre-configured Microsoft apt repos (azure-cli, prod)
+          # that intermittently serve an unsigned InRelease, which makes the
+          # `apt-get update` inside `--with-deps` fail the whole job. Drop those
+          # sources first; chromium's system deps come from the Ubuntu repos.
+          sudo rm -f /etc/apt/sources.list.d/*microsoft* /etc/apt/sources.list.d/*azure* 2>/dev/null || true
+          npx playwright install --with-deps chromium
       - uses: actions/download-artifact@v8
         with:
           name: dist
