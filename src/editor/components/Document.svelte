@@ -11,6 +11,9 @@
   const sel = $derived(editor.selection);
   const selEntry = $derived(sel.kind === 'entry' ? sel.entryId : null);
   const personalSel = $derived(sel.kind === 'personal');
+  const fullName = $derived(
+    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim(),
+  );
   const presets = presetsByCategory();
   let picking = $state(false);
 
@@ -84,7 +87,7 @@
       onclick={() => editor.select({ kind: 'personal' })}
       onkeydown={(e) => onKey(e, () => editor.select({ kind: 'personal' }))}
     >
-      <h1>{person.personal.firstName} {person.personal.lastName}</h1>
+      <h1 class:untitled={!fullName}>{fullName || 'Your name'}</h1>
       <p class="contact">{contactLine()}</p>
     </div>
   {/if}
@@ -283,6 +286,9 @@
     font-size: 30px;
     font-weight: 700;
     margin: 0 0 4px;
+  }
+  .doc-head h1.untitled {
+    color: #a8a6a0;
   }
   .contact {
     font-size: 13.5px;

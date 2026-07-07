@@ -38,7 +38,7 @@ async function mockAdaWithVariant(page: Page) {
 /** Select the "Full CV" variant via the drawer (drives the lens + preview target). */
 async function selectFullCV(page: Page) {
   await expect(async () => {
-    await page.locator('.toolbar button.popup').click();
+    await page.locator('.toolbar .variant-btn').click();
     await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
   }).toPass({ timeout: 8000 });
   await page.locator('.drawer .opt').filter({ hasText: 'Full CV' }).click();
@@ -395,11 +395,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.goto('/projects/latex-resume-editor/app/');
     await expect(page.locator('.menubar')).toContainText('Editor');
 
-    // Open the Variants drawer from the toolbar popup (the only button.popup in
-    // demo). Retry until the island hydrates so the click's handler is live.
+    // Open the Variants drawer from the toolbar popup. Retry until the island
+    // hydrates so the click's handler is live.
     const drawer = page.locator('.drawer');
     await expect(async () => {
-      await page.locator('.toolbar button.popup').click();
+      await page.locator('.toolbar .variant-btn').click();
       await expect(drawer).toBeVisible({ timeout: 500 });
     }).toPass({ timeout: 8000 });
     await expect(drawer).toContainText('lens on your master');
@@ -493,5 +493,115 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     await expect(preview.locator('.pv-log')).toContainText('Undefined control sequence');
     await expect(preview.locator('iframe.pv-frame')).toHaveCount(0);
+  });
+
+  test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    const drawer = page.locator('.drawer');
+    await expect(async () => {
+      await page.locator('.toolbar .profile-btn').click();
+      await expect(drawer).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    await expect(drawer).toContainText('Profiles live on the server');
+    await expect(drawer.getByRole('button', { name: /Sign in/ })).toBeVisible();
+  });
+
+  test('creates, renames, and deletes a profile when connected', async ({ page }) => {
+    const adaMaster = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 11, fields: { position: 'Analyst' }, tags: [], items: [] }],
+        },
+      ],
+      variants: [],
+    };
+    const emptyMaster = {
+      person: { id: 8, name: 'New profile' },
+      personal: {},
+      sections: [],
+      variants: [],
+    };
+
+    // GET /persons lists; POST /persons creates id 8.
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.request().method() === 'POST'
+        ? r.fulfill({
+            status: 201,
+            contentType: 'application/json',
+            body: JSON.stringify({ id: 8 }),
+          })
+        : r.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+          }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adaMaster) }),
+    );
+    // /persons/8 serves the master (GET), the rename (PUT), and the delete (DELETE).
+    let renamedTo: string | null = null;
+    let deleted = false;
+    await page.route(/\/cv\/api\/persons\/8$/, (r) => {
+      const m = r.request().method();
+      if (m === 'PUT') {
+        renamedTo = (r.request().postDataJSON() as { name: string }).name;
+        return r.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: '{"success":true}',
+        });
+      }
+      if (m === 'DELETE') {
+        deleted = true;
+        return r.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: '{"success":true}',
+        });
+      }
+      return r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(emptyMaster),
+      });
+    });
+    page.on('dialog', (d) => void d.accept());
+
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    const drawer = page.locator('.drawer');
+    await expect(async () => {
+      await page.locator('.toolbar .profile-btn').click();
+      await expect(drawer).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    await expect(drawer.locator('.opt')).toHaveCount(1);
+
+    // Create → a new empty profile appears, is selected, and loads (blank doc-head).
+    await drawer.getByRole('button', { name: /New profile/ }).click();
+    await expect(drawer.locator('.opt')).toHaveCount(2);
+    await expect(page.locator('.doc-head h1.untitled')).toHaveText('Your name');
+
+    // Rename the new profile's label via the drawer.
+    const nameInput = drawer.locator('.rename .in');
+    await nameInput.fill('Backend Resume');
+    await nameInput.blur();
+    await expect.poll(() => renamedTo).toBe('Backend Resume');
+    await expect(drawer.locator('.opt').filter({ hasText: 'Backend Resume' })).toBeVisible();
+
+    // Delete it (confirmed) → back to Ada.
+    await drawer.getByRole('button', { name: /Delete profile/ }).click();
+    await expect.poll(() => deleted).toBe(true);
+    await expect(drawer.locator('.opt')).toHaveCount(1);
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
   });
 });
