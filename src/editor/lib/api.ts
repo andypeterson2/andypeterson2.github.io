@@ -8,7 +8,7 @@
 // variants, tag vocab) in one shot. The gateway tiers access: an allowlisted
 // (owner) Access identity gets every profile; anyone else gets the public demo
 // profile only. Contract: cv/editor/routes/persons.js + lib/db.js#getMaster.
-import type { Person, Personal, Item, Entry } from './types';
+import type { Person, Personal, Item, Entry, Variant } from './types';
 
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
@@ -50,10 +50,19 @@ interface RawMasterSection {
   title: string;
   entries?: RawMasterEntry[];
 }
+interface RawMasterVariant {
+  id: number;
+  name: string;
+  kind: string;
+  layout_id?: string | null;
+  rules?: { include?: string[]; exclude?: string[] };
+  sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
+}
 interface RawMaster {
   person: { id: number; name: string };
   personal?: Record<string, string>;
   sections?: RawMasterSection[];
+  variants?: RawMasterVariant[];
 }
 
 /**
@@ -98,6 +107,16 @@ function mapEntry(e: RawMasterEntry): Entry {
   for (const [k, v] of Object.entries(e.fields ?? {})) fields[k] = untex(v);
   return { id: e.id, fields, items: (e.items ?? []).map(mapItem), tags: e.tags ?? [] };
 }
+function mapVariant(v: RawMasterVariant): Variant {
+  return {
+    id: v.id,
+    name: v.name,
+    kind: (v.kind as Variant['kind']) ?? 'cv',
+    layoutId: v.layout_id ?? null,
+    rules: { include: v.rules?.include ?? [], exclude: v.rules?.exclude ?? [] },
+    sections: (v.sections ?? []).map((r) => ({ sectionId: r.section_id, enabled: !!r.enabled })),
+  };
+}
 /** GET /persons/:pid (getMaster) → the editor's Person. Rows arrive pre-ordered. */
 function mapMaster(m: RawMaster): Person {
   const personal: Record<string, string> = {};
@@ -113,6 +132,7 @@ function mapMaster(m: RawMaster): Person {
       title: s.title,
       entries: (s.entries ?? []).map(mapEntry),
     })),
+    variants: (m.variants ?? []).map(mapVariant),
   };
 }
 
@@ -305,6 +325,23 @@ export class CvApi {
   }
   removeItemTag(itemId: number, tag: string) {
     return this.req(`/items/${itemId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+  }
+
+  // ---- variants (the lens) ----
+  createVariant(pid: number, variant: { name: string; kind: Variant['kind'] }) {
+    return this.req<{ id: number }>(`/persons/${pid}/variants`, {
+      method: 'POST',
+      body: JSON.stringify(variant),
+    });
+  }
+  renameVariant(id: number, name: string) {
+    return this.req(`/variants/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
+  }
+  deleteVariant(id: number) {
+    return this.req(`/variants/${id}`, { method: 'DELETE' });
+  }
+  setVariantRules(id: number, rules: { include: string[]; exclude: string[] }) {
+    return this.req(`/variants/${id}/rules`, { method: 'PUT', body: JSON.stringify(rules) });
   }
 }
 

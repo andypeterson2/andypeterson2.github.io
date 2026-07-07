@@ -129,4 +129,20 @@ export const DEMO_PERSON: Person = {
       ],
     },
   ],
+  variants: [
+    {
+      id: 1,
+      name: 'Backend Engineer',
+      kind: 'cv',
+      rules: { include: ['backend'], exclude: [] },
+      sections: [],
+    },
+    {
+      id: 2,
+      name: 'Concise',
+      kind: 'cv',
+      rules: { include: [], exclude: ['management'] },
+      sections: [],
+    },
+  ],
 };

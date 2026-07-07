@@ -280,8 +280,13 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.goto('/projects/latex-resume-editor/app/');
     await expect(page.locator('.menubar')).toContainText('Editor');
 
-    // Style drawer — accent swatches; close box dismisses.
-    await page.getByRole('button', { name: 'Style', exact: true }).click();
+    // Style drawer — accent swatches; close box dismisses. Retry the first open
+    // until the island hydrates (the toolbar is server-rendered before its
+    // handlers attach), so this doesn't race a cold dev-server compile.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Style', exact: true }).click();
+      await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
     await expect(page.locator('.drawer')).toContainText('Accent color');
     await expect(page.locator('.drawer .swatch')).toHaveCount(9);
     await page.locator('.drawer .close').click();
@@ -306,18 +311,22 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
-    // (#backend sits on 2 entries + 2 bullets → 4).
-    await page.getByRole('button', { name: 'Tags', exact: true }).click();
+    // (#backend sits on 2 entries + 2 bullets → 4). Retry the open until the
+    // island has hydrated (the toolbar is server-rendered before its handlers).
     const drawer = page.locator('.drawer');
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Tags', exact: true }).click();
+      await expect(drawer).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
     const backendRow = drawer.locator('.row', { hasText: 'backend' });
     await expect(backendRow).toContainText('4');
 
     // Spotlight #backend: entries carrying it stay lit, the untagged summary dims.
     await backendRow.click();
     await expect(page.locator('.doc .para')).toHaveClass(/dim/);
-    await expect(page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' })).not.toHaveClass(
-      /dim/,
-    );
+    await expect(
+      page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' }),
+    ).not.toHaveClass(/dim/);
 
     // Clearing the spotlight restores everything.
     await drawer.locator('.clear').click();
@@ -339,5 +348,47 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     await inline.locator('.tags-row .chip .cx').click();
     await expect(inline.locator('.tags-row .chip')).toHaveCount(0);
+  });
+
+  test('the variant drawer applies a lens that dims excluded content', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    // Open the Variants drawer from the toolbar popup (the only button.popup in
+    // demo). Retry until the island hydrates so the click's handler is live.
+    const drawer = page.locator('.drawer');
+    await expect(async () => {
+      await page.locator('.toolbar button.popup').click();
+      await expect(drawer).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    await expect(drawer).toContainText('lens on your master');
+    // The demo ships two variants with live "shows X of Y" counts.
+    await expect(drawer.locator('.opt').filter({ hasText: 'Backend Engineer' })).toContainText(
+      '2/7',
+    );
+
+    // Applying it dims the untagged summary while the #backend entry stays lit.
+    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+    await expect(page.locator('.doc .para')).toHaveClass(/dim/);
+    await expect(
+      page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' }),
+    ).not.toHaveClass(/dim/);
+    // The lens reaches into bullets: a #management bullet drops inside a lit entry.
+    await expect(
+      page.locator('.doc li').filter({ hasText: 'Mentored four engineers' }),
+    ).toHaveClass(/dim/);
+
+    // Editing a rule updates the lens live: excluding #infra vetoes that bullet.
+    const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
+    await excludeIn.fill('infra');
+    await excludeIn.press('Enter');
+    await expect(
+      page.locator('.doc li').filter({ hasText: 'Microservices migration' }),
+    ).toHaveClass(/dim/);
+
+    // Back to Master clears the lens entirely.
+    await drawer.locator('.opt').filter({ hasText: 'Master' }).click();
+    await expect(page.locator('.doc .dim')).toHaveCount(0);
   });
 });

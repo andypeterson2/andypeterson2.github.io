@@ -4,7 +4,8 @@
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
   import { sortable } from '../lib/sortable';
-  import type { Section } from '../lib/types';
+  import { entryIncluded, itemIncluded, sectionScopedOut } from '../lib/variant-lens';
+  import type { Section, Entry, Item } from '../lib/types';
 
   const person = $derived(editor.person);
   const sel = $derived(editor.selection);
@@ -38,10 +39,27 @@
     }
   }
 
+  // Two dimming modes compose onto the same .dim class: the tag spotlight
+  // (highlightTag) and the variant lens (activeVariant → what a variant drops).
   const hl = $derived(editor.highlightTag);
-  function matches(e: { tags: string[]; items: { tags: string[] }[] }): boolean {
-    if (!hl) return true;
-    return e.tags.includes(hl) || e.items.some((i) => i.tags.includes(hl));
+  const lens = $derived(editor.activeVariant);
+
+  function spotlightDim(e: Entry): boolean {
+    return !!hl && !(e.tags.includes(hl) || e.items.some((i) => i.tags.includes(hl)));
+  }
+  /** Whole section greyed — the variant scopes it out entirely. */
+  function sectionDim(section: Section): boolean {
+    return !!lens && sectionScopedOut(section, lens);
+  }
+  function entryDim(section: Section, e: Entry): boolean {
+    if (sectionDim(section)) return false; // the section container handles it
+    if (spotlightDim(e)) return true;
+    return !!lens && !entryIncluded(e, lens);
+  }
+  /** A single bullet dropped by the lens, while its entry is otherwise shown. */
+  function itemDim(section: Section, e: Entry, it: Item): boolean {
+    if (!lens || sectionDim(section) || !entryIncluded(e, lens)) return false;
+    return !itemIncluded(it, lens);
   }
 
   // Scroll a newly-created section into view once it renders.
@@ -76,6 +94,7 @@
     {@const def = typeDef(section.type)}
     <section
       class="sec"
+      class:dim={sectionDim(section)}
       data-sortable
       id={`sec-${section.id}`}
       use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
@@ -103,7 +122,7 @@
         {:else if pe}
           <div
             class="para entry-hit"
-            class:dim={hl && !matches(pe)}
+            class:dim={entryDim(section, pe)}
             role="button"
             tabindex="0"
             onclick={() => pick(section.id, pe.id)}
@@ -121,7 +140,7 @@
           {:else}
             <div
               class="skill entry-hit"
-              class:dim={hl && !matches(e)}
+              class:dim={entryDim(section, e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -141,7 +160,7 @@
           {:else}
             <div
               class="entry"
-              class:dim={hl && !matches(e)}
+              class:dim={entryDim(section, e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -164,7 +183,7 @@
           {:else}
             <div
               class="entry"
-              class:dim={hl && !matches(e)}
+              class:dim={entryDim(section, e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -187,7 +206,7 @@
           {:else}
             <div
               class="entry"
-              class:dim={hl && !matches(e)}
+              class:dim={entryDim(section, e)}
               role="button"
               tabindex="0"
               draggable="true"
@@ -203,7 +222,7 @@
               {#if hasBullets(section.type) && e.items.length}
                 <ul>
                   {#each e.items as it (it.id)}
-                    <li>{#if it.title}<b>{it.title}</b> — {/if}{it.content}{#each it.tags as t}<span class="tag">#{t}</span>{/each}</li>
+                    <li class:dim={itemDim(section, e, it)}>{#if it.title}<b>{it.title}</b> — {/if}{it.content}{#each it.tags as t}<span class="tag">#{t}</span>{/each}</li>
                   {/each}
                 </ul>
               {/if}

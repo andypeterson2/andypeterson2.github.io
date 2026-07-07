@@ -7,6 +7,7 @@
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
   import TagsDrawer from './components/TagsDrawer.svelte';
+  import VariantDrawer from './components/VariantDrawer.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -73,7 +74,15 @@
           <span class="popup">{fullName} ▾</span>
         {/if}
       </span>
-      <span class="field">Variant <span class="popup">{editor.variant} ▾</span></span>
+      <span class="field"
+        >Variant
+        <button
+          class="popup"
+          class:lens={editor.activeVariantId !== null}
+          title="Variants + the lens"
+          onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
+        ></span
+      >
       <button
         class="btn icon"
         class:on={editor.openDrawer === 'variant'}
@@ -88,12 +97,12 @@
     </div>
 
     <div class="window">
-      <div class="titlebar"><span class="close"></span><span class="title">{fullName} — {editor.variant}</span><span class="fill"></span></div>
+      <div class="titlebar"><span class="close"></span><span class="title">{fullName} — {editor.variantLabel}</span><span class="fill"></span></div>
       <div class="wbody" class:split={editor.previewOpen}>
         <div class="doc-scroll"><Document /></div>
         {#if editor.previewOpen}
           <div class="preview">
-            <div class="pv-bar"><span>{editor.variant}.pdf</span><span class="pv-tools">⟳ Compile · ⤓ PDF · ☰ Log</span></div>
+            <div class="pv-bar"><span>{editor.variantLabel}.pdf</span><span class="pv-tools">⟳ Compile · ⤓ PDF · ☰ Log</span></div>
             <div class="pv-body"><div class="pv-note">Compiled&nbsp;PDF&nbsp;preview<br /><small>wired to <code>GET /variants/:id/pdf</code> in a later increment</small></div></div>
           </div>
         {/if}
@@ -108,7 +117,7 @@
                 : '✓ saved'
             : editor.dirty
               ? 'demo · unsaved (local)'
-              : 'demo'} · {editor.variant}</span
+              : 'demo'} · {editor.variantLabel}</span
         >
         <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
@@ -122,15 +131,12 @@
   {:else if editor.openDrawer === 'tags'}
     <Drawer title="Tags"><TagsDrawer /></Drawer>
   {:else if editor.openDrawer === 'variant'}
-    <Drawer title="Variant"
-      ><p class="soon">Variants + the variant lens (dim excluded content in place) are coming next.</p></Drawer
-    >
+    <Drawer title="Variants"><VariantDrawer /></Drawer>
   {/if}
 </div>
 
 <style>
   .stage { min-height: 100vh; padding-bottom: 34px; }
-  .soon { font-size: 13px; line-height: 1.6; color: #55534e; margin: 0; }
   .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
   .mark { font-size: 15px; }
   .menu { font-weight: 400; }
@@ -148,6 +154,9 @@
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
   .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
+  button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; }
+  button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+  .popup.lens { background: var(--ink); color: var(--paper); }
   .sel { cursor: pointer; max-width: 190px; color: var(--ink); }
   .btn { font-size: 12.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
   .btn.icon { padding: 5px 9px; font-size: 14px; }
