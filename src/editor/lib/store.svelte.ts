@@ -1,22 +1,23 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
 //
-// This is a large, single store on purpose. It's organized into slices, each
-// under a `// ---- <slice> ----` banner: reactive fields + derived views up
-// top, then field autosave, content CRUD, drag reorder, drawers, tags,
-// variants/lens, cover letter, and profile CRUD. Every slice leans on the same
-// private infra — `settle`, `debounce`, `say`, `seq`, `saveState` — which is
-// exactly why it hasn't been split (tech-debt #11): pulling a slice into its
-// own module means exposing that infra or threading it through as params,
-// trading this cohesive object for cross-module coupling and reactivity risk,
-// for modest gain. When a slice genuinely needs to grow, lift it into a
-// sub-controller that takes the shared infra via a small typed interface —
-// don't scatter the reactive state. Until then, navigate by the banners.
+// This is a large, single store, being split down incrementally (tech-debt
+// #11). Most slices — field autosave, content CRUD, drag reorder, drawers,
+// tags, variants/lens, cover letter, profile CRUD, each under a
+// `// ---- <slice> ----` banner — lean on shared private infra (`settle`,
+// `debounce`, `say`, `seq`, `saveState`), so extracting them wholesale would
+// just relocate that coupling. The slices worth peeling off first are the ones
+// that DON'T touch it: the PDF preview is already out (`preview.svelte.ts`,
+// composed below as `editor.preview`), lifted into a sub-controller that gets
+// the two things it needs — is-connected, the active variant — injected as
+// thunks. Follow that shape for the next self-contained slice; don't scatter
+// the reactive state. Until a slice is peeled, navigate by the banners.
 import type { Person, Selection, Section, Entry, Item, Variant, LetterSection } from './types';
 import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
 import { resolveAccent } from './accent';
 import { buildExport } from './export';
+import { PreviewController } from './preview.svelte';
 
 /** Immutably move an array item from one index to another. */
 function move<T>(arr: T[], from: number, to: number): T[] {
@@ -61,11 +62,11 @@ class EditorState {
   saveError = $state<string | null>(null);
   /** Re-run the last failed save, or null when there's nothing safe to retry. */
   retryOp = $state<null | (() => void)>(null);
-  previewOpen = $state(false);
-  /** PDF preview of the active variant (compiled on demand — xelatex, rate-limited). */
-  previewState = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
-  previewUrl = $state<string | null>(null);
-  previewLog = $state<string | null>(null);
+  /** the on-demand PDF preview — its own reactive island (see preview.svelte.ts). */
+  preview = new PreviewController(
+    () => this.connected,
+    () => this.activeVariant,
+  );
   /** aria-live text for keyboard-reorder feedback (screen-reader only). */
   announce = $state('');
   /** the active variant lens (null = Main, the full document). */
@@ -117,8 +118,6 @@ class EditorState {
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
   /** body paragraphs of the active cover-letter variant (loaded on select). */
   letterSections = $state<LetterSection[]>([]);
-  /** the PDF preview can compile only a real variant on a live backend. */
-  previewCompilable = $derived(this.connected && this.activeVariant !== null);
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
   noProfiles = $derived(this.connected && this.persons.length === 0);
   /** the active profile's switcher label (its person "name"); demo → the CV name. */
@@ -415,7 +414,7 @@ class EditorState {
   // ---- variants: the lens (optimistic; persisted when connected) ----
   selectVariant(id: number | null) {
     this.activeVariantId = id;
-    this.resetPreview(); // the compiled PDF belonged to the previous variant
+    this.preview.reset(); // the compiled PDF belonged to the previous variant
     this.loadLetter();
   }
   /** Load the active cover-letter variant's body paragraphs (clear for a CV variant). */
@@ -447,7 +446,7 @@ class EditorState {
     const tempId = variant.id;
     this.person.variants.push(variant);
     this.activeVariantId = tempId;
-    this.resetPreview();
+    this.preview.reset();
     this.letterSections = []; // a fresh variant has no letter paragraphs yet
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
@@ -559,10 +558,6 @@ class EditorState {
     this.settle((await api.reorderLetterSections(v.id, ids)).ok);
   }
 
-  togglePreview() {
-    this.previewOpen = !this.previewOpen;
-  }
-
   /**
    * Download the current résumé as import-compatible JSON. Connected profiles use
    * the authoritative backend export; the local demo (and any unsaved edits) is
@@ -591,28 +586,6 @@ class EditorState {
     }
     downloadJson(data, `${label}.json`);
   }
-  private resetPreview() {
-    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-    this.previewUrl = null;
-    this.previewLog = null;
-    this.previewState = 'idle';
-  }
-  /** Compile the active variant to a PDF and show it (manual — xelatex is costly). */
-  async compilePreview() {
-    const v = this.activeVariant;
-    if (!this.connected || !v) return;
-    this.previewState = 'compiling';
-    this.previewLog = null;
-    const res = await api.compilePdf(v.id);
-    if (res.ok && res.data) {
-      if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-      this.previewUrl = URL.createObjectURL(res.data);
-      this.previewState = 'ready';
-    } else {
-      this.previewLog = res.error?.message ?? 'Compile failed';
-      this.previewState = 'error';
-    }
-  }
 
   loadPerson(p: Person) {
     this.person = p;
@@ -621,7 +594,7 @@ class EditorState {
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letterSections = [];
-    this.resetPreview();
+    this.preview.reset();
     this.dirty = false;
   }
 
@@ -635,7 +608,7 @@ class EditorState {
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letterSections = [];
-    this.resetPreview();
+    this.preview.reset();
     this.dirty = false;
   }
 
