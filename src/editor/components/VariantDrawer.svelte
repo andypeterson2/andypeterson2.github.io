@@ -14,7 +14,7 @@
     return v.kind === 'coverletter' ? 'cover letter' : 'variant';
   }
   function confirmDelete(v: Variant) {
-    if (window.confirm(`Delete the "${v.name}" ${noun(v)}?`)) void editor.deleteVariant(v);
+    if (window.confirm(`Delete the "${v.name}" ${noun(v)}?`)) void editor.variants.remove(v);
   }
 </script>
 
@@ -27,7 +27,7 @@
   <button
     class="opt"
     class:on={editor.activeVariantId === null}
-    onclick={() => editor.selectVariant(null)}
+    onclick={() => editor.variants.select(null)}
   >
     <span class="radio"></span>
     <span class="opt-name">Main</span>
@@ -38,7 +38,7 @@
     <button
       class="opt"
       class:on={editor.activeVariantId === v.id}
-      onclick={() => editor.selectVariant(v.id)}
+      onclick={() => editor.variants.select(v.id)}
     >
       <span class="radio"></span>
       <span class="opt-name">{v.name}</span>
@@ -48,8 +48,8 @@
 </div>
 
 <div class="new-row">
-  <button class="new" onclick={() => editor.addVariant('New variant')}>＋ New variant</button>
-  <button class="new" onclick={() => editor.addVariant('New cover letter', 'coverletter')}
+  <button class="new" onclick={() => editor.variants.add('New variant')}>＋ New variant</button>
+  <button class="new" onclick={() => editor.variants.add('New cover letter', 'coverletter')}
     >＋ New cover letter</button
   >
 </div>
@@ -62,7 +62,7 @@
       <input
         class="in"
         value={v.name}
-        onchange={(e) => editor.renameVariant(v, e.currentTarget.value)}
+        onchange={(e) => editor.variants.rename(v, e.currentTarget.value)}
       />
     </label>
 
@@ -76,16 +76,16 @@
         <span class="rule-lbl inc">Include</span>
         <TagChips
           tags={v.rules.include}
-          onAdd={(t) => editor.addVariantRule(v, 'include', t)}
-          onRemove={(t) => editor.removeVariantRule(v, 'include', t)}
+          onAdd={(t) => editor.variants.addRule(v, 'include', t)}
+          onRemove={(t) => editor.variants.removeRule(v, 'include', t)}
         />
       </div>
       <div class="rule">
         <span class="rule-lbl exc">Exclude</span>
         <TagChips
           tags={v.rules.exclude}
-          onAdd={(t) => editor.addVariantRule(v, 'exclude', t)}
-          onRemove={(t) => editor.removeVariantRule(v, 'exclude', t)}
+          onAdd={(t) => editor.variants.addRule(v, 'exclude', t)}
+          onRemove={(t) => editor.variants.removeRule(v, 'exclude', t)}
         />
       </div>
       <p class="hint">
