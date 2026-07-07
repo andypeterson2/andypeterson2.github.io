@@ -35,7 +35,7 @@ class EditorState {
   activePersonId = $state<number | null>(null);
   /** a section id the document should scroll into view (set on create) */
   scrollTarget = $state<number | string | null>(null);
-  openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style'>(null);
+  openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles'>(null);
   style = $state({
     accentColor: 'spinel',
     customHex: '',
@@ -71,6 +71,12 @@ class EditorState {
   variantLabel = $derived(this.activeVariant?.name ?? 'Master');
   /** the PDF preview can compile only a real variant on a live backend. */
   previewCompilable = $derived(this.connected && this.activeVariant !== null);
+  /** the active profile's switcher label (its person "name"); demo → the CV name. */
+  profileLabel = $derived(
+    this.persons.find((p) => p.id === this.activePersonId)?.name ||
+      `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
+      'Demo',
+  );
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -429,6 +435,52 @@ class EditorState {
       this.activePersonId = pid;
       this.loadPerson(res.data);
     }
+  }
+
+  // ---- profile (person) CRUD — connected only (profiles live on the server) ----
+  async addPerson() {
+    if (!this.connected) return;
+    const existing = new Set(this.persons.map((p) => p.name));
+    let name = 'New profile';
+    let n = 2;
+    while (existing.has(name)) name = `New profile ${n++}`;
+    this.saveState = 'saving';
+    const res = await api.createPerson(name);
+    if (res.ok && res.data) {
+      this.persons = [...this.persons, { id: res.data.id, name }];
+      this.settle(true);
+      await this.selectPerson(res.data.id); // load the new (empty) profile
+    } else {
+      this.settle(false);
+    }
+  }
+  async renamePerson(pid: number, name: string) {
+    const clean = name.trim();
+    const meta = this.persons.find((p) => p.id === pid);
+    if (!clean || !meta || clean === meta.name) return;
+    const old = meta.name;
+    this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: clean } : p));
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const res = await api.renamePerson(pid, clean);
+    if (!res.ok) this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: old } : p));
+    this.settle(res.ok);
+  }
+  async deletePerson(pid: number) {
+    if (!this.connected || this.persons.length <= 1) return;
+    const snapshot = this.persons;
+    const wasActive = this.activePersonId === pid;
+    const remaining = this.persons.filter((p) => p.id !== pid);
+    this.persons = remaining;
+    this.saveState = 'saving';
+    const res = await api.deletePerson(pid);
+    if (!res.ok) {
+      this.persons = snapshot;
+      this.settle(false);
+      return;
+    }
+    this.settle(true);
+    if (wasActive) await this.selectPerson(remaining[0].id);
   }
 
   /**
