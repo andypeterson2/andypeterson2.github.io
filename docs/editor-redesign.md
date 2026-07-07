@@ -1,8 +1,11 @@
 # CV Editor — Redesign (Document-First)
 
-> **Status:** design agreed, not yet built. This is the north star for the ground-up
-> frontend rewrite of the LaTeX résumé editor (`src/pages/projects/latex-resume-editor/`).
-> The backend (cv on Railway) and the API are **not** changing — this is a frontend rewrite.
+> **Status:** ✅ shipped & live. This was the north star for the ground-up frontend
+> rewrite of the LaTeX résumé editor; the rewrite is built, deployed, and live at
+> [`/projects/latex-resume-editor/app/`](https://andypeterson.dev/projects/latex-resume-editor/app/).
+> The document-first frontend lives in [`src/editor/`](../src/editor/README.md); this
+> doc is retained as the design rationale behind it. The backend (cv on Railway) and
+> its API were **not** changed by the rewrite.
 >
 > **Mockups:** [desktop](https://claude.ai/code/artifact/833eccbd-4ca3-4884-b684-e7e6aa6c4a54) ·
 > [mobile](https://claude.ai/code/artifact/eae19394-7a4a-48d3-b5d4-fa710927a18e)

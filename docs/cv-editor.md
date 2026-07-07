@@ -1,6 +1,6 @@
 ## CV Editor
 
-**Source repo:** [`andypeterson2/cv`](https://github.com/andypeterson2/cv) — API-only backend. The portal owns the frontend under `public/cv/`.
+**Source repo:** [`andypeterson2/cv`](https://github.com/andypeterson2/cv) — API-only backend. The portal owns the frontend: the current document-first editor is a Svelte island in [`src/editor/`](../src/editor/README.md) — **this page describes the backend.**
 
 <a id="cv-overview"></a>
 ### Overview
@@ -10,13 +10,13 @@ Full-stack web application for managing LaTeX resumes, CVs, and cover letters wi
 <a id="cv-server-architecture"></a>
 ### Server Architecture
 
-**`editor/server.js`** (543 lines) — Express.js application:
+**`editor/server.js`** (~184 lines) — Express.js application:
 
 | Property | Value |
 |----------|-------|
-| Framework | Express 4.21.0 |
-| Database | SQLite via better-sqlite3 12.8.0 |
-| Validation | AJV 8.18.0 (JSON Schema) |
+| Framework | Express 5.2.1 |
+| Database | SQLite via better-sqlite3 12.11.1 |
+| Validation | AJV 8.20.0 (JSON Schema) |
 | DB Path | `process.env.CV_DB_PATH` or `../cv.db` |
 | Static Files | Served from `public/` |
 | Testability | Exports app with `app.setDb()` and `app.getDb()` for DI |
