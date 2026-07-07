@@ -8,21 +8,15 @@
 import { api } from './api';
 import { DEMO_LETTERS } from './demo';
 import { move } from './util';
+import type { SaveHost } from './host';
 import type { LetterSection, Variant } from './types';
 
-/** Exactly what the cover-letter concern needs from the editor core. */
-export interface LetterHost {
-  connected(): boolean;
+/** The shared save infra plus the reads the cover-letter concern needs. */
+export interface LetterHost extends SaveHost {
   activeVariant(): Variant | null;
   activeVariantId(): number | null;
   activePersonId(): number | null;
   coverletter(): Record<string, string>;
-  nextId(): number;
-  markDirty(): void;
-  setSaving(): void;
-  settle(ok: boolean, retry?: () => void): void;
-  debounce(key: string, fn: () => void): void;
-  announce(msg: string): void;
 }
 
 export class LetterController {

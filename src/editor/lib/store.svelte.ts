@@ -1,17 +1,21 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
 //
-// This is a large, single store, being split down incrementally (tech-debt
-// #11). Most slices — field autosave, content CRUD, drag reorder, drawers,
-// tags, variants/lens, cover letter, profile CRUD, each under a
-// `// ---- <slice> ----` banner — lean on shared private infra (`settle`,
-// `debounce`, `say`, `seq`, `saveState`), so extracting them wholesale would
-// just relocate that coupling. The slices worth peeling off first are the ones
-// that DON'T touch it: the PDF preview is already out (`preview.svelte.ts`,
-// composed below as `editor.preview`), lifted into a sub-controller that gets
-// the two things it needs — is-connected, the active variant — injected as
-// thunks. Follow that shape for the next self-contained slice; don't scatter
-// the reactive state. Until a slice is peeled, navigate by the banners.
-import type { Person, Selection, Section, Entry, Item, Variant } from './types';
+// This store is being split down incrementally (tech-debt #11). Three concerns
+// are already out, each a sub-controller composed below and driven through an
+// injected host of thunks rather than reaching back into this object:
+//   • `editor.preview`  — preview.svelte.ts  (2 deps; fully self-contained)
+//   • `editor.letters`  — letters.svelte.ts  (the cover letter)
+//   • `editor.variants` — variants.svelte.ts (the lenses + rules)
+// The shared save infra (`nextId`/`markDirty`/`setSaving`/`settle`/`debounce`/
+// `announce`) is named once as `SaveHost` (host.ts) and provided by `saveHost`
+// below; each controller's host extends it with the slice's own reads. To peel
+// another slice, define its host = SaveHost + its reads, move the methods, and
+// keep genuinely shared reactive state (like `activeVariantId`) HERE — the
+// controllers coordinate with it through the host. What remains under the
+// `// ---- <slice> ----` banners (field autosave, content CRUD, drag reorder,
+// drawers, tags, profile CRUD) is the core; extracting it gives diminishing
+// returns. Navigate by the banners.
+import type { Person, Selection, Section, Entry, Item } from './types';
 import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
@@ -19,6 +23,8 @@ import { resolveAccent } from './accent';
 import { buildExport } from './export';
 import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
+import { VariantController } from './variants.svelte';
+import type { SaveHost } from './host';
 import { move } from './util';
 
 /** Trigger a client-side download of `data` as a pretty-printed JSON file. */
@@ -110,13 +116,9 @@ class EditorState {
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
-  /** the cover-letter concern — header fields + per-variant paragraphs (see letters.svelte.ts). */
-  letters = new LetterController({
+  /** the save infra every slice-controller composes (see host.ts). */
+  private saveHost: SaveHost = {
     connected: () => this.connected,
-    activeVariant: () => this.activeVariant,
-    activeVariantId: () => this.activeVariantId,
-    activePersonId: () => this.activePersonId,
-    coverletter: () => this.person.coverletter as Record<string, string>,
     nextId: () => this.seq++,
     markDirty: () => {
       this.dirty = true;
@@ -127,6 +129,32 @@ class EditorState {
     settle: (ok, retry) => this.settle(ok, retry),
     debounce: (key, fn) => this.debounce(key, fn),
     announce: (msg) => this.say(msg),
+  };
+  /** the cover-letter concern — header fields + per-variant paragraphs (letters.svelte.ts). */
+  letters = new LetterController({
+    ...this.saveHost,
+    activeVariant: () => this.activeVariant,
+    activeVariantId: () => this.activeVariantId,
+    activePersonId: () => this.activePersonId,
+    coverletter: () => this.person.coverletter as Record<string, string>,
+  });
+  /** the variants concern — alternate lenses + include/exclude rules (variants.svelte.ts). */
+  variants = new VariantController({
+    ...this.saveHost,
+    activePersonId: () => this.activePersonId,
+    activeId: () => this.activeVariantId,
+    setActiveId: (id) => {
+      this.activeVariantId = id;
+    },
+    variants: () => this.person.variants,
+    setVariants: (v) => {
+      this.person.variants = v;
+    },
+    syncActive: (load) => {
+      this.preview.reset();
+      if (load) this.letters.load();
+      else this.letters.clear();
+    },
   });
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
   noProfiles = $derived(this.connected && this.persons.length === 0);
@@ -419,76 +447,6 @@ class EditorState {
     if (!this.connected) return;
     this.saveState = 'saving';
     this.settle((await api.removeItemTag(item.id, tag)).ok);
-  }
-
-  // ---- variants: the lens (optimistic; persisted when connected) ----
-  selectVariant(id: number | null) {
-    this.activeVariantId = id;
-    this.preview.reset(); // the compiled PDF belonged to the previous variant
-    this.letters.load();
-  }
-  async addVariant(name: string, kind: Variant['kind'] = 'cv') {
-    const clean = name.trim() || (kind === 'coverletter' ? 'New cover letter' : 'New variant');
-    const variant: Variant = {
-      id: this.seq++,
-      name: clean,
-      kind,
-      rules: { include: [], exclude: [] },
-      sections: [],
-    };
-    const tempId = variant.id;
-    this.person.variants.push(variant);
-    this.activeVariantId = tempId;
-    this.preview.reset();
-    this.letters.clear(); // a fresh variant has no letter paragraphs yet
-    this.dirty = true;
-    if (!this.connected || this.activePersonId == null) return;
-    this.saveState = 'saving';
-    const res = await api.createVariant(this.activePersonId, { name: clean, kind });
-    if (res.ok && res.data) {
-      if (this.activeVariantId === tempId) this.activeVariantId = res.data.id;
-      variant.id = res.data.id; // reconcile temp id → server id
-    } else {
-      this.person.variants = this.person.variants.filter((v) => v.id !== tempId); // roll back
-      if (this.activeVariantId === tempId) {
-        this.activeVariantId = null; // fall back to Main
-        this.letters.clear();
-      }
-    }
-    this.settle(res.ok);
-  }
-  async renameVariant(variant: Variant, name: string) {
-    const clean = name.trim();
-    if (!clean || clean === variant.name) return;
-    variant.name = clean;
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.renameVariant(variant.id, clean)).ok);
-  }
-  async deleteVariant(variant: Variant) {
-    this.person.variants = this.person.variants.filter((v) => v.id !== variant.id);
-    if (this.activeVariantId === variant.id) this.activeVariantId = null;
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.deleteVariant(variant.id)).ok);
-  }
-  async addVariantRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
-    const t = tag.trim().replace(/^#/, '');
-    if (!t || variant.rules[mode].includes(t)) return;
-    variant.rules[mode] = [...variant.rules[mode], t];
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
-  }
-  async removeVariantRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
-    variant.rules[mode] = variant.rules[mode].filter((t) => t !== tag);
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
   }
 
   /**
