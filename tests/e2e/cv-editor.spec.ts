@@ -1,10 +1,50 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
  * The editor auto-connects to the live backend on mount, so each test controls
  * that fetch (abort / 403) to stay deterministic and never touch the real gateway.
  */
+
+/** Mock a signed-in profile that owns one no-rules variant ("Full CV", id 50). */
+async function mockAdaWithVariant(page: Page) {
+  const master = {
+    person: { id: 7, name: 'Ada Lovelace' },
+    personal: { firstName: 'Ada', lastName: 'Lovelace' },
+    sections: [
+      {
+        id: 2,
+        type: 'experience',
+        title: 'Experience',
+        entries: [{ id: 11, fields: { position: 'Analyst' }, tags: [], items: [] }],
+      },
+    ],
+    variants: [
+      { id: 50, name: 'Full CV', kind: 'cv', rules: { include: [], exclude: [] }, sections: [] },
+    ],
+  };
+  await page.route(/\/cv\/api\/persons$/, (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+    }),
+  );
+  await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+  );
+}
+
+/** Select the "Full CV" variant via the drawer (drives the lens + preview target). */
+async function selectFullCV(page: Page) {
+  await expect(async () => {
+    await page.locator('.toolbar button.popup').click();
+    await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 8000 });
+  await page.locator('.drawer .opt').filter({ hasText: 'Full CV' }).click();
+  await page.keyboard.press('Escape');
+}
+
 test.describe('CV editor (document-first rewrite)', () => {
   test('renders the full-bleed shell and the demo profile', async ({ page }) => {
     // Backend unreachable → editor stays on the local demo.
@@ -390,5 +430,68 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Back to Master clears the lens entirely.
     await drawer.locator('.opt').filter({ hasText: 'Master' }).click();
     await expect(page.locator('.doc .dim')).toHaveCount(0);
+  });
+
+  test('the preview pane prompts to connect in demo mode', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    await expect(async () => {
+      await page.getByRole('button', { name: /Preview/ }).click();
+      await expect(page.locator('.preview')).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    await expect(page.locator('.preview')).toContainText('connect to compile');
+    await expect(page.locator('.preview .pv-btn')).toBeDisabled();
+  });
+
+  test('compiles the active variant to a PDF blob in the preview', async ({ page }) => {
+    await mockAdaWithVariant(page);
+    let pdfHits = 0;
+    await page.route(/\/cv\/api\/variants\/50\/pdf$/, (r) => {
+      pdfHits += 1;
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+    });
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+    await selectFullCV(page);
+
+    await page.getByRole('button', { name: /Preview/ }).click();
+    const preview = page.locator('.preview');
+    await preview.getByRole('button', { name: /Compile/ }).click();
+
+    const frame = preview.locator('iframe.pv-frame');
+    await expect(frame).toBeVisible();
+    await expect(frame).toHaveAttribute('src', /^blob:/);
+    await expect.poll(() => pdfHits).toBe(1);
+    // The download link carries the variant filename.
+    await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
+      'download',
+      'Full CV.pdf',
+    );
+  });
+
+  test('surfaces the LaTeX log when a compile fails', async ({ page }) => {
+    await mockAdaWithVariant(page);
+    await page.route(/\/cv\/api\/variants\/50\/pdf$/, (r) =>
+      r.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          log: '! Undefined control sequence \\qiQubitCount',
+        }),
+      }),
+    );
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+    await selectFullCV(page);
+
+    await page.getByRole('button', { name: /Preview/ }).click();
+    const preview = page.locator('.preview');
+    await preview.getByRole('button', { name: /Compile/ }).click();
+
+    await expect(preview.locator('.pv-log')).toContainText('Undefined control sequence');
+    await expect(preview.locator('iframe.pv-frame')).toHaveCount(0);
   });
 });

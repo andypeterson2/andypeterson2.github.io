@@ -102,8 +102,45 @@
         <div class="doc-scroll"><Document /></div>
         {#if editor.previewOpen}
           <div class="preview">
-            <div class="pv-bar"><span>{editor.variantLabel}.pdf</span><span class="pv-tools">⟳ Compile · ⤓ PDF · ☰ Log</span></div>
-            <div class="pv-body"><div class="pv-note">Compiled&nbsp;PDF&nbsp;preview<br /><small>wired to <code>GET /variants/:id/pdf</code> in a later increment</small></div></div>
+            <div class="pv-bar">
+              <span>{editor.variantLabel}.pdf</span>
+              <span class="pv-tools">
+                <button
+                  class="pv-btn"
+                  disabled={!editor.previewCompilable || editor.previewState === 'compiling'}
+                  onclick={() => editor.compilePreview()}
+                  >⟳ {editor.previewState === 'ready' ? 'Recompile' : 'Compile'}</button
+                >
+                {#if editor.previewUrl}
+                  <a class="pv-btn" href={editor.previewUrl} download={`${editor.variantLabel}.pdf`}
+                    >⤓ PDF</a
+                  >
+                {/if}
+              </span>
+            </div>
+            <div class="pv-body">
+              {#if !editor.connected}
+                <div class="pv-note">Sign in and connect to compile a live PDF.</div>
+              {:else if !editor.activeVariant}
+                <div class="pv-note">
+                  Pick a <button class="pv-link" onclick={() => (editor.openDrawer = 'variant')}
+                    >variant</button
+                  > to compile its PDF.<br /><small
+                    >Master is the editing view — variants are the deliverables.</small
+                  >
+                </div>
+              {:else if editor.previewState === 'compiling'}
+                <div class="pv-note">
+                  Compiling {editor.variantLabel}…<br /><small>running xelatex — a few seconds</small>
+                </div>
+              {:else if editor.previewState === 'error'}
+                <div class="pv-log"><pre>{editor.previewLog}</pre></div>
+              {:else if editor.previewUrl}
+                <iframe class="pv-frame" title="Compiled PDF preview" src={editor.previewUrl}></iframe>
+              {:else}
+                <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
+              {/if}
+            </div>
           </div>
         {/if}
       </div>
@@ -172,10 +209,17 @@
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
   .doc-scroll { max-height: min(70vh, 640px); overflow: auto; background: var(--paper); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
-  .pv-bar { display: flex; justify-content: space-between; padding: 7px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: 12px; font-weight: 700; }
-  .pv-tools { font-family: var(--mono); font-size: 11px; font-weight: 400; }
-  .pv-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 30px; }
-  .pv-note { font-family: var(--mono); font-size: 12px; color: #55534e; text-align: center; line-height: 1.7; }
+  .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: 12px; font-weight: 700; }
+  .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 400; }
+  .pv-btn { font-family: var(--sans); font-size: 11.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
+  .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+  .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+  .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
+  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: 12px; color: #55534e; text-align: center; line-height: 1.7; }
+  .pv-link { font: inherit; color: #2b6cb0; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .pv-frame { flex: 1; width: 100%; border: 0; background: #fff; }
+  .pv-log { flex: 1; overflow: auto; background: #1c1b19; }
+  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 11px; line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
   .statusbar { display: flex; justify-content: space-between; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
   .sb-r { color: #57554f; }
 </style>
