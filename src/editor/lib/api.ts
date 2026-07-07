@@ -343,6 +343,42 @@ export class CvApi {
   setVariantRules(id: number, rules: { include: string[]; exclude: string[] }) {
     return this.req(`/variants/${id}/rules`, { method: 'PUT', body: JSON.stringify(rules) });
   }
+
+  /**
+   * Compile a variant to PDF (GET /variants/:id/pdf — spawns xelatex, rate-limited).
+   * On success the body is application/pdf → returned as a Blob; on failure the
+   * backend returns { success:false, log } → surfaced as the error message.
+   */
+  async compilePdf(variantId: number): Promise<ApiResult<Blob>> {
+    try {
+      const res = await fetch(`${this.base}/api/variants/${variantId}/pdf`, {
+        credentials: 'include',
+      });
+      if (res.status === 401 || res.status === 403) {
+        return {
+          ok: false,
+          status: res.status,
+          error: { code: 'auth_required', message: 'Sign-in required' },
+        };
+      }
+      const ct = res.headers.get('content-type') ?? '';
+      if (res.ok && ct.includes('pdf')) {
+        return { ok: true, status: res.status, data: await res.blob() };
+      }
+      let message = `Compile failed (HTTP ${res.status})`;
+      if (ct.includes('json')) {
+        const body = (await res.json().catch(() => null)) as { log?: string } | null;
+        if (body?.log) message = body.log;
+      }
+      return { ok: false, status: res.status, error: { code: 'compile_failed', message } };
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        error: { code: 'network_error', message: e instanceof Error ? e.message : String(e) },
+      };
+    }
+  }
 }
 
 export const api = new CvApi();

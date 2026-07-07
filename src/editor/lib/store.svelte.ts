@@ -20,6 +20,10 @@ class EditorState {
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
   previewOpen = $state(false);
+  /** PDF preview of the active variant (compiled on demand — xelatex, rate-limited). */
+  previewState = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
+  previewUrl = $state<string | null>(null);
+  previewLog = $state<string | null>(null);
   /** the active variant lens (null = Master, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
@@ -65,6 +69,8 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Master". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Master');
+  /** the PDF preview can compile only a real variant on a live backend. */
+  previewCompilable = $derived(this.connected && this.activeVariant !== null);
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -296,6 +302,7 @@ class EditorState {
   // ---- variants: the lens (optimistic; persisted when connected) ----
   selectVariant(id: number | null) {
     this.activeVariantId = id;
+    this.resetPreview(); // the compiled PDF belonged to the previous variant
   }
   async addVariant(name: string) {
     const clean = name.trim() || 'New variant';
@@ -356,6 +363,28 @@ class EditorState {
   togglePreview() {
     this.previewOpen = !this.previewOpen;
   }
+  private resetPreview() {
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+    this.previewUrl = null;
+    this.previewLog = null;
+    this.previewState = 'idle';
+  }
+  /** Compile the active variant to a PDF and show it (manual — xelatex is costly). */
+  async compilePreview() {
+    const v = this.activeVariant;
+    if (!this.connected || !v) return;
+    this.previewState = 'compiling';
+    this.previewLog = null;
+    const res = await api.compilePdf(v.id);
+    if (res.ok && res.data) {
+      if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+      this.previewUrl = URL.createObjectURL(res.data);
+      this.previewState = 'ready';
+    } else {
+      this.previewLog = res.error?.message ?? 'Compile failed';
+      this.previewState = 'error';
+    }
+  }
 
   loadPerson(p: Person) {
     this.person = p;
@@ -363,6 +392,7 @@ class EditorState {
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
+    this.resetPreview();
     this.dirty = false;
   }
 
