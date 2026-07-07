@@ -1,20 +1,23 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
 //
-// This store is being split down incrementally (tech-debt #11). Three concerns
-// are already out, each a sub-controller composed below and driven through an
-// injected host of thunks rather than reaching back into this object:
+// This store was split down incrementally (tech-debt #11). Four concerns are
+// out, each a sub-controller composed below and driven through an injected host
+// of thunks rather than reaching back into this object:
 //   • `editor.preview`  — preview.svelte.ts  (2 deps; fully self-contained)
 //   • `editor.letters`  — letters.svelte.ts  (the cover letter)
 //   • `editor.variants` — variants.svelte.ts (the lenses + rules)
+//   • `editor.tags`     — tags.svelte.ts     (tag CRUD, spotlight, vocabulary)
 // The shared save infra (`nextId`/`markDirty`/`setSaving`/`settle`/`debounce`/
 // `announce`) is named once as `SaveHost` (host.ts) and provided by `saveHost`
-// below; each controller's host extends it with the slice's own reads. To peel
-// another slice, define its host = SaveHost + its reads, move the methods, and
-// keep genuinely shared reactive state (like `activeVariantId`) HERE — the
-// controllers coordinate with it through the host. What remains under the
-// `// ---- <slice> ----` banners (field autosave, content CRUD, drag reorder,
-// drawers, tags, profile CRUD) is the core; extracting it gives diminishing
-// returns. Navigate by the banners.
+// below; each controller's host extends it with the slice's own reads. The
+// recipe to peel a slice: define its host = SaveHost + its reads, move the
+// methods, and keep genuinely shared reactive state (like `activeVariantId`)
+// HERE — the controllers coordinate with it through the host.
+//
+// What remains under the `// ---- <slice> ----` banners — field autosave,
+// content CRUD, drag reorder, drawers, profile CRUD — is the core the save infra
+// exists FOR; it's deliberately left in place, as pulling it out would relocate
+// coupling rather than reduce it. Navigate by the banners.
 import type { Person, Selection, Section, Entry, Item } from './types';
 import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
@@ -24,6 +27,7 @@ import { buildExport } from './export';
 import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
+import { TagController } from './tags.svelte';
 import type { SaveHost } from './host';
 import { move } from './util';
 
@@ -91,21 +95,6 @@ class EditorState {
   defaultLayout = $state<string | null>(null);
   /** accent hex the document themes with — mirrors the Style drawer live. */
   accentHex = $derived(resolveAccent(this.style.accentColor, this.style.customHex));
-  /** a tag to spotlight — entries without it dim in the document. */
-  highlightTag = $state<string | null>(null);
-  /** the profile's tag vocabulary with usage counts (derived from content). */
-  tagVocab = $derived.by(() => {
-    const counts = new Map<string, number>();
-    for (const s of this.person.sections) {
-      for (const e of s.entries) {
-        for (const t of e.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
-        for (const it of e.items) for (const t of it.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
-      }
-    }
-    return [...counts.entries()]
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => a.tag.localeCompare(b.tag));
-  });
   /** the Variant object for the active lens, or null for Main (full document). */
   activeVariant = $derived(
     this.activeVariantId == null
@@ -155,6 +144,11 @@ class EditorState {
       if (load) this.letters.load();
       else this.letters.clear();
     },
+  });
+  /** the tags concern — entry/bullet tags, the spotlight, the vocabulary (tags.svelte.ts). */
+  tags = new TagController({
+    ...this.saveHost,
+    sections: () => this.person.sections,
   });
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
   noProfiles = $derived(this.connected && this.persons.length === 0);
@@ -413,40 +407,6 @@ class EditorState {
     if (!this.connected) return;
     this.saveState = 'saving';
     this.settle((await api.setDefaultLayout(id)).ok);
-  }
-
-  // ---- tags on entries + bullets (optimistic; persisted when connected) ----
-  async addEntryTags(entry: Entry, tags: string[]) {
-    const fresh = tags.map((t) => t.trim()).filter((t) => t && !entry.tags.includes(t));
-    if (!fresh.length) return;
-    entry.tags = [...entry.tags, ...fresh];
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.addEntryTags(entry.id, fresh)).ok);
-  }
-  async removeEntryTag(entry: Entry, tag: string) {
-    entry.tags = entry.tags.filter((t) => t !== tag);
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.removeEntryTag(entry.id, tag)).ok);
-  }
-  async addItemTags(item: Item, tags: string[]) {
-    const fresh = tags.map((t) => t.trim()).filter((t) => t && !item.tags.includes(t));
-    if (!fresh.length) return;
-    item.tags = [...item.tags, ...fresh];
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.addItemTags(item.id, fresh)).ok);
-  }
-  async removeItemTag(item: Item, tag: string) {
-    item.tags = item.tags.filter((t) => t !== tag);
-    this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.removeItemTag(item.id, tag)).ok);
   }
 
   /**
