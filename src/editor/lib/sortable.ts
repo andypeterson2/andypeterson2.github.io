@@ -7,11 +7,56 @@
 // Nesting-safe: a container only reacts to a drag whose grip belongs to one of
 // ITS direct `[data-sortable]` children (it tracks `from` locally, and every
 // other container sees `from < 0` and no-ops). That lets a section list contain
-// per-section entry lists without cross-talk. Mouse/pointer only — keyboard
-// reordering is a separate follow-up.
+// per-section entry lists without cross-talk. Mouse/pointer only for drag;
+// keyboard reordering is `reorderKeydown` below (both call the same onReorder).
 
 export interface SortableParam {
   onReorder: (from: number, to: number) => void;
+}
+
+/**
+ * Keyboard reordering for a focused reorderable item (or its grip). Alt+ArrowUp/
+ * Down moves by one; Alt+Home/End jumps to an end. Alt avoids clashing with
+ * Enter/Space (activate) and the browser's Alt+←/→ (back/forward). Returns true
+ * when it consumed the key, so callers can fall through to their own handler.
+ * The keyed re-render drops focus, so we restore it to the moved control (after
+ * the DOM settles) — keeping repeated presses working. Pair with an aria-live
+ * announcement of the new position.
+ */
+export function reorderKeydown(
+  e: KeyboardEvent,
+  index: number,
+  length: number,
+  move: (from: number, to: number) => void,
+): boolean {
+  if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+  let to: number;
+  switch (e.key) {
+    case 'ArrowUp':
+      to = index - 1;
+      break;
+    case 'ArrowDown':
+      to = index + 1;
+      break;
+    case 'Home':
+      to = 0;
+      break;
+    case 'End':
+      to = length - 1;
+      break;
+    default:
+      return false;
+  }
+  e.preventDefault();
+  to = Math.max(0, Math.min(length - 1, to));
+  if (to !== index) {
+    const el = e.currentTarget as HTMLElement | null;
+    move(index, to);
+    if (el && typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => el.focus());
+    }
+  }
+  return true;
 }
 
 export function sortable(container: HTMLElement, param: SortableParam) {

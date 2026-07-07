@@ -24,6 +24,8 @@ class EditorState {
   previewState = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
   previewUrl = $state<string | null>(null);
   previewLog = $state<string | null>(null);
+  /** aria-live text for keyboard-reorder feedback (screen-reader only). */
+  announce = $state('');
   /** the active variant lens (null = Master, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
@@ -100,6 +102,12 @@ class EditorState {
   }
   private settle(ok: boolean) {
     this.saveState = ok ? 'saved' : 'error';
+  }
+  private annToggle = false;
+  /** Set the aria-live message, forcing a re-announce even when the text repeats. */
+  private say(msg: string) {
+    this.annToggle = !this.annToggle;
+    this.announce = this.annToggle ? msg : `${msg}\u200B`;
   }
 
   // ---- debounced field autosave (connected only; demo stays local) ----
@@ -210,6 +218,7 @@ class EditorState {
   // ---- drag reorder (persist the new id order) ----
   async reorderEntries(section: Section, from: number, to: number) {
     section.entries = move(section.entries, from, to);
+    this.say(`Entry moved to position ${to + 1} of ${section.entries.length}`);
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
@@ -218,6 +227,7 @@ class EditorState {
   }
   async reorderItems(entry: Entry, from: number, to: number) {
     entry.items = move(entry.items, from, to);
+    this.say(`Bullet moved to position ${to + 1} of ${entry.items.length}`);
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
@@ -226,6 +236,7 @@ class EditorState {
   }
   async reorderSections(from: number, to: number) {
     this.person.sections = move(this.person.sections, from, to);
+    this.say(`Section moved to position ${to + 1} of ${this.person.sections.length}`);
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     this.saveState = 'saving';

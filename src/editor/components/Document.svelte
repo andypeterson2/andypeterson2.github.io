@@ -3,7 +3,7 @@
   import { typeDef, entryLead, hasBullets, presetsByCategory } from '../lib/section-types';
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
-  import { sortable } from '../lib/sortable';
+  import { sortable, reorderKeydown } from '../lib/sortable';
   import { entryIncluded, itemIncluded, sectionScopedOut } from '../lib/variant-lens';
   import type { Section, Entry, Item } from '../lib/types';
 
@@ -31,6 +31,16 @@
       e.preventDefault();
       fn();
     }
+  }
+  // A focused entry row reorders with Alt+↑/↓ (see reorderKeydown), else activates.
+  function entryKey(ev: KeyboardEvent, section: Section, index: number, entryId: number) {
+    if (
+      reorderKeydown(ev, index, section.entries.length, (f, t) =>
+        editor.reorderEntries(section, f, t),
+      )
+    )
+      return;
+    onKey(ev, () => pick(section.id, entryId));
   }
   function chooseSection(type: string) {
     void editor.addSection(type);
@@ -93,7 +103,7 @@
   {/if}
 
   <div class="sections" use:sortable={{ onReorder: (f, t) => editor.reorderSections(f, t) }}>
-  {#each person.sections as section (section.id)}
+  {#each person.sections as section, sIdx (section.id)}
     {@const def = typeDef(section.type)}
     <section
       class="sec"
@@ -107,8 +117,11 @@
           class="grip"
           data-drag-handle
           draggable="true"
-          title="Drag to reorder section"
+          title="Drag, or press Alt+↑/↓ to reorder"
           aria-label="Reorder section"
+          aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+          onkeydown={(ev) =>
+            reorderKeydown(ev, sIdx, person.sections.length, (f, t) => editor.reorderSections(f, t))}
           onclick={(e) => e.stopPropagation()}>⠿</button
         >
         <h2>{section.title}</h2>
@@ -137,7 +150,7 @@
           <button class="empty" onclick={() => editor.addEntry(section)}>＋ Add text</button>
         {/if}
       {:else if def?.latexType === 'cvskills'}
-        {#each section.entries as e (e.id)}
+        {#each section.entries as e, eIdx (e.id)}
           {#if selEntry === e.id}
             <EntryEdit {section} entry={e} />
           {:else}
@@ -149,15 +162,16 @@
               draggable="true"
               data-drag-handle
               data-sortable
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
               onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
+              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <span class="skill-cat">{e.fields.category}</span><span>{e.fields.skills}</span>
             </div>
           {/if}
         {/each}
       {:else if def?.latexType === 'cvhonors'}
-        {#each section.entries as e (e.id)}
+        {#each section.entries as e, eIdx (e.id)}
           {#if selEntry === e.id}
             <EntryEdit {section} entry={e} />
           {:else}
@@ -169,8 +183,9 @@
               draggable="true"
               data-drag-handle
               data-sortable
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
               onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
+              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
                 <span class="entry-title">{[e.fields.award, e.fields.issuer].filter(Boolean).join(' · ')}</span>
@@ -180,7 +195,7 @@
           {/if}
         {/each}
       {:else if def?.latexType === 'cvreferences'}
-        {#each section.entries as e (e.id)}
+        {#each section.entries as e, eIdx (e.id)}
           {#if selEntry === e.id}
             <EntryEdit {section} entry={e} />
           {:else}
@@ -192,8 +207,9 @@
               draggable="true"
               data-drag-handle
               data-sortable
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
               onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
+              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
                 <span class="entry-title">{e.fields.name}</span>
@@ -203,7 +219,7 @@
           {/if}
         {/each}
       {:else}
-        {#each section.entries as e (e.id)}
+        {#each section.entries as e, eIdx (e.id)}
           {#if selEntry === e.id}
             <EntryEdit {section} entry={e} />
           {:else}
@@ -215,8 +231,9 @@
               draggable="true"
               data-drag-handle
               data-sortable
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
               onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => onKey(ev, () => pick(section.id, e.id))}
+              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
                 <span class="entry-title">{[entryLead(section.type, e.fields), e.fields.organization].filter(Boolean).join(' · ')}</span>
