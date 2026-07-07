@@ -95,7 +95,7 @@
       <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
       <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
       <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
-      <button class="btn" class:on={editor.previewOpen} onclick={() => editor.togglePreview()}>◱ Preview</button>
+      <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
       <button
         class="btn"
         title="Export this résumé as JSON"
@@ -106,7 +106,7 @@
 
     <div class="window">
       <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
-      <div class="wbody" class:split={editor.previewOpen}>
+      <div class="wbody" class:split={editor.preview.open}>
         <div class="doc-scroll">
           {#if editor.noProfiles}
             <div class="no-profiles">
@@ -122,19 +122,19 @@
             <Document />
           {/if}
         </div>
-        {#if editor.previewOpen}
+        {#if editor.preview.open}
           <div class="preview">
             <div class="pv-bar">
               <span>{editor.variantLabel}.pdf</span>
               <span class="pv-tools">
                 <button
                   class="pv-btn"
-                  disabled={!editor.previewCompilable || editor.previewState === 'compiling'}
-                  onclick={() => editor.compilePreview()}
-                  >⟳ {editor.previewState === 'ready' ? 'Recompile' : 'Compile'}</button
+                  disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
+                  onclick={() => editor.preview.compile()}
+                  >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
                 >
-                {#if editor.previewUrl}
-                  <a class="pv-btn" href={editor.previewUrl} download={`${editor.variantLabel}.pdf`}
+                {#if editor.preview.url}
+                  <a class="pv-btn" href={editor.preview.url} download={`${editor.variantLabel}.pdf`}
                     >⤓ PDF</a
                   >
                 {/if}
@@ -151,14 +151,14 @@
                     >Main is the editing view — variants are the deliverables.</small
                   >
                 </div>
-              {:else if editor.previewState === 'compiling'}
+              {:else if editor.preview.state === 'compiling'}
                 <div class="pv-note">
                   Compiling {editor.variantLabel}…<br /><small>running xelatex — a few seconds</small>
                 </div>
-              {:else if editor.previewState === 'error'}
-                <div class="pv-log"><pre>{editor.previewLog}</pre></div>
-              {:else if editor.previewUrl}
-                <iframe class="pv-frame" title="Compiled PDF preview" src={editor.previewUrl}></iframe>
+              {:else if editor.preview.state === 'error'}
+                <div class="pv-log"><pre>{editor.preview.log}</pre></div>
+              {:else if editor.preview.url}
+                <iframe class="pv-frame" title="Compiled PDF preview" src={editor.preview.url}></iframe>
               {:else}
                 <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
               {/if}
