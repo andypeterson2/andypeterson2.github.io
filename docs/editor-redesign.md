@@ -82,7 +82,7 @@ The three logical jobs (navigate · edit · preview) collapse into **one documen
 │           Languages   JavaScript · Python · Go · Rust          │
 │                                              + Add section      │
 ├──────────────────────────────────────────────────────────────┤
-│ ✓ saved · Master                        ⌘K · ⤒ jump to        │
+│ ✓ saved · Main                          ⌘K · ⤒ jump to        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -94,7 +94,7 @@ The three logical jobs (navigate · edit · preview) collapse into **one documen
 - **Preview is a toggle, not a pane.** `◱ Preview` splits in the compiled PDF (or full-screen on
   mobile); dismiss for the clean single column. Compile is **debounced/manual**, not per-keystroke
   (LaTeX is seconds + rate-limited).
-- **Variant lens.** Selecting a variant (vs. "Master") paints the resolved result **onto** the master:
+- **Variant lens.** Selecting a variant (vs. "Main") paints the resolved result **onto** the main:
   excluded content stays **visible, dimmed + struck**, overrides get a badge, each cut item has a
   one-tap re-include. You shape the variant *while reading it* — the argument for a lens over a
   separate "variant builder." The dimming is just `GET /variants/:id/resolve` rendered in place.

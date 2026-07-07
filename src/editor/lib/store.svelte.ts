@@ -52,7 +52,7 @@ class EditorState {
   previewLog = $state<string | null>(null);
   /** aria-live text for keyboard-reorder feedback (screen-reader only). */
   announce = $state('');
-  /** the active variant lens (null = Master, the full document). */
+  /** the active variant lens (null = Main, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
   connecting = $state(false);
@@ -89,14 +89,14 @@ class EditorState {
       .map(([tag, count]) => ({ tag, count }))
       .sort((a, b) => a.tag.localeCompare(b.tag));
   });
-  /** the Variant object for the active lens, or null for Master (full document). */
+  /** the Variant object for the active lens, or null for Main (full document). */
   activeVariant = $derived(
     this.activeVariantId == null
       ? null
       : (this.person.variants.find((v) => v.id === this.activeVariantId) ?? null),
   );
-  /** label for the toolbar/titlebar — the active variant's name or "Master". */
-  variantLabel = $derived(this.activeVariant?.name ?? 'Master');
+  /** label for the toolbar/titlebar — the active variant's name or "Main". */
+  variantLabel = $derived(this.activeVariant?.name ?? 'Main');
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
   /** body paragraphs of the active cover-letter variant (loaded on select). */
