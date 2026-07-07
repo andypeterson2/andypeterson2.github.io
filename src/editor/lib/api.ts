@@ -80,9 +80,10 @@ interface RawMain {
 }
 
 /**
- * Minimal LaTeX→text for display. NOTE: intentionally one-directional for the
- * read-only increment. When writes are wired it MUST be paired with the inverse
- * (text→LaTeX) on the way out, or round-trips will corrupt data.
+ * LaTeX → display text. Deliberately PARTIAL: only the "stray prose special" set
+ * (% & $ # _) and the en-dash are un-escaped; LaTeX syntax (\command, { } ~ ^) is
+ * left intact so fields can hold light LaTeX — e.g. \textbf{…} or the real CV's
+ * custom macros. Exact mirror of `tex` (see it for the round-trip tradeoff).
  */
 function untex(s: string | undefined): string {
   if (!s) return '';
@@ -94,9 +95,16 @@ function untex(s: string | undefined): string {
     .replace(/\\_/g, '_')
     .replace(/--/g, '–');
 }
-/** Inverse of untex — display text → LaTeX, for writes. Negative lookbehind
- *  avoids double-escaping anything already escaped. Keep this the exact mirror
- *  of untex so read→edit→write round-trips are lossless. */
+/**
+ * Display text → LaTeX, for writes; exact inverse of `untex`. Escapes stray prose
+ * specials (% & $ # _), converts the en-dash, and via the (?<!\\) lookbehind
+ * leaves already-escaped text AND any LaTeX the field holds (\command, { } ~ ^)
+ * untouched. TRADEOFF: a LITERAL { } ~ ^ or \ typed as prose is NOT escaped, so it
+ * renders as LaTeX (braces group, ~ → non-breaking space, a bare \ or ^ can
+ * error). Accepted so fields can carry light LaTeX; the real fix is a
+ * plain-text-vs-LaTeX field distinction, NOT wider escaping — that would mangle
+ * the macros the real CV depends on.
+ */
 export function tex(s: string): string {
   if (!s) return '';
   return s
