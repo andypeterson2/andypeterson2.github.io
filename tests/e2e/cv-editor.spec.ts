@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -815,5 +816,35 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Add a paragraph → POST /letter-sections.
     await letter.getByRole('button', { name: /Add paragraph/ }).click();
     await expect.poll(() => posted).toBe(1);
+  });
+
+  test('exports the résumé as import-compatible JSON (works offline)', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+
+    // Confirm the island has hydrated (its click handlers are live) before export.
+    const inline = page.locator('.doc .edit');
+    await expect(async () => {
+      await page.locator('.entry').first().click();
+      await expect(inline).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+    await page.keyboard.press('Escape');
+
+    // Export downloads a JSON file with the backend's import-compatible shape.
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Export/ }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.json$/);
+
+    const path = await download.path();
+    const doc = JSON.parse(await readFile(path, 'utf8')) as {
+      sections: { slug: string }[];
+      variants: { kind: string }[];
+      personal: Record<string, string>;
+    };
+    expect(doc.sections.map((s) => s.slug)).toContain('experience');
+    expect(doc.variants.some((v) => v.kind === 'coverletter')).toBe(true);
+    // 'id' in doc.sections[0] would be true for a raw snapshot; the import shape drops it.
+    expect('id' in doc.sections[0]).toBe(false);
   });
 });

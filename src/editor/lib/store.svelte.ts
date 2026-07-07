@@ -4,6 +4,7 @@ import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
 import { resolveAccent } from './accent';
+import { buildExport } from './export';
 
 /** Immutably move an array item from one index to another. */
 function move<T>(arr: T[], from: number, to: number): T[] {
@@ -11,6 +12,21 @@ function move<T>(arr: T[], from: number, to: number): T[] {
   const [item] = next.splice(from, 1);
   next.splice(to, 0, item);
   return next;
+}
+
+/** Trigger a client-side download of `data` as a pretty-printed JSON file. */
+function downloadJson(data: unknown, filename: string) {
+  if (typeof document === 'undefined') return;
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+  );
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 /** A blank profile held while connected with zero profiles — nothing stale renders. */
@@ -475,6 +491,30 @@ class EditorState {
 
   togglePreview() {
     this.previewOpen = !this.previewOpen;
+  }
+
+  /**
+   * Download the current résumé as import-compatible JSON. Connected profiles use
+   * the authoritative backend export; the local demo (and any unsaved edits) is
+   * serialized client-side. Either way it re-imports losslessly.
+   */
+  async exportJson() {
+    if (this.noProfiles) return;
+    const label = (this.profileLabel || 'resume').replace(/[^\w.-]+/g, '-') || 'resume';
+    let data: unknown;
+    if (this.connected && this.activePersonId != null) {
+      const res = await api.exportPerson(this.activePersonId);
+      if (!res.ok || res.data == null) {
+        this.settle(false);
+        return;
+      }
+      data = res.data;
+    } else {
+      data = buildExport(this.person, (v) =>
+        this.activeVariantId === v.id ? this.letterSections : (DEMO_LETTERS[v.id] ?? []),
+      );
+    }
+    downloadJson(data, `${label}.json`);
   }
   private resetPreview() {
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
