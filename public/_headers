@@ -1,3 +1,17 @@
+# ── Security headers — SPEC, NOT LIVE ────────────────────────────────────────
+# GitHub Pages (this site's origin) does not serve _headers — this file is inert
+# HERE. It is kept as the source-of-truth spec and is mirrored by hand into the
+# Cloudflare Response Header Transform Rules that run at the edge in front of
+# andypeterson.dev. See docs/security-headers.md for the exact rules + rationale.
+#
+# The two headers that matter most for injection defense — the content security
+# policy and the referrer policy — do NOT depend on the edge: they are also
+# enforced in-page via <meta> (astro.config.mjs `security.csp` emits a hashed
+# per-page policy at build time; BaseLayout.astro sets the referrer meta). The
+# post-build gate scripts/check-security-headers.sh asserts the CSP actually
+# ships in dist/. The headers below add edge-only defenses (nosniff, framing,
+# HSTS, permissions) that a static origin cannot set for itself.
+# ─────────────────────────────────────────────────────────────────────────────
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
