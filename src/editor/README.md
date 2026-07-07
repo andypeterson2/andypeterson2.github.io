@@ -81,6 +81,23 @@ escapes `% & $ # _` and en-dashes but leaves `\command`, `{}`, `~`, `^` intact
 (`\textbf{…}`, `\qiQubitCount`) round-trip. Widening it would mangle the real
 CV — this is a documented tradeoff, not a gap.
 
+## Kept in sync with the backend (by hand)
+
+Three pieces of logic are **duplicated** in the cv backend and here. They live
+in separate repos with no shared package (the submodule was removed), so there
+is no import to dedupe them — the mitigation is to know they're coupled and
+change both sides together ([tech-debt #10](../../docs/)):
+
+| Knowledge | Backend (cv) | Frontend (here) | Drift shows up as |
+|---|---|---|---|
+| LaTeX escaping | `editor/lib/serializer.js` (final `.tex`) | `api.ts` `tex`/`untex` (edit display) | a char renders raw in one, escaped in the other |
+| Section-type catalog | `GET /api/catalog` → `validSectionTypes` | `section-types.ts` (types + fields + labels) | a backend-only type has no editor UI |
+| Variant include/exclude | `editor/lib/db/variants.js` | `variant-lens.ts` (client preview) | the preview dims different entries than the compiled PDF |
+
+The escaping overlap is the mildest (the two encode the same rule for different
+outputs); the catalog and variant-lens are the ones to watch — the backend is
+authoritative, so if the two disagree, the backend wins and this side is the bug.
+
 ## Demo mode
 
 Not signed in → the editor renders a **fictional** persona (Jordan Rivera, in
