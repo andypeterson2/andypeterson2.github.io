@@ -97,7 +97,7 @@ function untex(s: string | undefined): string {
 /** Inverse of untex — display text → LaTeX, for writes. Negative lookbehind
  *  avoids double-escaping anything already escaped. Keep this the exact mirror
  *  of untex so read→edit→write round-trips are lossless. */
-function tex(s: string): string {
+export function tex(s: string): string {
   if (!s) return '';
   return s
     .replace(/(?<!\\)%/g, '\\%')
@@ -107,7 +107,7 @@ function tex(s: string): string {
     .replace(/(?<!\\)_/g, '\\_')
     .replace(/–/g, '--');
 }
-function texFields(fields: Record<string, string>): Record<string, string> {
+export function texFields(fields: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(fields)) out[k] = tex(v);
   return out;
@@ -411,6 +411,10 @@ export class CvApi {
   }
   deleteLetterSection(variantId: number, lid: number) {
     return this.req(`/variants/${variantId}/letter-sections/${lid}`, { method: 'DELETE' });
+  }
+  /** GET /persons/:pid/export → the backend's import-compatible tree (authoritative). */
+  exportPerson(pid: number) {
+    return this.req<unknown>(`/persons/${pid}/export`);
   }
   reorderLetterSections(variantId: number, ids: number[]) {
     return this.req(`/variants/${variantId}/letter-sections/order`, {
