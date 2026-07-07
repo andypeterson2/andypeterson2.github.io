@@ -195,6 +195,9 @@ class EditorState {
       if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
         this.selection = { kind: 'entry', sectionId: section.id, entryId: res.data.id };
       }
+    } else {
+      section.entries = section.entries.filter((e) => e.id !== tempId); // roll back the phantom
+      this.clearSelection();
     }
     this.settle(res.ok);
   }
@@ -214,6 +217,7 @@ class EditorState {
     this.saveState = 'saving';
     const res = await api.createItem(entry.id, { content: '', title: '' });
     if (res.ok && res.data) item.id = res.data.id;
+    else entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
     this.settle(res.ok);
   }
   async deleteBullet(entry: Entry, itemId: number) {
@@ -237,7 +241,12 @@ class EditorState {
     if (!this.connected || this.activePersonId == null) return;
     this.saveState = 'saving';
     const res = await api.createSection(this.activePersonId, { slug, type, title });
-    if (res.ok && res.data) section.id = res.data.id; // reconcile temp id → server id
+    if (res.ok && res.data)
+      section.id = res.data.id; // reconcile temp id → server id
+    else {
+      this.person.sections = this.person.sections.filter((s) => s.id !== section.id); // roll back
+      this.scrollTarget = null;
+    }
     this.settle(res.ok);
   }
   async deleteSection(sectionId: Section['id']) {
@@ -394,6 +403,12 @@ class EditorState {
     if (res.ok && res.data) {
       if (this.activeVariantId === tempId) this.activeVariantId = res.data.id;
       variant.id = res.data.id; // reconcile temp id → server id
+    } else {
+      this.person.variants = this.person.variants.filter((v) => v.id !== tempId); // roll back
+      if (this.activeVariantId === tempId) {
+        this.activeVariantId = null; // fall back to Main
+        this.letterSections = [];
+      }
     }
     this.settle(res.ok);
   }
@@ -455,6 +470,8 @@ class EditorState {
     if (res.ok && res.data) {
       const s = this.letterSections.find((x) => x.id === tempId);
       if (s) s.id = res.data.id; // reconcile temp id → server id
+    } else {
+      this.letterSections = this.letterSections.filter((s) => s.id !== tempId); // roll back
     }
     this.settle(res.ok);
   }
