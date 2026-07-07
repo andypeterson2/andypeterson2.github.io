@@ -91,6 +91,12 @@
       <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
       <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
       <button class="btn" class:on={editor.previewOpen} onclick={() => editor.togglePreview()}>◱ Preview</button>
+      <button
+        class="btn"
+        title="Export this résumé as JSON"
+        disabled={editor.noProfiles}
+        onclick={() => editor.exportJson()}>⤓ Export</button
+      >
     </div>
 
     <div class="window">
@@ -201,7 +207,7 @@
   .signin a,
   .signin .link { color: #9ec7ff; font-weight: 700; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
   .dismiss { background: none; border: 0; color: var(--paper); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }
-  .workspace { max-width: 1040px; margin: 0 auto; padding: 26px 22px 0; }
+  .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
   .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
@@ -212,6 +218,7 @@
   .btn.icon { padding: 5px 9px; font-size: 14px; }
   .btn.on { background: var(--ink); color: var(--paper); }
   .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .sp { flex: 1; }
   .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
   .titlebar { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
@@ -220,7 +227,7 @@
   .fill { width: 11px; }
   .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
-  .doc-scroll { max-height: min(70vh, 640px); overflow: auto; background: var(--paper); }
+  .doc-scroll { max-height: min(82vh, 960px); overflow: auto; background: var(--paper); }
   .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
   .np-title { font-family: var(--serif); font-size: 22px; font-weight: 700; color: #3a3934; margin: 0; }
   .np-sub { font-size: 13.5px; color: #55534e; margin: 0 0 10px; }
