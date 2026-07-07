@@ -211,29 +211,46 @@ describe('SEO and Meta Tags', () => {
   });
 });
 
-// ---- HTTP Security Headers ----
+// ---- Security header policy ----
+//
+// This is a static GitHub Pages origin (behind Cloudflare). GH Pages ignores
+// public/_headers, so those headers are a SPEC mirrored by hand into Cloudflare
+// edge rules — see docs/security-headers.md. What the repo enforces on its own
+// is the in-page CSP + referrer <meta>; those are the controls worth asserting
+// here. (That the CSP actually ships in the built HTML is gated separately by
+// scripts/check-security-headers.sh, which runs after `npm run build`.)
 
-describe('HTTP Security Headers', () => {
-  const headers = readFileSync(resolve(ROOT, 'public/_headers'), 'utf-8');
+describe('Security header policy', () => {
+  const headersSpec = readFileSync(resolve(ROOT, 'public/_headers'), 'utf-8');
+  const configSrc = readFileSync(resolve(ROOT, 'astro.config.mjs'), 'utf-8');
+  const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
-  test('sets X-Content-Type-Options', () => {
-    expect(headers).toContain('X-Content-Type-Options: nosniff');
+  // Enforced in-repo — these ship inside the HTML and hold with or without edge rules.
+  test('CSP is configured with the load-bearing directives', () => {
+    expect(configSrc).toContain('csp:');
+    expect(configSrc).toContain("default-src 'self'");
+    expect(configSrc).toContain("object-src 'none'");
+    expect(configSrc).toContain("frame-ancestors 'none'");
+    // the CV editor's gateway must stay allow-listed or the app's fetches break
+    expect(configSrc).toContain('https://api.andypeterson.dev');
   });
 
-  test('sets X-Frame-Options', () => {
-    expect(headers).toContain('X-Frame-Options: DENY');
+  test('referrer policy ships as a meta tag', () => {
+    expect(layoutSrc).toContain('name="referrer"');
+    expect(layoutSrc).toContain('strict-origin-when-cross-origin');
   });
 
-  test('sets Referrer-Policy', () => {
-    expect(headers).toContain('Referrer-Policy');
+  // Spec-only — public/_headers is inert on GH Pages and mirrored to Cloudflare.
+  // Assert it still lists the edge-only headers it's the contract for, and that
+  // it's clearly labelled as a spec so no one mistakes it for a live source.
+  test('_headers spec lists the edge-only headers (mirrored to Cloudflare)', () => {
+    expect(headersSpec).toContain('X-Content-Type-Options: nosniff');
+    expect(headersSpec).toContain('X-Frame-Options: DENY');
+    expect(headersSpec).toContain('Permissions-Policy');
+    expect(headersSpec).toContain('Strict-Transport-Security');
   });
 
-  test('sets Permissions-Policy', () => {
-    expect(headers).toContain('Permissions-Policy');
-  });
-
-  test('CSP is enforced via Astro meta tags (not _headers)', () => {
-    // CSP moved from _headers to per-page <meta> tags via Astro security.csp
-    expect(headers).not.toContain('Content-Security-Policy');
+  test('_headers is labelled spec-only, not a live GH Pages header source', () => {
+    expect(headersSpec).toMatch(/SPEC|inert|Cloudflare/i);
   });
 });

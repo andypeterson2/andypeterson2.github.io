@@ -35,6 +35,8 @@ jobs:
           path: coverage/
           retention-days: 7
       - run: npm run build
+      - name: Verify CSP ships in built output
+        run: bash scripts/check-security-headers.sh
       - uses: actions/upload-artifact@v7
         with:
           name: dist
