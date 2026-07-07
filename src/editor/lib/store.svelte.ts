@@ -13,6 +13,9 @@ function move<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
+/** A blank profile held while connected with zero profiles — nothing stale renders. */
+const EMPTY_PERSON: Person = { id: 0, name: '', personal: {}, sections: [], variants: [] };
+
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(DEMO_PERSON);
@@ -73,11 +76,15 @@ class EditorState {
   variantLabel = $derived(this.activeVariant?.name ?? 'Master');
   /** the PDF preview can compile only a real variant on a live backend. */
   previewCompilable = $derived(this.connected && this.activeVariant !== null);
+  /** connected, but the account has no profiles yet (e.g. after deleting the last). */
+  noProfiles = $derived(this.connected && this.persons.length === 0);
   /** the active profile's switcher label (its person "name"); demo → the CV name. */
   profileLabel = $derived(
-    this.persons.find((p) => p.id === this.activePersonId)?.name ||
-      `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
-      'Demo',
+    this.noProfiles
+      ? 'No profiles'
+      : this.persons.find((p) => p.id === this.activePersonId)?.name ||
+          `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
+          'Demo',
   );
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
@@ -413,6 +420,19 @@ class EditorState {
     this.dirty = false;
   }
 
+  /** Connected but with no profiles — shows the "create your first profile" prompt. */
+  enterEmpty() {
+    this.person = EMPTY_PERSON;
+    this.persons = [];
+    this.activePersonId = null;
+    this.connected = true;
+    this.saveState = 'saved';
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.resetPreview();
+    this.dirty = false;
+  }
+
   /** Try to load a profile from the live backend (read-only). */
   async connect() {
     if (this.connecting) return;
@@ -424,6 +444,13 @@ class EditorState {
       this.persons = res.data.persons;
       this.activePersonId = res.data.person.id;
       this.loadPerson(res.data.person);
+      return;
+    }
+    // Signed in but the account has no profiles yet → connected empty state,
+    // NOT a sign-in prompt (the request succeeded; the list was just empty).
+    if (res.error?.code === 'no_persons') {
+      this.connecting = false;
+      this.enterEmpty();
       return;
     }
     // Not loaded. A not-signed-in request 302s to the Access login on another
@@ -478,7 +505,7 @@ class EditorState {
     this.settle(res.ok);
   }
   async deletePerson(pid: number) {
-    if (!this.connected || this.persons.length <= 1) return;
+    if (!this.connected) return;
     const snapshot = this.persons;
     const wasActive = this.activePersonId === pid;
     const remaining = this.persons.filter((p) => p.id !== pid);
@@ -491,7 +518,10 @@ class EditorState {
       return;
     }
     this.settle(true);
-    if (wasActive) await this.selectPerson(remaining[0].id);
+    if (wasActive) {
+      if (remaining.length) await this.selectPerson(remaining[0].id);
+      else this.enterEmpty(); // deleted the last one → connected empty state
+    }
   }
 
   /**
