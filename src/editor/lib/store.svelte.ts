@@ -500,7 +500,12 @@ class EditorState {
    */
   async exportJson() {
     if (this.noProfiles) return;
-    const label = (this.profileLabel || 'resume').replace(/[^\w.-]+/g, '-') || 'resume';
+    // Keep Unicode letters (résumé, non-Latin names); strip only filesystem-unsafe
+    // characters + leading/trailing dots/spaces (\w would flatten accents to dashes).
+    const label =
+      (this.profileLabel || 'resume')
+        .replace(/[/\\:*?"<>| -]+/g, '-')
+        .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume';
     let data: unknown;
     if (this.connected && this.activePersonId != null) {
       const res = await api.exportPerson(this.activePersonId);
