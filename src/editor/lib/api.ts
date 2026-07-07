@@ -4,10 +4,10 @@
 //
 // The backend is id-addressable — there is NO active-person/session state.
 // GET /persons lists profiles ({id,name}); GET /persons/:pid returns that
-// profile's full "master" (person + personal + sections→entries→items→tags,
+// profile's full "main" record (person + personal + sections→entries→items→tags,
 // variants, tag vocab) in one shot. The gateway tiers access: an allowlisted
 // (owner) Access identity gets every profile; anyone else gets the public demo
-// profile only. Contract: cv/editor/routes/persons.js + lib/db.js#getMaster.
+// profile only. Contract: cv/editor/routes/persons.js (the GET /persons/:pid route).
 import type {
   Person,
   Personal,
@@ -38,27 +38,27 @@ export interface ActiveLoad {
   persons: PersonMeta[];
 }
 
-// ---- raw shapes as returned by GET /persons/:pid (getMaster) ----
-interface RawMasterItem {
+// ---- raw shapes as returned by GET /persons/:pid ----
+interface RawMainItem {
   id: number;
   title?: string;
   content?: string;
   tags?: string[];
 }
-interface RawMasterEntry {
+interface RawMainEntry {
   id: number;
   fields?: Record<string, string>;
-  items?: RawMasterItem[];
+  items?: RawMainItem[];
   tags?: string[];
 }
-interface RawMasterSection {
+interface RawMainSection {
   id: number | string;
   slug?: string;
   type: string;
   title: string;
-  entries?: RawMasterEntry[];
+  entries?: RawMainEntry[];
 }
-interface RawMasterVariant {
+interface RawMainVariant {
   id: number;
   name: string;
   kind: string;
@@ -71,11 +71,11 @@ interface RawLetterSection {
   title?: string;
   body?: string;
 }
-interface RawMaster {
+interface RawMain {
   person: { id: number; name: string };
   personal?: Record<string, string>;
-  sections?: RawMasterSection[];
-  variants?: RawMasterVariant[];
+  sections?: RawMainSection[];
+  variants?: RawMainVariant[];
   coverletter?: Record<string, string>;
 }
 
@@ -113,15 +113,15 @@ export function texFields(fields: Record<string, string>): Record<string, string
   return out;
 }
 
-function mapItem(it: RawMasterItem): Item {
+function mapItem(it: RawMainItem): Item {
   return { id: it.id, title: untex(it.title), content: untex(it.content), tags: it.tags ?? [] };
 }
-function mapEntry(e: RawMasterEntry): Entry {
+function mapEntry(e: RawMainEntry): Entry {
   const fields: Record<string, string> = {};
   for (const [k, v] of Object.entries(e.fields ?? {})) fields[k] = untex(v);
   return { id: e.id, fields, items: (e.items ?? []).map(mapItem), tags: e.tags ?? [] };
 }
-function mapVariant(v: RawMasterVariant): Variant {
+function mapVariant(v: RawMainVariant): Variant {
   return {
     id: v.id,
     name: v.name,
@@ -140,8 +140,8 @@ function mapCoverletter(cl?: Record<string, string>): CoverletterHeader {
   }
   return out as CoverletterHeader;
 }
-/** GET /persons/:pid (getMaster) → the editor's Person. Rows arrive pre-ordered. */
-function mapMaster(m: RawMaster): Person {
+/** GET /persons/:pid → the editor's Person. Rows arrive pre-ordered. */
+function mapMain(m: RawMain): Person {
   const personal: Record<string, string> = {};
   for (const [k, v] of Object.entries(m.personal ?? {})) personal[k] = untex(v);
   return {
@@ -208,13 +208,13 @@ export class CvApi {
   listPersons() {
     return this.req<{ persons: PersonMeta[] }>('/persons');
   }
-  private getMaster(pid: number | string) {
-    return this.req<RawMaster>(`/persons/${pid}`);
+  private getMain(pid: number | string) {
+    return this.req<RawMain>(`/persons/${pid}`);
   }
 
   /** Load one profile by id and map it to the editor's Person shape. */
   async fetchPerson(pid: number | string): Promise<ApiResult<Person>> {
-    const res = await this.getMaster(pid);
+    const res = await this.getMain(pid);
     if (!res.ok || !res.data) {
       return {
         ok: false,
@@ -222,7 +222,7 @@ export class CvApi {
         error: res.error ?? { code: 'load_failed', message: 'Could not load profile' },
       };
     }
-    return { ok: true, status: 200, data: mapMaster(res.data) };
+    return { ok: true, status: 200, data: mapMain(res.data) };
   }
 
   /**
