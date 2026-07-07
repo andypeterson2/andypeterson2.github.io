@@ -8,6 +8,7 @@
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
   import TagsDrawer from './components/TagsDrawer.svelte';
   import VariantDrawer from './components/VariantDrawer.svelte';
+  import ProfilesDrawer from './components/ProfilesDrawer.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -62,22 +63,16 @@
     <div class="toolbar">
       <span class="field"
         >Profile
-        {#if editor.persons.length > 1}
-          <select
-            class="popup sel"
-            value={editor.activePersonId}
-            onchange={(e) => editor.selectPerson(Number(e.currentTarget.value))}
-          >
-            {#each editor.persons as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
-          </select>
-        {:else}
-          <span class="popup">{fullName} ▾</span>
-        {/if}
-      </span>
+        <button
+          class="popup profile-btn"
+          title="Profiles"
+          onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
+        ></span
+      >
       <span class="field"
         >Variant
         <button
-          class="popup"
+          class="popup variant-btn"
           class:lens={editor.activeVariantId !== null}
           title="Variants + the lens"
           onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
@@ -97,7 +92,7 @@
     </div>
 
     <div class="window">
-      <div class="titlebar"><span class="close"></span><span class="title">{fullName} — {editor.variantLabel}</span><span class="fill"></span></div>
+      <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
       <div class="wbody" class:split={editor.previewOpen}>
         <div class="doc-scroll"><Document /></div>
         {#if editor.previewOpen}
@@ -169,6 +164,8 @@
     <Drawer title="Tags"><TagsDrawer /></Drawer>
   {:else if editor.openDrawer === 'variant'}
     <Drawer title="Variants"><VariantDrawer /></Drawer>
+  {:else if editor.openDrawer === 'profiles'}
+    <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
   {/if}
 </div>
 
@@ -191,10 +188,9 @@
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
   .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
-  button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; }
+  button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .popup.lens { background: var(--ink); color: var(--paper); }
-  .sel { cursor: pointer; max-width: 190px; color: var(--ink); }
   .btn { font-size: 12.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
   .btn.icon { padding: 5px 9px; font-size: 14px; }
   .btn.on { background: var(--ink); color: var(--paper); }

@@ -229,6 +229,17 @@ export class CvApi {
     return { ok: true, status: 200, data: { person: loaded.data, persons } };
   }
 
+  // ---- person (profile) CRUD ----
+  createPerson(name: string) {
+    return this.req<{ id: number }>('/persons', { method: 'POST', body: JSON.stringify({ name }) });
+  }
+  renamePerson(id: number, name: string) {
+    return this.req(`/persons/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
+  }
+  deletePerson(id: number) {
+    return this.req(`/persons/${id}`, { method: 'DELETE' });
+  }
+
   // ---- writes (display text is LaTeX-escaped on the way out) ----
   updateEntry(id: number, fields: Record<string, string>) {
     return this.req(`/entries/${id}`, {
