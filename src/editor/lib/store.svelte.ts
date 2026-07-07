@@ -1,5 +1,5 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
-import type { Person, Selection, Section, Entry, Item } from './types';
+import type { Person, Selection, Section, Entry, Item, Variant } from './types';
 import { DEMO_PERSON } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
@@ -20,7 +20,8 @@ class EditorState {
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
   previewOpen = $state(false);
-  variant = $state('Master');
+  /** the active variant lens (null = Master, the full document). */
+  activeVariantId = $state<number | null>(null);
   dirty = $state(false);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
@@ -56,6 +57,14 @@ class EditorState {
       .map(([tag, count]) => ({ tag, count }))
       .sort((a, b) => a.tag.localeCompare(b.tag));
   });
+  /** the Variant object for the active lens, or null for Master (full document). */
+  activeVariant = $derived(
+    this.activeVariantId == null
+      ? null
+      : (this.person.variants.find((v) => v.id === this.activeVariantId) ?? null),
+  );
+  /** label for the toolbar/titlebar — the active variant's name or "Master". */
+  variantLabel = $derived(this.activeVariant?.name ?? 'Master');
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
@@ -284,6 +293,66 @@ class EditorState {
     this.settle((await api.removeItemTag(item.id, tag)).ok);
   }
 
+  // ---- variants: the lens (optimistic; persisted when connected) ----
+  selectVariant(id: number | null) {
+    this.activeVariantId = id;
+  }
+  async addVariant(name: string) {
+    const clean = name.trim() || 'New variant';
+    const variant: Variant = {
+      id: this.seq++,
+      name: clean,
+      kind: 'cv',
+      rules: { include: [], exclude: [] },
+      sections: [],
+    };
+    const tempId = variant.id;
+    this.person.variants.push(variant);
+    this.activeVariantId = tempId;
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    this.saveState = 'saving';
+    const res = await api.createVariant(this.activePersonId, { name: clean, kind: 'cv' });
+    if (res.ok && res.data) {
+      if (this.activeVariantId === tempId) this.activeVariantId = res.data.id;
+      variant.id = res.data.id; // reconcile temp id → server id
+    }
+    this.settle(res.ok);
+  }
+  async renameVariant(variant: Variant, name: string) {
+    const clean = name.trim();
+    if (!clean || clean === variant.name) return;
+    variant.name = clean;
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.renameVariant(variant.id, clean)).ok);
+  }
+  async deleteVariant(variant: Variant) {
+    this.person.variants = this.person.variants.filter((v) => v.id !== variant.id);
+    if (this.activeVariantId === variant.id) this.activeVariantId = null;
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.deleteVariant(variant.id)).ok);
+  }
+  async addVariantRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
+    const t = tag.trim().replace(/^#/, '');
+    if (!t || variant.rules[mode].includes(t)) return;
+    variant.rules[mode] = [...variant.rules[mode], t];
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
+  }
+  async removeVariantRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
+    variant.rules[mode] = variant.rules[mode].filter((t) => t !== tag);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
+  }
+
   togglePreview() {
     this.previewOpen = !this.previewOpen;
   }
@@ -293,6 +362,7 @@ class EditorState {
     this.connected = true;
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
+    this.activeVariantId = null;
     this.dirty = false;
   }
 

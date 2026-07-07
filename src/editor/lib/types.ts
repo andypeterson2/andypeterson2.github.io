@@ -49,6 +49,19 @@ export interface Person {
   name: string;
   personal: Personal;
   sections: Section[];
+  variants: Variant[];
+}
+
+/** A variant's tag rules — the primary lever for what it includes. */
+export interface VariantRules {
+  include: string[];
+  exclude: string[];
+}
+
+/** Explicit section scoping for a variant. */
+export interface VariantSectionRef {
+  sectionId: number | string;
+  enabled: boolean;
 }
 
 export interface Variant {
@@ -56,6 +69,9 @@ export interface Variant {
   name: string;
   kind: 'cv' | 'resume' | 'coverletter';
   layoutId?: string | null;
+  rules: VariantRules;
+  /** Explicit section scope; empty = every section is in. */
+  sections: VariantSectionRef[];
 }
 
 /** A selected node in the document (what the inspector edits). */
