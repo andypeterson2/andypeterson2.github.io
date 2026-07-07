@@ -847,4 +847,36 @@ test.describe('CV editor (document-first rewrite)', () => {
     // 'id' in doc.sections[0] would be true for a raw snapshot; the import shape drops it.
     expect('id' in doc.sections[0]).toBe(false);
   });
+
+  test('rolls back an optimistic create when the backend rejects it', async ({ page }) => {
+    const main = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [{ id: 2, type: 'experience', title: 'Experience', entries: [] }],
+      variants: [],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
+    );
+    // The section create fails.
+    await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) =>
+      r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' }),
+    );
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    await page.locator('.add-section').click();
+    await page.locator('.picker .pick').filter({ hasText: 'Skills' }).first().click();
+
+    // The optimistic Skills section is removed (no phantom), and the error surfaces.
+    await expect(page.locator('.sec-head h2').filter({ hasText: 'Skills' })).toHaveCount(0);
+    await expect(page.locator('.statusbar')).toContainText('save failed');
+  });
 });
