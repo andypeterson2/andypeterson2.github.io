@@ -45,6 +45,10 @@ class EditorState {
   selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
+  /** Human-readable save-failure message for the toast (null → no toast shown). */
+  saveError = $state<string | null>(null);
+  /** Re-run the last failed save, or null when there's nothing safe to retry. */
+  retryOp = $state<null | (() => void)>(null);
   previewOpen = $state(false);
   /** PDF preview of the active variant (compiled on demand — xelatex, rate-limited). */
   previewState = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
@@ -134,8 +138,35 @@ class EditorState {
     clearTimeout(this.timers[key]);
     this.timers[key] = setTimeout(fn, delay);
   }
-  private settle(ok: boolean) {
-    this.saveState = ok ? 'saved' : 'error';
+  /** true when the error toast can offer a one-tap retry. */
+  canRetry = $derived(this.retryOp !== null);
+  /**
+   * Resolve a save: clear the error on success, or raise the toast on failure.
+   * Pass `retry` only for idempotent saves (field PUTs) — re-running a create
+   * would orphan a second server row, since the failed one was rolled back.
+   */
+  private settle(ok: boolean, retry?: () => void) {
+    if (ok) {
+      this.saveState = 'saved';
+      this.saveError = null;
+      this.retryOp = null;
+      return;
+    }
+    this.saveState = 'error';
+    this.retryOp = retry ?? null;
+    this.saveError = retry
+      ? "Couldn't save your edit — it's still here. Retry?"
+      : "Couldn't save your last change. Check your connection.";
+  }
+  /** Re-fire the stashed retry (used by the error toast). */
+  retrySave() {
+    const fn = this.retryOp;
+    this.retryOp = null;
+    fn?.();
+  }
+  /** Dismiss the error toast; the statusbar keeps its subtle marker until the next save. */
+  dismissError() {
+    this.saveError = null;
   }
   private annToggle = false;
   /** Set the aria-live message, forcing a re-announce even when the text repeats. */
@@ -145,34 +176,44 @@ class EditorState {
   }
 
   // ---- debounced field autosave (connected only; demo stays local) ----
+  // Each debounced save delegates to a push* helper so the same call can be
+  // re-fired verbatim by the error toast — reading the field's *current* value.
   saveEntry(entry: Entry) {
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
-    this.debounce(`entry.${entry.id}`, () => {
-      void api.updateEntry(entry.id, entry.fields).then((r) => this.settle(r.ok));
-    });
+    this.debounce(`entry.${entry.id}`, () => this.pushEntry(entry));
+  }
+  private pushEntry(entry: Entry) {
+    this.saveState = 'saving';
+    void api
+      .updateEntry(entry.id, entry.fields)
+      .then((r) => this.settle(r.ok, () => this.pushEntry(entry)));
   }
   saveItem(item: Item) {
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
-    this.debounce(`item.${item.id}`, () => {
-      void api
-        .updateItem(item.id, { content: item.content, title: item.title ?? '' })
-        .then((r) => this.settle(r.ok));
-    });
+    this.debounce(`item.${item.id}`, () => this.pushItem(item));
+  }
+  private pushItem(item: Item) {
+    this.saveState = 'saving';
+    void api
+      .updateItem(item.id, { content: item.content, title: item.title ?? '' })
+      .then((r) => this.settle(r.ok, () => this.pushItem(item)));
   }
   savePersonal(key: string) {
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     this.saveState = 'saving';
-    this.debounce(`personal.${key}`, () => {
-      void api
-        .updatePersonal(pid, { [key]: this.person.personal[key] ?? '' })
-        .then((r) => this.settle(r.ok));
-    });
+    this.debounce(`personal.${key}`, () => this.pushPersonal(pid, key));
+  }
+  private pushPersonal(pid: number, key: string) {
+    this.saveState = 'saving';
+    void api
+      .updatePersonal(pid, { [key]: this.person.personal[key] ?? '' })
+      .then((r) => this.settle(r.ok, () => this.pushPersonal(pid, key)));
   }
 
   // ---- content mutations (persist immediately when connected) ----

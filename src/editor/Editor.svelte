@@ -194,6 +194,19 @@
   {:else if editor.openDrawer === 'profiles'}
     <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
   {/if}
+
+  {#if editor.saveError}
+    <div class="save-toast" role="alert" aria-live="assertive">
+      <span class="st-icon" aria-hidden="true">⚠</span>
+      <span class="st-msg">{editor.saveError}</span>
+      {#if editor.canRetry}
+        <button class="st-btn st-retry" onclick={() => editor.retrySave()}>Retry</button>
+      {/if}
+      <button class="st-btn st-x" aria-label="Dismiss save error" onclick={() => editor.dismissError()}
+        >✕</button
+      >
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -252,4 +265,16 @@
   .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 11px; line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
   .statusbar { display: flex; justify-content: space-between; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
   .sb-r { color: #57554f; }
+
+  /* Save-error toast — a System-6 alert box that floats above the statusbar. */
+  .save-toast { position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35); font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  .save-toast .st-icon { color: #b3261e; font-size: 14px; line-height: 1; }
+  .save-toast .st-msg { flex: 1; line-height: 1.35; }
+  .save-toast .st-btn { font-family: var(--mono); font-size: 12px; border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
+  .save-toast .st-btn:hover { background: var(--ink); color: var(--paper); }
+  .save-toast .st-x { padding: 2px 6px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .save-toast { animation: toast-in 160ms ease-out; }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  }
 </style>
