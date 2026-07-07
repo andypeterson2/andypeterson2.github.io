@@ -848,4 +848,58 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.sec-head h2').filter({ hasText: 'Skills' })).toHaveCount(0);
     await expect(page.locator('.statusbar')).toContainText('save failed');
   });
+
+  test('a failed field save raises a retry toast; retry clears it', async ({ page }) => {
+    const main = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 11, fields: { position: 'Analyst' }, tags: [], items: [] }],
+        },
+      ],
+      variants: [],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
+    );
+    // The first PUT fails; the retry (second) succeeds.
+    let puts = 0;
+    await page.route(/\/cv\/api\/entries\/11$/, (r) => {
+      puts += 1;
+      return puts === 1
+        ? r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' })
+        : r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+
+    await gotoEditor(page);
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    // Edit Position → debounced PUT /entries/11, which fails the first time.
+    await page.locator('.entry').first().click();
+    const inline = page.locator('.doc .edit');
+    await expect(inline).toBeVisible();
+    await inline.locator('.fld').first().locator('input').fill('Lead Analyst');
+
+    // The failure surfaces as a toast offering a retry (not just a statusbar tick).
+    const toast = page.locator('.save-toast');
+    await expect(toast).toContainText("Couldn't save");
+    await expect(page.locator('.statusbar')).toContainText('save failed');
+
+    // Retry re-sends the PUT (now 200) → toast clears and the save settles.
+    await toast.locator('.st-retry').click();
+    await expect(toast).toHaveCount(0);
+    await expect(page.locator('.statusbar')).toContainText('saved');
+    expect(puts).toBe(2);
+  });
 });
