@@ -1,4 +1,16 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
+//
+// This is a large, single store on purpose. It's organized into slices, each
+// under a `// ---- <slice> ----` banner: reactive fields + derived views up
+// top, then field autosave, content CRUD, drag reorder, drawers, tags,
+// variants/lens, cover letter, and profile CRUD. Every slice leans on the same
+// private infra — `settle`, `debounce`, `say`, `seq`, `saveState` — which is
+// exactly why it hasn't been split (tech-debt #11): pulling a slice into its
+// own module means exposing that infra or threading it through as params,
+// trading this cohesive object for cross-module coupling and reactivity risk,
+// for modest gain. When a slice genuinely needs to grow, lift it into a
+// sub-controller that takes the shared infra via a small typed interface —
+// don't scatter the reactive state. Until then, navigate by the banners.
 import type { Person, Selection, Section, Entry, Item, Variant, LetterSection } from './types';
 import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
