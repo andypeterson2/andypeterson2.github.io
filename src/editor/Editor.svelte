@@ -143,7 +143,7 @@
                   Pick a <button class="pv-link" onclick={() => (editor.openDrawer = 'variant')}
                     >variant</button
                   > to compile its PDF.<br /><small
-                    >Master is the editing view — variants are the deliverables.</small
+                    >Main is the editing view — variants are the deliverables.</small
                   >
                 </div>
               {:else if editor.previewState === 'compiling'}

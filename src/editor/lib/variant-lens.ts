@@ -6,7 +6,7 @@
 // sync with that file is a deliberate tradeoff: the lens works offline and
 // updates instantly as rules change, at the cost of mirroring ~5 lines of logic
 // (pinned by variant-lens.test.ts). NOTE: per-entry/item manual *overrides* are
-// not part of getMaster and so are not reflected here — the compiled PDF (via
+// not part of the /persons/:pid response and so are not reflected here — the compiled PDF (via
 // GET /variants/:id/resolve) stays authoritative for those.
 import type { Variant, VariantRules, Section, Entry, Item } from './types';
 

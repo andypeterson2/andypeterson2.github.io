@@ -19,8 +19,8 @@
 </script>
 
 <p class="note">
-  A variant is a lens on your master résumé. Pick one to preview what it keeps — excluded entries
-  and bullets dim in place. Editing here never changes the master.
+  A variant is a lens on your main résumé. Pick one to preview what it keeps — excluded entries
+  and bullets dim in place. Editing here never changes the main.
 </p>
 
 <div class="picker">
@@ -30,7 +30,7 @@
     onclick={() => editor.selectVariant(null)}
   >
     <span class="radio"></span>
-    <span class="opt-name">Master</span>
+    <span class="opt-name">Main</span>
     <span class="opt-meta">full document</span>
   </button>
   {#each variants as v (v.id)}

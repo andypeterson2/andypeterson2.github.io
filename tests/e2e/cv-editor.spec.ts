@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 
 /** Mock a signed-in profile that owns one no-rules variant ("Full CV", id 50). */
 async function mockAdaWithVariant(page: Page) {
-  const master = {
+  const main = {
     person: { id: 7, name: 'Ada Lovelace' },
     personal: { firstName: 'Ada', lastName: 'Lovelace' },
     sections: [
@@ -32,7 +32,7 @@ async function mockAdaWithVariant(page: Page) {
     }),
   );
   await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
   );
 }
 
@@ -96,9 +96,9 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
     // The reworked backend is id-addressable: GET /persons lists profiles,
-    // GET /persons/:pid returns the full master. Mock both and assert the mapper
+    // GET /persons/:pid returns the full main. Mock both and assert the mapper
     // renders the profile's name + entries (not the demo).
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: {
         firstName: 'Ada',
@@ -141,7 +141,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     await page.goto('/projects/latex-resume-editor/app/');
 
@@ -152,7 +152,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('autosaves an edited field to the backend, LaTeX-escaped', async ({ page }) => {
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -179,7 +179,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let putBody: { fields?: Record<string, string> } | null = null;
     await page.route(/\/cv\/api\/entries\/11$/, (r) => {
@@ -202,7 +202,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('creates a section against the backend when connected', async ({ page }) => {
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -222,7 +222,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let postBody: { slug?: string; type?: string; title?: string } | null = null;
     await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) => {
@@ -245,7 +245,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('deletes a section via the backend (confirmed)', async ({ page }) => {
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -261,7 +261,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let deletedPath: string | null = null;
     await page.route(/\/cv\/api\/sections\/\d+$/, (r) => {
@@ -280,7 +280,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('drag-reorders entries and persists the new id order', async ({ page }) => {
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -303,7 +303,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let orderBody: { ids?: number[] } | null = null;
     await page.route(/\/cv\/api\/sections\/2\/entries\/order$/, (r) => {
@@ -407,7 +407,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       await page.locator('.toolbar .variant-btn').click();
       await expect(drawer).toBeVisible({ timeout: 500 });
     }).toPass({ timeout: 8000 });
-    await expect(drawer).toContainText('lens on your master');
+    await expect(drawer).toContainText('lens on your main');
     // The demo ships two variants with live "shows X of Y" counts.
     await expect(drawer.locator('.opt').filter({ hasText: 'Backend Engineer' })).toContainText(
       '2/7',
@@ -432,8 +432,8 @@ test.describe('CV editor (document-first rewrite)', () => {
       page.locator('.doc li').filter({ hasText: 'Microservices migration' }),
     ).toHaveClass(/dim/);
 
-    // Back to Master clears the lens entirely.
-    await drawer.locator('.opt').filter({ hasText: 'Master' }).click();
+    // Back to Main clears the lens entirely.
+    await drawer.locator('.opt').filter({ hasText: 'Main' }).click();
     await expect(page.locator('.doc .dim')).toHaveCount(0);
   });
 
@@ -515,7 +515,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('creates, renames, and deletes a profile when connected', async ({ page }) => {
-    const adaMaster = {
+    const adaMain = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -528,7 +528,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       ],
       variants: [],
     };
-    const emptyMaster = {
+    const emptyMain = {
       person: { id: 8, name: 'New profile' },
       personal: {},
       sections: [],
@@ -550,9 +550,9 @@ test.describe('CV editor (document-first rewrite)', () => {
           }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adaMaster) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adaMain) }),
     );
-    // /persons/8 serves the master (GET), the rename (PUT), and the delete (DELETE).
+    // /persons/8 serves the main (GET), the rename (PUT), and the delete (DELETE).
     let renamedTo: string | null = null;
     let deleted = false;
     await page.route(/\/cv\/api\/persons\/8$/, (r) => {
@@ -576,7 +576,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(emptyMaster),
+        body: JSON.stringify(emptyMain),
       });
     });
     page.on('dialog', (d) => void d.accept());
@@ -613,7 +613,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('deleting the last profile shows an empty state and lets you start over', async ({
     page,
   }) => {
-    const adaMaster = {
+    const adaMain = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
@@ -626,7 +626,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       ],
       variants: [],
     };
-    const emptyMaster9 = {
+    const emptyMain9 = {
       person: { id: 9, name: 'New profile' },
       personal: {},
       sections: [],
@@ -652,14 +652,14 @@ test.describe('CV editor (document-first rewrite)', () => {
         : r.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify(adaMaster),
+            body: JSON.stringify(adaMain),
           }),
     );
     await page.route(/\/cv\/api\/persons\/9$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(emptyMaster9),
+        body: JSON.stringify(emptyMain9),
       }),
     );
     page.on('dialog', (d) => void d.accept());
@@ -753,7 +753,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('cover-letter header + paragraphs persist to the backend when connected', async ({
     page,
   }) => {
-    const master = {
+    const main = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [],
@@ -776,7 +776,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
-      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     // Letter body: GET loads one paragraph; POST adds another.
     let posted = 0;
