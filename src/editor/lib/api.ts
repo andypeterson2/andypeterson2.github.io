@@ -8,7 +8,15 @@
 // variants, tag vocab) in one shot. The gateway tiers access: an allowlisted
 // (owner) Access identity gets every profile; anyone else gets the public demo
 // profile only. Contract: cv/editor/routes/persons.js + lib/db.js#getMaster.
-import type { Person, Personal, Item, Entry, Variant } from './types';
+import type {
+  Person,
+  Personal,
+  Item,
+  Entry,
+  Variant,
+  CoverletterHeader,
+  LetterSection,
+} from './types';
 
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
@@ -58,11 +66,17 @@ interface RawMasterVariant {
   rules?: { include?: string[]; exclude?: string[] };
   sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
 }
+interface RawLetterSection {
+  id: number;
+  title?: string;
+  body?: string;
+}
 interface RawMaster {
   person: { id: number; name: string };
   personal?: Record<string, string>;
   sections?: RawMasterSection[];
   variants?: RawMasterVariant[];
+  coverletter?: Record<string, string>;
 }
 
 /**
@@ -117,6 +131,15 @@ function mapVariant(v: RawMasterVariant): Variant {
     sections: (v.sections ?? []).map((r) => ({ sectionId: r.section_id, enabled: !!r.enabled })),
   };
 }
+/** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */
+function mapCoverletter(cl?: Record<string, string>): CoverletterHeader {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(cl ?? {})) {
+    if (k === 'tex' || k === 'sections') continue;
+    out[k] = untex(v);
+  }
+  return out as CoverletterHeader;
+}
 /** GET /persons/:pid (getMaster) → the editor's Person. Rows arrive pre-ordered. */
 function mapMaster(m: RawMaster): Person {
   const personal: Record<string, string> = {};
@@ -133,6 +156,7 @@ function mapMaster(m: RawMaster): Person {
       entries: (s.entries ?? []).map(mapEntry),
     })),
     variants: (m.variants ?? []).map(mapVariant),
+    coverletter: mapCoverletter(m.coverletter),
   };
 }
 
@@ -353,6 +377,46 @@ export class CvApi {
   }
   setVariantRules(id: number, rules: { include: string[]; exclude: string[] }) {
     return this.req(`/variants/${id}/rules`, { method: 'PUT', body: JSON.stringify(rules) });
+  }
+
+  // ---- cover letter: header (per person) + body paragraphs (per variant) ----
+  updateCoverletter(pid: number, patch: Record<string, string>) {
+    const body: Record<string, string> = {};
+    for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
+    return this.req(`/persons/${pid}/coverletter`, { method: 'PATCH', body: JSON.stringify(body) });
+  }
+  async getLetterSections(variantId: number): Promise<ApiResult<LetterSection[]>> {
+    const res = await this.req<RawLetterSection[]>(`/variants/${variantId}/letter-sections`);
+    if (!res.ok || !res.data) return { ok: false, status: res.status, error: res.error };
+    return {
+      ok: true,
+      status: 200,
+      data: res.data.map((s) => ({ id: s.id, title: untex(s.title), body: untex(s.body) })),
+    };
+  }
+  createLetterSection(variantId: number, s: { title: string; body: string }) {
+    return this.req<{ id: number }>(`/variants/${variantId}/letter-sections`, {
+      method: 'POST',
+      body: JSON.stringify({ title: tex(s.title), body: tex(s.body) }),
+    });
+  }
+  updateLetterSection(variantId: number, lid: number, patch: { title?: string; body?: string }) {
+    const body: Record<string, string> = {};
+    if (patch.title !== undefined) body.title = tex(patch.title);
+    if (patch.body !== undefined) body.body = tex(patch.body);
+    return this.req(`/variants/${variantId}/letter-sections/${lid}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+  deleteLetterSection(variantId: number, lid: number) {
+    return this.req(`/variants/${variantId}/letter-sections/${lid}`, { method: 'DELETE' });
+  }
+  reorderLetterSections(variantId: number, ids: number[]) {
+    return this.req(`/variants/${variantId}/letter-sections/order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids }),
+    });
   }
 
   /**

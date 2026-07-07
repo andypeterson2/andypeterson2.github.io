@@ -35,14 +35,18 @@ async function mockAdaWithVariant(page: Page) {
   );
 }
 
-/** Select the "Full CV" variant via the drawer (drives the lens + preview target). */
-async function selectFullCV(page: Page) {
+/** Open the variant drawer (retrying past hydration) and pick a variant by name. */
+async function selectVariant(page: Page, name: string | RegExp) {
   await expect(async () => {
     await page.locator('.toolbar .variant-btn').click();
     await expect(page.locator('.drawer')).toBeVisible({ timeout: 500 });
   }).toPass({ timeout: 8000 });
-  await page.locator('.drawer .opt').filter({ hasText: 'Full CV' }).click();
+  await page.locator('.drawer .opt').filter({ hasText: name }).click();
   await page.keyboard.press('Escape');
+}
+/** Select the "Full CV" variant (drives the lens + preview target). */
+async function selectFullCV(page: Page) {
+  await selectVariant(page, 'Full CV');
 }
 
 test.describe('CV editor (document-first rewrite)', () => {
@@ -711,5 +715,105 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc .sec').first().locator('.entry-title').nth(1)).toHaveText(
       firstEntryText,
     );
+  });
+
+  test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.menubar')).toContainText('Editor');
+
+    // The demo ships a cover-letter variant, labelled as such in the drawer.
+    await selectVariant(page, 'Cover Letter');
+
+    // The CV document is replaced by the letter editor (header + paragraphs).
+    const letter = page.locator('.letter');
+    await expect(letter).toBeVisible();
+    await expect(page.locator('.doc .sec')).toHaveCount(0);
+    await expect(letter.locator('.para')).toHaveCount(3);
+
+    // Add then delete a paragraph.
+    await letter.getByRole('button', { name: /Add paragraph/ }).click();
+    await expect(letter.locator('.para')).toHaveCount(4);
+    await letter
+      .locator('.para')
+      .last()
+      .getByRole('button', { name: /Delete paragraph/ })
+      .click();
+    await expect(letter.locator('.para')).toHaveCount(3);
+
+    // Keyboard-reorder a paragraph (same Alt+Arrow mechanism), announced.
+    await letter.locator('.para .grip').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect(page.locator('.sr-only[aria-live]')).toContainText(
+      'Paragraph moved to position 2',
+    );
+  });
+
+  test('cover-letter header + paragraphs persist to the backend when connected', async ({
+    page,
+  }) => {
+    const master = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [],
+      variants: [
+        {
+          id: 60,
+          name: 'Cover Letter',
+          kind: 'coverletter',
+          rules: { include: [], exclude: [] },
+          sections: [],
+        },
+      ],
+      coverletter: { recipientName: 'Globex', opening: 'Dear Team,', closing: 'Sincerely,' },
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(master) }),
+    );
+    // Letter body: GET loads one paragraph; POST adds another.
+    let posted = 0;
+    await page.route(/\/cv\/api\/variants\/60\/letter-sections$/, (r) => {
+      if (r.request().method() === 'POST') {
+        posted += 1;
+        return r.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 200 }),
+        });
+      }
+      return r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ id: 100, title: '', body: 'Existing paragraph.' }]),
+      });
+    });
+    // Header PATCH — capture the LaTeX-escaped payload.
+    let headerPatch: { recipientName?: string } | null = null;
+    await page.route(/\/cv\/api\/persons\/7\/coverletter$/, (r) => {
+      headerPatch = r.request().postDataJSON();
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    await selectVariant(page, 'Cover Letter');
+    const letter = page.locator('.letter');
+    await expect(letter.locator('.para .body')).toHaveValue('Existing paragraph.');
+
+    // Edit the recipient → debounced PATCH /coverletter, LaTeX-escaped.
+    await letter.locator('.fields .in').first().fill('Globex R&D');
+    await expect.poll(() => headerPatch?.recipientName).toBe('Globex R\\&D');
+
+    // Add a paragraph → POST /letter-sections.
+    await letter.getByRole('button', { name: /Add paragraph/ }).click();
+    await expect.poll(() => posted).toBe(1);
   });
 });
