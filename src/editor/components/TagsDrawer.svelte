@@ -2,25 +2,25 @@
   import { editor } from '../lib/store.svelte';
 
   function toggle(tag: string) {
-    editor.highlightTag = editor.highlightTag === tag ? null : tag;
+    editor.tags.highlight = editor.tags.highlight === tag ? null : tag;
   }
 </script>
 
 <p class="note">Tags on entries and bullets. Click one to spotlight where it's used.</p>
 
-{#if editor.tagVocab.length === 0}
+{#if editor.tags.vocab.length === 0}
   <p class="empty">No tags yet — add them on entries and bullets while editing.</p>
 {:else}
   <div class="list">
-    {#each editor.tagVocab as { tag, count } (tag)}
-      <button class="row" class:on={editor.highlightTag === tag} onclick={() => toggle(tag)}>
+    {#each editor.tags.vocab as { tag, count } (tag)}
+      <button class="row" class:on={editor.tags.highlight === tag} onclick={() => toggle(tag)}>
         <span class="tag">#{tag}</span>
         <span class="count">{count}</span>
       </button>
     {/each}
   </div>
-  {#if editor.highlightTag}
-    <button class="clear" onclick={() => (editor.highlightTag = null)}>Clear spotlight</button>
+  {#if editor.tags.highlight}
+    <button class="clear" onclick={() => (editor.tags.highlight = null)}>Clear spotlight</button>
   {/if}
 {/if}
 

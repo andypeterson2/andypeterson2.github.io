@@ -53,8 +53,8 @@
   }
 
   // Two dimming modes compose onto the same .dim class: the tag spotlight
-  // (highlightTag) and the variant lens (activeVariant → what a variant drops).
-  const hl = $derived(editor.highlightTag);
+  // (tags.highlight) and the variant lens (activeVariant → what a variant drops).
+  const hl = $derived(editor.tags.highlight);
   const lens = $derived(editor.activeVariant);
 
   function spotlightDim(e: Entry): boolean {
