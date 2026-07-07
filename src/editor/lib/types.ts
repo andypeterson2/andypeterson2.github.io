@@ -44,12 +44,31 @@ export interface Section {
   entries: Entry[];
 }
 
+/** The cover-letter header (per-person `coverletter.*` settings). */
+export interface CoverletterHeader {
+  title?: string;
+  recipientName?: string;
+  recipientAddress?: string;
+  opening?: string;
+  closing?: string;
+  enclosureLabel?: string;
+  enclosureContent?: string;
+}
+
+/** A body paragraph of a cover letter (per coverletter variant). */
+export interface LetterSection {
+  id: number;
+  title: string;
+  body: string;
+}
+
 export interface Person {
   id: number;
   name: string;
   personal: Personal;
   sections: Section[];
   variants: Variant[];
+  coverletter: CoverletterHeader;
 }
 
 /** A variant's tag rules — the primary lever for what it includes. */

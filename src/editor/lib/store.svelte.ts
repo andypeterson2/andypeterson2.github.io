@@ -1,6 +1,6 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
-import type { Person, Selection, Section, Entry, Item, Variant } from './types';
-import { DEMO_PERSON } from './demo';
+import type { Person, Selection, Section, Entry, Item, Variant, LetterSection } from './types';
+import { DEMO_PERSON, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
 import { resolveAccent } from './accent';
@@ -14,7 +14,14 @@ function move<T>(arr: T[], from: number, to: number): T[] {
 }
 
 /** A blank profile held while connected with zero profiles — nothing stale renders. */
-const EMPTY_PERSON: Person = { id: 0, name: '', personal: {}, sections: [], variants: [] };
+const EMPTY_PERSON: Person = {
+  id: 0,
+  name: '',
+  personal: {},
+  sections: [],
+  variants: [],
+  coverletter: {},
+};
 
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
@@ -74,6 +81,10 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Master". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Master');
+  /** true when the active variant is a cover letter — the editor swaps to letter mode. */
+  letterMode = $derived(this.activeVariant?.kind === 'coverletter');
+  /** body paragraphs of the active cover-letter variant (loaded on select). */
+  letterSections = $state<LetterSection[]>([]);
   /** the PDF preview can compile only a real variant on a live backend. */
   previewCompilable = $derived(this.connected && this.activeVariant !== null);
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
@@ -327,23 +338,43 @@ class EditorState {
   selectVariant(id: number | null) {
     this.activeVariantId = id;
     this.resetPreview(); // the compiled PDF belonged to the previous variant
+    this.loadLetter();
   }
-  async addVariant(name: string) {
-    const clean = name.trim() || 'New variant';
+  /** Load the active cover-letter variant's body paragraphs (clear for a CV variant). */
+  private loadLetter() {
+    const v = this.activeVariant;
+    if (v?.kind !== 'coverletter') {
+      this.letterSections = [];
+      return;
+    }
+    if (this.connected) {
+      this.letterSections = [];
+      const vid = v.id;
+      void api.getLetterSections(vid).then((res) => {
+        if (res.ok && res.data && this.activeVariantId === vid) this.letterSections = res.data;
+      });
+    } else {
+      this.letterSections = (DEMO_LETTERS[v.id] ?? []).map((s) => ({ ...s }));
+    }
+  }
+  async addVariant(name: string, kind: Variant['kind'] = 'cv') {
+    const clean = name.trim() || (kind === 'coverletter' ? 'New cover letter' : 'New variant');
     const variant: Variant = {
       id: this.seq++,
       name: clean,
-      kind: 'cv',
+      kind,
       rules: { include: [], exclude: [] },
       sections: [],
     };
     const tempId = variant.id;
     this.person.variants.push(variant);
     this.activeVariantId = tempId;
+    this.resetPreview();
+    this.letterSections = []; // a fresh variant has no letter paragraphs yet
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     this.saveState = 'saving';
-    const res = await api.createVariant(this.activePersonId, { name: clean, kind: 'cv' });
+    const res = await api.createVariant(this.activePersonId, { name: clean, kind });
     if (res.ok && res.data) {
       if (this.activeVariantId === tempId) this.activeVariantId = res.data.id;
       variant.id = res.data.id; // reconcile temp id → server id
@@ -384,6 +415,64 @@ class EditorState {
     this.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
   }
 
+  // ---- cover letter: header (per person, debounced) + body paragraphs (per variant) ----
+  saveCoverletter(key: string) {
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    const pid = this.activePersonId;
+    this.saveState = 'saving';
+    this.debounce(`cl.${key}`, () => {
+      const value = (this.person.coverletter as Record<string, string>)[key] ?? '';
+      void api.updateCoverletter(pid, { [key]: value }).then((r) => this.settle(r.ok));
+    });
+  }
+  async addLetterSection() {
+    const v = this.activeVariant;
+    if (!v) return;
+    const section: LetterSection = { id: this.seq++, title: '', body: '' };
+    const tempId = section.id;
+    this.letterSections.push(section);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const res = await api.createLetterSection(v.id, { title: '', body: '' });
+    if (res.ok && res.data) {
+      const s = this.letterSections.find((x) => x.id === tempId);
+      if (s) s.id = res.data.id; // reconcile temp id → server id
+    }
+    this.settle(res.ok);
+  }
+  saveLetterSection(section: LetterSection) {
+    this.dirty = true;
+    const v = this.activeVariant;
+    if (!this.connected || !v) return;
+    const vid = v.id;
+    this.saveState = 'saving';
+    this.debounce(`ls.${section.id}`, () => {
+      void api
+        .updateLetterSection(vid, section.id, { title: section.title, body: section.body })
+        .then((r) => this.settle(r.ok));
+    });
+  }
+  async deleteLetterSection(id: number) {
+    const v = this.activeVariant;
+    this.letterSections = this.letterSections.filter((s) => s.id !== id);
+    this.dirty = true;
+    if (!this.connected || !v) return;
+    this.saveState = 'saving';
+    this.settle((await api.deleteLetterSection(v.id, id)).ok);
+  }
+  async reorderLetterSections(from: number, to: number) {
+    const v = this.activeVariant;
+    this.letterSections = move(this.letterSections, from, to);
+    this.say(`Paragraph moved to position ${to + 1} of ${this.letterSections.length}`);
+    this.dirty = true;
+    if (!this.connected || !v) return;
+    this.saveState = 'saving';
+    const ids = this.letterSections.map((s) => s.id);
+    this.settle((await api.reorderLetterSections(v.id, ids)).ok);
+  }
+
   togglePreview() {
     this.previewOpen = !this.previewOpen;
   }
@@ -416,6 +505,7 @@ class EditorState {
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
+    this.letterSections = [];
     this.resetPreview();
     this.dirty = false;
   }
@@ -429,6 +519,7 @@ class EditorState {
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
+    this.letterSections = [];
     this.resetPreview();
     this.dirty = false;
   }

@@ -10,8 +10,11 @@
   function counts(v: Variant) {
     return countIncludedEntries(editor.person.sections, v);
   }
+  function noun(v: Variant) {
+    return v.kind === 'coverletter' ? 'cover letter' : 'variant';
+  }
   function confirmDelete(v: Variant) {
-    if (window.confirm(`Delete the "${v.name}" variant?`)) void editor.deleteVariant(v);
+    if (window.confirm(`Delete the "${v.name}" ${noun(v)}?`)) void editor.deleteVariant(v);
   }
 </script>
 
@@ -31,7 +34,7 @@
     <span class="opt-meta">full document</span>
   </button>
   {#each variants as v (v.id)}
-    {@const c = counts(v)}
+    {@const c = v.kind === 'coverletter' ? null : counts(v)}
     <button
       class="opt"
       class:on={editor.activeVariantId === v.id}
@@ -39,12 +42,17 @@
     >
       <span class="radio"></span>
       <span class="opt-name">{v.name}</span>
-      <span class="opt-meta">{c.shown}/{c.total} entries</span>
+      <span class="opt-meta">{c ? `${c.shown}/${c.total} entries` : 'cover letter'}</span>
     </button>
   {/each}
 </div>
 
-<button class="new" onclick={() => editor.addVariant('New variant')}>＋ New variant</button>
+<div class="new-row">
+  <button class="new" onclick={() => editor.addVariant('New variant')}>＋ New variant</button>
+  <button class="new" onclick={() => editor.addVariant('New cover letter', 'coverletter')}
+    >＋ New cover letter</button
+  >
+</div>
 
 {#if active}
   {@const v = active}
@@ -58,28 +66,35 @@
       />
     </label>
 
-    <div class="rule">
-      <span class="rule-lbl inc">Include</span>
-      <TagChips
-        tags={v.rules.include}
-        onAdd={(t) => editor.addVariantRule(v, 'include', t)}
-        onRemove={(t) => editor.removeVariantRule(v, 'include', t)}
-      />
-    </div>
-    <div class="rule">
-      <span class="rule-lbl exc">Exclude</span>
-      <TagChips
-        tags={v.rules.exclude}
-        onAdd={(t) => editor.addVariantRule(v, 'exclude', t)}
-        onRemove={(t) => editor.removeVariantRule(v, 'exclude', t)}
-      />
-    </div>
-    <p class="hint">
-      No include tags → every entry is in (minus excludes). Otherwise only entries carrying an
-      include tag stay.
-    </p>
+    {#if v.kind === 'coverletter'}
+      <p class="hint">
+        A cover letter has its own recipient and paragraphs — edit them on the letter itself. Tag
+        rules don't apply.
+      </p>
+    {:else}
+      <div class="rule">
+        <span class="rule-lbl inc">Include</span>
+        <TagChips
+          tags={v.rules.include}
+          onAdd={(t) => editor.addVariantRule(v, 'include', t)}
+          onRemove={(t) => editor.removeVariantRule(v, 'include', t)}
+        />
+      </div>
+      <div class="rule">
+        <span class="rule-lbl exc">Exclude</span>
+        <TagChips
+          tags={v.rules.exclude}
+          onAdd={(t) => editor.addVariantRule(v, 'exclude', t)}
+          onRemove={(t) => editor.removeVariantRule(v, 'exclude', t)}
+        />
+      </div>
+      <p class="hint">
+        No include tags → every entry is in (minus excludes). Otherwise only entries carrying an
+        include tag stay.
+      </p>
+    {/if}
 
-    <button class="del" onclick={() => confirmDelete(v)}>Delete variant</button>
+    <button class="del" onclick={() => confirmDelete(v)}>Delete {noun(v)}</button>
   </div>
 {/if}
 
@@ -143,8 +158,13 @@
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
   }
-  .new {
+  .new-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     margin-top: 10px;
+  }
+  .new {
     width: 100%;
     font-family: var(--sans);
     font-size: 12.5px;

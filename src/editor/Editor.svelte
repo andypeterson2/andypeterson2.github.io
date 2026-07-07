@@ -3,6 +3,7 @@
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
   import Document from './components/Document.svelte';
+  import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
@@ -104,6 +105,8 @@
                 >＋ Create your first profile</button
               >
             </div>
+          {:else if editor.letterMode}
+            <LetterEditor />
           {:else}
             <Document />
           {/if}

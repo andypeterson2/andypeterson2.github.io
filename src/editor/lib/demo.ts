@@ -1,4 +1,4 @@
-import type { Person } from './types';
+import type { Person, LetterSection } from './types';
 
 // The demo résumé rendered when not connected to a backend (see design doc §4).
 // Deliberately a FICTIONAL persona — this file is committed to a public repo with
@@ -143,6 +143,40 @@ export const DEMO_PERSON: Person = {
       kind: 'cv',
       rules: { include: [], exclude: ['management'] },
       sections: [],
+    },
+    {
+      id: 3,
+      name: 'Cover Letter — Globex',
+      kind: 'coverletter',
+      rules: { include: [], exclude: [] },
+      sections: [],
+    },
+  ],
+  coverletter: {
+    recipientName: 'Hiring Team, Globex Corporation',
+    recipientAddress: '500 Terminal Way\nSan Francisco, CA 94108',
+    opening: 'Dear Hiring Team,',
+    closing: 'Sincerely,',
+  },
+};
+
+/** Demo cover-letter body paragraphs, keyed by coverletter-variant id (offline only). */
+export const DEMO_LETTERS: Record<number, LetterSection[]> = {
+  3: [
+    {
+      id: 1,
+      title: '',
+      body: 'I am writing to apply for the Senior Software Engineer role. Over the past six years I have shipped web platforms end to end, and I would welcome the chance to bring that experience to your team.',
+    },
+    {
+      id: 2,
+      title: '',
+      body: 'At Acme Technologies I led a monolith-to-microservices migration that cut deploy time by 60%, and mentored four engineers through design reviews. I care about the boring parts — reliability, tooling, and clear interfaces — as much as the features.',
+    },
+    {
+      id: 3,
+      title: '',
+      body: 'Thank you for your consideration. I would be glad to discuss how I can contribute.',
     },
   ],
 };
