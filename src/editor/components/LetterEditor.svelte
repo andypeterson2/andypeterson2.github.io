@@ -1,7 +1,7 @@
 <script lang="ts">
   // Cover-letter editor — replaces the CV document when a coverletter variant is
   // active. Header (recipient/salutation/closing) is per-person; the body
-  // paragraphs are per-variant (editor.letterSections).
+  // paragraphs are per-variant (editor.letters.sections).
   import { editor } from '../lib/store.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
 
@@ -11,8 +11,8 @@
   );
 
   function paraKey(ev: KeyboardEvent, index: number) {
-    reorderKeydown(ev, index, editor.letterSections.length, (f, t) =>
-      editor.reorderLetterSections(f, t),
+    reorderKeydown(ev, index, editor.letters.sections.length, (f, t) =>
+      editor.letters.reorderParagraphs(f, t),
     );
   }
 </script>
@@ -27,7 +27,7 @@
           class="in"
           placeholder="Hiring Manager, Company"
           bind:value={cl.recipientName}
-          oninput={() => editor.saveCoverletter('recipientName')}
+          oninput={() => editor.letters.saveHeader('recipientName')}
         />
       </label>
       <label class="fld">
@@ -37,7 +37,7 @@
           rows="2"
           placeholder="Company address"
           bind:value={cl.recipientAddress}
-          oninput={() => editor.saveCoverletter('recipientAddress')}
+          oninput={() => editor.letters.saveHeader('recipientAddress')}
         ></textarea>
       </label>
       <label class="fld">
@@ -46,14 +46,14 @@
           class="in"
           placeholder="Dear Hiring Manager,"
           bind:value={cl.opening}
-          oninput={() => editor.saveCoverletter('opening')}
+          oninput={() => editor.letters.saveHeader('opening')}
         />
       </label>
     </div>
   </header>
 
-  <div class="paras" use:sortable={{ onReorder: (f, t) => editor.reorderLetterSections(f, t) }}>
-    {#each editor.letterSections as s, i (s.id)}
+  <div class="paras" use:sortable={{ onReorder: (f, t) => editor.letters.reorderParagraphs(f, t) }}>
+    {#each editor.letters.sections as s, i (s.id)}
       <div class="para" data-sortable>
         <button
           class="grip"
@@ -69,28 +69,28 @@
             class="in lead"
             placeholder="lead-in (optional)"
             bind:value={s.title}
-            oninput={() => editor.saveLetterSection(s)}
+            oninput={() => editor.letters.saveParagraph(s)}
           />
           <textarea
             class="in body"
             rows="4"
             placeholder="Write this paragraph…"
             bind:value={s.body}
-            oninput={() => editor.saveLetterSection(s)}
+            oninput={() => editor.letters.saveParagraph(s)}
           ></textarea>
         </div>
         <button
           class="del"
           title="Delete paragraph"
           aria-label="Delete paragraph"
-          onclick={() => editor.deleteLetterSection(s.id)}>×</button
+          onclick={() => editor.letters.deleteParagraph(s.id)}>×</button
         >
       </div>
     {/each}
-    {#if editor.letterSections.length === 0}
+    {#if editor.letters.sections.length === 0}
       <p class="empty">No paragraphs yet.</p>
     {/if}
-    <button class="add" onclick={() => editor.addLetterSection()}>＋ Add paragraph</button>
+    <button class="add" onclick={() => editor.letters.addParagraph()}>＋ Add paragraph</button>
   </div>
 
   <footer class="lf">
@@ -100,7 +100,7 @@
         class="in"
         placeholder="Sincerely,"
         bind:value={cl.closing}
-        oninput={() => editor.saveCoverletter('closing')}
+        oninput={() => editor.letters.saveHeader('closing')}
       />
     </label>
     <p class="signoff">{sender || 'Your name'}</p>
