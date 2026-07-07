@@ -605,6 +605,84 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
   });
 
+  test('deleting the last profile shows an empty state and lets you start over', async ({
+    page,
+  }) => {
+    const adaMaster = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 11, fields: { position: 'Analyst' }, tags: [], items: [] }],
+        },
+      ],
+      variants: [],
+    };
+    const emptyMaster9 = {
+      person: { id: 9, name: 'New profile' },
+      personal: {},
+      sections: [],
+      variants: [],
+    };
+
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.request().method() === 'POST'
+        ? r.fulfill({
+            status: 201,
+            contentType: 'application/json',
+            body: JSON.stringify({ id: 9 }),
+          })
+        : r.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+          }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.request().method() === 'DELETE'
+        ? r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' })
+        : r.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(adaMaster),
+          }),
+    );
+    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(emptyMaster9),
+      }),
+    );
+    page.on('dialog', (d) => void d.accept());
+
+    await page.goto('/projects/latex-resume-editor/app/');
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    const drawer = page.locator('.drawer');
+    await expect(async () => {
+      await page.locator('.toolbar .profile-btn').click();
+      await expect(drawer).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 8000 });
+
+    // Delete the only profile → the connected empty state (NOT a sign-in prompt).
+    await drawer.getByRole('button', { name: /Delete profile/ }).click();
+    await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
+    await expect(page.locator('.doc-head')).toHaveCount(0);
+    await expect(page.locator('.conn')).toContainText('connected');
+    await expect(page.locator('.signin')).toHaveCount(0);
+
+    // Close the drawer, then create from the empty state → editing resumes.
+    await page.keyboard.press('Escape');
+    await expect(drawer).toHaveCount(0);
+    await page.locator('.no-profiles .np-btn').click();
+    await expect(page.locator('.no-profiles')).toHaveCount(0);
+    await expect(page.locator('.doc-head h1.untitled')).toHaveText('Your name');
+  });
+
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await page.goto('/projects/latex-resume-editor/app/');
@@ -630,8 +708,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     const firstEntryText = ((await firstEntry.locator('.entry-title').textContent()) ?? '').trim();
     await firstEntry.focus();
     await page.keyboard.press('Alt+ArrowDown');
-    await expect(
-      page.locator('.doc .sec').first().locator('.entry-title').nth(1),
-    ).toHaveText(firstEntryText);
+    await expect(page.locator('.doc .sec').first().locator('.entry-title').nth(1)).toHaveText(
+      firstEntryText,
+    );
   });
 });
