@@ -17,6 +17,12 @@ export interface TourHost {
   reset(): void;
   /** Narrate through the editor's ONE aria-live region; never add a second. */
   announce(msg: string): void;
+  /**
+   * Put away chrome the tour opened (the variant drawer, at step 5). The visitor's
+   * document is left exactly as the tour left it — but a modal scrim they never
+   * asked for must not outlive the tour that raised it.
+   */
+  closeChrome(): void;
   steps(): TourStep[];
 }
 
@@ -111,6 +117,7 @@ export class TourController {
   /** Dismiss outright (✕ or Esc). */
   end() {
     this.#cancel();
+    this.host.closeChrome();
     this.state = 'idle';
     this.index = 0;
   }
@@ -118,6 +125,7 @@ export class TourController {
   /** Ran off the end — offer the undo the invitation promised. */
   #finish() {
     this.#cancel();
+    this.host.closeChrome();
     this.state = 'done';
     this.host.announce('Tour complete. The demo is yours — nothing was saved.');
   }
@@ -136,5 +144,8 @@ export const tour = new TourController({
   canRun: () => !editor.connected,
   reset: () => editor.resetDemo(),
   announce: (msg) => editor.narrate(msg),
+  closeChrome: () => {
+    editor.openDrawer = null;
+  },
   steps: tourSteps,
 });

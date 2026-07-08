@@ -5,6 +5,8 @@
   import { tour } from './lib/tour.svelte';
   import { tourIntent } from './lib/tour';
   import Tour from './components/Tour.svelte';
+  import MenuBar from './components/MenuBar.svelte';
+  import type { MenuDef } from './lib/menus';
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
@@ -24,9 +26,33 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
-  // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it,
-  // so "Reset demo" is never more than one click away.
+  // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it.
   let inviteOpen = $state(true);
+
+  // Reset demo lives here, where a System-6 user looks for Revert — not on a strip
+  // they can dismiss. Edit and View have no commands yet, so they render disabled
+  // rather than as live-looking text that does nothing.
+  const menus: MenuDef[] = $derived([
+    {
+      title: 'File',
+      items: [
+        {
+          label: '⤓ Export as JSON…',
+          disabled: editor.noProfiles,
+          onSelect: () => void editor.exportJson(),
+        },
+        {
+          label: '↺ Reset demo',
+          separatorBefore: true,
+          // A no-op when connected: there is real data to protect (store.resetDemo).
+          disabled: editor.connected,
+          onSelect: () => editor.resetDemo(),
+        },
+      ],
+    },
+    { title: 'Edit', items: [] },
+    { title: 'View', items: [] },
+  ]);
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
@@ -79,7 +105,7 @@
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
     <span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong>
-    <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span>
+    <MenuBar {menus} />
     <span class="right">
       <button
         class="conn"
@@ -125,7 +151,6 @@
         title="Watch the editor drive itself — touch anything to take over"
         onclick={() => tour.start()}>▶ Guided tour</button
       >
-      <button class="btn reset" onclick={() => editor.resetDemo()}>↺ Reset demo</button>
       {#if editor.connectError === 'offline'}
         <button class="link" onclick={() => editor.connect()}>Retry</button>
       {:else}
@@ -285,7 +310,6 @@
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
   .mark { font-size: 15px; }
-  .menu { font-weight: 400; }
   .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-weight: 400; }
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
