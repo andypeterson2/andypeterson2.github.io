@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { gotoEditor } from './helpers';
+import { gotoEditor, EDITOR_APP } from './helpers';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -121,6 +121,86 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(invite).toHaveCount(0);
     await page.locator('.conn').click();
     await expect(page.locator('.invite')).toBeVisible();
+  });
+
+  test('the guided tour drives the real editor, then yields at the first touch', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const tour = page.locator('.tour');
+    await page.locator('.tour-start').click();
+    await expect(tour).toBeVisible();
+    await expect(tour.locator('.count')).toHaveText('1 of 7');
+    // Step 1 drives the REAL editor — the same inline editor a click opens.
+    await expect(page.locator('.doc .edit')).toBeVisible();
+
+    // Step 2 types a genuinely new bullet into the document, character by character.
+    await expect(tour.locator('.count')).toHaveText('2 of 7');
+    const typed = page.locator('.doc .edit .bl-content').last();
+    await expect(typed).toHaveValue(/^Cut p/);
+    const bullets = await page.locator('.doc .edit .bl').count();
+
+    // The signature interaction: one touch outside the tour hands back the wheel.
+    await page.locator('.statusbar').click();
+    await expect(tour.locator('.wheel')).toHaveText('Paused — you have the wheel.');
+    await expect(tour.getByRole('button', { name: /Resume/ })).toBeVisible();
+
+    // It stops mid-word and stays stopped — a paused tour never auto-resumes.
+    const frozen = await typed.inputValue();
+    await page.waitForTimeout(1200); // > nothing: proves no dwell timer survived
+    expect(await typed.inputValue()).toBe(frozen);
+    await expect(tour.locator('.count')).toHaveText('2 of 7');
+
+    // Resume re-enters the step, so narration matches the screen — and because
+    // `enter` is idempotent it restages the same bullet rather than adding another.
+    await tour.getByRole('button', { name: /Resume/ }).click();
+    await expect(tour.locator('.wheel')).toHaveCount(0);
+    await expect(typed).toHaveValue(/queries\.$/, { timeout: 5000 });
+    expect(await page.locator('.doc .edit .bl').count()).toBe(bullets);
+
+    // Esc ends it outright (the drawer convention).
+    await page.keyboard.press('Escape');
+    await expect(tour).toHaveCount(0);
+  });
+
+  test('reduced motion degrades the tour to a manual step-through', async ({ page }) => {
+    // The tour moves the page — a vestibular hazard, so auto-advance must not happen.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const tour = page.locator('.tour');
+    await page.locator('.tour-start').click();
+    await expect(tour.locator('.count')).toHaveText('1 of 7');
+    await expect(tour.getByRole('button', { name: /Next/ })).toBeVisible();
+    await expect(tour.getByRole('button', { name: /Pause/ })).toHaveCount(0);
+
+    // Sit on step 1: nothing advances on its own.
+    await page.waitForTimeout(1500);
+    await expect(tour.locator('.count')).toHaveText('1 of 7');
+
+    await tour.getByRole('button', { name: /Next/ }).click();
+    await expect(tour.locator('.count')).toHaveText('2 of 7');
+    // …and the typewriter becomes an instant state change.
+    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/queries\.$/);
+  });
+
+  test('a forwarded ?tour=1 link opens straight into the narrative', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page, `${EDITOR_APP}?tour=1`);
+    await expect(page.locator('.tour')).toBeVisible();
+    await expect(page.locator('.tour .count')).toHaveText('1 of 7');
+  });
+
+  test('the tour never runs against a signed-in profile', async ({ page }) => {
+    // The tour *writes* (it adds a bullet). Against a live backend that would edit
+    // a real CV, so canRun() gates it on demo mode — even via the deep link.
+    await mockAdaWithVariant(page);
+    await gotoEditor(page, `${EDITOR_APP}?tour=1`);
+
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.locator('.tour')).toHaveCount(0);
+    await expect(page.locator('.tour-start')).toHaveCount(0); // no entry point either
   });
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
