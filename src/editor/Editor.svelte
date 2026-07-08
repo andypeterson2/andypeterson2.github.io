@@ -29,8 +29,15 @@
   // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it.
   let inviteOpen = $state(true);
 
+  /** Open a drawer from the menu (they are mutually exclusive — one at a time). */
+  const drawerItem = (label: string, drawer: NonNullable<typeof editor.openDrawer>) => ({
+    label: `${label}…`, // the ellipsis convention: this opens a panel
+    onSelect: () => (editor.openDrawer = drawer),
+  });
+
   // Reset demo lives here, where a System-6 user looks for Revert — not on a strip
-  // they can dismiss. Edit and View have no commands yet, so they render disabled
+  // they can dismiss. View mirrors the toolbar: the preview pane (a toggle, so it
+  // carries a ✓) and the panels. Edit still has no commands, so it renders disabled
   // rather than as live-looking text that does nothing.
   const menus: MenuDef[] = $derived([
     {
@@ -51,7 +58,21 @@
       ],
     },
     { title: 'Edit', items: [] },
-    { title: 'View', items: [] },
+    {
+      title: 'View',
+      items: [
+        {
+          label: '◱ Preview',
+          checked: editor.preview.open,
+          onSelect: () => editor.preview.toggle(),
+        },
+        { ...drawerItem('Variants', 'variant'), separatorBefore: true },
+        drawerItem('Tags', 'tags'),
+        drawerItem('Layout', 'layouts'),
+        drawerItem('Style', 'style'),
+        { ...drawerItem('Profiles', 'profiles'), separatorBefore: true },
+      ],
+    },
   ]);
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →

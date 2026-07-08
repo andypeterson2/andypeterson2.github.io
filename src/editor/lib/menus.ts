@@ -9,6 +9,12 @@ export interface MenuItem {
   disabled?: boolean;
   /** Draw a rule above this item. */
   separatorBefore?: boolean;
+  /**
+   * Present → the item is a toggle, rendered with a ✓ gutter and announced as a
+   * menuitemcheckbox. Absent → a plain command. (A checkmark faked into the label
+   * would leave screen readers with no idea the thing has a state.)
+   */
+  checked?: boolean;
 }
 
 export interface MenuDef {
