@@ -138,8 +138,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     const file = page.locator('.menus .menu', { hasText: 'File' });
     const drop = page.locator('.drop[aria-label="File"]');
 
-    // Edit has no commands yet, and says so rather than looking live.
-    await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeDisabled();
+    // Every menu carries real commands now, so none of them is disabled.
+    await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeEnabled();
     await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeEnabled();
 
     // ArrowDown opens and lands focus on the first item.
@@ -163,6 +163,97 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drop).toBeVisible();
     await page.locator('.statusbar').click();
     await expect(drop).toHaveCount(0);
+  });
+
+  test('Edit ▸ Undo restores a typed burst, and Redo puts it back', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    // Nothing done yet → both commands are honestly disabled.
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+    await expect(page.getByRole('menuitem', { name: /Redo/ })).toBeDisabled();
+    await page.keyboard.press('Escape');
+
+    await page.locator('.entry').first().click();
+    const field = page.locator('.doc .edit .fld input').first();
+    await field.fill('Chief Tinkerer');
+    await page.locator('.doc .edit button', { hasText: 'Done' }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+
+    // The label names what will be undone, and typing collapsed into ONE command.
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
+    await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
+    await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
+    await expect(page.locator('.doc')).toContainText('Senior Software Engineer');
+
+    // One command, not fourteen keystrokes: the stack is now empty.
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+    await page.getByRole('menuitem', { name: '↷ Redo Position' }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+  });
+
+  test('undo restores a deleted section with its bullets and tags', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    page.on('dialog', (d) => d.accept());
+
+    const sections = page.locator('.doc .sec h2');
+    await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
+
+    const experience = page.locator('.doc .sec').filter({ has: page.locator('h2', { hasText: 'Experience' }) });
+    await experience.locator('.tool.danger').click();
+    await expect(sections).toHaveText(['Summary', 'Skills', 'Education']);
+
+    // ⌘Z outside a text field drives the document-level undo.
+    await page.locator('.statusbar').click();
+    await page.keyboard.press('ControlOrMeta+z');
+
+    // Back at its original index, with everything that was inside it.
+    await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
+    await expect(page.locator('.doc')).toContainText('Acme Technologies');
+    await expect(page.locator('.doc')).toContainText('Mentored four engineers');
+    await expect(page.locator('.doc .entry li')).toHaveCount(3);
+    await expect(page.locator('.doc .entry li .tag')).toHaveCount(5);
+  });
+
+  test('undoing a delete re-creates the row on the backend', async ({ page }) => {
+    // The inverse of a delete is a CREATE, so the server issues a brand-new id.
+    // Commands therefore close over the live object, never over a captured id.
+    await mockAdaWithVariant(page);
+    const calls: string[] = [];
+    await page.route(/\/cv\/api\/entries\/11$/, (r) => {
+      calls.push(`${r.request().method()} /entries/11`);
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.route(/\/cv\/api\/sections\/2\/entries$/, (r) => {
+      calls.push(`${r.request().method()} /sections/2/entries`);
+      return r.fulfill({ status: 201, contentType: 'application/json', body: '{"id":99}' });
+    });
+    await page.route(/\/cv\/api\/sections\/2\/entries\/order$/, (r) => {
+      calls.push(`PATCH order ${JSON.stringify(r.request().postDataJSON().ids)}`);
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await gotoEditor(page);
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+
+    page.on('dialog', (d) => d.accept());
+    await page.locator('.entry').first().click();
+    await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
+    await expect(page.locator('.doc .entry')).toHaveCount(0);
+
+    await page.locator('.statusbar').click();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.locator('.doc .entry')).toHaveCount(1);
+    await expect(page.locator('.doc')).toContainText('Analyst');
+
+    // DELETE, then a real POST to re-create it — and the order PATCH carries the
+    // NEW server id (99), not the dead one (11).
+    await expect
+      .poll(() => calls)
+      .toEqual(['DELETE /entries/11', 'POST /sections/2/entries', 'PATCH order [99]']);
   });
 
   test('the View menu toggles the preview pane and opens the panels', async ({ page }) => {
