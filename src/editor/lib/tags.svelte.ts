@@ -32,10 +32,20 @@ export class TagController {
       .sort((a, b) => a.tag.localeCompare(b.tag));
   });
 
+  // Tags are their own inverse: an add undoes to a remove and vice versa. The
+  // commands drive these same public methods, and `record` no-ops while an inverse
+  // is running — otherwise undoing would push a command and the stack never drains.
   async addToEntry(entry: Entry, tags: string[]) {
     const fresh = tags.map((t) => t.trim()).filter((t) => t && !entry.tags.includes(t));
     if (!fresh.length) return;
     entry.tags = [...entry.tags, ...fresh];
+    this.host.record({
+      label: fresh.length === 1 ? `Tag #${fresh[0]}` : 'Tags',
+      undo: async () => {
+        for (const t of fresh) await this.removeFromEntry(entry, t);
+      },
+      redo: () => this.addToEntry(entry, fresh),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();
@@ -43,7 +53,13 @@ export class TagController {
   }
 
   async removeFromEntry(entry: Entry, tag: string) {
+    if (!entry.tags.includes(tag)) return;
     entry.tags = entry.tags.filter((t) => t !== tag);
+    this.host.record({
+      label: `Untag #${tag}`,
+      undo: () => this.addToEntry(entry, [tag]),
+      redo: () => this.removeFromEntry(entry, tag),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();
@@ -54,6 +70,13 @@ export class TagController {
     const fresh = tags.map((t) => t.trim()).filter((t) => t && !item.tags.includes(t));
     if (!fresh.length) return;
     item.tags = [...item.tags, ...fresh];
+    this.host.record({
+      label: fresh.length === 1 ? `Tag #${fresh[0]}` : 'Tags',
+      undo: async () => {
+        for (const t of fresh) await this.removeFromItem(item, t);
+      },
+      redo: () => this.addToItem(item, fresh),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();
@@ -61,7 +84,13 @@ export class TagController {
   }
 
   async removeFromItem(item: Item, tag: string) {
+    if (!item.tags.includes(tag)) return;
     item.tags = item.tags.filter((t) => t !== tag);
+    this.host.record({
+      label: `Untag #${tag}`,
+      undo: () => this.addToItem(item, [tag]),
+      redo: () => this.removeFromItem(item, tag),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();

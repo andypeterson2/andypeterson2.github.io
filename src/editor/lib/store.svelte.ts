@@ -28,6 +28,8 @@ import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
 import { TagController } from './tags.svelte';
+import { UndoController } from './undo.svelte';
+import { fieldDiff, humanize, patchShadow, seedShadow, type Shadow } from './undo';
 import type { SaveHost } from './host';
 import { move } from './util';
 
@@ -71,6 +73,8 @@ class EditorState {
     () => this.connected,
     () => this.activeVariant,
   );
+  /** the undo/redo history behind the Edit menu (undo.svelte.ts). */
+  undo = new UndoController({ announce: (msg) => this.say(msg) });
   /** aria-live text for keyboard-reorder feedback (screen-reader only). */
   announce = $state('');
   /** the active variant lens (null = Main, the full document). */
@@ -118,6 +122,8 @@ class EditorState {
     settle: (ok, retry) => this.settle(ok, retry),
     debounce: (key, fn) => this.debounce(key, fn),
     announce: (msg) => this.say(msg),
+    record: (cmd) => this.undo.record(cmd),
+    forgetHistory: () => this.undo.clear(),
   };
   /** the cover-letter concern — header fields + per-variant paragraphs (letters.svelte.ts). */
   letters = new LetterController({
@@ -140,6 +146,12 @@ class EditorState {
     },
     syncActive: (load) => {
       this.preview.reset();
+      // Switching into or out of a cover letter replaces the letter objects, so any
+      // command that closed over them would write to something detached. Switching
+      // between CV lenses touches no objects and keeps its history.
+      const letterInvolved =
+        this.letters.sections.length > 0 || this.activeVariant?.kind === 'coverletter';
+      if (letterInvolved) this.undo.clear();
       if (load) this.letters.load();
       else this.letters.clear();
     },
@@ -161,6 +173,59 @@ class EditorState {
   );
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
+
+  constructor() {
+    this.reshadow();
+  }
+
+  // ---- undo plumbing ----
+  // `bind:value` mutates state before the store is called, so the previous value
+  // has to be remembered separately. Keyed by object identity, never by id: an
+  // undone delete re-creates the row and the server issues a NEW id, while the JS
+  // object survives. See undo.ts.
+  #shadow: Shadow = new WeakMap();
+  #uids = new WeakMap<object, number>();
+  #uidSeq = 0;
+
+  /** A stable per-object key for coalescing (ids move; object identity doesn't). */
+  private uid(obj: object): number {
+    let u = this.#uids.get(obj);
+    if (u == null) {
+      u = ++this.#uidSeq;
+      this.#uids.set(obj, u);
+    }
+    return u;
+  }
+
+  /**
+   * NOTE — the `$state` proxy trap. Pushing a raw object into a reactive array and
+   * keeping the raw reference gives you an object that is never `===` the element
+   * you read back, so identity filters silently match nothing and the shadow keyed
+   * on it is never found. Always re-read the element after inserting it.
+   */
+  private live<T>(arr: T[], index: number): T {
+    return arr[index];
+  }
+
+  /** Re-seed every editable object's shadow (a fresh document has fresh objects). */
+  private reshadow() {
+    seedShadow(this.#shadow, this.person.personal, this.person.personal as Record<string, string>);
+    for (const section of this.person.sections) {
+      for (const entry of section.entries) {
+        seedShadow(this.#shadow, entry, entry.fields);
+        for (const item of entry.items) this.seedItem(item);
+      }
+    }
+  }
+  private seedItem(item: Item) {
+    seedShadow(this.#shadow, item, { title: item.title ?? '', content: item.content });
+  }
+
+  /** Forget history + re-shadow: the document was replaced wholesale. */
+  private rebase() {
+    this.undo.clear();
+    this.reshadow();
+  }
 
   select(sel: Selection) {
     this.selection = sel;
@@ -229,10 +294,29 @@ class EditorState {
   // Each debounced save delegates to a push* helper so the same call can be
   // re-fired verbatim by the error toast — reading the field's *current* value.
   saveEntry(entry: Entry) {
+    const change = fieldDiff(this.#shadow, entry, entry.fields);
+    if (change) {
+      const { key, old, next } = change;
+      this.undo.record({
+        label: humanize(key),
+        mergeKey: `entry:${this.uid(entry)}:${key}`,
+        undo: () => this.applyEntryField(entry, key, old),
+        redo: () => this.applyEntryField(entry, key, next),
+      });
+    }
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`entry.${entry.id}`, () => this.pushEntry(entry));
+  }
+  /** Write a field back (undo/redo). Persists at once — an inverse must not linger. */
+  private applyEntryField(entry: Entry, key: string, value: string) {
+    entry.fields[key] = value;
+    patchShadow(this.#shadow, entry, key, value);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.pushEntry(entry);
   }
   private pushEntry(entry: Entry) {
     this.saveState = 'saving';
@@ -241,10 +325,32 @@ class EditorState {
       .then((r) => this.settle(r.ok, () => this.pushEntry(entry)));
   }
   saveItem(item: Item) {
+    const change = fieldDiff(this.#shadow, item, {
+      title: item.title ?? '',
+      content: item.content,
+    });
+    if (change) {
+      const { key, old, next } = change;
+      this.undo.record({
+        label: key === 'title' ? 'Lead-in' : 'Bullet',
+        mergeKey: `item:${this.uid(item)}:${key}`,
+        undo: () => this.applyItemField(item, key, old),
+        redo: () => this.applyItemField(item, key, next),
+      });
+    }
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`item.${item.id}`, () => this.pushItem(item));
+  }
+  private applyItemField(item: Item, key: string, value: string) {
+    if (key === 'title') item.title = value;
+    else item.content = value;
+    patchShadow(this.#shadow, item, key, value);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    this.pushItem(item);
   }
   private pushItem(item: Item) {
     this.saveState = 'saving';
@@ -253,11 +359,30 @@ class EditorState {
       .then((r) => this.settle(r.ok, () => this.pushItem(item)));
   }
   savePersonal(key: string) {
+    const personal = this.person.personal as Record<string, string | undefined>;
+    const change = fieldDiff(this.#shadow, this.person.personal, personal);
+    if (change) {
+      const { old, next } = change;
+      this.undo.record({
+        label: humanize(change.key),
+        mergeKey: `personal:${change.key}`,
+        undo: () => this.applyPersonalField(change.key, old),
+        redo: () => this.applyPersonalField(change.key, next),
+      });
+    }
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     this.saveState = 'saving';
     this.debounce(`personal.${key}`, () => this.pushPersonal(pid, key));
+  }
+  private applyPersonalField(key: string, value: string) {
+    (this.person.personal as Record<string, string>)[key] = value;
+    patchShadow(this.#shadow, this.person.personal, key, value);
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    this.saveState = 'saving';
+    this.pushPersonal(this.activePersonId, key);
   }
   private pushPersonal(pid: number, key: string) {
     this.saveState = 'saving';
@@ -267,18 +392,34 @@ class EditorState {
   }
 
   // ---- content mutations (persist immediately when connected) ----
+  // Every structural op is undoable, and its inverse re-CREATES the row — so the
+  // server issues a new id. That is why each command closes over the live object
+  // (reading `.id` at call time) rather than over an id captured up front, and why
+  // an inserted literal is re-read out of the array before anything captures it.
+
   async addEntry(section: Section) {
-    const entry: Entry = {
+    const index = section.entries.length;
+    section.entries.push({
       id: this.seq++,
       fields: defaultFields(section.type),
       items: [],
       tags: [],
-    };
+    });
+    const entry = this.live(section.entries, index); // the proxy, not the literal
+    seedShadow(this.#shadow, entry, entry.fields);
     const tempId = entry.id;
-    section.entries.push(entry);
     this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
     this.dirty = true;
-    if (!this.connected) return;
+    const remember = () =>
+      this.undo.record({
+        label: 'Add entry',
+        undo: () => this.detachEntry(section, entry),
+        redo: () => this.attachEntry(section, entry, index),
+      });
+    if (!this.connected) {
+      remember();
+      return;
+    }
     this.saveState = 'saving';
     const res = await api.createEntry(section.id, entry.fields);
     if (res.ok && res.data) {
@@ -286,6 +427,7 @@ class EditorState {
       if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
         this.selection = { kind: 'entry', sectionId: section.id, entryId: res.data.id };
       }
+      remember(); // only a create that stuck is worth undoing
     } else {
       section.entries = section.entries.filter((e) => e.id !== tempId); // roll back the phantom
       this.clearSelection();
@@ -293,31 +435,117 @@ class EditorState {
     this.settle(res.ok);
   }
   async deleteEntry(section: Section, entryId: number) {
-    section.entries = section.entries.filter((e) => e.id !== entryId);
+    const index = section.entries.findIndex((e) => e.id === entryId);
+    if (index < 0) return;
+    const entry = this.live(section.entries, index);
+    this.undo.record({
+      label: 'Delete entry',
+      undo: () => this.attachEntry(section, entry, index),
+      redo: () => this.detachEntry(section, entry),
+    });
+    await this.detachEntry(section, entry);
+  }
+  /** Drop an entry and its server row. The JS object survives, for the undo. */
+  private async detachEntry(section: Section, entry: Entry) {
+    const id = entry.id;
+    section.entries = section.entries.filter((e) => e.id !== id);
     this.clearSelection();
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
-    this.settle((await api.deleteEntry(entryId)).ok);
+    this.settle((await api.deleteEntry(id)).ok);
   }
-  async addBullet(entry: Entry) {
-    const item: Item = { id: this.seq++, content: '', title: '', tags: [] };
-    entry.items.push(item);
+  /** Put an entry back, re-creating its row, bullets and tags. Every id is new. */
+  private async attachEntry(section: Section, entry: Entry, index: number) {
+    section.entries.splice(Math.min(index, section.entries.length), 0, entry);
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
+    const res = await api.createEntry(section.id, entry.fields);
+    if (!res.ok || !res.data) {
+      section.entries = section.entries.filter((e) => e !== entry);
+      this.settle(false);
+      return;
+    }
+    entry.id = res.data.id;
+    for (const item of entry.items) {
+      const r = await api.createItem(entry.id, { content: item.content, title: item.title ?? '' });
+      if (r.ok && r.data) item.id = r.data.id;
+      if (item.tags.length) await api.addItemTags(item.id, item.tags);
+    }
+    if (entry.tags.length) await api.addEntryTags(entry.id, entry.tags);
+    await api.reorderEntries(
+      section.id,
+      section.entries.map((e) => e.id),
+    );
+    this.settle(true);
+  }
+
+  async addBullet(entry: Entry) {
+    const index = entry.items.length;
+    entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
+    const item = this.live(entry.items, index);
+    this.seedItem(item);
+    this.dirty = true;
+    const remember = () =>
+      this.undo.record({
+        label: 'Add bullet',
+        undo: () => this.detachBullet(entry, item),
+        redo: () => this.attachBullet(entry, item, index),
+      });
+    if (!this.connected) {
+      remember();
+      return;
+    }
+    this.saveState = 'saving';
     const res = await api.createItem(entry.id, { content: '', title: '' });
-    if (res.ok && res.data) item.id = res.data.id;
-    else entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
+    if (res.ok && res.data) {
+      item.id = res.data.id;
+      remember();
+    } else {
+      entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
+    }
     this.settle(res.ok);
   }
   async deleteBullet(entry: Entry, itemId: number) {
-    entry.items = entry.items.filter((i) => i.id !== itemId);
+    const index = entry.items.findIndex((i) => i.id === itemId);
+    if (index < 0) return;
+    const item = this.live(entry.items, index);
+    this.undo.record({
+      label: 'Delete bullet',
+      undo: () => this.attachBullet(entry, item, index),
+      redo: () => this.detachBullet(entry, item),
+    });
+    await this.detachBullet(entry, item);
+  }
+  private async detachBullet(entry: Entry, item: Item) {
+    const id = item.id;
+    entry.items = entry.items.filter((i) => i.id !== id);
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
-    this.settle((await api.deleteItem(itemId)).ok);
+    this.settle((await api.deleteItem(id)).ok);
   }
+  private async attachBullet(entry: Entry, item: Item, index: number) {
+    entry.items.splice(Math.min(index, entry.items.length), 0, item);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    const res = await api.createItem(entry.id, { content: item.content, title: item.title ?? '' });
+    if (!res.ok || !res.data) {
+      entry.items = entry.items.filter((i) => i !== item);
+      this.settle(false);
+      return;
+    }
+    item.id = res.data.id;
+    if (item.tags.length) await api.addItemTags(item.id, item.tags);
+    await api.reorderItems(
+      entry.id,
+      entry.items.map((i) => i.id),
+    );
+    this.settle(true);
+  }
+
   async addSection(type: string) {
     // Section-type keys are valid slugs (^[a-z0-9_-]+$); dedup against existing.
     const existing = new Set(this.person.sections.map((s) => s.slug).filter(Boolean));
@@ -325,34 +553,93 @@ class EditorState {
     let n = 2;
     while (existing.has(slug)) slug = `${type}-${n++}`;
     const title = SECTION_TYPES[type].label;
-    const section: Section = { id: this.seq++, slug, type, title, entries: [] };
-    this.person.sections.push(section);
+    const index = this.person.sections.length;
+    this.person.sections.push({ id: this.seq++, slug, type, title, entries: [] });
+    const section = this.live(this.person.sections, index);
+    const tempId = section.id;
     this.scrollTarget = section.id;
     this.dirty = true;
-    if (!this.connected || this.activePersonId == null) return;
+    const remember = () =>
+      this.undo.record({
+        label: 'Add section',
+        undo: () => this.detachSection(section),
+        redo: () => this.attachSection(section, index),
+      });
+    if (!this.connected || this.activePersonId == null) {
+      remember();
+      return;
+    }
     this.saveState = 'saving';
     const res = await api.createSection(this.activePersonId, { slug, type, title });
-    if (res.ok && res.data)
+    if (res.ok && res.data) {
       section.id = res.data.id; // reconcile temp id → server id
-    else {
-      this.person.sections = this.person.sections.filter((s) => s.id !== section.id); // roll back
+      remember();
+    } else {
+      this.person.sections = this.person.sections.filter((s) => s.id !== tempId); // roll back
       this.scrollTarget = null;
     }
     this.settle(res.ok);
   }
   async deleteSection(sectionId: Section['id']) {
-    this.person.sections = this.person.sections.filter((s) => s.id !== sectionId);
+    const index = this.person.sections.findIndex((s) => s.id === sectionId);
+    if (index < 0) return;
+    const section = this.live(this.person.sections, index);
+    this.undo.record({
+      label: 'Delete section',
+      undo: () => this.attachSection(section, index),
+      redo: () => this.detachSection(section),
+    });
+    await this.detachSection(section);
+  }
+  private async detachSection(section: Section) {
+    const id = section.id;
+    this.person.sections = this.person.sections.filter((s) => s.id !== id);
     this.clearSelection();
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
-    this.settle((await api.deleteSection(sectionId)).ok);
+    this.settle((await api.deleteSection(id)).ok);
+  }
+  /** Re-create a section and everything inside it. All ids are new; objects are not. */
+  private async attachSection(section: Section, index: number) {
+    this.person.sections.splice(Math.min(index, this.person.sections.length), 0, section);
+    this.scrollTarget = section.id;
+    this.dirty = true;
+    if (!this.connected || this.activePersonId == null) return;
+    this.saveState = 'saving';
+    const res = await api.createSection(this.activePersonId, {
+      slug: section.slug ?? section.type,
+      type: section.type,
+      title: section.title,
+    });
+    if (!res.ok || !res.data) {
+      this.person.sections = this.person.sections.filter((s) => s !== section);
+      this.settle(false);
+      return;
+    }
+    section.id = res.data.id;
+    // Re-attach the children one at a time so each gets its own fresh server id.
+    const entries = [...section.entries];
+    section.entries = [];
+    for (const [i, entry] of entries.entries()) await this.attachEntry(section, entry, i);
+    await api.reorderSections(
+      this.activePersonId,
+      this.person.sections.map((s) => s.id),
+    );
+    this.settle(true);
   }
 
   // ---- drag reorder (persist the new id order) ----
+  // move(arr, from, to) splices out `from` and inserts at `to`, so move(arr, to,
+  // from) is its exact inverse — the undo is the same call with the pair swapped.
   async reorderEntries(section: Section, from: number, to: number) {
     section.entries = move(section.entries, from, to);
     this.say(`Entry moved to position ${to + 1} of ${section.entries.length}`);
+    this.undo.record({
+      label: 'Reorder',
+      undo: () => this.reorderEntries(section, to, from),
+      redo: () => this.reorderEntries(section, from, to),
+    });
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
@@ -362,6 +649,11 @@ class EditorState {
   async reorderItems(entry: Entry, from: number, to: number) {
     entry.items = move(entry.items, from, to);
     this.say(`Bullet moved to position ${to + 1} of ${entry.items.length}`);
+    this.undo.record({
+      label: 'Reorder',
+      undo: () => this.reorderItems(entry, to, from),
+      redo: () => this.reorderItems(entry, from, to),
+    });
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
@@ -371,6 +663,11 @@ class EditorState {
   async reorderSections(from: number, to: number) {
     this.person.sections = move(this.person.sections, from, to);
     this.say(`Section moved to position ${to + 1} of ${this.person.sections.length}`);
+    this.undo.record({
+      label: 'Reorder',
+      undo: () => this.reorderSections(to, from),
+      redo: () => this.reorderSections(from, to),
+    });
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     this.saveState = 'saving';
@@ -456,6 +753,7 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
+    this.rebase(); // a different document: the old history can't be replayed onto it
   }
 
   /**
@@ -475,6 +773,7 @@ class EditorState {
     this.scrollTarget = null;
     this.dirty = false;
     this.saveState = 'demo';
+    this.rebase(); // fresh clone → fresh objects; nothing on the stack still points at them
     this.say('Demo reset — the sample résumé is back to its original state.');
   }
 
@@ -490,6 +789,7 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
+    this.rebase();
   }
 
   /** Try to load a profile from the live backend (read-only). */

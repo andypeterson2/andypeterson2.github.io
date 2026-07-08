@@ -57,7 +57,26 @@
         },
       ],
     },
-    { title: 'Edit', items: [] },
+    {
+      title: 'Edit',
+      items: [
+        {
+          // The label names what will be undone, so the command is never a surprise.
+          label: editor.undo.canUndo ? `↶ Undo ${editor.undo.undoLabel}` : '↶ Undo',
+          disabled: !editor.undo.canUndo,
+          accel: '⌘Z',
+          keys: 'Meta+Z Control+Z',
+          onSelect: () => void editor.undo.undo(),
+        },
+        {
+          label: editor.undo.canRedo ? `↷ Redo ${editor.undo.redoLabel}` : '↷ Redo',
+          disabled: !editor.undo.canRedo,
+          accel: '⇧⌘Z',
+          keys: 'Meta+Shift+Z Control+Shift+Z',
+          onSelect: () => void editor.undo.redo(),
+        },
+      ],
+    },
     {
       title: 'View',
       items: [
@@ -98,6 +117,21 @@
   const isEditable = (t: EventTarget | null) =>
     t instanceof HTMLElement && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
 
+  /**
+   * ⌘Z / ⇧⌘Z — but never inside a text field. There the browser's own undo is
+   * better (it moves the caret with the text), and it still persists: the `input`
+   * event it fires routes through saveEntry, which records it like any other edit.
+   */
+  function onGlobalKey(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
+      e.preventDefault();
+      if (tour.active) tour.takeover(); // a keystroke means the visitor is driving
+      void (e.shiftKey ? editor.undo.redo() : editor.undo.undo());
+      return;
+    }
+    onTourKey(e);
+  }
+
   /** Esc ends, Space pauses/resumes, anything else means the visitor is driving. */
   function onTourKey(e: KeyboardEvent) {
     if (!tour.active) return;
@@ -120,7 +154,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onTourKey} onpointerdown={onTourPointer} onwheel={onTourPointer} />
+<svelte:window onkeydown={onGlobalKey} onpointerdown={onTourPointer} onwheel={onTourPointer} />
 
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
