@@ -5,7 +5,14 @@
   --chrome: #dcdcd6;
   --chrome-hi: #efefe9;
   --dim: #8f8d86;
-  --live: #2f7d4c;
+
+  /* Semantic state. Demo deliberately has NO colour: its dot is hollow (paper on
+     ink), the System-6 idiom for "unset". Red belongs to real errors — not to the
+     one mode every visitor of this site will ever see. */
+  --state-live: #2f7d4c;
+  --state-busy: #d9a520;
+  --state-error: #b3261e;
+  --link-on-ink: #9ec7ff;
   --sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
   --mono: 'SF Mono', ui-monospace, 'Menlo', 'DejaVu Sans Mono', monospace;
