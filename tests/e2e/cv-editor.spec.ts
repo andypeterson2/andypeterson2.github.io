@@ -37,6 +37,12 @@ async function mockAdaWithVariant(page: Page) {
   );
 }
 
+/** Open a menubar pull-down by title. */
+async function openMenu(page: Page, title: string) {
+  await page.locator('.menus .menu', { hasText: title }).click();
+  await expect(page.locator(`.drop[aria-label="${title}"]`)).toBeVisible();
+}
+
 /** Open the variant drawer and pick a variant by name. */
 async function selectVariant(page: Page, name: string | RegExp) {
   await page.locator('.toolbar .variant-btn').click();
@@ -94,7 +100,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(invite.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
   });
 
-  test('the invitation dismisses to the ◇ chip; Reset demo restores the sample', async ({
+  test('the invitation dismisses to the ◇ chip; File ▸ Reset demo restores the sample', async ({
     page,
   }) => {
     await page.route('**/api/**', (route) => route.abort());
@@ -111,16 +117,64 @@ test.describe('CV editor (document-first rewrite)', () => {
     await inline.locator('button', { hasText: 'Done' }).click();
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
 
-    // Reset restores a pristine clone (the store proxies/mutates what it's given).
-    await invite.getByRole('button', { name: /Reset demo/ }).click();
+    // Reset lives in File, where a System-6 user looks for Revert. It restores a
+    // pristine clone (the store proxies/mutates whatever object it's handed).
+    await openMenu(page, 'File');
+    await page.getByRole('menuitem', { name: /Reset demo/ }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Senior Software Engineer');
 
-    // Dismiss collapses it to the chip, which reopens it — Reset is one click away.
+    // Dismiss collapses the strip to the chip, which reopens it.
     await invite.getByRole('button', { name: 'Dismiss' }).click();
     await expect(invite).toHaveCount(0);
     await page.locator('.conn').click();
     await expect(page.locator('.invite')).toBeVisible();
+  });
+
+  test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const file = page.locator('.menus .menu', { hasText: 'File' });
+    const drop = page.locator('.drop[aria-label="File"]');
+
+    // Unimplemented menus say so, rather than looking live and doing nothing.
+    await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeDisabled();
+    await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeDisabled();
+
+    // ArrowDown opens and lands focus on the first item.
+    await file.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(drop).toBeVisible();
+    await expect(file).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
+
+    // Roving focus wraps; Escape closes and returns focus to the title.
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(drop).toHaveCount(0);
+    await expect(file).toBeFocused();
+
+    // A press outside dismisses it, the way a real pull-down does.
+    await file.click();
+    await expect(drop).toBeVisible();
+    await page.locator('.statusbar').click();
+    await expect(drop).toHaveCount(0);
+  });
+
+  test('File ▸ Reset demo is disabled for a signed-in profile', async ({ page }) => {
+    // resetDemo() is a no-op when connected — there is real data to protect. Say so
+    // in the menu instead of offering a command that silently does nothing.
+    await mockAdaWithVariant(page);
+    await gotoEditor(page);
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+
+    await openMenu(page, 'File');
+    await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeDisabled();
+    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeEnabled();
   });
 
   test('the guided tour drives the real editor, then yields at the first touch', async ({ page }) => {
@@ -183,6 +237,27 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(tour.locator('.count')).toHaveText('2 of 7');
     // …and the typewriter becomes an instant state change.
     await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/queries\.$/);
+  });
+
+  test('ending the tour puts away the drawer it opened', async ({ page }) => {
+    // Step 5 opens the variant drawer. A modal scrim the visitor never asked for
+    // must not outlive the tour that raised it. (Reduced motion → deterministic:
+    // step through with Next rather than waiting on dwell timers.)
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const tour = page.locator('.tour');
+    await page.locator('.tour-start').click();
+    const next = tour.getByRole('button', { name: /Next/ });
+    for (let i = 0; i < 4; i += 1) await next.click();
+    await expect(tour.locator('.count')).toHaveText('5 of 7');
+    await expect(page.locator('.drawer')).toBeVisible();
+
+    await tour.getByRole('button', { name: '✕ End', exact: true }).click();
+    await expect(tour).toHaveCount(0);
+    await expect(page.locator('.drawer')).toHaveCount(0);
+    await expect(page.locator('.scrim')).toHaveCount(0);
   });
 
   test('a forwarded ?tour=1 link opens straight into the narrative', async ({ page }) => {
