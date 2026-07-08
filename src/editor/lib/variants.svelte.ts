@@ -72,6 +72,10 @@ export class VariantController {
   }
 
   async remove(variant: Variant) {
+    // Variant add/remove isn't itself undoable, and a delete would strand any rule
+    // command still pointing at this variant's now-dead server row. Forget rather
+    // than offer an "Undo" that would 404.
+    this.host.forgetHistory();
     this.host.setVariants(this.host.variants().filter((v) => v.id !== variant.id));
     if (this.host.activeId() === variant.id) this.host.setActiveId(null);
     this.host.markDirty();
@@ -80,10 +84,18 @@ export class VariantController {
     this.host.settle((await api.deleteVariant(variant.id)).ok);
   }
 
+  // A rule tag is its own inverse: adding undoes to removing and vice versa. Rules
+  // are only edited on the ACTIVE variant (the drawer gates on it), so undo re-dims
+  // the document live. `record` no-ops while an inverse runs, so the stack drains.
   async addRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
     const t = tag.trim().replace(/^#/, '');
     if (!t || variant.rules[mode].includes(t)) return;
     variant.rules[mode] = [...variant.rules[mode], t];
+    this.host.record({
+      label: `${mode === 'include' ? 'Include' : 'Exclude'} #${t}`,
+      undo: () => this.removeRule(variant, mode, t),
+      redo: () => this.addRule(variant, mode, t),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();
@@ -91,7 +103,13 @@ export class VariantController {
   }
 
   async removeRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
+    if (!variant.rules[mode].includes(tag)) return;
     variant.rules[mode] = variant.rules[mode].filter((t) => t !== tag);
+    this.host.record({
+      label: `Remove #${tag}`,
+      undo: () => this.addRule(variant, mode, tag),
+      redo: () => this.removeRule(variant, mode, tag),
+    });
     this.host.markDirty();
     if (!this.host.connected()) return;
     this.host.setSaving();

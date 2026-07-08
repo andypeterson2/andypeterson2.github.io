@@ -210,6 +210,10 @@ class EditorState {
   /** Re-seed every editable object's shadow (a fresh document has fresh objects). */
   private reshadow() {
     seedShadow(this.#shadow, this.person.personal, this.person.personal as Record<string, string>);
+    // Style is global rather than per-document, but its object is stable, so re-seeding
+    // to the current values on a reload is a harmless no-op — and loadStyle re-seeds
+    // again after it fetches, which is the seeding that actually matters.
+    seedShadow(this.#shadow, this.style, this.style as Record<string, string>);
     for (const section of this.person.sections) {
       for (const entry of section.entries) {
         seedShadow(this.#shadow, entry, entry.fields);
@@ -686,8 +690,21 @@ class EditorState {
         (this.style as Record<string, string>)[field] = v;
       }
     }
+    // The fetched values are the new baseline: without this, the first style edit
+    // would record the demo default as its "old" and undo would restore that.
+    seedShadow(this.#shadow, this.style, this.style as Record<string, string>);
   }
   saveStyle(field: 'accentColor' | 'customHex' | 'pageSize' | 'fontSize') {
+    const change = fieldDiff(this.#shadow, this.style, this.style as Record<string, string>);
+    if (change) {
+      const { key, old, next } = change;
+      this.undo.record({
+        label: humanize(key),
+        mergeKey: `style:${key}`,
+        undo: () => this.applyStyle(key, old),
+        redo: () => this.applyStyle(key, next),
+      });
+    }
     this.dirty = true;
     if (!this.connected) return;
     this.saveState = 'saving';
@@ -696,6 +713,15 @@ class EditorState {
         .patchSettings({ [`style.${field}`]: this.style[field] })
         .then((r) => this.settle(r.ok));
     });
+  }
+  /** Write a style field back (undo/redo), persisting at once — an inverse must not linger. */
+  private applyStyle(key: string, value: string) {
+    (this.style as Record<string, string>)[key] = value;
+    patchShadow(this.#shadow, this.style, key, value);
+    this.dirty = true;
+    if (!this.connected) return;
+    this.saveState = 'saving';
+    void api.patchSettings({ [`style.${key}`]: value }).then((r) => this.settle(r.ok));
   }
   async loadLayouts() {
     if (!this.connected) return;
