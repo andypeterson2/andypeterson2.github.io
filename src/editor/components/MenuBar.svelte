@@ -118,6 +118,7 @@
               class="item"
               role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
               aria-checked={item.checked}
+              aria-keyshortcuts={item.keys}
               tabindex="-1"
               disabled={item.disabled}
               bind:this={itemEls[ii]}
@@ -125,6 +126,9 @@
             >
               <span class="check" aria-hidden="true">{item.checked ? '✓' : ''}</span>
               <span class="label">{item.label}</span>
+              {#if item.accel}
+                <span class="accel" aria-hidden="true">{item.accel}</span>
+              {/if}
             </button>
           {/each}
         </div>
@@ -199,6 +203,23 @@
     font-family: var(--mono);
     font-size: 11px;
     line-height: 1;
+  }
+  .label {
+    flex: 1;
+  }
+  .accel {
+    padding-left: 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .item:hover:not(:disabled) .accel,
+  .item:focus-visible .accel {
+    color: inherit;
+    opacity: 0.7;
+  }
+  .item:disabled .accel {
+    opacity: 0.7;
   }
   .item:hover:not(:disabled),
   .item:focus-visible {

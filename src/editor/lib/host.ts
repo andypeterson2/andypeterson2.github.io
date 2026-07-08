@@ -4,6 +4,8 @@
 // the coupling to the store is named and typed in one place instead of being
 // re-declared per controller.
 
+import type { NewCommand } from './undo';
+
 export interface SaveHost {
   /** live "is the backend connected" flag — the guard before any persist */
   connected(): boolean;
@@ -19,4 +21,8 @@ export interface SaveHost {
   debounce(key: string, fn: () => void): void;
   /** announce a message to the aria-live region (screen readers) */
   announce(msg: string): void;
+  /** record an undoable command; a no-op while an inverse is being applied */
+  record(cmd: NewCommand): void;
+  /** forget the undo history — the stack cannot be replayed across this change */
+  forgetHistory(): void;
 }

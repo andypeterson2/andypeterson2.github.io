@@ -15,6 +15,10 @@ export interface MenuItem {
    * would leave screen readers with no idea the thing has a state.)
    */
   checked?: boolean;
+  /** Keyboard equivalent, shown right-aligned (e.g. "⌘Z"). Purely a visual hint. */
+  accel?: string;
+  /** The same shortcut in aria-keyshortcuts form (e.g. "Meta+Z Control+Z"). */
+  keys?: string;
 }
 
 export interface MenuDef {

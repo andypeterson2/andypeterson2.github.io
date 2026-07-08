@@ -8,6 +8,7 @@
 import { api } from './api';
 import { DEMO_LETTERS } from './demo';
 import { move } from './util';
+import { fieldDiff, patchShadow, seedShadow, type Shadow } from './undo';
 import type { SaveHost } from './host';
 import type { LetterSection, Variant } from './types';
 
@@ -25,7 +26,19 @@ export class LetterController {
   /** header fields of the active cover-letter variant (recipient / opening / closing) */
   header = $state<Record<string, string>>({});
 
+  /** Last-recorded field values, for undo — see undo.ts on why a shadow is needed. */
+  #shadow: Shadow = new WeakMap();
+
   constructor(private host: LetterHost) {}
+
+  /** Re-shadow after the letter's objects are replaced wholesale. */
+  #reshadow() {
+    seedShadow(this.#shadow, this.header, this.header);
+    for (const s of this.sections) this.#seedSection(s);
+  }
+  #seedSection(section: LetterSection) {
+    seedShadow(this.#shadow, section, { title: section.title, body: section.body });
+  }
 
   /** Load the active cover-letter variant's header + paragraphs (clear for a CV variant). */
   load() {
@@ -42,11 +55,13 @@ export class LetterController {
         if (res.ok && res.data && this.host.activeVariantId() === vid) {
           this.sections = res.data.sections;
           this.header = res.data.header;
+          this.#reshadow();
         }
       });
     } else {
       this.sections = (DEMO_LETTERS[v.id] ?? []).map((s) => ({ ...s }));
       this.header = { ...this.host.coverletter() }; // demo: the shared person header
+      this.#reshadow();
     }
   }
 
@@ -58,6 +73,16 @@ export class LetterController {
 
   /** Debounced save of one cover-letter header field to the active variant. */
   saveHeader(key: string) {
+    const change = fieldDiff(this.#shadow, this.header, this.header);
+    if (change) {
+      const { old, next } = change;
+      this.host.record({
+        label: 'Letter header',
+        mergeKey: `letterHeader:${change.key}`,
+        undo: () => this.applyHeader(change.key, old),
+        redo: () => this.applyHeader(change.key, next),
+      });
+    }
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
@@ -69,20 +94,40 @@ export class LetterController {
         .then((r) => this.host.settle(r.ok));
     });
   }
+  private applyHeader(key: string, value: string) {
+    this.header[key] = value;
+    patchShadow(this.#shadow, this.header, key, value);
+    this.host.markDirty();
+    const v = this.host.activeVariant();
+    if (!this.host.connected() || !v) return;
+    this.host.setSaving();
+    void api.updateVariantHeader(v.id, { [key]: value }).then((r) => this.host.settle(r.ok));
+  }
 
   async addParagraph() {
     const v = this.host.activeVariant();
     if (!v) return;
-    const section: LetterSection = { id: this.host.nextId(), title: '', body: '' };
+    const index = this.sections.length;
+    this.sections.push({ id: this.host.nextId(), title: '', body: '' });
+    const section = this.sections[index]; // the proxy, not the literal we pushed
+    this.#seedSection(section);
     const tempId = section.id;
-    this.sections.push(section);
     this.host.markDirty();
-    if (!this.host.connected()) return;
+    const remember = () =>
+      this.host.record({
+        label: 'Add paragraph',
+        undo: () => this.detach(section),
+        redo: () => this.attach(section, index),
+      });
+    if (!this.host.connected()) {
+      remember();
+      return;
+    }
     this.host.setSaving();
     const res = await api.createLetterSection(v.id, { title: '', body: '' });
     if (res.ok && res.data) {
-      const s = this.sections.find((x) => x.id === tempId);
-      if (s) s.id = res.data.id; // reconcile temp id → server id
+      section.id = res.data.id; // reconcile temp id → server id
+      remember();
     } else {
       this.sections = this.sections.filter((s) => s.id !== tempId); // roll back
     }
@@ -90,6 +135,19 @@ export class LetterController {
   }
 
   saveParagraph(section: LetterSection) {
+    const change = fieldDiff(this.#shadow, section, {
+      title: section.title,
+      body: section.body,
+    });
+    if (change) {
+      const { key, old, next } = change;
+      this.host.record({
+        label: 'Paragraph',
+        mergeKey: `letterSection:${section.id}:${key}`,
+        undo: () => this.applyParagraph(section, key, old),
+        redo: () => this.applyParagraph(section, key, next),
+      });
+    }
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
@@ -101,20 +159,69 @@ export class LetterController {
         .then((r) => this.host.settle(r.ok));
     });
   }
+  private applyParagraph(section: LetterSection, key: string, value: string) {
+    if (key === 'title') section.title = value;
+    else section.body = value;
+    patchShadow(this.#shadow, section, key, value);
+    this.host.markDirty();
+    const v = this.host.activeVariant();
+    if (!this.host.connected() || !v) return;
+    this.host.setSaving();
+    void api
+      .updateLetterSection(v.id, section.id, { title: section.title, body: section.body })
+      .then((r) => this.host.settle(r.ok));
+  }
 
   async deleteParagraph(id: number) {
+    const index = this.sections.findIndex((s) => s.id === id);
+    if (index < 0) return;
+    const section = this.sections[index];
+    this.host.record({
+      label: 'Delete paragraph',
+      undo: () => this.attach(section, index),
+      redo: () => this.detach(section),
+    });
+    await this.detach(section);
+  }
+  private async detach(section: LetterSection) {
     const v = this.host.activeVariant();
+    const id = section.id;
     this.sections = this.sections.filter((s) => s.id !== id);
     this.host.markDirty();
     if (!this.host.connected() || !v) return;
     this.host.setSaving();
     this.host.settle((await api.deleteLetterSection(v.id, id)).ok);
   }
+  /** Put a paragraph back — the row is re-created, so its id comes back new. */
+  private async attach(section: LetterSection, index: number) {
+    const v = this.host.activeVariant();
+    this.sections.splice(Math.min(index, this.sections.length), 0, section);
+    this.host.markDirty();
+    if (!this.host.connected() || !v) return;
+    this.host.setSaving();
+    const res = await api.createLetterSection(v.id, { title: section.title, body: section.body });
+    if (!res.ok || !res.data) {
+      this.sections = this.sections.filter((s) => s !== section);
+      this.host.settle(false);
+      return;
+    }
+    section.id = res.data.id;
+    await api.reorderLetterSections(
+      v.id,
+      this.sections.map((s) => s.id),
+    );
+    this.host.settle(true);
+  }
 
   async reorderParagraphs(from: number, to: number) {
     const v = this.host.activeVariant();
     this.sections = move(this.sections, from, to);
     this.host.announce(`Paragraph moved to position ${to + 1} of ${this.sections.length}`);
+    this.host.record({
+      label: 'Reorder',
+      undo: () => this.reorderParagraphs(to, from),
+      redo: () => this.reorderParagraphs(from, to),
+    });
     this.host.markDirty();
     if (!this.host.connected() || !v) return;
     this.host.setSaving();
