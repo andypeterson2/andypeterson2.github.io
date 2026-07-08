@@ -393,6 +393,36 @@ export class CvApi {
     for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
     return this.req(`/persons/${pid}/coverletter`, { method: 'PATCH', body: JSON.stringify(body) });
   }
+  /** Per-variant cover-letter header + paragraphs, in one fetch (GET /variants/:id). */
+  async getLetterData(
+    variantId: number,
+  ): Promise<ApiResult<{ header: Record<string, string>; sections: LetterSection[] }>> {
+    const res = await this.req<{
+      header?: Record<string, string>;
+      letterSections?: RawLetterSection[];
+    }>(`/variants/${variantId}`);
+    if (!res.ok || !res.data) return { ok: false, status: res.status, error: res.error };
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        header: mapCoverletter(res.data.header),
+        sections: (res.data.letterSections ?? []).map((s) => ({
+          id: s.id,
+          title: untex(s.title),
+          body: untex(s.body),
+        })),
+      },
+    };
+  }
+  updateVariantHeader(variantId: number, patch: Record<string, string>) {
+    const body: Record<string, string> = {};
+    for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
+    return this.req(`/variants/${variantId}/header`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  }
   async getLetterSections(variantId: number): Promise<ApiResult<LetterSection[]>> {
     const res = await this.req<RawLetterSection[]>(`/variants/${variantId}/letter-sections`);
     if (!res.ok || !res.data) return { ok: false, status: res.status, error: res.error };

@@ -124,7 +124,6 @@ class EditorState {
     ...this.saveHost,
     activeVariant: () => this.activeVariant,
     activeVariantId: () => this.activeVariantId,
-    activePersonId: () => this.activePersonId,
     coverletter: () => this.person.coverletter as Record<string, string>,
   });
   /** the variants concern — alternate lenses + include/exclude rules (variants.svelte.ts). */

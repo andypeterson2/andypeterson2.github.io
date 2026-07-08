@@ -737,7 +737,8 @@ test.describe('CV editor (document-first rewrite)', () => {
           sections: [],
         },
       ],
-      coverletter: { recipientName: 'Globex', opening: 'Dear Team,', closing: 'Sincerely,' },
+      // legacy person-level header — the new frontend reads the variant's, not this
+      coverletter: { recipientName: 'Legacy Person Header' },
     };
     await page.route(/\/cv\/api\/persons$/, (r) =>
       r.fulfill({
@@ -749,8 +750,22 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
-    // Letter body: GET loads one paragraph; POST adds another.
+    // The letter loads via GET /variants/60 (header + paragraphs together); POST adds one.
     let posted = 0;
+    await page.route(/\/cv\/api\/variants\/60$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 60,
+          name: 'Cover Letter',
+          kind: 'coverletter',
+          rules: { include: [], exclude: [] },
+          header: { recipientName: 'Globex', opening: 'Dear Team,', closing: 'Sincerely,' },
+          letterSections: [{ id: 100, title: '', body: 'Existing paragraph.' }],
+        }),
+      }),
+    );
     await page.route(/\/cv\/api\/variants\/60\/letter-sections$/, (r) => {
       if (r.request().method() === 'POST') {
         posted += 1;
@@ -760,15 +775,11 @@ test.describe('CV editor (document-first rewrite)', () => {
           body: JSON.stringify({ id: 200 }),
         });
       }
-      return r.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{ id: 100, title: '', body: 'Existing paragraph.' }]),
-      });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     });
-    // Header PATCH — capture the LaTeX-escaped payload.
+    // Per-variant header PATCH — capture the LaTeX-escaped payload.
     let headerPatch: { recipientName?: string } | null = null;
-    await page.route(/\/cv\/api\/persons\/7\/coverletter$/, (r) => {
+    await page.route(/\/cv\/api\/variants\/60\/header$/, (r) => {
       headerPatch = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
@@ -779,8 +790,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     await selectVariant(page, 'Cover Letter');
     const letter = page.locator('.letter');
     await expect(letter.locator('.para .body')).toHaveValue('Existing paragraph.');
+    // the header comes from the VARIANT (GET /variants/60), not the person
+    await expect(letter.locator('.fields .in').first()).toHaveValue('Globex');
 
-    // Edit the recipient → debounced PATCH /coverletter, LaTeX-escaped.
+    // Edit the recipient → debounced PATCH /variants/60/header, LaTeX-escaped.
     await letter.locator('.fields .in').first().fill('Globex R&D');
     await expect.poll(() => headerPatch?.recipientName).toBe('Globex R\\&D');
 
