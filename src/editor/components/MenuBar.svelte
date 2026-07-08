@@ -116,12 +116,16 @@
             {/if}
             <button
               class="item"
-              role="menuitem"
+              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={item.checked}
               tabindex="-1"
               disabled={item.disabled}
               bind:this={itemEls[ii]}
-              onclick={() => choose(item)}>{item.label}</button
+              onclick={() => choose(item)}
             >
+              <span class="check" aria-hidden="true">{item.checked ? '✓' : ''}</span>
+              <span class="label">{item.label}</span>
+            </button>
           {/each}
         </div>
       {/if}
@@ -173,7 +177,8 @@
     box-shadow: var(--shadow);
   }
   .item {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
     text-align: left;
     font-family: var(--sans);
@@ -182,9 +187,18 @@
     color: var(--ink);
     background: none;
     border: 0;
-    padding: 5px 14px;
+    padding: 5px 14px 5px 6px;
     cursor: pointer;
     white-space: nowrap;
+  }
+
+  /* Fixed gutter so every label aligns, toggle or not. */
+  .check {
+    width: 16px;
+    flex: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
   }
   .item:hover:not(:disabled),
   .item:focus-visible {

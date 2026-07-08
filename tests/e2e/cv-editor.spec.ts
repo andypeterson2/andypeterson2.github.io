@@ -138,9 +138,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     const file = page.locator('.menus .menu', { hasText: 'File' });
     const drop = page.locator('.drop[aria-label="File"]');
 
-    // Unimplemented menus say so, rather than looking live and doing nothing.
+    // Edit has no commands yet, and says so rather than looking live.
     await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeDisabled();
-    await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeDisabled();
+    await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeEnabled();
 
     // ArrowDown opens and lands focus on the first item.
     await file.focus();
@@ -163,6 +163,33 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drop).toBeVisible();
     await page.locator('.statusbar').click();
     await expect(drop).toHaveCount(0);
+  });
+
+  test('the View menu toggles the preview pane and opens the panels', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    // The pane is a toggle, so it is a menuitemcheckbox — a ✓ faked into the label
+    // would leave a screen reader with no idea the thing has a state.
+    await openMenu(page, 'View');
+    const previewItem = page.getByRole('menuitemcheckbox', { name: '◱ Preview' });
+    await expect(previewItem).toHaveAttribute('aria-checked', 'false');
+    await previewItem.click();
+    await expect(page.locator('.preview')).toBeVisible();
+
+    // Reopen: the checkmark tracks the pane, so the menu can be read at a glance.
+    await openMenu(page, 'View');
+    await expect(page.getByRole('menuitemcheckbox', { name: '◱ Preview' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await page.getByRole('menuitemcheckbox', { name: '◱ Preview' }).click();
+    await expect(page.locator('.preview')).toHaveCount(0);
+
+    // …and the panels open from here too, mirroring the toolbar.
+    await openMenu(page, 'View');
+    await page.getByRole('menuitem', { name: 'Tags…' }).click();
+    await expect(page.locator('.drawer[aria-label="Tags"]')).toBeVisible();
   });
 
   test('File ▸ Reset demo is disabled for a signed-in profile', async ({ page }) => {
