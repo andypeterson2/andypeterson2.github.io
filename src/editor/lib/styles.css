@@ -17,10 +17,34 @@
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
   --mono: 'SF Mono', ui-monospace, 'Menlo', 'DejaVu Sans Mono', monospace;
   --shadow: 2px 2px 0 var(--ink);
+
+  /* The deeper drop a panel floating over the document casts, as opposed to the
+     flat 2px a button presses off the page. Named because two components share
+     it — see .floating-panel below. */
+  --shadow-float: 3px 3px 0 rgb(0 0 0 / 35%);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* A small System-6 utility window floating above the statusbar. Shared by the
+   save-error toast and the guided-tour narrator: same paper, same 1px ink rule,
+   same hard shadow, same mono chrome. They are one family, so the triad is
+   named once here instead of being retyped per component. Components add only
+   their own width and inner layout. */
+.floating-panel {
+  position: fixed;
+  bottom: 46px;
+  left: 50%;
+  z-index: 100;
+  transform: translateX(-50%);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: var(--shadow-float);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
 }
 
 html,
