@@ -24,6 +24,7 @@ export interface ExportVariant {
   entryOverrides: never[];
   itemOverrides: never[];
   letterSections?: { title: string; body: string }[];
+  header?: Record<string, string>;
 }
 export interface ExportDoc {
   name: string;
@@ -46,11 +47,15 @@ function slugOf(person: Person, sectionId: number | string): string {
 
 /**
  * Build the import-compatible export for a person from in-memory editor state.
- * `letterFor` supplies a coverletter variant's paragraphs (only the active
- * variant's are loaded in the store, so the caller resolves the rest). All
- * display text is re-escaped to LaTeX so a re-import round-trips.
+ * `letterFor` / `headerFor` supply a coverletter variant's paragraphs + header
+ * (only the active variant's are loaded in the store, so the caller resolves the
+ * rest). All display text is re-escaped to LaTeX so a re-import round-trips.
  */
-export function buildExport(person: Person, letterFor: (v: Variant) => LetterSection[]): ExportDoc {
+export function buildExport(
+  person: Person,
+  letterFor: (v: Variant) => LetterSection[],
+  headerFor: (v: Variant) => Record<string, string>,
+): ExportDoc {
   const name =
     person.name ||
     `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim() ||
@@ -86,7 +91,10 @@ export function buildExport(person: Person, letterFor: (v: Variant) => LetterSec
       entryOverrides: [],
       itemOverrides: [],
       ...(v.kind === 'coverletter'
-        ? { letterSections: letterFor(v).map((s) => ({ title: tex(s.title), body: tex(s.body) })) }
+        ? {
+            letterSections: letterFor(v).map((s) => ({ title: tex(s.title), body: tex(s.body) })),
+            header: texMap(headerFor(v)),
+          }
         : {}),
     })),
   };

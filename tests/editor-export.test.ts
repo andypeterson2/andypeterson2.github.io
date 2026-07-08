@@ -65,16 +65,20 @@ describe('buildExport', () => {
     const doc = buildExport(
       person({ variants: [cv, cl], coverletter: { opening: 'Dear R&D,' } }),
       (v) => (v.id === 2 ? [{ id: 9, title: '', body: 'saved 50% time' }] : []),
+      (v) => (v.id === 2 ? { recipientName: 'Acme R&D' } : {}),
     );
-    expect(doc.coverletter.opening).toBe('Dear R\\&D,');
+    expect(doc.coverletter.opening).toBe('Dear R\\&D,'); // person-level header kept (expand compat)
     expect(doc.variants[0].letterSections).toBeUndefined();
+    expect(doc.variants[0].header).toBeUndefined(); // cv variant has no header
     expect(doc.variants[1].letterSections).toEqual([{ title: '', body: 'saved 50\\% time' }]);
+    expect(doc.variants[1].header).toEqual({ recipientName: 'Acme R\\&D' }); // per-variant, escaped
   });
 
   test('falls back to the CV name when the person has no label', () => {
     const doc = buildExport(
       person({ name: '', personal: { firstName: 'Grace', lastName: 'Hopper' } }),
       () => [],
+      () => ({}),
     );
     expect(doc.name).toBe('Grace Hopper');
   });
