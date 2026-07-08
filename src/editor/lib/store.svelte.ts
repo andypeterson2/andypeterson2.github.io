@@ -430,8 +430,10 @@ class EditorState {
       }
       data = res.data;
     } else {
-      data = buildExport(this.person, (v) =>
-        this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? []),
+      data = buildExport(
+        this.person,
+        (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
+        (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
       );
     }
     downloadJson(data, `${label}.json`);
