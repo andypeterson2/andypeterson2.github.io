@@ -210,6 +210,14 @@ class EditorState {
   dismissError() {
     this.saveError = null;
   }
+  /**
+   * Speak through the editor's single aria-live region. Public so the guided tour
+   * can narrate its captions here rather than mount a second live region — two of
+   * them talk over each other.
+   */
+  narrate(msg: string) {
+    this.say(msg);
+  }
   private annToggle = false;
   /** Set the aria-live message, forcing a re-announce even when the text repeats. */
   private say(msg: string) {

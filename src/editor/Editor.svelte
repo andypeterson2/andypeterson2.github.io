@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
+  import { tour } from './lib/tour.svelte';
+  import { tourIntent } from './lib/tour';
+  import Tour from './components/Tour.svelte';
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
@@ -27,11 +30,50 @@
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
+  // `?tour=1` lets a forwarded link open straight into the narrative — the only
+  // way the tour ever autoplays, and only once we know we're in demo mode.
   onMount(() => {
     hydrated = true;
-    editor.connect();
+    void editor.connect().then(() => {
+      if (!editor.connected && new URLSearchParams(location.search).get('tour') === '1') {
+        tour.start();
+      }
+    });
   });
+
+  // Belt and braces around TourController.canRun(): if a session goes live mid-tour
+  // (the sign-in popup lands), stop driving before a step can write to a real CV.
+  $effect(() => {
+    if (editor.connected && tour.state !== 'idle') tour.end();
+  });
+
+  const inTourChrome = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-tour]');
+  const isEditable = (t: EventTarget | null) =>
+    t instanceof HTMLElement && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
+
+  /** Esc ends, Space pauses/resumes, anything else means the visitor is driving. */
+  function onTourKey(e: KeyboardEvent) {
+    if (!tour.active) return;
+    const intent = tourIntent({
+      type: 'keydown',
+      key: e.key,
+      insideTour: inTourChrome(e.target),
+      editable: isEditable(e.target),
+    });
+    if (intent === 'ignore') return;
+    if (intent === 'end') tour.end();
+    else if (intent === 'toggle') {
+      e.preventDefault(); // Space would otherwise scroll the document out from under them
+      tour.toggle();
+    } else tour.takeover();
+  }
+  /** A click or a scroll anywhere but the tour's own chrome hands back the wheel. */
+  function onTourPointer(e: Event) {
+    if (tour.active && !inTourChrome(e.target)) tour.takeover();
+  }
 </script>
+
+<svelte:window onkeydown={onTourKey} onpointerdown={onTourPointer} onwheel={onTourPointer} />
 
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
@@ -74,8 +116,14 @@
     <div class="invite" id="demo-invite" role="status">
       <span class="mk" aria-hidden="true">◇</span>
       <span class="txt"
-        >This is the real editor, running live in your browser. Edit anything — drag, tag, compile a
-        PDF. <b>Nothing is saved.</b></span
+        >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
+        variants, export. <b>Nothing is saved.</b></span
+      >
+      <button
+        class="btn tour-start"
+        disabled={tour.state !== 'idle'}
+        title="Watch the editor drive itself — touch anything to take over"
+        onclick={() => tour.start()}>▶ Guided tour</button
       >
       <button class="btn reset" onclick={() => editor.resetDemo()}>↺ Reset demo</button>
       {#if editor.connectError === 'offline'}
@@ -214,8 +262,12 @@
     <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
   {/if}
 
-  {#if editor.saveError}
-    <div class="save-toast" role="alert" aria-live="assertive">
+  <Tour />
+
+  <!-- The toast and the tour share the bottom-center slot; the tour wins. (In demo
+       mode nothing saves, so nothing can fail — this only matters if the two ever meet.) -->
+  {#if editor.saveError && !tour.active}
+    <div class="save-toast floating-panel" role="alert" aria-live="assertive">
       <span class="st-icon" aria-hidden="true">⚠</span>
       <span class="st-msg">{editor.saveError}</span>
       {#if editor.canRetry}
@@ -297,8 +349,10 @@
   .statusbar { display: flex; justify-content: space-between; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
   .sb-r { color: #57554f; }
 
-  /* Save-error toast — a System-6 alert box that floats above the statusbar. */
-  .save-toast { position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35); font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
+     from the shared .floating-panel primitive (lib/styles.css); only the row layout
+     is the toast's own. */
+  .save-toast { display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; }
   .save-toast .st-icon { color: var(--state-error); font-size: 14px; line-height: 1; }
   .save-toast .st-msg { flex: 1; line-height: 1.35; }
   .save-toast .st-btn { font-family: var(--mono); font-size: 12px; border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
