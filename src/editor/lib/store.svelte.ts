@@ -19,7 +19,7 @@
 // exists FOR; it's deliberately left in place, as pulling it out would relocate
 // coupling rather than reduce it. Navigate by the banners.
 import type { Person, Selection, Section, Entry, Item } from './types';
-import { DEMO_PERSON, DEMO_LETTERS } from './demo';
+import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta } from './api';
 import { resolveAccent } from './accent';
@@ -58,7 +58,7 @@ const EMPTY_PERSON: Person = {
 
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
-  person = $state<Person>(DEMO_PERSON);
+  person = $state<Person>(createDemoPerson());
   selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
@@ -448,6 +448,26 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
+  }
+
+  /**
+   * Restore the untouched demo profile — the safety net behind "edit anything,
+   * nothing is saved". If you invite people to touch it, you owe them an undo.
+   * A no-op when connected: there is real data to protect.
+   */
+  resetDemo() {
+    if (this.connected) return;
+    this.person = createDemoPerson();
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.preview.reset();
+    this.tags.highlight = null;
+    this.openDrawer = null;
+    this.scrollTarget = null;
+    this.dirty = false;
+    this.saveState = 'demo';
+    this.say('Demo reset — the sample résumé is back to its original state.');
   }
 
   /** Connected but with no profiles — shows the "create your first profile" prompt. */
