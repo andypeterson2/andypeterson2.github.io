@@ -1,4 +1,4 @@
-// The cover-letter concern — the letter header (per person) plus the per-variant
+// The cover-letter concern — the per-variant letter header plus the per-variant
 // body paragraphs, their loading, and their CRUD — lifted out of EditorState
 // (tech-debt #11). Unlike the preview slice, this one is genuinely coupled to the
 // editor's save machinery, so rather than reach into a god-object it declares
@@ -15,49 +15,58 @@ import type { LetterSection, Variant } from './types';
 export interface LetterHost extends SaveHost {
   activeVariant(): Variant | null;
   activeVariantId(): number | null;
-  activePersonId(): number | null;
+  /** the demo person's shared header — the fallback header source when offline. */
   coverletter(): Record<string, string>;
 }
 
 export class LetterController {
   /** body paragraphs of the active cover-letter variant (loaded on select) */
   sections = $state<LetterSection[]>([]);
+  /** header fields of the active cover-letter variant (recipient / opening / closing) */
+  header = $state<Record<string, string>>({});
 
   constructor(private host: LetterHost) {}
 
-  /** Load the active cover-letter variant's paragraphs (clear for a CV variant). */
+  /** Load the active cover-letter variant's header + paragraphs (clear for a CV variant). */
   load() {
     const v = this.host.activeVariant();
     if (v?.kind !== 'coverletter') {
-      this.sections = [];
+      this.clear();
       return;
     }
     if (this.host.connected()) {
-      this.sections = [];
+      this.clear();
       const vid = v.id;
-      void api.getLetterSections(vid).then((res) => {
+      void api.getLetterData(vid).then((res) => {
         // guard against a stale response after the user switched variants again
-        if (res.ok && res.data && this.host.activeVariantId() === vid) this.sections = res.data;
+        if (res.ok && res.data && this.host.activeVariantId() === vid) {
+          this.sections = res.data.sections;
+          this.header = res.data.header;
+        }
       });
     } else {
       this.sections = (DEMO_LETTERS[v.id] ?? []).map((s) => ({ ...s }));
+      this.header = { ...this.host.coverletter() }; // demo: the shared person header
     }
   }
 
-  /** Drop the loaded paragraphs (fresh variant, or on leaving a profile). */
+  /** Drop the loaded header + paragraphs (fresh variant, or on leaving a profile). */
   clear() {
     this.sections = [];
+    this.header = {};
   }
 
-  /** Debounced save of one cover-letter header field (recipient, opening, …). */
+  /** Debounced save of one cover-letter header field to the active variant. */
   saveHeader(key: string) {
     this.host.markDirty();
-    const pid = this.host.activePersonId();
-    if (!this.host.connected() || pid == null) return;
+    const v = this.host.activeVariant();
+    if (!this.host.connected() || !v) return;
+    const vid = v.id;
     this.host.setSaving();
-    this.host.debounce(`cl.${key}`, () => {
-      const value = this.host.coverletter()[key] ?? '';
-      void api.updateCoverletter(pid, { [key]: value }).then((r) => this.host.settle(r.ok));
+    this.host.debounce(`clh.${vid}.${key}`, () => {
+      void api
+        .updateVariantHeader(vid, { [key]: this.header[key] ?? '' })
+        .then((r) => this.host.settle(r.ok));
     });
   }
 
