@@ -3,7 +3,12 @@ import type { Person, LetterSection } from './types';
 // The demo résumé rendered when not connected to a backend (see design doc §4).
 // Deliberately a FICTIONAL persona — this file is committed to a public repo with
 // a PII-leakage CI gate. Real data only ever arrives at runtime from the API.
-export const DEMO_PERSON: Person = {
+//
+// This is a SEED, not a shared instance: the store wraps whatever it's handed in
+// `$state`, which proxies and therefore *mutates* it. Every caller takes its own
+// deep clone via createDemoPerson(), so "Reset demo" has something pristine to
+// restore — and so demo edits can never poison the module constant.
+const DEMO_PERSON_SEED: Person = {
   id: 0,
   name: 'Sample',
   personal: {
@@ -159,6 +164,15 @@ export const DEMO_PERSON: Person = {
     closing: 'Sincerely,',
   },
 };
+
+/**
+ * A fresh, unmutated demo profile. Call this rather than sharing one instance —
+ * the store's `$state` proxy writes through to whatever object it wraps, so a
+ * shared constant would accumulate every edit a visitor ever made.
+ */
+export function createDemoPerson(): Person {
+  return structuredClone(DEMO_PERSON_SEED);
+}
 
 /** Demo cover-letter body paragraphs, keyed by coverletter-variant id (offline only). */
 export const DEMO_LETTERS: Record<number, LetterSection[]> = {

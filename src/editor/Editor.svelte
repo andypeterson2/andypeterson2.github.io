@@ -18,6 +18,13 @@
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
 
+  // Demo is the default — and the only mode almost every visitor can reach, since
+  // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
+  const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
+  // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it,
+  // so "Reset demo" is never more than one click away.
+  let inviteOpen = $state(true);
+
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
   onMount(() => {
@@ -29,40 +36,54 @@
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
-    <span class="mark">◆</span><strong>CV&nbsp;Editor</strong>
+    <span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong>
     <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span>
     <span class="right">
       <button
         class="conn"
-        onclick={() => editor.connect()}
+        onclick={() => (demoMode ? (inviteOpen = !inviteOpen) : editor.connect())}
         disabled={editor.connecting || editor.signingIn}
-        title="Connect to the live backend"
+        title={demoMode ? 'About demo mode' : 'Connection status'}
+        aria-expanded={demoMode ? inviteOpen : undefined}
+        aria-controls={demoMode ? 'demo-invite' : undefined}
       >
-        <span class="dot" class:live={editor.connected} class:busy={editor.connecting || editor.signingIn}
+        <span
+          class="dot"
+          class:live={editor.connected}
+          class:busy={editor.connecting || editor.signingIn}
+          aria-hidden="true"
         ></span>{editor.signingIn
           ? 'signing in…'
           : editor.connecting
             ? 'connecting…'
             : editor.connected
               ? 'connected'
-              : 'demo'}
+              : 'Demo — nothing saved'}
       </button>
     </span>
   </div>
 
   {#if editor.signingIn}
-    <div class="signin">
-      <span>Signing in… finish the Google login in the new tab — the editor connects automatically.</span>
+    <div class="invite busy" role="status">
+      <span class="mk" aria-hidden="true">◆</span>
+      <span class="txt"
+        >Signing in… finish the Google login in the new tab — the editor connects automatically.</span
+      >
     </div>
-  {:else if editor.connectError === 'signin' && !editor.connected}
-    <div class="signin">
-      <span
-        >Local demo — <button class="link" onclick={() => editor.signIn()}>Sign in with Google</button
-        > to connect to the live editor.</span
+  {:else if demoMode && inviteOpen}
+    <div class="invite" id="demo-invite" role="status">
+      <span class="mk" aria-hidden="true">◇</span>
+      <span class="txt"
+        >This is the real editor, running live in your browser. Edit anything — drag, tag, compile a
+        PDF. <b>Nothing is saved.</b></span
       >
-      <button class="dismiss" aria-label="Dismiss" onclick={() => (editor.connectError = null)}
-        >×</button
-      >
+      <button class="btn reset" onclick={() => editor.resetDemo()}>↺ Reset demo</button>
+      {#if editor.connectError === 'offline'}
+        <button class="link" onclick={() => editor.connect()}>Retry</button>
+      {:else}
+        <button class="link" onclick={() => editor.signIn()}>Sign in with Google</button>
+      {/if}
+      <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
     </div>
   {/if}
 
@@ -174,9 +195,7 @@
               : editor.saveState === 'error'
                 ? '⚠ save failed'
                 : '✓ saved'
-            : editor.dirty
-              ? 'demo · unsaved (local)'
-              : 'demo'} · {editor.variantLabel}</span
+            : 'demo · nothing saved'} · {editor.variantLabel}</span
         >
         <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
@@ -216,15 +235,27 @@
   .mark { font-size: 15px; }
   .menu { font-weight: 400; }
   .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-weight: 400; }
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #c0392b; border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
-  .dot.live { background: var(--live); }
-  .dot.busy { background: #d9a520; }
+  /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
+     demo no longer borrows the colour we reserve for real errors. */
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
+  .dot.live { background: var(--state-live); }
+  .dot.busy { background: var(--state-busy); }
   .conn { font: inherit; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
   .conn:disabled { cursor: default; }
-  .signin { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 12px; background: var(--ink); color: var(--paper); font-size: 12.5px; }
-  .signin a,
-  .signin .link { color: #9ec7ff; font-weight: 700; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
-  .dismiss { background: none; border: 0; color: var(--paper); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }
+
+  /* The demo invitation — chrome, never an alarm. Replaces the inverted-ink
+     sign-in bar, which advertised a dead end to everyone but the owner. */
+  .invite { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 12px; background: var(--chrome-hi); color: var(--ink); border-bottom: 1px solid var(--ink); font-size: 12.5px; line-height: 1.4; }
+  /* pin the glyph to the first line so it doesn't float when the copy wraps */
+  .invite .mk { font-size: 14px; flex: none; align-self: flex-start; line-height: 1.4; }
+  .invite .txt { flex: 1 1 260px; min-width: 0; }
+  .invite .txt b { font-weight: 700; }
+  .invite .btn { font-size: 12px; padding: 4px 10px; }
+  .invite .link { background: none; border: 0; padding: 0; font: inherit; color: #45433d; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+  .invite .link:hover { color: var(--ink); }
+  .invite .x { background: none; border: 1px solid transparent; border-radius: 5px; color: var(--dim); font-family: var(--mono); font-size: 12px; line-height: 1; padding: 3px 6px; cursor: pointer; flex: none; }
+  .invite .x:hover { color: var(--ink); border-color: var(--ink); }
+  .invite.busy { color: #45433d; }
   .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
@@ -268,7 +299,7 @@
 
   /* Save-error toast — a System-6 alert box that floats above the statusbar. */
   .save-toast { position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35); font-family: var(--mono); font-size: 12px; color: var(--ink); }
-  .save-toast .st-icon { color: #b3261e; font-size: 14px; line-height: 1; }
+  .save-toast .st-icon { color: var(--state-error); font-size: 14px; line-height: 1; }
   .save-toast .st-msg { flex: 1; line-height: 1.35; }
   .save-toast .st-btn { font-family: var(--mono); font-size: 12px; border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
   .save-toast .st-btn:hover { background: var(--ink); color: var(--paper); }

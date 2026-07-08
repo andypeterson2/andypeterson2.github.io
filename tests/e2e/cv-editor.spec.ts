@@ -61,8 +61,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc-head h1')).toContainText('Jordan Rivera');
     // Portal chrome is stripped in bare mode.
     await expect(page.locator('.site-menubar')).toBeHidden();
-    // Connection resolves to demo, not connected.
-    await expect(page.locator('.conn')).toContainText('demo');
+    // Demo is the default, and it says so plainly — no red "failed" dot.
+    await expect(page.locator('.conn')).toContainText('Demo — nothing saved');
   });
 
   test('clicking an entry opens the type-aware inline editor', async ({ page }) => {
@@ -79,15 +79,48 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(inline.locator('button', { hasText: 'Done' })).toBeVisible();
   });
 
-  test('offers Access sign-in when the backend requires auth', async ({ page }) => {
-    // Simulate Cloudflare Access blocking the unauthenticated data probe.
+  test('a blocked backend reads as an invitation, not a failure', async ({ page }) => {
+    // Simulate Cloudflare Access blocking the unauthenticated data probe — the
+    // state EVERY visitor lands in, since the backend is owner-only.
     await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
     await gotoEditor(page);
 
-    const banner = page.locator('.signin');
-    await expect(banner).toBeVisible();
-    // Sign-in is a button that opens the Access login popup (no hand-built URL).
-    await expect(banner.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
+    const invite = page.locator('.invite');
+    await expect(invite).toBeVisible();
+    await expect(invite).toContainText('Nothing is saved');
+    await expect(page.locator('.conn')).toContainText('Demo — nothing saved');
+    // Sign-in survives as a quiet link for the owner (still the Access popup,
+    // never a hand-built URL) — not an inverted-ink alarm bar.
+    await expect(invite.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
+  });
+
+  test('the invitation dismisses to the ◇ chip; Reset demo restores the sample', async ({
+    page,
+  }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const invite = page.locator('.invite');
+    await expect(invite).toBeVisible();
+
+    // Edit the demo — the whole point of inviting people to touch it.
+    await page.locator('.entry').first().click();
+    const inline = page.locator('.doc .edit');
+    await expect(inline).toBeVisible();
+    await inline.locator('.fld').first().locator('input').fill('Chief Tinkerer');
+    await inline.locator('button', { hasText: 'Done' }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+
+    // Reset restores a pristine clone (the store proxies/mutates what it's given).
+    await invite.getByRole('button', { name: /Reset demo/ }).click();
+    await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
+    await expect(page.locator('.doc')).toContainText('Senior Software Engineer');
+
+    // Dismiss collapses it to the chip, which reopens it — Reset is one click away.
+    await invite.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(invite).toHaveCount(0);
+    await page.locator('.conn').click();
+    await expect(page.locator('.invite')).toBeVisible();
   });
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
@@ -652,7 +685,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
     await expect(page.locator('.doc-head')).toHaveCount(0);
     await expect(page.locator('.conn')).toContainText('connected');
-    await expect(page.locator('.signin')).toHaveCount(0);
+    await expect(page.locator('.invite')).toHaveCount(0); // connected → no demo strip
 
     // Close the drawer, then create from the empty state → editing resumes.
     await page.keyboard.press('Escape');
