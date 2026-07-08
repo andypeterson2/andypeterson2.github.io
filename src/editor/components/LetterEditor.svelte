@@ -1,11 +1,11 @@
 <script lang="ts">
   // Cover-letter editor — replaces the CV document when a coverletter variant is
-  // active. Header (recipient/salutation/closing) is per-person; the body
-  // paragraphs are per-variant (editor.letters.sections).
+  // active. Both the header (recipient/salutation/closing, editor.letters.header)
+  // and the body paragraphs (editor.letters.sections) are per-variant.
   import { editor } from '../lib/store.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
 
-  const cl = $derived(editor.person.coverletter);
+  const cl = $derived(editor.letters.header);
   const sender = $derived(
     `${editor.person.personal.firstName ?? ''} ${editor.person.personal.lastName ?? ''}`.trim(),
   );
