@@ -256,6 +256,82 @@ test.describe('CV editor (document-first rewrite)', () => {
       .toEqual(['DELETE /entries/11', 'POST /sections/2/entries', 'PATCH order [99]']);
   });
 
+  test('undo reverts a variant rule, and the lens re-dims live', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    const drawer = page.locator('.drawer');
+    await page.locator('.toolbar .variant-btn').click();
+    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+
+    // Exclude #apis → the one bullet carrying it drops out of the lens.
+    const apisBullet = page.locator('.doc li').filter({ hasText: 'REST API serving 10,000' });
+    await expect(apisBullet).not.toHaveClass(/dim/);
+    const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
+    await excludeIn.fill('apis');
+    await excludeIn.press('Enter');
+    await expect(apisBullet).toHaveClass(/dim/);
+
+    // The Edit menu names the exact rule; undoing it lifts the veto and re-dims live.
+    await page.keyboard.press('Escape'); // close the drawer so ⌘Z isn't inside the chip input
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: '↶ Undo Exclude #apis' })).toBeEnabled();
+    await page.getByRole('menuitem', { name: '↶ Undo Exclude #apis' }).click();
+    await expect(apisBullet).not.toHaveClass(/dim/);
+  });
+
+  test('undo reverts a style change, and re-themes the document live', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    await page.locator('.toolbar .btn', { hasText: 'Style' }).click();
+    const drawer = page.locator('.drawer');
+    await expect(drawer.locator('.swatch')).toHaveCount(9);
+
+    const originally = await drawer.locator('.swatch.on').getAttribute('aria-label');
+    const target = drawer.locator('.swatch:not(.on)').first();
+    const targetLabel = await target.getAttribute('aria-label');
+    await target.click();
+    await expect(drawer.locator('.swatch.on')).toHaveAttribute('aria-label', targetLabel!);
+
+    await page.keyboard.press('Escape');
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: '↶ Undo Accent color' })).toBeEnabled();
+    await page.getByRole('menuitem', { name: '↶ Undo Accent color' }).click();
+
+    // Reopen Style: the original swatch is selected again.
+    await page.locator('.toolbar .btn', { hasText: 'Style' }).click();
+    await expect(drawer.locator('.swatch.on')).toHaveAttribute('aria-label', originally!);
+  });
+
+  test('deleting a variant clears the undo history', async ({ page }) => {
+    // A rule command points at the variant's server row; once the variant is gone,
+    // undoing it would write to a dead row — so the delete forgets the history.
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    page.on('dialog', (d) => d.accept());
+
+    const drawer = page.locator('.drawer');
+    await page.locator('.toolbar .variant-btn').click();
+    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+    const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
+    await excludeIn.fill('apis');
+    await excludeIn.press('Enter');
+
+    // History has the rule command…
+    await page.keyboard.press('Escape');
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: /Undo Exclude/ })).toBeEnabled();
+    await page.keyboard.press('Escape');
+
+    // …deleting the variant clears it.
+    await page.locator('.toolbar .variant-btn').click();
+    await drawer.locator('.del').click();
+    await page.keyboard.press('Escape');
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+  });
+
   test('the View menu toggles the preview pane and opens the panels', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
