@@ -47,9 +47,7 @@ export class TagController {
       redo: () => this.addToEntry(entry, fresh),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.addEntryTags(entry.id, fresh)).ok);
+    await this.host.persist(() => api.addEntryTags(entry.id, fresh));
   }
 
   async removeFromEntry(entry: Entry, tag: string) {
@@ -61,9 +59,7 @@ export class TagController {
       redo: () => this.removeFromEntry(entry, tag),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.removeEntryTag(entry.id, tag)).ok);
+    await this.host.persist(() => api.removeEntryTag(entry.id, tag));
   }
 
   async addToItem(item: Item, tags: string[]) {
@@ -78,9 +74,7 @@ export class TagController {
       redo: () => this.addToItem(item, fresh),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.addItemTags(item.id, fresh)).ok);
+    await this.host.persist(() => api.addItemTags(item.id, fresh));
   }
 
   async removeFromItem(item: Item, tag: string) {
@@ -92,8 +86,6 @@ export class TagController {
       redo: () => this.removeFromItem(item, tag),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.removeItemTag(item.id, tag)).ok);
+    await this.host.persist(() => api.removeItemTag(item.id, tag));
   }
 }

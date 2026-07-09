@@ -46,8 +46,7 @@ export class VariantController {
     this.host.markDirty();
     const pid = this.host.activePersonId();
     if (!this.host.connected() || pid == null) return;
-    this.host.setSaving();
-    const res = await api.createVariant(pid, { name: clean, kind });
+    const res = await this.host.persist(() => api.createVariant(pid, { name: clean, kind }));
     if (res.ok && res.data) {
       if (this.host.activeId() === tempId) this.host.setActiveId(res.data.id);
       variant.id = res.data.id; // reconcile temp id → server id
@@ -58,7 +57,6 @@ export class VariantController {
         this.host.syncActive(false);
       }
     }
-    this.host.settle(res.ok);
   }
 
   async rename(variant: Variant, name: string) {
@@ -66,9 +64,7 @@ export class VariantController {
     if (!clean || clean === variant.name) return;
     variant.name = clean;
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.renameVariant(variant.id, clean)).ok);
+    await this.host.persist(() => api.renameVariant(variant.id, clean));
   }
 
   async remove(variant: Variant) {
@@ -79,9 +75,7 @@ export class VariantController {
     this.host.setVariants(this.host.variants().filter((v) => v.id !== variant.id));
     if (this.host.activeId() === variant.id) this.host.setActiveId(null);
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.deleteVariant(variant.id)).ok);
+    await this.host.persist(() => api.deleteVariant(variant.id));
   }
 
   // A rule tag is its own inverse: adding undoes to removing and vice versa. Rules
@@ -97,9 +91,7 @@ export class VariantController {
       redo: () => this.addRule(variant, mode, t),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
+    await this.host.persist(() => api.setVariantRules(variant.id, variant.rules));
   }
 
   async removeRule(variant: Variant, mode: 'include' | 'exclude', tag: string) {
@@ -111,8 +103,6 @@ export class VariantController {
       redo: () => this.removeRule(variant, mode, tag),
     });
     this.host.markDirty();
-    if (!this.host.connected()) return;
-    this.host.setSaving();
-    this.host.settle((await api.setVariantRules(variant.id, variant.rules)).ok);
+    await this.host.persist(() => api.setVariantRules(variant.id, variant.rules));
   }
 }
