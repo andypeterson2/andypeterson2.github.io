@@ -20,6 +20,16 @@ export class UndoController {
    */
   applying = $state(false);
 
+  /**
+   * Undo is per-profile: each profile's history is stashed here when you switch
+   * away and restored when you come back, so glancing at another profile doesn't
+   * throw away your work. Commands close over that profile's document objects, so
+   * this is only sound as long as the store keeps those objects alive across the
+   * switch (it caches the working tree rather than refetching — see store.selectPerson).
+   */
+  #scope = 'demo';
+  #stashed = new Map<string, { past: UndoCommand[]; future: UndoCommand[] }>();
+
   constructor(private host: UndoHost) {}
 
   canUndo = $derived(this.past.length > 0 && !this.applying);
@@ -63,13 +73,33 @@ export class UndoController {
   }
 
   /**
-   * Drop the whole history. Called when a change lands that the stack cannot be
-   * replayed across: a different profile loaded, the demo reset, or an operation
-   * whose inverse we don't model (variant and profile CRUD). Better to forget
-   * than to offer an "Undo" that would write to a row that no longer exists.
+   * Drop the CURRENT scope's history. Called when a change lands that the scope
+   * cannot be replayed across: the demo reset, or an operation whose inverse we
+   * don't model (variant CRUD). Better to forget than to offer an "Undo" that
+   * would write to a row that no longer exists.
    */
   clear() {
     this.past = [];
     this.future = [];
+  }
+
+  /**
+   * Switch to a profile's history, stashing the current one first. A profile
+   * seen for the first time starts empty; returning to one restores where you
+   * left off. Keying is the caller's job (the store uses the person id).
+   */
+  setScope(key: string) {
+    if (key === this.#scope) return;
+    this.#stashed.set(this.#scope, { past: this.past, future: this.future });
+    const restored = this.#stashed.get(key) ?? { past: [], future: [] };
+    this.#scope = key;
+    this.past = restored.past;
+    this.future = restored.future;
+  }
+
+  /** Forget a profile's history entirely (it was deleted). */
+  dropScope(key: string) {
+    this.#stashed.delete(key);
+    if (key === this.#scope) this.clear();
   }
 }
