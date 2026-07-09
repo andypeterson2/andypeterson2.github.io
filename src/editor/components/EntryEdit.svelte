@@ -5,11 +5,37 @@
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
   import { sortable, reorderKeydown } from '../lib/sortable';
+  import { unknownCommands } from '../lib/symbols';
+  import { insertAtCaret } from '../lib/caret';
   import TagChips from './TagChips.svelte';
+  import SymbolPalette from './SymbolPalette.svelte';
   import type { Entry, Section } from '../lib/types';
 
   let { section, entry }: { section: Section; entry: Entry } = $props();
   const def = $derived(typeDef(section.type));
+
+  // The symbols palette inserts a glyph into whichever text field was last
+  // focused; a field keeps its caret after blur, so a chip click still lands.
+  let showSymbols = $state(false);
+  let lastField: HTMLInputElement | HTMLTextAreaElement | null = null;
+  function trackFocus(e: FocusEvent) {
+    const t = e.target;
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) lastField = t;
+  }
+  function insertSymbol(glyph: string) {
+    if (lastField) insertAtCaret(lastField, glyph);
+  }
+
+  // Which \commands in this entry aren't recognized — they'll print literally.
+  const unknowns = $derived.by(() => {
+    const parts: string[] = [];
+    if (def?.isParagraph) parts.push(entry.fields.text ?? '');
+    else {
+      for (const f of def?.fields ?? []) parts.push(entry.fields[f.key] ?? '');
+      for (const it of entry.items) parts.push(it.title ?? '', it.content ?? '');
+    }
+    return unknownCommands(parts.join('  '));
+  });
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') editor.clearSelection();
@@ -18,14 +44,26 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="edit">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="edit" onfocusin={trackFocus}>
   <div class="ehead">
     <span class="etype">{def?.label ?? section.type}{def?.entryLabel ? ` · ${def.entryLabel}` : ''}</span>
     <span class="eacts">
+      <button
+        class="mini sym-toggle"
+        class:on={showSymbols}
+        title="Insert a symbol"
+        aria-expanded={showSymbols}
+        onclick={() => (showSymbols = !showSymbols)}>Ω</button
+      >
       <button class="mini danger" onclick={() => editor.deleteEntry(section, entry.id)}>Delete</button>
       <button class="mini primary" onclick={() => editor.clearSelection()}>Done</button>
     </span>
   </div>
+
+  {#if showSymbols}
+    <SymbolPalette onpick={insertSymbol} />
+  {/if}
 
   {#if def?.isParagraph}
     <textarea
@@ -115,6 +153,17 @@
       </div>
     {/if}
   {/if}
+
+  {#if unknowns.length}
+    <p class="warn" role="status">
+      <span class="wg" aria-hidden="true">⚠</span>
+      <span
+        >{unknowns.join(', ')}
+        {unknowns.length === 1 ? "isn't a recognized symbol — it" : "aren't recognized symbols — they"}
+        will print literally. Pick from <b>Ω</b> for live ones.</span
+      >
+    </p>
+  {/if}
 </div>
 
 <style>
@@ -159,6 +208,35 @@
   .mini.primary {
     background: var(--ink);
     color: var(--paper);
+  }
+  .mini.sym-toggle {
+    font-family: var(--serif);
+    font-size: 13px;
+    padding: 3px 9px;
+  }
+  .mini.sym-toggle.on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .warn {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin: 12px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid #e2e0d8;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #6b6960;
+  }
+  .warn .wg {
+    color: var(--state-busy);
+    font-size: 12px;
+  }
+  .warn b {
+    font-family: var(--serif);
+    font-weight: 700;
+    color: var(--ink);
   }
   .mini.danger {
     color: #9c2b3f;
