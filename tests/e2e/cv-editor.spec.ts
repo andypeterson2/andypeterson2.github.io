@@ -85,6 +85,33 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(inline.locator('button', { hasText: 'Done' })).toBeVisible();
   });
 
+  test('the symbols palette inserts a glyph; an unknown command warns', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    await page.locator('.entry').first().click();
+    const edit = page.locator('.doc .edit');
+    await expect(edit).toBeVisible();
+    const field = edit.locator('.fld input').first();
+
+    // An unrecognized \command warns that it prints literally…
+    await field.fill('Led \\vspace migration');
+    await expect(edit.locator('.warn')).toContainText('\\vspace');
+    await expect(edit.locator('.warn')).toContainText('print literally');
+
+    // …a recognized one raises no warning.
+    await field.fill('scaling n \\rightarrow \\infty');
+    await expect(edit.locator('.warn')).toHaveCount(0);
+
+    // The palette inserts the glyph at the caret (fill leaves it at the end).
+    await field.fill('AB');
+    await field.focus();
+    await edit.locator('.sym-toggle').click();
+    await expect(edit.locator('.palette')).toBeVisible();
+    await edit.locator('.palette .sym').filter({ hasText: '→' }).first().click();
+    await expect(field).toHaveValue('AB→');
+  });
+
   test('a blocked backend reads as an invitation, not a failure', async ({ page }) => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
     // state EVERY visitor lands in, since the backend is owner-only.
@@ -203,7 +230,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     const sections = page.locator('.doc .sec h2');
     await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
 
-    const experience = page.locator('.doc .sec').filter({ has: page.locator('h2', { hasText: 'Experience' }) });
+    const experience = page
+      .locator('.doc .sec')
+      .filter({ has: page.locator('h2', { hasText: 'Experience' }) });
     await experience.locator('.tool.danger').click();
     await expect(sections).toHaveText(['Summary', 'Skills', 'Education']);
 
@@ -456,7 +485,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeEnabled();
   });
 
-  test('the guided tour drives the real editor, then yields at the first touch', async ({ page }) => {
+  test('the guided tour drives the real editor, then yields at the first touch', async ({
+    page,
+  }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 

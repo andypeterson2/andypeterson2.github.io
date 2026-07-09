@@ -1,6 +1,12 @@
 import { describe, test, expect } from 'vitest';
 import { tex, untex } from '../src/editor/lib/api';
-import { SYMBOLS, GLYPH_BY_CMD, isPermitted } from '../src/editor/lib/symbols';
+import {
+  SYMBOLS,
+  SYMBOL_CATEGORIES,
+  GLYPH_BY_CMD,
+  isPermitted,
+  unknownCommands,
+} from '../src/editor/lib/symbols';
 
 /**
  * The field-escaping contract (round-two item 18). The old scheme left LaTeX
@@ -150,5 +156,38 @@ describe('the allowlist table itself', () => {
   test('no duplicate command names', () => {
     const cmds = SYMBOLS.map((s) => s.cmd);
     expect(new Set(cmds).size).toBe(cmds.length);
+  });
+});
+
+describe('unknownCommands — the inline warning (increment 2)', () => {
+  test('flags commands that are not on the allowlist', () => {
+    expect(unknownCommands('a \\foobar b')).toEqual(['\\foobar']);
+    expect(unknownCommands('\\textbf{x} and \\vspace')).toEqual(['\\textbf', '\\vspace']);
+  });
+
+  test('permitted commands raise no warning', () => {
+    expect(unknownCommands('n \\rightarrow \\infty, \\alpha')).toEqual([]);
+  });
+
+  test('is unique and first-seen ordered', () => {
+    expect(unknownCommands('\\foo \\bar \\foo')).toEqual(['\\foo', '\\bar']);
+  });
+
+  test('plain prose (specials, no commands) is clean', () => {
+    expect(unknownCommands('Cut cost 40% for R&D — nothing here')).toEqual([]);
+  });
+});
+
+describe('SYMBOL_CATEGORIES — the palette source', () => {
+  test('covers every category and dedupes glyphs (\\to and \\rightarrow → one →)', () => {
+    const arrows = SYMBOL_CATEGORIES.find((c) => c.name === 'Arrows');
+    const rightArrows = arrows?.symbols.filter((s) => s.glyph === '→') ?? [];
+    expect(rightArrows).toHaveLength(1);
+  });
+
+  test('every listed symbol is a real allowlist entry', () => {
+    for (const cat of SYMBOL_CATEGORIES) {
+      for (const s of cat.symbols) expect(isPermitted(s.cmd.slice(1))).toBe(true);
+    }
   });
 });
