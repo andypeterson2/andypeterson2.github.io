@@ -21,7 +21,7 @@
 import type { Person, Selection, Section, Entry, Item } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
-import { api, type PersonMeta } from './api';
+import { api, type PersonMeta, type ApiResult } from './api';
 import { resolveAccent } from './accent';
 import { buildExport } from './export';
 import { PreviewController } from './preview.svelte';
@@ -119,7 +119,7 @@ class EditorState {
     setSaving: () => {
       this.saveState = 'saving';
     },
-    settle: (ok, retry) => this.settle(ok, retry),
+    persist: (op, retry) => this.persist(op, retry),
     debounce: (key, fn) => this.debounce(key, fn),
     announce: (msg) => this.say(msg),
     record: (cmd) => this.undo.record(cmd),
@@ -281,6 +281,25 @@ class EditorState {
       ? "Couldn't save your edit — it's still here. Retry?"
       : "Couldn't save your last change. Check your connection.";
   }
+  /**
+   * The single pairing of "saving…" with a settle — so no persist can hang the
+   * indicator. Runs `op` (connected only; demo reports success and writes nothing),
+   * settles from its result even if `op` throws, and returns the full result so a
+   * create can reconcile from `data`. `retry` is stashed for the toast only when
+   * the op is safe to re-run.
+   */
+  async persist<T>(op: () => Promise<ApiResult<T>>, retry?: () => void): Promise<ApiResult<T>> {
+    if (!this.connected) return { ok: true, status: 0 };
+    this.saveState = 'saving';
+    let res: ApiResult<T>;
+    try {
+      res = await op();
+    } catch {
+      res = { ok: false, status: 0, error: { code: 'threw', message: 'save failed' } };
+    }
+    this.settle(res.ok, retry);
+    return res;
+  }
   /** Re-fire the stashed retry (used by the error toast). */
   retrySave() {
     const fn = this.retryOp;
@@ -322,7 +341,7 @@ class EditorState {
     }
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
+    this.saveState = 'saving'; // immediate pending indicator; the debounced push settles it
     this.debounce(`entry.${entry.id}`, () => this.pushEntry(entry));
   }
   /** Write a field back (undo/redo). Persists at once — an inverse must not linger. */
@@ -331,14 +350,13 @@ class EditorState {
     patchShadow(this.#shadow, entry, key, value);
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
     this.pushEntry(entry);
   }
   private pushEntry(entry: Entry) {
-    this.saveState = 'saving';
-    void api
-      .updateEntry(entry.id, entry.fields)
-      .then((r) => this.settle(r.ok, () => this.pushEntry(entry)));
+    void this.persist(
+      () => api.updateEntry(entry.id, entry.fields),
+      () => this.pushEntry(entry),
+    );
   }
   saveItem(item: Item) {
     const change = fieldDiff(this.#shadow, item, {
@@ -365,14 +383,13 @@ class EditorState {
     patchShadow(this.#shadow, item, key, value);
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
     this.pushItem(item);
   }
   private pushItem(item: Item) {
-    this.saveState = 'saving';
-    void api
-      .updateItem(item.id, { content: item.content, title: item.title ?? '' })
-      .then((r) => this.settle(r.ok, () => this.pushItem(item)));
+    void this.persist(
+      () => api.updateItem(item.id, { content: item.content, title: item.title ?? '' }),
+      () => this.pushItem(item),
+    );
   }
   savePersonal(key: string) {
     const personal = this.person.personal as Record<string, string | undefined>;
@@ -397,14 +414,13 @@ class EditorState {
     patchShadow(this.#shadow, this.person.personal, key, value);
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
-    this.saveState = 'saving';
     this.pushPersonal(this.activePersonId, key);
   }
   private pushPersonal(pid: number, key: string) {
-    this.saveState = 'saving';
-    void api
-      .updatePersonal(pid, { [key]: this.person.personal[key] ?? '' })
-      .then((r) => this.settle(r.ok, () => this.pushPersonal(pid, key)));
+    void this.persist(
+      () => api.updatePersonal(pid, { [key]: this.person.personal[key] ?? '' }),
+      () => this.pushPersonal(pid, key),
+    );
   }
 
   // ---- content mutations (persist immediately when connected) ----
@@ -436,8 +452,7 @@ class EditorState {
       remember();
       return;
     }
-    this.saveState = 'saving';
-    const res = await api.createEntry(section.id, entry.fields);
+    const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (res.ok && res.data) {
       entry.id = res.data.id; // reconcile temp id → server id
       if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
@@ -448,7 +463,6 @@ class EditorState {
       section.entries = section.entries.filter((e) => e.id !== tempId); // roll back the phantom
       this.clearSelection();
     }
-    this.settle(res.ok);
   }
   async deleteEntry(section: Section, entryId: number) {
     const index = section.entries.findIndex((e) => e.id === entryId);
@@ -467,23 +481,20 @@ class EditorState {
     section.entries = section.entries.filter((e) => e.id !== id);
     this.clearSelection();
     this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.deleteEntry(id)).ok);
+    await this.persist(() => api.deleteEntry(id));
   }
   /** Put an entry back, re-creating its row, bullets and tags. Every id is new. */
   private async attachEntry(section: Section, entry: Entry, index: number) {
     section.entries.splice(Math.min(index, section.entries.length), 0, entry);
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
-    const res = await api.createEntry(section.id, entry.fields);
+    const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (!res.ok || !res.data) {
       section.entries = section.entries.filter((e) => e !== entry);
-      this.settle(false);
       return;
     }
     entry.id = res.data.id;
+    // Re-attach children best-effort; the create above is what the indicator tracks.
     for (const item of entry.items) {
       const r = await api.createItem(entry.id, { content: item.content, title: item.title ?? '' });
       if (r.ok && r.data) item.id = r.data.id;
@@ -494,7 +505,6 @@ class EditorState {
       section.id,
       section.entries.map((e) => e.id),
     );
-    this.settle(true);
   }
 
   async addBullet(entry: Entry) {
@@ -513,15 +523,13 @@ class EditorState {
       remember();
       return;
     }
-    this.saveState = 'saving';
-    const res = await api.createItem(entry.id, { content: '', title: '' });
+    const res = await this.persist(() => api.createItem(entry.id, { content: '', title: '' }));
     if (res.ok && res.data) {
       item.id = res.data.id;
       remember();
     } else {
       entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
     }
-    this.settle(res.ok);
   }
   async deleteBullet(entry: Entry, itemId: number) {
     const index = entry.items.findIndex((i) => i.id === itemId);
@@ -538,19 +546,17 @@ class EditorState {
     const id = item.id;
     entry.items = entry.items.filter((i) => i.id !== id);
     this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.deleteItem(id)).ok);
+    await this.persist(() => api.deleteItem(id));
   }
   private async attachBullet(entry: Entry, item: Item, index: number) {
     entry.items.splice(Math.min(index, entry.items.length), 0, item);
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
-    const res = await api.createItem(entry.id, { content: item.content, title: item.title ?? '' });
+    const res = await this.persist(() =>
+      api.createItem(entry.id, { content: item.content, title: item.title ?? '' }),
+    );
     if (!res.ok || !res.data) {
       entry.items = entry.items.filter((i) => i !== item);
-      this.settle(false);
       return;
     }
     item.id = res.data.id;
@@ -559,7 +565,6 @@ class EditorState {
       entry.id,
       entry.items.map((i) => i.id),
     );
-    this.settle(true);
   }
 
   async addSection(type: string) {
@@ -585,8 +590,8 @@ class EditorState {
       remember();
       return;
     }
-    this.saveState = 'saving';
-    const res = await api.createSection(this.activePersonId, { slug, type, title });
+    const pid = this.activePersonId;
+    const res = await this.persist(() => api.createSection(pid, { slug, type, title }));
     if (res.ok && res.data) {
       section.id = res.data.id; // reconcile temp id → server id
       remember();
@@ -594,7 +599,6 @@ class EditorState {
       this.person.sections = this.person.sections.filter((s) => s.id !== tempId); // roll back
       this.scrollTarget = null;
     }
-    this.settle(res.ok);
   }
   async deleteSection(sectionId: Section['id']) {
     const index = this.person.sections.findIndex((s) => s.id === sectionId);
@@ -612,9 +616,7 @@ class EditorState {
     this.person.sections = this.person.sections.filter((s) => s.id !== id);
     this.clearSelection();
     this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.deleteSection(id)).ok);
+    await this.persist(() => api.deleteSection(id));
   }
   /** Re-create a section and everything inside it. All ids are new; objects are not. */
   private async attachSection(section: Section, index: number) {
@@ -622,15 +624,16 @@ class EditorState {
     this.scrollTarget = section.id;
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
-    this.saveState = 'saving';
-    const res = await api.createSection(this.activePersonId, {
-      slug: section.slug ?? section.type,
-      type: section.type,
-      title: section.title,
-    });
+    const pid = this.activePersonId;
+    const res = await this.persist(() =>
+      api.createSection(pid, {
+        slug: section.slug ?? section.type,
+        type: section.type,
+        title: section.title,
+      }),
+    );
     if (!res.ok || !res.data) {
       this.person.sections = this.person.sections.filter((s) => s !== section);
-      this.settle(false);
       return;
     }
     section.id = res.data.id;
@@ -639,10 +642,9 @@ class EditorState {
     section.entries = [];
     for (const [i, entry] of entries.entries()) await this.attachEntry(section, entry, i);
     await api.reorderSections(
-      this.activePersonId,
+      pid,
       this.person.sections.map((s) => s.id),
     );
-    this.settle(true);
   }
 
   // ---- drag reorder (persist the new id order) ----
@@ -658,9 +660,8 @@ class EditorState {
     });
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
     const ids = section.entries.map((e) => e.id);
-    this.settle((await api.reorderEntries(section.id, ids)).ok);
+    await this.persist(() => api.reorderEntries(section.id, ids));
   }
   async reorderItems(entry: Entry, from: number, to: number) {
     entry.items = move(entry.items, from, to);
@@ -672,9 +673,8 @@ class EditorState {
     });
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
     const ids = entry.items.map((i) => i.id);
-    this.settle((await api.reorderItems(entry.id, ids)).ok);
+    await this.persist(() => api.reorderItems(entry.id, ids));
   }
   async reorderSections(from: number, to: number) {
     this.person.sections = move(this.person.sections, from, to);
@@ -686,9 +686,9 @@ class EditorState {
     });
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
-    this.saveState = 'saving';
+    const pid = this.activePersonId;
     const ids = this.person.sections.map((s) => s.id);
-    this.settle((await api.reorderSections(this.activePersonId, ids)).ok);
+    await this.persist(() => api.reorderSections(pid, ids));
   }
 
   // ---- drawers: global style + layouts ----
@@ -721,9 +721,7 @@ class EditorState {
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`style.${field}`, () => {
-      void api
-        .patchSettings({ [`style.${field}`]: this.style[field] })
-        .then((r) => this.settle(r.ok));
+      void this.persist(() => api.patchSettings({ [`style.${field}`]: this.style[field] }));
     });
   }
   /** Write a style field back (undo/redo), persisting at once — an inverse must not linger. */
@@ -732,8 +730,7 @@ class EditorState {
     patchShadow(this.#shadow, this.style, key, value);
     this.dirty = true;
     if (!this.connected) return;
-    this.saveState = 'saving';
-    void api.patchSettings({ [`style.${key}`]: value }).then((r) => this.settle(r.ok));
+    void this.persist(() => api.patchSettings({ [`style.${key}`]: value }));
   }
   async loadLayouts() {
     if (!this.connected) return;
@@ -746,9 +743,7 @@ class EditorState {
   async chooseLayout(id: string) {
     this.defaultLayout = id;
     this.dirty = true;
-    if (!this.connected) return;
-    this.saveState = 'saving';
-    this.settle((await api.setDefaultLayout(id)).ok);
+    await this.persist(() => api.setDefaultLayout(id));
   }
 
   /**
@@ -901,14 +896,10 @@ class EditorState {
     let name = 'New profile';
     let n = 2;
     while (existing.has(name)) name = `New profile ${n++}`;
-    this.saveState = 'saving';
-    const res = await api.createPerson(name);
+    const res = await this.persist(() => api.createPerson(name));
     if (res.ok && res.data) {
       this.persons = [...this.persons, { id: res.data.id, name }];
-      this.settle(true);
       await this.selectPerson(res.data.id); // load the new (empty) profile
-    } else {
-      this.settle(false);
     }
   }
   async renamePerson(pid: number, name: string) {
@@ -918,10 +909,8 @@ class EditorState {
     const old = meta.name;
     this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: clean } : p));
     if (!this.connected) return;
-    this.saveState = 'saving';
-    const res = await api.renamePerson(pid, clean);
+    const res = await this.persist(() => api.renamePerson(pid, clean));
     if (!res.ok) this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: old } : p));
-    this.settle(res.ok);
   }
   async deletePerson(pid: number) {
     if (!this.connected) return;
@@ -929,14 +918,11 @@ class EditorState {
     const wasActive = this.activePersonId === pid;
     const remaining = this.persons.filter((p) => p.id !== pid);
     this.persons = remaining;
-    this.saveState = 'saving';
-    const res = await api.deletePerson(pid);
+    const res = await this.persist(() => api.deletePerson(pid));
     if (!res.ok) {
       this.persons = snapshot;
-      this.settle(false);
       return;
     }
-    this.settle(true);
     this.#loaded.delete(pid); // its working tree and history die with it
     this.undo.dropScope(`p${pid}`);
     if (wasActive) {

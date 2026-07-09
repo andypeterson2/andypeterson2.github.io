@@ -89,9 +89,7 @@ export class LetterController {
     const vid = v.id;
     this.host.setSaving();
     this.host.debounce(`clh.${vid}.${key}`, () => {
-      void api
-        .updateVariantHeader(vid, { [key]: this.header[key] ?? '' })
-        .then((r) => this.host.settle(r.ok));
+      void this.host.persist(() => api.updateVariantHeader(vid, { [key]: this.header[key] ?? '' }));
     });
   }
   private applyHeader(key: string, value: string) {
@@ -100,8 +98,7 @@ export class LetterController {
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
-    this.host.setSaving();
-    void api.updateVariantHeader(v.id, { [key]: value }).then((r) => this.host.settle(r.ok));
+    void this.host.persist(() => api.updateVariantHeader(v.id, { [key]: value }));
   }
 
   async addParagraph() {
@@ -123,15 +120,15 @@ export class LetterController {
       remember();
       return;
     }
-    this.host.setSaving();
-    const res = await api.createLetterSection(v.id, { title: '', body: '' });
+    const res = await this.host.persist(() =>
+      api.createLetterSection(v.id, { title: '', body: '' }),
+    );
     if (res.ok && res.data) {
       section.id = res.data.id; // reconcile temp id → server id
       remember();
     } else {
       this.sections = this.sections.filter((s) => s.id !== tempId); // roll back
     }
-    this.host.settle(res.ok);
   }
 
   saveParagraph(section: LetterSection) {
@@ -154,9 +151,9 @@ export class LetterController {
     const vid = v.id;
     this.host.setSaving();
     this.host.debounce(`ls.${section.id}`, () => {
-      void api
-        .updateLetterSection(vid, section.id, { title: section.title, body: section.body })
-        .then((r) => this.host.settle(r.ok));
+      void this.host.persist(() =>
+        api.updateLetterSection(vid, section.id, { title: section.title, body: section.body }),
+      );
     });
   }
   private applyParagraph(section: LetterSection, key: string, value: string) {
@@ -166,10 +163,9 @@ export class LetterController {
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
-    this.host.setSaving();
-    void api
-      .updateLetterSection(v.id, section.id, { title: section.title, body: section.body })
-      .then((r) => this.host.settle(r.ok));
+    void this.host.persist(() =>
+      api.updateLetterSection(v.id, section.id, { title: section.title, body: section.body }),
+    );
   }
 
   async deleteParagraph(id: number) {
@@ -189,8 +185,7 @@ export class LetterController {
     this.sections = this.sections.filter((s) => s.id !== id);
     this.host.markDirty();
     if (!this.host.connected() || !v) return;
-    this.host.setSaving();
-    this.host.settle((await api.deleteLetterSection(v.id, id)).ok);
+    await this.host.persist(() => api.deleteLetterSection(v.id, id));
   }
   /** Put a paragraph back — the row is re-created, so its id comes back new. */
   private async attach(section: LetterSection, index: number) {
@@ -198,11 +193,11 @@ export class LetterController {
     this.sections.splice(Math.min(index, this.sections.length), 0, section);
     this.host.markDirty();
     if (!this.host.connected() || !v) return;
-    this.host.setSaving();
-    const res = await api.createLetterSection(v.id, { title: section.title, body: section.body });
+    const res = await this.host.persist(() =>
+      api.createLetterSection(v.id, { title: section.title, body: section.body }),
+    );
     if (!res.ok || !res.data) {
       this.sections = this.sections.filter((s) => s !== section);
-      this.host.settle(false);
       return;
     }
     section.id = res.data.id;
@@ -210,7 +205,6 @@ export class LetterController {
       v.id,
       this.sections.map((s) => s.id),
     );
-    this.host.settle(true);
   }
 
   async reorderParagraphs(from: number, to: number) {
@@ -224,8 +218,7 @@ export class LetterController {
     });
     this.host.markDirty();
     if (!this.host.connected() || !v) return;
-    this.host.setSaving();
     const ids = this.sections.map((s) => s.id);
-    this.host.settle((await api.reorderLetterSections(v.id, ids)).ok);
+    await this.host.persist(() => api.reorderLetterSections(v.id, ids));
   }
 }

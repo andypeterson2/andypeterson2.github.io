@@ -5,6 +5,7 @@
 // re-declared per controller.
 
 import type { NewCommand } from './undo';
+import type { ApiResult } from './api';
 
 export interface SaveHost {
   /** live "is the backend connected" flag — the guard before any persist */
@@ -13,10 +14,21 @@ export interface SaveHost {
   nextId(): number;
   /** flag unsaved edits */
   markDirty(): void;
-  /** enter the "saving…" state */
+  /**
+   * Show "saving…" immediately, before a debounced write actually fires — so the
+   * indicator doesn't claim "saved" while an edit is still pending. Always paired
+   * with the scheduled `persist` that settles it; never used alone.
+   */
   setSaving(): void;
-  /** resolve a save: clear on success, raise the error toast on failure */
-  settle(ok: boolean, retry?: () => void): void;
+  /**
+   * Run a backend write and resolve the save indicator from its result — the ONE
+   * place "saving…" is paired with a settle, so a mutation can't forget to clear
+   * it and hang forever (it even settles if `op` throws). A no-op that reports
+   * success when offline: demo edits don't persist. Returns the full result so a
+   * create can read `data` to reconcile its temp id. Pass `retry` only for
+   * idempotent ops — re-running a create would orphan a second row.
+   */
+  persist<T>(op: () => Promise<ApiResult<T>>, retry?: () => void): Promise<ApiResult<T>>;
   /** debounce a keyed callback (field autosave) */
   debounce(key: string, fn: () => void): void;
   /** announce a message to the aria-live region (screen readers) */
