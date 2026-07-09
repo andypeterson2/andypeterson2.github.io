@@ -1,6 +1,17 @@
 import { defineConfig } from 'vitest/config';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
+  // The svelte plugin compiles `.svelte.ts` runes modules so their controllers
+  // (undo, tags, variants, letters, …) can finally be unit-tested — the reactive
+  // "shell" tier that was e2e-only before (tech-debt round-two item 17). The
+  // `browser` resolve condition pulls in Svelte's client runtime, so `$state` /
+  // `$derived` actually react under vitest. Only affects `npm run test`; the Astro
+  // build has its own config.
+  // configFile:false — there is no root svelte.config (Astro's integration owns
+  // its own); this stops the plugin warning on every run and keeps its defaults.
+  plugins: [svelte({ configFile: false })],
+  resolve: { conditions: ['browser'] },
   test: {
     include: ['tests/**/*.test.ts'],
     exclude: ['tests/integration/**', 'node_modules/**'],
