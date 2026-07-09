@@ -1,6 +1,9 @@
 <script lang="ts">
   // Header/identity editor — click the document masthead to edit these.
   import { editor } from '../lib/store.svelte';
+  import { symbolInput } from '../lib/symbol-input.svelte';
+  import SymbolPalette from './SymbolPalette.svelte';
+  import UnknownWarning from './UnknownWarning.svelte';
 
   const FIELDS = [
     { key: 'firstName', label: 'First name' },
@@ -14,6 +17,9 @@
     { key: 'linkedin', label: 'LinkedIn' },
   ] as const;
 
+  const sym = symbolInput();
+  const text = $derived(FIELDS.map((f) => editor.person.personal[f.key] ?? '').join('  '));
+
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') editor.clearSelection();
   }
@@ -21,11 +27,26 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="edit">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="edit" onfocusin={sym.track}>
   <div class="ehead">
     <span class="etype">Personal details</span>
-    <button class="mini primary" onclick={() => editor.clearSelection()}>Done</button>
+    <span class="eacts">
+      <button
+        class="mini sym-toggle"
+        class:on={sym.open}
+        title="Insert a symbol"
+        aria-expanded={sym.open}
+        onclick={() => sym.toggle()}>Ω</button
+      >
+      <button class="mini primary" onclick={() => editor.clearSelection()}>Done</button>
+    </span>
   </div>
+
+  {#if sym.open}
+    <SymbolPalette onpick={sym.insert} />
+  {/if}
+
   <div class="grid">
     {#each FIELDS as f (f.key)}
       <label class="fld">
@@ -39,6 +60,8 @@
       </label>
     {/each}
   </div>
+
+  <UnknownWarning {text} />
 </div>
 
 <style>
@@ -64,6 +87,10 @@
     color: var(--dim);
     font-weight: 700;
   }
+  .eacts {
+    display: flex;
+    gap: 6px;
+  }
   .mini {
     font-family: var(--sans);
     font-size: 11.5px;
@@ -75,6 +102,17 @@
     color: var(--paper);
     cursor: pointer;
     box-shadow: 1px 1px 0 var(--ink);
+  }
+  .mini.sym-toggle {
+    font-family: var(--serif);
+    font-size: 13px;
+    padding: 3px 9px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .mini.sym-toggle.on {
+    background: var(--ink);
+    color: var(--paper);
   }
   .mini:active {
     transform: translate(1px, 1px);
