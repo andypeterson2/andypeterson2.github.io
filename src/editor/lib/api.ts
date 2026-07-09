@@ -17,6 +17,7 @@ import type {
   CoverletterHeader,
   LetterSection,
 } from './types';
+import { GLYPH_BY_CMD } from './symbols';
 
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
@@ -79,41 +80,49 @@ interface RawMain {
   coverletter?: Record<string, string>;
 }
 
+/** Every LaTeX special → its literal-text escape. Full coverage, not the old subset. */
+const ESCAPE: Record<string, string> = {
+  '\\': '\\textbackslash{}',
+  '{': '\\{',
+  '}': '\\}',
+  '~': '\\textasciitilde{}',
+  '^': '\\textasciicircum{}',
+  '%': '\\%',
+  '&': '\\&',
+  $: '\\$',
+  '#': '\\#',
+  _: '\\_',
+};
+
 /**
- * LaTeX → display text. Deliberately PARTIAL: only the "stray prose special" set
- * (% & $ # _) and the en-dash are un-escaped; LaTeX syntax (\command, { } ~ ^) is
- * left intact so fields can hold light LaTeX — e.g. \textbf{…} or the real CV's
- * custom macros. Exact mirror of `tex` (see it for the round-trip tradeoff).
+ * LaTeX → display text, for reads. Reverses `tex`'s escaping so the field shows as
+ * typed. Multi-char escapes first, so their trailing `{}` isn't mistaken for an
+ * escaped brace. Permitted-symbol glyphs (→, α) are already Unicode and pass
+ * straight through — the substitution is one-way (see `tex`).
  */
-function untex(s: string | undefined): string {
+export function untex(s: string | undefined): string {
   if (!s) return '';
   return s
-    .replace(/\\%/g, '%')
-    .replace(/\\&/g, '&')
-    .replace(/\\\$/g, '$')
-    .replace(/\\#/g, '#')
-    .replace(/\\_/g, '_')
-    .replace(/--/g, '–');
+    .replace(/\\textbackslash\{\}/g, '\\')
+    .replace(/\\textasciitilde\{\}/g, '~')
+    .replace(/\\textasciicircum\{\}/g, '^')
+    .replace(/\\([{}%&$#_])/g, '$1');
 }
+
 /**
- * Display text → LaTeX, for writes; exact inverse of `untex`. Escapes stray prose
- * specials (% & $ # _), converts the en-dash, and via the (?<!\\) lookbehind
- * leaves already-escaped text AND any LaTeX the field holds (\command, { } ~ ^)
- * untouched. TRADEOFF: a LITERAL { } ~ ^ or \ typed as prose is NOT escaped, so it
- * renders as LaTeX (braces group, ~ → non-breaking space, a bare \ or ^ can
- * error). Accepted so fields can carry light LaTeX; the real fix is a
- * plain-text-vs-LaTeX field distinction, NOT wider escaping — that would mangle
- * the macros the real CV depends on.
+ * Display text → LaTeX, for writes. A field is made injection- and
+ * breakage-proof: a permitted `\command` (see symbols.ts) is substituted to its
+ * Unicode glyph FIRST, then EVERY remaining LaTeX special is escaped to literal
+ * text. So the compiler never receives a raw control word from a field — a token
+ * is either a known glyph or literal prose. `\rightarrow` → `→` normalizes on the
+ * way in (one-way; the glyph is canonical); an unknown `\foobar` becomes the
+ * literal text “\foobar”. Nothing is trusted through.
  */
 export function tex(s: string): string {
   if (!s) return '';
   return s
-    .replace(/(?<!\\)%/g, '\\%')
-    .replace(/(?<!\\)&/g, '\\&')
-    .replace(/(?<!\\)\$/g, '\\$')
-    .replace(/(?<!\\)#/g, '\\#')
-    .replace(/(?<!\\)_/g, '\\_')
-    .replace(/–/g, '--');
+    .replace(/\\([a-zA-Z]+)/g, (m, name: string) => GLYPH_BY_CMD.get(name) ?? m)
+    .replace(/[\\{}~^%&$#_]/g, (c) => ESCAPE[c]);
 }
 export function texFields(fields: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
