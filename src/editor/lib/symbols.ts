@@ -125,3 +125,42 @@ export const GLYPH_BY_CMD: Map<string, string> = new Map(
 export function isPermitted(name: string): boolean {
   return GLYPH_BY_CMD.has(name);
 }
+
+const CATEGORY_ORDER: SymbolDef['category'][] = [
+  'Arrows',
+  'Relations',
+  'Operators',
+  'Set & logic',
+  'Greek',
+  'Misc',
+];
+
+/** One entry per distinct glyph — several commands share a glyph (\to, \rightarrow). */
+function dedupeByGlyph(list: SymbolDef[]): SymbolDef[] {
+  const seen = new Set<string>();
+  return list.filter((s) => (seen.has(s.glyph) ? false : (seen.add(s.glyph), true)));
+}
+
+/** The allowlist grouped for the palette — one chip per glyph, in a stable order. */
+export const SYMBOL_CATEGORIES: { name: SymbolDef['category']; symbols: SymbolDef[] }[] =
+  CATEGORY_ORDER.map((name) => ({
+    name,
+    symbols: dedupeByGlyph(SYMBOLS.filter((s) => s.category === name)),
+  }));
+
+/**
+ * The `\command` tokens in `text` that are NOT permitted — they will print
+ * literally (see `tex`). Unique, in first-seen order, backslash included. Powers
+ * the inline "unrecognized command" warning.
+ */
+export function unknownCommands(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of text.matchAll(/\\([a-zA-Z]+)/g)) {
+    if (!GLYPH_BY_CMD.has(m[1]) && !seen.has(m[0])) {
+      seen.add(m[0]);
+      out.push(m[0]);
+    }
+  }
+  return out;
+}
