@@ -29,7 +29,8 @@ import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
 import { TagController } from './tags.svelte';
 import { UndoController } from './undo.svelte';
-import { fieldDiff, humanize, patchShadow, seedShadow, type Shadow } from './undo';
+import { humanize, FieldShadow } from './undo';
+import { ProfileCache } from './profile-cache';
 import type { SaveHost } from './host';
 import { move } from './util';
 
@@ -175,34 +176,15 @@ class EditorState {
   private seq = 1000;
 
   constructor() {
-    this.reshadow();
+    this.#shadow.reseat(this.person, this.style as Record<string, string>);
   }
 
   // ---- undo plumbing ----
   // `bind:value` mutates state before the store is called, so the previous value
-  // has to be remembered separately. Keyed by object identity, never by id: an
-  // undone delete re-creates the row and the server issues a NEW id, while the JS
-  // object survives. See undo.ts.
-  #shadow: Shadow = new WeakMap();
-  #uids = new WeakMap<object, number>();
-  #uidSeq = 0;
-  /**
-   * Working trees of profiles visited this session, kept alive so a switch away and
-   * back preserves both the document and its (object-identity-keyed) undo history.
-   * Reusing the cached tree rather than refetching is what keeps those commands
-   * valid — a refetch would rebuild every object and strand them.
-   */
-  #loaded = new Map<number, Person>();
-
-  /** A stable per-object key for coalescing (ids move; object identity doesn't). */
-  private uid(obj: object): number {
-    let u = this.#uids.get(obj);
-    if (u == null) {
-      u = ++this.#uidSeq;
-      this.#uids.set(obj, u);
-    }
-    return u;
-  }
+  // has to be remembered separately — the field-shadow (undo.ts), keyed by object
+  // identity. #cache keeps visited profiles' trees alive so a switch preserves undo.
+  #shadow = new FieldShadow();
+  #cache = new ProfileCache();
 
   /**
    * NOTE — the `$state` proxy trap. Pushing a raw object into a reactive array and
@@ -214,24 +196,6 @@ class EditorState {
     return arr[index];
   }
 
-  /** Re-seed every editable object's shadow (a fresh document has fresh objects). */
-  private reshadow() {
-    seedShadow(this.#shadow, this.person.personal, this.person.personal as Record<string, string>);
-    // Style is global rather than per-document, but its object is stable, so re-seeding
-    // to the current values on a reload is a harmless no-op — and loadStyle re-seeds
-    // again after it fetches, which is the seeding that actually matters.
-    seedShadow(this.#shadow, this.style, this.style as Record<string, string>);
-    for (const section of this.person.sections) {
-      for (const entry of section.entries) {
-        seedShadow(this.#shadow, entry, entry.fields);
-        for (const item of entry.items) this.seedItem(item);
-      }
-    }
-  }
-  private seedItem(item: Item) {
-    seedShadow(this.#shadow, item, { title: item.title ?? '', content: item.content });
-  }
-
   /**
    * Enter a scope with a clean slate: the document was replaced by fresh objects
    * (demo reset, empty state), so its old history can't be replayed. Switch to the
@@ -240,7 +204,7 @@ class EditorState {
   private rebase(scopeKey: string) {
     this.undo.setScope(scopeKey);
     this.undo.clear();
-    this.reshadow();
+    this.#shadow.reseat(this.person, this.style as Record<string, string>);
   }
 
   select(sel: Selection) {
@@ -329,12 +293,12 @@ class EditorState {
   // Each debounced save delegates to a push* helper so the same call can be
   // re-fired verbatim by the error toast — reading the field's *current* value.
   saveEntry(entry: Entry) {
-    const change = fieldDiff(this.#shadow, entry, entry.fields);
+    const change = this.#shadow.diff(entry, entry.fields);
     if (change) {
       const { key, old, next } = change;
       this.undo.record({
         label: humanize(key),
-        mergeKey: `entry:${this.uid(entry)}:${key}`,
+        mergeKey: `entry:${this.#shadow.uid(entry)}:${key}`,
         undo: () => this.applyEntryField(entry, key, old),
         redo: () => this.applyEntryField(entry, key, next),
       });
@@ -347,7 +311,7 @@ class EditorState {
   /** Write a field back (undo/redo). Persists at once — an inverse must not linger. */
   private applyEntryField(entry: Entry, key: string, value: string) {
     entry.fields[key] = value;
-    patchShadow(this.#shadow, entry, key, value);
+    this.#shadow.patch(entry, key, value);
     this.dirty = true;
     if (!this.connected) return;
     this.pushEntry(entry);
@@ -359,7 +323,7 @@ class EditorState {
     );
   }
   saveItem(item: Item) {
-    const change = fieldDiff(this.#shadow, item, {
+    const change = this.#shadow.diff(item, {
       title: item.title ?? '',
       content: item.content,
     });
@@ -367,7 +331,7 @@ class EditorState {
       const { key, old, next } = change;
       this.undo.record({
         label: key === 'title' ? 'Lead-in' : 'Bullet',
-        mergeKey: `item:${this.uid(item)}:${key}`,
+        mergeKey: `item:${this.#shadow.uid(item)}:${key}`,
         undo: () => this.applyItemField(item, key, old),
         redo: () => this.applyItemField(item, key, next),
       });
@@ -380,7 +344,7 @@ class EditorState {
   private applyItemField(item: Item, key: string, value: string) {
     if (key === 'title') item.title = value;
     else item.content = value;
-    patchShadow(this.#shadow, item, key, value);
+    this.#shadow.patch(item, key, value);
     this.dirty = true;
     if (!this.connected) return;
     this.pushItem(item);
@@ -393,7 +357,7 @@ class EditorState {
   }
   savePersonal(key: string) {
     const personal = this.person.personal as Record<string, string | undefined>;
-    const change = fieldDiff(this.#shadow, this.person.personal, personal);
+    const change = this.#shadow.diff(this.person.personal, personal);
     if (change) {
       const { old, next } = change;
       this.undo.record({
@@ -411,7 +375,7 @@ class EditorState {
   }
   private applyPersonalField(key: string, value: string) {
     (this.person.personal as Record<string, string>)[key] = value;
-    patchShadow(this.#shadow, this.person.personal, key, value);
+    this.#shadow.patch(this.person.personal, key, value);
     this.dirty = true;
     if (!this.connected || this.activePersonId == null) return;
     this.pushPersonal(this.activePersonId, key);
@@ -438,7 +402,7 @@ class EditorState {
       tags: [],
     });
     const entry = this.live(section.entries, index); // the proxy, not the literal
-    seedShadow(this.#shadow, entry, entry.fields);
+    this.#shadow.seed(entry, entry.fields);
     const tempId = entry.id;
     this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
     this.dirty = true;
@@ -511,7 +475,7 @@ class EditorState {
     const index = entry.items.length;
     entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
     const item = this.live(entry.items, index);
-    this.seedItem(item);
+    this.#shadow.seedItem(item);
     this.dirty = true;
     const remember = () =>
       this.undo.record({
@@ -704,10 +668,10 @@ class EditorState {
     }
     // The fetched values are the new baseline: without this, the first style edit
     // would record the demo default as its "old" and undo would restore that.
-    seedShadow(this.#shadow, this.style, this.style as Record<string, string>);
+    this.#shadow.seed(this.style, this.style as Record<string, string>);
   }
   saveStyle(field: 'accentColor' | 'customHex' | 'pageSize' | 'fontSize') {
-    const change = fieldDiff(this.#shadow, this.style, this.style as Record<string, string>);
+    const change = this.#shadow.diff(this.style, this.style as Record<string, string>);
     if (change) {
       const { key, old, next } = change;
       this.undo.record({
@@ -727,7 +691,7 @@ class EditorState {
   /** Write a style field back (undo/redo), persisting at once — an inverse must not linger. */
   private applyStyle(key: string, value: string) {
     (this.style as Record<string, string>)[key] = value;
-    patchShadow(this.#shadow, this.style, key, value);
+    this.#shadow.patch(this.style, key, value);
     this.dirty = true;
     if (!this.connected) return;
     void this.persist(() => api.patchSettings({ [`style.${key}`]: value }));
@@ -798,8 +762,8 @@ class EditorState {
       // `p`: edits flow through the proxy, and its nested objects are the very ones
       // the undo commands and the shadow hold. Re-assigning it later is idempotent
       // (Svelte returns an already-proxied object unchanged).
-      this.#loaded.set(pid, this.person);
-      this.reshadow();
+      this.#cache.set(pid, this.person);
+      this.#shadow.reseat(this.person, this.style as Record<string, string>);
     }
   }
 
@@ -880,7 +844,7 @@ class EditorState {
     if (pid === this.activePersonId) return;
     // Return to an already-loaded profile without refetching: reusing its working
     // tree keeps its undo history (whose commands hold these very objects) alive.
-    const cached = this.#loaded.get(pid);
+    const cached = this.#cache.get(pid);
     if (cached) {
       this.activate(cached, pid, false);
       return;
@@ -923,7 +887,7 @@ class EditorState {
       this.persons = snapshot;
       return;
     }
-    this.#loaded.delete(pid); // its working tree and history die with it
+    this.#cache.drop(pid); // its working tree and history die with it
     this.undo.dropScope(`p${pid}`);
     if (wasActive) {
       // Guard the reuse path: the just-deleted tree must never be re-adopted.

@@ -12,6 +12,7 @@
 // The shadow is keyed by OBJECT IDENTITY, never by id: undoing a delete re-creates
 // the row and the server hands back a *new* id, while the JS object survives. Ids
 // churn; identities don't.
+import type { Person } from './types';
 
 export interface UndoCommand {
   /** shown in the Edit menu: "Undo Position" */
@@ -119,4 +120,56 @@ export function fieldDiff(shadow: Shadow, obj: object, fields: Fields): FieldCha
 export function patchShadow(shadow: Shadow, obj: object, key: string, value: string): void {
   const snap = shadow.get(obj);
   if (snap) snap[key] = value;
+}
+
+/**
+ * The field-shadow as one object, so the store and the letter controller don't
+ * each carry the same WeakMaps and seeding loops. Wraps the primitives above plus
+ * the coalescing `uid` counter. Pure (WeakMaps, no runes) — unit-tested directly.
+ */
+export class FieldShadow {
+  #shadow: Shadow = new WeakMap();
+  #uids = new WeakMap<object, number>();
+  #uidSeq = 0;
+
+  /** A stable per-object key for coalescing merge-keys (ids move; identity doesn't). */
+  uid(obj: object): number {
+    let u = this.#uids.get(obj);
+    if (u == null) {
+      u = ++this.#uidSeq;
+      this.#uids.set(obj, u);
+    }
+    return u;
+  }
+
+  /** Which field changed since last seen, and its old value (advances the shadow). */
+  diff(obj: object, fields: Fields): FieldChange | null {
+    return fieldDiff(this.#shadow, obj, fields);
+  }
+
+  /** Snapshot an object's current values as the new baseline. */
+  seed(obj: object, fields: Fields): void {
+    seedShadow(this.#shadow, obj, fields);
+  }
+
+  /** Seed a bullet (its two text fields). */
+  seedItem(item: { title?: string; content: string }): void {
+    this.seed(item, { title: item.title ?? '', content: item.content });
+  }
+
+  /** Keep the shadow in step when a command writes a value back. */
+  patch(obj: object, key: string, value: string): void {
+    patchShadow(this.#shadow, obj, key, value);
+  }
+
+  /** Re-seed a whole document + the global style object — a fresh set of objects. */
+  reseat(person: Person, style: Record<string, string>): void {
+    this.seed(person.personal, person.personal as Record<string, string>);
+    this.seed(style, style);
+    for (const section of person.sections)
+      for (const entry of section.entries) {
+        this.seed(entry, entry.fields);
+        for (const item of entry.items) this.seedItem(item);
+      }
+  }
 }
