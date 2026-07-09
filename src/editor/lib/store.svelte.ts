@@ -186,6 +186,13 @@ class EditorState {
   #shadow: Shadow = new WeakMap();
   #uids = new WeakMap<object, number>();
   #uidSeq = 0;
+  /**
+   * Working trees of profiles visited this session, kept alive so a switch away and
+   * back preserves both the document and its (object-identity-keyed) undo history.
+   * Reusing the cached tree rather than refetching is what keeps those commands
+   * valid — a refetch would rebuild every object and strand them.
+   */
+  #loaded = new Map<number, Person>();
 
   /** A stable per-object key for coalescing (ids move; object identity doesn't). */
   private uid(obj: object): number {
@@ -225,8 +232,13 @@ class EditorState {
     seedShadow(this.#shadow, item, { title: item.title ?? '', content: item.content });
   }
 
-  /** Forget history + re-shadow: the document was replaced wholesale. */
-  private rebase() {
+  /**
+   * Enter a scope with a clean slate: the document was replaced by fresh objects
+   * (demo reset, empty state), so its old history can't be replayed. Switch to the
+   * scope, drop whatever it held, and re-seed the shadow for the new objects.
+   */
+  private rebase(scopeKey: string) {
+    this.undo.setScope(scopeKey);
     this.undo.clear();
     this.reshadow();
   }
@@ -770,8 +782,14 @@ class EditorState {
     downloadJson(data, `${label}.json`);
   }
 
-  loadPerson(p: Person) {
+  /**
+   * Make `p` the active document. `fresh` — a first load from the backend — caches
+   * the tree and seeds its shadow; a reused (cached) tree keeps both. Either way we
+   * switch the undo scope to this profile, so its history follows it.
+   */
+  private activate(p: Person, pid: number, fresh: boolean) {
     this.person = p;
+    this.activePersonId = pid;
     this.connected = true;
     this.saveState = 'saved';
     this.selection = { kind: 'none' };
@@ -779,7 +797,19 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
-    this.rebase(); // a different document: the old history can't be replayed onto it
+    this.undo.setScope(`p${pid}`);
+    if (fresh) {
+      // Cache the reactive proxy Svelte now manages (`this.person`), NOT the raw
+      // `p`: edits flow through the proxy, and its nested objects are the very ones
+      // the undo commands and the shadow hold. Re-assigning it later is idempotent
+      // (Svelte returns an already-proxied object unchanged).
+      this.#loaded.set(pid, this.person);
+      this.reshadow();
+    }
+  }
+
+  loadPerson(p: Person) {
+    this.activate(p, p.id, true);
   }
 
   /**
@@ -799,7 +829,7 @@ class EditorState {
     this.scrollTarget = null;
     this.dirty = false;
     this.saveState = 'demo';
-    this.rebase(); // fresh clone → fresh objects; nothing on the stack still points at them
+    this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
     this.say('Demo reset — the sample résumé is back to its original state.');
   }
 
@@ -815,7 +845,7 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
-    this.rebase();
+    this.rebase('empty');
   }
 
   /** Try to load a profile from the live backend (read-only). */
@@ -853,11 +883,15 @@ class EditorState {
   /** Switch to another profile (the toolbar picker). */
   async selectPerson(pid: number) {
     if (pid === this.activePersonId) return;
-    const res = await api.fetchPerson(pid);
-    if (res.ok && res.data) {
-      this.activePersonId = pid;
-      this.loadPerson(res.data);
+    // Return to an already-loaded profile without refetching: reusing its working
+    // tree keeps its undo history (whose commands hold these very objects) alive.
+    const cached = this.#loaded.get(pid);
+    if (cached) {
+      this.activate(cached, pid, false);
+      return;
     }
+    const res = await api.fetchPerson(pid);
+    if (res.ok && res.data) this.activate(res.data, pid, true);
   }
 
   // ---- profile (person) CRUD — connected only (profiles live on the server) ----
@@ -903,7 +937,11 @@ class EditorState {
       return;
     }
     this.settle(true);
+    this.#loaded.delete(pid); // its working tree and history die with it
+    this.undo.dropScope(`p${pid}`);
     if (wasActive) {
+      // Guard the reuse path: the just-deleted tree must never be re-adopted.
+      this.activePersonId = null;
       if (remaining.length) await this.selectPerson(remaining[0].id);
       else this.enterEmpty(); // deleted the last one → connected empty state
     }

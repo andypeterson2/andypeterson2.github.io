@@ -332,6 +332,91 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
   });
 
+  test('undo history survives a profile switch and back', async ({ page }) => {
+    // Each profile keeps its own history, and returning reuses the cached tree
+    // (no refetch) so the commands — which hold that tree's objects — stay valid.
+    const ada = {
+      person: { id: 8, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 11, fields: { position: 'Analyst' }, tags: [], items: [] }],
+        },
+      ],
+      variants: [],
+    };
+    const grace = {
+      person: { id: 7, name: 'Grace Hopper' },
+      personal: { firstName: 'Grace', lastName: 'Hopper' },
+      sections: [
+        {
+          id: 3,
+          type: 'experience',
+          title: 'Experience',
+          entries: [{ id: 21, fields: { position: 'Admiral' }, tags: [], items: [] }],
+        },
+      ],
+      variants: [],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          persons: [
+            { id: 7, name: 'Grace Hopper' },
+            { id: 8, name: 'Ada Lovelace' },
+          ],
+        }),
+      }),
+    );
+    let adaGets = 0;
+    await page.route(/\/cv\/api\/persons\/8$/, (r) => {
+      adaGets += 1; // count refetches of Ada — a cache hit must not add one
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ada) });
+    });
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(grace) }),
+    );
+    await page.route(/\/cv\/api\/entries\/\d+$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+    );
+    await gotoEditor(page);
+
+    // fetchActive defaults to the highest id → Ada (8). Edit her position field.
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await page.locator('.entry').first().click();
+    await page.locator('.doc .edit .fld input').first().fill('Chief Analyst');
+    await page.locator('.doc .edit button', { hasText: 'Done' }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Analyst');
+
+    // Switch to Grace: a different profile, her own (empty) history.
+    await page.locator('.toolbar .profile-btn').click();
+    await page.locator('.drawer .opt').filter({ hasText: 'Grace Hopper' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.doc')).toContainText('Admiral');
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+    await page.keyboard.press('Escape');
+
+    // Back to Ada — from cache (adaGets stays 1) — with her edit AND her undo intact.
+    await page.locator('.toolbar .profile-btn').click();
+    await page.locator('.drawer .opt').filter({ hasText: 'Ada Lovelace' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    expect(adaGets).toBe(1); // cache hit — no refetch
+    await expect(page.locator('.doc')).toContainText('Chief Analyst');
+
+    await openMenu(page, 'Edit');
+    await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
+    await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
+    await expect(page.locator('.doc')).toContainText('Analyst');
+    await expect(page.locator('.doc')).not.toContainText('Chief Analyst');
+  });
+
   test('the View menu toggles the preview pane and opens the panels', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
