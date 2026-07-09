@@ -112,6 +112,46 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(field).toHaveValue('AB→');
   });
 
+  test('the palette + warning also work in the personal-details editor', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    await page.locator('.doc-head').click();
+    const edit = page.locator('.doc .edit');
+    await expect(edit).toBeVisible();
+    const field = edit.locator('.grid .fld input').first();
+
+    await field.fill('Ada');
+    await field.focus();
+    await edit.locator('.sym-toggle').click();
+    await expect(edit.locator('.palette')).toBeVisible();
+    await edit.locator('.palette .sym').filter({ hasText: 'α' }).first().click();
+    await expect(field).toHaveValue('Adaα');
+
+    await field.fill('\\nope');
+    await expect(edit.locator('.warn')).toContainText('\\nope');
+  });
+
+  test('the palette + warning also work in the cover-letter editor', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    await selectVariant(page, 'Cover Letter');
+
+    const letter = page.locator('.letter');
+    await expect(letter).toBeVisible();
+    const field = letter.locator('.fields input').first(); // recipient
+
+    await field.fill('Globex');
+    await field.focus();
+    await letter.locator('.sym-toggle').click();
+    await expect(letter.locator('.palette')).toBeVisible();
+    await letter.locator('.palette .sym').filter({ hasText: '→' }).first().click();
+    await expect(field).toHaveValue('Globex→');
+
+    await field.fill('\\zilch');
+    await expect(letter.locator('.warn')).toContainText('\\zilch');
+  });
+
   test('a blocked backend reads as an invitation, not a failure', async ({ page }) => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
     // state EVERY visitor lands in, since the backend is owner-only.

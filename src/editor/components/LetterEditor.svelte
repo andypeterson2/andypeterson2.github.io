@@ -4,11 +4,27 @@
   // and the body paragraphs (editor.letters.sections) are per-variant.
   import { editor } from '../lib/store.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
+  import { symbolInput } from '../lib/symbol-input.svelte';
+  import SymbolPalette from './SymbolPalette.svelte';
+  import UnknownWarning from './UnknownWarning.svelte';
 
   const cl = $derived(editor.letters.header);
   const sender = $derived(
     `${editor.person.personal.firstName ?? ''} ${editor.person.personal.lastName ?? ''}`.trim(),
   );
+
+  const sym = symbolInput();
+  // Every editable string in the letter — header fields + each paragraph.
+  const text = $derived.by(() => {
+    const parts = [
+      cl.recipientName ?? '',
+      cl.recipientAddress ?? '',
+      cl.opening ?? '',
+      cl.closing ?? '',
+    ];
+    for (const s of editor.letters.sections) parts.push(s.title ?? '', s.body ?? '');
+    return parts.join('  ');
+  });
 
   function paraKey(ev: KeyboardEvent, index: number) {
     reorderKeydown(ev, index, editor.letters.sections.length, (f, t) =>
@@ -17,7 +33,22 @@
   }
 </script>
 
-<article class="letter">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<article class="letter" onfocusin={sym.track}>
+  <div class="ltools">
+    <button
+      class="sym-toggle"
+      class:on={sym.open}
+      title="Insert a symbol"
+      aria-expanded={sym.open}
+      onclick={() => sym.toggle()}>Ω</button
+    >
+  </div>
+  {#if sym.open}
+    <SymbolPalette onpick={sym.insert} />
+  {/if}
+  <UnknownWarning {text} />
+
   <header class="lh">
     <h1 class:untitled={!sender}>{sender || 'Your name'}</h1>
     <div class="fields">
@@ -114,6 +145,31 @@
     margin: 0 auto;
     padding: 40px 46px 54px;
     color: #232220;
+  }
+  .ltools {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+  }
+  .sym-toggle {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 3px 9px;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  .sym-toggle.on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .sym-toggle:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
   }
   .lh h1 {
     font-size: 30px;
