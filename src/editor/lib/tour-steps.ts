@@ -8,25 +8,28 @@
 // editing demo.ts can't silently break the narration.
 import { editor } from './store.svelte';
 import { typeText, type TourStep } from './tour';
-import type { Entry } from './types';
+import {
+  findExperience,
+  findFirstEntry,
+  findLensVariant,
+  findLetterVariant,
+  SPOTLIT_TAG,
+  LENS_TAG,
+} from './tour-shape';
 
 /** Typed live into a brand-new bullet — fictional, like the rest of the demo. */
 const TYPED_BULLET = 'Cut p95 latency 40% by batching the tag-resolver queries.';
-
-/** The tag the spotlight step lifts out (one bullet carries it, so the effect is stark). */
-const SPOTLIT_TAG = 'management';
 
 export function tourSteps(): TourStep[] {
   // Captured across re-entries: Resume re-runs the current step, and a step that
   // appended a bullet each time would grow the demo instead of restaging it.
   let bulletId: number | null = null;
 
-  const experience = () => editor.person.sections.find((s) => s.type === 'experience') ?? null;
-  const firstEntry = (): Entry | null => experience()?.entries[0] ?? null;
-  const lensVariant = () =>
-    editor.person.variants.find((v) => v.kind !== 'coverletter' && v.rules.include.length > 0) ??
-    null;
-  const letterVariant = () => editor.person.variants.find((v) => v.kind === 'coverletter') ?? null;
+  // The shapes the steps drive, guarded by tests/editor-tour-shape.test.ts.
+  const experience = () => findExperience(editor.person);
+  const firstEntry = () => findFirstEntry(editor.person);
+  const lensVariant = () => findLensVariant(editor.person);
+  const letterVariant = () => findLetterVariant(editor.person);
 
   return [
     {
@@ -69,8 +72,7 @@ export function tourSteps(): TourStep[] {
     },
     {
       id: 'lens',
-      caption:
-        'A variant is a saved lens over that one document. This one keeps only what is tagged #backend.',
+      caption: `A variant is a saved lens over that one document. This one keeps only what is tagged #${LENS_TAG}.`,
       enter() {
         editor.tags.highlight = null;
         editor.openDrawer = null;
