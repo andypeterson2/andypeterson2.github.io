@@ -8,7 +8,7 @@
 import { api } from './api';
 import { DEMO_LETTERS } from './demo';
 import { move } from './util';
-import { fieldDiff, patchShadow, seedShadow, type Shadow } from './undo';
+import { FieldShadow } from './undo';
 import type { SaveHost } from './host';
 import type { LetterSection, Variant } from './types';
 
@@ -27,17 +27,17 @@ export class LetterController {
   header = $state<Record<string, string>>({});
 
   /** Last-recorded field values, for undo — see undo.ts on why a shadow is needed. */
-  #shadow: Shadow = new WeakMap();
+  #shadow = new FieldShadow();
 
   constructor(private host: LetterHost) {}
 
   /** Re-shadow after the letter's objects are replaced wholesale. */
   #reshadow() {
-    seedShadow(this.#shadow, this.header, this.header);
+    this.#shadow.seed(this.header, this.header);
     for (const s of this.sections) this.#seedSection(s);
   }
   #seedSection(section: LetterSection) {
-    seedShadow(this.#shadow, section, { title: section.title, body: section.body });
+    this.#shadow.seed(section, { title: section.title, body: section.body });
   }
 
   /** Load the active cover-letter variant's header + paragraphs (clear for a CV variant). */
@@ -73,7 +73,7 @@ export class LetterController {
 
   /** Debounced save of one cover-letter header field to the active variant. */
   saveHeader(key: string) {
-    const change = fieldDiff(this.#shadow, this.header, this.header);
+    const change = this.#shadow.diff(this.header, this.header);
     if (change) {
       const { old, next } = change;
       this.host.record({
@@ -94,7 +94,7 @@ export class LetterController {
   }
   private applyHeader(key: string, value: string) {
     this.header[key] = value;
-    patchShadow(this.#shadow, this.header, key, value);
+    this.#shadow.patch(this.header, key, value);
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
@@ -132,7 +132,7 @@ export class LetterController {
   }
 
   saveParagraph(section: LetterSection) {
-    const change = fieldDiff(this.#shadow, section, {
+    const change = this.#shadow.diff(section, {
       title: section.title,
       body: section.body,
     });
@@ -159,7 +159,7 @@ export class LetterController {
   private applyParagraph(section: LetterSection, key: string, value: string) {
     if (key === 'title') section.title = value;
     else section.body = value;
-    patchShadow(this.#shadow, section, key, value);
+    this.#shadow.patch(section, key, value);
     this.host.markDirty();
     const v = this.host.activeVariant();
     if (!this.host.connected() || !v) return;
