@@ -15,6 +15,7 @@
   import TagsDrawer from './components/TagsDrawer.svelte';
   import VariantDrawer from './components/VariantDrawer.svelte';
   import ProfilesDrawer from './components/ProfilesDrawer.svelte';
+  import HistoryDrawer from './components/HistoryDrawer.svelte';
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -89,6 +90,7 @@
         drawerItem('Tags', 'tags'),
         drawerItem('Layout', 'layouts'),
         drawerItem('Style', 'style'),
+        { ...drawerItem('History', 'history'), separatorBefore: true },
         { ...drawerItem('Profiles', 'profiles'), separatorBefore: true },
       ],
     },
@@ -340,6 +342,8 @@
     <Drawer title="Variants"><VariantDrawer /></Drawer>
   {:else if editor.openDrawer === 'profiles'}
     <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
+  {:else if editor.openDrawer === 'history'}
+    <Drawer title="History"><HistoryDrawer /></Drawer>
   {/if}
 
   <Tour />

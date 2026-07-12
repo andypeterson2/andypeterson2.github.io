@@ -28,6 +28,7 @@ import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
 import { TagController } from './tags.svelte';
+import { HistoryController } from './history.svelte';
 import { UndoController } from './undo.svelte';
 import { humanize, FieldShadow } from './undo';
 import { ProfileCache } from './profile-cache';
@@ -89,7 +90,9 @@ class EditorState {
   activePersonId = $state<number | null>(null);
   /** a section id the document should scroll into view (set on create) */
   scrollTarget = $state<number | string | null>(null);
-  openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles'>(null);
+  openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles' | 'history'>(
+    null,
+  );
   style = $state({
     accentColor: 'spinel',
     customHex: '',
@@ -161,6 +164,14 @@ class EditorState {
   tags = new TagController({
     ...this.saveHost,
     sections: () => this.person.sections,
+  });
+  /** the version-history concern — document checkpoints + restore (history.svelte.ts). */
+  history = new HistoryController({
+    ...this.saveHost,
+    activePersonId: () => this.activePersonId,
+    capture: () => $state.snapshot(this.person) as Person,
+    apply: (doc) => this.restoreDocument(doc),
+    reload: () => this.reloadActive(),
   });
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
   noProfiles = $derived(this.connected && this.persons.length === 0);
@@ -754,6 +765,7 @@ class EditorState {
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
+    this.history.clear();
     this.preview.reset();
     this.dirty = false;
     this.undo.setScope(`p${pid}`);
@@ -772,6 +784,37 @@ class EditorState {
   }
 
   /**
+   * Replace the working document with a restored checkpoint (History drawer, demo
+   * path). Like a demo reset it drops undo — the restored objects are fresh, so the
+   * old stack can't be replayed against them (ADR-003 / ADR-004).
+   */
+  restoreDocument(doc: Person) {
+    this.person = doc;
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.preview.reset();
+    this.scrollTarget = null;
+    this.dirty = true;
+    this.saveState = 'demo';
+    this.rebase('demo');
+    this.say('Document restored to the selected checkpoint.');
+  }
+
+  /**
+   * Refetch the active profile from scratch (after a connected restore). selectPerson
+   * short-circuits on the current id and reuses the cached tree; a restore must
+   * bypass both — drop the cache, then re-activate the server's copy.
+   */
+  async reloadActive() {
+    const pid = this.activePersonId;
+    if (pid == null) return;
+    this.#cache.drop(pid);
+    const res = await api.fetchPerson(pid);
+    if (res.ok && res.data) this.activate(res.data, pid, true);
+  }
+
+  /**
    * Restore the untouched demo profile — the safety net behind "edit anything,
    * nothing is saved". If you invite people to touch it, you owe them an undo.
    * A no-op when connected: there is real data to protect.
@@ -782,6 +825,7 @@ class EditorState {
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
+    this.history.clear();
     this.preview.reset();
     this.tags.highlight = null;
     this.openDrawer = null;
