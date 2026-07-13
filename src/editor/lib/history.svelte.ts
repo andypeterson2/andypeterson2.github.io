@@ -12,6 +12,7 @@
 // profile switch it drops the undo history — the restored objects are fresh and
 // the old stack can't be replayed against them (ADR-003 / ADR-004).
 import { api } from './api';
+import { diffDocuments, type DocDiff } from './diff';
 import type { SaveHost } from './host';
 import type { Person } from './types';
 
@@ -108,6 +109,26 @@ export class HistoryController {
     } finally {
       this.restoring = false;
     }
+  }
+
+  /**
+   * Diff a checkpoint against the current document — "what changed since this
+   * checkpoint." Uses the in-memory snapshot (demo); when connected and the doc
+   * isn't loaded (the list omits the blob), fetch it. Null if it can't be resolved.
+   */
+  async compare(versionId: number): Promise<DocDiff | null> {
+    const version = this.versions.find((v) => v.id === versionId);
+    if (!version) return null;
+    let base = version.doc as Person | undefined;
+    if (!base) {
+      const pid = this.host.activePersonId();
+      if (this.host.connected() && pid != null) {
+        const res = await api.getVersion(pid, versionId);
+        if (res.ok && res.data) base = res.data.doc;
+      }
+    }
+    if (!base) return null;
+    return diffDocuments(base, this.host.capture());
   }
 
   /** Forget the list — the document was replaced (profile switch / demo reset). */
