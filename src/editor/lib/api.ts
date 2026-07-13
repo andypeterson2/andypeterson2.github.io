@@ -290,6 +290,12 @@ export class CvApi {
       `/persons/${pid}/versions`,
     );
   }
+  /** One checkpoint in full, including its `doc` snapshot — for the diff view. */
+  getVersion(pid: number, id: number) {
+    return this.req<{ id: number; label: string; createdAt: number; doc: Person }>(
+      `/persons/${pid}/versions/${id}`,
+    );
+  }
   commitVersion(pid: number, v: { label: string; doc: Person }) {
     return this.req<{ id: number }>(`/persons/${pid}/versions`, {
       method: 'POST',
