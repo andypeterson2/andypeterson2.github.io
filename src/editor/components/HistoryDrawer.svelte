@@ -1,16 +1,22 @@
 <script lang="ts">
-  // Version history (ADR-006). Increment 1: take a named checkpoint, list them,
-  // restore one. Increment 2: Compare a checkpoint against the current document —
-  // a structural diff (added / removed / changed sections, entries, bullets, and
-  // personal fields). In the demo, history is for this session only (ADR-001).
+  // Version history (ADR-006). Inc 1: snapshot / restore / list. Inc 2: Compare a
+  // checkpoint against the current document (a structural diff). Inc 3: branches
+  // (fork an audience line, switch between them), tags (frozen provenance names),
+  // and cherry-restore (lift one entry from a checkpoint via the diff). In the demo,
+  // history is for this session only (ADR-001).
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
   import type { DocDiff } from '../lib/diff';
 
   let label = $state('');
-  /** the checkpoint being compared against the current document, or null */
   let compare = $state<{ id: number; label: string; diff: DocDiff } | null>(null);
   let comparing = $state(false);
+
+  // branch fork + per-checkpoint tag — small inline inputs
+  let forking = $state(false);
+  let forkName = $state('');
+  let taggingId = $state<number | null>(null);
+  let tagInput = $state('');
 
   onMount(() => {
     void editor.history.load();
@@ -20,15 +26,33 @@
     void editor.history.snapshot(label);
     label = '';
   }
-
+  function doFork() {
+    if (forkName.trim()) void editor.history.fork(forkName);
+    forkName = '';
+    forking = false;
+  }
+  function startTag(id: number, tag: string | undefined) {
+    taggingId = id;
+    tagInput = tag ?? '';
+  }
+  function saveTag(id: number) {
+    void editor.history.tag(id, tagInput);
+    taggingId = null;
+    tagInput = '';
+  }
   async function openCompare(id: number, name: string) {
     comparing = true;
     const diff = await editor.history.compare(id);
     comparing = false;
     if (diff) compare = { id, label: name, diff };
   }
+  async function cherry(entryId: number) {
+    if (!compare) return;
+    await editor.history.cherryRestore(compare.id, entryId);
+    const diff = await editor.history.compare(compare.id); // refresh — the entry drops out
+    compare = diff ? { ...compare, diff } : null;
+  }
 
-  /** A compact "how long ago" — recomputed each render (the drawer is short-lived). */
   function when(ms: number): string {
     const secs = Math.round((Date.now() - ms) / 1000);
     if (secs < 45) return 'just now';
@@ -40,7 +64,7 @@
   }
 </script>
 
-{#snippet delta(from: string, to: string)}
+{#snippet deltaText(from: string, to: string)}
   {#if from && to}<s class="del">{from}</s> <span class="ins">{to}</span>
   {:else if to}<span class="ins">{to}</span>
   {:else}<s class="del">{from}</s>{/if}
@@ -56,15 +80,17 @@
   {:else}
     <p class="summary">
       {#if compare.diff.counts.added}<span class="s-add">+{compare.diff.counts.added} added</span>{/if}
-      {#if compare.diff.counts.removed}<span class="s-del">−{compare.diff.counts.removed} removed</span>{/if}
-      {#if compare.diff.counts.changed}<span class="s-chg">{compare.diff.counts.changed} changed</span>{/if}
+      {#if compare.diff.counts.removed}<span class="s-del">−{compare.diff.counts.removed} removed</span
+        >{/if}
+      {#if compare.diff.counts.changed}<span class="s-chg">{compare.diff.counts.changed} changed</span
+        >{/if}
     </p>
 
     {#if compare.diff.personal.length}
       <div class="grp">
         <div class="grp-h">Personal details</div>
         {#each compare.diff.personal as f (f.key)}
-          <div class="fld"><span class="fk">{f.key}</span> {@render delta(f.from, f.to)}</div>
+          <div class="fld"><span class="fk">{f.key}</span> {@render deltaText(f.from, f.to)}</div>
         {/each}
       </div>
     {/if}
@@ -81,15 +107,18 @@
                   class="mk del">－</span
                 >{/if}
               <span class="ent-label" class:strike={e.kind === 'removed'}>{e.label}</span>
+              {#if e.kind !== 'added'}
+                <button class="cherry" onclick={() => cherry(e.id)}>Restore this</button>
+              {/if}
             </div>
             {#each e.fields as f (f.key)}
-              <div class="fld"><span class="fk">{f.key}</span> {@render delta(f.from, f.to)}</div>
+              <div class="fld"><span class="fk">{f.key}</span> {@render deltaText(f.from, f.to)}</div>
             {/each}
             {#each e.items as it (it.id)}
               <div class="itm">
                 {#if it.kind === 'added'}<span class="ins">＋ {it.to}</span>
                 {:else if it.kind === 'removed'}<span class="del">－ {it.from}</span>
-                {:else}{@render delta(it.from, it.to)}{/if}
+                {:else}{@render deltaText(it.from, it.to)}{/if}
               </div>
             {/each}
           </div>
@@ -98,15 +127,34 @@
     {/each}
   {/if}
 {:else}
-  <!-- ── default view: the checkpoint list ── -->
-  <p class="note">
-    A checkpoint captures the whole document. Restoring one replaces it and clears undo;
-    <b>Compare</b> shows what changed since.
-    {#if editor.connected}
-      Durable, cross-session history lands with the backend.
+  <!-- ── default view: branches + the checkpoint list ── -->
+  <div class="branches" role="group" aria-label="Branches">
+    {#each editor.history.branches as b (b)}
+      <button
+        class="chip"
+        class:on={b === editor.history.currentBranch}
+        disabled={editor.history.restoring}
+        onclick={() => editor.history.switchTo(b)}>⎇ {b}</button
+      >
+    {/each}
+    {#if forking}
+      <input
+        class="fork-in"
+        placeholder="branch name"
+        aria-label="New branch name"
+        bind:value={forkName}
+        onkeydown={(e) =>
+          e.key === 'Enter' ? doFork() : e.key === 'Escape' ? (forking = false) : null}
+      />
+      <button class="chip go" onclick={doFork}>fork</button>
     {:else}
-      In the demo, history lives for this session only — nothing is saved.
+      <button class="chip add" onclick={() => (forking = true)} aria-label="New branch">＋</button>
     {/if}
+  </div>
+
+  <p class="note">
+    A checkpoint captures the whole document. <b>Compare</b> shows what changed;
+    <b>Fork</b> keeps a separate audience line. In the demo, history is for this session only.
   </p>
 
   <div class="make">
@@ -120,28 +168,40 @@
     <button class="snap" onclick={take}>Snapshot now</button>
   </div>
 
-  {#if editor.history.versions.length === 0}
-    <p class="empty">No checkpoints yet.<br />Snapshot the document to begin its history.</p>
+  {#if editor.history.visible.length === 0}
+    <p class="empty">No checkpoints on <b>{editor.history.currentBranch}</b> yet.<br />Snapshot to begin.</p>
   {:else}
     <ul class="list" aria-label="Checkpoints, newest first">
-      {#each editor.history.versions as v, i (v.id)}
+      {#each editor.history.visible as v, i (v.id)}
         <li class="row">
           <span class="dot" class:head={i === 0} aria-hidden="true"></span>
           <div class="meta">
-            <span class="name" class:untitled={!v.label}>{v.label || 'Untitled checkpoint'}</span>
+            <span class="name" class:untitled={!v.label}>
+              {v.label || 'Untitled checkpoint'}
+              {#if v.tag}<span class="tagb">🏷 {v.tag}</span>{/if}
+            </span>
             <span class="time">{when(v.createdAt)}{i === 0 ? ' · latest' : ''}</span>
+            {#if taggingId === v.id}
+              <input
+                class="tag-in"
+                placeholder="tag (e.g. sent-to-google)"
+                aria-label="Tag name"
+                bind:value={tagInput}
+                onkeydown={(e) =>
+                  e.key === 'Enter' ? saveTag(v.id) : e.key === 'Escape' ? (taggingId = null) : null}
+              />
+            {/if}
           </div>
           <div class="acts">
-            <button
-              class="act"
-              disabled={comparing}
-              onclick={() => openCompare(v.id, v.label || 'checkpoint')}>Compare</button
+            <button class="act" disabled={comparing} onclick={() => openCompare(v.id, v.label || 'checkpoint')}
+              >Compare</button
             >
             <button
-              class="act restore"
+              class="act"
               disabled={editor.history.restoring}
               onclick={() => editor.history.restore(v.id)}>Restore</button
             >
+            <button class="act sm" onclick={() => startTag(v.id, v.tag)}>{v.tag ? 'Retag' : 'Tag'}</button>
           </div>
         </li>
       {/each}
@@ -150,6 +210,47 @@
 {/if}
 
 <style>
+  .branches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--faint, #e4e2db);
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 20px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .chip.on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .chip.add,
+  .chip.go {
+    font-weight: 700;
+  }
+  .chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .fork-in {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    background: var(--chrome-hi);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 3px 8px;
+    width: 110px;
+  }
   .note {
     font-size: 11.5px;
     line-height: 1.5;
@@ -241,10 +342,28 @@
     font-weight: 400;
     color: #77756e;
   }
+  .tagb {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 400;
+    color: #8a6d1a;
+    margin-left: 4px;
+  }
   .time {
     font-size: 10.5px;
     color: #8f8d86;
     font-variant-numeric: tabular-nums;
+  }
+  .tag-in {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    background: var(--chrome-hi);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 3px 7px;
+    margin-top: 4px;
+    width: 100%;
   }
   .acts {
     display: flex;
@@ -261,6 +380,10 @@
     border-radius: 6px;
     padding: 3px 10px;
     cursor: pointer;
+  }
+  .act.sm {
+    font-weight: 400;
+    padding: 2px 10px;
   }
   .act:hover:not(:disabled) {
     background: var(--chrome-hi);
@@ -288,9 +411,6 @@
     font-size: 13px;
     color: var(--ink);
     margin: 0 0 12px;
-  }
-  .cmp-title b {
-    font-weight: 700;
   }
   .summary {
     display: flex;
@@ -364,6 +484,8 @@
     font-size: 12.5px;
     font-weight: 600;
     color: var(--ink);
+    flex: 1;
+    min-width: 0;
   }
   .ent-label.strike {
     text-decoration: line-through;
@@ -372,6 +494,21 @@
   .mk {
     font-family: var(--mono);
     font-weight: 700;
+  }
+  .cherry {
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--chrome-hi);
+    border: 1px solid var(--ink);
+    border-radius: 5px;
+    padding: 1px 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cherry:hover {
+    background: var(--paper);
   }
   .fld,
   .itm {
