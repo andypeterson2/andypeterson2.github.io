@@ -1,0 +1,1149 @@
+<title>CV Editor — Tech-Debt Register</title>
+<style>
+  :root {
+    --paper: #e7e3d5;
+    --panel: #f4f1e8;
+    --panel-hi: #fbf9f2;
+    --ink: #1c1b19;
+    --ink-2: #46433c;
+    --dim: #837f73;
+    --line: #d0cbbb;
+    --line-2: #bcb6a3;
+    --crit: #9c2b3f;
+    --warn: #a56916;
+    --low: #5a7861;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --shadow: 3px 3px 0 rgba(28, 27, 25, 0.5);
+    --shadow-sm: 2px 2px 0 var(--ink);
+  }
+  * { box-sizing: border-box; }
+  .page {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: clamp(14px, 3.5vw, 44px) clamp(12px, 3vw, 32px) 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .win {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--ink);
+    box-shadow: var(--shadow);
+    animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .win { animation: none; } }
+
+  /* ---- System-6 titlebar ---- */
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 24px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--ink);
+    background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--panel) 1px, var(--panel) 3px);
+  }
+  .tb-close { width: 11px; height: 11px; background: var(--panel); border: 1px solid var(--ink); flex: none; }
+  .tb-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--panel);
+    padding: 0 12px;
+    margin: 0 auto;
+  }
+  .tb-fill { width: 11px; flex: none; }
+
+  .body { padding: clamp(20px, 4vw, 40px); }
+
+  /* ---- masthead ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--low);
+    margin: 0 0 12px;
+  }
+  h1 {
+    font-size: clamp(25px, 5vw, 38px);
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 12px;
+    max-width: 20ch;
+  }
+  .lede { font-size: 15.5px; color: var(--ink-2); margin: 0; max-width: 68ch; }
+  .lede code { font-size: 0.9em; }
+  .scope {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    max-width: 80ch;
+    line-height: 1.7;
+  }
+  .scope b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- summary strip ---- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 26px 0 8px;
+  }
+  .tile {
+    background: var(--panel-hi);
+    border: 1px solid var(--line-2);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tile .count {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .tile .sub { font-size: 11px; color: var(--dim); }
+  .tile.c-done { border-left: 4px solid var(--low); } .tile.c-done .count { color: var(--low); }
+  .tile.c-defer { border-left: 4px solid var(--warn); } .tile.c-defer .count { color: var(--warn); }
+  .tile.c-gate { border-left: 4px solid var(--line-2); } .tile.c-gate .count { color: var(--dim); }
+
+  .method {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    margin: 16px 0 30px;
+    padding: 11px 14px;
+    background: var(--panel-hi);
+    border: 1px dashed var(--line-2);
+  }
+  .method b { color: var(--ink); font-weight: 600; }
+  .method .formula { color: var(--ink-2); }
+
+  /* ---- section headers ---- */
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 40px 0 16px;
+  }
+  .sec-head h2 {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .sec-head .rule { flex: 1; height: 1px; background: var(--line-2); }
+  .sec-head .note { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+  /* ---- register items ---- */
+  .register { display: flex; flex-direction: column; gap: 10px; }
+  .item {
+    display: grid;
+    grid-template-columns: 40px 1fr 168px;
+    background: var(--panel-hi);
+    border: 1px solid var(--line-2);
+    border-left: 5px solid var(--sev, var(--dim));
+  }
+  /* stripe now encodes RESOLUTION, not risk: green = done, amber = deferred, grey = gated */
+  .item.s-done  { --sev: var(--low); }
+  .item.s-defer { --sev: var(--warn); }
+  .item.s-gate  { --sev: var(--line-2); }
+  .rank {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dim);
+    padding: 15px 0 0 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .main { padding: 14px 16px 15px 4px; min-width: 0; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 7px; }
+  .head h3 { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; margin: 0; line-height: 1.25; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: var(--panel);
+    border: 1px solid var(--line-2);
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+  /* resolution pill */
+  .status {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--ink);
+    white-space: nowrap;
+  }
+  .status.done { background: var(--low); color: var(--panel-hi); border-color: var(--low); }
+  .status.defer { background: var(--warn); color: var(--panel-hi); border-color: var(--warn); }
+  .status.gate { background: var(--panel); color: var(--dim); border-color: var(--line-2); }
+  .status.reassess { background: var(--panel); color: var(--ink-2); border-color: var(--line-2); }
+  .just { font-size: 13.5px; color: var(--ink-2); margin: 0 0 9px; max-width: 68ch; }
+  .just s { color: var(--dim); text-decoration-color: var(--line-2); }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 14px;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--dim);
+  }
+  .meta .evidence { color: var(--ink-2); }
+  .meta .res { color: var(--low); }
+  .meta .res b { color: var(--ink-2); font-weight: 600; }
+  .meta .res.amber { color: var(--warn); }
+  .meta .res.amber b { color: var(--warn); }
+  a.sha { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-2); font-weight: 600; }
+  a.sha:hover { color: var(--crit); border-bottom-color: var(--crit); }
+
+  .metrics {
+    border-left: 1px solid var(--line);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ire { display: flex; flex-direction: column; gap: 5px; }
+  .ire-row { display: grid; grid-template-columns: 52px 1fr 14px; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
+  .ire-row .num { text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .track { height: 5px; background: var(--line); position: relative; }
+  .track > i { position: absolute; inset: 0 auto 0 0; background: var(--ink-2); display: block; }
+  .prio { margin-top: 2px; }
+  .prio .cap { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .prio .val { font-family: var(--mono); font-size: 26px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .prio .bar { height: 7px; background: var(--line); margin-top: 5px; border: 1px solid var(--line-2); }
+  .prio .bar > i { display: block; height: 100%; background: var(--ink); }
+  .metrics.cleared .prio .val { color: var(--low); }
+  .metrics.cleared .prio .bar > i { background: var(--low); }
+
+  /* ---- roadmap ---- */
+  .phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .phase {
+    background: var(--panel-hi);
+    border: 1px solid var(--line-2);
+    box-shadow: var(--shadow-sm);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .phase-hd { padding: 12px 14px; border-bottom: 1px solid var(--ink); background: var(--panel); }
+  .phase-hd .p-num { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .phase-hd .p-name { font-size: 15px; font-weight: 700; margin: 1px 0 0; }
+  .phase-hd .p-cost { font-family: var(--mono); font-size: 11px; color: var(--low); margin-top: 3px; font-weight: 600; }
+  .phase-hd .p-cost.mid { color: var(--warn); }
+  .phase ul { list-style: none; margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
+  .phase li { font-size: 12.5px; color: var(--ink-2); padding-left: 22px; position: relative; line-height: 1.4; }
+  .phase li::before { content: "✓"; position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--low); }
+  .phase li.def::before { content: "⏸"; color: var(--warn); }
+  .phase li b { color: var(--ink); font-weight: 600; }
+  .phase li .id { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .gated {
+    margin-top: 12px;
+    background: var(--panel);
+    border: 1px dashed var(--line-2);
+    padding: 12px 15px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .gated b { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); margin-right: 8px; }
+
+  footer {
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+  code { font-family: var(--mono); font-size: 0.92em; background: var(--panel); padding: 0 3px; border: 1px solid var(--line); }
+  a { color: var(--crit); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ---- round two: open items (hollow = unset, the System-6 idiom) ---- */
+  .item.s-open { --sev: var(--ink); }
+  .status.open { background: var(--panel); color: var(--ink); border-color: var(--ink); }
+  .tile.c-open { border-left: 4px solid var(--ink); }
+  .tile.c-open .count { color: var(--ink); }
+  .meta .plan { color: var(--ink-2); }
+  .meta .plan b { color: var(--ink); font-weight: 600; }
+  .phase li.todo::before { content: "○"; color: var(--dim); font-weight: 400; }
+  .phase li.gate::before { content: "↺"; color: var(--dim); font-weight: 700; }
+  .phase li.gate b { color: var(--ink-2); }
+  .p-cost.plan { color: var(--dim); }
+  .round2-head h2 { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .summary { grid-template-columns: 1fr; }
+    .item { grid-template-columns: 34px 1fr; }
+    .rank { padding-left: 12px; }
+    .metrics { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .ire { flex: 1; min-width: 150px; }
+    .phases { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="page">
+  <div class="win">
+    <div class="titlebar">
+      <span class="tb-close" aria-hidden="true"></span>
+      <span class="tb-title">tech-debt.register — CV&nbsp;Editor</span>
+      <span class="tb-fill" aria-hidden="true"></span>
+    </div>
+
+    <div class="body">
+      <p class="eyebrow">Engineering · Debt Register · Round Two</p>
+      <h1>Round one, cleared. Round two, open.</h1>
+      <p class="lede">
+        Round one is done — <b>13 of 14 items resolved and shipped to <code>main</code>, CI-green</b>,
+        one deferred on an upstream Vite&nbsp;8 bug. Then a second wave landed: the demo reframe, an
+        interruptible guided tour, a real menubar, and undo across the whole editor — now spanning
+        profile switches. Seven commits, and a fresh audit <b>surfaced seven new items</b>, scored and
+        ranked below — and separately, removing macro support <b>reopened an eighth</b> (item&nbsp;03,
+        whose whole verdict rested on those macros), <b>already fixed</b>. Five are now shipped, one
+        was built then <b>reassessed away</b> (the dedup — <code>persist()</code> had already closed
+        its risk), and two remain — the cheapest guards, still cheap. The headline signal: the store
+        the round-one split trimmed to 587 lines <b>ballooned to 969</b> as undo and the per-profile
+        cache landed — then item&nbsp;20's extraction clawed it back to <b>933</b>.
+      </p>
+      <p class="scope">
+        <b>Scope:</b> the CV editor (Svelte island) and the surfaces it touches — the cv Express
+        backend, the site's deploy/headers, and the test suite. &nbsp;<b>Not covered:</b> the other
+        portal apps (classifiers, nonogram) and the gateway, which have their own registers.
+        &nbsp;<b>Status as of</b> 2026-07-08.
+      </p>
+
+      <div class="summary">
+        <div class="tile c-done"><span class="count">18</span><span class="lbl">Resolved</span><span class="sub">13 round one + 5 round two</span></div>
+        <div class="tile c-open"><span class="count">2</span><span class="lbl">Open</span><span class="sub">round two · scored, not yet built</span></div>
+        <div class="tile c-gate"><span class="count">1</span><span class="lbl">Reassessed</span><span class="sub">built, measured, declined (item&nbsp;19)</span></div>
+        <div class="tile c-defer"><span class="count">1</span><span class="lbl">Deferred</span><span class="sub">blocked upstream (Vite&nbsp;8)</span></div>
+      </div>
+      <p class="method">
+        <span><b>Scored</b> <span class="formula">(Impact + Risk) × (6 − Effort)</span>, each 1–5 — the ranking that sets the order.</span>
+        <span>The <b>stripe encodes resolution</b>: <b>○</b> ink = open · <b>✓</b> green = shipped · <b>⏸</b> amber = deferred · grey = reassessed.</span>
+      </p>
+
+      <!-- ============ REGISTER · ROUND ONE ============ -->
+      <div class="sec-head">
+        <h2>Round one · the register</h2>
+        <span class="rule"></span>
+        <span class="note">14 items · 13 cleared · 1 deferred</span>
+      </div>
+
+      <div class="register">
+
+        <!-- 1 -->
+        <article class="item s-done">
+          <div class="rank">01</div>
+          <div class="main">
+            <div class="head">
+              <h3>The cv backend's tests can't run on our toolchain</h3>
+              <span class="chip">Test · Infra</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The Express backend's Vitest suite failed to boot — <code>better_sqlite3.node</code> was
+              built for Node 14 but the tests need Node 22 — so backend changes went out partly blind.
+            </p>
+            <div class="meta">
+              <span class="evidence">~/Projects/cv/editor</span>
+              <span class="res"><b>Shipped:</b> rebuilt the native binding for Node 22, pinned it (<code>engines</code> + a backend README documenting the gotcha). The 307-test suite runs.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">30</div><div class="bar"><i style="width:100%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 2 -->
+        <article class="item s-done">
+          <div class="rank">02</div>
+          <div class="main">
+            <div class="head">
+              <h3>The <code>about.png</code> visual baseline fails on every local run</h3>
+              <span class="chip">Test</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The screenshot test diffed against a stale, differently-rendered baseline, so it failed
+              locally every run — training everyone to skim past red.
+            </p>
+            <div class="meta">
+              <span class="evidence"><code>tests/e2e/visual-regression.spec.ts</code></span>
+              <span class="res"><b>Shipped:</b> made visual-regression strictly opt-in (<code>VISUAL_REGRESSION=1</code>), so a normal run is a real signal again.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">25</div><div class="bar"><i style="width:83%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 3 -->
+        <article class="item s-gate">
+          <div class="rank">03</div>
+          <div class="main">
+            <div class="head">
+              <h3>LaTeX escaping covers only half the special characters</h3>
+              <span class="chip">Code · Correctness</span>
+              <span class="status reassess">↺ Reassessed</span>
+            </div>
+            <p class="just">
+              Filed as a correctness bug — but on investigation it's <b>deliberate, not a gap</b>. The
+              light-touch <code>tex()</code> escapes <code>% &amp; $ # _</code> yet leaves
+              <code>\command{}</code> intact (via a negative lookbehind) precisely so fields can carry
+              the real CV's custom macros — <code>\qiQubitCount</code>, <code>\textbf{}</code>. Widening
+              it would mangle them. Closed as working-as-intended.
+            </p>
+            <div class="meta">
+              <span class="evidence"><code>src/editor/lib/api.ts</code> — <code>tex</code>/<code>untex</code></span>
+              <span class="res amber"><b>Resolution:</b> documented the tradeoff in the code instead of "fixing" it — the escaping is scoped on purpose. <b>↺ Superseded (item&nbsp;18):</b> macro support was removed, voiding this rationale — reopened and <b>fixed</b> in round two.</span>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Was</span><div class="val">24</div><div class="bar"><i style="width:80%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 4 -->
+        <article class="item s-done">
+          <div class="rank">04</div>
+          <div class="main">
+            <div class="head">
+              <h3>Nothing tests the editor against the real cv API</h3>
+              <span class="chip">Test · Architecture</span>
+              <span class="status done">✓ Already in place</span>
+            </div>
+            <p class="just">
+              Every editor e2e mocks the backend, and the one time the API changed shape the mocks
+              stayed green while production 404'd.
+            </p>
+            <div class="meta">
+              <span class="evidence">cv <code>tests/contract/test_cv_api.py</code></span>
+              <span class="res"><b>Already covered:</b> the cv repo boots the server and runs a live-HTTP contract suite (health, <code>/api</code> discovery, error envelope + the id-addressable read shapes) in its own CI — green.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">21</div><div class="bar"><i style="width:70%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 5 -->
+        <article class="item s-done">
+          <div class="rank">05</div>
+          <div class="main">
+            <div class="head">
+              <h3>The site ships no security headers — <code>_headers</code> is inert</h3>
+              <span class="chip">Infra · Security</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              <code>public/_headers</code> was a Cloudflare-Pages/Netlify format that GitHub Pages
+              ignores — and the tests asserted its contents as if the headers were live, when a curl
+              showed only <code>cf-*</code>.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/9af9108">9af9108</a></span>
+              <span class="res"><b>Shipped:</b> CSP + referrer enforced in-page via <code>&lt;meta&gt;</code>, verified in <code>dist/</code> by a new CI gate; <code>_headers</code> relabelled a spec + <code>docs/security-headers.md</code> gives the exact Cloudflare rules; tests now assert what's really enforced. <em>(Edge rules are an owner action in the CF dashboard.)</em></span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">20</div><div class="bar"><i style="width:67%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 6 -->
+        <article class="item s-done">
+          <div class="rank">06</div>
+          <div class="main">
+            <div class="head">
+              <h3>A failed "create" leaves a phantom item behind</h3>
+              <span class="chip">Code</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The five optimistic create paths pushed a temp-id node and reconciled on success — but on
+              failure left the phantom, a row that looks saved but has no server id.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/2518cee">2518cee</a></span>
+              <span class="res"><b>Shipped:</b> all five roll back on a rejected write — keyed on node id, because Svelte's <code>$state</code> proxies the pushed object so reference-equality wouldn't match (the fix's own test caught that). e2e covers it.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">16</div><div class="bar"><i style="width:53%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 7 -->
+        <article class="item s-done">
+          <div class="rank">07</div>
+          <div class="main">
+            <div class="head">
+              <h3>e2e hydration races are papered over with copy-pasted retries</h3>
+              <span class="chip">Test</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              Under the parallel suite the editor cold-compiled, so the first click raced hydration —
+              and 13 tests wrapped their first action in the same <code>toPass</code> retry.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/8e761e0">8e761e0</a></span>
+              <span class="res"><b>Shipped:</b> a deterministic <code>data-hydrated</code> marker + a shared <code>gotoEditor</code> helper; all 13 retry loops gone, verified stable under <code>--repeat-each=3</code>.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">16</div><div class="bar"><i style="width:53%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 8 -->
+        <article class="item s-done">
+          <div class="rank">08</div>
+          <div class="main">
+            <div class="head">
+              <h3>Save failures are nearly invisible</h3>
+              <span class="chip">Code · UX</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              A failed write flipped the status bar to a small "⚠ save failed" and stopped — no detail,
+              no retry. Someone editing their real CV could lose an edit and never notice.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/278205a">278205a</a></span>
+              <span class="res"><b>Shipped:</b> a System-6 error toast with one-tap Retry — wired for the field saves (safe to re-send); creates surface the toast minus the button, since they're already rolled back.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">12</div><div class="bar"><i style="width:40%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 9 -->
+        <article class="item s-done">
+          <div class="rank">09</div>
+          <div class="main">
+            <div class="head">
+              <h3>The spec and module docs have drifted from what shipped</h3>
+              <span class="chip">Documentation</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              <code>editor-redesign.md</code> still read "design agreed, not yet built" for a
+              months-live app, and <code>src/editor</code> — the frontend the portal owns — had no
+              README at all.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/b99d4b6">b99d4b6</a></span>
+              <span class="res"><b>Shipped:</b> a new <code>src/editor/README.md</code> (the as-built map), <code>editor-redesign.md</code> flipped to "shipped &amp; live", and <code>cv-editor.md</code>'s stale versions/line-counts corrected.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">12</div><div class="bar"><i style="width:40%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 10 -->
+        <article class="item s-done">
+          <div class="rank">10</div>
+          <div class="main">
+            <div class="head">
+              <h3>The client re-implements backend logic that can silently drift</h3>
+              <span class="chip">Architecture</span>
+              <span class="status done">✓ Mitigated</span>
+            </div>
+            <p class="just">
+              <code>variant-lens.ts</code>, <code>export.ts</code> and <code>tex/untex</code> each mirror
+              backend logic; a backend change to any of them passes CI here and diverges in production.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/c0392d0">c0392d0</a></span>
+              <span class="res"><b>Mitigated:</b> can't be unified — separate repos, no shared package (the submodule was removed). Documented the three duplications + their sync obligations in the README, with the backend named authoritative when they disagree.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">10</div><div class="bar"><i style="width:33%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 11 -->
+        <article class="item s-done">
+          <div class="rank">11</div>
+          <div class="main">
+            <div class="head">
+              <h3><code>EditorState</code> was a 750-line god object</h3>
+              <span class="chip">Architecture · Code</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              One class owned the document, variants, cover letters, PDF preview, tags, profiles and
+              export. Deferred at first as too risky — then done incrementally, one clean slice at a time.
+            </p>
+            <div class="meta">
+              <span class="evidence">4 commits ·
+                <a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/952b54c">952b54c</a>
+                <a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/931748f">931748f</a>
+                <a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/7670282">7670282</a>
+                <a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/5837eaa">5837eaa</a>
+              </span>
+              <span class="res"><b>Shipped:</b> split into four controllers — <code>preview</code>, <code>letters</code>, <code>variants</code>, <code>tags</code> — each driven through an injected host, with the shared save infra named once as <code>SaveHost</code>. <b>Store 750 → 587 lines (−22%).</b> Genuinely shared state (<code>activeVariantId</code>) stays at the root; the rest is deliberately left as the core — pulling it out would relocate coupling, not reduce it.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">10</div><div class="bar"><i style="width:33%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 12 -->
+        <article class="item s-done">
+          <div class="rank">12</div>
+          <div class="main">
+            <div class="head">
+              <h3>Export filenames mangle non-ASCII names</h3>
+              <span class="chip">Code</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The export filename sanitized with <code>[^\w.-]</code>, and JS <code>\w</code> is
+              ASCII-only — "résumé" or any non-Latin name came out a run of dashes.
+            </p>
+            <div class="meta">
+              <span class="evidence"><code>store.exportJson</code></span>
+              <span class="res"><b>Shipped:</b> a Unicode-aware sanitize — non-ASCII names survive intact.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">10</div><div class="bar"><i style="width:33%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 13 -->
+        <article class="item s-defer">
+          <div class="rank">13</div>
+          <div class="main">
+            <div class="head">
+              <h3>Framework majors are a version behind</h3>
+              <span class="chip">Dependency</span>
+              <span class="status defer">⏸ Deferred</span>
+            </div>
+            <p class="just">
+              Astro 6→7 and <code>@astrojs/svelte</code> 8→9 are out. <b>Attempted and reverted:</b>
+              the bump resolves cleanly and passes build + 242 unit, but Astro 7 pulls <b>Vite 8</b>,
+              whose published HMR client ships a bare, unreplaced <code>__BUNDLED_DEV__</code> → a
+              <code>ReferenceError</code> on every page → 30 e2e fail. A stable-versioned SvelteKit spike
+              confirmed the bug is <b>Vite-8-specific and framework-agnostic</b> (SvelteKit is Vite too).
+            </p>
+            <div class="meta">
+              <span class="evidence">reverted · zero drift</span>
+              <span class="res amber"><b>Blocked upstream:</b> re-attempt once Vite 8 settles — the non-dev pieces (config, peers, tooling) are all ready.</span>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">9</div><div class="bar"><i style="width:30%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 14 -->
+        <article class="item s-done">
+          <div class="rank">14</div>
+          <div class="main">
+            <div class="head">
+              <h3>One cover-letter recipient was shared across all a person's letters</h3>
+              <span class="chip">Architecture · Product</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The header (recipient / salutation / closing) was stored per-person while paragraphs were
+              per-variant, so two letters to two companies shared a recipient — the backend's data model,
+              capping the feature at one letter per profile. The product call got made, and it shipped.
+            </p>
+            <div class="meta">
+              <span class="evidence">design doc + artifact · 3 deploys</span>
+              <span class="res"><b>Shipped:</b> the header moved to a per-variant <code>variant_letter_header</code> table via an expand → migrate → contract rollout — backfill-before-switch, both paths coexisting until the frontend moved. Two letters now keep independent recipients. cv <a class="sha" href="https://github.com/andypeterson2/cv/commit/54d8070">54d8070</a> · frontend <a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/b53f5a8">b53f5a8</a>.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">6</div><div class="bar"><i style="width:20%"></i></div></div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- ============ REGISTER · ROUND TWO ============ -->
+      <div class="sec-head round2-head">
+        <h2>Round two · surfaced building the editor</h2>
+        <span class="rule"></span>
+        <span class="note">8 items · 5 shipped · 3 open</span>
+      </div>
+      <p class="just" style="max-width: 80ch; margin: -4px 0 16px; color: var(--dim);">
+        Discovered auditing the undo / tour / menubar work. Seams, not rot — the new code is
+        well-tested and documented — but real, and ranked by the same formula.
+      </p>
+
+      <div class="register">
+
+        <!-- 15 · D6 — RESOLVED -->
+        <article class="item s-done">
+          <div class="rank">15</div>
+          <div class="main">
+            <div class="head">
+              <h3>The guided tour finds its targets by shape, untested</h3>
+              <span class="chip">Test</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The tour locates content by shape — an <code>experience</code> section, a lens variant, a
+              cover-letter variant, the <code>#management</code> spotlight tag. Reshape <code>demo.ts</code>
+              and the tour still "runs", narrating over a document where nothing happens — green in CI. A
+              silent failure on the marketing surface.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/1806dfe">1806dfe</a></span>
+              <span class="res"><b>Shipped:</b> the shape predicates moved to a pure <code>lib/tour-shape.ts</code> that the tour AND the guard test share (<code>tour-steps.ts</code> imports the runes store, so it can't be unit-tested); the lens caption interpolates the tag too, so copy can't drift. A test pins that the demo seed carries every shape — drop one and it fails loudly.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:20%"></i></span><span class="num">1</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">25</div><div class="bar"><i style="width:83%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 16 · D2 — RESOLVED -->
+        <article class="item s-done">
+          <div class="rank">16</div>
+          <div class="main">
+            <div class="head">
+              <h3>The save-lifecycle boilerplate is a latent bug class</h3>
+              <span class="chip">Code</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              <code>saveState = 'saving'</code> appeared <b>28 times</b> in the store alone (~45 with the
+              controllers) — every mutation hand-rolled setSaving → api call → settle. Miss the
+              <code>settle</code> on one path and the UI hangs on "saving…" forever.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/a5c0b37">a5c0b37</a></span>
+              <span class="res"><b>Shipped:</b> one <code>SaveHost.persist(op, retry?)</code> pairs setSaving with settle — connected-only, settles even if the op throws, returns the result so a create reconciles from <code>data</code>. <code>settle</code> is <b>removed from the host</b>, so the only way to resolve a save is through persist: the stuck state is unreachable by construction. store <code>saving</code>-sites 28 → 6; behaviour-preserving (316 unit / 42 e2e).</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">24</div><div class="bar"><i style="width:80%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 17 · D3 — RESOLVED -->
+        <article class="item s-done">
+          <div class="rank">17</div>
+          <div class="main">
+            <div class="head">
+              <h3>Runes modules are unreachable by unit tests</h3>
+              <span class="chip">Test · Architecture</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              Seven <code>.svelte.ts</code> modules couldn't be unit-tested — vitest had no Svelte plugin,
+              so <code>$state</code>/<code>$derived</code> wouldn't compile. The root constraint behind the
+              pure-core / reactive-shell split, and the wall hit twice building items 16 &amp; 04.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/007b454">007b454</a></span>
+              <span class="res"><b>Shipped:</b> wired <code>@sveltejs/vite-plugin-svelte</code> (already present via <code>@astrojs/svelte</code>) into <code>vitest.config.ts</code> with the <code>browser</code> resolve condition, so runes react under vitest — node env, no DOM. Proof: <b>8 unit tests</b> on <code>UndoController</code> pin the per-profile scope stash/restore and the <code>applying</code> re-entrancy guard that were e2e-only before. The whole runes tier is testable now.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:80%"></i></span><span class="num">4</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">24</div><div class="bar"><i style="width:80%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 18 · reopen of item 03 — macro support removed — RESOLVED -->
+        <article class="item s-done">
+          <div class="rank">18</div>
+          <div class="main">
+            <div class="head">
+              <h3>Item&nbsp;03 reopened, then fixed — fields escape to plain text</h3>
+              <span class="chip">Code · Correctness</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              Item&nbsp;03 was closed as working-as-intended: <code>tex()</code> left
+              <code>\ { } ~ ^</code> unescaped so fields could carry the real CV's custom macros.
+              <b>That support was removed</b>, voiding the rationale — a literal brace or backslash now
+              just breaks the compile, with nothing left to protect.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/55d52cb">55d52cb</a> · supersedes item&nbsp;03</span>
+              <span class="res"><b>Shipped:</b> a permitted-symbol allowlist (<code>symbols.ts</code>, 78 commands) — <code>tex()</code> substitutes <code>\rightarrow</code>→<code>→</code>, <code>\alpha</code>→<code>α</code> to their Unicode glyphs (xelatex is Unicode-native), then <b>escapes every remaining special</b>. So no raw control word reaches the compiler: a token is a known glyph or literal prose (<code>\input</code>, <code>\textbf</code> go inert). 21 new tests; injection closed.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">20</div><div class="bar"><i style="width:67%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 19 · D4 -->
+        <article class="item s-gate">
+          <div class="rank">19</div>
+          <div class="main">
+            <div class="head">
+              <h3>The undo re-create paths duplicate structure</h3>
+              <span class="chip">Code</span>
+              <span class="status reassess">↺ Reassessed</span>
+            </div>
+            <p class="just">
+              Filed when six <code>attach*</code> / <code>detach*</code> methods each re-created rows on
+              undo with the same splice → create → reconcile-id → reorder tail — a divergence in the
+              trickiest path (undo-of-delete, where server ids churn) reads as a silent correctness bug.
+              But <b>item&nbsp;16 already closed the real risk</b>: every create now funnels its failure
+              branch through one <code>persist()</code>, so the paths are uniform where it counts.
+            </p>
+            <div class="meta">
+              <span class="evidence"><code>store.svelte.ts</code> — attach/detach Entry·Bullet·Section</span>
+              <span class="res"><b>Declined:</b> built the <code>recreateRow</code> helper, measured it, backed it out. Unifying the last shared line (persist&nbsp;→ rollback-on-fail) <b>grew</b> the store ~25 lines and added a callback layer to guard a divergence risk <code>persist()</code> already all but removes — a net loss in legibility for near-zero safety. The experiment is preserved in <code>git stash</code>, not the tree; reopen only if a seventh re-create path appears.</span>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+            </div>
+            <div class="prio"><span class="cap">Was</span><div class="val">20</div><div class="bar"><i style="width:67%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 20 · D1 — RESOLVED -->
+        <article class="item s-done">
+          <div class="rank">20</div>
+          <div class="main">
+            <div class="head">
+              <h3>The store regrew to 983 lines — item&nbsp;11, partly undone</h3>
+              <span class="chip">Architecture</span>
+              <span class="status done">✓ Resolved</span>
+            </div>
+            <p class="just">
+              The store the round-one split trimmed to 587 had grown to <b>983</b> as undo and the
+              per-profile cache landed. Much is irreducible — the <code>record()</code> calls must drive
+              store methods (ADR-003) — but two non-reactive concerns had leaked in, one of them
+              duplicated in the letter controller.
+            </p>
+            <div class="meta">
+              <span class="evidence"><a class="sha" href="https://github.com/andypeterson2/andypeterson2.github.io/commit/b2951e4">b2951e4</a></span>
+              <span class="res"><b>Shipped:</b> extracted <code>FieldShadow</code> (the WeakMap+uid+seed/diff/patch — <b>DRY'd across the store AND the letter controller</b>, which each carried their own) and <code>ProfileCache</code>. Both pure, so both now unit-tested (+6) — what they couldn't be inside the runes store. store 969 → 933. The rest is the coordination core; pulling it would relocate coupling, not reduce it (the #11 lesson), so honest target, not 587.</span>
+            </div>
+          </div>
+          <div class="metrics cleared">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">15</div><div class="bar"><i style="width:50%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 21 · D7 -->
+        <article class="item s-open">
+          <div class="rank">21</div>
+          <div class="main">
+            <div class="head">
+              <h3>The editor e2e leans on real wall-clock timing</h3>
+              <span class="chip">Test</span>
+              <span class="status open">○ Open</span>
+            </div>
+            <p class="just">
+              The tests depend on real timers — the 900&nbsp;ms coalesce window, the tour dwell, a fixed
+              1200&nbsp;ms "stayed paused" wait. Held on CI so far, but timing-coupled tests are fragile on
+              slower runners and erode trust when they flake.
+            </p>
+            <div class="meta">
+              <span class="evidence"><code>tests/e2e/cv-editor.spec.ts</code></span>
+              <span class="plan"><b>Plan:</b> make the timings injectable/overridable for tests — far easier once item&nbsp;17 lets the logic be unit-tested off the wall clock.</span>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">15</div><div class="bar"><i style="width:50%"></i></div></div>
+          </div>
+        </article>
+
+        <!-- 22 · D5 -->
+        <article class="item s-open">
+          <div class="rank">22</div>
+          <div class="main">
+            <div class="head">
+              <h3>The profile cache has no invalidation</h3>
+              <span class="chip">Architecture</span>
+              <span class="status open">○ Watch</span>
+            </div>
+            <p class="just">
+              The per-profile document cache shows a returning profile the cached copy, so an external
+              edit — another client, or the MCP tools — made while you were away won't appear until a
+              reload. ADR-004's named tradeoff, and the price of not discarding your undo across a switch.
+            </p>
+            <div class="meta">
+              <span class="evidence">ADR-004 · <code>store.selectPerson</code></span>
+              <span class="plan"><b>Watch, don't fix</b> — correct for a single-user editor. Add invalidation or a refresh affordance only if concurrent writers become common.</span>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="ire">
+              <div class="ire-row">Impact<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Risk<span class="track"><i style="width:40%"></i></span><span class="num">2</span></div>
+              <div class="ire-row">Effort<span class="track"><i style="width:60%"></i></span><span class="num">3</span></div>
+            </div>
+            <div class="prio"><span class="cap">Priority</span><div class="val">12</div><div class="bar"><i style="width:40%"></i></div></div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- ============ ROADMAP ============ -->
+      <div class="sec-head">
+        <h2>Round one · remediation, phased</h2>
+        <span class="rule"></span>
+        <span class="note">all three phases shipped</span>
+      </div>
+
+      <div class="phases">
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 1</div>
+            <div class="p-name">Quick wins</div>
+            <div class="p-cost">✓ done</div>
+          </div>
+          <ul>
+            <li><span class="id">01</span> <b>Unblocked the cv tests</b> — rebuilt binding + pinned Node.</li>
+            <li><span class="id">03</span> <b>LaTeX escaping</b> — reassessed as intended; documented.</li>
+            <li><span class="id">02</span> <b>Fixed the <code>about.png</code> baseline</b> — opt-in now.</li>
+            <li><span class="id">12</span> <b>Unicode export filenames.</b></li>
+          </ul>
+        </div>
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 2</div>
+            <div class="p-name">Hardening</div>
+            <div class="p-cost">✓ done</div>
+          </div>
+          <ul>
+            <li><span class="id">05</span> <b>Honest security headers</b> — meta CSP + CI gate + CF doc.</li>
+            <li><span class="id">06</span> <b>Roll back failed creates</b> — no more phantom rows.</li>
+            <li><span class="id">08</span> <b>Surface save errors</b> — a toast with retry.</li>
+            <li><span class="id">07</span> <b>De-flaked e2e</b> — a hydration marker + one helper.</li>
+          </ul>
+        </div>
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 3</div>
+            <div class="p-name">Structural</div>
+            <div class="p-cost">✓ done · 13 deferred</div>
+          </div>
+          <ul>
+            <li><span class="id">04</span> <b>Live cv-contract smoke test</b> — already in cv CI.</li>
+            <li><span class="id">10</span> <b>Shared-logic drift</b> — documented (can't unify).</li>
+            <li><span class="id">11</span> <b>Split <code>EditorState</code></b> — 4 controllers, −22%.</li>
+            <li><span class="id">09</span> <b>Refreshed docs</b> — module README + spec.</li>
+            <li class="def"><span class="id">13</span> <b>Astro 7 + svelte 9</b> — deferred (Vite 8 bug).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="gated">
+        <b>Update</b>Item 14 (per-letter recipients) <em>was</em> the one product-gated call — and it got
+        made. Designed (doc + artifact) and shipped as per-variant cover-letter headers across three
+        coordinated deploys, backend-first with a backfill. No product-gated debt remains.
+      </div>
+
+      <!-- ============ ROADMAP · ROUND TWO ============ -->
+      <div class="sec-head round2-head">
+        <h2>Round two · the plan</h2>
+        <span class="rule"></span>
+        <span class="note">~3 days, alongside features</span>
+      </div>
+
+      <div class="phases">
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 1</div>
+            <div class="p-name">Cheap guards</div>
+            <div class="p-cost plan">○ ½–1 day · next</div>
+          </div>
+          <ul>
+            <li><span class="id">15</span> <b>Guard the tour</b> — demo-shape test + shared predicates. <b>Shipped.</b></li>
+            <li><span class="id">16</span> <b>A <code>persist()</code> helper</b> — pairs setSaving+settle. <b>Shipped.</b></li>
+            <li><span class="id">18</span> <b>Escape fields to plain text</b> — allowlist + full escape. <b>Shipped</b> (reopened 03).</li>
+            <li class="gate"><span class="id">19</span> <b>Dedup attach/detach</b> — built, measured, <b>declined</b>; item&nbsp;16 already closed the risk.</li>
+          </ul>
+        </div>
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 2</div>
+            <div class="p-name">Unlock the test tier</div>
+            <div class="p-cost plan">○ ~1 day</div>
+          </div>
+          <ul>
+            <li><span class="id">17</span> <b>Svelte vitest plugin</b> — the runes tier is unit-testable. <b>Shipped.</b></li>
+            <li><span class="id">17</span> Proved with 8 UndoController tests; tags/variants/persist now cheap.</li>
+          </ul>
+        </div>
+        <div class="phase">
+          <div class="phase-hd">
+            <div class="p-num">Phase 3</div>
+            <div class="p-name">Structural</div>
+            <div class="p-cost plan">○ 1–1½ days</div>
+          </div>
+          <ul>
+            <li><span class="id">20</span> <b>Extract cache + shadow</b> from the store — <code>FieldShadow</code>/<code>ProfileCache</code>. <b>Shipped.</b></li>
+            <li class="todo"><span class="id">21</span> <b>Deterministic e2e</b> — inject the timings (easier after 17).</li>
+            <li class="def"><span class="id">22</span> <b>Cache staleness</b> — watch; fix only if concurrent writers appear.</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer>
+        <b>Round one</b> paid down 2026-07-06 → 08 · every fix shipped to <code>main</code>, CI-green
+        (build · CSP gate · 99 e2e · 242 unit; cv 317). <b>Round two</b> surfaced 2026-07-08 auditing
+        the editor UX + history work (demo reframe, guided tour, menubar, undo across the editor and
+        profile switches — <code>c3c2b3c…b2951e4</code>, editor suite now 330 unit / 42 e2e). Eight
+        round-two items — seven new plus item&nbsp;03 reopened after macro support was removed;
+        <b>five shipped</b> (18 escaping, 15 tour-guard, 16 persist(), 17 runes-plugin, 20
+        store-extraction), <b>one built then reassessed away</b> (19 dedup — <code>persist()</code>
+        had already closed the risk; kept in <code>git stash</code>), two open (21 e2e-timing, 22
+        cache-watch). Scoring:
+        (Impact + Risk) × (6 − Effort), 1–5,
+        effort inverted. Each item
+        is anchored to a measured file, a commit, or a verified observation — not a hunch. A living
+        register: re-score as the code moves.
+      </footer>
+    </div>
+  </div>
+</div>
