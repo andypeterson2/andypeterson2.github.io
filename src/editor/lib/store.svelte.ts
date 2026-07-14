@@ -172,6 +172,7 @@ class EditorState {
     capture: () => $state.snapshot(this.person) as Person,
     apply: (doc) => this.restoreDocument(doc),
     reload: () => this.reloadActive(),
+    applyEntry: (source, entryId) => this.applyEntryFrom(source, entryId),
   });
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
   noProfiles = $derived(this.connected && this.persons.length === 0);
@@ -812,6 +813,44 @@ class EditorState {
     this.#cache.drop(pid);
     const res = await api.fetchPerson(pid);
     if (res.ok && res.data) this.activate(res.data, pid, true);
+  }
+
+  /**
+   * Cherry-restore (ADR-006 increment 3): copy one entry, by id, from a checkpoint's
+   * document onto the working one — overwrite it if it's still present, re-add it to
+   * its section if it was deleted. A structural change, so it drops undo (the old
+   * stack can't be replayed against the fresh objects — ADR-003 drop-where-unsound).
+   * Demo path; a connected cherry-restore would persist through the entry writes.
+   */
+  applyEntryFrom(source: Person, entryId: number): boolean {
+    let src: Entry | undefined;
+    let sectionId: number | string | undefined;
+    for (const s of source.sections) {
+      const e = s.entries.find((x) => x.id === entryId);
+      if (e) {
+        src = e;
+        sectionId = s.id;
+        break;
+      }
+    }
+    if (!src) return false;
+    const section = this.person.sections.find((s) => s.id === sectionId);
+    if (!section) return false; // the section is gone — nowhere to place it
+    const copy = JSON.parse(JSON.stringify(src)) as Entry;
+    const existing = section.entries.find((e) => e.id === entryId);
+    if (existing) {
+      existing.fields = copy.fields;
+      existing.items = copy.items;
+      existing.tags = copy.tags;
+    } else {
+      section.entries.push(copy);
+      this.scrollTarget = section.id;
+    }
+    this.dirty = true;
+    this.undo.clear();
+    this.#shadow.reseat(this.person, this.style as Record<string, string>);
+    this.say('Restored one entry from the checkpoint.');
+    return true;
   }
 
   /**

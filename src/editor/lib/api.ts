@@ -286,17 +286,31 @@ export class CvApi {
   // stored as an opaque JSON blob — the backend rebuilds its tables from it on
   // restore. ----
   listVersions(pid: number) {
-    return this.req<{ versions: { id: number; label: string; createdAt: number; doc: Person }[] }>(
-      `/persons/${pid}/versions`,
-    );
+    return this.req<{
+      versions: {
+        id: number;
+        label: string;
+        createdAt: number;
+        branch: string;
+        tag?: string | null;
+        parent?: number | null;
+        doc: Person;
+      }[];
+    }>(`/persons/${pid}/versions`);
   }
   /** One checkpoint in full, including its `doc` snapshot — for the diff view. */
   getVersion(pid: number, id: number) {
-    return this.req<{ id: number; label: string; createdAt: number; doc: Person }>(
-      `/persons/${pid}/versions/${id}`,
-    );
+    return this.req<{
+      id: number;
+      label: string;
+      createdAt: number;
+      branch: string;
+      tag?: string | null;
+      parent?: number | null;
+      doc: Person;
+    }>(`/persons/${pid}/versions/${id}`);
   }
-  commitVersion(pid: number, v: { label: string; doc: Person }) {
+  commitVersion(pid: number, v: { label: string; doc: Person; branch?: string; parent?: number }) {
     return this.req<{ id: number }>(`/persons/${pid}/versions`, {
       method: 'POST',
       body: JSON.stringify(v),
@@ -304,6 +318,13 @@ export class CvApi {
   }
   restoreVersion(pid: number, id: number) {
     return this.req(`/persons/${pid}/versions/${id}/restore`, { method: 'POST' });
+  }
+  /** Set (or clear, with '') a checkpoint's frozen provenance tag. */
+  tagVersion(pid: number, id: number, tag: string) {
+    return this.req(`/persons/${pid}/versions/${id}/tag`, {
+      method: 'POST',
+      body: JSON.stringify({ tag }),
+    });
   }
 
   // ---- writes (display text is LaTeX-escaped on the way out) ----
