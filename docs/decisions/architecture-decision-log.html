@@ -1,0 +1,1206 @@
+<title>CV Editor — Architecture Decisions</title>
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     Architecture Decision Log — rendered in the System-6 design
+     system it documents. Tokens, chrome, and semantic state colours
+     are the editor's own (src/editor/lib/styles.css).
+     ───────────────────────────────────────────────────────────── */
+  :root {
+    color-scheme: light dark;
+
+    --ink: #1c1b19;
+    --paper: #fcfbf7;
+    --chrome: #dcdcd6;
+    --chrome-hi: #efefe9;
+    --dim: #8f8d86;
+    --faint: #d9d7cf;
+
+    /* semantic state — the tokens this session introduced */
+    --state-live: #2f7d4c;
+    --state-busy: #b8891a;
+    --state-error: #b3261e;
+    --link: #2b5f9e;
+
+    /* desktop dither */
+    --desk-a: #c7c7c1;
+    --desk-b: #b6b6b0;
+
+    --shadow-col: var(--ink);
+    --pane: #f6f4ee;
+
+    --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --mono: 'SF Mono', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
+
+    --measure: 66ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ece9e1;
+      --paper: #201f1d;
+      --chrome: #33322e;
+      --chrome-hi: #2a2926;
+      --dim: #8c8a83;
+      --faint: #383731;
+
+      --state-live: #5cb97f;
+      --state-busy: #e6c052;
+      --state-error: #ec6f64;
+      --link: #9ec7ff;
+
+      --desk-a: #26251f;
+      --desk-b: #1c1b16;
+
+      --shadow-col: rgba(0, 0, 0, 0.55);
+      --pane: #262521;
+    }
+  }
+
+  /* explicit toggle overrides the OS preference, both directions */
+  :root[data-theme='light'] {
+    --ink: #1c1b19; --paper: #fcfbf7; --chrome: #dcdcd6; --chrome-hi: #efefe9;
+    --dim: #8f8d86; --faint: #d9d7cf;
+    --state-live: #2f7d4c; --state-busy: #b8891a; --state-error: #b3261e; --link: #2b5f9e;
+    --desk-a: #c7c7c1; --desk-b: #b6b6b0; --shadow-col: var(--ink); --pane: #f6f4ee;
+  }
+  :root[data-theme='dark'] {
+    --ink: #ece9e1; --paper: #201f1d; --chrome: #33322e; --chrome-hi: #2a2926;
+    --dim: #8c8a83; --faint: #383731;
+    --state-live: #5cb97f; --state-busy: #e6c052; --state-error: #ec6f64; --link: #9ec7ff;
+    --desk-a: #26251f; --desk-b: #1c1b16; --shadow-col: rgba(0, 0, 0, 0.55); --pane: #262521;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--desk-a); }
+  code { font-family: var(--mono); font-size: 0.88em; }
+
+  .desktop {
+    margin: 0;
+    min-height: 100dvh;
+    padding: clamp(14px, 3.5vw, 46px) clamp(10px, 3vw, 40px) 64px;
+    color: var(--ink);
+    font-family: var(--serif);
+    background-color: var(--desk-a);
+    background-image:
+      linear-gradient(45deg, var(--desk-b) 25%, transparent 25%, transparent 75%, var(--desk-b) 75%),
+      linear-gradient(45deg, var(--desk-b) 25%, transparent 25%, transparent 75%, var(--desk-b) 75%);
+    background-size: 4px 4px;
+    background-position: 0 0, 2px 2px;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  .win {
+    max-width: 1080px;
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--shadow-col);
+  }
+
+  /* menubar */
+  .menubar {
+    display: flex; align-items: center; gap: 18px;
+    height: 27px; padding: 0 12px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans); font-size: 13px; font-weight: 700;
+  }
+  .menubar .mk { font-size: 15px; }
+  .menubar .mu { font-weight: 400; color: var(--dim); }
+  .menubar .spacer { margin-left: auto; }
+  .menubar .theme {
+    font-family: var(--mono); font-size: 12px; font-weight: 400;
+    background: none; border: 1px solid transparent; border-radius: 5px;
+    color: var(--dim); cursor: pointer; padding: 2px 7px; line-height: 1;
+  }
+  .menubar .theme:hover { color: var(--ink); border-color: var(--ink); }
+  .menubar .theme:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  /* window titlebar with the System-6 stripes */
+  .titlebar {
+    display: flex; align-items: center; gap: 8px;
+    height: 24px; padding: 0 9px;
+    border-bottom: 1px solid var(--ink);
+    background-image: repeating-linear-gradient(
+      to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px);
+  }
+  .titlebar .close { width: 12px; height: 12px; background: var(--paper); border: 1px solid var(--ink); }
+  .titlebar .t {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 700;
+    background: var(--paper); padding: 0 14px; margin: 0 auto;
+    max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .titlebar .fill { width: 12px; }
+
+  .body { display: grid; grid-template-columns: 232px minmax(0, 1fr); }
+
+  /* ── the chooser (Finder-style sidebar) ── */
+  .chooser {
+    border-right: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    padding: 14px 0 18px;
+    align-self: start;
+    position: sticky; top: 12px;
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+  }
+  .chooser h2 {
+    font-family: var(--mono); font-size: 10px; font-weight: 400;
+    text-transform: uppercase; letter-spacing: 0.13em; color: var(--dim);
+    margin: 0 0 8px; padding: 0 14px;
+  }
+  .clist { display: flex; flex-direction: column; }
+  .clink {
+    display: grid; grid-template-columns: 14px 1fr; align-items: baseline; gap: 8px;
+    padding: 7px 14px;
+    font-family: var(--sans); font-size: 12.5px; color: var(--ink);
+    text-decoration: none; border: 0; background: none; text-align: left; cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .clink:hover { background: var(--paper); }
+  .clink:active { transform: translate(1px, 0); }
+  .clink:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .clink .cn { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .clink b { font-weight: 700; }
+  .clink .cd {
+    grid-column: 2; font-size: 11px; color: var(--dim); line-height: 1.35; margin-top: 1px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+  .dot.live { background: var(--state-live); border: 1px solid color-mix(in srgb, var(--state-live) 60%, var(--ink)); }
+  .dot.hollow { background: var(--paper); border: 1px solid var(--ink); }
+  .dot.busy { background: var(--state-busy); border: 1px solid color-mix(in srgb, var(--state-busy) 60%, var(--ink)); }
+
+  .chooser hr { border: 0; border-top: 1px solid var(--faint); margin: 12px 14px; }
+  .stat { padding: 0 14px; font-family: var(--mono); font-size: 10.5px; color: var(--dim); line-height: 1.7; }
+  .stat b { color: var(--ink); font-weight: 700; }
+
+  /* ── the document column ── */
+  .doc { padding: clamp(20px, 3.4vw, 40px) clamp(18px, 3.6vw, 46px) 30px; min-width: 0; }
+  .doc > * + * { margin-top: 0; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.14em; color: var(--dim); margin: 0 0 10px;
+  }
+  h1.doc-title {
+    font-family: var(--sans); font-weight: 700; letter-spacing: -0.01em;
+    font-size: clamp(26px, 4.2vw, 38px); line-height: 1.06; margin: 0;
+    text-wrap: balance;
+  }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0;
+    font-family: var(--mono); font-size: 11.5px; color: var(--dim);
+  }
+  .meta b { color: var(--ink); font-weight: 400; }
+
+  .prose { max-width: var(--measure); }
+  .prose p { margin: 12px 0 0; }
+  .lead { font-size: 17.5px; line-height: 1.55; }
+
+  /* the spine — pull-quote thesis */
+  .spine {
+    margin: 26px 0 8px; padding: 20px 22px;
+    background: var(--pane); border: 1px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-col);
+  }
+  .spine .lbl {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em;
+    color: var(--dim); margin: 0 0 8px;
+  }
+  .spine p {
+    font-family: var(--serif); font-size: clamp(18px, 2.5vw, 23px); line-height: 1.4; margin: 0;
+    text-wrap: balance;
+  }
+  .spine em { font-style: italic; }
+
+  .rule { border: 0; border-top: 1px solid var(--ink); margin: 34px 0 0; }
+  .section-eyebrow {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--dim); margin: 26px 0 12px;
+  }
+
+  /* constraints grid */
+  .constraints { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0; border: 1px solid var(--ink); border-bottom: 0; }
+  .constraints .c { border-bottom: 1px solid var(--ink); border-right: 1px solid var(--faint); padding: 12px 14px; }
+  .constraints .c:last-child { border-right: 0; }
+  .constraints .c h3 { font-family: var(--sans); font-size: 12.5px; font-weight: 700; margin: 0 0 3px; }
+  .constraints .c p { font-size: 13px; line-height: 1.45; margin: 0; color: var(--ink); }
+
+  /* causal chain diagram */
+  .chainwrap { border: 1px solid var(--ink); background: var(--pane); box-shadow: 2px 2px 0 var(--shadow-col); margin-top: 14px; }
+  .chainwrap .cap {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--dim); padding: 9px 14px; border-bottom: 1px solid var(--faint);
+  }
+  .chainscroll { overflow-x: auto; padding: 20px 16px 22px; }
+  .chain { display: block; width: 100%; min-width: 560px; height: auto; }
+  .chain text { font-family: var(--mono); fill: var(--ink); }
+  .chain .box { fill: var(--paper); stroke: var(--ink); stroke-width: 1.4; }
+  .chain .box.key { fill: var(--ink); }
+  .chain .box.key + text, .chain text.inv { fill: var(--paper); }
+  .chain .edge { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+  .chain .elabel { fill: var(--dim); font-size: 10px; }
+  .chain .num { font-size: 11px; font-weight: 700; }
+  .chain .name { font-size: 10px; }
+  /* ports from the ADR-006 / ADR-007 diagrams */
+  .chain .node { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+  .chain .node.key { fill: var(--ink); }
+  .chain .edge.fork { stroke-dasharray: 0; }
+  .chain .edge.dem { stroke: var(--dim); stroke-dasharray: 3 3; }
+  .chain .box.dem { fill: var(--pane); stroke: var(--dim); }
+  .chain .cherry { stroke: var(--state-busy); stroke-width: 1.4; fill: none; stroke-dasharray: 3 3; }
+  .chain .tag { fill: var(--pane); stroke: var(--ink); stroke-width: 1.2; }
+  .chain .tagtext { font-size: 10px; fill: var(--ink); }
+  .chain .blabel { fill: var(--dim); font-size: 11px; }
+  .chain .clabel { fill: var(--dim); font-size: 9.5px; }
+  .chain .lg { font-size: 12px; font-weight: 700; }
+  .chain .sm { font-size: 10px; }
+  .chain .role { font-size: 11px; }
+  .chain .role .rk { font-weight: 700; }
+
+  /* ── ADR record ── */
+  .adr { margin-top: 30px; scroll-margin-top: 60px; }
+  .adr .head {
+    display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--ink); padding-bottom: 12px;
+  }
+  .adr .no {
+    font-family: var(--mono); font-weight: 700; font-size: clamp(30px, 5vw, 46px);
+    line-height: 0.9; letter-spacing: -0.03em; color: var(--ink); flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .adr .htext { flex: 1 1 300px; min-width: 0; }
+  .adr h2.at {
+    font-family: var(--sans); font-weight: 700; font-size: clamp(19px, 2.6vw, 25px);
+    line-height: 1.14; margin: 0; text-wrap: balance; letter-spacing: -0.005em;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+    font-family: var(--mono); font-size: 11px; padding: 3px 9px;
+    border: 1px solid var(--ink); background: var(--chrome-hi); white-space: nowrap;
+  }
+  .chip .dot { width: 7px; height: 7px; }
+
+  .decision {
+    margin-top: 14px; padding: 13px 16px; border-left: 3px solid var(--ink); background: var(--pane);
+  }
+  .decision .k {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--dim); display: block; margin-bottom: 4px;
+  }
+  .decision p { margin: 0; font-size: 15px; line-height: 1.5; }
+  .decision p + p { margin-top: 9px; }
+  .decision ol { margin: 8px 0 0; padding-left: 20px; }
+  .decision li { font-size: 14px; line-height: 1.5; margin: 4px 0; }
+
+  .subhead {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--dim); margin: 20px 0 9px;
+  }
+
+  /* options table */
+  .scroll { overflow-x: auto; border: 1px solid var(--ink); }
+  table { border-collapse: collapse; width: 100%; min-width: 460px; background: var(--paper); }
+  thead th {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+    font-weight: 400; color: var(--dim); text-align: left; padding: 8px 12px;
+    border-bottom: 1px solid var(--ink); background: var(--chrome-hi); white-space: nowrap;
+  }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--faint); font-size: 13px; line-height: 1.42; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody th {
+    text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--faint);
+    font-family: var(--sans); font-weight: 700; font-size: 12.5px; white-space: nowrap; vertical-align: top;
+  }
+  tr.chosen td, tr.chosen th { background: color-mix(in srgb, var(--state-live) 12%, var(--paper)); }
+  tr.chosen th { box-shadow: inset 3px 0 0 var(--state-live); }
+  .pick { font-family: var(--mono); font-size: 10px; color: var(--state-live); font-weight: 700; }
+  .later { font-family: var(--mono); font-size: 10px; color: var(--state-busy); font-weight: 700; }
+  td.bad { color: var(--state-error); }
+  .fv { font-variant-numeric: tabular-nums; }
+
+  /* sub-decision list */
+  .subs { border: 1px solid var(--ink); }
+  .subs .row { display: grid; grid-template-columns: 190px 1fr; gap: 0; border-bottom: 1px solid var(--faint); }
+  .subs .row:last-child { border-bottom: 0; }
+  .subs dt {
+    font-family: var(--sans); font-weight: 700; font-size: 12.5px; padding: 11px 14px;
+    background: var(--chrome-hi); border-right: 1px solid var(--faint);
+  }
+  .subs dd { margin: 0; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
+  .subs code, code.inl { font-family: var(--mono); font-size: 0.87em; background: var(--pane); padding: 0.5px 4px; border: 1px solid var(--faint); }
+
+  /* correction / insight callout */
+  .callout {
+    margin-top: 16px; border: 1px solid var(--ink); border-left: 4px solid var(--state-busy);
+    background: var(--pane); padding: 13px 16px;
+  }
+  .callout .k {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--state-busy); display: flex; align-items: center; gap: 7px; margin-bottom: 6px;
+  }
+  .callout .k .glyph { color: var(--ink); }
+  .callout p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+  .callout p + p { margin-top: 8px; }
+
+  .conseq { margin-top: 16px; }
+  .conseq li { font-size: 13.5px; line-height: 1.5; margin: 6px 0; }
+  .conseq { padding-left: 0; list-style: none; }
+  .conseq li { display: grid; grid-template-columns: 18px 1fr; gap: 6px; }
+  .conseq li .g { color: var(--dim); font-family: var(--mono); }
+  .conseq li.revisit .g { color: var(--state-busy); }
+
+  /* footer — action items + commit trail */
+  .foot { border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: clamp(20px, 3vw, 34px) clamp(18px, 3.6vw, 46px); }
+  .foot h2 {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--dim); margin: 0 0 12px;
+  }
+  .checks { list-style: none; padding: 0; margin: 0 0 22px; max-width: var(--measure); }
+  .checks li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--faint); font-size: 13.5px; line-height: 1.45; }
+  .checks li .box { font-family: var(--mono); font-weight: 700; }
+  .checks li.done .box { color: var(--state-live); }
+  .checks li.todo .box { color: var(--dim); }
+  .checks li b { font-family: var(--sans); font-weight: 700; }
+  .checks li .why { color: var(--dim); }
+
+  .trail {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink);
+    padding: 12px 14px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-col);
+  }
+  .trail .h { padding: 1px 3px; }
+  .trail .h.last { background: var(--ink); color: var(--paper); }
+  .trail .ar { color: var(--dim); }
+  .trail .tail { margin-left: auto; color: var(--dim); }
+
+  a.inl { color: var(--link); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--link) 40%, transparent); }
+  a.inl:hover { border-bottom-color: var(--link); }
+
+  @media (max-width: 880px) {
+    .body { grid-template-columns: 1fr; }
+    .chooser {
+      position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--ink);
+      display: grid; grid-template-columns: 1fr; overflow: visible;
+    }
+    .subs .row { grid-template-columns: 1fr; }
+    .subs dt { border-right: 0; border-bottom: 1px solid var(--faint); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="desktop">
+  <div class="win">
+
+    <div class="menubar">
+      <span class="mk" aria-hidden="true">◆</span>
+      <strong>CV&nbsp;Editor</strong>
+      <span class="mu">File</span>
+      <span class="mu">Edit</span>
+      <span class="mu">View</span>
+      <span class="spacer"></span>
+      <button class="theme" id="themeBtn" type="button" aria-label="Toggle light and dark theme">◐ theme</button>
+    </div>
+
+    <div class="titlebar">
+      <span class="close" aria-hidden="true"></span>
+      <span class="t">Architecture&nbsp;Decisions — latex-resume-editor</span>
+      <span class="fill"></span>
+    </div>
+
+    <div class="body">
+
+      <!-- ───────────── chooser ───────────── -->
+      <nav class="chooser" aria-label="Decision records">
+        <h2>Records</h2>
+        <div class="clist">
+          <a class="clink" href="#adr-001">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">001</span> &nbsp;<b>Demo is the default</b></span>
+            <span class="cd">not a failed connection</span>
+          </a>
+          <a class="clink" href="#adr-002">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">002</span> &nbsp;<b>Tour drives the real store</b></span>
+            <span class="cd">no parallel renderer</span>
+          </a>
+          <a class="clink" href="#adr-003">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">003</span> &nbsp;<b>Undo as a command stack</b></span>
+            <span class="cd">not document snapshots</span>
+          </a>
+          <a class="clink" href="#adr-004">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">004</span> &nbsp;<b>Per-profile scopes</b></span>
+            <span class="cd">reuse the cached tree</span>
+          </a>
+          <a class="clink" href="#adr-005">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">005</span> &nbsp;<b>The interface tells the truth</b></span>
+            <span class="cd">unimplemented ⇒ disabled</span>
+          </a>
+          <a class="clink" href="#adr-006">
+            <span class="dot live" aria-hidden="true"></span>
+            <span><span class="cn">006</span> &nbsp;<b>Versioned data store</b></span>
+            <span class="cd">snapshot · diff · branches — shipped</span>
+          </a>
+        </div>
+        <h2 style="margin-top: 16px;">Proposed · next</h2>
+        <div class="clist">
+          <a class="clink" href="#adr-007">
+            <span class="dot hollow" aria-hidden="true"></span>
+            <span><span class="cn">007</span> &nbsp;<b>Multi-tenant + review</b></span>
+            <span class="cd">delegate authN, own authZ</span>
+          </a>
+        </div>
+        <hr />
+        <div class="stat">
+          <b>Accepted · live</b> ×6<br />
+          <b>Proposed</b> ×1<br />
+          <span style="color: var(--state-live)">006 · shipped — 3 increments</span><br />
+          <b>285</b> unit · <b>39</b> e2e<br />
+          <span style="color: var(--dim)">7 commits · c3c2b3c→6f65ba3</span>
+        </div>
+      </nav>
+
+      <!-- ───────────── document ───────────── -->
+      <main class="doc">
+        <p class="eyebrow">Architecture Decision Log</p>
+        <h1 class="doc-title">Six shipped. One proposed.</h1>
+        <div class="meta">
+          <span>Status&nbsp; <b>Six accepted &amp; live · one proposed (007)</b></span>
+          <span>Deciders&nbsp; <b>A. Peterson (sole maintainer)</b></span>
+          <span>Date&nbsp; <b>2026-07-08 · rev 2026-07-12 (006–007 folded in)</b></span>
+        </div>
+
+        <div class="prose">
+          <p class="lead" style="margin-top: 18px;">
+            The subject is <b>src/editor</b> — a Svelte&nbsp;5 island on a static Astro site
+            (→ GitHub&nbsp;Pages), talking to an Access-gated Express/SQLite backend on Railway
+            through a Cloudflare Worker gateway. The first six record decisions are shipped and live —
+            006, the versioned store, most recently. The last is a proposal (007) for where the data
+            goes next. What follows is the rationale worth keeping, not every tweak.
+          </p>
+        </div>
+
+        <div class="spine">
+          <p class="lbl">The spine</p>
+          <p>
+            The interface must not lie about what it can do, and a demonstration should be the
+            <em>real thing</em> rather than a mock of it.
+          </p>
+        </div>
+        <div class="prose">
+          <p>
+            The red “disconnected” dot, the unsatisfiable sign-in prompt, the copy promising a PDF
+            compile the demo can’t run, the inert menus styled to look live — the same bug in
+            different clothes. Naming it made the rest fall out, and it chained the decisions:
+            <b>001</b> created a debt, <b>003</b> paid it, and <b>005</b> couldn’t make the menu
+            honest until <b>003</b> existed.
+          </p>
+        </div>
+
+        <p class="section-eyebrow">Constraints that shaped every call</p>
+        <div class="constraints">
+          <div class="c">
+            <h3>No server of our own</h3>
+            <p>All logic runs in the browser island; the only backend is the gated CV API.</p>
+          </div>
+          <div class="c">
+            <h3>The backend is owner-only</h3>
+            <p>Almost every visitor reaches <em>only</em> the offline demo. The demo is the common case.</p>
+          </div>
+          <div class="c">
+            <h3>Offline-capable</h3>
+            <p>Every feature works with no backend, and degrades to persistence when connected.</p>
+          </div>
+          <div class="c">
+            <h3>No Svelte plugin in vitest</h3>
+            <p>Anything in a <code class="inl">.svelte.ts</code> runes module is unreachable from a unit test.</p>
+          </div>
+          <div class="c">
+            <h3>Single user</h3>
+            <p>No collaboration; no concurrent editors of one document. The MCP tools are out-of-band.</p>
+          </div>
+        </div>
+
+        <div class="chainwrap">
+          <div class="cap">The decisions are causally chained, not a menu of independent choices</div>
+          <div class="chainscroll">
+            <svg class="chain" viewBox="0 0 720 168" role="img"
+                 aria-label="001 creates a debt paid by 003, which 005 depends on; 002 is mutually safe with 001; 004 extends 003.">
+              <!-- edges -->
+              <defs>
+                <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                  <path d="M0,0 L7,3 L0,6" class="edge" />
+                </marker>
+              </defs>
+
+              <!-- row 1: 001 -> 003 -> 005 -->
+              <path class="edge" marker-end="url(#ah)" d="M168,52 L232,52" />
+              <text class="elabel" x="200" y="44" text-anchor="middle">creates the debt</text>
+              <path class="edge" marker-end="url(#ah)" d="M400,52 L464,52" />
+              <text class="elabel" x="432" y="44" text-anchor="middle">makes it honest</text>
+
+              <!-- 002 -> 001 (mutual safety) -->
+              <path class="edge" marker-end="url(#ah)" d="M96,96 L96,72" />
+              <text class="elabel" x="104" y="88" text-anchor="start">mutually safe</text>
+
+              <!-- 004 extends 003 -->
+              <path class="edge" marker-end="url(#ah)" d="M316,96 L316,72" />
+              <text class="elabel" x="324" y="88" text-anchor="start">extends</text>
+
+              <!-- boxes row1 -->
+              <g>
+                <rect class="box" x="24" y="30" width="144" height="44" rx="0" />
+                <text class="num" x="36" y="50">001</text>
+                <text class="name" x="36" y="64">Demo default</text>
+              </g>
+              <g>
+                <rect class="box key" x="256" y="30" width="144" height="44" />
+                <text class="num inv" x="268" y="50">003</text>
+                <text class="name inv" x="268" y="64">Undo command stack</text>
+              </g>
+              <g>
+                <rect class="box" x="488" y="30" width="150" height="44" />
+                <text class="num" x="500" y="50">005</text>
+                <text class="name" x="500" y="64">Truthful interface</text>
+              </g>
+
+              <!-- boxes row2 -->
+              <g>
+                <rect class="box" x="24" y="96" width="144" height="44" />
+                <text class="num" x="36" y="116">002</text>
+                <text class="name" x="36" y="130">Guided tour</text>
+              </g>
+              <g>
+                <rect class="box" x="244" y="96" width="144" height="44" />
+                <text class="num" x="256" y="116">004</text>
+                <text class="name" x="256" y="130">Per-profile scopes</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- ═══════════ ADR-001 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-001">
+          <div class="head">
+            <div class="no">001</div>
+            <div class="htext">
+              <h2 class="at">Demo mode is the confident default, not a failed connection</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · <span class="fv">c3c2b3c</span></span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              The editor auto-probes the backend on mount. For everyone but the owner that probe
+              fails (Access-gated) — and the UI drew that as an <em>error</em>: a red dot, a filled
+              ◆, and a “Connect to the live backend” CTA nobody outside the Access team can satisfy.
+              The system was drawing its own happy path as a fault.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              Treat demo as a first-class default — hollow ◇ status (the System-6 idiom for
+              “unset”), a quiet invitation strip (“This is the real editor… Nothing is saved.”),
+              sign-in demoted to a text link, and a <b>Reset demo</b> safety net.
+            </p>
+          </div>
+
+          <p class="subhead">Options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Option</th><th>Complexity</th><th>Honesty</th><th>Portfolio value</th></tr></thead>
+              <tbody>
+                <tr><th>A · Keep the failed-connection framing</th><td>Low (status quo)</td><td class="bad">Actively misleading</td><td>Low — reads as broken</td></tr>
+                <tr class="chosen"><th>B · Invitation reframe &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Low</td><td>High — states “nothing is saved”</td><td>High — recruiters touch a live tool</td></tr>
+                <tr><th>C · Sign-in wall for non-owners</th><td>Medium</td><td>High</td><td class="bad">Zero — the demo <em>is</em> the pitch</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">Trade-off</p>
+          <div class="prose">
+            <p>
+              C is the “safe” honest answer but destroys the reason the editor is public. A is cheap
+              but lies. B keeps the confident default at the cost of one new obligation: <b>if you
+              invite people to edit, you owe them an undo</b> — which seeded ADR-003. The residual
+              “is this real?” risk is bought off with explicit copy, not more chrome.
+            </p>
+          </div>
+
+          <ul class="conseq">
+            <li><span class="g">+</span><span>Red is freed for real errors; introduced semantic tokens <code class="inl">--state-live / -busy / -error</code>.</span></li>
+            <li><span class="g">→</span><span>Created the debt that forced ADR-003 (undo).</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit if</b> the backend opens to multiple users — the “demo = default” assumption inverts.</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ ADR-002 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-002">
+          <div class="head">
+            <div class="no">002</div>
+            <div class="htext">
+              <h2 class="at">The guided tour drives the real store, not a parallel renderer</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · <span class="fv">c8ac487</span></span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              The best features are invisible — a variant lens looks like “text turned grey.” We
+              wanted to <em>show</em> them. The question was what the tour actually animates.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              The tour issues the <b>same public store calls a user’s clicks make</b> — there is no
+              separate playback path. Its signature behaviour is the interrupt: any pointer, key, or
+              wheel outside the tour’s own chrome yields control instantly.
+            </p>
+          </div>
+
+          <p class="subhead">Options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Option</th><th>Fidelity</th><th>Drift risk</th><th>Interactivity</th></tr></thead>
+              <tbody>
+                <tr><th>A · Scripted video / GIF</th><td>Low</td><td class="bad">Ages out of sync with the app</td><td>None</td></tr>
+                <tr><th>B · Parallel “playback” component</th><td>Medium</td><td class="bad">High — a second path that drifts</td><td>Fake</td></tr>
+                <tr class="chosen"><th>C · Drive the real store &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Exact</td><td>None — it <em>is</em> the app</td><td>Real — grab the wheel</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">Trade-off</p>
+          <div class="prose">
+            <p>
+              B is the tempting middle ground and the wrong one: the thing you demo stops being the
+              thing you ship. C is the most honest and makes “grab the wheel” trivial — but demands
+              three things a mock wouldn’t:
+            </p>
+          </div>
+          <dl class="subs" style="margin-top: 12px;">
+            <div class="row"><dt>Idempotent steps</dt><dd>Resume re-enters the current step, so typing a bullet reuses the same bullet, never adds a second.</dd></div>
+            <div class="row"><dt>A real abort</dt><dd><code>AbortSignal</code> + a generation counter kill the in-flight typewriter and dwell timer the instant the visitor moves.</dd></div>
+            <div class="row"><dt>A hard write-gate</dt><dd>The tour <em>mutates</em> (it adds a bullet), so <code>canRun()</code> restricts it to demo mode and an <code>$effect</code> ends it if a session goes live mid-tour — else <code>?tour=1</code> on the owner’s session would edit a real CV.</dd></div>
+          </dl>
+
+          <ul class="conseq">
+            <li><span class="g">+</span><span>Made 001 and the tour mutually safe: demo never hits the network, so the tour can’t raise a save-error toast; the tour resets the demo first, so each step is deterministic.</span></li>
+            <li><span class="g">+</span><span><code class="inl">prefers-reduced-motion</code> degrades to a manual <b>Next ▸</b> step-through — the tour moves the page, a vestibular hazard, not a nicety.</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit if</b> a step must demonstrate a connected-only feature — the demo-only gate blocks that by design.</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ ADR-003 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-003">
+          <div class="head">
+            <div class="no">003</div>
+            <div class="htext">
+              <h2 class="at">Undo as a command stack over the reactive store</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · <span class="fv">0a18590</span></span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              ADR-001 promised “edit anything.” That needs an undo. The editor autosaves through a
+              normalized REST API with optimistic mutation and temp-id → server-id reconciliation —
+              which constrains the design far more than a local-only editor would.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              A <b>command pattern</b>: each undoable action records <code>{ undo, redo }</code>
+              closures that drive the <em>same public store methods</em> a user’s action does. Not
+              document snapshots.
+            </p>
+          </div>
+
+          <p class="subhead">Options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Option</th><th>Correctness vs backend</th><th>Memory</th><th>Cost</th></tr></thead>
+              <tbody>
+                <tr><th>A · Snapshot the document (memento)</th><td class="bad">Fails — a restore doesn’t replay the API writes; local &amp; server diverge</td><td>Grows with doc size × depth</td><td>Low locally</td></tr>
+                <tr class="chosen"><th>B · Command pattern + inverses &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Persists — the inverse issues the same PUT/POST/DELETE</td><td>Bounded; depth-capped at 60</td><td>High — an inverse per op</td></tr>
+                <tr><th>C · Event sourcing / CRDT</th><td>Overkill</td><td>—</td><td class="bad">Solves collaboration we don’t have</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">Trade-off — B is the only option that keeps local and server in step</p>
+          <div class="prose">
+            <p>
+              A snapshot restore would silently desync the backend. The cost of B is a cluster of
+              sub-decisions, each forced by the environment:
+            </p>
+          </div>
+          <dl class="subs" style="margin-top: 12px;">
+            <div class="row"><dt>The field shadow</dt><dd>Components <code>bind:value</code> into state and <em>then</em> call <code>saveEntry</code>, so the old value is already gone. A <code>WeakMap</code> shadow of last-recorded values, diffed per save, recovers it.</dd></div>
+            <div class="row"><dt>Key by identity, not id</dt><dd>The inverse of a delete is a <em>create</em>, and the server issues a new id. The JS object survives; the id doesn’t. (Collides with the <code>$state</code> proxy trap — a pushed literal is never <code>===</code> the element you read back — so every insert is re-read before capture.)</dd></div>
+            <div class="row"><dt>Pure core + shell</dt><dd>Forced by the no-plugin vitest: coalescing / merge / shadow logic lives in <code>undo.ts</code> where tests reach it; only the runes live in <code>undo.svelte.ts</code>.</dd></div>
+            <div class="row"><dt>The <code>applying</code> guard</dt><dd>Inverses call recording methods; without a guard, undo pushes a command and the stack never drains.</dd></div>
+            <div class="row"><dt>Coalescing</dt><dd>900&nbsp;ms window; merge keeps the older undo + newer redo, so undo takes back a typed word, not a keystroke.</dd></div>
+            <div class="row"><dt>Drop where unsound</dt><dd>Demo reset, variant delete, cover-letter switches drop history rather than fake it — an “Undo” that writes to a dead row is worse than a greyed-out one.</dd></div>
+            <div class="row"><dt><code>⌘Z</code> in a field</dt><dd>Defers to the browser — native undo moves the caret with the text and still persists (its <code>input</code> event routes through <code>saveEntry</code>).</dd></div>
+          </dl>
+
+          <ul class="conseq">
+            <li><span class="g">−</span><span>Every future mutation must author an inverse to be undoable — a real tax, paid per feature.</span></li>
+            <li><span class="g">+</span><span>The pure/shell split became the template the rest of the editor already followed (slice controllers + injected host).</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit</b> when an op has no modelable inverse — extend the drop policy, don’t fake it. (This is exactly why <b>layout choice</b> is deliberately <em>not</em> undoable: its inverse can be a <code class="inl">null</code> default the API can’t express.)</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ ADR-004 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-004">
+          <div class="head">
+            <div class="no">004</div>
+            <div class="htext">
+              <h2 class="at">Per-profile undo scopes, with a reused (cached) working tree</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · <span class="fv">6f65ba3</span></span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              Undo commands close over their document’s objects. <code>selectPerson</code> refetched
+              on every switch, rebuilding the whole tree — so keeping a stack across a switch would
+              leave commands pointing at detached objects that write invisibly to the backend.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              Undo is <b>scoped per profile</b> (stash / restore each profile’s stacks on switch),
+              and returning to a profile <b>reuses its cached working tree</b> instead of refetching,
+              so the commands’ captured objects stay valid.
+            </p>
+          </div>
+
+          <p class="subhead">Options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Option</th><th>Preserves history</th><th>Correctness</th><th>Surprise</th></tr></thead>
+              <tbody>
+                <tr><th>A · Clear undo on switch (status quo)</th><td class="bad">No — loses work on a glance</td><td>Trivially correct</td><td>Low but annoying</td></tr>
+                <tr><th>B · One global stack; undo auto-navigates</th><td>Yes</td><td class="bad">Async load mid-undo can fail; objects still need to be alive</td><td>High — undo jumps profiles</td></tr>
+                <tr class="chosen"><th>C · Per-profile scopes + cached trees &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Yes</td><td>Sound <em>iff</em> objects stay alive</td><td>Low — undo applies to the visible profile</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">Trade-off</p>
+          <div class="prose">
+            <p>
+              Both B and C need the objects to survive the switch; C additionally keeps undo local to
+              the active, visible profile. The load-bearing realization: <b>reuse, not refetch</b> is
+              what makes scoping sound — a refetch rebuilds every object and strands the commands.
+            </p>
+          </div>
+
+          <div class="callout">
+            <p class="k"><span class="glyph" aria-hidden="true">◆</span> Correction — a belief the test overturned</p>
+            <p>
+              The first cut cached the raw fetched object. Tests proved (via a route-call counter)
+              that <em>no refetch</em> happened, yet the returned profile rendered its
+              <em>unedited</em> value.
+            </p>
+            <p>
+              The correction: <b>Svelte’s <code>$state</code> does not write nested edits back
+              through to the object it wrapped.</b> <code>this.person = p</code> then editing
+              <code>editor.person.x</code> mutates the <em>proxy</em>; the raw <code>p</code> stays
+              pristine. The fix — cache <code>this.person</code> (the proxy), which is idempotent to
+              re-assign.
+            </p>
+          </div>
+
+          <ul class="conseq">
+            <li><span class="g">−</span><span><b>Staleness, stated plainly:</b> a returned profile shows your working copy — an external edit (another client, the MCP tools) made while away won’t appear until reload. Acceptable for a single-user editor, and the price of not discarding your undo.</span></li>
+            <li><span class="g">+</span><span>Memory grows with profiles-visited-per-session — bounded and small.</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit if</b> the editor becomes multi-user or the MCP tools become a frequent concurrent writer — then cache invalidation (or a “refresh” affordance) is needed.</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ ADR-005 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-005">
+          <div class="head">
+            <div class="no">005</div>
+            <div class="htext">
+              <h2 class="at">The interface tells the truth</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · <span class="fv">74f28e1</span> · <span class="fv">73312bd</span></span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              A cross-cutting stance, not a feature. Several bugs this session were the same lie in
+              different clothes — inert <code>&lt;span&gt;</code> menus styled to look clickable, a
+              menu command that silently no-ops, hardcoded status colours, a duplicated
+              floating-panel triad.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>Three conventions, now load-bearing across the editor.</p>
+          </div>
+          <dl class="subs" style="margin-top: 12px;">
+            <div class="row"><dt>Unimplemented ⇒ disabled</dt><dd>Never hidden or fake. Empty menus (<b>Edit</b> before undo) render disabled; a command that can’t act now (<b>Reset demo</b> when connected) is disabled, not silently inert.</dd></div>
+            <div class="row"><dt>State in form, not just colour</dt><dd>Hollow-vs-filled glyphs, a real <code>menuitemcheckbox</code> with <code>aria-checked</code> (not a ✓ glued into a label), semantic <code>--state-*</code> tokens, one shared <code>aria-live</code> region.</dd></div>
+            <div class="row"><dt>Name shared primitives once</dt><dd><code>.floating-panel</code> (toast + tour narrator) and <code>--shadow-float</code>, surfaced when a stylelint rule that lints CSS — but not Svelte <code>&lt;style&gt;</code> blocks — demanded a token the toast had been evading.</dd></div>
+          </dl>
+
+          <p class="subhead">Trade-off</p>
+          <div class="prose">
+            <p>
+              The cost is discipline — an empty menu is <em>more</em> code than an inert span; a real
+              checkbox is more than a glyph. The payoff: the UI is honest to sighted and screen-reader
+              users alike, and can’t drift into “looks live, does nothing.” Given the session began
+              with a UI that lied, the convention pays for itself.
+            </p>
+          </div>
+
+          <ul class="conseq">
+            <li><span class="g">→</span><span><b>Edit</b> stays disabled until it has a real command — which is <em>why</em> undo (003) had to be built before the menu could be honest.</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit</b> on any <b>View</b> / <b>Edit</b> growth: a new command must bring a real handler or render disabled.</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ PROPOSED ═══════════ -->
+        <hr class="rule" />
+        <p class="section-eyebrow" style="margin-top: 30px;">The versioned store — shipped · multi-tenant — proposed</p>
+        <div class="prose">
+          <p>
+            The last two look forward — at how the CV <em>data</em> should evolve, not the editor
+            around it. They share their own spine, and answer the question the shipped work kept
+            deferring: what happens when you want a <em>history</em>, and more than one <em>person</em>.
+            <b>006 is now built and live</b>, merged across two PRs and deployed; 007 remains a design.
+          </p>
+        </div>
+        <div class="spine">
+          <p class="lbl">The second spine</p>
+          <p>
+            You don't want git. You want a <em>slice</em> of it — durable history and honest branches
+            — and the constraint that keeps it cheap is <em>single writer per document</em>, not
+            single user.
+          </p>
+        </div>
+
+        <!-- ═══════════ ADR-006 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-006">
+          <div class="head">
+            <div class="no">006</div>
+            <div class="htext">
+              <h2 class="at">A versioned CV data store — history, without the merge</h2>
+              <span class="chip"><span class="dot live"></span> Accepted · live · 3 increments</span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              The editor can undo an edit and show one résumé through different lenses, but it can't
+              <em>remember</em>: close the tab and the history is gone. There is no “the version I sent
+              to Google,” no diff between two drafts, no academic-vs-industry lines evolving side by
+              side. This proposes giving the data a history — borrowing git's <em>shape</em> while
+              refusing its most expensive idea.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              A <b>commit-graph-lite</b>: immutable, content-addressed <b>snapshots</b> with named
+              <b>refs</b> — <b>tags</b> (frozen) for provenance, <b>branches</b> (movable) for audience
+              lines. Walk history to time-travel; compare two snapshots to diff; fork a ref to branch.
+              <b>No three-way merge.</b> Ship snapshot-and-restore first.
+            </p>
+          </div>
+
+          <div class="callout">
+            <p class="k"><span class="glyph" aria-hidden="true">✓</span> Shipped — all three increments live</p>
+            <p>
+              <b>1</b> snapshot / restore / a History drawer · <b>2</b> a structural diff (Compare) ·
+              <b>3</b> branches, tags, and cherry-restore. A <code>HistoryController</code> in the editor
+              over a <code>versions</code> table (snapshots + a branch / parent / tag graph), reusing
+              export/import. Merged as <b>cv&nbsp;#25</b> + <b>website&nbsp;#133</b> and deployed
+              (Railway migrations 013–014 + GitHub&nbsp;Pages); 358 unit + 42 e2e + 335 backend green.
+              Two connected-mode follow-ups deferred by design: persisting the current branch, and
+              routing cherry-restore through the entry-write path.
+            </p>
+          </div>
+
+          <div class="chainwrap">
+            <div class="cap">One model — the four jobs are operations on it</div>
+            <div class="chainscroll">
+              <svg class="chain" viewBox="0 0 720 200" role="img"
+                   aria-label="A main line of four snapshots; a branch labelled industry forks from the second snapshot into two more; a frozen tag pins the third main snapshot; a dashed cherry-restore arrow moves one entry from the branch back to the main head.">
+                <defs>
+                  <marker id="ah6" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                    <path d="M0,0 L7,3 L0,6" class="edge" />
+                  </marker>
+                  <marker id="ac6" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                    <path d="M0,0 L7,3 L0,6" class="cherry" />
+                  </marker>
+                </defs>
+                <path class="edge" d="M104,84 L206,84" />
+                <path class="edge" d="M234,84 L336,84" />
+                <path class="edge" d="M364,84 L560,84" marker-end="url(#ah6)" />
+                <text class="blabel" x="40" y="88">main</text>
+                <circle class="node" cx="90" cy="84" r="10" />
+                <circle class="node" cx="220" cy="84" r="10" />
+                <circle class="node" cx="350" cy="84" r="10" />
+                <circle class="node key" cx="580" cy="84" r="11" />
+                <text class="clabel" x="90" y="112" text-anchor="middle">v1</text>
+                <text class="clabel" x="220" y="112" text-anchor="middle">v2</text>
+                <text class="clabel" x="350" y="112" text-anchor="middle">v3</text>
+                <text class="clabel" x="580" y="112" text-anchor="middle">head</text>
+                <path class="edge" d="M350,74 L350,52" />
+                <rect class="tag" x="300" y="30" width="100" height="21" rx="2" />
+                <text class="tagtext" x="350" y="44" text-anchor="middle">⌾ sent→google</text>
+                <path class="edge fork" d="M228,93 C250,120 300,140 336,150" marker-end="url(#ah6)" />
+                <path class="edge" d="M364,152 L466,152" marker-end="url(#ah6)" />
+                <text class="blabel" x="40" y="156">industry</text>
+                <circle class="node" cx="350" cy="152" r="10" />
+                <circle class="node key" cx="490" cy="152" r="11" />
+                <text class="clabel" x="350" y="180" text-anchor="middle">rewritten summary</text>
+                <path class="cherry" d="M500,142 C540,118 560,108 574,96" marker-end="url(#ac6)" />
+                <text class="clabel" x="566" y="132" text-anchor="start" style="fill: var(--state-busy)">cherry-restore</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="callout">
+            <p class="k"><span class="glyph" aria-hidden="true">◆</span> Not a reversal of ADR-003</p>
+            <p>
+              ADR-003 rejected document snapshots <em>for undo</em> — they can't express a cheap
+              per-field inverse, so undo stayed a command stack. Durable history has the opposite
+              grain: whole-document states are exactly what you name, freeze, and restore. Same
+              primitive, opposite concern — both verdicts correct.
+            </p>
+          </div>
+
+          <p class="subhead">Options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Approach</th><th>Cost vs. today's stack</th><th>Covers the four jobs</th><th>Branch / merge</th><th>Verdict</th></tr></thead>
+              <tbody>
+                <tr class="chosen"><th>Snapshot-per-commit &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Low — a <code>versions</code> table of JSON blobs</td><td>All four</td><td>Branch cheap; no native merge</td><td>The core</td></tr>
+                <tr><th>Event-sourced log (persist undo)</th><td>Medium — CRUD → append</td><td>+ per-field blame</td><td>Same</td><td><span class="later">↑ Later — enhancement</span></td></tr>
+                <tr><th>Temporal DB tables</th><td>Medium</td><td class="bad">No branch story</td><td>None</td><td>Rejected — fails job D</td></tr>
+                <tr><th>Dolt / git-as-store</th><td class="bad">High — a VC engine behind a CRUD API</td><td>+ merge</td><td>Full git</td><td>Rejected — pays for unused merge</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">The sharp calls</p>
+          <dl class="subs" style="margin-top: 12px;">
+            <div class="row"><dt>Snapshot, then log</dt><dd>Whole-document snapshots first — free at CV sizes; layer the persisted undo-log later for per-field <b>blame</b> + cross-session undo. Its client half already exists (ADR-003).</dd></div>
+            <div class="row"><dt>Branches fork, never merge</dt><dd>Independent after the fork; move one entry with <code>cherry-restore</code> by id — merge's 20% of value at 5% of its cost. Governed by: <em>same bullet on two branches, fix one — must the other update?</em> If yes, you've asked for merge.</dd></div>
+            <div class="row"><dt>Branch ⊥ variant</dt><dd>A <b>branch</b> is a line of history (time); a <b>variant</b> a view within one version (space). Keep them orthogonal, or you get a two-dimensional matrix nobody can hold.</dd></div>
+            <div class="row"><dt>Content-address the snapshot</dt><dd>Hash the document — free dedup, identity, and “did this change?” as a hash compare. Diff and history both stand on it.</dd></div>
+          </dl>
+
+          <ul class="conseq">
+            <li><span class="g">+</span><span>The undo stack (ADR-003) can finally <b>persist</b> — durable history and cross-session undo become one feature.</span></li>
+            <li><span class="g">+</span><span>Provenance is exact: “the CV Company X saw” is a frozen tag, reproducible forever.</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>Revisit</b> if documents grow large — per-version snapshots stop being free; switch to deltas / the event log.</span></li>
+          </ul>
+        </section>
+
+        <!-- ═══════════ ADR-007 ═══════════ -->
+        <hr class="rule" />
+        <section class="adr" id="adr-007">
+          <div class="head">
+            <div class="no">007</div>
+            <div class="htext">
+              <h2 class="at">Multi-tenant editing with review roles</h2>
+              <span class="chip"><span class="dot hollow"></span> Proposed · extends 006</span>
+            </div>
+          </div>
+
+          <div class="prose">
+            <p>
+              “What if I want <em>merge</em>, and <em>multiple users</em>?” Pulled apart: for what's
+              actually wanted — many people each owning their own CV, and reviewers who suggest edits
+              — you need neither merge nor a CRDT. You need <b>auth</b>. The constraint was never
+              “single <em>user</em>”; it's <b>single writer per document</b>. Owners write their own,
+              reviewers propose, nobody co-writes — so 006's store is untouched, and only <em>who you
+              are and what you may touch</em> grows.
+            </p>
+          </div>
+
+          <div class="decision">
+            <span class="k">Decision</span>
+            <p>
+              <b>Extend</b> 006 (do not supersede it) with three layers, settling auth as a
+              <b>hybrid</b> — delegate authentication to an identity provider; own authorization,
+              tenancy, and sharing in the app:
+            </p>
+            <ol>
+              <li><b>Identity &amp; tenancy</b> — row-level ownership; you touch only your own documents.</li>
+              <li><b>Per-document roles</b> — <code>owner</code> / <code>reviewer</code> / <code>viewer</code>, granted by email invite.</li>
+              <li><b>A review layer</b> — entity-anchored comments + suggested edits (accept = a 006 <code>cherry-restore</code>).</li>
+            </ol>
+            <p>
+              <b>authN:</b> reuse <b>Cloudflare Access</b> while tenants are invite-scoped; escalate to
+              a product auth service for open signup. The demo (ADR-001) stays public —
+              <em>auth gates data, never the demo</em>.
+            </p>
+          </div>
+
+          <div class="chainwrap">
+            <div class="cap">Two stages — authenticate at the edge, authorize in the app</div>
+            <div class="chainscroll">
+              <svg class="chain" viewBox="0 0 720 214" role="img"
+                   aria-label="A request is authenticated by Cloudflare Access at the gateway, which yields a verified identity; the app then authorizes it against document ownership and role, fanning to write for owner, propose for reviewer, and read for viewer. A separate unauthenticated path reaches the public demo.">
+                <defs>
+                  <marker id="ah7" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                    <path d="M0,0 L7,3 L0,6" class="edge" />
+                  </marker>
+                  <marker id="ad7" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                    <path d="M0,0 L7,3 L0,6" class="edge dem" />
+                  </marker>
+                </defs>
+                <text class="sm" x="16" y="70" style="fill: var(--dim)">request</text>
+                <path class="edge" d="M60,66 L84,66" marker-end="url(#ah7)" />
+                <rect class="box key" x="88" y="42" width="164" height="50" rx="2" />
+                <text class="lg inv" x="170" y="64" text-anchor="middle">Cloudflare Access</text>
+                <text class="sm inv" x="170" y="80" text-anchor="middle">authN · who are you?</text>
+                <path class="edge" d="M252,66 L300,66" marker-end="url(#ah7)" />
+                <text class="elabel" x="276" y="58" text-anchor="middle">identity</text>
+                <rect class="box" x="304" y="42" width="150" height="50" rx="2" />
+                <text class="lg" x="379" y="64" text-anchor="middle">App</text>
+                <text class="sm" x="379" y="80" text-anchor="middle">authZ · own? role?</text>
+                <path class="edge" d="M454,58 C500,44 512,34 548,30" marker-end="url(#ah7)" />
+                <path class="edge" d="M454,67 L548,67" marker-end="url(#ah7)" />
+                <path class="edge" d="M454,76 C500,90 512,100 548,104" marker-end="url(#ah7)" />
+                <text class="role" x="556" y="34"><tspan class="rk">◆ owner</tspan> → write</text>
+                <text class="role" x="556" y="71"><tspan class="rk">○ reviewer</tspan> → propose</text>
+                <text class="role" x="556" y="108"><tspan class="rk">○ viewer</tspan> → read</text>
+                <line class="edge dem" x1="16" y1="150" x2="704" y2="150" />
+                <text class="sm" x="16" y="180" style="fill: var(--dim)">no auth</text>
+                <path class="edge dem" d="M74,176 L84,176" marker-end="url(#ad7)" />
+                <rect class="box dem" x="88" y="160" width="164" height="34" rx="2" />
+                <text class="sm" x="170" y="181" text-anchor="middle" style="fill: var(--dim)">public visitor</text>
+                <path class="edge dem" d="M252,177 L300,177" marker-end="url(#ad7)" />
+                <rect class="box dem" x="304" y="160" width="150" height="34" rx="2" />
+                <text class="sm" x="379" y="181" text-anchor="middle" style="fill: var(--dim)">demo (ADR-001)</text>
+                <text class="elabel" x="470" y="181" text-anchor="start">gates data, never the demo</text>
+              </svg>
+            </div>
+          </div>
+
+          <p class="subhead">The auth spine — options considered</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Approach</th><th>authN</th><th>authZ · roles · sharing</th><th>Security burden</th><th>Verdict</th></tr></thead>
+              <tbody>
+                <tr><th>Cloudflare Access only</th><td>Live already</td><td class="bad">None — no per-doc role model</td><td>Low</td><td class="bad">authN is not authZ</td></tr>
+                <tr><th>App accounts (own passwords)</th><td>Full control</td><td>Full control</td><td class="bad">High — you own password security</td><td>Rejected</td></tr>
+                <tr class="chosen"><th>Hybrid · Access + app authZ &nbsp;<span class="pick">◆ CHOSEN</span></th><td>Reuse Access</td><td>App owns users, roles, sharing</td><td>Low — no passwords</td><td>Invite-scoped tenants</td></tr>
+                <tr><th>Hybrid · product auth (Clerk / Supabase)</th><td>Built for signup</td><td>App owns roles</td><td>Low–Med</td><td><span class="later">↑ Escalate — for open signup</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="subhead">The sharp calls</p>
+          <dl class="subs" style="margin-top: 12px;">
+            <div class="row"><dt>Delegate authN, own authZ</dt><dd>Never store passwords — an IdP proves <em>who</em>. The app owns <em>what you may touch</em>: the users table, per-document roles, the sharing model. That boundary is the design.</dd></div>
+            <div class="row"><dt>Reviewers propose, never write</dt><dd>The invariant that keeps merge out. Suggestions land against entity ids; only the owner applies them — serialized through one writer, no reconciliation, ever.</dd></div>
+            <div class="row"><dt>Row-level ownership, server-side</dt><dd>“Are you the owner?” becomes “do you own — or hold a role on — <em>this</em> document?”, enforced on every endpoint. Never trust the client to scope its own reach.</dd></div>
+          </dl>
+
+          <div class="callout">
+            <p class="k"><span class="glyph" aria-hidden="true">⚠</span> Access is not authorization</p>
+            <p>
+              Cloudflare Access answers <em>who are you</em> — not which documents you own or what a
+              reviewer may do. That is the app's job, on every request. The login wall is not a
+              permission system; letting it masquerade as one is the same “CORS-is-not-access-control”
+              mistake in a new coat. authN at the edge, authZ in the app — always both.
+            </p>
+          </div>
+
+          <ul class="conseq">
+            <li><span class="g">+</span><span>006's store is unchanged; review <b>reuses</b> branch + cherry-restore; the demo (ADR-001) survives multi-tenancy.</span></li>
+            <li><span class="g">−</span><span><b>The real lift is authZ</b> — the owner-vs-demo binary becomes row-level ownership + roles on every endpoint. It reshapes the security model, not the data model.</span></li>
+            <li class="revisit"><span class="g">⚠</span><span><b>The door 006 left open</b> — if reviewers ever gain <em>direct write</em>, concurrent writers return and the merge / CRDT question reopens in earnest.</span></li>
+          </ul>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ───────────── footer ───────────── -->
+    <div class="foot">
+      <h2>Action items &amp; what to revisit</h2>
+      <ul class="checks">
+        <li class="done"><span class="box" aria-hidden="true">▪</span><span><b>All five records shipped &amp; live</b> <span class="why">— 285 unit / 39 e2e, verified on the live site each time.</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true">▫</span><span><b>Layout-choice undo</b> <span class="why">— deferred by 003’s drop-policy (a null-default inverse the API can’t express).</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true">▫</span><span><b>Register #13 · Astro 7</b> <span class="why">— blocked upstream on Vite 8’s HMR client shipping a bare <code class="inl">__BUNDLED_DEV__</code>.</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true">▫</span><span><b>Cache-staleness affordance</b> <span class="why">— only if concurrent writers become common (004).</span></span></li>
+      </ul>
+
+      <h2>Shipped, and the road not yet built (006 done · 007 proposed)</h2>
+      <ul class="checks">
+        <li class="done"><span class="box" aria-hidden="true">▪</span><span><b>006 · versioned store — shipped &amp; live</b> <span class="why">— all three increments (snapshot/restore, structural diff, branches + tags + cherry-restore), merged (cv&nbsp;#25, website&nbsp;#133) and deployed. The foundation 007 stands on.</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true">▫</span><span><b>007 · tenancy, then review</b> <span class="why">— row-level ownership on every endpoint (the real lift), then owner/reviewer/viewer sharing, then the suggestion layer on 006's cherry-restore.</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true" style="color: var(--state-busy)">⚠</span><span><b>Ratify first (007):</b> <span class="why">invite-scoped tenants → Cloudflare Access is enough; open public signup → a product auth service. Sets the authN vendor; authZ stays in the app either way.</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true" style="color: var(--state-error)">✗</span><span><b>Merge / CRDT</b> <span class="why">— still not planned; single-writer-per-document holds. Reopen only if reviewers gain direct write.</span></span></li>
+      </ul>
+
+      <h2>Revisit triggers — the assumptions that would invalidate these</h2>
+      <ul class="checks">
+        <li class="todo"><span class="box" aria-hidden="true" style="color: var(--state-busy)">⚠</span><span>Backend opens to <b>multiple users</b> → inverts 001’s “demo = default” and breaks 004’s single-writer staleness bargain. <span class="why">(ADR-007 proposes how: auth gates data, not the demo; single-writer-<em>per-document</em> preserves 004.)</span></span></li>
+        <li class="todo"><span class="box" aria-hidden="true" style="color: var(--state-busy)">⚠</span><span>A mutation appears with <b>no modelable inverse</b> → extend the drop-history policy (003), don’t fake it.</span></li>
+        <li class="todo"><span class="box" aria-hidden="true" style="color: var(--state-busy)">⚠</span><span><b>vitest gains a Svelte plugin</b> → the pure/shell split (003) becomes optional; worth simplifying.</span></li>
+      </ul>
+
+      <div class="trail" role="group" aria-label="Commit trail">
+        <span class="h">c3c2b3c</span><span class="ar">→</span>
+        <span class="h">c8ac487</span><span class="ar">→</span>
+        <span class="h">74f28e1</span><span class="ar">→</span>
+        <span class="h">73312bd</span><span class="ar">→</span>
+        <span class="h">0a18590</span><span class="ar">→</span>
+        <span class="h">0255429</span><span class="ar">→</span>
+        <span class="h last">6f65ba3</span>
+        <span class="tail">main · all green first try</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var root = document.documentElement;
+      var current = root.getAttribute('data-theme');
+      if (!current) {
+        current = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      root.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
