@@ -281,6 +281,52 @@ export class CvApi {
     return this.req(`/persons/${id}`, { method: 'DELETE' });
   }
 
+  // ---- version history (ADR-006 increment 1; the /versions endpoints are the
+  // paired backend increment). A version's `doc` is the editor's Person snapshot,
+  // stored as an opaque JSON blob — the backend rebuilds its tables from it on
+  // restore. ----
+  listVersions(pid: number) {
+    return this.req<{
+      versions: {
+        id: number;
+        label: string;
+        createdAt: number;
+        branch: string;
+        tag?: string | null;
+        parent?: number | null;
+        doc: Person;
+      }[];
+    }>(`/persons/${pid}/versions`);
+  }
+  /** One checkpoint in full, including its `doc` snapshot — for the diff view. */
+  getVersion(pid: number, id: number) {
+    return this.req<{
+      id: number;
+      label: string;
+      createdAt: number;
+      branch: string;
+      tag?: string | null;
+      parent?: number | null;
+      doc: Person;
+    }>(`/persons/${pid}/versions/${id}`);
+  }
+  commitVersion(pid: number, v: { label: string; doc: Person; branch?: string; parent?: number }) {
+    return this.req<{ id: number }>(`/persons/${pid}/versions`, {
+      method: 'POST',
+      body: JSON.stringify(v),
+    });
+  }
+  restoreVersion(pid: number, id: number) {
+    return this.req(`/persons/${pid}/versions/${id}/restore`, { method: 'POST' });
+  }
+  /** Set (or clear, with '') a checkpoint's frozen provenance tag. */
+  tagVersion(pid: number, id: number, tag: string) {
+    return this.req(`/persons/${pid}/versions/${id}/tag`, {
+      method: 'POST',
+      body: JSON.stringify({ tag }),
+    });
+  }
+
   // ---- writes (display text is LaTeX-escaped on the way out) ----
   updateEntry(id: number, fields: Record<string, string>) {
     return this.req(`/entries/${id}`, {
