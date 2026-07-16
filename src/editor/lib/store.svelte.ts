@@ -199,6 +199,23 @@ class EditorState {
   #cache = new ProfileCache();
 
   /**
+   * The signed-in owner's real document, view and save status, captured when they
+   * start the guided tour so it can drive their live CV and then put everything
+   * back untouched. Null unless a connected tour is staged — demo never captures;
+   * it resets to the pristine sample and keeps whatever the tour leaves behind
+   * (see stageTour / unstageTour / addEphemeralBullet).
+   */
+  #tourResume: {
+    doc: Person;
+    selection: Selection;
+    activeVariantId: number | null;
+    openDrawer: null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles' | 'history';
+    highlight: string | null;
+    dirty: boolean;
+    saveState: 'demo' | 'saved' | 'saving' | 'error';
+  } | null = null;
+
+  /**
    * NOTE — the `$state` proxy trap. Pushing a raw object into a reactive array and
    * keeping the raw reference gives you an object that is never `===` the element
    * you read back, so identity filters silently match nothing and the shadow keyed
@@ -506,6 +523,21 @@ class EditorState {
     } else {
       entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
     }
+  }
+  /**
+   * Add a bullet that never touches the network and records no undo — the guided
+   * tour's one scripted mutation. In demo it's the same local write a real click
+   * makes, and it simply stays (nothing is saved anyway). When a signed-in owner
+   * takes the tour, stageTour/unstageTour sandbox it: this bullet lives only in
+   * memory and is wiped when the tour ends, so their real CV is never altered.
+   */
+  addEphemeralBullet(entry: Entry): Item {
+    const index = entry.items.length;
+    entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
+    const item = this.live(entry.items, index);
+    this.#shadow.seedItem(item);
+    this.dirty = true;
+    return item;
   }
   async deleteBullet(entry: Entry, itemId: number) {
     const index = entry.items.findIndex((i) => i.id === itemId);
@@ -873,6 +905,59 @@ class EditorState {
     this.saveState = 'demo';
     this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
     this.say('Demo reset — the sample résumé is back to its original state.');
+  }
+
+  /**
+   * Stage the guided tour. Demo → reset to the pristine sample (determinism beats
+   * continuity). A signed-in owner → snapshot their live document, view and save
+   * status so the tour can drive the real CV and restore it afterwards; nothing the
+   * tour does will persist or outlive it (see unstageTour / addEphemeralBullet).
+   */
+  stageTour() {
+    if (!this.connected) {
+      this.resetDemo();
+      return;
+    }
+    this.#tourResume = {
+      doc: $state.snapshot(this.person) as Person,
+      selection: $state.snapshot(this.selection) as Selection,
+      activeVariantId: this.activeVariantId,
+      openDrawer: this.openDrawer,
+      highlight: this.tags.highlight,
+      dirty: this.dirty,
+      saveState: this.saveState,
+    };
+  }
+
+  /**
+   * Tear down the guided tour. Demo → leave the document exactly as the tour left
+   * it (the visitor keeps exploring; nothing is saved regardless). A signed-in
+   * owner → restore the captured document, view and save status, wiping every
+   * ephemeral edit. Re-activates the snapshot so the cache, shadow and undo scope
+   * follow the fresh objects; the old undo stack can't replay against them, so it
+   * is dropped (the tour clears undo when it visits a cover letter anyway).
+   */
+  unstageTour() {
+    const resume = this.#tourResume;
+    this.#tourResume = null;
+    if (!this.connected || !resume) return;
+    const pid = this.activePersonId;
+    if (pid != null) {
+      this.#cache.drop(pid);
+      this.activate(resume.doc, pid, true);
+      this.undo.clear();
+    } else {
+      this.person = resume.doc;
+      this.#shadow.reseat(this.person, this.style as Record<string, string>);
+    }
+    // activate() resets the view to a clean Main; put the owner back where they were.
+    this.selection = resume.selection;
+    this.openDrawer = resume.openDrawer;
+    this.tags.highlight = resume.highlight;
+    this.scrollTarget = null;
+    this.dirty = resume.dirty;
+    this.saveState = resume.saveState;
+    if (resume.activeVariantId != null) this.variants.select(resume.activeVariantId);
   }
 
   /** Connected but with no profiles — shows the "create your first profile" prompt. */

@@ -35,6 +35,7 @@ export function tourSteps(): TourStep[] {
     {
       id: 'inline',
       caption: 'The résumé is the interface. Click any line and it opens for editing, in place.',
+      spot: '[data-tour-spot="experience"]',
       enter() {
         const section = experience();
         const entry = firstEntry();
@@ -45,26 +46,27 @@ export function tourSteps(): TourStep[] {
     {
       id: 'type',
       caption: 'Bullets are just content. Watch — this one is being added and typed right now.',
+      spot: '[data-tour-spot="experience"]',
       async enter(signal) {
         const entry = firstEntry();
         if (!entry) return;
-        // Idempotent: reuse the bullet a previous entry created, else make one.
+        // Idempotent across re-entries (Resume replays the step): reuse the bullet a
+        // previous run added, else make one. It never persists — in demo nothing is
+        // saved, and a signed-in owner's tour is sandboxed (store.stageTour).
         let bullet = bulletId == null ? null : (entry.items.find((i) => i.id === bulletId) ?? null);
         if (!bullet) {
-          await editor.addBullet(entry);
-          bullet = entry.items[entry.items.length - 1] ?? null;
-          bulletId = bullet?.id ?? null;
+          bullet = editor.addEphemeralBullet(entry);
+          bulletId = bullet.id;
         }
-        if (!bullet) return;
         const target = bullet;
         target.content = '';
         await typeText(TYPED_BULLET, (partial) => (target.content = partial), signal);
-        if (!signal.aborted) editor.saveItem(target); // demo: marks dirty, touches no network
       },
     },
     {
       id: 'tags',
       caption: `Tag any entry or bullet, then spotlight a tag — here #${SPOTLIT_TAG} — and the rest fades.`,
+      spot: '[data-tour-spot="experience"]',
       enter() {
         editor.clearSelection();
         editor.tags.highlight = SPOTLIT_TAG;
@@ -73,6 +75,7 @@ export function tourSteps(): TourStep[] {
     {
       id: 'lens',
       caption: `A variant is a saved lens over that one document. This one keeps only what is tagged #${LENS_TAG}.`,
+      spot: '[data-tour-spot="variants"]',
       enter() {
         editor.tags.highlight = null;
         editor.openDrawer = null;
@@ -84,6 +87,7 @@ export function tourSteps(): TourStep[] {
       id: 'rules',
       caption:
         'Its rules are ordinary tag chips. Edit them and the document re-filters as you type.',
+      spot: 'aside.drawer',
       enter() {
         editor.openDrawer = 'variant';
       },
@@ -92,6 +96,7 @@ export function tourSteps(): TourStep[] {
       id: 'letter',
       caption:
         'A cover letter is a variant too — the same profile, with its own recipient and paragraphs.',
+      spot: '[data-tour-spot="variants"]',
       enter() {
         editor.openDrawer = null;
         const v = letterVariant();
@@ -102,6 +107,7 @@ export function tourSteps(): TourStep[] {
       id: 'ship',
       caption:
         'Export the profile as JSON whenever you like. Signed in, every variant compiles to a real PDF through LaTeX.',
+      spot: '[data-tour-spot="export"]',
       enter() {
         editor.variants.select(null);
       },
