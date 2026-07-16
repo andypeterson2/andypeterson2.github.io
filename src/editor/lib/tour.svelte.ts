@@ -2,25 +2,38 @@
 // interrupt. The testable logic lives in ./tour — this file holds the runes.
 //
 // Composed through an injected host like the other slice controllers (see
-// store.svelte.ts), so the machine never reaches into the store. `canRun()` is
-// the single place that keeps the tour away from a signed-in owner: the tour
-// *writes* (it adds a bullet), and a write against a live backend would edit a
-// real CV. Demo only, enforced here rather than at each call site.
+// store.svelte.ts), so the machine never reaches into the store. The tour runs
+// in demo for anyone, and for a signed-in owner too — there `stage()`/`restore()`
+// sandbox it: it drives the real CV through the same public calls, but its one
+// mutation is an ephemeral bullet, and the document is snapshotted on entry and
+// put back untouched on exit, so nothing it does persists (see store.stageTour).
 import { DWELL_MS, prefersReducedMotion, type TourStep } from './tour';
 import { editor } from './store.svelte';
 import { tourSteps } from './tour-steps';
 
 export interface TourHost {
-  /** Demo only — a signed-in owner has real data, and the tour mutates. */
+  /** Demo runs for anyone; a signed-in owner tours their own CV (needs a profile). */
   canRun(): boolean;
-  /** Restore the pristine demo before playing: determinism beats continuity. */
-  reset(): void;
+  /** True when a signed-in session is driving — the tour is sandboxed, not on demo data. */
+  isLive(): boolean;
+  /**
+   * Prepare the stage before playing. Demo → restore the pristine sample
+   * (determinism beats continuity). Signed in → capture the live document so the
+   * tour can drive it and put it back untouched afterwards.
+   */
+  stage(): void;
+  /**
+   * Tear down after the tour. Demo → leave the document as the tour left it (the
+   * visitor keeps exploring; nothing is saved anyway); signed in → restore the
+   * captured document, wiping every ephemeral edit. Paired with stage().
+   */
+  restore(): void;
   /** Narrate through the editor's ONE aria-live region; never add a second. */
   announce(msg: string): void;
   /**
-   * Put away chrome the tour opened (the variant drawer, at step 5). The visitor's
-   * document is left exactly as the tour left it — but a modal scrim they never
-   * asked for must not outlive the tour that raised it.
+   * Put away chrome the tour opened (the variant drawer, at step 5) so a modal
+   * scrim never outlives the tour that raised it. Demo-facing: a signed-in restore
+   * already returns the drawer to wherever the owner had it.
    */
   closeChrome(): void;
   steps(): TourStep[];
@@ -35,6 +48,9 @@ export class TourController {
   steps = $state.raw<TourStep[]>([]);
   /** reduced motion → no auto-advance; the visitor steps through with Next ▸. */
   manual = $state(false);
+  /** connected-ness captured at start(): the tour is staged for this mode. If the
+   *  session flips mid-tour (a sign-in popup lands), Editor.svelte ends it. */
+  liveAtStart = $state(false);
 
   /** in-flight step (aborted on interrupt), the dwell timer, and a generation counter */
   #ac: AbortController | null = null;
@@ -46,13 +62,16 @@ export class TourController {
   /** Playing or paused — i.e. the controller is on screen and owns the app. */
   active = $derived(this.state === 'playing' || this.state === 'paused');
   caption = $derived(this.steps[this.index]?.caption ?? '');
+  /** selector for the element to glide to + frame this step; '' → no spotlight */
+  spot = $derived(this.steps[this.index]?.spot ?? '');
   total = $derived(this.steps.length);
 
   start() {
     if (!this.host.canRun()) return;
     const steps = this.host.steps();
     if (!steps.length) return;
-    this.host.reset();
+    this.liveAtStart = this.host.isLive();
+    this.host.stage();
     this.steps = steps;
     this.manual = prefersReducedMotion();
     this.index = 0;
@@ -97,6 +116,12 @@ export class TourController {
   /** The visitor twitched. Let go at once — never fight them for the wheel. */
   takeover() {
     if (this.state !== 'playing') return;
+    // A signed-in owner grabbing the wheel gets their real CV back at once —
+    // restored and untouched — rather than a paused tour they'd edit through.
+    if (this.liveAtStart) {
+      this.end();
+      return;
+    }
     this.#cancel();
     this.state = 'paused';
     this.host.announce('Tour paused — you have the wheel.');
@@ -114,20 +139,22 @@ export class TourController {
     else this.takeover();
   }
 
-  /** Dismiss outright (✕ or Esc). */
+  /** Dismiss outright (✕ or Esc). Restore first: a signed-in owner gets their CV back. */
   end() {
     this.#cancel();
     this.host.closeChrome();
+    this.host.restore();
     this.state = 'idle';
     this.index = 0;
   }
 
-  /** Ran off the end — offer the undo the invitation promised. */
+  /** Ran off the end — put the document back, then offer the undo the invite promised. */
   #finish() {
     this.#cancel();
     this.host.closeChrome();
+    this.host.restore();
     this.state = 'done';
-    this.host.announce('Tour complete. The demo is yours — nothing was saved.');
+    this.host.announce('Tour complete — nothing was saved.');
   }
 
   /** Abort the in-flight step and cancel the dwell, invalidating the generation. */
@@ -141,8 +168,12 @@ export class TourController {
 }
 
 export const tour = new TourController({
-  canRun: () => !editor.connected,
-  reset: () => editor.resetDemo(),
+  // Demo for anyone; a signed-in owner tours their own CV, but only once a profile
+  // is loaded (an empty account has nothing to show).
+  canRun: () => !editor.connected || editor.activePersonId != null,
+  isLive: () => editor.connected,
+  stage: () => editor.stageTour(),
+  restore: () => editor.unstageTour(),
   announce: (msg) => editor.narrate(msg),
   closeChrome: () => {
     editor.openDrawer = null;

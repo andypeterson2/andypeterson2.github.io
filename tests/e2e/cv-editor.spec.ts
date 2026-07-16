@@ -617,15 +617,38 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.tour .count')).toHaveText('1 of 7');
   });
 
-  test('the tour never runs against a signed-in profile', async ({ page }) => {
-    // The tour *writes* (it adds a bullet). Against a live backend that would edit
-    // a real CV, so canRun() gates it on demo mode — even via the deep link.
+  test('the tour runs for a signed-in owner too — sandboxed, then restores the CV', async ({
+    page,
+  }) => {
+    // The tour drives the owner's REAL CV through the same public calls, but it is
+    // sandboxed: its one mutation is an ephemeral bullet, and the document is
+    // snapshotted on entry and put back untouched on exit. Reduced motion → a
+    // deterministic manual step-through; the catch-all abort proves no write escapes.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.route('**/cv/api/**', (r) => r.abort()); // specific persons routes (below) win
     await mockAdaWithVariant(page);
-    await gotoEditor(page, `${EDITOR_APP}?tour=1`);
+    await gotoEditor(page);
 
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
-    await expect(page.locator('.tour')).toHaveCount(0);
-    await expect(page.locator('.tour-start')).toHaveCount(0); // no entry point either
+    await expect(page.locator('.tour-start')).toHaveCount(0); // the demo invite strip is gone
+
+    // Signed-in entry point: Help ▸ Guided tour (the strip that carries it is demo-only).
+    await openMenu(page, 'Help');
+    await page.getByRole('menuitem', { name: /Guided tour/ }).click();
+    const tour = page.locator('.tour');
+    await expect(tour.locator('.count')).toHaveText('1 of 7');
+
+    // Step 2 types an ephemeral bullet onto Ada's real entry — locally, never saved.
+    await tour.getByRole('button', { name: /Next/ }).click();
+    await expect(tour.locator('.count')).toHaveText('2 of 7');
+    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/queries\.$/);
+
+    // The moment the owner takes the wheel, the tour bows out and the document is
+    // put back exactly as it was — re-open the entry and the bullet is gone.
+    await page.locator('.statusbar').click();
+    await expect(tour).toHaveCount(0);
+    await page.locator('.doc .entry').first().click();
+    await expect(page.locator('.doc .edit .bl')).toHaveCount(0);
   });
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
