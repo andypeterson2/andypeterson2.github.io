@@ -94,25 +94,38 @@
         { ...drawerItem('Profiles', 'profiles'), separatorBefore: true },
       ],
     },
+    {
+      // The demo's invite strip carries the tour, but that strip is gone once you
+      // sign in — so a signed-in owner reaches it here (it drives their own CV,
+      // sandboxed: nothing is saved). Demo visitors can use either entry point.
+      title: 'Help',
+      items: [
+        {
+          label: '▶ Guided tour',
+          disabled: tour.state !== 'idle',
+          onSelect: () => tour.start(),
+        },
+      ],
+    },
   ]);
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
   // `?tour=1` lets a forwarded link open straight into the narrative — the only
-  // way the tour ever autoplays, and only once we know we're in demo mode.
+  // way the tour ever autoplays. It runs once we know which mode we're in: the
+  // demo for a visitor, or the owner's own CV (sandboxed) for a signed-in owner.
   onMount(() => {
     hydrated = true;
     void editor.connect().then(() => {
-      if (!editor.connected && new URLSearchParams(location.search).get('tour') === '1') {
-        tour.start();
-      }
+      if (new URLSearchParams(location.search).get('tour') === '1') tour.start();
     });
   });
 
-  // Belt and braces around TourController.canRun(): if a session goes live mid-tour
-  // (the sign-in popup lands), stop driving before a step can write to a real CV.
+  // A tour is staged for the mode it began in (demo vs. the owner's live CV). If
+  // the session flips mid-tour — a sign-in popup lands while a demo tour plays —
+  // the document changes under it, so end rather than drive stale steps against it.
   $effect(() => {
-    if (editor.connected && tour.state !== 'idle') tour.end();
+    if (tour.state !== 'idle' && editor.connected !== tour.liveAtStart) tour.end();
   });
 
   const inTourChrome = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-tour]');
@@ -233,6 +246,7 @@
           class="popup variant-btn"
           class:lens={editor.activeVariantId !== null}
           title="Variants + the lens"
+          data-tour-spot="variants"
           onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
         ></span
       >
@@ -250,6 +264,7 @@
       <button
         class="btn"
         title="Export this résumé as JSON"
+        data-tour-spot="export"
         disabled={editor.noProfiles}
         onclick={() => editor.exportJson()}>⤓ Export</button
       >
