@@ -7,15 +7,67 @@
   // controls, not interruptions.
   import { tour } from '../lib/tour.svelte';
   import { editor } from '../lib/store.svelte';
+  import { prefersReducedMotion } from '../lib/tour';
 
   const done = $derived(tour.state === 'done');
   const paused = $derived(tour.state === 'paused');
+  // Signed-in owner: the tour drove their real CV (sandboxed) and has restored it.
+  // Demo: nothing is saved, and "Reset demo" is the visitor's fresh start.
+  const live = $derived(editor.connected);
 
   function resetAndClose() {
     editor.resetDemo();
     tour.end();
   }
+
+  // The spotlight: while the tour is active, glide the page to the current step's
+  // target and frame it. A rAF loop tracks the element's viewport rect so the frame
+  // follows it through scrolls, typing, and drawers opening; the box's CSS transition
+  // turns each rect change into a smooth glide (pointer-events:none, so it never
+  // blocks the app — touching the real element still yields the tour). Absent target
+  // or reduced motion is handled gracefully.
+  let box = $state<{ x: number; y: number; w: number; h: number } | null>(null);
+  const PAD = 6;
+
+  $effect(() => {
+    if (!tour.active) {
+      box = null;
+      return;
+    }
+    let alive = true;
+    let scrolledKey = '';
+    const reduced = prefersReducedMotion();
+    const tick = () => {
+      if (!alive) return;
+      const sel = tour.spot;
+      const el = sel ? document.querySelector(sel) : null;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        box = { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2 };
+        const key = `${sel}#${tour.index}`; // glide to each step's target once
+        if (scrolledKey !== key) {
+          scrolledKey = key;
+          el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+        }
+      } else {
+        box = null; // the step hasn't materialised its target yet
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    return () => {
+      alive = false;
+    };
+  });
 </script>
+
+{#if box}
+  <div
+    class="spotlight"
+    style="--spot: {editor.accentHex}; transform: translate({box.x}px, {box.y}px); width: {box.w}px; height: {box.h}px;"
+    aria-hidden="true"
+  ></div>
+{/if}
 
 {#if tour.state !== 'idle'}
   <section class="tour floating-panel" data-tour role="region" aria-label="Guided tour">
@@ -26,13 +78,25 @@
     </div>
     <div class="tbody">
       {#if done}
-        <p class="cap">That was the tour. The demo is yours now — nothing you do is saved.</p>
-        <div class="row">
-          <span class="count">{tour.total} of {tour.total}</span>
-          <span class="gap"></span>
-          <button class="tbtn" onclick={resetAndClose}>↺ Reset demo</button>
-          <button class="tbtn" onclick={() => tour.end()}>Close</button>
-        </div>
+        {#if live}
+          <p class="cap">
+            That's the tour. You're back on your own CV — the tour changed nothing, and nothing was
+            saved.
+          </p>
+          <div class="row">
+            <span class="count">{tour.total} of {tour.total}</span>
+            <span class="gap"></span>
+            <button class="tbtn" onclick={() => tour.end()}>Close</button>
+          </div>
+        {:else}
+          <p class="cap">That was the tour. The demo is yours now — nothing you do is saved.</p>
+          <div class="row">
+            <span class="count">{tour.total} of {tour.total}</span>
+            <span class="gap"></span>
+            <button class="tbtn" onclick={resetAndClose}>↺ Reset demo</button>
+            <button class="tbtn" onclick={() => tour.end()}>Close</button>
+          </div>
+        {/if}
       {:else}
         <p class="cap">{tour.caption}</p>
         {#if paused}
@@ -145,5 +209,44 @@
   .tclose:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 1px;
+  }
+
+  /* the "look here" spotlight — an accent frame that glides to each step's target */
+  .spotlight {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50; /* above the drawers (41), below the narrator (100) */
+    pointer-events: none;
+    border: 2px solid var(--spot, var(--ink));
+    border-radius: 3px;
+    will-change: transform, width, height;
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+      0 3px 16px rgb(28 27 25 / 20%);
+    transition:
+      transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
+      width 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
+      height 0.32s cubic-bezier(0.22, 0.68, 0.24, 1);
+    animation: spot-pulse 1.9s ease-in-out infinite;
+  }
+  @keyframes spot-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+        0 3px 16px rgb(28 27 25 / 20%);
+    }
+    50% {
+      box-shadow:
+        0 0 0 7px color-mix(in srgb, var(--spot, var(--ink)) 9%, transparent),
+        0 3px 16px rgb(28 27 25 / 20%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spotlight {
+      transition: none;
+      animation: none;
+    }
   }
 </style>

@@ -16,6 +16,12 @@ export interface TourStep {
    * Anything slow (the typewriter) must give up promptly once `signal` aborts.
    */
   enter(signal: AbortSignal): void | Promise<void>;
+  /**
+   * CSS selector for the element this step acts on. The tour glides the page to it
+   * and frames it — the "look here" cue. Resolved live (after `enter`), so it can
+   * name what the step just opened or created. Absent → no spotlight for that step.
+   */
+  spot?: string;
 }
 
 /**
