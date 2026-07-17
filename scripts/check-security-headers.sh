@@ -6,8 +6,53 @@
 # config edit — the site silently loses its injection defense. This asserts the
 # built output actually carries it, with the directives that matter.
 #
-# Run AFTER `npm run build`. Reads dist/; fails the build if the CSP is missing.
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT A <meta> CSP CANNOT DO — read before adding a `require` below.
+#
+# Per the CSP spec, three directives are IGNORED when delivered via <meta>:
+#   frame-ancestors, report-uri, sandbox
+# They only take effect as a real HTTP response header. Our policy still *names*
+# frame-ancestors (harmless, and correct if the policy is ever header-delivered),
+# but a browser does nothing with it here — so this script must NOT assert it and
+# call the site protected. It used to, which is worse than not checking: the gate
+# went green and everyone believed clickjacking was handled while the site was
+# framable. Anti-framing must come from the EDGE (Cloudflare fronts this site and
+# can add response headers; GitHub Pages cannot).
+#
+# Build-time can't see edge headers, so `--live` below checks the deployed site.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Usage:
+#   check-security-headers.sh [dist]              # build gate (reads dist/)
+#   check-security-headers.sh --live <origin>     # verify the EDGE headers
+#
+# Run the default AFTER `npm run build`. Fails the build if the CSP is missing.
 set -euo pipefail
+
+# ---- --live: assert the deployed origin sends what a <meta> CSP can't ----
+if [ "${1:-}" = "--live" ]; then
+  ORIGIN="${2:?usage: check-security-headers.sh --live https://example.com}"
+  hdrs=$(curl -fsSL -m 15 -D - -o /dev/null "$ORIGIN") || { echo "✗ could not reach $ORIGIN" >&2; exit 1; }
+  live_fail=0
+  # Anti-framing: either X-Frame-Options, or a real CSP *header* with frame-ancestors.
+  if printf '%s' "$hdrs" | grep -qiE '^x-frame-options:' \
+    || printf '%s' "$hdrs" | grep -qiE '^content-security-policy:.*frame-ancestors'; then
+    echo "✓ anti-framing header present"
+  else
+    echo "✗ no anti-framing header (X-Frame-Options / CSP frame-ancestors). The <meta> CSP's" >&2
+    echo "  frame-ancestors is INERT — add a Cloudflare response-header rule." >&2
+    live_fail=1
+  fi
+  if printf '%s' "$hdrs" | grep -qiE '^strict-transport-security:'; then
+    echo "✓ HSTS present"
+  else
+    echo "✗ no Strict-Transport-Security (enable HSTS at the Cloudflare edge)." >&2
+    live_fail=1
+  fi
+  printf '%s' "$hdrs" | grep -qiE '^x-content-type-options:\s*nosniff' \
+    && echo "✓ nosniff present" || echo "! no X-Content-Type-Options: nosniff (minor)" >&2
+  exit "$live_fail"
+fi
 
 DIST="${1:-dist}"
 
@@ -53,11 +98,16 @@ require() {
     exit 1
   fi
 }
+# Only directives a <meta> CSP actually enforces belong here. NOT frame-ancestors:
+# it's ignored in meta (see the header comment), so asserting it would certify a
+# protection that doesn't exist. Anti-framing is verified by `--live` instead.
 require "default-src 'self'"
 require "object-src 'none'"
 require "base-uri 'self'"
-require "frame-ancestors 'none'"
+require "form-action"
 require "connect-src"
 require "api.andypeterson.dev"   # the CV editor's gateway — dropping it breaks the app
 
 echo "✓ CSP present in all $pages_total content pages ($skipped redirect stubs exempt), with required directives."
+echo "  note: frame-ancestors is inert in <meta> — anti-framing + HSTS come from the edge."
+echo "        verify the deployed site with: $0 --live https://andypeterson.dev"
