@@ -445,5 +445,24 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
       border-right: none;
       border-radius: 0;
     }
+
+    /* Breadcrumbs on touch screens: the links were bare inline text ~12–18px
+       tall with only ~3px between them (the home heart was 12×12px). Pad each
+       crumb out, add a font floor, and let a long trail wrap instead of
+       overflowing. Applies site-wide since the bar is shared chrome. */
+    .site-window .details-bar {
+      flex-wrap: wrap;
+      gap: 2px 6px;
+      font-size: clamp(14px, 3.6vw, 18px);
+    }
+
+    .site-window .details-bar .crumb-link {
+      padding: 9px 5px;
+    }
+
+    .site-window .details-bar .crumb-heart-icon {
+      width: 1.35em;
+      height: 1.35em;
+    }
   }
 </style>

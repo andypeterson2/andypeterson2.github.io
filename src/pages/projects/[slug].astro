@@ -403,5 +403,63 @@ const relatedProjects = projects
       width: 100%;
       margin-right: 0;
     }
+
+    /* Touch tap targets — the System-6 look stays chunky, the hit areas just
+       grow to ~44px. The CTAs were ~25px tall (10px text + 3px padding). */
+    .project-buttons {
+      gap: 10px;
+    }
+
+    .project-btn {
+      display: inline-flex;
+      align-items: center;
+      box-sizing: border-box;
+      min-height: 44px;
+      padding: 11px 18px;
+      font-size: 15px;
+    }
+
+    /* The carousel prev/next were 0-size border-triangles in a ~10px bar — a
+       ≈9×10px hit area, effectively untappable. Give the control bar real
+       height and turn each arrow into a wide, full-height hit zone with the
+       triangle re-drawn (centered) via a pseudo-element. */
+    .screenshot-controls {
+      height: 30px;
+    }
+
+    .arrow-left,
+    .arrow-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 33%;
+      height: 100%;
+      border: none;
+    }
+
+    .arrow-left {
+      left: 0;
+    }
+
+    .arrow-right {
+      right: 0;
+    }
+
+    .arrow-left::after,
+    .arrow-right::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+    }
+
+    .arrow-left::after {
+      border-right: 10px solid #000;
+    }
+
+    .arrow-right::after {
+      border-left: 10px solid #000;
+    }
   }
 </style>
