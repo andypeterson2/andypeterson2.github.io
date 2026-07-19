@@ -63,8 +63,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Island hydrated: the System-6 menubar is present.
     await expect(page.locator('.menubar')).toContainText('Editor');
-    // The demo persona renders (fictional — safe in a public repo).
-    await expect(page.locator('.doc-head h1')).toContainText('Jordan Rivera');
+    // The demo now renders the owner's real CV. The identity (name + contacts) comes
+    // from siteConfig at build — blank here without env — so assert on the public,
+    // hardcoded professional content instead.
+    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     // Portal chrome is stripped in bare mode.
     await expect(page.locator('.site-menubar')).toBeHidden();
     // Demo is the default, and it says so plainly — no red "failed" dot.
@@ -189,7 +191,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await openMenu(page, 'File');
     await page.getByRole('menuitem', { name: /Reset demo/ }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
-    await expect(page.locator('.doc')).toContainText('Senior Software Engineer');
+    await expect(page.locator('.doc')).toContainText('Research Intern');
 
     // Dismiss collapses the strip to the chip, which reopens it.
     await invite.getByRole('button', { name: 'Dismiss' }).click();
@@ -253,7 +255,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
     await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
-    await expect(page.locator('.doc')).toContainText('Senior Software Engineer');
+    await expect(page.locator('.doc')).toContainText('Research Intern');
 
     // One command, not fourteen keystrokes: the stack is now empty.
     await openMenu(page, 'Edit');
@@ -282,10 +284,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Back at its original index, with everything that was inside it.
     await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
-    await expect(page.locator('.doc')).toContainText('Acme Technologies');
-    await expect(page.locator('.doc')).toContainText('Mentored four engineers');
-    await expect(page.locator('.doc .entry li')).toHaveCount(3);
-    await expect(page.locator('.doc .entry li .tag')).toHaveCount(5);
+    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
+    await expect(page.locator('.doc')).toContainText('Simulated a noisy quantum channel');
+    await expect(page.locator('.doc .entry li')).toHaveCount(7);
+    await expect(page.locator('.doc .entry li .tag')).toHaveCount(9);
   });
 
   test('undoing a delete re-creates the row on the backend', async ({ page }) => {
@@ -331,22 +333,24 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .variant-btn').click();
-    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+    await drawer.locator('.opt').filter({ hasText: 'Quantum Research' }).click();
 
-    // Exclude #apis → the one bullet carrying it drops out of the lens.
-    const apisBullet = page.locator('.doc li').filter({ hasText: 'REST API serving 10,000' });
-    await expect(apisBullet).not.toHaveClass(/dim/);
+    // Exclude #research → a quantum bullet that also carries it drops out of the lens.
+    const researchBullet = page
+      .locator('.doc li')
+      .filter({ hasText: 'Simulated a noisy quantum channel' });
+    await expect(researchBullet).not.toHaveClass(/dim/);
     const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
-    await excludeIn.fill('apis');
+    await excludeIn.fill('research');
     await excludeIn.press('Enter');
-    await expect(apisBullet).toHaveClass(/dim/);
+    await expect(researchBullet).toHaveClass(/dim/);
 
     // The Edit menu names the exact rule; undoing it lifts the veto and re-dims live.
     await page.keyboard.press('Escape'); // close the drawer so ⌘Z isn't inside the chip input
     await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: '↶ Undo Exclude #apis' })).toBeEnabled();
-    await page.getByRole('menuitem', { name: '↶ Undo Exclude #apis' }).click();
-    await expect(apisBullet).not.toHaveClass(/dim/);
+    await expect(page.getByRole('menuitem', { name: '↶ Undo Exclude #research' })).toBeEnabled();
+    await page.getByRole('menuitem', { name: '↶ Undo Exclude #research' }).click();
+    await expect(researchBullet).not.toHaveClass(/dim/);
   });
 
   test('undo reverts a style change, and re-themes the document live', async ({ page }) => {
@@ -382,9 +386,9 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .variant-btn').click();
-    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+    await drawer.locator('.opt').filter({ hasText: 'Quantum Research' }).click();
     const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
-    await excludeIn.fill('apis');
+    await excludeIn.fill('research');
     await excludeIn.press('Enter');
 
     // History has the rule command…
@@ -541,7 +545,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Step 2 types a genuinely new bullet into the document, character by character.
     await expect(tour.locator('.count')).toHaveText('2 of 7');
     const typed = page.locator('.doc .edit .bl-content').last();
-    await expect(typed).toHaveValue(/^Cut p/);
+    await expect(typed).toHaveValue(/^Added/);
     const bullets = await page.locator('.doc .edit .bl').count();
 
     // The signature interaction: one touch outside the tour hands back the wheel.
@@ -559,7 +563,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // `enter` is idempotent it restages the same bullet rather than adding another.
     await tour.getByRole('button', { name: /Resume/ }).click();
     await expect(tour.locator('.wheel')).toHaveCount(0);
-    await expect(typed).toHaveValue(/queries\.$/, { timeout: 5000 });
+    await expect(typed).toHaveValue(/threshold\.$/, { timeout: 5000 });
     expect(await page.locator('.doc .edit .bl').count()).toBe(bullets);
 
     // Esc ends it outright (the drawer convention).
@@ -586,7 +590,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await tour.getByRole('button', { name: /Next/ }).click();
     await expect(tour.locator('.count')).toHaveText('2 of 7');
     // …and the typewriter becomes an instant state change.
-    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/queries\.$/);
+    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/threshold\.$/);
   });
 
   test('ending the tour puts away the drawer it opened', async ({ page }) => {
@@ -641,7 +645,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Step 2 types an ephemeral bullet onto Ada's real entry — locally, never saved.
     await tour.getByRole('button', { name: /Next/ }).click();
     await expect(tour.locator('.count')).toHaveText('2 of 7');
-    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/queries\.$/);
+    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/threshold\.$/);
 
     // The moment the owner takes the wheel, the tour bows out and the document is
     // put back exactly as it was — re-open the entry and the bullet is gone.
@@ -907,19 +911,19 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.menubar')).toContainText('Editor');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
-    // (#backend sits on 2 entries + 2 bullets → 4).
+    // (#leadership sits on 2 entries + 2 bullets → 4).
     const drawer = page.locator('.drawer');
     await page.getByRole('button', { name: 'Tags', exact: true }).click();
     await expect(drawer).toBeVisible();
-    const backendRow = drawer.locator('.row', { hasText: 'backend' });
-    await expect(backendRow).toContainText('4');
+    const leadershipRow = drawer.locator('.row', { hasText: 'leadership' });
+    await expect(leadershipRow).toContainText('4');
 
-    // Spotlight #backend: entries carrying it stay lit, the untagged summary dims.
-    await backendRow.click();
+    // Spotlight #leadership: entries carrying it stay lit, the untagged summary dims.
+    await leadershipRow.click();
     await expect(page.locator('.doc .para')).toHaveClass(/dim/);
-    await expect(
-      page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' }),
-    ).not.toHaveClass(/dim/);
+    await expect(page.locator('.doc .entry').filter({ hasText: 'ACM Cyber' })).not.toHaveClass(
+      /dim/,
+    );
 
     // Clearing the spotlight restores everything.
     await drawer.locator('.clear').click();
@@ -929,7 +933,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Inline chips: open an untagged entry and add + remove a tag.
     const inline = page.locator('.doc .edit');
-    await page.locator('.entry').filter({ hasText: 'State University' }).click();
+    await page.locator('.entry').filter({ hasText: 'December 2024' }).click();
     await expect(inline).toBeVisible();
 
     const tagIn = inline.locator('.tags-row .tag-in');
@@ -951,28 +955,28 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.toolbar .variant-btn').click();
     await expect(drawer).toBeVisible();
     await expect(drawer).toContainText('lens on your main');
-    // The demo ships two variants with live "shows X of Y" counts.
-    await expect(drawer.locator('.opt').filter({ hasText: 'Backend Engineer' })).toContainText(
-      '2/7',
+    // The demo ships CV variants with live "shows X of Y" counts.
+    await expect(drawer.locator('.opt').filter({ hasText: 'Quantum Research' })).toContainText(
+      '2/11',
     );
 
-    // Applying it dims the untagged summary while the #backend entry stays lit.
-    await drawer.locator('.opt').filter({ hasText: 'Backend Engineer' }).click();
+    // Applying it dims the untagged summary while a #quantum entry stays lit.
+    await drawer.locator('.opt').filter({ hasText: 'Quantum Research' }).click();
     await expect(page.locator('.doc .para')).toHaveClass(/dim/);
     await expect(
-      page.locator('.doc .entry').filter({ hasText: 'Acme Technologies' }),
+      page.locator('.doc .entry').filter({ hasText: 'Qualcomm Institute' }),
     ).not.toHaveClass(/dim/);
-    // The lens reaches into bullets: a #management bullet drops inside a lit entry.
+    // The lens reaches into bullets: a non-#quantum bullet drops inside a lit entry.
     await expect(
-      page.locator('.doc li').filter({ hasText: 'Mentored four engineers' }),
+      page.locator('.doc li').filter({ hasText: 'Presented algorithmic research' }),
     ).toHaveClass(/dim/);
 
-    // Editing a rule updates the lens live: excluding #infra vetoes that bullet.
+    // Editing a rule updates the lens live: excluding #research vetoes a lit bullet.
     const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
-    await excludeIn.fill('infra');
+    await excludeIn.fill('research');
     await excludeIn.press('Enter');
     await expect(
-      page.locator('.doc li').filter({ hasText: 'Microservices migration' }),
+      page.locator('.doc li').filter({ hasText: 'Simulated a noisy quantum channel' }),
     ).toHaveClass(/dim/);
 
     // Back to Main clears the lens entirely.

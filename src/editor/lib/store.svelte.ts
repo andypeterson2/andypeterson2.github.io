@@ -18,7 +18,7 @@
 // content CRUD, drag reorder, drawers, profile CRUD — is the core the save infra
 // exists FOR; it's deliberately left in place, as pulling it out would relocate
 // coupling rather than reduce it. Navigate by the banners.
-import type { Person, Selection, Section, Entry, Item } from './types';
+import type { Person, Personal, Selection, Section, Entry, Item } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta, type ApiResult } from './api';
@@ -63,6 +63,10 @@ const EMPTY_PERSON: Person = {
 class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(createDemoPerson());
+  /** The owner's identity — name + public contacts — overlaid onto the demo person
+   *  from `siteConfig` (via Editor's `identity` prop). Held so resetDemo and the
+   *  tour re-apply it after re-cloning the pristine sample. Never committed PII. */
+  private demoIdentity: Partial<Personal> | null = null;
   selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
@@ -886,13 +890,25 @@ class EditorState {
   }
 
   /**
+   * Overlay the owner's identity (name + public contacts, resolved from siteConfig
+   * on the server and handed down as Editor's `identity` prop) onto the demo person.
+   * Stored so resetDemo and the tour keep it across re-clones. A no-op once connected —
+   * the real CV brings its own identity. Runs at mount, so the first paint already
+   * shows the owner, not blank contact fields.
+   */
+  hydrateDemoIdentity(identity: Partial<Personal>) {
+    this.demoIdentity = identity;
+    if (!this.connected) Object.assign(this.person.personal, identity);
+  }
+
+  /**
    * Restore the untouched demo profile — the safety net behind "edit anything,
    * nothing is saved". If you invite people to touch it, you owe them an undo.
    * A no-op when connected: there is real data to protect.
    */
   resetDemo() {
     if (this.connected) return;
-    this.person = createDemoPerson();
+    this.person = createDemoPerson(this.demoIdentity ?? undefined);
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();

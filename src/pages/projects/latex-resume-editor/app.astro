@@ -1,6 +1,18 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Editor from '../../../editor/Editor.svelte';
+import { siteConfig } from '../../../config/site';
+
+// The demo résumé shows the real owner — but their identity never lives in committed
+// source (the name-leakage CI gate scans for it). It's resolved from env here, on the
+// server, and passed to the island; only the public business contacts ever render.
+const identity = {
+  firstName: siteConfig.firstName,
+  lastName: siteConfig.lastName,
+  email: siteConfig.email,
+  github: siteConfig.github,
+  linkedin: siteConfig.linkedin,
+};
 ---
 
 <BaseLayout
@@ -12,5 +24,5 @@ import Editor from '../../../editor/Editor.svelte';
     { label: 'app' },
   ]}
 >
-  <Editor client:load />
+  <Editor client:load identity={identity} />
 </BaseLayout>

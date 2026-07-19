@@ -17,8 +17,9 @@ import {
   LENS_TAG,
 } from './tour-shape';
 
-/** Typed live into a brand-new bullet — fictional, like the rest of the demo. */
-const TYPED_BULLET = 'Cut p95 latency 40% by batching the tag-resolver queries.';
+/** Typed live into a brand-new bullet during the tour (removed again on reset). */
+const TYPED_BULLET =
+  'Added dark-count modeling to the channel simulator, tightening the eavesdrop-detection threshold.';
 
 export function tourSteps(): TourStep[] {
   // Captured across re-entries: Resume re-runs the current step, and a step that

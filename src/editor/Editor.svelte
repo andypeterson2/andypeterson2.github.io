@@ -7,6 +7,7 @@
   import Tour from './components/Tour.svelte';
   import MenuBar from './components/MenuBar.svelte';
   import type { MenuDef } from './lib/menus';
+  import type { Personal } from './lib/types';
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
@@ -16,6 +17,14 @@
   import VariantDrawer from './components/VariantDrawer.svelte';
   import ProfilesDrawer from './components/ProfilesDrawer.svelte';
   import HistoryDrawer from './components/HistoryDrawer.svelte';
+
+  // The owner's identity (name + public contacts) resolved from siteConfig on the
+  // server and handed down by the Astro page. Overlaid onto the demo person so a
+  // visitor sees the real CV, while committed source stays free of PII (the demo
+  // seed carries none — see demo.ts). Applied synchronously so the first paint is
+  // already the owner, not blank fields.
+  let { identity }: { identity?: Partial<Personal> } = $props();
+  if (identity) editor.hydrateDemoIdentity(identity);
 
   const person = $derived(editor.person);
   const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
@@ -605,13 +614,26 @@
     }
     .actions {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      grid-template-columns: repeat(6, 1fr);
       gap: 8px;
       flex: 1 1 100%;
     }
+    /* Tags / Layout / Style → thirds on the first row; Preview / Export → halves
+       spanning the full width on the second (each button is 3 of 6 columns). */
+    .actions .btn:nth-child(-n + 3) {
+      grid-column: span 2;
+    }
+    .actions .btn:nth-child(n + 4) {
+      grid-column: span 3;
+    }
 
-    /* The résumé window spans the full width: edge-to-edge, no L/R border or shadow. */
+    /* The résumé window spans the full width, flush to both edges. system.css's
+       global `.window` adds margin:16px + min-width:320px (it styles any .window on
+       the page); override both here so the paper runs edge-to-edge with no gutter. */
     .window {
+      margin-left: 0;
+      margin-right: 0;
+      min-width: 0;
       border-left: 0;
       border-right: 0;
       box-shadow: none;
