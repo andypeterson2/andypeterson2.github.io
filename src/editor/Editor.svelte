@@ -30,6 +30,14 @@
   // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it.
   let inviteOpen = $state(true);
 
+  // Starting the tour dismisses the invitation first: on mobile the invite is a
+  // popup window that would otherwise sit over the narrator, and on desktop the
+  // strip has served its purpose. The status chip reopens the invite afterwards.
+  function startTour() {
+    inviteOpen = false;
+    tour.start();
+  }
+
   /** Open a drawer from the menu (they are mutually exclusive — one at a time). */
   const drawerItem = (label: string, drawer: NonNullable<typeof editor.openDrawer>) => ({
     label: `${label}…`, // the ellipsis convention: this opens a panel
@@ -103,7 +111,7 @@
         {
           label: '▶ Guided tour',
           disabled: tour.state !== 'idle',
-          onSelect: () => tour.start(),
+          onSelect: () => startTour(),
         },
       ],
     },
@@ -117,7 +125,7 @@
   onMount(() => {
     hydrated = true;
     void editor.connect().then(() => {
-      if (new URLSearchParams(location.search).get('tour') === '1') tour.start();
+      if (new URLSearchParams(location.search).get('tour') === '1') startTour();
     });
   });
 
@@ -209,7 +217,20 @@
       >
     </div>
   {:else if demoMode && inviteOpen}
+    <!-- On phones this whole block presents as a centered pop-up window: the scrim
+         and the System-6 titlebar below are shown only there. On desktop it stays
+         the inline invitation strip and both are display:none. -->
+    <button class="invite-scrim" aria-label="Dismiss" onclick={() => (inviteOpen = false)}></button>
     <div class="invite" id="demo-invite" role="status">
+      <div class="invite-tbar">
+        <button
+          class="invite-close"
+          aria-label="Dismiss"
+          onclick={() => (inviteOpen = false)}
+        ></button>
+        <span class="invite-ttl">CV Editor</span>
+        <span class="invite-fill"></span>
+      </div>
       <span class="mk" aria-hidden="true">◇</span>
       <span class="txt"
         >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
@@ -219,7 +240,7 @@
         class="btn tour-start"
         disabled={tour.state !== 'idle'}
         title="Watch the editor drive itself — touch anything to take over"
-        onclick={() => tour.start()}>▶ Guided tour</button
+        onclick={startTour}>▶ Guided tour</button
       >
       {#if editor.connectError === 'offline'}
         <button class="link" onclick={() => editor.connect()}>Retry</button>
@@ -251,23 +272,28 @@
         ></span
       >
       <button
-        class="btn icon"
+        class="btn icon settings-btn"
         class:on={editor.openDrawer === 'variant'}
         title="Variant settings"
         onclick={() => (editor.openDrawer = 'variant')}>⚙</button
       >
       <span class="sp"></span>
-      <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
-      <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
-      <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
-      <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
-      <button
-        class="btn"
-        title="Export this résumé as JSON"
-        data-tour-spot="export"
-        disabled={editor.noProfiles}
-        onclick={() => editor.exportJson()}>⤓ Export</button
-      >
+      <!-- The panel/action buttons. `display:contents` on desktop keeps them flat in
+           the toolbar flow (the .sp above pushes them right); on mobile the group
+           becomes a full-width even grid so they line up instead of wrapping ragged. -->
+      <div class="actions">
+        <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
+        <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
+        <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
+        <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
+        <button
+          class="btn"
+          title="Export this résumé as JSON"
+          data-tour-spot="export"
+          disabled={editor.noProfiles}
+          onclick={() => editor.exportJson()}>⤓ Export</button
+        >
+      </div>
     </div>
 
     <div class="window">
@@ -406,8 +432,13 @@
   .invite .x { background: none; border: 1px solid transparent; border-radius: 5px; color: var(--dim); font-family: var(--mono); font-size: 12px; line-height: 1; padding: 3px 6px; cursor: pointer; flex: none; }
   .invite .x:hover { color: var(--ink); border-color: var(--ink); }
   .invite.busy { color: #45433d; }
+  /* Pop-up-window chrome for the invite — inert on desktop (the invite is an inline
+     strip there); the mobile block below turns it on. */
+  .invite-scrim, .invite-tbar { display: none; }
   .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
+  .actions { display: contents; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
   .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
   button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -461,18 +492,142 @@
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   }
 
-  /* ── Mobile ── The editor is dense and desktop-first; on phones, trim the chrome
-     so nothing overflows: compact the menubar (the connection status collapses to
-     just its dot — the menus are what must stay reachable), tighten padding, and
-     stack the PDF preview under the document instead of beside it. */
+  /* ── Mobile ── The editor is dense and desktop-first; on phones it becomes a
+     proper touch layout: a ☰ app bar (the File/Edit/View/Help row lives in the
+     hamburger now — see MenuBar), the invitation as a centered pop-up window, an
+     evenly-aligned toolbar, and the résumé spanning the full width. */
   @media (max-width: 640px) {
-    .menubar { gap: 10px; padding: 0 8px; }
+    /* App bar: ☰ first, wordmark, status dot far right. */
+    .menubar { gap: 8px; padding: 0 6px; height: 44px; }
+    .mark { display: none; }
+    .menubar > :global(.menus) { order: -1; }
     .conn-label { display: none; }
-    .workspace { padding: 12px 12px 0; }
-    .wbody.split { grid-template-columns: minmax(0, 1fr); }
-    .preview { border-left: 0; border-top: 1px solid var(--ink); }
+    .right .conn { padding: 8px 4px; }
+
+    /* Guided-tour invite → centered System-6 pop-up window over a dismiss scrim. */
+    .invite-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgb(28 27 25 / 30%);
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+    .invite {
+      position: fixed;
+      z-index: 61;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(90vw, 360px);
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      padding: 14px;
+      box-shadow: var(--shadow-float);
+    }
+    .invite-tbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 22px;
+      margin: -14px -14px 2px; /* bleed the titlebar to the window edges */
+      padding: 0 8px;
+      border-bottom: 1px solid var(--ink);
+      background-image: repeating-linear-gradient(
+        to bottom,
+        var(--ink) 0,
+        var(--ink) 1px,
+        var(--paper) 1px,
+        var(--paper) 3px
+      );
+    }
+    .invite-close {
+      width: 12px;
+      height: 12px;
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      padding: 0;
+      cursor: pointer;
+      flex: none;
+    }
+    .invite-ttl {
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--paper);
+      padding: 0 10px;
+      margin: 0 auto;
+    }
+    .invite-fill {
+      width: 12px;
+    }
+    .invite .mk {
+      align-self: flex-start;
+    }
+    .invite .txt {
+      flex: none;
+    }
+    .invite .btn.tour-start {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+    }
+    .invite .link {
+      align-self: center;
+    }
+    .invite .x {
+      display: none; /* the titlebar close box replaces it */
+    }
+
+    /* Toolbar: drop the redundant ⚙ (the Variant button opens the same drawer) and
+       the desktop spacer; give each field its own full-width row; lay the action
+       buttons out as an even grid so they align instead of wrapping ragged. */
+    .workspace {
+      padding: 12px 0 0;
+    }
+    .toolbar {
+      padding: 0 12px;
+      gap: 8px;
+    }
+    .settings-btn,
+    .sp {
+      display: none;
+    }
+    .toolbar .field {
+      flex: 1 1 100%;
+      gap: 8px;
+    }
+    .toolbar .field .popup {
+      flex: 1 1 auto;
+      max-width: none;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px;
+      flex: 1 1 100%;
+    }
+
+    /* The résumé window spans the full width: edge-to-edge, no L/R border or shadow. */
+    .window {
+      border-left: 0;
+      border-right: 0;
+      box-shadow: none;
+    }
+
+    .wbody.split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .preview {
+      border-left: 0;
+      border-top: 1px solid var(--ink);
+    }
     /* Clip the entry hover-highlight bleed (its ±10px negative margins) so it doesn't
        add a horizontal scrollbar to the document in a narrow column; keep vertical scroll. */
-    .doc-scroll { overflow-x: hidden; }
+    .doc-scroll {
+      overflow-x: hidden;
+    }
   }
 </style>

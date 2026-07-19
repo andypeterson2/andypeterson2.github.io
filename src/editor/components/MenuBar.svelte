@@ -2,17 +2,40 @@
   // The System-6 menubar: real pull-down menus, following the ARIA menubar
   // pattern (menubar → menuitem[aria-haspopup] → menu → menuitem).
   //
+  // Below 640px the desktop row of titles is the wrong idiom for a thumb, so it
+  // collapses to a single ☰ that opens every command in one grouped panel — the
+  // conventional mobile menu. Same MenuDef data drives both.
+  //
   // A menu with no items renders *disabled* rather than as inert text styled to
   // look live. An unimplemented command that looks available is the same class of
   // bug as a demo dot painted red: the interface lying about what it can do.
+  import { onMount } from 'svelte';
   import { enabledItems, stepIndex, type MenuDef, type MenuItem } from '../lib/menus';
 
   let { menus }: { menus: MenuDef[] } = $props();
 
-  let open = $state<number | null>(null);
+  let open = $state<number | null>(null); // desktop: index of the open pull-down
+  let allOpen = $state(false); // mobile: the single ☰ panel
   let root: HTMLDivElement;
+  let hamburgerEl: HTMLButtonElement | undefined;
   let titleEls: HTMLButtonElement[] = [];
   let itemEls: HTMLButtonElement[] = [];
+
+  // Which idiom to render. Tracked in JS (not just CSS) because the two are
+  // structurally different — four independent dropdowns vs. one grouped panel.
+  let mobile = $state(false);
+  onMount(() => {
+    const mq = matchMedia('(max-width: 640px)');
+    const sync = () => {
+      mobile = mq.matches;
+      // Leaving a mode closes whatever it had open, so a stale menu can't linger.
+      if (mobile) open = null;
+      else allOpen = false;
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
 
   /** Open `mi` and put focus on its first selectable item (keyboard entry). */
   function openMenu(mi: number, focusItems = true) {
@@ -43,7 +66,30 @@
   function choose(item: MenuItem) {
     if (item.disabled) return;
     close(true);
+    allOpen = false;
     item.onSelect();
+  }
+
+  // ── The ☰ panel (mobile) ──
+  function toggleAll() {
+    if (allOpen) {
+      allOpen = false;
+      return;
+    }
+    allOpen = true;
+    // Focus the first live command so the panel is keyboard-operable at once.
+    queueMicrotask(() =>
+      root?.querySelector<HTMLButtonElement>('.mega .item:not(:disabled)')?.focus(),
+    );
+  }
+  function onMegaKey(e: KeyboardEvent) {
+    // Stop here so the window-level Escape (which would end a tour) never fires.
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      allOpen = false;
+      hamburgerEl?.focus();
+    }
   }
 
   function onTitleKey(e: KeyboardEvent, mi: number) {
@@ -87,30 +133,30 @@
 
   /** A press anywhere else dismisses the menu, the way a real pull-down does. */
   function onOutside(e: Event) {
-    if (open != null && e.target instanceof Node && !root.contains(e.target)) close();
+    if (!(e.target instanceof Node) || !root || root.contains(e.target)) return;
+    if (open != null) close();
+    allOpen = false;
   }
 </script>
 
 <svelte:window onpointerdown={onOutside} />
 
-<div class="menus" role="menubar" aria-label="Editor commands" bind:this={root}>
-  {#each menus as menu, mi (menu.title)}
-    <div class="wrap">
-      <button
-        class="menu"
-        role="menuitem"
-        tabindex={mi === 0 ? 0 : -1}
-        disabled={!menu.items.length}
-        aria-haspopup={menu.items.length ? 'menu' : undefined}
-        aria-expanded={menu.items.length ? open === mi : undefined}
-        bind:this={titleEls[mi]}
-        onclick={() => toggle(mi)}
-        onkeydown={(e) => onTitleKey(e, mi)}>{menu.title}</button
-      >
-      {#if open === mi}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div class="drop" role="menu" aria-label={menu.title} onkeydown={(e) => onMenuKey(e, mi)}>
-          {#each menu.items as item, ii (item.label)}
+{#if mobile}
+  <div class="menus mobile" bind:this={root}>
+    <button
+      bind:this={hamburgerEl}
+      class="hamburger"
+      aria-haspopup="menu"
+      aria-expanded={allOpen}
+      aria-label="Menu"
+      onclick={toggleAll}>☰</button
+    >
+    {#if allOpen}
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div class="drop mega" role="menu" aria-label="Editor commands" onkeydown={onMegaKey}>
+        {#each menus as menu (menu.title)}
+          <div class="group-label" role="presentation">{menu.title}</div>
+          {#each menu.items as item (item.label)}
             {#if item.separatorBefore}
               <div class="sep" role="separator"></div>
             {/if}
@@ -119,9 +165,7 @@
               role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
               aria-checked={item.checked}
               aria-keyshortcuts={item.keys}
-              tabindex="-1"
               disabled={item.disabled}
-              bind:this={itemEls[ii]}
               onclick={() => choose(item)}
             >
               <span class="check" aria-hidden="true">{item.checked ? '✓' : ''}</span>
@@ -131,11 +175,55 @@
               {/if}
             </button>
           {/each}
-        </div>
-      {/if}
-    </div>
-  {/each}
-</div>
+        {/each}
+      </div>
+    {/if}
+  </div>
+{:else}
+  <div class="menus" role="menubar" aria-label="Editor commands" bind:this={root}>
+    {#each menus as menu, mi (menu.title)}
+      <div class="wrap">
+        <button
+          class="menu"
+          role="menuitem"
+          tabindex={mi === 0 ? 0 : -1}
+          disabled={!menu.items.length}
+          aria-haspopup={menu.items.length ? 'menu' : undefined}
+          aria-expanded={menu.items.length ? open === mi : undefined}
+          bind:this={titleEls[mi]}
+          onclick={() => toggle(mi)}
+          onkeydown={(e) => onTitleKey(e, mi)}>{menu.title}</button
+        >
+        {#if open === mi}
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div class="drop" role="menu" aria-label={menu.title} onkeydown={(e) => onMenuKey(e, mi)}>
+            {#each menu.items as item, ii (item.label)}
+              {#if item.separatorBefore}
+                <div class="sep" role="separator"></div>
+              {/if}
+              <button
+                class="item"
+                role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+                aria-checked={item.checked}
+                aria-keyshortcuts={item.keys}
+                tabindex="-1"
+                disabled={item.disabled}
+                bind:this={itemEls[ii]}
+                onclick={() => choose(item)}
+              >
+                <span class="check" aria-hidden="true">{item.checked ? '✓' : ''}</span>
+                <span class="label">{item.label}</span>
+                {#if item.accel}
+                  <span class="accel" aria-hidden="true">{item.accel}</span>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/each}
+  </div>
+{/if}
 
 <style>
   .menus {
@@ -235,5 +323,53 @@
     height: 1px;
     margin: 3px 0;
     background: var(--chrome);
+  }
+
+  /* ── Mobile: the ☰ and its single grouped panel ── */
+  .menus.mobile {
+    position: relative;
+  }
+  .hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    padding: 0 6px;
+    cursor: pointer;
+  }
+  .hamburger[aria-expanded='true'] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .drop.mega {
+    left: 0;
+    min-width: 230px;
+    max-height: 76vh;
+    overflow: auto;
+    padding-bottom: 6px;
+  }
+  /* Bigger touch rows in the ☰ panel than in the desktop pull-downs. */
+  .drop.mega .item {
+    font-size: 14px;
+    padding: 10px 16px 10px 8px;
+  }
+  .group-label {
+    padding: 9px 14px 3px 8px;
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .group-label:first-child {
+    padding-top: 5px;
   }
 </style>
