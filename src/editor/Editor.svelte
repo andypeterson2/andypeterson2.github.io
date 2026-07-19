@@ -501,22 +501,33 @@
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   }
 
-  /* ── Mobile ── A touch layout: the sitewide floating nav (BaseLayout) sits at the
-     very top; the editor's own controls collapse into a single ☰ menu one row down
-     (the toolbar's buttons all live in it now); the résumé fills the width; and the
-     connection status moves to a bar pinned across the bottom. No title. */
+  /* ── Mobile ── A fixed shell: a persistent top bar (the floating site-nav on the
+     left — from BaseLayout — and the editor ☰ Menu on the right), the résumé filling
+     the middle as the ONLY scroll region, and the connection status pinned across the
+     bottom. The three regions cover the viewport edge-to-edge, so no background ever
+     shows between them. No title. */
   @media (max-width: 640px) {
-    /* Editor menu bar — just the ☰ (File/Edit/View/Help, which is every panel and
-       command). Sits below the floating site-nav and sticks to the top so the
-       controls stay reachable while the résumé scrolls. */
+    .stage {
+      --top-h: 58px;
+      --bot-h: 44px;
+      min-height: 0;
+      padding-bottom: 0;
+    }
+
+    /* Top bar — the editor ☰ Menu, pushed to the far right so it clears the floating
+       site-nav at the top-left. This one menu is every command (File/Edit/View/Help). */
     .menubar {
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
+      height: var(--top-h);
       gap: 8px;
-      height: auto;
-      padding: 8px 12px;
-      margin-top: 54px; /* clear the floating site-nav (fixed, top-left) */
-      z-index: 4;
+      padding: 0 12px;
+      margin: 0;
+      justify-content: flex-end;
+      align-items: center;
+      z-index: 5;
     }
     .mark,
     .menubar strong {
@@ -526,39 +537,26 @@
       display: none; /* its buttons all moved into the ☰ menu */
     }
 
-    /* Connection status → a bar spanning the bottom of the page (tap to reopen the
-       invite / tour). It is the one persistent chrome besides the two menus. */
+    /* Status bar — pinned across the bottom (tap to reopen the invite / tour). */
     .right {
       position: fixed;
       left: 0;
+      right: 0;
       bottom: 0;
-      width: 100%;
+      height: var(--bot-h);
       margin: 0;
       justify-content: center;
+      align-items: center;
       gap: 6px;
-      padding: 11px 12px;
       background: var(--paper);
       border-top: 1px solid var(--ink);
       font-size: 12.5px;
-      z-index: 6;
+      z-index: 5;
     }
     .conn-label {
-      display: inline; /* there is room for it in the bottom bar */
+      display: inline;
     }
-
-    .workspace {
-      padding: 8px 0 0;
-    }
-    .doc-scroll {
-      /* Inner scroll sized to leave room for the ☰ bar above and the status bar
-         below; the (now-hidden) scrollbar means no visible chrome, and overflow-x
-         hidden still clips the entry hover-highlight's ±10px bleed. */
-      max-height: calc(100dvh - 210px);
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-    /* The per-document statusbar is redundant with the bottom status bar (and would
-       hide behind it), so drop it on mobile. */
+    /* Redundant with the bottom status bar. */
     .statusbar {
       display: none;
     }
@@ -640,22 +638,44 @@
       display: none; /* the titlebar close box replaces it */
     }
 
-    /* The résumé window spans the full width, flush to both edges. system.css's
-       global `.window` adds margin:16px + min-width:320px (it styles any .window on
-       the page); override both here so the paper runs edge-to-edge with no gutter. */
+    /* Résumé: fixed between the two bars, edge-to-edge; only its body scrolls, so the
+       three fixed regions together cover the whole viewport (no grey gaps). system.css's
+       global `.window` also adds margin:16px + min-width:320px — override those too. */
     .window {
-      margin-left: 0;
-      margin-right: 0;
+      position: fixed;
+      top: var(--top-h);
+      right: 0;
+      bottom: var(--bot-h);
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
       min-width: 0;
       border-left: 0;
       border-right: 0;
+      border-top: 0;
       box-shadow: none;
     }
-
+    .titlebar {
+      flex: none;
+    }
+    .wbody,
     .wbody.split {
-      grid-template-columns: minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .doc-scroll {
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     .preview {
+      flex: 1;
+      min-height: 0;
       border-left: 0;
       border-top: 1px solid var(--ink);
     }
