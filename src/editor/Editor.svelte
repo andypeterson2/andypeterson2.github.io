@@ -428,22 +428,81 @@
   .conn.cta .dot { display: none; }
   .conn.cta .conn-label { font-weight: 700; text-decoration: underline; }
 
-  /* The demo invitation — chrome, never an alarm. Replaces the inverted-ink
-     sign-in bar, which advertised a dead end to everyone but the owner. */
-  .invite { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 12px; background: var(--chrome-hi); color: var(--ink); border-bottom: 1px solid var(--ink); font-size: 12.5px; line-height: 1.4; }
-  /* pin the glyph to the first line so it doesn't float when the copy wraps */
+  /* The demo invitation — a centered System-6 pop-up window carrying the guided
+     tour, over a dismiss scrim. Shown once, on load (see Editor's inviteOpen); the
+     same on every viewport. */
+  .invite-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgb(28 27 25 / 30%);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .invite {
+    position: fixed;
+    z-index: 61;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: min(92vw, 400px);
+    padding: 14px;
+    background: var(--chrome-hi);
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    box-shadow: var(--shadow-float);
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .invite-tbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 22px;
+    margin: -14px -14px 2px; /* bleed the titlebar to the window edges */
+    padding: 0 8px;
+    border-bottom: 1px solid var(--ink);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--ink) 0,
+      var(--ink) 1px,
+      var(--paper) 1px,
+      var(--paper) 3px
+    );
+  }
+  .invite-close {
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    padding: 0;
+    cursor: pointer;
+    flex: none;
+  }
+  .invite-ttl {
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--paper);
+    padding: 0 10px;
+    margin: 0 auto;
+  }
+  .invite-fill {
+    width: 12px;
+  }
   .invite .mk { font-size: 14px; flex: none; align-self: flex-start; line-height: 1.4; }
-  .invite .txt { flex: 1 1 260px; min-width: 0; }
+  .invite .txt { min-width: 0; }
   .invite .txt b { font-weight: 700; }
   .invite .btn { font-size: 12px; padding: 4px 10px; }
-  .invite .link { background: none; border: 0; padding: 0; font: inherit; color: #45433d; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+  .invite .btn.tour-start { width: 100%; padding: 10px; font-size: 13px; }
+  .invite .link { align-self: center; background: none; border: 0; padding: 0; font: inherit; color: #45433d; text-decoration: underline; cursor: pointer; white-space: nowrap; }
   .invite .link:hover { color: var(--ink); }
-  .invite .x { background: none; border: 1px solid transparent; border-radius: 5px; color: var(--dim); font-family: var(--mono); font-size: 12px; line-height: 1; padding: 3px 6px; cursor: pointer; flex: none; }
-  .invite .x:hover { color: var(--ink); border-color: var(--ink); }
+  .invite .x { display: none; } /* the titlebar close box replaces it */
   .invite.busy { color: #45433d; }
-  /* Pop-up-window chrome for the invite — inert on desktop (the invite is an inline
-     strip there); the mobile block below turns it on. */
-  .invite-scrim, .invite-tbar { display: none; }
   .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
@@ -559,83 +618,6 @@
     /* Redundant with the bottom status bar. */
     .statusbar {
       display: none;
-    }
-
-    /* Guided-tour invite → centered System-6 pop-up window over a dismiss scrim. */
-    .invite-scrim {
-      display: block;
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      background: rgb(28 27 25 / 30%);
-      border: 0;
-      padding: 0;
-      cursor: pointer;
-    }
-    .invite {
-      position: fixed;
-      z-index: 61;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(90vw, 360px);
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
-      padding: 14px;
-      box-shadow: var(--shadow-float);
-    }
-    .invite-tbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 22px;
-      margin: -14px -14px 2px; /* bleed the titlebar to the window edges */
-      padding: 0 8px;
-      border-bottom: 1px solid var(--ink);
-      background-image: repeating-linear-gradient(
-        to bottom,
-        var(--ink) 0,
-        var(--ink) 1px,
-        var(--paper) 1px,
-        var(--paper) 3px
-      );
-    }
-    .invite-close {
-      width: 12px;
-      height: 12px;
-      background: var(--paper);
-      border: 1px solid var(--ink);
-      padding: 0;
-      cursor: pointer;
-      flex: none;
-    }
-    .invite-ttl {
-      font-size: 12px;
-      font-weight: 700;
-      background: var(--paper);
-      padding: 0 10px;
-      margin: 0 auto;
-    }
-    .invite-fill {
-      width: 12px;
-    }
-    .invite .mk {
-      align-self: flex-start;
-    }
-    .invite .txt {
-      flex: none;
-    }
-    .invite .btn.tour-start {
-      width: 100%;
-      padding: 10px;
-      font-size: 13px;
-    }
-    .invite .link {
-      align-self: center;
-    }
-    .invite .x {
-      display: none; /* the titlebar close box replaces it */
     }
 
     /* Résumé: fixed between the two bars, edge-to-edge; only its body scrolls, so the
