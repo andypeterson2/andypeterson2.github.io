@@ -282,6 +282,12 @@ import { siteConfig } from '../config/site';
   }
 
   /* ── Bio window ── */
+  /* Drop the shared .window min-width:320px floor (from system.css) so the intro
+     window and its bio paragraphs fit the pane on phones instead of clipping. */
+  .bio-window {
+    min-width: 0;
+  }
+
   .bio-body {
     font-size: clamp(13px, 1.6vw, 18px);
     line-height: 1.65;
@@ -305,6 +311,7 @@ import { siteConfig } from '../config/site';
 
   .bio-contact {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-evenly;
     gap: clamp(4px, 0.6vw, 8px);
     clear: both;
@@ -314,7 +321,9 @@ import { siteConfig } from '../config/site';
   /* ── Two-column grid ── */
   .about-grid {
     display: grid;
-    grid-template-columns: clamp(220px, 30%, 280px) 1fr;
+    /* minmax(0, …) so the content column can shrink below its min-content instead
+       of overflowing the viewport (see index.astro for the same fix). */
+    grid-template-columns: clamp(220px, 30%, 280px) minmax(0, 1fr);
     gap: clamp(8px, 1vw, 12px);
     align-items: start;
     margin-top: 0;
@@ -339,6 +348,9 @@ import { siteConfig } from '../config/site';
   .timeline-window {
     z-index: 2;
     position: relative;
+    /* Drop the shared .window min-width:320px floor — like .sidebar-window — so it
+       fits the about-grid column on phones instead of overflowing. */
+    min-width: 0;
   }
 
   .sidebar-window .window-body {
@@ -429,7 +441,7 @@ import { siteConfig } from '../config/site';
 
   .timeline-entry {
     display: grid;
-    grid-template-columns: clamp(62px, 8vw, 90px) 1fr;
+    grid-template-columns: clamp(62px, 8vw, 90px) minmax(0, 1fr);
     gap: clamp(16px, 2.5vw, 28px);
     padding-bottom: clamp(20px, 3vw, 36px);
     position: relative;
@@ -502,7 +514,7 @@ import { siteConfig } from '../config/site';
   /* ── Responsive ── */
   @media (width <= 480px) {
     .about-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .sidebar {
@@ -514,7 +526,7 @@ import { siteConfig } from '../config/site';
     }
 
     .timeline-entry {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 2px;
     }
 
