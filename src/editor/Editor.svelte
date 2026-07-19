@@ -36,7 +36,12 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
-  // The invitation strip. Dismissing collapses it to the ◇ chip, which reopens it.
+  // Offer sign-in when the backend is actually reachable (the live case: a 403 from
+  // Access means "sign in", not "down"). When the probe couldn't reach it at all
+  // (local dev → 'offline'), stay on the plain demo status — a button that can't
+  // complete would be worse than none.
+  const canSignIn = $derived(demoMode && editor.connectError !== 'offline');
+  // The invitation strip. Dismissing collapses it to the chip.
   let inviteOpen = $state(true);
 
   // Starting the tour dismisses the invitation first: on mobile the invite is a
@@ -196,11 +201,13 @@
     <span class="right">
       <button
         class="conn"
-        onclick={() => (demoMode ? (inviteOpen = !inviteOpen) : editor.connect())}
+        class:cta={canSignIn}
+        onclick={() =>
+          canSignIn ? editor.signIn() : demoMode ? (inviteOpen = !inviteOpen) : editor.connect()}
         disabled={editor.connecting || editor.signingIn}
-        title={demoMode ? 'About demo mode' : 'Connection status'}
-        aria-expanded={demoMode ? inviteOpen : undefined}
-        aria-controls={demoMode ? 'demo-invite' : undefined}
+        title={canSignIn ? 'Sign in with Google to save changes' : 'Connection status'}
+        aria-expanded={demoMode && !canSignIn ? inviteOpen : undefined}
+        aria-controls={demoMode && !canSignIn ? 'demo-invite' : undefined}
       >
         <span
           class="dot"
@@ -213,7 +220,9 @@
             ? 'connecting…'
             : editor.connected
               ? 'connected'
-              : 'Demo — nothing saved'}</span>
+              : canSignIn
+                ? 'Sign in with Google to save changes'
+                : 'Demo — nothing saved'}</span>
       </button>
     </span>
   </div>
@@ -240,7 +249,6 @@
         <span class="invite-ttl">CV Editor</span>
         <span class="invite-fill"></span>
       </div>
-      <span class="mk" aria-hidden="true">◇</span>
       <span class="txt"
         >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
         variants, export. <b>Nothing is saved.</b></span
@@ -427,6 +435,9 @@
   .dot.busy { background: var(--state-busy); }
   .conn { font: inherit; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
   .conn:disabled { cursor: default; }
+  /* Sign-in CTA: drop the status dot and read as an obvious link. */
+  .conn.cta .dot { display: none; }
+  .conn.cta .conn-label { font-weight: 700; text-decoration: underline; }
 
   /* The demo invitation — chrome, never an alarm. Replaces the inverted-ink
      sign-in bar, which advertised a dead end to everyone but the owner. */
