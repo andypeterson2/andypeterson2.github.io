@@ -36,12 +36,8 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
-  // Offer sign-in when the backend is actually reachable (the live case: a 403 from
-  // Access means "sign in", not "down"). When the probe couldn't reach it at all
-  // (local dev → 'offline'), stay on the plain demo status — a button that can't
-  // complete would be worse than none.
-  const canSignIn = $derived(demoMode && editor.connectError !== 'offline');
-  // The invitation strip. Dismissing collapses it to the chip.
+  // The invite (with the guided tour) appears once, on load. Dismissing it is final —
+  // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
 
   // Starting the tour dismisses the invitation first: on mobile the invite is a
@@ -201,13 +197,10 @@
     <span class="right">
       <button
         class="conn"
-        class:cta={canSignIn}
-        onclick={() =>
-          canSignIn ? editor.signIn() : demoMode ? (inviteOpen = !inviteOpen) : editor.connect()}
+        class:cta={demoMode}
+        onclick={() => (demoMode ? editor.signIn() : editor.connect())}
         disabled={editor.connecting || editor.signingIn}
-        title={canSignIn ? 'Sign in with Google to save changes' : 'Connection status'}
-        aria-expanded={demoMode && !canSignIn ? inviteOpen : undefined}
-        aria-controls={demoMode && !canSignIn ? 'demo-invite' : undefined}
+        title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
       >
         <span
           class="dot"
@@ -220,9 +213,7 @@
             ? 'connecting…'
             : editor.connected
               ? 'connected'
-              : canSignIn
-                ? 'Sign in with Google to save changes'
-                : 'Demo — nothing saved'}</span>
+              : 'Sign in with Google to save changes'}</span>
       </button>
     </span>
   </div>

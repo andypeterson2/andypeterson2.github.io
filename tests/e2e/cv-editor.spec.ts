@@ -69,8 +69,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     // Portal chrome is stripped in bare mode.
     await expect(page.locator('.site-menubar')).toBeHidden();
-    // Demo is the default, and it says so plainly — no red "failed" dot.
-    await expect(page.locator('.conn')).toContainText('Demo — nothing saved');
+    // The status bar is the sign-in invitation — the demo saves nothing until then.
+    await expect(page.locator('.conn')).toContainText('Sign in with Google');
   });
 
   test('clicking an entry opens the type-aware inline editor', async ({ page }) => {
@@ -169,7 +169,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.conn')).toContainText('Sign in with Google');
   });
 
-  test('the invitation dismisses to the ◇ chip; File ▸ Reset demo restores the sample', async ({
+  test('the invitation dismisses for good; File ▸ Reset demo restores the sample', async ({
     page,
   }) => {
     await page.route('**/api/**', (route) => route.abort());
@@ -193,11 +193,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
 
-    // Dismiss collapses the strip to the chip, which reopens it.
+    // Dismissing is final — the invite only auto-appears on load. The status bar is a
+    // sign-in button now, not a way to bring it back.
     await invite.getByRole('button', { name: 'Dismiss' }).click();
     await expect(invite).toHaveCount(0);
-    await page.locator('.conn').click();
-    await expect(page.locator('.invite')).toBeVisible();
+    await expect(page.locator('.conn')).toContainText('Sign in with Google');
   });
 
   test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
