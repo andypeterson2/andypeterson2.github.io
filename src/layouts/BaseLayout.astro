@@ -229,6 +229,7 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
   body.is-bare #back-to-top {
     display: none !important;
   }
+
   /* The floating site-nav is deliberately NOT hidden in bare mode — it is the one
      consistent way back out of a full-bleed app page like the editor. */
 
@@ -270,6 +271,7 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     * {
       scrollbar-width: none;
     }
+
     *::-webkit-scrollbar {
       width: 0;
       height: 0;
@@ -431,6 +433,7 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
   .mobile-nav {
     display: none;
   }
+
   .mobile-nav-btn {
     display: inline-flex;
     align-items: center;
@@ -442,14 +445,16 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     color: #000;
     background: #fff;
     border: 2px solid #000;
-    border-radius: 8px;
-    box-shadow: 2px 2px 0 #000;
+    border-radius: 3px;
+    box-shadow: var(--shadow-focus);
     cursor: pointer;
   }
+
   .mobile-nav-btn:active {
     transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0 #000;
+    box-shadow: none;
   }
+
   .mobile-nav-menu {
     list-style: none;
     margin: 6px 0 0;
@@ -457,12 +462,14 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     min-width: 172px;
     background: #fff;
     border: 2px solid #000;
-    box-shadow: 3px 3px 0 rgb(0 0 0 / 35%);
+    box-shadow: var(--shadow-focus);
     font-family: var(--font-ui);
   }
+
   .mobile-nav-menu[hidden] {
     display: none;
   }
+
   .mobile-nav-menu a {
     display: flex;
     align-items: center;
@@ -472,15 +479,18 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     text-decoration: none;
     font-size: 16px;
   }
+
   .mobile-nav-menu a:hover,
   .mobile-nav-menu a:focus-visible {
     background: #000;
     color: #fff;
   }
+
   .mobile-nav-menu a:hover .mnav-heart,
   .mobile-nav-menu a:focus-visible .mnav-heart {
     filter: invert(1);
   }
+
   .mnav-heart {
     width: 18px;
     height: 18px;

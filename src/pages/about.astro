@@ -282,6 +282,7 @@ import { siteConfig } from '../config/site';
   }
 
   /* ── Bio window ── */
+
   /* Drop the shared .window min-width:320px floor (from system.css) so the intro
      window and its bio paragraphs fit the pane on phones instead of clipping. */
   .bio-window {
@@ -321,6 +322,7 @@ import { siteConfig } from '../config/site';
   /* ── Two-column grid ── */
   .about-grid {
     display: grid;
+
     /* minmax(0, …) so the content column can shrink below its min-content instead
        of overflowing the viewport (see index.astro for the same fix). */
     grid-template-columns: clamp(220px, 30%, 280px) minmax(0, 1fr);
@@ -348,6 +350,7 @@ import { siteConfig } from '../config/site';
   .timeline-window {
     z-index: 2;
     position: relative;
+
     /* Drop the shared .window min-width:320px floor — like .sidebar-window — so it
        fits the about-grid column on phones instead of overflowing. */
     min-width: 0;
