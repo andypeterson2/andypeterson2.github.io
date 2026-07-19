@@ -57,10 +57,20 @@ const featured = projects.filter((p) => p.featured);
 <style>
   .home-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, 1fr) — not bare 1fr — so a column can shrink below its content's
+       min-width; otherwise the projects icon-grid's min-content blows the track
+       past the viewport on narrow screens and the intro text clips. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: clamp(16px, 3vw, 48px);
     align-items: start;
     padding: clamp(12px, 2vw, 32px) 0;
+  }
+
+  /* Grid items default to min-width:auto, which lets their content overflow the
+     track; pin to 0 so both columns honour the track width. */
+  .home-intro,
+  .projects-col {
+    min-width: 0;
   }
 
   /* ── Left column ── */
@@ -117,6 +127,10 @@ const featured = projects.filter((p) => p.featured);
 
   .projects-window {
     width: 100%;
+    /* The shared .window has min-width:320px (keeps the main site window usable);
+       a nested window in a grid column must not carry that floor, or it overflows
+       the column on phones. */
+    min-width: 0;
   }
 
   /* Hide close/resize buttons from system.css title-bar */
@@ -141,7 +155,7 @@ const featured = projects.filter((p) => p.featured);
 
   .icon-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: clamp(12px, 2vw, 32px);
     justify-items: center;
   }
@@ -188,7 +202,7 @@ const featured = projects.filter((p) => p.featured);
   /* ── Mobile: stack columns ── */
   @media (width <= 768px) {
     .home-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .bio {
