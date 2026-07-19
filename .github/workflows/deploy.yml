@@ -38,6 +38,17 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          # Public site identity — resolved into siteConfig at build (see
+          # astro.config envPrefix). All values are public by design; set them as
+          # repository *variables* (Settings ▸ Secrets and variables ▸ Actions ▸
+          # Variables). Unset → the "Portfolio" fallback.
+          SITE_DISPLAY_NAME: ${{ vars.SITE_DISPLAY_NAME }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_EMAIL: ${{ vars.SITE_EMAIL }}
+          SITE_GITHUB: ${{ vars.SITE_GITHUB }}
+          SITE_LINKEDIN: ${{ vars.SITE_LINKEDIN }}
 
       - uses: actions/upload-pages-artifact@v5
         with:

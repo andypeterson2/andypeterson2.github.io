@@ -45,4 +45,12 @@ export default defineConfig({
     '/underconstruction': '/',
     '/resume': '/',
   },
+  vite: {
+    // Expose the site's own env prefixes to import.meta.env. Vite only surfaces
+    // VITE_-prefixed vars by default, so without this siteConfig never sees
+    // SITE_* and silently renders "Portfolio" with empty contacts — the identity
+    // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
+    // other prefixes the app reads (BaseLayout).
+    envPrefix: ['PUBLIC_', 'SITE_', 'PLAUSIBLE_', 'PREVIEW_'],
+  },
 });
