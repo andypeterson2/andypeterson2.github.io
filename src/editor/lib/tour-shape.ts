@@ -6,9 +6,9 @@
 import type { Person, Section, Entry, Variant } from './types';
 
 /** The tag the spotlight step lifts out — one demo bullet must carry it. */
-export const SPOTLIT_TAG = 'management';
+export const SPOTLIT_TAG = 'leadership';
 /** The tag the lens step filters on — its caption names it, so they share this. */
-export const LENS_TAG = 'backend';
+export const LENS_TAG = 'quantum';
 
 export function findExperience(person: Person): Section | null {
   return person.sections.find((s) => s.type === 'experience') ?? null;

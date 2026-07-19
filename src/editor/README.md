@@ -32,7 +32,7 @@ lib/
   store.svelte.ts      EditorState — the single reactive store (see below)
   api.ts               REST client, the wire⇄view mappers, LaTeX escaping, auth
   types.ts             Person / Section / Entry / Item / Variant / LetterSection
-  demo.ts              the fictional demo persona (Jordan Rivera) + demo letters
+  demo.ts              the offline demo résumé (owner's public CV) + demo letters
   section-types.ts     the section catalog (fields, labels, defaults) per type
   variant-lens.ts      resolves which entries a variant's rules include/exclude
   export.ts            builds the import-compatible JSON snapshot
@@ -100,9 +100,13 @@ authoritative, so if the two disagree, the backend wins and this side is the bug
 
 ## Demo mode
 
-Not signed in → the editor renders a **fictional** persona (Jordan Rivera, in
-`demo.ts` — the repo is public and PII-gated, so demo data must never be real)
-and is fully editable **locally**. Nothing persists; a **Download JSON** action
+Not signed in → the editor renders the owner's **public CV** (`demo.ts`) and is
+fully editable **locally**. The professional history is hardcoded (the same public
+narrative as the About page), but the identity — name + contacts — is NOT: it is
+resolved from `siteConfig` on the server and passed in as the `identity` prop, so
+committed source carries no protected PII (the name-leakage CI gate) and only the
+public business contacts (email / GitHub / LinkedIn) ever render. Nothing persists;
+a **Download JSON** action
 exports the current document in the same shape the backend's import accepts, so
 a demo session isn't lost.
 
