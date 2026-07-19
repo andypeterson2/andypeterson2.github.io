@@ -251,7 +251,7 @@
       </div>
       <span class="txt"
         >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
-        variants, export. <b>Nothing is saved.</b></span
+        variants, export. <b>Nothing is saved until you sign in.</b></span
       >
       <button
         class="btn tour-start"
@@ -261,8 +261,6 @@
       >
       {#if editor.connectError === 'offline'}
         <button class="link" onclick={() => editor.connect()}>Retry</button>
-      {:else}
-        <button class="link" onclick={() => editor.signIn()}>Sign in with Google</button>
       {/if}
       <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
     </div>
