@@ -190,13 +190,13 @@
           class:live={editor.connected}
           class:busy={editor.connecting || editor.signingIn}
           aria-hidden="true"
-        ></span>{editor.signingIn
+        ></span><span class="conn-label">{editor.signingIn
           ? 'signing in…'
           : editor.connecting
             ? 'connecting…'
             : editor.connected
               ? 'connected'
-              : 'Demo — nothing saved'}
+              : 'Demo — nothing saved'}</span>
       </button>
     </span>
   </div>
@@ -459,5 +459,20 @@
   @media (prefers-reduced-motion: no-preference) {
     .save-toast { animation: toast-in 160ms ease-out; }
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  }
+
+  /* ── Mobile ── The editor is dense and desktop-first; on phones, trim the chrome
+     so nothing overflows: compact the menubar (the connection status collapses to
+     just its dot — the menus are what must stay reachable), tighten padding, and
+     stack the PDF preview under the document instead of beside it. */
+  @media (max-width: 640px) {
+    .menubar { gap: 10px; padding: 0 8px; }
+    .conn-label { display: none; }
+    .workspace { padding: 12px 12px 0; }
+    .wbody.split { grid-template-columns: minmax(0, 1fr); }
+    .preview { border-left: 0; border-top: 1px solid var(--ink); }
+    /* Clip the entry hover-highlight bleed (its ±10px negative margins) so it doesn't
+       add a horizontal scrollbar to the document in a narrow column; keep vertical scroll. */
+    .doc-scroll { overflow-x: hidden; }
   }
 </style>
