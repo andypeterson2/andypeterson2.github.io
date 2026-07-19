@@ -114,17 +114,30 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
       </ul>
     </nav>
 
-    <!-- Mobile header (≤768px) -->
-    <div class="mobile-header" aria-label="Mobile navigation">
-      <a href="/" class="mobile-heart">
-        <img src="/icons/heart.svg" alt="Home" width="40" height="40" class="mobile-heart-icon" />
-      </a>
-      <select class="mobile-nav-select" aria-label="Navigate to">
-        <option value="">Navigate...</option>
-        <option value="/about/">About</option>
-        <option value="/projects/">Projects</option>
-      </select>
-    </div>
+    <!-- Mobile site navigation (≤768px): one floating hamburger, the same on every
+         page — including full-bleed app pages like the editor (it is not hidden in
+         bare mode). -->
+    <nav class="mobile-nav" aria-label="Site navigation">
+      <button
+        type="button"
+        class="mobile-nav-btn"
+        aria-haspopup="true"
+        aria-expanded="false"
+        aria-controls="mobile-nav-menu"
+        aria-label="Site navigation"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+      <ul id="mobile-nav-menu" class="mobile-nav-menu" hidden>
+        <li>
+          <a href="/"
+            ><img src="/icons/heart.svg" alt="" class="mnav-heart" width="18" height="18" /> Home</a
+          >
+        </li>
+        <li><a href="/about/">About</a></li>
+        <li><a href="/projects/">Projects</a></li>
+      </ul>
+    </nav>
 
     <div class="site-canvas">
       <div class="window site-window">
@@ -164,11 +177,28 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     </button>
 
     <script>
-      // Mobile nav select
-      const sel = document.querySelector('.mobile-nav-select') as HTMLSelectElement | null;
-      if (sel) {
-        sel.addEventListener('change', () => {
-          if (sel.value) window.location.href = sel.value;
+      // Mobile floating nav — a hamburger that toggles a small menu.
+      const navBtn = document.querySelector('.mobile-nav-btn') as HTMLButtonElement | null;
+      const navMenu = document.getElementById('mobile-nav-menu');
+      if (navBtn && navMenu) {
+        const setOpen = (open: boolean) => {
+          navBtn.setAttribute('aria-expanded', String(open));
+          navMenu.hidden = !open;
+        };
+        navBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setOpen(navBtn.getAttribute('aria-expanded') !== 'true');
+        });
+        // A press anywhere else, or Escape, closes it.
+        document.addEventListener('click', (e) => {
+          if (!navMenu.hidden && !(e.target instanceof Node && navMenu.contains(e.target)))
+            setOpen(false);
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !navMenu.hidden) {
+            setOpen(false);
+            navBtn.focus();
+          }
         });
       }
 
@@ -195,11 +225,12 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
   /* Full-bleed app pages (bare): hide the portal chrome, strip the window frame,
      let the page fill the viewport. The <h1> stays for SEO/a11y (sr-only). */
   body.is-bare .site-menubar,
-  body.is-bare .mobile-header,
   body.is-bare .details-bar,
   body.is-bare #back-to-top {
     display: none !important;
   }
+  /* The floating site-nav is deliberately NOT hidden in bare mode — it is the one
+     consistent way back out of a full-bleed app page like the editor. */
 
   body.is-bare .site-canvas {
     max-width: none;
@@ -231,6 +262,19 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     padding: 0;
     margin: 0;
     max-width: none;
+  }
+
+  /* Mobile: no scrollbar chrome anywhere. Scrolling still works — the bars just
+     don't paint (the System-6 patterned bars are heavy on a phone). */
+  @media (width <= 768px) {
+    * {
+      scrollbar-width: none;
+    }
+    *::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
   }
 </style>
 
@@ -383,9 +427,64 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     padding: 1vw 4vw;
   }
 
-  /* ── Mobile header: hidden on desktop ── */
-  .mobile-header {
+  /* ── Mobile floating nav: hidden on desktop (the .site-menubar serves there) ── */
+  .mobile-nav {
     display: none;
+  }
+  .mobile-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+    line-height: 1;
+    color: #000;
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 8px;
+    box-shadow: 2px 2px 0 #000;
+    cursor: pointer;
+  }
+  .mobile-nav-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 #000;
+  }
+  .mobile-nav-menu {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 4px;
+    min-width: 172px;
+    background: #fff;
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 rgb(0 0 0 / 35%);
+    font-family: var(--font-ui);
+  }
+  .mobile-nav-menu[hidden] {
+    display: none;
+  }
+  .mobile-nav-menu a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    color: #000;
+    text-decoration: none;
+    font-size: 16px;
+  }
+  .mobile-nav-menu a:hover,
+  .mobile-nav-menu a:focus-visible {
+    background: #000;
+    color: #fff;
+  }
+  .mobile-nav-menu a:hover .mnav-heart,
+  .mobile-nav-menu a:focus-visible .mnav-heart {
+    filter: invert(1);
+  }
+  .mnav-heart {
+    width: 18px;
+    height: 18px;
+    display: block;
   }
 
   /* ── Back to top ── */
@@ -409,26 +508,12 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
       display: none;
     }
 
-    .mobile-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 2vw 4vw;
-      box-sizing: border-box;
-      background: #fff;
-      border-bottom: 2px solid #000;
-    }
-
-    .mobile-heart-icon {
-      width: 10vw;
-      height: 10vw;
+    .mobile-nav {
       display: block;
-    }
-
-    .mobile-nav-select {
-      font-size: clamp(0.875rem, 4vw, 1.5rem);
-      height: 10vw;
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 300;
     }
 
     body {
