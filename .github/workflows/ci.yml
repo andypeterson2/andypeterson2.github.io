@@ -35,6 +35,15 @@ jobs:
           path: coverage/
           retention-days: 7
       - run: npm run build
+        env:
+          # Public site identity — kept in sync with deploy.yml so the tested build
+          # matches production. Set as repository variables; unset → "Portfolio".
+          SITE_DISPLAY_NAME: ${{ vars.SITE_DISPLAY_NAME }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_EMAIL: ${{ vars.SITE_EMAIL }}
+          SITE_GITHUB: ${{ vars.SITE_GITHUB }}
+          SITE_LINKEDIN: ${{ vars.SITE_LINKEDIN }}
       - name: Verify CSP ships in built output
         run: bash scripts/check-security-headers.sh
       - uses: actions/upload-artifact@v7
