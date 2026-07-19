@@ -459,6 +459,21 @@
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
+
+  /* Mobile: the résumé renders in a narrow column, so the role/date row and the
+     skill category/list grid get crushed (a role wraps to 4 lines beside its date).
+     Stack them — role over date, category over list — so each gets the full width. */
+  @media (max-width: 640px) {
+    .entry-line {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    .skill {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+  }
   ul {
     margin: 6px 0 0;
     padding-left: 20px;
