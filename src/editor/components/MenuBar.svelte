@@ -149,7 +149,7 @@
       aria-haspopup="menu"
       aria-expanded={allOpen}
       aria-label="Menu"
-      onclick={toggleAll}>☰</button
+      onclick={toggleAll}><span class="hb-icon" aria-hidden="true">☰</span> Menu</button
     >
     {#if allOpen}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -332,17 +332,26 @@
   .hamburger {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-width: 40px;
+    gap: 8px;
     min-height: 40px;
-    font: inherit;
-    font-size: 20px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
     line-height: 1;
     color: var(--ink);
-    background: none;
-    border: 0;
-    padding: 0 6px;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 9px 14px;
     cursor: pointer;
+  }
+  .hamburger .hb-icon {
+    font-size: 18px;
+  }
+  .hamburger:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--ink);
   }
   .hamburger[aria-expanded='true'] {
     background: var(--ink);

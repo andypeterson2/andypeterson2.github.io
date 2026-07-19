@@ -501,17 +501,67 @@
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   }
 
-  /* ── Mobile ── The editor is dense and desktop-first; on phones it becomes a
-     proper touch layout: a ☰ app bar (the File/Edit/View/Help row lives in the
-     hamburger now — see MenuBar), the invitation as a centered pop-up window, an
-     evenly-aligned toolbar, and the résumé spanning the full width. */
+  /* ── Mobile ── A touch layout: the sitewide floating nav (BaseLayout) sits at the
+     very top; the editor's own controls collapse into a single ☰ menu one row down
+     (the toolbar's buttons all live in it now); the résumé fills the width; and the
+     connection status moves to a bar pinned across the bottom. No title. */
   @media (max-width: 640px) {
-    /* App bar: ☰ first, wordmark, status dot far right. */
-    .menubar { gap: 8px; padding: 0 6px; height: 44px; }
-    .mark { display: none; }
-    .menubar > :global(.menus) { order: -1; }
-    .conn-label { display: none; }
-    .right .conn { padding: 8px 4px; }
+    /* Editor menu bar — just the ☰ (File/Edit/View/Help, which is every panel and
+       command). Sits below the floating site-nav and sticks to the top so the
+       controls stay reachable while the résumé scrolls. */
+    .menubar {
+      position: sticky;
+      top: 0;
+      gap: 8px;
+      height: auto;
+      padding: 8px 12px;
+      margin-top: 54px; /* clear the floating site-nav (fixed, top-left) */
+      z-index: 4;
+    }
+    .mark,
+    .menubar strong {
+      display: none; /* no wordmark, no title */
+    }
+    .toolbar {
+      display: none; /* its buttons all moved into the ☰ menu */
+    }
+
+    /* Connection status → a bar spanning the bottom of the page (tap to reopen the
+       invite / tour). It is the one persistent chrome besides the two menus. */
+    .right {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      margin: 0;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 12px;
+      background: var(--paper);
+      border-top: 1px solid var(--ink);
+      font-size: 12.5px;
+      z-index: 6;
+    }
+    .conn-label {
+      display: inline; /* there is room for it in the bottom bar */
+    }
+
+    .workspace {
+      padding: 8px 0 0;
+    }
+    .doc-scroll {
+      /* Inner scroll sized to leave room for the ☰ bar above and the status bar
+         below; the (now-hidden) scrollbar means no visible chrome, and overflow-x
+         hidden still clips the entry hover-highlight's ±10px bleed. */
+      max-height: calc(100dvh - 210px);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    /* The per-document statusbar is redundant with the bottom status bar (and would
+       hide behind it), so drop it on mobile. */
+    .statusbar {
+      display: none;
+    }
 
     /* Guided-tour invite → centered System-6 pop-up window over a dismiss scrim. */
     .invite-scrim {
@@ -590,43 +640,6 @@
       display: none; /* the titlebar close box replaces it */
     }
 
-    /* Toolbar: drop the redundant ⚙ (the Variant button opens the same drawer) and
-       the desktop spacer; give each field its own full-width row; lay the action
-       buttons out as an even grid so they align instead of wrapping ragged. */
-    .workspace {
-      padding: 12px 0 0;
-    }
-    .toolbar {
-      padding: 0 12px;
-      gap: 8px;
-    }
-    .settings-btn,
-    .sp {
-      display: none;
-    }
-    .toolbar .field {
-      flex: 1 1 100%;
-      gap: 8px;
-    }
-    .toolbar .field .popup {
-      flex: 1 1 auto;
-      max-width: none;
-    }
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
-      flex: 1 1 100%;
-    }
-    /* Tags / Layout / Style → thirds on the first row; Preview / Export → halves
-       spanning the full width on the second (each button is 3 of 6 columns). */
-    .actions .btn:nth-child(-n + 3) {
-      grid-column: span 2;
-    }
-    .actions .btn:nth-child(n + 4) {
-      grid-column: span 3;
-    }
-
     /* The résumé window spans the full width, flush to both edges. system.css's
        global `.window` adds margin:16px + min-width:320px (it styles any .window on
        the page); override both here so the paper runs edge-to-edge with no gutter. */
@@ -645,11 +658,6 @@
     .preview {
       border-left: 0;
       border-top: 1px solid var(--ink);
-    }
-    /* Clip the entry hover-highlight bleed (its ±10px negative margins) so it doesn't
-       add a horizontal scrollbar to the document in a narrow column; keep vertical scroll. */
-    .doc-scroll {
-      overflow-x: hidden;
     }
   }
 </style>

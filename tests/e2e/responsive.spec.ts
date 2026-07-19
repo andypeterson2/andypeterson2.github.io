@@ -1,24 +1,25 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Responsive layout', () => {
-  test('desktop shows menubar, hides mobile header', async ({ page }) => {
+  test('desktop shows menubar, hides mobile nav', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await expect(page.locator('.site-menubar')).toBeVisible();
-    await expect(page.locator('.mobile-header')).not.toBeVisible();
+    await expect(page.locator('.mobile-nav')).not.toBeVisible();
   });
 
-  test('mobile hides menubar, shows mobile header', async ({ page }) => {
+  test('mobile hides menubar, shows the floating nav', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await expect(page.locator('.site-menubar')).not.toBeVisible();
-    await expect(page.locator('.mobile-header')).toBeVisible();
+    await expect(page.locator('.mobile-nav-btn')).toBeVisible();
   });
 
-  test('mobile nav select navigates to pages', async ({ page }) => {
+  test('the floating nav opens and navigates to pages', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
-    await page.locator('.mobile-nav-select').selectOption('/about/');
+    await page.locator('.mobile-nav-btn').click();
+    await page.locator('#mobile-nav-menu a').filter({ hasText: 'About' }).click();
     await expect(page).toHaveURL('/about/');
   });
 
