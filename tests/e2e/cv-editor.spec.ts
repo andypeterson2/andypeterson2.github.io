@@ -163,12 +163,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
     await expect(invite).toContainText('Nothing is saved');
-    // The status bar itself becomes the sign-in invitation once the gateway is
-    // reachable (a 403 means "sign in", not "down").
+    // The status bar itself is the sign-in invitation once the gateway is reachable
+    // (a 403 means "sign in", not "down"); tapping it opens the Access popup. The
+    // invite no longer carries its own redundant sign-in link.
     await expect(page.locator('.conn')).toContainText('Sign in with Google');
-    // Sign-in survives as a quiet link for the owner (still the Access popup,
-    // never a hand-built URL) — not an inverted-ink alarm bar.
-    await expect(invite.getByRole('button', { name: /Sign in with Google/i })).toBeVisible();
   });
 
   test('the invitation dismisses to the ◇ chip; File ▸ Reset demo restores the sample', async ({
