@@ -73,7 +73,8 @@ const DEMO_PERSON_SEED: Person = {
             },
             {
               id: 3,
-              content: "Presented algorithmic research to IBM's VP of Quantum during a campus visit.",
+              content:
+                "Presented algorithmic research to IBM's VP of Quantum during a campus visit.",
               tags: ['research'],
             },
           ],
