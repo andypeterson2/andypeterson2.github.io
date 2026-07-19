@@ -5,6 +5,7 @@
   //
   // `data-tour` marks this subtree as the tour's own chrome: events inside it are
   // controls, not interruptions.
+  import { onMount } from 'svelte';
   import { tour } from '../lib/tour.svelte';
   import { editor } from '../lib/store.svelte';
   import { prefersReducedMotion } from '../lib/tour';
@@ -28,6 +29,23 @@
   // or reduced motion is handled gracefully.
   let box = $state<{ x: number; y: number; w: number; h: number } | null>(null);
   const PAD = 6;
+
+  // On phones a fixed narrator edge can't win: anchored at the bottom it covers the
+  // variant drawer's bottom sheet (step 5); anchored at the top it covers the
+  // toolbar targets it points at (variant, export). So place it opposite the current
+  // spotlight — top when the framed target sits in the lower part of the screen,
+  // bottom otherwise. Desktop keeps the shared bottom anchor.
+  let mobile = $state(false);
+  onMount(() => {
+    const mq = matchMedia('(max-width: 640px)');
+    const sync = () => (mobile = mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
+  const narratorTop = $derived(
+    mobile && box ? box.y + box.h / 2 > window.innerHeight * 0.55 : false,
+  );
 
   $effect(() => {
     if (!tour.active) {
@@ -70,7 +88,13 @@
 {/if}
 
 {#if tour.state !== 'idle'}
-  <section class="tour floating-panel" data-tour role="region" aria-label="Guided tour">
+  <section
+    class="tour floating-panel"
+    class:at-top={narratorTop}
+    data-tour
+    role="region"
+    aria-label="Guided tour"
+  >
     <div class="tbar">
       <button class="tclose" aria-label="End tour" onclick={() => tour.end()}></button>
       <span class="ttl">{done ? 'Tour complete' : 'Guided tour'}</span>
@@ -125,6 +149,12 @@
      .floating-panel primitive (lib/styles.css) — the same one the save toast uses. */
   .tour {
     width: min(92vw, 430px);
+  }
+  /* Dynamic anchor (mobile only — see narratorTop): the narrator jumps to the top
+     edge when the current spotlight sits low, so it never covers what it frames. */
+  .tour.at-top {
+    top: 8px;
+    bottom: auto;
   }
   .tbar {
     display: flex;
