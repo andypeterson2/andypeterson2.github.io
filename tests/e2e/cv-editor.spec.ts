@@ -158,7 +158,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
     // state EVERY visitor lands in, since the backend is owner-only.
     await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
@@ -173,10 +173,15 @@ test.describe('CV editor (document-first rewrite)', () => {
     page,
   }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
+    // The invite is a modal pop-up on load. Dismissing is final — it only auto-appears
+    // on load, and the status bar is a sign-in button, not a way to bring it back.
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
+    await invite.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(invite).toHaveCount(0);
+    await expect(page.locator('.conn')).toContainText('Sign in with Google');
 
     // Edit the demo — the whole point of inviting people to touch it.
     await page.locator('.entry').first().click();
@@ -192,12 +197,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.getByRole('menuitem', { name: /Reset demo/ }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
-
-    // Dismissing is final — the invite only auto-appears on load. The status bar is a
-    // sign-in button now, not a way to bring it back.
-    await invite.getByRole('button', { name: 'Dismiss' }).click();
-    await expect(invite).toHaveCount(0);
-    await expect(page.locator('.conn')).toContainText('Sign in with Google');
   });
 
   test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
@@ -533,7 +532,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     page,
   }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     const tour = page.locator('.tour');
     await page.locator('.tour-start').click();
@@ -575,7 +574,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // The tour moves the page — a vestibular hazard, so auto-advance must not happen.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     const tour = page.locator('.tour');
     await page.locator('.tour-start').click();
@@ -599,7 +598,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // step through with Next rather than waiting on dwell timers.)
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     const tour = page.locator('.tour');
     await page.locator('.tour-start').click();
@@ -616,7 +615,9 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('a forwarded ?tour=1 link opens straight into the narrative', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page, `${EDITOR_APP}?tour=1`);
+    // ?tour=1 auto-starts the tour, which dismisses the invite itself — skip the
+    // helper's dismiss step (there is nothing to dismiss).
+    await gotoEditor(page, `${EDITOR_APP}?tour=1`, { keepInvite: true });
     await expect(page.locator('.tour')).toBeVisible();
     await expect(page.locator('.tour .count')).toHaveText('1 of 7');
   });
