@@ -19,16 +19,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       reportsDirectory: 'coverage',
-      // Measure the WHOLE logic surface — both the portal lib (src/lib/**) and the
-      // editor lib (src/editor/lib/**) — not just files a test happens to import
-      // (v4's default), and without cherry-picking the well-covered files, which
-      // would only relocate the blind spot. So the number is honest, and low: the
-      // pure logic is thoroughly unit-tested (diff/undo/tour ~100%), but the reactive
-      // controllers (store.svelte.ts, tags, …) and api.ts are exercised by the
-      // Playwright e2e suite (tests/e2e), which v8 unit coverage cannot see — so they
-      // read as ~0% here. The thresholds below are therefore a regression RATCHET at
-      // the true current floor, not an aspiration; raising real unit coverage of the
-      // controller tier is tracked as tech debt, not faked with a green 100%.
+      // Measure the WHOLE logic surface — the portal lib (src/lib/**) and the editor
+      // lib (src/editor/lib/**) — without cherry-picking the well-covered files (that
+      // would only relocate the blind spot). The slice controllers (tags/variants/
+      // letters/preview/tour) and the core store are now unit-tested (tests/editor-*
+      // -controller.test.ts, editor-store.test.ts); api.ts and some store branches
+      // still lean on the Playwright e2e suite, which v8 unit coverage can't see — so
+      // the honest number is ~54%, not a faked 100%. Thresholds are a regression
+      // RATCHET just below that floor; raise them as more branches land.
       // .astro/.svelte stay out — v8 can't parse them; they're e2e-covered.
       include: ['src/lib/**/*.{ts,js}', 'src/editor/lib/**/*.{ts,js}'],
       exclude: [
@@ -39,13 +37,13 @@ export default defineConfig({
         'dist/**',
         'coverage/**',
       ],
-      // Honest floor (current: ~25% stmts/lines, ~29% branch, ~23% func). A drop
-      // below these fails CI; the goal is to ratchet UP as controller unit tests land.
+      // Honest floor (current ~54% stmts/lines, ~46% branch, ~49% func). A drop below
+      // these fails CI; ratchet UP as coverage grows — never loosen to hide a gap.
       thresholds: {
-        lines: 22,
-        functions: 20,
-        branches: 26,
-        statements: 22,
+        lines: 51,
+        functions: 46,
+        branches: 43,
+        statements: 50,
       },
     },
   },
