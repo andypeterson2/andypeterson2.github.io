@@ -123,7 +123,7 @@ jobs:
           name: dist
           path: dist/
       - name: Lighthouse CI (desktop)
-        uses: treosh/lighthouse-ci-action@v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
           uploadArtifacts: true
           artifactName: lighthouse-desktop-results
@@ -139,7 +139,7 @@ jobs:
           name: dist
           path: dist/
       - name: Lighthouse CI (mobile)
-        uses: treosh/lighthouse-ci-action@v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
           uploadArtifacts: true
           artifactName: lighthouse-mobile-results

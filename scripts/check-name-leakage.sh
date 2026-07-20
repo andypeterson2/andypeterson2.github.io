@@ -12,7 +12,12 @@ if [ -n "$PROTECTED_NAMES" ]; then
 fi
 
 if [ ${#NAMES[@]} -eq 0 ]; then
-  echo "No PROTECTED_NAMES configured — skipping leakage check."
+  # Fail closed in CI: a green PII gate that scans for nothing is worse than none.
+  if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    echo "ERROR: PROTECTED_NAMES is unset in CI — refusing to pass a PII gate that checks nothing."
+    exit 1
+  fi
+  echo "No PROTECTED_NAMES configured — skipping leakage check (local run)."
   exit 0
 fi
 
@@ -23,6 +28,11 @@ INCLUDES=(--include='*.ts' --include='*.tsx' --include='*.astro' --include='*.md
 HAVE_PDFTOTEXT=0
 command -v pdftotext >/dev/null 2>&1 && HAVE_PDFTOTEXT=1
 if [ $HAVE_PDFTOTEXT -eq 0 ]; then
+  # Fail closed in CI if there are committed PDFs we'd otherwise silently skip.
+  if { [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; } && [ -n "$(find $SCAN_DIRS -name '*.pdf' 2>/dev/null | head -n1)" ]; then
+    echo "ERROR: pdftotext missing in CI but committed PDFs exist — cannot scan them for PII. Install poppler-utils."
+    exit 1
+  fi
   echo "WARN: pdftotext not found — committed PDFs will NOT be scanned (install poppler-utils in CI)."
 fi
 

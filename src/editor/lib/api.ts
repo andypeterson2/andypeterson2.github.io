@@ -110,13 +110,16 @@ export function untex(s: string | undefined): string {
 }
 
 /**
- * Display text → LaTeX, for writes. A field is made injection- and
- * breakage-proof: a permitted `\command` (see symbols.ts) is substituted to its
- * Unicode glyph FIRST, then EVERY remaining LaTeX special is escaped to literal
- * text. So the compiler never receives a raw control word from a field — a token
- * is either a known glyph or literal prose. `\rightarrow` → `→` normalizes on the
- * way in (one-way; the glyph is canonical); an unknown `\foobar` becomes the
- * literal text “\foobar”. Nothing is trusted through.
+ * Display text → LaTeX, for writes. A field is made breakage-proof: a permitted
+ * `\command` (see symbols.ts) is substituted to its Unicode glyph FIRST, then EVERY
+ * remaining LaTeX special is escaped to literal text, so a token is either a known
+ * glyph or literal prose. `\rightarrow` → `→` normalizes on the way in (one-way; the
+ * glyph is canonical); an unknown `\foobar` becomes the literal text “\foobar”.
+ *
+ * This is display-safety and defense-in-depth, NOT the security boundary: it runs in
+ * the browser, so a `curl` bypasses it. The server-side compile path (xelatex) is the
+ * real boundary — it must re-escape untrusted field content independently and run
+ * sandboxed (no `-shell-escape`, `openin_any=p`).
  */
 export function tex(s: string): string {
   if (!s) return '';
