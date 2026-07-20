@@ -198,28 +198,6 @@
       ><span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong></a
     >
     <MenuBar {menus} />
-    <span class="right">
-      <button
-        class="conn"
-        class:cta={demoMode}
-        onclick={() => (demoMode ? editor.signIn() : editor.connect())}
-        disabled={editor.connecting || editor.signingIn}
-        title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
-      >
-        <span
-          class="dot"
-          class:live={editor.connected}
-          class:busy={editor.connecting || editor.signingIn}
-          aria-hidden="true"
-        ></span><span class="conn-label">{editor.signingIn
-          ? 'signing in…'
-          : editor.connecting
-            ? 'connecting…'
-            : editor.connected
-              ? 'connected'
-              : 'Sign in with Google to save changes'}</span>
-      </button>
-    </span>
   </div>
 
   {#if editor.signingIn}
@@ -369,15 +347,35 @@
         {/if}
       </div>
       <div class="statusbar">
-        <span
+        <span class="sb-l"
           >{editor.connected
             ? editor.saveState === 'saving'
               ? 'saving…'
               : editor.saveState === 'error'
                 ? '⚠ save failed'
                 : '✓ saved'
-            : 'demo · nothing saved'} · {editor.variantLabel}</span
+            : 'demo'} · {editor.variantLabel}</span
         >
+        <button
+          class="conn"
+          class:cta={demoMode}
+          onclick={() => (demoMode ? editor.signIn() : editor.connect())}
+          disabled={editor.connecting || editor.signingIn}
+          title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
+        >
+          <span
+            class="dot"
+            class:live={editor.connected}
+            class:busy={editor.connecting || editor.signingIn}
+            aria-hidden="true"
+          ></span><span class="conn-label">{editor.signingIn
+            ? 'signing in…'
+            : editor.connecting
+              ? 'connecting…'
+              : editor.connected
+                ? 'connected'
+                : 'Sign in with Google to save changes'}</span>
+        </button>
         <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
     </div>
@@ -426,17 +424,18 @@
   .wordmark { display: inline-flex; align-items: center; gap: 7px; color: inherit; text-decoration: none; }
   .wordmark:hover strong { text-decoration: underline; }
   .wordmark:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-weight: 400; }
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
   .dot.live { background: var(--state-live); }
   .dot.busy { background: var(--state-busy); }
-  .conn { font: inherit; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+  /* The connection status + sign-in CTA lives in the status bar's centre column
+     (see .statusbar); justify-self keeps it centred there. */
+  .conn { font: inherit; justify-self: center; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
   .conn:disabled { cursor: default; }
   /* Sign-in CTA: drop the status dot and read as an obvious link. */
   .conn.cta .dot { display: none; }
-  .conn.cta .conn-label { font-weight: 700; text-decoration: underline; }
+  .conn.cta .conn-label { font-weight: 700; text-decoration: underline; color: var(--ink); }
 
   /* The demo invitation — a centered System-6 pop-up window carrying the guided
      tour, over a dismiss scrim. Shown once, on load (see Editor's inviteOpen); the
@@ -553,8 +552,12 @@
   .pv-frame { flex: 1; width: 100%; border: 0; background: #fff; }
   .pv-log { flex: 1; overflow: auto; background: #1c1b19; }
   .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 11px; line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
-  .statusbar { display: flex; justify-content: space-between; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
-  .sb-r { color: #57554f; }
+  /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
+     the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
+     regardless of the side widths. */
+  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
+  .sb-l { justify-self: start; white-space: nowrap; }
+  .sb-r { justify-self: end; white-space: nowrap; color: #57554f; }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
      from the shared .floating-panel primitive (lib/styles.css); only the row layout
@@ -609,27 +612,26 @@
       display: none; /* its buttons all moved into the ☰ menu */
     }
 
-    /* Status bar — pinned across the bottom (tap to reopen the invite / tour). */
-    .right {
+    /* Status bar — pinned across the bottom, showing just the centred connection CTA.
+       Its side columns (save state, key hint) are dropped on a phone; the ☰ menu and
+       the doc carry that context. This is the same bar as desktop, re-anchored. */
+    .statusbar {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
       height: var(--bot-h);
       margin: 0;
+      display: flex;
       justify-content: center;
       align-items: center;
-      gap: 6px;
       background: var(--paper);
       border-top: 1px solid var(--ink);
       font-size: 12.5px;
       z-index: 5;
     }
-    .conn-label {
-      display: inline;
-    }
-    /* Redundant with the bottom status bar. */
-    .statusbar {
+    .sb-l,
+    .sb-r {
       display: none;
     }
 
