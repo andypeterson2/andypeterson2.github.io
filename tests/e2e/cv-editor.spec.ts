@@ -232,7 +232,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // A press outside dismisses it, the way a real pull-down does.
     await file.click();
     await expect(drop).toBeVisible();
-    await page.locator('.statusbar').click();
+    await page.locator('.sb-l').click();
     await expect(drop).toHaveCount(0);
   });
 
@@ -281,7 +281,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(sections).toHaveText(['Summary', 'Skills', 'Education']);
 
     // ⌘Z outside a text field drives the document-level undo.
-    await page.locator('.statusbar').click();
+    await page.locator('.sb-l').click();
     await page.keyboard.press('ControlOrMeta+z');
 
     // Back at its original index, with everything that was inside it.
@@ -317,7 +317,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
     await expect(page.locator('.doc .entry')).toHaveCount(0);
 
-    await page.locator('.statusbar').click();
+    await page.locator('.sb-l').click();
     await page.keyboard.press('ControlOrMeta+z');
     await expect(page.locator('.doc .entry')).toHaveCount(1);
     await expect(page.locator('.doc')).toContainText('Analyst');
@@ -553,7 +553,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     const bullets = await page.locator('.doc .edit .bl').count();
 
     // The signature interaction: one touch outside the tour hands back the wheel.
-    await page.locator('.statusbar').click();
+    await page.locator('.sb-l').click();
     await expect(tour.locator('.wheel')).toHaveText('Paused — you have the wheel.');
     await expect(tour.getByRole('button', { name: /Resume/ })).toBeVisible();
 
@@ -655,7 +655,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The moment the owner takes the wheel, the tour bows out and the document is
     // put back exactly as it was — re-open the entry and the bullet is gone.
-    await page.locator('.statusbar').click();
+    await page.locator('.sb-l').click();
     await expect(tour).toHaveCount(0);
     await page.locator('.doc .entry').first().click();
     await expect(page.locator('.doc .edit .bl')).toHaveCount(0);
