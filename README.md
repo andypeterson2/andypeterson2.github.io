@@ -9,7 +9,7 @@ and talks to their optional backends over a shared HTTP API contract.
 ```
 src/                      Astro 6 portal (pages, layouts, components, styles)
 public/                   Served as-is, including owned sub-app frontends:
-  classifiers/ nonogram/ video-chat/ cv/   each app's frontend JS/CSS
+  classifiers/ nonogram/                   each app's frontend JS/CSS
   ui-kit/                                  ui-kit runtime (icons.js, ui-kit.js)
   js/                                      portal scripts (contract client, modal)
 public/js/       Shared browser scripts (service config, nav, theme bootstrap)
