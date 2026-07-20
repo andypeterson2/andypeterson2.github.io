@@ -77,6 +77,9 @@ export function tourSteps(): TourStep[] {
       id: 'lens',
       caption: `A variant is a saved lens over that one document. This one keeps only what is tagged #${LENS_TAG}.`,
       spot: '[data-tour-spot="variants"]',
+      // Phones: the variant picker is folded into the ☰ menu, so frame the document
+      // the lens just re-rendered — the visible effect is right there in the résumé.
+      spotMobile: '[data-tour-spot="document"]',
       enter() {
         editor.tags.highlight = null;
         editor.openDrawer = null;
@@ -98,6 +101,8 @@ export function tourSteps(): TourStep[] {
       caption:
         'A cover letter is a variant too — the same profile, with its own recipient and paragraphs.',
       spot: '[data-tour-spot="variants"]',
+      // Phones: frame the document, now re-rendered as the letter this variant selects.
+      spotMobile: '[data-tour-spot="document"]',
       enter() {
         editor.openDrawer = null;
         const v = letterVariant();
@@ -109,6 +114,8 @@ export function tourSteps(): TourStep[] {
       caption:
         'Export the profile as JSON whenever you like. Signed in, every variant compiles to a real PDF through LaTeX.',
       spot: '[data-tour-spot="export"]',
+      // Phones: Export lives inside the ☰ menu (File → Export) — point at the menu.
+      spotMobile: '.menubar .hamburger',
       enter() {
         editor.variants.select(null);
       },
