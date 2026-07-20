@@ -310,4 +310,16 @@
     outline-offset: 2px;
     border-radius: 6px;
   }
+
+  /* Narrow phones: stack the recipient/salutation label over its input so each field
+     gets the full width instead of squeezing beside a fixed 96px label. */
+  @media (max-width: 640px) {
+    .fld {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .lbl {
+      padding-top: 0;
+    }
+  }
 </style>

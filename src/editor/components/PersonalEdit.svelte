@@ -148,7 +148,9 @@
     outline: 2px solid var(--ink);
     outline-offset: 1px;
   }
-  @media (width <= 620px) {
+  /* Narrow column (the résumé's own width, not the chrome breakpoint): stack the
+     two-up identity fields so each input gets the full width. */
+  @media (max-width: 640px) {
     .grid {
       grid-template-columns: 1fr;
     }

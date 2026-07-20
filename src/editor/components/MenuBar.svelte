@@ -2,9 +2,9 @@
   // The System-6 menubar: real pull-down menus, following the ARIA menubar
   // pattern (menubar → menuitem[aria-haspopup] → menu → menuitem).
   //
-  // Below 640px the desktop row of titles is the wrong idiom for a thumb, so it
-  // collapses to a single ☰ that opens every command in one grouped panel — the
-  // conventional mobile menu. Same MenuDef data drives both.
+  // At/below 768px (the site's own touch breakpoint) the desktop row of titles is the
+  // wrong idiom for a thumb, so it collapses to a single ☰ that opens every command in
+  // one grouped panel — the conventional mobile menu. Same MenuDef data drives both.
   //
   // A menu with no items renders *disabled* rather than as inert text styled to
   // look live. An unimplemented command that looks available is the same class of
@@ -25,7 +25,7 @@
   // structurally different — four independent dropdowns vs. one grouped panel.
   let mobile = $state(false);
   onMount(() => {
-    const mq = matchMedia('(max-width: 640px)');
+    const mq = matchMedia('(max-width: 768px)');
     const sync = () => {
       mobile = mq.matches;
       // Leaving a mode closes whatever it had open, so a stale menu can't linger.
@@ -357,9 +357,15 @@
     background: var(--ink);
     color: var(--paper);
   }
+  /* Anchored to the button's right edge (the ☰ sits at the far right of the bar),
+     so the panel opens leftward — into the viewport — instead of off the right edge.
+     The max-width is a hard backstop: it can never exceed the screen, whatever the
+     labels. */
   .drop.mega {
-    left: 0;
+    left: auto;
+    right: 0;
     min-width: 230px;
+    max-width: calc(100vw - 24px);
     max-height: 76vh;
     overflow: auto;
     padding-bottom: 6px;

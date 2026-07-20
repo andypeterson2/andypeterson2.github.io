@@ -311,4 +311,15 @@
     box-shadow: none;
     color: #55534e;
   }
+
+  /* Narrow phones: the fixed 116px label column leaves too little for the input, so
+     stack label over field — each then spans the full width. */
+  @media (max-width: 640px) {
+    .tags-row,
+    .fld {
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 4px;
+    }
+  }
 </style>

@@ -23,7 +23,7 @@ export interface TourStep {
    */
   spot?: string;
   /**
-   * Narrow-viewport override for `spot`. Below 640px the toolbar folds into the ☰
+   * Narrow-viewport override for `spot`. At/below 768px the toolbar folds into the ☰
    * menu, so a target like the variant picker or Export button is `display:none` and
    * would frame nothing. Such a step names a stand-in the phone actually shows — the
    * document the variant re-renders, or the ☰ Menu that now holds the command.

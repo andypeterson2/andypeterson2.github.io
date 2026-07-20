@@ -54,22 +54,25 @@
     onSelect: () => (editor.openDrawer = drawer),
   });
 
-  // Reset demo lives here, where a System-6 user looks for Revert — not on a strip
-  // they can dismiss. View mirrors the toolbar: the preview pane (a toggle, so it
-  // carries a ✓) and the panels. Edit still has no commands, so it renders disabled
-  // rather than as live-looking text that does nothing.
+  // Grouped the way a System-6 user reaches for them. File is document-level: which
+  // résumé you're in (Profiles), then getting it out (Export) or starting over (Reset).
+  // Edit is the change timeline — Undo/Redo and the checkpoint History that extends it.
+  // View is the shaping surface: the preview toggle and the panels that re-shape the one
+  // document (Variants, Tags, Layout, Style). Dead commands render disabled, never as
+  // live-looking text that does nothing.
   const menus: MenuDef[] = $derived([
     {
       title: 'File',
       items: [
+        drawerItem('Profiles', 'profiles'),
         {
           label: '⤓ Export as JSON…',
+          separatorBefore: true,
           disabled: editor.noProfiles,
           onSelect: () => void editor.exportJson(),
         },
         {
           label: '↺ Reset demo',
-          separatorBefore: true,
           // A no-op when connected: there is real data to protect (store.resetDemo).
           disabled: editor.connected,
           onSelect: () => editor.resetDemo(),
@@ -94,6 +97,7 @@
           keys: 'Meta+Shift+Z Control+Shift+Z',
           onSelect: () => void editor.undo.redo(),
         },
+        { ...drawerItem('History', 'history'), separatorBefore: true },
       ],
     },
     {
@@ -108,14 +112,12 @@
         drawerItem('Tags', 'tags'),
         drawerItem('Layout', 'layouts'),
         drawerItem('Style', 'style'),
-        { ...drawerItem('History', 'history'), separatorBefore: true },
-        { ...drawerItem('Profiles', 'profiles'), separatorBefore: true },
       ],
     },
     {
-      // The demo's invite strip carries the tour, but that strip is gone once you
-      // sign in — so a signed-in owner reaches it here (it drives their own CV,
-      // sandboxed: nothing is saved). Demo visitors can use either entry point.
+      // The demo's invite popup carries the tour, but it's gone once you sign in — so a
+      // signed-in owner reaches it here (it drives their own CV, sandboxed: nothing is
+      // saved). Demo visitors can use either entry point.
       title: 'Help',
       items: [
         {
@@ -560,12 +562,16 @@
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   }
 
-  /* ── Mobile ── A fixed shell: a persistent top bar (the floating site-nav on the
-     left — from BaseLayout — and the editor ☰ Menu on the right), the résumé filling
-     the middle as the ONLY scroll region, and the connection status pinned across the
-     bottom. The three regions cover the viewport edge-to-edge, so no background ever
-     shows between them. No title. */
-  @media (max-width: 640px) {
+  /* ── Mobile / tablet (≤768px) ── A fixed shell: a persistent top bar (the floating
+     site-nav on the left — from BaseLayout — and the editor ☰ Menu on the right), the
+     résumé filling the middle as the ONLY scroll region, and the connection status
+     pinned across the bottom. The three regions cover the viewport edge-to-edge, so no
+     background ever shows between them. No title.
+
+     768px matches BaseLayout's own breakpoint: the site swaps to its floating nav at
+     768, so the editor must enter this touch layout at the same width — otherwise the
+     floating nav (top-left) lands on top of the desktop menubar in the 641–768 band. */
+  @media (max-width: 768px) {
     .stage {
       --top-h: 58px;
       --bot-h: 44px;

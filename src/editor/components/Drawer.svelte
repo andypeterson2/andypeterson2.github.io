@@ -110,7 +110,9 @@
       transform: translateX(0);
     }
   }
-  @media (width <= 620px) {
+  /* 768px matches the editor shell: inside the full-bleed touch layout a right-edge
+     side panel looks wrong, so the drawer becomes a bottom sheet across that range. */
+  @media (max-width: 768px) {
     .drawer {
       inset: auto 0 0;
       width: 100%;
