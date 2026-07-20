@@ -194,7 +194,9 @@
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
-    <span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong>
+    <a class="wordmark" href="/" aria-label="CV Editor — back to home"
+      ><span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong></a
+    >
     <MenuBar {menus} />
     <span class="right">
       <button
@@ -418,6 +420,12 @@
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
   .mark { font-size: 15px; }
+  /* The wordmark is the way back out to the site (the desktop menubar has no other
+     site-nav; the floating nav only appears on touch). A quiet link — inherits ink,
+     underlines its text on hover. */
+  .wordmark { display: inline-flex; align-items: center; gap: 7px; color: inherit; text-decoration: none; }
+  .wordmark:hover strong { text-decoration: underline; }
+  .wordmark:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-weight: 400; }
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
@@ -594,9 +602,8 @@
       align-items: center;
       z-index: 5;
     }
-    .mark,
-    .menubar strong {
-      display: none; /* no wordmark, no title */
+    .wordmark {
+      display: none; /* no wordmark/title on a phone — the floating site-nav is the way back */
     }
     .toolbar {
       display: none; /* its buttons all moved into the ☰ menu */
