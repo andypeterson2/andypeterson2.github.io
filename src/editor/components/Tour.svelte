@@ -47,6 +47,31 @@
     mobile && box ? box.y + box.h / 2 > window.innerHeight * 0.55 : false,
   );
 
+  /**
+   * The region the spotlight is allowed to occupy: the viewport, intersected with
+   * every clipping ancestor of the target (a scroll container like .doc-scroll, a
+   * fixed window). Clamping the frame to this keeps it on the *visible* part of the
+   * target and off the fixed chrome — a tall section scrolled inside .doc-scroll no
+   * longer paints a frame that runs off-screen or across the top/bottom bars.
+   */
+  function clipBoundsFor(el: Element) {
+    let left = 0;
+    let top = 0;
+    let right = window.innerWidth;
+    let bottom = window.innerHeight;
+    for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+      const s = getComputedStyle(node);
+      if (s.overflow === 'visible' && s.overflowX === 'visible' && s.overflowY === 'visible')
+        continue;
+      const r = node.getBoundingClientRect();
+      left = Math.max(left, r.left);
+      top = Math.max(top, r.top);
+      right = Math.min(right, r.right);
+      bottom = Math.min(bottom, r.bottom);
+    }
+    return { left, top, right, bottom };
+  }
+
   $effect(() => {
     if (!tour.active) {
       box = null;
@@ -61,7 +86,18 @@
       const el = sel ? document.querySelector(sel) : null;
       if (el) {
         const r = el.getBoundingClientRect();
-        box = { x: r.left - PAD, y: r.top - PAD, w: r.width + PAD * 2, h: r.height + PAD * 2 };
+        // Clamp the padded target rect to the region where it can actually be seen,
+        // so the frame never spills off-screen or over the fixed chrome; a zero-size
+        // (hidden / not-yet-rendered) target draws nothing.
+        const c = clipBoundsFor(el);
+        const x1 = Math.max(r.left - PAD, c.left);
+        const y1 = Math.max(r.top - PAD, c.top);
+        const x2 = Math.min(r.right + PAD, c.right);
+        const y2 = Math.min(r.bottom + PAD, c.bottom);
+        box =
+          r.width > 0 && r.height > 0 && x2 > x1 && y2 > y1
+            ? { x: x1, y: y1, w: x2 - x1, h: y2 - y1 }
+            : null;
         const key = `${sel}#${tour.index}`; // glide to each step's target once
         if (scrolledKey !== key) {
           scrolledKey = key;
