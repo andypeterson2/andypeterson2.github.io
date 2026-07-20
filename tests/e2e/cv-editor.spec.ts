@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { gotoEditor, EDITOR_APP } from './helpers';
+import { DWELL_MS } from '../../src/editor/lib/tour';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -210,18 +211,20 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeEnabled();
     await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeEnabled();
 
-    // ArrowDown opens and lands focus on the first item.
+    // ArrowDown opens and lands focus on the first item (Profiles, now File's top).
     await file.focus();
     await page.keyboard.press('ArrowDown');
     await expect(drop).toBeVisible();
     await expect(file).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: /Profiles/ })).toBeFocused();
 
-    // Roving focus wraps; Escape closes and returns focus to the title.
+    // Roving focus steps through every item and wraps; Escape closes, returns focus.
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeFocused();
     await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
+    await expect(page.getByRole('menuitem', { name: /Profiles/ })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(drop).toHaveCount(0);
     await expect(file).toBeFocused();
@@ -542,7 +545,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc .edit')).toBeVisible();
 
     // Step 2 types a genuinely new bullet into the document, character by character.
-    await expect(tour.locator('.count')).toHaveText('2 of 7');
+    // Auto-advance waits out step 1's dwell, so the timeout tracks DWELL_MS (not a
+    // magic 5s) — the tour deliberately dwells long enough to read each caption.
+    await expect(tour.locator('.count')).toHaveText('2 of 7', { timeout: DWELL_MS + 4000 });
     const typed = page.locator('.doc .edit .bl-content').last();
     await expect(typed).toHaveValue(/^Added/);
     const bullets = await page.locator('.doc .edit .bl').count();

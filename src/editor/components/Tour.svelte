@@ -37,7 +37,7 @@
   // bottom otherwise. Desktop keeps the shared bottom anchor.
   let mobile = $state(false);
   onMount(() => {
-    const mq = matchMedia('(max-width: 640px)');
+    const mq = matchMedia('(max-width: 768px)');
     const sync = () => (mobile = mq.matches);
     sync();
     mq.addEventListener('change', sync);
@@ -82,7 +82,7 @@
     const reduced = prefersReducedMotion();
     const tick = () => {
       if (!alive) return;
-      // Below 640px a step can override its target (the desktop one may be hidden in
+      // At/below 768px a step can override its target (the desktop one may be hidden in
       // the ☰ menu); read `mobile` fresh each frame so rotation re-resolves it too.
       const sel = mobile && tour.spotMobile ? tour.spotMobile : tour.spot;
       const el = sel ? document.querySelector(sel) : null;
