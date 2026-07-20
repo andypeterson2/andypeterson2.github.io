@@ -21,12 +21,12 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       // Measure the WHOLE logic surface — the portal lib (src/lib/**) and the editor
       // lib (src/editor/lib/**) — without cherry-picking the well-covered files (that
-      // would only relocate the blind spot). The slice controllers (tags/variants/
-      // letters/preview/tour) and the core store are now unit-tested (tests/editor-*
-      // -controller.test.ts, editor-store.test.ts); api.ts and some store branches
-      // still lean on the Playwright e2e suite, which v8 unit coverage can't see — so
-      // the honest number is ~54%, not a faked 100%. Thresholds are a regression
-      // RATCHET just below that floor; raise them as more branches land.
+      // would only relocate the blind spot). The slice controllers, the core store
+      // (demo + connected paths), the api client, and the pure utils are unit-tested
+      // (tests/editor-*.test.ts); the remaining gap is glue exercised only by the
+      // Playwright e2e suite, which v8 unit coverage can't see — so the honest number
+      // is ~66%, not a faked 100%. Thresholds are a regression RATCHET just below that
+      // floor; raise them as coverage grows — never loosen to hide a gap.
       // .astro/.svelte stay out — v8 can't parse them; they're e2e-covered.
       include: ['src/lib/**/*.{ts,js}', 'src/editor/lib/**/*.{ts,js}'],
       exclude: [
@@ -37,13 +37,12 @@ export default defineConfig({
         'dist/**',
         'coverage/**',
       ],
-      // Honest floor (current ~54% stmts/lines, ~46% branch, ~49% func). A drop below
-      // these fails CI; ratchet UP as coverage grows — never loosen to hide a gap.
+      // Honest floor (current ~66% stmts/lines, ~60% branch, ~57% func).
       thresholds: {
-        lines: 51,
-        functions: 46,
-        branches: 43,
-        statements: 50,
+        lines: 65,
+        functions: 54,
+        branches: 56,
+        statements: 63,
       },
     },
   },
