@@ -82,7 +82,9 @@
     const reduced = prefersReducedMotion();
     const tick = () => {
       if (!alive) return;
-      const sel = tour.spot;
+      // Below 640px a step can override its target (the desktop one may be hidden in
+      // the ☰ menu); read `mobile` fresh each frame so rotation re-resolves it too.
+      const sel = mobile && tour.spotMobile ? tour.spotMobile : tour.spot;
       const el = sel ? document.querySelector(sel) : null;
       if (el) {
         const r = el.getBoundingClientRect();

@@ -22,6 +22,14 @@ export interface TourStep {
    * name what the step just opened or created. Absent → no spotlight for that step.
    */
   spot?: string;
+  /**
+   * Narrow-viewport override for `spot`. Below 640px the toolbar folds into the ☰
+   * menu, so a target like the variant picker or Export button is `display:none` and
+   * would frame nothing. Such a step names a stand-in the phone actually shows — the
+   * document the variant re-renders, or the ☰ Menu that now holds the command.
+   * Absent → `spot` is used on every viewport.
+   */
+  spotMobile?: string;
 }
 
 /**
@@ -30,7 +38,7 @@ export interface TourStep {
  * Plain numbers rather than CSS custom properties because only JS reads them —
  * a `--dwell-step` that no stylesheet consumes would be dead code.
  */
-export const DWELL_MS = 3200;
+export const DWELL_MS = 6400; // an unhurried read of each caption before it auto-advances
 export const TYPE_MS = 28;
 
 /** The tour moves the page, which is a vestibular hazard — honour the opt-out. */

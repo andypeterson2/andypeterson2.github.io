@@ -305,7 +305,7 @@
     <div class="window">
       <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
       <div class="wbody" class:split={editor.preview.open}>
-        <div class="doc-scroll">
+        <div class="doc-scroll" data-tour-spot="document">
           {#if editor.noProfiles}
             <div class="no-profiles">
               <p class="np-title">No profiles yet</p>

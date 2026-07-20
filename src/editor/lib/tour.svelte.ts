@@ -64,6 +64,8 @@ export class TourController {
   caption = $derived(this.steps[this.index]?.caption ?? '');
   /** selector for the element to glide to + frame this step; '' → no spotlight */
   spot = $derived(this.steps[this.index]?.spot ?? '');
+  /** narrow-viewport spotlight override; '' → fall back to `spot` (see TourStep.spotMobile) */
+  spotMobile = $derived(this.steps[this.index]?.spotMobile ?? '');
   total = $derived(this.steps.length);
 
   start() {
