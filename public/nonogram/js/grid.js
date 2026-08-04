@@ -241,8 +241,17 @@ function doClear() {
 }
 
 async function doRandomize() {
-  if (!window.API_BASE) return;
   const rows = state.rows, cols = state.cols;
+  if (!window.API_BASE) {
+    // Offline demo tier: fill a random grid in the browser (the clues follow).
+    state.grid = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => Math.random() < 0.5));
+    recomputeClues();
+    buildGrid();
+    const filled = state.grid.flat().filter(Boolean).length;
+    App.setStatus(`Randomized ${rows}×${cols} puzzle (${filled} filled).`);
+    return;
+  }
   try {
     const res = await fetch(API_BASE + "/api/randomize", {
       method: "POST",

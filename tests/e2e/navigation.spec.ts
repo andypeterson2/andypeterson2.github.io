@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Site navigation', () => {
-  test('home page renders with title and featured projects', async ({ page }) => {
+  test('home page renders the bio and the project timeline', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/Projects|Portfolio/);
-    await expect(page.locator('.greeting')).toBeVisible();
-    await expect(page.locator('.icon-grid .finder-icon').first()).toBeVisible();
+    await expect(page).toHaveTitle(/Home/);
+    await expect(page.locator('.bio-window')).toBeVisible();
+    await expect(page.locator('.timeline-entry--project').first()).toBeVisible();
   });
 
   test('desktop menubar links work', async ({ page }) => {
@@ -15,26 +15,30 @@ test.describe('Site navigation', () => {
     await nav.locator('a[href="/projects/"]').click();
     await expect(page).toHaveURL('/projects/');
 
-    await nav.locator('a[href="/about"]').click();
-    await expect(page).toHaveURL('/about');
-
-  });
-
-  test('breadcrumb navigation renders on subpages', async ({ page }) => {
-    await page.goto('/projects/');
-    const breadcrumbs = page.locator('.details-bar');
-    await expect(breadcrumbs).toBeVisible();
-    await expect(breadcrumbs.locator('.crumb-heart')).toBeVisible();
-  });
-
-  test('home heart icon in menubar links to root', async ({ page }) => {
-    await page.goto('/about');
-    await page.locator('.heart-item a').click();
+    // "Home" links back to the root (the flat layout renamed About → Home).
+    await nav.locator('a[href="/"]').click();
     await expect(page).toHaveURL('/');
   });
 
+  test('subpages have no breadcrumb bar (flat layout)', async ({ page }) => {
+    await page.goto('/projects/');
+    // The breadcrumb details-bar was removed; the menubar is the only nav chrome.
+    await expect(page.locator('.site-window .details-bar')).toHaveCount(0);
+    await expect(page.locator('.site-menubar a[href="/"]')).toBeVisible();
+  });
+
+  test('the heart in the menubar toggles the theme', async ({ page }) => {
+    await page.goto('/');
+    const heart = page.locator('.heart-toggle');
+    await expect(heart).toBeVisible();
+    const before = await page.evaluate(() => document.documentElement.dataset.theme ?? 'light');
+    await heart.click();
+    const after = await page.evaluate(() => document.documentElement.dataset.theme ?? 'light');
+    expect(after).not.toBe(before);
+  });
+
   test('back-to-top button appears on scroll', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
     const btn = page.locator('#back-to-top');
     await expect(btn).not.toHaveClass(/visible/);
 

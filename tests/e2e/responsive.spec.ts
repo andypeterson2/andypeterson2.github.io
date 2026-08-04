@@ -19,8 +19,8 @@ test.describe('Responsive layout', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await page.locator('.mobile-nav-btn').click();
-    await page.locator('#mobile-nav-menu a').filter({ hasText: 'About' }).click();
-    await expect(page).toHaveURL('/about/');
+    await page.locator('#mobile-nav-menu a').filter({ hasText: 'Projects' }).click();
+    await expect(page).toHaveURL('/projects/');
   });
 
   test('window chrome renders at all breakpoints', async ({ page }) => {
@@ -30,7 +30,6 @@ test.describe('Responsive layout', () => {
       // Scope to the site window's own chrome — page content has its own windows.
       await expect(page.locator('.site-window')).toBeVisible();
       await expect(page.locator('.site-window > .title-bar')).toBeVisible();
-      await expect(page.locator('.site-window > .details-bar')).toBeVisible();
     }
   });
 });

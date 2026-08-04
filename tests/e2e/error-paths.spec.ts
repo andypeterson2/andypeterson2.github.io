@@ -16,7 +16,7 @@ test.describe('Error paths and 404 handling', () => {
 
   test('404 page includes navigation back to home', async ({ page }) => {
     await page.goto('/not-a-page/');
-    // Heart icon or link back to home should be present
+    // A link back to home should be present
     const homeLinks = page.locator('a[href="/"]');
     const count = await homeLinks.count();
     expect(count).toBeGreaterThan(0);

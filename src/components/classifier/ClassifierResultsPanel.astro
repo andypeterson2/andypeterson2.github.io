@@ -92,7 +92,7 @@
   }
 
   :global(.metrics-section-row > td) {
-    background: #eee;
+    background: #fff;
     color: #666;
     font-size: clamp(8px, 1vw, 11px);
     font-weight: 700;
@@ -169,7 +169,7 @@
   /* ── Progress bar ── */
   .progress-bar {
     height: 14px;
-    background: #eee;
+    background: var(--dither-light);
     border: 1.5px solid #000;
     margin-bottom: 4px;
   }
@@ -179,5 +179,31 @@
     background: #000;
     width: 0%;
     transition: width 0.2s;
+  }
+
+  /* ── Tabular feature form (built client-side for Iris) ── */
+  :global(#tabular-col .feature-inputs) {
+    margin-bottom: 12px;
+  }
+
+  :global(.feature-row) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  :global(.feature-label) {
+    font-size: clamp(9px, 1.1vw, 13px);
+    text-transform: capitalize;
+  }
+
+  :global(#tabular-col .feature-input) {
+    width: 90px;
+    border: 2px solid #000;
+    padding: 3px 6px;
+    font-size: 13px;
+    text-align: right;
   }
 </style>

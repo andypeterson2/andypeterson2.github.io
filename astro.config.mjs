@@ -16,14 +16,16 @@ export default defineConfig({
           'https://unpkg.com',
           'https://plausible.io',
           'https://cdn.jsdelivr.net',
+          // Hash of the no-FOUC theme bootstrap — an `is:inline` <script> in
+          // BaseLayout.astro that Astro deliberately does NOT auto-hash. If that
+          // script's bytes change, this hash must change with it, or the CSP
+          // blocks it in production (silent FOUC). tests/integration/csp.test.ts
+          // recomputes it from the built HTML and fails if they drift.
+          "'sha256-HtnKF9Q9BqMM7MpvEnYWNeMRvr0cAXf7QDRakU++yxI='",
         ],
       },
       styleDirective: {
-        resources: [
-          "'self'",
-          'https://unpkg.com',
-          'https://cdn.jsdelivr.net',
-        ],
+        resources: ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
       },
       directives: [
         "default-src 'self'",
@@ -44,6 +46,9 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
+    // About merged into the home page (bio + skills + timeline with projects).
+    '/about': '/',
+    '/about/': '/',
   },
   vite: {
     // Expose the site's own env prefixes to import.meta.env. Vite only surfaces

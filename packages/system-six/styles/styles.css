@@ -1,0 +1,11 @@
+/* system-six — the whole look as one @import closure.
+ *
+ * This is the single stylesheet a consumer needs; everything the components
+ * render is styled from here. The System 6 chrome (`system.css`) is loaded
+ * globally by the host page today; for a fully self-contained closure — e.g.
+ * the claude.ai/design sync — vendor it into this folder and @import it first.
+ */
+@import './tokens.css'; /* the ink + status-light + type/space scales */
+@import './base.css'; /* resets, the invert idiom, dark mode, section-rule, finder grid */
+@import './dither.css'; /* the 1-bit ordered fills */
+@import './elements.css'; /* host layout for the custom elements */

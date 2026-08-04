@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import WriteupModal from '../../components/WriteupModal.astro';
 import { projects } from '../../data/projects';
 
 export function getStaticPaths() {
@@ -46,6 +47,7 @@ const relatedProjects = projects
               View Source
             </a>
           )}
+          <WriteupModal slug={slug!} />
         </div>
       )
     }
@@ -237,7 +239,7 @@ const relatedProjects = projects
     border: 3px solid #000;
     border-radius: 0 0 clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px);
     overflow: hidden;
-    background: #eee;
+    background: var(--dither-light);
   }
 
   .screenshot-slide {
@@ -265,13 +267,11 @@ const relatedProjects = projects
   .screenshot-icon {
     width: clamp(32px, 4vw, 56px);
     height: clamp(32px, 4vw, 56px);
-    opacity: 0.4;
   }
 
   .screenshot-label {
     font-family: var(--font-ui);
     font-size: clamp(9px, 1.2vw, 16px);
-    opacity: 0.4;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -355,7 +355,6 @@ const relatedProjects = projects
 
   .related-desc {
     font-size: clamp(10px, 1.4vw, 18px);
-    opacity: 0.6;
   }
 
   /* ── Nav ── */

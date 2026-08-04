@@ -35,8 +35,7 @@ describe('Sitemap generation', () => {
 
   test.runIf(hasDist)('sitemap contains core pages', () => {
     const xml = readFileSync(resolve(DIST, 'sitemap-0.xml'), 'utf-8');
-    expect(xml).toMatch(/<loc>https?:\/\/[^<]+\/<\/loc>/);  // home
-    expect(xml).toContain('/about/');
+    expect(xml).toMatch(/<loc>https?:\/\/[^<]+\/<\/loc>/); // home
     expect(xml).toContain('/projects/');
   });
 });

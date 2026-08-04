@@ -1,0 +1,68 @@
+/* Host layout for the custom elements — the ONE thing the wrappers need that
+ * isn't already in the design layer: a display value (custom elements are
+ * display:inline by default). No design here — colors, borders, and fills all
+ * come from tokens.css / base.css / dither.css via the emitted classes. */
+s6-window,
+s6-section-rule,
+s6-icon-grid,
+s6-dither {
+  display: block;
+}
+s6-button,
+s6-finder-icon,
+s6-status,
+s6-theme-toggle {
+  display: inline-block;
+}
+
+/* A dither fill takes the size of its host, so consumers size <s6-dither>. */
+s6-dither > [class^='dither-'] {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── s6-status — the status light (L3 / L6). The ONLY hues in the system,
+ * straight from the status tokens; idle is the muted gray, not a color. ── */
+.s6-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-sans);
+}
+.s6-status-dot {
+  line-height: 1;
+}
+.s6-status--success .s6-status-dot {
+  color: var(--color-success);
+}
+.s6-status--warning .s6-status-dot {
+  color: var(--color-warning);
+}
+.s6-status--danger .s6-status-dot {
+  color: var(--color-danger);
+}
+.s6-status--idle .s6-status-dot {
+  color: var(--color-text-muted);
+}
+
+/* ── s6-theme-toggle — the dark-mode control (L4). Invert-hover matches the
+ * site idiom and composes correctly under the page filter in dark mode. ── */
+.theme-toggle {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0.1em 0.3em;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  background: var(--color-text);
+  color: var(--color-bg);
+}

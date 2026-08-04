@@ -1,0 +1,58 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dither — 1-bit ordered dithering, the honest System 6 gray.
+   Design law L2 ("one ink"): System 6 had NO true grays. It faked them by
+   dithering pure black and white pixels in fixed ordered patterns. These tokens
+   replace the flat #eee/#ddd/#ccc placeholders (see tokens.css --pattern-*),
+   so every "gray" surface is actually 1-bit, not a smoothed lie.
+
+   Ships as inline SVG data-URIs (CSP img-src 'self' data:) — no external
+   request, no dependency, crisp at integer sizes (shape-rendering=crispEdges).
+   Cell sizes are 2px (4px for the lightest), so on a 2× display each dither
+   pixel is 2 device px — chunky-crisp, the way the rest of the pixel UI scales.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── the ordered ramp: fraction of pixels that are black ──
+     ~12.5%  light stipple   → replaces #eee light surfaces
+     25%     light gray      → replaces #eee / #ddd
+     50%     the classic Mac "gray" checkerboard → replaces #ccc
+     75%     dark gray
+     hatch   45° 1px diagonal (QuickDraw-style line fill) */
+  --dither-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M2 2h1v1H2z' fill='%23000'/%3E%3C/svg%3E");
+  --dither-25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23000'/%3E%3C/svg%3E");
+  --dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
+  --dither-75: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23000'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23fff'/%3E%3C/svg%3E");
+  --dither-hatch: repeating-linear-gradient(-45deg, #000 0 1px, #fff 1px 2px);
+}
+
+/* ── utility fills ── */
+.dither-light,
+.dither-25,
+.dither-50,
+.dither-75,
+.dither-hatch {
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
+.dither-light {
+  background-image: var(--dither-light);
+  background-size: 4px 4px;
+}
+.dither-25 {
+  background-image: var(--dither-25);
+  background-size: 2px 2px;
+}
+.dither-50 {
+  background-image: var(--dither-50);
+  background-size: 2px 2px;
+}
+.dither-75 {
+  background-image: var(--dither-75);
+  background-size: 2px 2px;
+}
+.dither-hatch {
+  background-image: var(--dither-hatch);
+}
+
+/* Reduced motion / print: dither is static texture, safe as-is. In print it
+   holds up (1-bit is what a laser printer wants), so we keep it. */

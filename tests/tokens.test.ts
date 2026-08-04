@@ -9,13 +9,25 @@ import { resolve } from 'path';
 const ROOT = resolve(import.meta.dirname!, '..');
 
 describe('Token CSS Output', () => {
-  const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
+  const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
 
-  test('defines :root with monochrome variables', () => {
+  test('defines :root with the honest ink primitives + status scale', () => {
     expect(tokensCss).toMatch(/:root\s*\{/);
+    // the true monochrome primitives
     expect(tokensCss).toContain('--color-bg:');
     expect(tokensCss).toContain('--color-text:');
-    expect(tokensCss).toContain('--color-accent:');
+    expect(tokensCss).toContain('--color-border:');
+    // the status-light scale (L3) — the only color the design has
+    expect(tokensCss).toContain('--color-success:');
+    expect(tokensCss).toContain('--color-danger:');
+  });
+
+  test('no chromatic-hierarchy tokens (L5 — rank by type, not hue)', () => {
+    // These named a color hierarchy the design refuses; gap B removed them.
+    // Guarding here so a well-meaning "design token" pass can't re-add the lie.
+    expect(tokensCss).not.toContain('--color-accent:');
+    expect(tokensCss).not.toContain('--color-text-secondary:');
+    expect(tokensCss).not.toContain('--color-surface:');
   });
 
   test('no light theme overrides (pure monochrome)', () => {
@@ -57,7 +69,7 @@ describe('Token CSS Output', () => {
 });
 
 describe('Base CSS', () => {
-  const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
+  const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
 
   test('includes box-sizing reset', () => {
     expect(baseCss).toContain('box-sizing: border-box');
@@ -155,7 +167,7 @@ describe('Site Configuration', () => {
 // ---- Semantic color tokens ----
 
 describe('Semantic color tokens', () => {
-  const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
+  const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
 
   test('defines --color-success with a non-black value', () => {
     const match = tokensCss.match(/--color-success:\s*([^;]+)/);

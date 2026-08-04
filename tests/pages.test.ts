@@ -105,13 +105,23 @@ describe('Home Page', () => {
     expect(indexSrc).toContain('BaseLayout');
   });
 
-  test('has finder icon grid', () => {
-    expect(indexSrc).toContain('icon-grid');
-    expect(indexSrc).toContain('finder-icon');
+  // The home page is the consolidated hiring surface: bio, then a single
+  // timeline carrying both projects and experience, then the long-form about.
+  test('has the bio window and the unified timeline', () => {
+    expect(indexSrc).toContain('bio-window');
+    expect(indexSrc).toContain('timeline-entry--project');
   });
 
-  test('links to projects', () => {
-    expect(indexSrc).toContain('/projects/');
+  test('has the long-form about section', () => {
+    expect(indexSrc).toContain('id="about"');
+    expect(indexSrc).toContain('about-section');
+  });
+
+  test('links to project apps and repos', () => {
+    // The home timeline links each project to its live app (appUrl) and source
+    // repo (repoUrl); the standalone "Details →" link was removed.
+    expect(indexSrc).toContain('appUrl');
+    expect(indexSrc).toContain('repoUrl');
   });
 });
 
@@ -133,7 +143,7 @@ describe('Projects Page', () => {
   });
 
   test('uses responsive grid (via base.css)', () => {
-    const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
+    const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
     expect(baseCss).toContain('grid-template-columns');
     expect(baseCss).toContain('auto-fill');
   });
@@ -148,7 +158,7 @@ describe('Projects Page', () => {
 
 describe('Accessibility Features', () => {
   test('reduced-motion in tokens CSS', () => {
-    const tokensCss = readFileSync(resolve(ROOT, 'src/styles/tokens.css'), 'utf-8');
+    const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
     expect(tokensCss).toContain('prefers-reduced-motion');
   });
 

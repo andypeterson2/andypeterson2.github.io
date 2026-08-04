@@ -33,6 +33,35 @@
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
 
+  // The heart in the menubar toggles the site theme — the portfolio's own control.
+  // Its aria is set imperatively (via bind:this), not through a reactive binding:
+  // the island is server-rendered light but hydrated against the real (possibly
+  // dark) theme, and driving aria off reactive state is unreliable across that
+  // hydration boundary. onMount corrects the SSR defaults; toggleTheme keeps them
+  // in sync. BaseLayout's bootstrap already applied the persisted theme on load.
+  let heartEl: HTMLButtonElement | undefined;
+  let theme: 'light' | 'dark' = 'light';
+  function reflectTheme() {
+    const dark = theme === 'dark';
+    const btn = heartEl ?? document.querySelector<HTMLButtonElement>('.heart-toggle');
+    btn?.setAttribute('aria-pressed', String(dark));
+    btn?.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  onMount(() => {
+    theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    reflectTheme();
+  });
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('sm-theme', theme);
+    } catch {
+      /* private mode: the theme just won't persist */
+    }
+    reflectTheme();
+  }
+
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
@@ -194,9 +223,20 @@
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
-    <a class="wordmark" href="/" aria-label="CV Editor — back to home"
-      ><span class="mark" aria-hidden="true">{demoMode ? '◇' : '◆'}</span><strong>CV&nbsp;Editor</strong></a
-    >
+    <nav class="site-nav" aria-label="Site">
+      <button
+        type="button"
+        class="navlink heart-toggle"
+        bind:this={heartEl}
+        aria-label="Switch to dark mode"
+        aria-pressed="false"
+        onclick={toggleTheme}
+      >
+        <img src="/icons/heart.svg" alt="" class="heart-icon" width="18" height="18" />
+      </button>
+      <a class="navlink" href="/">Home</a>
+      <a class="navlink" href="/projects/">Projects</a>
+    </nav>
     <MenuBar {menus} />
   </div>
 
@@ -240,7 +280,9 @@
   {/if}
 
   <div class="workspace">
-    <div class="toolbar">
+    <div class="window toolbar-window">
+      <div class="titlebar"><span class="close"></span><span class="title">Toolbar</span><span class="fill"></span></div>
+      <div class="toolbar">
       <span class="field"
         >Profile
         <button
@@ -282,6 +324,7 @@
           onclick={() => editor.exportJson()}>⤓ Export</button
         >
       </div>
+    </div>
     </div>
 
     <div class="window">
@@ -416,14 +459,27 @@
 <style>
   .stage { min-height: 100vh; padding-bottom: 34px; }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .menubar { display: flex; align-items: center; gap: 20px; height: 26px; padding: 0 12px; background: var(--paper); border-bottom: 1px solid var(--ink); font-size: 13px; font-weight: 700; position: sticky; top: 0; z-index: 5; }
-  .mark { font-size: 15px; }
-  /* The wordmark is the way back out to the site (the desktop menubar has no other
-     site-nav; the floating nav only appears on touch). A quiet link — inherits ink,
-     underlines its text on hover. */
-  .wordmark { display: inline-flex; align-items: center; gap: 7px; color: inherit; text-decoration: none; }
-  .wordmark:hover strong { text-decoration: underline; }
-  .wordmark:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  /* Mirrors the portfolio menubar (BaseLayout .site-menubar): Chicago face, 3px
+     rule, rounded top, flush full-height items that invert on hover. No
+     overflow:hidden here (it would clip the pull-down menus) — the corner is
+     rounded on the leftmost item (the heart) itself instead. */
+  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: 0.75vw 0.75vw 0 0; font-family: var(--font-ui); font-size: clamp(14px, 1.6vw, 18px); position: sticky; top: 0; z-index: 5; }
+
+  /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
+     invert on hover, mirroring the portfolio menubar. */
+  .site-nav { display: flex; align-items: stretch; }
+  .navlink { display: flex; align-items: center; padding: 0.6vh 1vw; font: inherit; color: var(--ink); background: none; border: 0; text-decoration: none; cursor: pointer; }
+  .navlink:hover,
+  .navlink:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
+  /* The heart is the leftmost item, so it carries the menubar's rounded corner. */
+  .heart-toggle { border-top-left-radius: 0.75vw; }
+  .heart-icon { width: 1em; height: 1em; display: block; }
+  .heart-toggle:hover .heart-icon,
+  .heart-toggle:focus-visible .heart-icon { filter: invert(1); }
+  /* On phones the floating site-nav takes over (as on the portfolio). */
+  @media (max-width: 768px) {
+    .site-nav { display: none; }
+  }
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
@@ -513,7 +569,11 @@
   .invite .x { display: none; } /* the titlebar close box replaces it */
   .invite.busy { color: #45433d; }
   .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
-  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  /* The toolbar is the body of its own System-6 window (.toolbar-window) above
+     the document — the .window wrapper supplies the paper/border/shadow chrome
+     and striped titlebar, matching the document and drawer windows. */
+  .toolbar-window { margin-bottom: 16px; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
@@ -604,9 +664,6 @@
       justify-content: flex-end;
       align-items: center;
       z-index: 5;
-    }
-    .wordmark {
-      display: none; /* no wordmark/title on a phone — the floating site-nav is the way back */
     }
     .toolbar {
       display: none; /* its buttons all moved into the ☰ menu */

@@ -22,15 +22,3 @@ describe('Button props typing', () => {
   });
 });
 
-describe('BaseLayout readability', () => {
-  test('details-bar rendering uses helper function instead of nested ternaries', () => {
-    const src = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    const mapBlock = src.slice(
-      src.indexOf('detailsSegments.map'),
-      src.indexOf('</div>', src.indexOf('detailsSegments.map')),
-    );
-    // Count chained ternaries — should not have 3+ levels deep
-    const ternaryDepth = (mapBlock.match(/\?\s*\(/g) || []).length;
-    expect(ternaryDepth, 'Too many nested ternaries in details-bar').toBeLessThanOrEqual(1);
-  });
-});

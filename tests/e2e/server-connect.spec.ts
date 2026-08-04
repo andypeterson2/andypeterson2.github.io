@@ -9,7 +9,7 @@ test.describe('ServerConnectModal + SiteContract', () => {
   });
 
   test('does not render connection UI on pages without backends', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/');
     // No site-backend meta tags → no connect nav item and no modal.
     await expect(page.locator('.server-nav-item')).toHaveCount(0);
     await expect(page.locator('.sn-modal')).toHaveCount(0);
