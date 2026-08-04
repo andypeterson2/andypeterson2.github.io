@@ -25,6 +25,7 @@
     "svelte": "^5.56.4"
   },
   "devDependencies": {
+    "@astrojs/compiler": "^2.13.1",
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@typescript-eslint/eslint-plugin": "^8.62.1",
