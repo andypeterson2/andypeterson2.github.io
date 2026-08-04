@@ -63,7 +63,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
 
     // Island hydrated: the System-6 menubar is present.
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
     // The demo now renders the owner's real CV. The identity (name + contacts) comes
     // from siteConfig at build — blank here without env — so assert on the public,
     // hardcoded professional content instead.
@@ -888,7 +888,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('toolbar opens and closes the drawers', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     // Style drawer — accent swatches; close box dismisses.
     await page.getByRole('button', { name: 'Style', exact: true }).click();
@@ -914,7 +914,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('tags drawer spotlights matching entries; chips edit tags inline', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
     // (#leadership sits on 2 entries + 2 bullets → 4).
@@ -954,7 +954,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the variant drawer applies a lens that dims excluded content', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     // Open the Variants drawer from the toolbar popup.
     const drawer = page.locator('.drawer');
@@ -993,7 +993,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the preview pane prompts to connect in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     await page.getByRole('button', { name: /Preview/ }).click();
     await expect(page.locator('.preview')).toBeVisible();
@@ -1054,7 +1054,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .profile-btn').click();
@@ -1236,7 +1236,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     const sectionTitles = page.locator('.doc .sec h2');
     await expect(sectionTitles.first()).toHaveText('Summary');
@@ -1263,7 +1263,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('Editor');
+    await expect(page.locator('.menubar')).toContainText('File');
 
     // The demo ships a cover-letter variant, labelled as such in the drawer.
     await selectVariant(page, 'Cover Letter');

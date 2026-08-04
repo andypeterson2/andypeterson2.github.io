@@ -111,9 +111,9 @@ const windowTitle = title || siteConfig.title;
           <button
             type="button"
             class="theme-toggle heart-toggle"
-            role="menuitem"
+            role="menuitemcheckbox"
             aria-label="Switch to dark mode"
-            aria-pressed="false"
+            aria-checked="false"
           >
             <img src="/icons/heart.svg" alt="" class="heart-icon" width="36" height="36" />
           </button>
@@ -207,7 +207,12 @@ const windowTitle = title || siteConfig.title;
           const label = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
           for (const b of themeBtns) {
             b.setAttribute('aria-label', label);
-            b.setAttribute('aria-pressed', String(t === 'dark'));
+            // The menubar toggle is a menuitemcheckbox (takes aria-checked); the
+            // mobile toggle is a plain button (takes aria-pressed). Using the
+            // wrong attribute for the role is an aria-allowed-attr violation.
+            const stateAttr =
+              b.getAttribute('role') === 'menuitemcheckbox' ? 'aria-checked' : 'aria-pressed';
+            b.setAttribute(stateAttr, String(t === 'dark'));
           }
         };
         applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
