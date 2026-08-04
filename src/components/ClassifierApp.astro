@@ -30,6 +30,10 @@ import '../styles/classifier.css';
 <script is:inline src="/classifiers/js/connection.js"></script>
 <script is:inline src="/classifiers/js/sse.js"></script>
 <script is:inline src="/classifiers/js/chart.js"></script>
+<!-- portal bootstrap: seeds window.API_BASE / window.UI_CONFIG before app.js reads them -->
+<script is:inline src="/classifiers/js/config.js"></script>
+<!-- in-browser inference for the demo tier (loads weights from /classifiers/models/) -->
+<script is:inline src="/classifiers/js/infer.js"></script>
 <script is:inline src="/classifiers/js/app.js"></script>
 
 <style>
@@ -70,7 +74,7 @@ import '../styles/classifier.css';
   .resize-handle {
     width: 5px;
     cursor: col-resize;
-    background: #ccc;
+    background: var(--dither-50);
     flex-shrink: 0;
   }
 

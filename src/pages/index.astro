@@ -1,215 +1,872 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import WriteupModal from '../components/WriteupModal.astro';
+import { siteConfig } from '../config/site';
 import { projects } from '../data/projects';
 
-const featured = projects.filter((p) => p.featured);
+const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
+
+// Projects placed on the timeline, newest first. Periods live here (timeline
+// presentation), not in the core project data.
+const projectTimeline = [
+  { slug: 'latex-resume-editor', period: '2025' },
+  { slug: 'quantum-protein-kernel', period: '2024' },
+  { slug: 'quantum-nonogram-solver', period: '2024' },
+  { slug: 'quantum-video-chat', period: '2024' },
+].map((e) => ({ type: 'project' as const, period: e.period, project: bySlug(e.slug) }));
+
+// Experience, newest first (formerly the standalone About page).
+const experience = [
+  {
+    type: 'experience' as const,
+    date: '2022 – 2024',
+    role: 'Research Intern',
+    org: 'Qualcomm Institute (CALIT2) · San Diego, CA',
+    bullets: [
+      'Built a frame-level encryption pipeline for live video with sub-millisecond latency overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).',
+      'Simulated a noisy quantum channel (Poisson photon source, fiber attenuation, detector modeling) to validate protocol correctness — used to verify eavesdrop detection via error rate anomalies.',
+      "Presented algorithmic research to IBM's VP of Quantum during campus visit.",
+    ],
+  },
+  {
+    type: 'experience' as const,
+    date: '2021 – 2024',
+    role: 'Co-Founder / President',
+    org: 'Quantum Computing at UC, San Diego (QCSD)',
+    bullets: [
+      'Co-founded to fill a gap in undergraduate quantum computing education at UCSD. Restructured processes and formalized handoffs before graduating — org survived complete leadership turnover and is now nationally chartered as QCSA.',
+    ],
+  },
+  {
+    type: 'experience' as const,
+    date: '2020 – 2023',
+    role: 'President / Competition Committee',
+    org: 'ACM Cyber at UCSD',
+    bullets: [
+      'As President, maintained org engagement through full COVID lockdown when most student orgs lost momentum.',
+      'Centralized documentation for the 500-member org in Notion with role-based least-privilege access controls.',
+    ],
+  },
+  {
+    type: 'experience' as const,
+    date: '2020 – 2022',
+    role: 'Web Developer',
+    org: 'RIT Esports · Remote',
+    bullets: [
+      'Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active visitors across 6 varsity esports teams with 99.9% uptime.',
+    ],
+  },
+  {
+    type: 'experience' as const,
+    date: '2020 – 2022',
+    role: 'Co-Founder',
+    org: 'San Diego CTF',
+    bullets: [
+      "Co-founded San Diego's largest annual cybersecurity competition — hundreds of competitors across 20+ countries, running for two annual iterations.",
+      'Built the Discord bot submission interface (Discord.JS) used by all competitors across both years — zero onboarding friction.',
+    ],
+  },
+  {
+    type: 'experience' as const,
+    date: '2020 – 2021',
+    role: 'Tutor / IT Lead',
+    org: 'Mathnasium · Southern California',
+    bullets: [
+      'Sole IT resource for transitioning the center to remote operations during COVID-19, keeping ~25 client families and ~15 active students connected.',
+    ],
+  },
+];
+
+// Unified timeline: 2024–2025 projects sit above the Qualcomm research period
+// they came out of, then the rest of the experience.
+const timeline = [...projectTimeline, ...experience];
 ---
 
-<BaseLayout title="Home">
-  <div class="home-grid">
-    <!-- Left column: intro + actions -->
-    <div class="home-intro">
-      <h2 class="greeting">Welcome to Andy's desk.</h2>
-      <p class="bio">
-        I build software that works under pressure — real-time systems, research prototypes, and the
-        infrastructure that holds them together.
+<BaseLayout title="Home" description={`${siteConfig.displayName} — software developer`}>
+  <!-- ── Bio ── -->
+  <div class="window bio-window" id="intro">
+    <div class="title-bar">
+      <h1 class="title">Intro</h1>
+    </div>
+    <div class="window-sub">
+      <span>Software Developer</span>
+      <span>Southern California</span>
+    </div>
+    <div class="bio-body">
+      <div class="bio-card window">
+        <div class="title-bar">
+          <span class="title">Me</span>
+        </div>
+        <img src="/headshot.png" alt={siteConfig.displayName} class="bio-headshot" />
+        <div class="bio-name">{siteConfig.displayName}</div>
+      </div>
+      <p>
+        Recent <strong>UC San Diego</strong> Computer Science graduate. I spent two and a half years as
+        a <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong>, building
+        quantum-secured video communications, quantum search algorithms, and machine-learning
+        classification pipelines.
       </p>
-      <p class="bio">
-        I'm a recent <strong>UC San Diego</strong> graduate with two and a half years of quantum computing
-        research at <strong>Qualcomm Institute</strong>, co-founder of <strong>San Diego CTF</strong
-        > and the
-        <strong>Quantum Computing Student Association</strong> at UC San Diego.
+      <p>
+        Outside the lab, I co-founded <strong>San Diego CTF</strong> and the
+        <strong>Quantum Computing Student Association at UCSD</strong>, served as
+        <strong>President of ACM Cyber</strong> through COVID lockdown, and built a MERN-stack platform
+        serving 2,400 monthly users for <strong>RIT Esports</strong>.
       </p>
-      <div class="home-actions">
-        <a href="/resume.pdf" class="btn resume-btn">
-          <i class="bi bi-file-earmark-text"></i> Resume
-        </a>
-        <a href="/about/" class="learn-more">Learn More &rarr;</a>
+      <p>
+        I care about making <strong>technical ideas usable and understandable</strong> — whether that
+        means translating research-level specifications into working software, or writing documentation
+        that lets people solve problems without asking for help.
+      </p>
+      <div class="bio-contact">
+        <a href={`mailto:${siteConfig.email}`} class="btn"><i class="bi bi-envelope"></i> Email</a>
+        <a
+          href={`https://linkedin.com/in/${siteConfig.linkedin}`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"><i class="bi bi-linkedin"></i> LinkedIn</a
+        >
+        <a
+          href={`https://github.com/${siteConfig.github}`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"><i class="bi bi-github"></i> GitHub</a
+        >
+        <a href="/resume.pdf" class="btn"><i class="bi bi-file-earmark-text"></i> Resume</a>
+        <a href="/cv.pdf" class="btn"><i class="bi bi-file-earmark-person"></i> CV</a>
       </div>
     </div>
+  </div>
 
-    <!-- Right column: projects window -->
-    <div class="projects-col">
-      <div class="window projects-window">
-        <div class="title-bar">
-          <a href="/projects/" class="projects-title-link">
-            <span class="title">View All Projects &rarr;</span>
-          </a>
-        </div>
-        <div class="window-pane projects-pane">
-          <div class="icon-grid">
-            {
-              featured.map((project) => (
-                <a href={`/projects/${project.slug}/`} class="finder-icon">
-                  <div class="icon-box">
-                    <img src={`/icons/${project.icon}`} alt={project.title} class="icon-glyph" />
-                  </div>
-                  <span class="icon-label">{project.title}</span>
-                </a>
-              ))
-            }
+  <!-- ── Two-column: sidebar + timeline ── -->
+  <div class="about-grid">
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <div class="window sidebar-window">
+        <div class="title-bar"><h2 class="title">Education</h2></div>
+        <div class="window-body">
+          <div class="sidebar-entry">
+            <div class="sidebar-entry-title">B.S. Computer Science</div>
+            <div class="sidebar-entry-sub">UC San Diego</div>
+            <div class="sidebar-entry-date">December 2024</div>
           </div>
         </div>
       </div>
+
+      <div class="window sidebar-window">
+        <div class="title-bar"><h2 class="title">Certifications</h2></div>
+        <div class="window-body">
+          <div class="sidebar-entry">
+            <div class="sidebar-entry-title">Azure Data Fundamentals (DP-900)</div>
+            <div class="sidebar-entry-sub">Microsoft</div>
+          </div>
+          <div class="sidebar-entry">
+            <div class="sidebar-entry-title">ITF+ (IT Fundamentals)</div>
+            <div class="sidebar-entry-sub">CompTIA</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="window sidebar-window">
+        <div class="title-bar"><h2 class="title">Skills</h2></div>
+        <div class="window-body">
+          <div class="skill-group">
+            <div class="skill-group-label">Languages</div>
+            <div class="skill-tags">
+              <span class="tag">Python</span>
+              <span class="tag">TypeScript</span>
+              <span class="tag">C/C++</span>
+              <span class="tag">Java</span>
+              <span class="tag">SQL</span>
+            </div>
+          </div>
+          <div class="skill-group">
+            <div class="skill-group-label">Quantum</div>
+            <div class="skill-tags">
+              <span class="tag">Qiskit</span>
+              <span class="tag">BB84</span>
+              <span class="tag">Grover</span>
+            </div>
+          </div>
+          <div class="skill-group">
+            <div class="skill-group-label">Infrastructure</div>
+            <div class="skill-tags">
+              <span class="tag">Docker</span>
+              <span class="tag">Kubernetes</span>
+              <span class="tag">Terraform</span>
+              <span class="tag">AWS</span>
+              <span class="tag">Azure</span>
+              <span class="tag">Linux</span>
+              <span class="tag">CI/CD</span>
+            </div>
+          </div>
+          <div class="skill-group">
+            <div class="skill-group-label">AI / ML</div>
+            <div class="skill-tags">
+              <span class="tag">PyTorch</span>
+              <span class="tag">Scikit-Learn</span>
+            </div>
+          </div>
+          <div class="skill-group">
+            <div class="skill-group-label">Security</div>
+            <div class="skill-tags">
+              <span class="tag">Cryptography</span>
+              <span class="tag">CTF</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right: unified timeline (experience + projects) -->
+    <div class="window timeline-window">
+      <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
+      <p class="timeline-note">
+        Projects are woven in chronologically. Most run right in your browser — press
+        <strong>?</strong> for the full writeup, or open the live app.
+      </p>
+      <div class="timeline">
+        {
+          timeline.map((entry) =>
+            entry.type === 'experience' ? (
+              <div class="timeline-entry">
+                <div class="timeline-meta">
+                  <div class="timeline-date">{entry.date}</div>
+                </div>
+                <div class="timeline-content">
+                  <div class="timeline-role">{entry.role}</div>
+                  <div class="timeline-org">{entry.org}</div>
+                  <ul class="timeline-bullets">
+                    {entry.bullets.map((b) => (
+                      <li>{b}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <div class="timeline-entry timeline-entry--project" id={entry.project.slug}>
+                <div class="timeline-meta">
+                  <div class="timeline-date">{entry.period}</div>
+                </div>
+                <div class="timeline-content tl-project">
+                  <div class="tl-eyebrow">
+                    <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
+                    Project
+                  </div>
+                  <div class="timeline-role">{entry.project.title}</div>
+                  <p class="tl-desc">{entry.project.description}</p>
+
+                  {entry.project.metrics && (
+                    <div class="tl-metrics">
+                      {entry.project.metrics.map((m) => (
+                        <span class="tl-metric">
+                          <b>{m.value}</b> {m.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {entry.project.tech && (
+                    <div class="tl-tech">
+                      {entry.project.tech.map((t) => (
+                        <span class="tl-tag">{t}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div class="tl-actions">
+                    {entry.project.appUrl && (
+                      <a
+                        href={entry.project.appUrl}
+                        class="action-btn"
+                        target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
+                        rel={
+                          entry.project.appUrl.startsWith('http')
+                            ? 'noopener noreferrer'
+                            : undefined
+                        }
+                      >
+                        {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
+                      </a>
+                    )}
+                    <WriteupModal slug={entry.project.slug} label="Writeup" />
+                    <a
+                      href={entry.project.repoUrl}
+                      class="action-btn"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Source
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ),
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Long-form about ── -->
+  <div class="window about-window" id="about">
+    <div class="title-bar"><h2 class="title">About</h2></div>
+    <div class="window-sub">
+      <span>The longer version</span>
+    </div>
+    <div class="about-body">
+      <section class="about-section">
+        <h3>How I got here</h3>
+        <p>
+          I got into computing through security clubs rather than coursework. I was running
+          <strong>ACM Cyber at UCSD</strong> when campus closed in 2020 — a 500-member org that existed
+          almost entirely through in-person meetings. Keeping it alive meant rebuilding how it ran: documentation
+          people could actually find, and role-based access so officers could do their jobs without waiting
+          on me. Around the same time a few of us started
+          <strong>San Diego CTF</strong>, which grew into a competition with hundreds of players
+          from more than twenty countries. I wrote the Discord bot everyone submitted through, on
+          the theory that the fastest way to get people competing is to meet them where they already
+          are.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h3>The research years</h3>
+        <p>
+          From 2022 to 2024 I was a research intern at the
+          <strong>Qualcomm Institute (CALIT2)</strong>, working on quantum-secured communication.
+          The centerpiece was a browser-native encrypted video system whose symmetric keys come from
+          a <strong>BB84 quantum key-distribution</strong> exchange rather than classical Diffie–Hellman.
+          The whole protocol runs in the browser over a WebRTC DataChannel: basis reconciliation and sifting,
+          QBER estimation from a public sample, Cascade error correction, then Toeplitz privacy amplification
+          down to a 128-bit key. That key drives
+          <strong>AES-128-GCM</strong> encryption of the media frames through WebRTC Insertable Streams
+          (<code>RTCRtpScriptTransform</code>, in a Web Worker), so frames are re-keyed with no SDP
+          renegotiation and the latency cost stays low enough that a call still feels like a call.
+        </p>
+        <p>
+          Claiming a channel is secure is easy; showing it is not. So I built a simulated quantum
+          optical channel with the parameters that actually matter — Poissonian photon statistics,
+          ~0.2 dB/km fiber attenuation, single-photon detector efficiency — and an intercept-resend
+          eavesdropper. Eve can't measure a qubit without disturbing the ones she forwards, which
+          pushes the quantum bit error rate past the ~11% threshold where a secure key can no longer
+          be distilled; the protocol sees the spike, throws the key away, and re-exchanges.
+          Alongside that I worked on Grover-based quantum search for constraint problems — validated
+          on real IBM hardware, where a 2×2 nonogram reached 32.3% correct-state probability against
+          6.25% by chance — and PyTorch classification pipelines. I presented the algorithmic work
+          to IBM's VP of Quantum during a campus visit, and co-founded
+          <strong>Quantum Computing at UCSD</strong> to give undergraduates somewhere to start.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h3>Why everything here runs in your browser</h3>
+        <p>
+          Every demo on this page works with nothing running on my side. The nonogram solver's
+          classical path is a real solver ported to JavaScript. The digit classifier runs a trained
+          network's forward pass locally, on weights exported from the same model the backend
+          serves. The quantum results are real measurements, computed once and committed. That was a
+          deliberate constraint: a portfolio that only works while a server happens to be awake
+          isn't a portfolio, it's a recurring bill. The live backends still exist for the parts that
+          genuinely need them — they sit behind one gateway, scale to zero, and wake only for
+          someone I've handed a link to.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h3>How I work</h3>
+        <p>
+          A few habits, most of them learned the hard way. Do the structural fix rather than patch
+          around it — the shortcut is nearly always more expensive by the second time you touch it.
+          Write the test at the seam where two components meet: one of the worst bugs I've chased
+          was a handoff where one module called a method the other side never defined — each module
+          was individually correct and individually tested, and nothing caught it because no test
+          put them together. Treat security as a default rather than a feature — credentials stay
+          server-side, every input that reaches a solver or a trainer is bounded, and a static site
+          under a strict <code>Content-Security-Policy</code> beats one that trusts a CDN. And write the
+          documentation that lets someone finish the job without asking me — the same instinct that got
+          me into this: making technical ideas usable, not just correct.
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h3>What I'm after</h3>
+        <p>
+          Work where correctness is checkable and the result has to survive contact with real users.
+          I'm most useful somewhere between research and production — taking something that
+          currently only works in a paper, a notebook, or one person's head, and turning it into a
+          system other people can rely on. Each project above has a <em>?</em> button with the full writeup,
+          and the source is on GitHub if you'd rather just read the code.
+        </p>
+      </section>
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  .home-grid {
-    display: grid;
-
-    /* minmax(0, 1fr) — not bare 1fr — so a column can shrink below its content's
-       min-width; otherwise the projects icon-grid's min-content blows the track
-       past the viewport on narrow screens and the intro text clips. */
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(16px, 3vw, 48px);
-    align-items: start;
-    padding: clamp(12px, 2vw, 32px) 0;
+  /* ── Reset margins ── */
+  .bio-window,
+  .sidebar-window,
+  .timeline-window,
+  .bio-body p,
+  .bio-window .title-bar,
+  .sidebar-window .title-bar,
+  .timeline-window .title-bar,
+  .bio-card.window .title-bar {
+    margin: 0;
   }
 
-  /* Grid items default to min-width:auto, which lets their content overflow the
-     track; pin to 0 so both columns honour the track width. */
-  .home-intro,
-  .projects-col {
+  /* ── Bio window ── */
+  .bio-window {
     min-width: 0;
   }
 
-  /* ── Left column ── */
-  .greeting {
-    font-family: var(--font-ui);
-    font-size: clamp(16px, 2.4vw, 36px);
-    margin: 0 0 clamp(8px, 1.2vw, 18px);
+  .bio-body {
+    /* One gutter token for the whole bio block. It sets the card's top/left gap
+       (as .bio-body padding) and its right/bottom gap (as the card's margin),
+       so the card is evenly framed on all four sides. */
+    --bio-gutter: clamp(10px, 1.3vw, 15px);
+    font-size: clamp(13px, 1.6vw, 18px);
+    line-height: 1.65;
+    padding: var(--bio-gutter);
   }
 
-  .bio {
-    font-size: clamp(12px, 1.6vw, 22px);
-    line-height: 1.6;
-    max-width: 42ch;
-    margin: 0 0 clamp(6px, 1vw, 14px);
+  .bio-card.window {
+    float: left;
+    /* Top/left gap comes from .bio-body's padding; right/bottom from this
+       margin — same token, so the gutter around the card is consistent. */
+    margin: 0 var(--bio-gutter) var(--bio-gutter) 0;
+    width: clamp(120px, 24%, 170px);
+    min-width: 0;
   }
 
-  .bio strong {
-    font-weight: 700;
-  }
-
-  .home-actions {
-    display: flex;
-    align-items: center;
-    gap: clamp(10px, 1.5vw, 24px);
-    margin-top: clamp(10px, 1.5vw, 20px);
-  }
-
-  .resume-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    text-decoration: none;
-    font-size: clamp(12px, 1.6vw, 22px);
-  }
-
-  .learn-more {
-    font-family: var(--font-ui);
-    font-size: clamp(12px, 1.6vw, 22px);
-    font-weight: 700;
-    color: var(--color-text);
-    text-decoration: none;
-  }
-
-  .learn-more:hover {
-    background: var(--color-text);
-    color: var(--color-text-inverse);
-  }
-
-  /* ── Right column: projects window ── */
-  .projects-col {
-    display: flex;
-    justify-content: center;
-  }
-
-  .projects-window {
+  .bio-headshot {
     width: 100%;
-
-    /* The shared .window has min-width:320px (keeps the main site window usable);
-       a nested window in a grid column must not carry that floor, or it overflows
-       the column on phones. */
-    min-width: 0;
+    height: auto;
+    display: block;
   }
 
-  /* Hide close/resize buttons from system.css title-bar */
-  .projects-window .title-bar button {
+  /* The portrait is raster, so the page-level dark invert would render it as a
+     negative (uncanny for a face). Double-invert cancels the filter — it stays
+     itself in dark mode. This is the one media exception dark mode needed. */
+  :global(html[data-theme='dark']) .bio-headshot {
+    filter: invert(1) hue-rotate(180deg);
+  }
+
+  /* Name plate under the portrait — a flat centered caption (no window chrome). */
+  .bio-name {
+    text-align: center;
+    padding: clamp(5px, 0.8vw, 9px) clamp(6px, 1vw, 12px);
+    font-family: var(--font-ui);
+  }
+
+  /* Flat window subtitle — replaces the old inset details-bar (flat site). */
+  .window-sub {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+    padding: clamp(4px, 0.6vw, 8px) clamp(10px, 1.4vw, 16px);
+    border-bottom: 1px solid var(--color-border);
+    font-family: var(--font-ui);
+    font-size: clamp(12px, 1.5vw, 18px);
+  }
+
+  .bio-contact {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    gap: clamp(4px, 0.6vw, 8px);
+    clear: both;
+    margin-top: clamp(8px, 1.1vw, 14px);
+    /* Full-bleed the divider across the intro window by cancelling .bio-body's
+       side padding, then re-inset the buttons with matching padding. */
+    margin-left: calc(-1 * var(--bio-gutter));
+    margin-right: calc(-1 * var(--bio-gutter));
+    border-top: 1px solid var(--color-border);
+    padding-top: clamp(8px, 1.1vw, 14px);
+    padding-left: var(--bio-gutter);
+    padding-right: var(--bio-gutter);
+  }
+
+  /* Long-form About section temporarily hidden — restore by deleting this rule. */
+  .about-window {
     display: none;
   }
 
-  .projects-title-link {
-    display: contents;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .projects-title-link:hover .title {
-    text-decoration: underline;
-  }
-
-  .projects-pane {
-    padding: clamp(10px, 1.5vw, 24px);
-    overflow: hidden;
-  }
-
-  .icon-grid {
+  /* ── Two-column grid ── */
+  .about-grid {
+    /* One spacing token: the column gap, the space above the grid, and the gap
+       between the stacked sidebar windows (inherited) all share it. */
+    --grid-gap: clamp(8px, 1vw, 12px);
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(12px, 2vw, 32px);
-    justify-items: center;
+    grid-template-columns: clamp(220px, 30%, 280px) minmax(0, 1fr);
+    gap: var(--grid-gap);
+    align-items: start;
+    margin-top: var(--grid-gap);
   }
 
-  .finder-icon {
+  /* ── Sidebar ── */
+  .sidebar {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: clamp(4px, 0.5vw, 8px);
-    text-decoration: none;
-    color: var(--color-text);
-    padding: clamp(6px, 0.8vw, 12px);
+    gap: var(--grid-gap);
+    position: sticky;
+    top: clamp(12px, 2vw, 24px);
+    z-index: 1;
   }
 
-  .finder-icon:hover {
-    background: var(--color-text);
-    color: var(--color-text-inverse);
+  .sidebar-window {
+    overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
   }
 
-  .finder-icon:hover .icon-glyph {
-    filter: invert(1);
+  .timeline-window {
+    z-index: 2;
+    position: relative;
+    min-width: 0;
   }
 
-  .icon-box {
+  .sidebar-window .window-body {
+    padding: clamp(3px, 0.4vw, 5px);
     display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 5px);
+  }
+
+  .sidebar-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     align-items: center;
-    justify-content: center;
-  }
-
-  .icon-glyph {
-    width: clamp(36px, 4.5vw, 64px);
-    height: clamp(36px, 4.5vw, 64px);
-    display: block;
-    image-rendering: pixelated;
-  }
-
-  .icon-label {
-    font-family: var(--font-ui);
-    font-size: clamp(9px, 1.2vw, 16px);
     text-align: center;
+  }
+
+  .sidebar-entry-title {
+    font-family: var(--font-ui);
+    font-size: clamp(10px, 1.3vw, 14px);
+    font-weight: 700;
     line-height: 1.3;
   }
 
-  /* ── Mobile: stack columns ── */
-  @media (width <= 768px) {
-    .home-grid {
+  .sidebar-entry-sub,
+  .sidebar-entry-date {
+    font-size: clamp(9px, 1.1vw, 12px);
+    line-height: 1.3;
+  }
+
+  /* Skills */
+  .skill-group {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 4px);
+  }
+
+  .skill-group-label {
+    font-family: var(--font-mono);
+    font-size: clamp(13px, 1.6vw, 18px);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(3px, 0.4vw, 4px);
+  }
+
+  .tag {
+    font-family: var(--font-ui);
+    font-size: clamp(11px, 1.2vw, 14px);
+    border: 1px solid #000;
+    padding: 1px clamp(4px, 0.5vw, 6px);
+    line-height: 1.6;
+  }
+
+  /* ── Timeline ── */
+  .timeline-note {
+    font-size: clamp(10px, 1.2vw, 14px);
+    color: var(--color-text);
+    padding: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 14px);
+    margin: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .timeline-note strong {
+    font-weight: 700;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: clamp(8px, 1vw, 12px);
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: clamp(62px, 8vw, 90px);
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: #000;
+  }
+
+  .timeline-entry {
+    display: grid;
+    grid-template-columns: clamp(50px, 8vw, 78px) minmax(0, 1fr);
+    gap: clamp(16px, 2.5vw, 28px);
+    padding-bottom: clamp(20px, 3vw, 36px);
+    position: relative;
+  }
+
+  .timeline-entry:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-entry::after {
+    content: '';
+    position: absolute;
+    left: clamp(62px, 8vw, 90px);
+    top: 8px;
+    width: 7px;
+    height: 7px;
+    background: #000;
+    transform: translateX(-3px);
+  }
+
+  /* Projects get a distinct diamond marker on the spine. */
+  .timeline-entry--project::after {
+    width: 10px;
+    height: 10px;
+    transform: translateX(-4px) rotate(45deg);
+  }
+
+  .timeline-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 2px;
+    padding-right: clamp(6px, 1vw, 12px);
+  }
+
+  .timeline-date {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1.3vw, 16px);
+    text-align: center;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 0.3vw, 3px);
+  }
+
+  .timeline-role {
+    font-family: var(--font-ui);
+    font-size: clamp(11px, 1.4vw, 16px);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .timeline-org {
+    font-size: clamp(10px, 1.2vw, 13px);
+  }
+
+  .timeline-bullets {
+    margin: 0;
+    padding-left: clamp(14px, 1.8vw, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 5px);
+  }
+
+  .timeline-bullets li {
+    font-size: clamp(11px, 1.3vw, 15px);
+    line-height: 1.55;
+  }
+
+  /* ── Project timeline entries ── */
+  .timeline-entry--project {
+    scroll-margin-top: 80px;
+  }
+
+  .tl-project {
+    gap: clamp(4px, 0.6vw, 7px);
+  }
+
+  .tl-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: clamp(8px, 0.95vw, 11px);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .tl-icon {
+    width: 14px;
+    height: 14px;
+    image-rendering: pixelated;
+  }
+
+  .tl-desc {
+    font-size: clamp(11px, 1.3vw, 15px);
+    line-height: 1.55;
+    margin: 2px 0 0;
+    max-width: 60ch;
+  }
+
+  .tl-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .tl-metric {
+    font-size: clamp(9px, 1.1vw, 12px);
+    line-height: 1.4;
+    border: 1px solid #000;
+    padding: 2px 7px;
+    color: #000;
+  }
+
+  .tl-metric b {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    /* The mono value has a smaller x-height, so match the surrounding label by
+       sizing it up. em keeps it proportional to the chip across breakpoints. */
+    font-size: 1.5em;
+    color: #000;
+  }
+
+  .tl-tech {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .tl-tag {
+    font-family: var(--font-ui);
+    font-size: clamp(10px, 1.2vw, 14px);
+    padding: 1px 6px;
+    border: 1px solid #000;
+    color: #000;
+  }
+
+  .tl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  /* ── Long-form about ── */
+  .about-window,
+  .about-window .title-bar,
+  .about-section h3,
+  .about-section p {
+    margin: 0;
+  }
+
+  .about-window {
+    margin-top: clamp(10px, 1.4vw, 18px);
+    min-width: 0;
+    scroll-margin-top: 80px;
+  }
+
+  .about-body {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 1.4vw, 16px);
+    padding: clamp(8px, 1vw, 14px);
+    font-size: clamp(12px, 1.4vw, 16px);
+    line-height: 1.7;
+  }
+
+  .about-section {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.5vw, 6px);
+  }
+
+  .about-section h3 {
+    font-family: var(--font-ui);
+    font-size: clamp(11px, 1.3vw, 14px);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text);
+  }
+
+  /* Keep prose readable on wide screens without boxing in the window chrome. */
+  .about-section p {
+    max-width: 68ch;
+  }
+
+  .about-section code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-text);
+  }
+
+  /* ── Responsive ── */
+  @media (width <= 480px) {
+    .about-grid {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .bio {
-      max-width: none;
+    .sidebar {
+      position: static;
+    }
+
+    .timeline::before {
+      display: none;
+    }
+
+    .timeline-entry {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+
+    .timeline-entry::after {
+      display: none;
+    }
+
+    .timeline-meta {
+      align-items: flex-start;
+    }
+
+    .timeline-date {
+      text-align: left;
+    }
+
+    /* Bigger, more legible Education / Certifications / Skills text on phones,
+       where these boxes are full-width. */
+    .sidebar-entry-title {
+      font-size: 16px;
+    }
+
+    .sidebar-entry-sub,
+    .sidebar-entry-date {
+      font-size: 14px;
+    }
+
+    .skill-group-label {
+      font-size: 16px;
+    }
+
+    .tag {
+      font-size: 15px;
     }
   }
 </style>

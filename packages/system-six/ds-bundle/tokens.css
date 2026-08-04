@@ -6,22 +6,27 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── color — pure monochrome, matches system.css ── */
-  --color-bg: #fff;
-  --color-surface: #fff;
-  --color-surface-2: #eee;
-  --color-border: #000;
-  --color-border-focus: #000;
-  --color-text: #000;
-  --color-text-secondary: #000;
-  --color-text-muted: #666;
-  --color-text-inverse: #fff;
-  --color-accent: #000;
-  --color-accent-hover: #000;
-  --color-accent-muted: #eee;
+  /* ── ink — the monochrome primitives, and the whole of them ──
+     There is no color hierarchy (L5): rank by weight, dither density, chrome,
+     and whitespace — never by hue. So there is no "surface", "accent", or
+     "secondary" color token: the design has none, and a token that named one
+     was describing a design this site refuses. Most chrome uses literal
+     #000/#fff through system.css; these name the same values for code that
+     prefers a token. State changes are inversions (L4), not new colors. */
+  --color-bg: #fff; /* the ground */
+  --color-text: #000; /* the ink */
+  --color-text-inverse: #fff; /* ink on black — selection, hover, dark chrome */
+  --color-border: #000; /* every rule and edge */
+  --color-text-muted: #666; /* the ONE gray: de-emphasized text — the single
+                               concession to modern readability. Everything
+                               else that reads as "gray" is 1-bit dither. */
+
+  /* ── status light — the ONLY color, ever (L3) ──
+     Color appears when, and only when, the machine reports state. If nothing
+     is happening, there is no color. Route every new state through this scale;
+     do not invent a fresh green or red per feature. */
   --color-success: #16a34a;
   --color-warning: #d97706;
-  --color-warn: #d97706;
   --color-danger: #dc2626;
 
   /* ── font — Geneva for body, Chicago for window chrome only ── */
@@ -29,10 +34,9 @@
   --font-ui: 'Chicago_12', 'Chicago', system-ui, sans-serif;
   --font-mono: 'Monaco', ui-monospace, monospace;
 
-  /* ── dither patterns (future-ready, flat grays for now) ── */
-  --pattern-checker: #ccc;
-  --pattern-light: #eee;
-  --pattern-diagonal: #ddd;
+  /* ── dither: the 1-bit ordered fills now live in dither.css (--dither-light /
+     -25 / -50 / -75 / -hatch). The flat-gray placeholders that stood here
+     ("future-ready, flat grays for now") are retired — the gap is closed. ── */
 
   /* ── fontSize ── */
   --text-xs: 0.6875rem;

@@ -34,12 +34,6 @@ test.describe('Visual regression', () => {
     await expect(page).toHaveScreenshot('home.png', { fullPage: true });
   });
 
-  test('about page matches baseline', async ({ page }) => {
-    await page.goto('/about/');
-    await page.waitForLoadState('networkidle');
-    await expect(page).toHaveScreenshot('about.png', { fullPage: true });
-  });
-
   test('projects index matches baseline', async ({ page }) => {
     await page.goto('/projects/');
     await page.waitForLoadState('networkidle');

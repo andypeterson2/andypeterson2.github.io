@@ -11,8 +11,8 @@ test.describe('Keyboard navigation', () => {
 
   test('Enter activates a focused link', async ({ page }) => {
     await page.goto('/');
-    // Focus the first project link directly
-    await page.locator('.icon-grid .finder-icon').first().focus();
+    // Focus the first project action button on the timeline directly
+    await page.locator('.action-btn').first().focus();
     await page.keyboard.press('Enter');
     await page.waitForURL(/\/projects\/[\w-]+\//);
     expect(page.url()).toMatch(/\/projects\/[\w-]+\//);

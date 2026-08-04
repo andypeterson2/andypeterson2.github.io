@@ -119,7 +119,7 @@ class TestCrossServiceIntegration:
 
     def test_website_pages_load_through_nginx(self):
         """Main site pages should load through the proxy."""
-        for path in ["/", "/about", "/contact", "/projects/"]:
+        for path in ["/", "/projects/"]:
             status, body = http_get(path)
             assert status == 200, f"Page {path} returned {status}"
             assert "<html" in body.lower()

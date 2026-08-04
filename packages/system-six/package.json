@@ -1,0 +1,26 @@
+{
+  "name": "system-six",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Thin Web Components over the System 6 design system — light-DOM elements that emit the real system.css classes and tokens. No styling of their own.",
+  "main": "./dist/system-six.esm.js",
+  "module": "./dist/system-six.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/system-six.esm.js"
+    },
+    "./styles.css": "./styles/styles.css",
+    "./styles/*": "./styles/*"
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}

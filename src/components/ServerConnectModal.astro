@@ -10,6 +10,10 @@
  */
 ---
 
+<!-- SitePass (same-origin) — reads ?pass=, routes live-tier calls through the gateway
+     with a Bearer token, and scrubs the token from the URL. Loaded first so its
+     fetch wrapper is in place before any backend call. -->
+<script is:inline src="/js/pass.js"></script>
 <!-- ServiceConfig (same-origin) — resolves/persists each backend's URL
      (URL param > localStorage > default), shared with the app frontends. -->
 <script is:inline src="/js/service-config.js"></script>

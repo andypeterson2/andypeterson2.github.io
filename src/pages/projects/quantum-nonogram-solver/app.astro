@@ -42,6 +42,12 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
             <input type="number" id="trials-input" min="1" max="20" value="1" />
           </label>
           <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Run on Simulator</button>
+          <label class="gallery-label"
+            >Gallery
+            <select id="gallery-select">
+              <option value="">— real quantum runs —</option>
+            </select>
+          </label>
         </div>
         <div class="section-rule"><span>Classical</span></div>
         <div id="cl-canvas" class="sol-canvas">
@@ -77,6 +83,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   <script is:inline src="/nonogram/js/state.js"></script>
   <script is:inline src="/nonogram/js/grid.js"></script>
   <script is:inline src="/nonogram/js/solver.js"></script>
+  <script is:inline src="/nonogram/js/classical-solver.js"></script>
   <script is:inline src="/nonogram/js/app.js"></script>
 </BaseLayout>
 
@@ -180,7 +187,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
-    background: #eee;
+    background: var(--dither-light);
     text-align: center;
     font-size: 12px;
     font-weight: 600;
@@ -273,6 +280,25 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     padding: 4px 6px;
     font-size: 13px;
     text-align: center;
+  }
+
+  /* Gallery — pre-computed REAL quantum runs, rendered with no backend. */
+  .gallery-label {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .gallery-label select {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    border: 2px solid #000;
+    background: #fff;
+    padding: 3px 6px;
+    max-width: 190px;
   }
 
   /* ── Solution canvases ── */

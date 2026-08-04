@@ -1,0 +1,253 @@
+---
+// A "?" trigger + a System-6 modal holding a project's full writeup, rendered
+// from the `writeups` content collection at build time (no client-side markdown
+// parsing, CSP-safe). Reusable: multiple instances on one page share a single
+// event-delegated open/close handler — the one-page site will stack several.
+import { getEntry, render } from 'astro:content';
+
+interface Props {
+  slug: string;
+  label?: string;
+}
+const { slug, label = 'Full writeup' } = Astro.props;
+
+const entry = await getEntry('writeups', slug);
+const rendered = entry ? await render(entry) : null;
+const Content = rendered?.Content;
+const modalId = `writeup-${slug}`;
+---
+
+{
+  entry && Content && (
+    <>
+      <button
+        type="button"
+        class="action-btn writeup-trigger"
+        data-writeup-open={modalId}
+        aria-haspopup="dialog"
+      >
+        <span class="writeup-q" aria-hidden="true">
+          ?
+        </span>{' '}
+        {label}
+      </button>
+
+      <div id={modalId} class="writeup-overlay" data-writeup-modal hidden>
+        <div
+          class="writeup-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${modalId}-title`}
+        >
+          <div class="writeup-titlebar">
+            <span id={`${modalId}-title`} class="writeup-title">
+              {entry.data.title}
+            </span>
+            <button
+              type="button"
+              class="writeup-close"
+              data-writeup-close
+              aria-label="Close writeup"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="writeup-content">
+            <Content />
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+<script>
+  // One delegated handler for every WriteupModal on the page.
+  const rootStyle = document.documentElement.style;
+  let lastFocus: HTMLElement | null = null;
+
+  function openModal(modal: HTMLElement) {
+    lastFocus = document.activeElement as HTMLElement;
+    modal.hidden = false;
+    rootStyle.overflow = 'hidden';
+    modal.querySelector<HTMLElement>('[data-writeup-close]')?.focus();
+  }
+
+  function closeModal(modal: HTMLElement | null) {
+    if (!modal) return;
+    modal.hidden = true;
+    rootStyle.overflow = '';
+    lastFocus?.focus();
+  }
+
+  function trapTab(modal: HTMLElement, e: KeyboardEvent) {
+    const f = modal.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
+    );
+    if (!f.length) return;
+    const first = f[0];
+    const last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const trigger = t.closest('[data-writeup-open]');
+    if (trigger) {
+      const modal = document.getElementById(trigger.getAttribute('data-writeup-open') || '');
+      if (modal) openModal(modal);
+      return;
+    }
+    if (t.closest('[data-writeup-close]')) {
+      closeModal(t.closest<HTMLElement>('[data-writeup-modal]'));
+      return;
+    }
+    if (t.matches('[data-writeup-modal]')) closeModal(t); // backdrop click
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const active = document.querySelector<HTMLElement>('[data-writeup-modal]:not([hidden])');
+    if (!active) return;
+    if (e.key === 'Escape') closeModal(active);
+    else if (e.key === 'Tab') trapTab(active, e);
+  });
+</script>
+
+<style>
+  /* The trigger's button appearance comes from the shared global .action-btn
+     (packages/system-six/styles/base.css) — the single source of truth shared
+     with the timeline actions. Only the "?" badge is local. */
+  .writeup-q {
+    font-weight: 700;
+    margin-right: 0.15em;
+  }
+
+  .writeup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 3vw, 40px);
+    background: rgb(0 0 0 / 55%);
+  }
+
+  .writeup-overlay[hidden] {
+    display: none;
+  }
+
+  .writeup-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(680px, 100%);
+    max-height: 85vh;
+    background: var(--surface, #fff);
+    color: var(--ink, #000);
+    border: 3px solid #000;
+  }
+
+  .writeup-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 6px 8px 6px 14px;
+    background: #000;
+    color: #fff;
+    border-bottom: 3px solid #000;
+  }
+
+  .writeup-title {
+    font-family: var(--font-ui);
+    font-size: clamp(13px, 1.6vw, 18px);
+    font-weight: 700;
+  }
+
+  .writeup-close {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #000;
+    border: 2px solid #000;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .writeup-close:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .writeup-content {
+    overflow-y: auto;
+    padding: clamp(14px, 2.2vw, 26px);
+    font-size: clamp(12px, 1.3vw, 15px);
+    line-height: 1.6;
+  }
+
+  /* Markdown content — System-6 flavored. */
+  .writeup-content :global(h2) {
+    font-family: var(--font-ui);
+    font-size: clamp(12px, 1.3vw, 15px);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 1.4em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 2px solid #000;
+  }
+
+  .writeup-content :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .writeup-content :global(p) {
+    margin: 0 0 0.85em;
+  }
+
+  .writeup-content :global(ul),
+  .writeup-content :global(ol) {
+    margin: 0 0 0.85em;
+    padding-left: 1.4em;
+  }
+
+  .writeup-content :global(li) {
+    margin: 0.25em 0;
+  }
+
+  .writeup-content :global(strong) {
+    font-weight: 700;
+  }
+
+  .writeup-content :global(a) {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .writeup-content :global(code) {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.92em;
+    background: #fff;
+    border: 1px solid #000;
+    padding: 0.05em 0.35em;
+  }
+
+  @media (width <= 600px) {
+    .writeup-close {
+      width: 34px;
+      height: 34px;
+    }
+  }
+</style>

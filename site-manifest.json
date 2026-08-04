@@ -5,10 +5,6 @@
       "title": "Home"
     },
     {
-      "path": "/about/",
-      "title": "About"
-    },
-    {
       "path": "/classifiers/",
       "title": "Classifier",
       "backend": {

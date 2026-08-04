@@ -14,7 +14,7 @@ const ROOT = resolve(import.meta.dirname!, '..');
 // ---- Print stylesheet ----
 
 describe('Print stylesheet', () => {
-  const baseCss = readFileSync(resolve(ROOT, 'src/styles/base.css'), 'utf-8');
+  const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
 
   test('print media query exists', () => {
     expect(baseCss).toContain('@media print');
@@ -57,24 +57,24 @@ describe('Print stylesheet', () => {
   });
 });
 
-// ---- Breadcrumbs (inline in BaseLayout) ----
+// ---- Flat layout (breadcrumb details-bar removed) ----
 
-describe('Breadcrumbs (inline in BaseLayout)', () => {
+describe('Flat layout — no breadcrumb details-bar', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
-  test('breadcrumbs auto-generated in BaseLayout for non-home pages', () => {
-    expect(layoutSrc).toContain('breadcrumbs');
-    expect(layoutSrc).toContain('isHome');
+  test('no breadcrumb details-bar is rendered', () => {
+    expect(layoutSrc).not.toContain('class="details-bar"');
+    expect(layoutSrc).not.toContain('crumb-link');
   });
 
-  test('includes Home link', () => {
+  test('menubar includes a Home link to root', () => {
     expect(layoutSrc).toContain('href="/"');
     expect(layoutSrc).toContain('Home');
   });
 
-  test('has details-bar for breadcrumb display', () => {
-    expect(layoutSrc).toContain('details-bar');
-    expect(layoutSrc).toContain('crumb-link');
+  test('the heart is the theme toggle', () => {
+    expect(layoutSrc).toContain('heart-toggle');
+    expect(layoutSrc).toContain('theme-toggle');
   });
 });
 

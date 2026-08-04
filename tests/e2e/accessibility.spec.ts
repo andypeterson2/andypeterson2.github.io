@@ -3,8 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 
 // Pages that fully pass critical + serious WCAG 2.1 AA.
 const cleanPages = [
+  // The bio, experience/project timeline and long-form about all live on '/'.
   { name: 'Home', path: '/' },
-  { name: 'About', path: '/about/' },
   { name: 'Projects index', path: '/projects/' },
   { name: '404', path: '/intentionally-missing/' },
 ];

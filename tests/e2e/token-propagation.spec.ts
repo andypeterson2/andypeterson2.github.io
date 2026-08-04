@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * propagate to rendered elements at runtime. This catches CSS var
  * scope errors that structural tests miss.
  *
- * Expected token values (from src/styles/tokens.css):
+ * Expected token values (from packages/system-six/styles/tokens.css):
  *   --color-success: #16a34a  -> rgb(22, 163, 74)
  *   --color-warning: #d97706  -> rgb(217, 119, 6)
  *   --color-danger:  #dc2626  -> rgb(220, 38, 38)

@@ -56,8 +56,8 @@ test.describe('Performance assertions', () => {
     expect(longTasks).toBe(0);
   });
 
-  test('about page total load under 5 seconds in dev', async ({ page }) => {
-    await page.goto('/about/');
+  test('project detail page total load under 5 seconds in dev', async ({ page }) => {
+    await page.goto('/projects/quantum-video-chat/');
     const { load } = await getTimings(page);
     expect(load).toBeLessThan(5000);
   });

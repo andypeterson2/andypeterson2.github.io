@@ -7,7 +7,8 @@
  * logic: state management, SSE streaming, training, evaluation, prediction,
  * model persistence, and canvas drawing.
  *
- * @global {Object} UI_CONFIG - Injected by the server template.
+ * @global {Object} UI_CONFIG - Seeded by config.js (portal bootstrap).
+ * @global {string} API_BASE  - Backend origin; seeded by config.js, refreshed on connect.
  * @global {Object} UIKit     - Provided by ui-kit.js (loaded before this file).
  */
 "use strict";
@@ -15,10 +16,19 @@
 // ── Shorthand ────────────────────────────────────────────────────────────────
 const ICONS = UIKit.ICONS;
 
-// ── Config injected by template ─────────────────────────────────────────────
+// ── Backend config ───────────────────────────────────────────────────────────
+// window.API_BASE / window.UI_CONFIG are seeded by config.js (loaded first);
+// API_BASE is refreshed whenever the user connects a backend, so the per-dataset
+// URL prefix is computed live via base() rather than frozen at module-load time.
+document.addEventListener("navbar:connect", (e) => {
+  if (e.detail.service === "classifiers") window.API_BASE = e.detail.url;
+});
 
-/** @const {string} URL prefix for all API calls scoped to the active dataset. */
-const BASE = API_BASE + `/d/${UI_CONFIG.name}`;
+/** Live URL prefix for all API calls scoped to the active dataset. */
+function base() {
+  const ds = (window.UI_CONFIG && window.UI_CONFIG.name) || "mnist";
+  return (window.API_BASE || "") + `/d/${ds}`;
+}
 
 // ── Connection-aware fetch wrapper ──────────────────────────────────────────
 
@@ -98,7 +108,11 @@ function defaultName(modelType) {
 
 // ── UIKit initialisations ────────────────────────────────────────────────────
 
-UIKit.initThemeToggle(document.getElementById("theme-toggle"));
+// The portal owns theming globally, so this embed has no #theme-toggle. Guard
+// the init: passing null aborted the entire script here (a silent failure that
+// left the classifier non-interactive since the portal integration).
+const themeToggleEl = document.getElementById("theme-toggle");
+if (themeToggleEl) UIKit.initThemeToggle(themeToggleEl);
 
 const logDrawer  = document.getElementById("log-drawer");
 const logHandle  = document.getElementById("log-handle");
@@ -125,11 +139,11 @@ const addLog      = UIKit.createLogger(logTerminal, 200);
 const canvasCol  = document.getElementById("canvas-col");
 const tabularCol = document.getElementById("tabular-col");
 if (UI_CONFIG.input_type === "image") {
-  canvasCol.style.display  = "";
-  tabularCol.style.display = "none";
+  canvasCol.classList.remove("hidden");
+  tabularCol.classList.add("hidden");
 } else {
-  canvasCol.style.display  = "none";
-  tabularCol.style.display = "";
+  canvasCol.classList.add("hidden");
+  tabularCol.classList.remove("hidden");
 }
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -166,7 +180,7 @@ async function fetchModelInfo(modelType) {
   const details = document.getElementById("model-info-details");
   const panel   = document.getElementById("model-info-panel");
   try {
-    const res = await apiFetch(`${BASE}/model-info/${encodeURIComponent(modelType)}`);
+    const res = await apiFetch(`${base()}/model-info/${encodeURIComponent(modelType)}`);
     if (!res.ok) { details.classList.add("hidden"); return; }
     const data = await res.json();
     const doc = new DOMParser().parseFromString(data.html, "text/html");
@@ -215,30 +229,26 @@ function updateEnsembleBtn() {
   ensembleBtn.classList.toggle("hidden", Object.keys(state.models).length < 2);
 }
 
-// ── Populate dataset menu ─────────────────────────────────────────────────────
+// ── Dataset menu (client-side switching, no navigation) ───────────────────────
 
-(async function initDatasetMenu() {
-  try {
-    const res  = await apiFetch(API_BASE + "/api/datasets");
-    const list = await res.json();
-    datasetList.innerHTML = "";
-    for (const ds of list) {
-      const btn = document.createElement("button");
-      btn.className = "ui-dropdown-item" + (ds.name === UI_CONFIG.name ? " active" : "");
-      btn.textContent = ds.display_name;
-      btn.addEventListener("click", () => {
-        dropdown.close();
-        if (ds.name !== UI_CONFIG.name) window.location = `/d/${ds.name}/`;
-      });
-      datasetList.appendChild(btn);
-    }
-  } catch {
+// Populate the dataset dropdown from the client-side list and switch in place.
+// The portal has no per-dataset routes (/d/<name>/ would 404) and the demo runs
+// entirely client-side, so switching just reconfigures the UI + reloads weights.
+function renderDatasetMenu() {
+  const datasets = window.CLASSIFIER_DATASETS || [];
+  const current = window.UI_CONFIG && window.UI_CONFIG.name;
+  datasetList.innerHTML = "";
+  for (const ds of datasets) {
     const btn = document.createElement("button");
-    btn.className = "ui-dropdown-item active";
-    btn.textContent = UI_CONFIG.display_name;
+    btn.className = "ui-dropdown-item" + (ds.name === current ? " active" : "");
+    btn.textContent = ds.display_name;
+    btn.addEventListener("click", () => {
+      dropdown.close();
+      if (ds.name !== (window.UI_CONFIG && window.UI_CONFIG.name)) switchDataset(ds.name);
+    });
     datasetList.appendChild(btn);
   }
-})();
+}
 
 // ── Canvas drawing (28×28 pixel grid for MNIST) ────────────────────────────────
 
@@ -466,7 +476,10 @@ function buildMetricsTable() {
         },
         {
           key: "Test Loss",
-          fn: (m) => m.eval_result ? m.eval_result.avg_loss.toFixed(4) : "—",
+          fn: (m) =>
+            m.eval_result && m.eval_result.avg_loss != null
+              ? m.eval_result.avg_loss.toFixed(4)
+              : "—",
         },
       ],
     },
@@ -522,7 +535,7 @@ function buildMetricsTable() {
 
 async function loadModels() {
   try {
-    const res  = await apiFetch(`${BASE}/models`);
+    const res  = await apiFetch(`${base()}/models`);
     const data = await res.json();
     for (const [name, info] of Object.entries(data)) state.models[name] = info;
     buildMetricsTable();
@@ -543,7 +556,7 @@ async function runEvaluate() {
   let batchesDone  = 0;
   const approxBatches = 10 * Object.keys(state.models).length;
   await consumeSSE(
-    `${BASE}/evaluate`, {},
+    `${base()}/evaluate`, {},
     (msg) => {
       evalStatus.textContent = msg;
       batchesDone++;
@@ -569,7 +582,7 @@ async function runEvaluate() {
       evalStatus.textContent = `Error: ${err}`;
       setTimeout(() => evalProgress.classList.add("hidden"), 2000);
     },
-    `${BASE}/evaluate/sync`
+    `${base()}/evaluate/sync`
   );
 }
 
@@ -637,7 +650,7 @@ trainBtn.addEventListener("click", async () => {
   let trainedName = null;
 
   await consumeSSE(
-    `${BASE}/train`, body,
+    `${base()}/train`, body,
     (msg) => {
       if (typeof msg === "object" && msg.train_loss != null) {
         // History event from training
@@ -675,7 +688,7 @@ trainBtn.addEventListener("click", async () => {
       modelNameInput.value = defaultName(document.getElementById("model-type").value);
     },
     (err) => { addLog(`Error: ${err}`, "err"); },
-    `${BASE}/train/sync`
+    `${base()}/train/sync`
   );
 
   trainBtn.disabled = false;
@@ -697,7 +710,13 @@ function scheduleAutoPredict() {
   autoPredictTimer = setTimeout(runPredict, 250);
 }
 
+// True when no live backend is connected — the demo tier runs inference in-browser.
+function isOffline() {
+  return typeof connectionManager === "undefined" || connectionManager.state !== "connected";
+}
+
 async function runPredict() {
+  if (isOffline()) return runPredictLocal();
   if (Object.keys(state.models).length === 0) return;
   let body;
   if (UI_CONFIG.input_type === "image") {
@@ -711,7 +730,7 @@ async function runPredict() {
     body = { features };
   }
   try {
-    const res  = await apiFetch(`${BASE}/predict`, {
+    const res  = await apiFetch(`${base()}/predict`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify(body),
@@ -723,7 +742,87 @@ async function runPredict() {
   } catch (_) { /* silent */ }
 }
 
+// Demo tier: run the in-browser model over the current canvas / feature inputs,
+// producing the same shape the server /predict returns.
+async function runPredictLocal() {
+  const localName = Object.keys(state.models).find(n => state.models[n]._local);
+  if (!localName) return;
+  let model;
+  try {
+    model = await ClassifierInfer.loadModel(state.models[localName]._dataset);
+  } catch (_) {
+    return;
+  }
+  let raw;
+  if (UI_CONFIG.input_type === "image") {
+    raw = Array.from(grid); // the 28×28 intensity grid (0–255) is the model input
+  } else {
+    raw = (model.features || []).map(f => {
+      const inp = document.querySelector(`.feature-input[data-feature="${f}"]`);
+      return inp ? parseFloat(inp.value) || 0 : 0;
+    });
+  }
+  state.predictions[localName] = ClassifierInfer.predict(model, raw);
+  buildPredictionTable();
+}
+
+// ── Client-side dataset switching ─────────────────────────────────────────────
+
+// Build the tabular feature form (Iris) from the model's feature list + ranges,
+// re-predicting live as inputs change.
+function buildFeatureInputs(model) {
+  const wrap = document.querySelector("#tabular-col .feature-inputs");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  const feats = model.features || [];
+  const ranges = model.feature_ranges || [];
+  feats.forEach((f, i) => {
+    const [min, max] = ranges[i] || [0, 10];
+    const row = document.createElement("label");
+    row.className = "feature-row";
+    const span = document.createElement("span");
+    span.className = "feature-label";
+    span.textContent = f.replace(/_/g, " ");
+    const input = document.createElement("input");
+    input.type = "number";
+    input.className = "feature-input";
+    input.dataset.feature = f;
+    input.step = "0.1";
+    input.min = min;
+    input.max = max;
+    input.value = ((min + max) / 2).toFixed(1);
+    input.addEventListener("input", () => { if (isOffline()) runPredict(); });
+    row.appendChild(span);
+    row.appendChild(input);
+    wrap.appendChild(row);
+  });
+}
+
+// Switch the active dataset entirely in the browser: swap UI_CONFIG, flip the
+// input UI (canvas ↔ tabular), reload that dataset's weights, and re-predict.
+async function switchDataset(name) {
+  const ds = (window.CLASSIFIER_DATASETS || []).find(d => d.name === name);
+  if (!ds) return;
+  window.UI_CONFIG = ds;
+  const image = ds.input_type === "image";
+  canvasCol.classList.toggle("hidden", !image);
+  tabularCol.classList.toggle("hidden", image);
+  state.models = {};
+  state.predictions = {};
+  await initLocalModel(); // demo model for this dataset (rebuilds the tables)
+  loadModels();           // backend models too, when connected (no-op offline)
+  if (image) {
+    clearCanvas();
+  } else {
+    try { buildFeatureInputs(await ClassifierInfer.loadModel(ds.name)); } catch (_) { /* asset missing */ }
+  }
+  renderDatasetMenu();
+  if (isOffline()) runPredict();
+}
+
 if (predictBtn) predictBtn.addEventListener("click", runPredict);
+const predictBtnTab = document.getElementById("predict-btn-tab");
+if (predictBtnTab) predictBtnTab.addEventListener("click", runPredict);
 
 clearBtn.addEventListener("click", () => {
   clearCanvas();
@@ -735,7 +834,7 @@ clearBtn.addEventListener("click", () => {
 
 async function loadSavedModels() {
   try {
-    const res   = await apiFetch(`${BASE}/models/disk`);
+    const res   = await apiFetch(`${base()}/models/disk`);
     const files = await res.json();
     savedSelect.innerHTML = "";
     if (files.length === 0) {
@@ -763,7 +862,7 @@ importBtn.addEventListener("click", async () => {
   if (!filename) return;
   importBtn.disabled = true;
   try {
-    const res  = await apiFetch(`${BASE}/models/disk/${encodeURIComponent(filename)}/load`, { method: "POST" });
+    const res  = await apiFetch(`${base()}/models/disk/${encodeURIComponent(filename)}/load`, { method: "POST" });
     const data = await res.json();
     const errMsg = !res.ok ? envelopeError(data) || `HTTP ${res.status}` : envelopeError(data);
     if (errMsg) { addLog(`Import failed — ${errMsg}`, "err"); return; }
@@ -792,7 +891,7 @@ document.addEventListener("click", async (e) => {
   if (!exportName) return;
   btn.disabled = true;
   try {
-    const res  = await apiFetch(`${BASE}/models/${encodeURIComponent(exportName)}/export`, { method: "POST" });
+    const res  = await apiFetch(`${base()}/models/${encodeURIComponent(exportName)}/export`, { method: "POST" });
     const data = await res.json();
     const errMsg = !res.ok ? envelopeError(data) || `HTTP ${res.status}` : envelopeError(data);
     if (errMsg) { addLog(`Export failed — ${errMsg}`, "err"); return; }
@@ -809,7 +908,7 @@ document.addEventListener("click", async (e) => {
   const name = btn?.dataset?.remove;
   if (!name) return;
   try {
-    await apiFetch(`${BASE}/models/${encodeURIComponent(name)}`, { method: "DELETE" });
+    await apiFetch(`${base()}/models/${encodeURIComponent(name)}`, { method: "DELETE" });
   } catch (_) { /* best effort — server may be unavailable */ }
   delete state.models[name];
   delete state.predictions[name];
@@ -827,7 +926,7 @@ ensembleBtn.addEventListener("click", async () => {
   ensembleBtn.disabled = true;
   ensembleBtn.textContent = "Running…";
   try {
-    const res = await apiFetch(`${BASE}/ensemble`, {
+    const res = await apiFetch(`${base()}/ensemble`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model_names: names }),
@@ -872,7 +971,7 @@ document.addEventListener("click", async (e) => {
   addLog(`Running ablation study on '${modelName}'…`);
 
   await consumeSSE(
-    `${BASE}/ablation`,
+    `${base()}/ablation`,
     { model_name: modelName },
     (msg) => {
       if (typeof msg === "object" && msg.type === "ablation_result") {
@@ -902,7 +1001,43 @@ document.addEventListener("connection:statechange", (e) => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+// Demo tier: load the in-browser model so the canvas / feature form predicts
+// with no backend connected. Registered as a session model so the metrics table
+// surfaces its real test accuracy (no handwaving).
+async function initLocalModel() {
+  if (typeof ClassifierInfer === "undefined") return;
+  const ds = (window.UI_CONFIG && window.UI_CONFIG.name) || "mnist";
+  let model;
+  try {
+    model = await ClassifierInfer.loadModel(ds);
+  } catch (_) {
+    return; // model asset missing — stay bare, no error
+  }
+  const numParams = model.weight.length * model.weight[0].length + model.bias.length;
+  state.models["Logistic Regression (in-browser)"] = {
+    model_type: "Linear",
+    epochs: "—",
+    batch_size: "—",
+    lr: null,
+    num_params: numParams,
+    training_history: [],
+    eval_result: {
+      accuracy: model.test_accuracy,
+      avg_loss: null,
+      per_class_accuracy: {},
+      num_params: numParams,
+    },
+    _local: true,
+    _dataset: ds,
+  };
+  buildSessionModelsList();
+  buildMetricsTable();
+  buildPredictionTable();
+}
+
 loadModels();
 loadSavedModels();
+initLocalModel();
+renderDatasetMenu();
 modelNameInput.value = defaultName(document.getElementById("model-type").value);
 fetchModelInfo(document.getElementById("model-type").value);

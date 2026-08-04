@@ -22,6 +22,17 @@ body {
   color: #000;
 }
 
+/* ── Dark mode — the page-scale inversion (L4) ──
+   The site is 1-bit black/white with only monochrome-SVG images, so a single
+   photographic negative flips everything correctly at once: text, borders, the
+   desktop pattern, the dither fills — and, via hue-rotate, the status colors
+   keep their hue while lightening for contrast on black. No per-element dark
+   rules, no media exceptions: the design's own monochrome purity (L2) is what
+   makes this a one-liner. "State is inversion", here at the scale of the page. */
+html[data-theme='dark'] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* ── Typography — Geneva for headings (bold), Chicago only in title bars ── */
 h1,
 h2,
@@ -68,7 +79,9 @@ a:hover {
 code {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  background: #eee;
+  /* white inset, not a fill — dense mono text is unreadable over any dither
+     (the L2 prose rule at its extreme). The 1px border does the work. */
+  background: #fff;
   padding: 0.15em 0.4em;
   border: 1px solid #000;
 }

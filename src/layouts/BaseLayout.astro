@@ -1,25 +1,23 @@
 ---
 import { siteConfig } from '../config/site';
-import '../styles/tokens.css';
-import '../styles/base.css';
+// The design system's CSS is owned by the system-six package (single source of
+// truth); the site consumes its one @import closure. tokens + base idiom + dark
+// mode + dither + element layout, in order.
+import '../../packages/system-six/styles/styles.css';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
-import {
-  buildBreadcrumbs,
-  buildDetailsSegments,
-  renderSegment,
-  type Crumb,
-} from '../lib/breadcrumbs';
+import { type Crumb } from '../lib/breadcrumbs';
 
 interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
+  /** Accepted for source compatibility; the flat layout no longer renders a breadcrumb bar. */
   breadcrumbs?: Crumb[];
   /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
 }
 
-const { title, description, ogImage, breadcrumbs: customBreadcrumbs, bare } = Astro.props;
+const { title, description, ogImage, bare } = Astro.props;
 const pageTitle = title ? `${title} | ${siteConfig.title}` : siteConfig.title;
 const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
@@ -27,11 +25,6 @@ const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
 const windowTitle = title || siteConfig.title;
-
-const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
-const isHome = pathname === '/';
-const breadcrumbs = buildBreadcrumbs(pathname, title, customBreadcrumbs);
-const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
 ---
 
 <!doctype html>
@@ -44,6 +37,16 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     {isPreviewDeploy && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
     <link rel="canonical" href={canonicalUrl.href} />
+
+    <!-- No-FOUC theme bootstrap: apply the saved theme before first paint. -->
+    <script is:inline>
+      try {
+        if (localStorage.getItem('sm-theme') === 'dark')
+          document.documentElement.dataset.theme = 'dark';
+      } catch (e) {
+        /* private mode — default to light */
+      }
+    </script>
 
     <!-- system.css — System 6 UI framework -->
     <link
@@ -104,12 +107,18 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     <!-- Desktop menubar (>768px) -->
     <nav class="site-menubar" aria-label="Main navigation">
       <ul role="menubar">
-        <li role="menuitem" class="heart-item">
-          <a href="/"
-            ><img src="/icons/heart.svg" alt="Home" class="heart-icon" width="36" height="36" /></a
+        <li role="none" class="heart-item">
+          <button
+            type="button"
+            class="theme-toggle heart-toggle"
+            role="menuitem"
+            aria-label="Switch to dark mode"
+            aria-pressed="false"
           >
+            <img src="/icons/heart.svg" alt="" class="heart-icon" width="36" height="36" />
+          </button>
         </li>
-        <li role="menuitem"><a href="/about">About</a></li>
+        <li role="menuitem"><a href="/">Home</a></li>
         <li role="menuitem"><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
@@ -130,11 +139,16 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
       </button>
       <ul id="mobile-nav-menu" class="mobile-nav-menu" hidden>
         <li>
-          <a href="/"
-            ><img src="/icons/heart.svg" alt="" class="mnav-heart" width="18" height="18" /> Home</a
+          <button
+            type="button"
+            class="theme-toggle mnav-toggle"
+            aria-label="Switch to dark mode"
+            aria-pressed="false"
           >
+            Theme
+          </button>
         </li>
-        <li><a href="/about/">About</a></li>
+        <li><a href="/">Home</a></li>
         <li><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
@@ -144,28 +158,6 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
         <div class="title-bar">
           <h1 class="title">{windowTitle}</h1>
         </div>
-        <div class="details-bar">
-          {
-            detailsSegments.map((seg) => {
-              const r = renderSegment(seg);
-              if (r.isHeart) {
-                return (
-                  <a href={r.href} class={r.class}>
-                    <img src="/icons/heart_light.svg" alt="Home" class="crumb-heart-icon" />
-                  </a>
-                );
-              }
-              return r.tag === 'a' ? (
-                <a href={r.href} class={r.class}>
-                  {r.text}
-                </a>
-              ) : (
-                <span class={r.class}>{r.text}</span>
-              );
-            })
-          }
-        </div>
-        <slot name="details-bar" />
         <div class="window-pane site-pane" id="main-content">
           <slot />
         </div>
@@ -202,6 +194,30 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
         });
       }
 
+      // Theme toggle — dark mode is the page-scale inversion (see base.css, L4).
+      const themeBtns = Array.from(document.querySelectorAll('.theme-toggle'));
+      if (themeBtns.length) {
+        const applyTheme = (t: 'light' | 'dark') => {
+          document.documentElement.dataset.theme = t;
+          try {
+            localStorage.setItem('sm-theme', t);
+          } catch (e) {
+            /* private mode */
+          }
+          const label = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+          for (const b of themeBtns) {
+            b.setAttribute('aria-label', label);
+            b.setAttribute('aria-pressed', String(t === 'dark'));
+          }
+        };
+        applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+        for (const b of themeBtns) {
+          b.addEventListener('click', () =>
+            applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'),
+          );
+        }
+      }
+
       // Back to top
       const btn = document.getElementById('back-to-top');
       if (btn) {
@@ -225,7 +241,6 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
   /* Full-bleed app pages (bare): hide the portal chrome, strip the window frame,
      let the page fill the viewport. The <h1> stays for SEO/a11y (sr-only). */
   body.is-bare .site-menubar,
-  body.is-bare .details-bar,
   body.is-bare #back-to-top {
     display: none !important;
   }
@@ -304,7 +319,7 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: #eee url('/bg-pattern.svg') repeat;
+    background: #fff url('/bg-pattern.svg') repeat;
     background-size: 2.5vw 2.5vw;
     image-rendering: pixelated;
     border: 0.5vw solid #000;
@@ -316,7 +331,9 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
   /* ── Desktop nav (>768px) ── */
   .site-menubar {
     width: 100%;
-    padding: 0.5vh 1.25vw;
+    /* No vertical padding: the items themselves fill the full bar height so a
+       hover highlight runs flush top-to-bottom. */
+    padding: 0;
     font-size: clamp(0.875rem, 1.96vw, 1.5rem);
     border-bottom: 3px solid #000;
     background: #fff;
@@ -324,21 +341,48 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     position: sticky;
     top: 0;
     z-index: 100;
-    border-radius: 0.75vw 0.75vw 0 0;
+    --menubar-radius: 0.75vw;
+    border-radius: var(--menubar-radius) var(--menubar-radius) 0 0;
+    /* Clip the item highlights to the rounded top corners. */
+    overflow: hidden;
   }
 
   .site-menubar > ul {
     display: flex;
-    gap: 1.875vw;
+    gap: 0;
     list-style: none;
     margin: 0;
     padding: 0;
-    align-items: center;
+    align-items: stretch;
   }
 
-  .site-menubar a {
+  .site-menubar > ul > li {
+    display: flex;
+  }
+
+  /* Each menu item fills the full bar height and sits flush against its
+     neighbours, so hovering or focusing inverts the whole block — a solid black
+     panel in light mode, white under the dark-mode page filter. */
+  .site-menubar a,
+  .site-menubar .theme-toggle {
+    display: flex;
+    align-items: center;
+    padding: 0.6vh 1vw;
     text-decoration: none;
     color: inherit;
+    background: none;
+    border: none;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .site-menubar a:hover,
+  .site-menubar a:focus-visible,
+  .site-menubar .theme-toggle:hover,
+  .site-menubar .theme-toggle:focus-visible {
+    background: #000;
+    color: #fff;
   }
 
   .heart-icon {
@@ -347,8 +391,39 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     display: block;
   }
 
-  .heart-item:hover .heart-icon {
+  .heart-item:hover .heart-icon,
+  .heart-toggle:focus-visible .heart-icon {
     filter: invert(1);
+  }
+
+  /* The heart is the top-left menu item; give its highlight the bar's rounded
+     corner so the rounding survives when the block inverts on hover/focus. */
+  .site-menubar .heart-toggle {
+    border-top-left-radius: var(--menubar-radius);
+  }
+
+  /* Theme toggle base — shared with the mobile nav toggle. */
+  .theme-toggle {
+    background: none;
+    border: none;
+    padding: 0.1em 0.3em;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+  }
+  .theme-toggle:hover,
+  .theme-toggle:focus-visible {
+    background: #000;
+    color: #fff;
+  }
+  .mnav-toggle {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   /* ── Canvas area behind the window ── */
@@ -375,45 +450,6 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
 
   .site-window .title-bar .title {
     font-size: clamp(18px, 2.67vw, 42px);
-  }
-
-  .site-window .details-bar {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 0.75vw;
-    padding: 0.3vh 2vw 0;
-    font-family: var(--font-ui);
-    font-size: clamp(12px, 1.78vw, 24px);
-  }
-
-  .site-window .details-bar .crumb-sep {
-    font-weight: 700;
-  }
-
-  .site-window .details-bar .crumb-link {
-    color: #000;
-    text-decoration: none;
-  }
-
-  .site-window .details-bar .crumb-link:hover {
-    background: #000;
-    color: #fff;
-  }
-
-  .site-window .details-bar .crumb-heart {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .site-window .details-bar .crumb-heart-icon {
-    width: 1em;
-    height: 1em;
-    display: block;
-  }
-
-  .site-window .details-bar .crumb-heart:hover .crumb-heart-icon {
-    filter: invert(1);
   }
 
   .site-window .separator {
@@ -486,17 +522,6 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
     color: #fff;
   }
 
-  .mobile-nav-menu a:hover .mnav-heart,
-  .mobile-nav-menu a:focus-visible .mnav-heart {
-    filter: invert(1);
-  }
-
-  .mnav-heart {
-    width: 18px;
-    height: 18px;
-    display: block;
-  }
-
   /* ── Back to top ── */
   .back-to-top {
     position: fixed;
@@ -539,25 +564,6 @@ const detailsSegments = buildDetailsSegments(breadcrumbs, isHome);
       border-left: none;
       border-right: none;
       border-radius: 0;
-    }
-
-    /* Breadcrumbs on touch screens: the links were bare inline text ~12–18px
-       tall with only ~3px between them (the home heart was 12×12px). Pad each
-       crumb out, add a font floor, and let a long trail wrap instead of
-       overflowing. Applies site-wide since the bar is shared chrome. */
-    .site-window .details-bar {
-      flex-wrap: wrap;
-      gap: 2px 6px;
-      font-size: clamp(14px, 3.6vw, 18px);
-    }
-
-    .site-window .details-bar .crumb-link {
-      padding: 9px 5px;
-    }
-
-    .site-window .details-bar .crumb-heart-icon {
-      width: 1.35em;
-      height: 1.35em;
     }
   }
 </style>

@@ -1,9 +1,11 @@
 /* System-6 tokens + base for the CV editor. Component styles reference these vars. */
 :root {
   --ink: #1c1b19;
-  --paper: #fcfbf7;
-  --chrome: #dcdcd6;
-  --chrome-hi: #efefe9;
+  /* Chrome + surfaces are pure white to match the portfolio (the app's own ink
+     and accent colours are unchanged — only the backgrounds are neutralised). */
+  --paper: #fff;
+  --chrome: #fff;
+  --chrome-hi: #fff;
   --dim: #8f8d86;
 
   /* Semantic state. Demo deliberately has NO colour: its dot is hollow (paper on
@@ -56,13 +58,9 @@ body {
 body {
   font-family: var(--sans);
   color: var(--ink);
-  background-color: #c7c7c1;
-  background-image:
-    linear-gradient(45deg, #b6b6b0 25%, transparent 25%, transparent 75%, #b6b6b0 75%),
-    linear-gradient(45deg, #b6b6b0 25%, transparent 25%, transparent 75%, #b6b6b0 75%);
-  background-size: 4px 4px;
-  background-position:
-    0 0,
-    2px 2px;
+  /* Match the portfolio desktop (BaseLayout .site-canvas): white + 1-bit dither. */
+  background: #fff url('/bg-pattern.svg') repeat;
+  background-size: 2.5vw 2.5vw;
+  image-rendering: pixelated;
   -webkit-font-smoothing: antialiased;
 }

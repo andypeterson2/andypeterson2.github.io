@@ -226,31 +226,36 @@
 {/if}
 
 <style>
+  /* Flush, full-height titles that invert on hover/open — the portfolio
+     menubar idiom (BaseLayout .site-menubar). */
   .menus {
     display: flex;
-    align-items: center;
-    gap: 20px;
+    align-items: stretch;
+    gap: 0;
   }
   .wrap {
     position: relative;
+    display: flex;
   }
   .menu {
     font: inherit;
     font-weight: 400;
+    display: flex;
+    align-items: center;
     color: var(--ink);
     background: none;
     border: 0;
-    padding: 0;
+    padding: 0.6vh 1vw;
     cursor: pointer;
   }
   .menu:disabled {
     color: var(--dim);
     cursor: default;
   }
+  .menu:hover:not(:disabled),
   .menu[aria-expanded='true'] {
     background: var(--ink);
     color: var(--paper);
-    box-shadow: 0 0 0 3px var(--ink);
   }
   .menu:focus-visible,
   .item:focus-visible {
@@ -260,7 +265,7 @@
   .drop {
     position: absolute;
     top: calc(100% + 6px);
-    left: -12px;
+    left: 0;
     z-index: 20;
     min-width: 190px;
     padding: 3px 0;
