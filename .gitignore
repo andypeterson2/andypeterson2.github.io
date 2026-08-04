@@ -24,3 +24,9 @@ playwright-report/
 __pycache__/
 *.pyc
 *.egg-info/
+
+# Résumé/CV PDFs are served externally, never committed: they carry PII that the
+# name-leakage gate (scripts/check-name-leakage.sh) scans PDF text for. Local
+# copies stay on disk for dev; production serves them from an external host.
+/public/resume.pdf
+/public/cv.pdf
