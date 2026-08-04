@@ -1,6 +1,7 @@
 /* System-6 tokens + base for the CV editor. Component styles reference these vars. */
 :root {
   --ink: #1c1b19;
+
   /* Chrome + surfaces are pure white to match the portfolio (the app's own ink
      and accent colours are unchanged — only the backgrounds are neutralised). */
   --paper: #fff;
@@ -58,6 +59,7 @@ body {
 body {
   font-family: var(--sans);
   color: var(--ink);
+
   /* Match the portfolio desktop (BaseLayout .site-canvas): white + 1-bit dither. */
   background: #fff url('/bg-pattern.svg') repeat;
   background-size: 2.5vw 2.5vw;

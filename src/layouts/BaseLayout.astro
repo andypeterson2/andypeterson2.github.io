@@ -336,6 +336,7 @@ const windowTitle = title || siteConfig.title;
   /* ── Desktop nav (>768px) ── */
   .site-menubar {
     width: 100%;
+
     /* No vertical padding: the items themselves fill the full bar height so a
        hover highlight runs flush top-to-bottom. */
     padding: 0;
@@ -346,8 +347,11 @@ const windowTitle = title || siteConfig.title;
     position: sticky;
     top: 0;
     z-index: 100;
+
     --menubar-radius: 0.75vw;
+
     border-radius: var(--menubar-radius) var(--menubar-radius) 0 0;
+
     /* Clip the item highlights to the rounded top corners. */
     overflow: hidden;
   }
@@ -421,11 +425,13 @@ const windowTitle = title || siteConfig.title;
     align-items: center;
     gap: 0.35em;
   }
+
   .theme-toggle:hover,
   .theme-toggle:focus-visible {
     background: #000;
     color: #fff;
   }
+
   .mnav-toggle {
     width: 100%;
     justify-content: flex-start;
