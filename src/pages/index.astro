@@ -131,8 +131,18 @@ const timeline = [...projectTimeline, ...experience];
           target="_blank"
           rel="noopener noreferrer"><i class="bi bi-github"></i> GitHub</a
         >
-        <a href="/resume.pdf" class="btn"><i class="bi bi-file-earmark-text"></i> Resume</a>
-        <a href="/cv.pdf" class="btn"><i class="bi bi-file-earmark-person"></i> CV</a>
+        <a
+          href={`https://api.${siteConfig.domain}/resume.pdf`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"><i class="bi bi-file-earmark-text"></i> Resume</a
+        >
+        <a
+          href={`https://api.${siteConfig.domain}/cv.pdf`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"><i class="bi bi-file-earmark-person"></i> CV</a
+        >
       </div>
     </div>
   </div>
