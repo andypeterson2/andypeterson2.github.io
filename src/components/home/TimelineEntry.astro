@@ -1,0 +1,265 @@
+---
+import WriteupModal from '../WriteupModal.astro';
+import type { TimelineItem } from '../../lib/timeline';
+
+// One row on the home-page unified timeline. An experience period renders role /
+// org / bullets; a project renders the showcase card (eyebrow, metrics, tech,
+// actions). The dot/diamond marker is a ::after on this element positioned to
+// line up with the .timeline spine drawn by the container.
+interface Props {
+  entry: TimelineItem;
+}
+const { entry } = Astro.props;
+---
+
+{
+  entry.type === 'experience' ? (
+    <div class="timeline-entry">
+      <div class="timeline-meta">
+        <div class="timeline-date">{entry.date}</div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-role">{entry.role}</div>
+        <div class="timeline-org">{entry.org}</div>
+        <ul class="timeline-bullets">
+          {entry.bullets.map((b) => (
+            <li>{b}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  ) : (
+    <div class="timeline-entry timeline-entry--project" id={entry.project.slug}>
+      <div class="timeline-meta">
+        <div class="timeline-date">{entry.period}</div>
+      </div>
+      <div class="timeline-content tl-project">
+        <div class="tl-eyebrow">
+          <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
+          Project
+        </div>
+        <div class="timeline-role">{entry.project.title}</div>
+        <p class="tl-desc">{entry.project.description}</p>
+
+        {entry.project.metrics && (
+          <div class="tl-metrics">
+            {entry.project.metrics.map((m) => (
+              <span class="tl-metric">
+                <b>{m.value}</b> {m.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {entry.project.tech && (
+          <div class="tl-tech">
+            {entry.project.tech.map((t) => (
+              <span class="tl-tag">{t}</span>
+            ))}
+          </div>
+        )}
+
+        <div class="tl-actions">
+          {entry.project.appUrl && (
+            <a
+              href={entry.project.appUrl}
+              class="action-btn"
+              target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
+              rel={entry.project.appUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+            >
+              {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
+            </a>
+          )}
+          <WriteupModal slug={entry.project.slug} label="Writeup" />
+          <a
+            href={entry.project.repoUrl}
+            class="action-btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Source
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .timeline-entry {
+    display: grid;
+    grid-template-columns: clamp(50px, 8vw, 78px) minmax(0, 1fr);
+    gap: clamp(16px, 2.5vw, 28px);
+    padding-bottom: clamp(20px, 3vw, 36px);
+    position: relative;
+  }
+
+  .timeline-entry:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-entry::after {
+    content: '';
+    position: absolute;
+    left: clamp(62px, 8vw, 90px);
+    top: 8px;
+    width: 7px;
+    height: 7px;
+    background: #000;
+    transform: translateX(-3px);
+  }
+
+  /* Projects get a distinct diamond marker on the spine. */
+  .timeline-entry--project::after {
+    width: 10px;
+    height: 10px;
+    transform: translateX(-4px) rotate(45deg);
+  }
+
+  .timeline-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 2px;
+    padding-right: clamp(6px, 1vw, 12px);
+  }
+
+  .timeline-date {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-align: center;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 0.3vw, 3px);
+  }
+
+  .timeline-role {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .timeline-org {
+    font-size: var(--text-xs);
+  }
+
+  .timeline-bullets {
+    margin: 0;
+    padding-left: clamp(14px, 1.8vw, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 5px);
+  }
+
+  .timeline-bullets li {
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  /* ── Project timeline entries ── */
+  .timeline-entry--project {
+    scroll-margin-top: 80px;
+  }
+
+  .tl-project {
+    gap: clamp(4px, 0.6vw, 7px);
+  }
+
+  .tl-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .tl-icon {
+    width: 14px;
+    height: 14px;
+    image-rendering: pixelated;
+  }
+
+  .tl-desc {
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    margin: 2px 0 0;
+    max-width: 60ch;
+  }
+
+  .tl-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .tl-metric {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    border: 1px solid #000;
+    padding: 2px 7px;
+    color: #000;
+  }
+
+  .tl-metric b {
+    font-family: var(--font-mono);
+    font-weight: 700;
+
+    /* The mono value has a smaller x-height, so match the surrounding label by
+       sizing it up. em keeps it proportional to the chip across breakpoints. */
+    font-size: 1.5em;
+    color: #000;
+  }
+
+  .tl-tech {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .tl-tag {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    padding: 1px 6px;
+    border: 1px solid #000;
+    color: #000;
+  }
+
+  .tl-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  /* ── Responsive — collapse the date rail into the content column ── */
+  @media (width <= 480px) {
+    .timeline-entry {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+
+    .timeline-entry::after {
+      display: none;
+    }
+
+    .timeline-meta {
+      align-items: flex-start;
+    }
+
+    .timeline-date {
+      text-align: left;
+    }
+  }
+</style>
