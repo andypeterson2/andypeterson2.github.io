@@ -1,0 +1,46 @@
+---
+// A labeled cluster of skill tags inside the Skills SidebarWindow.
+interface Props {
+  label: string;
+  tags: string[];
+}
+const { label, tags } = Astro.props;
+---
+
+<div class="skill-group">
+  <div class="skill-group-label">{label}</div>
+  <div class="skill-tags">
+    {tags.map((t) => <span class="tag">{t}</span>)}
+  </div>
+</div>
+
+<style>
+  .skill-group {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 4px);
+  }
+
+  .skill-group-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(3px, 0.4vw, 4px);
+  }
+
+  .tag {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    border: 1px solid #000;
+    padding: 1px clamp(4px, 0.5vw, 6px);
+    line-height: 1.6;
+  }
+</style>

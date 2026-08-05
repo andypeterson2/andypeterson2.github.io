@@ -100,6 +100,11 @@ describe('Layout Structure', () => {
 
 describe('Home Page', () => {
   const indexSrc = readFileSync(resolve(ROOT, 'src/pages/index.astro'), 'utf-8');
+  // Timeline rows are their own component; the page composes them over the data.
+  const timelineEntrySrc = readFileSync(
+    resolve(ROOT, 'src/components/home/TimelineEntry.astro'),
+    'utf-8',
+  );
 
   test('uses BaseLayout', () => {
     expect(indexSrc).toContain('BaseLayout');
@@ -107,9 +112,11 @@ describe('Home Page', () => {
 
   // The home page is the consolidated hiring surface: bio, then a single
   // timeline carrying both projects and experience, then the long-form about.
+  // The bio window stays on the page; timeline rows live in TimelineEntry.
   test('has the bio window and the unified timeline', () => {
     expect(indexSrc).toContain('bio-window');
-    expect(indexSrc).toContain('timeline-entry--project');
+    expect(indexSrc).toContain('<TimelineEntry');
+    expect(timelineEntrySrc).toContain('timeline-entry--project');
   });
 
   test('has the long-form about section', () => {
@@ -120,8 +127,8 @@ describe('Home Page', () => {
   test('links to project apps and repos', () => {
     // The home timeline links each project to its live app (appUrl) and source
     // repo (repoUrl); the standalone "Details →" link was removed.
-    expect(indexSrc).toContain('appUrl');
-    expect(indexSrc).toContain('repoUrl');
+    expect(timelineEntrySrc).toContain('appUrl');
+    expect(timelineEntrySrc).toContain('repoUrl');
   });
 });
 

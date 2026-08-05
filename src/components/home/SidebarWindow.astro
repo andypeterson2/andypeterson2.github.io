@@ -1,0 +1,37 @@
+---
+// A left-column sidebar card (Education · Certs · Skills): the System-6 window
+// chrome plus a flex-column body. Content is slotted so each caller supplies its
+// own entries. Flex child of .main-left, so it carries no grid placement.
+interface Props {
+  /** Title-bar text, also the section's H2. */
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<section class="window sidebar-window">
+  <div class="title-bar"><h2 class="title">{title}</h2></div>
+  <div class="window-body"><slot /></div>
+</section>
+
+<style>
+  /* Zero the system.css .window default 16px margin so it sits flush in the
+     left column's flex stack. */
+  .sidebar-window {
+    margin: 0;
+    overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .sidebar-window .title-bar {
+    margin: 0;
+  }
+
+  .sidebar-window .window-body {
+    padding: clamp(3px, 0.4vw, 5px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vw, 5px);
+  }
+</style>

@@ -1,85 +1,32 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import WriteupModal from '../components/WriteupModal.astro';
+import SidebarWindow from '../components/home/SidebarWindow.astro';
+import SidebarEntry from '../components/home/SidebarEntry.astro';
+import SkillGroup from '../components/home/SkillGroup.astro';
+import TimelineEntry from '../components/home/TimelineEntry.astro';
 import { siteConfig } from '../config/site';
 import { projects } from '../data/projects';
+import { experience } from '../data/experience';
+import { education, certifications, skills } from '../data/credentials';
+import type { TimelineItem } from '../lib/timeline';
 
 const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
 
 // Projects placed on the timeline, newest first. Periods live here (timeline
 // presentation), not in the core project data.
-const projectTimeline = [
+const projectTimeline: TimelineItem[] = [
   { slug: 'latex-resume-editor', period: '2025' },
   { slug: 'quantum-protein-kernel', period: '2024' },
   { slug: 'quantum-nonogram-solver', period: '2024' },
   { slug: 'quantum-video-chat', period: '2024' },
-].map((e) => ({ type: 'project' as const, period: e.period, project: bySlug(e.slug) }));
-
-// Experience, newest first (formerly the standalone About page).
-const experience = [
-  {
-    type: 'experience' as const,
-    date: '2022 – 2024',
-    role: 'Research Intern',
-    org: 'Qualcomm Institute (CALIT2) · San Diego, CA',
-    bullets: [
-      'Built a frame-level encryption pipeline for live video with sub-millisecond latency overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).',
-      'Simulated a noisy quantum channel (Poisson photon source, fiber attenuation, detector modeling) to validate protocol correctness — used to verify eavesdrop detection via error rate anomalies.',
-      "Presented algorithmic research to IBM's VP of Quantum during campus visit.",
-    ],
-  },
-  {
-    type: 'experience' as const,
-    date: '2021 – 2024',
-    role: 'Co-Founder / President',
-    org: 'Quantum Computing at UC, San Diego (QCSD)',
-    bullets: [
-      'Co-founded to fill a gap in undergraduate quantum computing education at UCSD. Restructured processes and formalized handoffs before graduating — org survived complete leadership turnover and is now nationally chartered as QCSA.',
-    ],
-  },
-  {
-    type: 'experience' as const,
-    date: '2020 – 2023',
-    role: 'President / Competition Committee',
-    org: 'ACM Cyber at UCSD',
-    bullets: [
-      'As President, maintained org engagement through full COVID lockdown when most student orgs lost momentum.',
-      'Centralized documentation for the 500-member org in Notion with role-based least-privilege access controls.',
-    ],
-  },
-  {
-    type: 'experience' as const,
-    date: '2020 – 2022',
-    role: 'Web Developer',
-    org: 'RIT Esports · Remote',
-    bullets: [
-      'Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active visitors across 6 varsity esports teams with 99.9% uptime.',
-    ],
-  },
-  {
-    type: 'experience' as const,
-    date: '2020 – 2022',
-    role: 'Co-Founder',
-    org: 'San Diego CTF',
-    bullets: [
-      "Co-founded San Diego's largest annual cybersecurity competition — hundreds of competitors across 20+ countries, running for two annual iterations.",
-      'Built the Discord bot submission interface (Discord.JS) used by all competitors across both years — zero onboarding friction.',
-    ],
-  },
-  {
-    type: 'experience' as const,
-    date: '2020 – 2021',
-    role: 'Tutor / IT Lead',
-    org: 'Mathnasium · Southern California',
-    bullets: [
-      'Sole IT resource for transitioning the center to remote operations during COVID-19, keeping ~25 client families and ~15 active students connected.',
-    ],
-  },
-];
+].map((e) => ({ type: 'project', period: e.period, project: bySlug(e.slug) }));
 
 // Unified timeline: 2024–2025 projects sit above the Qualcomm research period
 // they came out of, then the rest of the experience.
-const timeline = [...projectTimeline, ...experience];
+const timeline: TimelineItem[] = [
+  ...projectTimeline,
+  ...experience.map((e) => ({ type: 'experience' as const, ...e })),
+];
 ---
 
 <BaseLayout title="Home" description={`${siteConfig.displayName} — software developer`}>
@@ -139,82 +86,19 @@ const timeline = [...projectTimeline, ...experience];
       </div>
 
       <!-- Education -->
-      <div class="window sidebar-window">
-        <div class="title-bar"><h2 class="title">Education</h2></div>
-        <div class="window-body">
-          <div class="sidebar-entry">
-            <div class="sidebar-entry-title">B.S. Computer Science</div>
-            <div class="sidebar-entry-sub">UC San Diego</div>
-            <div class="sidebar-entry-date">December 2024</div>
-          </div>
-        </div>
-      </div>
+      <SidebarWindow title="Education">
+        {education.map((e) => <SidebarEntry title={e.title} sub={e.sub} date={e.date} />)}
+      </SidebarWindow>
 
       <!-- Certifications -->
-      <div class="window sidebar-window">
-        <div class="title-bar"><h2 class="title">Certs</h2></div>
-        <div class="window-body">
-          <div class="sidebar-entry">
-            <div class="sidebar-entry-title">Azure Data Fundamentals (DP-900)</div>
-            <div class="sidebar-entry-sub">Microsoft</div>
-          </div>
-          <div class="sidebar-entry">
-            <div class="sidebar-entry-title">ITF+ (IT Fundamentals)</div>
-            <div class="sidebar-entry-sub">CompTIA</div>
-          </div>
-        </div>
-      </div>
+      <SidebarWindow title="Certs">
+        {certifications.map((c) => <SidebarEntry title={c.title} sub={c.sub} date={c.date} />)}
+      </SidebarWindow>
 
       <!-- Skills -->
-      <div class="window sidebar-window">
-        <div class="title-bar"><h2 class="title">Skills</h2></div>
-        <div class="window-body">
-          <div class="skill-group">
-            <div class="skill-group-label">Languages</div>
-            <div class="skill-tags">
-              <span class="tag">Python</span>
-              <span class="tag">TypeScript</span>
-              <span class="tag">C/C++</span>
-              <span class="tag">Java</span>
-              <span class="tag">SQL</span>
-            </div>
-          </div>
-          <div class="skill-group">
-            <div class="skill-group-label">Quantum</div>
-            <div class="skill-tags">
-              <span class="tag">Qiskit</span>
-              <span class="tag">BB84</span>
-              <span class="tag">Grover</span>
-            </div>
-          </div>
-          <div class="skill-group">
-            <div class="skill-group-label">Infrastructure</div>
-            <div class="skill-tags">
-              <span class="tag">Docker</span>
-              <span class="tag">Kubernetes</span>
-              <span class="tag">Terraform</span>
-              <span class="tag">AWS</span>
-              <span class="tag">Azure</span>
-              <span class="tag">Linux</span>
-              <span class="tag">CI/CD</span>
-            </div>
-          </div>
-          <div class="skill-group">
-            <div class="skill-group-label">AI / ML</div>
-            <div class="skill-tags">
-              <span class="tag">PyTorch</span>
-              <span class="tag">Scikit-Learn</span>
-            </div>
-          </div>
-          <div class="skill-group">
-            <div class="skill-group-label">Security</div>
-            <div class="skill-tags">
-              <span class="tag">Cryptography</span>
-              <span class="tag">CTF</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SidebarWindow title="Skills">
+        {skills.map((g) => <SkillGroup label={g.label} tags={g.tags} />)}
+      </SidebarWindow>
     </div>
 
     <!-- Right column · row 1: Intro (bio) -->
@@ -249,84 +133,7 @@ const timeline = [...projectTimeline, ...experience];
     <div class="window timeline-window">
       <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
       <div class="timeline">
-        {
-          timeline.map((entry) =>
-            entry.type === 'experience' ? (
-              <div class="timeline-entry">
-                <div class="timeline-meta">
-                  <div class="timeline-date">{entry.date}</div>
-                </div>
-                <div class="timeline-content">
-                  <div class="timeline-role">{entry.role}</div>
-                  <div class="timeline-org">{entry.org}</div>
-                  <ul class="timeline-bullets">
-                    {entry.bullets.map((b) => (
-                      <li>{b}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div class="timeline-entry timeline-entry--project" id={entry.project.slug}>
-                <div class="timeline-meta">
-                  <div class="timeline-date">{entry.period}</div>
-                </div>
-                <div class="timeline-content tl-project">
-                  <div class="tl-eyebrow">
-                    <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
-                    Project
-                  </div>
-                  <div class="timeline-role">{entry.project.title}</div>
-                  <p class="tl-desc">{entry.project.description}</p>
-
-                  {entry.project.metrics && (
-                    <div class="tl-metrics">
-                      {entry.project.metrics.map((m) => (
-                        <span class="tl-metric">
-                          <b>{m.value}</b> {m.label}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {entry.project.tech && (
-                    <div class="tl-tech">
-                      {entry.project.tech.map((t) => (
-                        <span class="tl-tag">{t}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div class="tl-actions">
-                    {entry.project.appUrl && (
-                      <a
-                        href={entry.project.appUrl}
-                        class="action-btn"
-                        target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
-                        rel={
-                          entry.project.appUrl.startsWith('http')
-                            ? 'noopener noreferrer'
-                            : undefined
-                        }
-                      >
-                        {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
-                      </a>
-                    )}
-                    <WriteupModal slug={entry.project.slug} label="Writeup" />
-                    <a
-                      href={entry.project.repoUrl}
-                      class="action-btn"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Source
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ),
-          )
-        }
+        {timeline.map((entry) => <TimelineEntry entry={entry} />)}
       </div>
     </div>
   </div>
@@ -429,12 +236,10 @@ const timeline = [...projectTimeline, ...experience];
 <style>
   /* ── Reset margins ── */
   .bio-window,
-  .sidebar-window,
   .timeline-window,
   .contact-window,
   .bio-body p,
   .bio-window .title-bar,
-  .sidebar-window .title-bar,
   .timeline-window .title-bar,
   .contact-window .title-bar,
   .bio-card.window .title-bar {
@@ -571,75 +376,12 @@ const timeline = [...projectTimeline, ...experience];
     text-align: center;
   }
 
-  .sidebar-window {
-    overflow: hidden;
-    max-width: 100%;
-    min-width: 0;
-  }
-
   .timeline-window {
     min-width: 0;
   }
 
-  .sidebar-window .window-body {
-    padding: clamp(3px, 0.4vw, 5px);
-    display: flex;
-    flex-direction: column;
-    gap: clamp(3px, 0.4vw, 5px);
-  }
-
-  .sidebar-entry {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    align-items: center;
-    text-align: center;
-  }
-
-  .sidebar-entry-title {
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .sidebar-entry-sub,
-  .sidebar-entry-date {
-    font-size: var(--text-xs);
-    line-height: 1.3;
-  }
-
-  /* Skills */
-  .skill-group {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(3px, 0.4vw, 4px);
-  }
-
-  .skill-group-label {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    text-align: center;
-  }
-
-  .skill-tags {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: clamp(3px, 0.4vw, 4px);
-  }
-
-  .tag {
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    border: 1px solid #000;
-    padding: 1px clamp(4px, 0.5vw, 6px);
-    line-height: 1.6;
-  }
-
-  /* ── Timeline ── */
+  /* ── Timeline ── the container owns the vertical spine; each entry (TimelineEntry
+     component) draws its own dot/diamond aligned to it. */
   .timeline {
     display: flex;
     flex-direction: column;
@@ -655,163 +397,6 @@ const timeline = [...projectTimeline, ...experience];
     bottom: 8px;
     width: 1px;
     background: #000;
-  }
-
-  .timeline-entry {
-    display: grid;
-    grid-template-columns: clamp(50px, 8vw, 78px) minmax(0, 1fr);
-    gap: clamp(16px, 2.5vw, 28px);
-    padding-bottom: clamp(20px, 3vw, 36px);
-    position: relative;
-  }
-
-  .timeline-entry:last-child {
-    padding-bottom: 0;
-  }
-
-  .timeline-entry::after {
-    content: '';
-    position: absolute;
-    left: clamp(62px, 8vw, 90px);
-    top: 8px;
-    width: 7px;
-    height: 7px;
-    background: #000;
-    transform: translateX(-3px);
-  }
-
-  /* Projects get a distinct diamond marker on the spine. */
-  .timeline-entry--project::after {
-    width: 10px;
-    height: 10px;
-    transform: translateX(-4px) rotate(45deg);
-  }
-
-  .timeline-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 2px;
-    padding-right: clamp(6px, 1vw, 12px);
-  }
-
-  .timeline-date {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    text-align: center;
-    line-height: 1.4;
-    white-space: nowrap;
-  }
-
-  .timeline-content {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(2px, 0.3vw, 3px);
-  }
-
-  .timeline-role {
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .timeline-org {
-    font-size: var(--text-xs);
-  }
-
-  .timeline-bullets {
-    margin: 0;
-    padding-left: clamp(14px, 1.8vw, 20px);
-    display: flex;
-    flex-direction: column;
-    gap: clamp(3px, 0.4vw, 5px);
-  }
-
-  .timeline-bullets li {
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
-
-  /* ── Project timeline entries ── */
-  .timeline-entry--project {
-    scroll-margin-top: 80px;
-  }
-
-  .tl-project {
-    gap: clamp(4px, 0.6vw, 7px);
-  }
-
-  .tl-eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .tl-icon {
-    width: 14px;
-    height: 14px;
-    image-rendering: pixelated;
-  }
-
-  .tl-desc {
-    font-size: var(--text-sm);
-    line-height: 1.55;
-    margin: 2px 0 0;
-    max-width: 60ch;
-  }
-
-  .tl-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 4px;
-  }
-
-  .tl-metric {
-    font-size: var(--text-xs);
-    line-height: 1.4;
-    border: 1px solid #000;
-    padding: 2px 7px;
-    color: #000;
-  }
-
-  .tl-metric b {
-    font-family: var(--font-mono);
-    font-weight: 700;
-
-    /* The mono value has a smaller x-height, so match the surrounding label by
-       sizing it up. em keeps it proportional to the chip across breakpoints. */
-    font-size: 1.5em;
-    color: #000;
-  }
-
-  .tl-tech {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 5px;
-    margin-top: 2px;
-  }
-
-  .tl-tag {
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    padding: 1px 6px;
-    border: 1px solid #000;
-    color: #000;
-  }
-
-  .tl-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
   }
 
   /* ── Long-form about ── */
@@ -863,27 +448,11 @@ const timeline = [...projectTimeline, ...experience];
     color: var(--color-text);
   }
 
-  /* ── Responsive ── */
+  /* ── Responsive ── the timeline spine hides on phones (entries collapse their
+     date rail in TimelineEntry's own media query). */
   @media (width <= 480px) {
     .timeline::before {
       display: none;
-    }
-
-    .timeline-entry {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 2px;
-    }
-
-    .timeline-entry::after {
-      display: none;
-    }
-
-    .timeline-meta {
-      align-items: flex-start;
-    }
-
-    .timeline-date {
-      text-align: left;
     }
   }
 </style>
