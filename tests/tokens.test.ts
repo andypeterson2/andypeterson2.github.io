@@ -48,22 +48,14 @@ describe('Token CSS Output', () => {
     expect(tokensCss).toContain('--space-16:');
   });
 
-  test('font size tokens use fixed values (no clamp)', () => {
-    const textTokenLines = tokensCss
-      .split('\n')
-      .filter((l) => l.includes('--text-') && l.includes(':'));
-    for (const line of textTokenLines) {
-      if (
-        line.includes('--text-inverse') ||
-        line.includes('--text-secondary') ||
-        line.includes('--text-muted')
-      ) {
-        continue;
-      }
-      const match = line.match(/--text-(xs|sm|base|lg|xl|2xl|3xl|4xl)/);
-      if (match) {
-        expect(line).not.toContain('clamp(');
-      }
+  test('font size scale tokens are fluid (clamp with a px floor + ceiling)', () => {
+    // The type scale is fluid: each step grows with the viewport between a legible
+    // px floor and a capped px ceiling, so text is comfortable at any width.
+    const steps = ['2xs', 'xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl'];
+    for (const step of steps) {
+      const line = tokensCss.split('\n').find((l) => new RegExp(`--text-${step}\\s*:`).test(l));
+      expect(line, `--text-${step} should be defined`).toBeTruthy();
+      expect(line).toMatch(/clamp\(\s*\d+px\s*,\s*[\d.]+vw\s*,\s*\d+px\s*\)/);
     }
   });
 });
