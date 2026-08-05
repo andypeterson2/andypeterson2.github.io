@@ -38,15 +38,21 @@
      -25 / -50 / -75 / -hatch). The flat-gray placeholders that stood here
      ("future-ready, flat grays for now") are retired — the gap is closed. ── */
 
-  /* ── fontSize ── */
-  --text-xs: 0.6875rem;
-  --text-sm: 0.8125rem;
-  --text-base: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 2rem;
-  --text-3xl: 2.5rem;
-  --text-4xl: 3rem;
+  /* ── Fluid type scale ──
+     Every step grows with the viewport between a legible floor and a capped
+     ceiling (clamp), so text is comfortable at any width — not tiny on laptops /
+     tablets and huge only on ultra-wide. One source of truth: components pick a
+     step (var(--text-*)) instead of hand-rolling a clamp. Steps are ~one minor
+     third apart. */
+  --text-2xs: clamp(14px, 2vw, 17px);
+  --text-xs: clamp(16px, 2.4vw, 20px);
+  --text-sm: clamp(18px, 2.7vw, 23px);
+  --text-base: clamp(21px, 3.2vw, 28px);
+  --text-lg: clamp(25px, 3.8vw, 36px);
+  --text-xl: clamp(30px, 4.8vw, 46px);
+  --text-2xl: clamp(37px, 6vw, 58px);
+  --text-3xl: clamp(45px, 7.5vw, 72px);
+  --text-4xl: clamp(54px, 9vw, 88px);
 
   /* ── space ── */
   --space-1: 0.25rem;

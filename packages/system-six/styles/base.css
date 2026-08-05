@@ -80,6 +80,13 @@ a:hover {
    match the frame so a highlighted button keeps its rounded shape. */
 .btn {
   border-radius: 7px;
+  font-size: var(--text-xs);
+}
+
+/* Window title bars: scale the title with the type system (system.css pins a
+   fixed size) so it stays above body copy in the fluid scale. */
+.title-bar .title {
+  font-size: var(--text-lg);
 }
 
 /* ── Code — use Monaco from system.css fonts ── */
@@ -228,7 +235,7 @@ pre code {
    border-radius (not a border-image) keeps the invert-hover rounded. ── */
 .action-btn {
   font-family: var(--font-ui);
-  font-size: clamp(11px, 1.3vw, 14px);
+  font-size: var(--text-xs);
   padding: clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 14px);
   border: 2px solid #000;
   border-radius: 6px;
