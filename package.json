@@ -21,7 +21,9 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "@astrojs/svelte": "^8.1.2",
+    "@sakun/system.css": "0.1.11",
     "astro": "^7.1.6",
+    "bootstrap-icons": "1.11.3",
     "svelte": "^5.56.4"
   },
   "devDependencies": {

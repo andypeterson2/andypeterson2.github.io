@@ -13,9 +13,7 @@ export default defineConfig({
         resources: [
           "'self'",
           'https://cdn.socket.io',
-          'https://unpkg.com',
           'https://plausible.io',
-          'https://cdn.jsdelivr.net',
           // Hash of the no-FOUC theme bootstrap — an `is:inline` <script> in
           // BaseLayout.astro that Astro deliberately does NOT auto-hash. If that
           // script's bytes change, this hash must change with it, or the CSP
@@ -25,11 +23,14 @@ export default defineConfig({
         ],
       },
       styleDirective: {
-        resources: ["'self'", 'https://unpkg.com', 'https://cdn.jsdelivr.net'],
+        resources: ["'self'"],
       },
       directives: [
         "default-src 'self'",
-        "font-src 'self' https://unpkg.com https://cdn.jsdelivr.net",
+        // Vite inlines the small System-6 woff2 fonts as data: URIs in the bundled
+        // CSS (fewer requests, no FOIT), so data: is required here — same rationale
+        // as img-src's data: for the inlined SVGs. No external font origins.
+        "font-src 'self' data:",
         "img-src 'self' data:",
         // api.andypeterson.dev is the gateway the CV editor fetches (credentialed,
         // behind Cloudflare Access). Without it here the CSP would block those calls.
