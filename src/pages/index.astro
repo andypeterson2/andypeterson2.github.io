@@ -285,15 +285,37 @@ const timeline: TimelineItem[] = [
   }
 
   @media (width <= 600px) {
+    /* One column, with Intro pulled up between Contact and the Education/Certs/
+       Skills stack. .main-left is flattened (display:contents) so its five windows
+       join Intro + the timeline as grid siblings; negative orders then lift
+       Me · Contact · Intro ahead of the default-order remainder (Education · Certs ·
+       Skills · Experience & Projects, which stay in document order). Final order:
+       Me · Contact · Intro · Education · Certs · Skills · Experience & Projects. */
     .main-cols {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .main-left,
-    .main-cols > #intro,
+    .main-left {
+      display: contents;
+    }
+
     .main-cols > .timeline-window {
       grid-column: 1;
       grid-row: auto;
+    }
+
+    .bio-card {
+      order: -3;
+    }
+
+    .contact-window {
+      order: -2;
+    }
+
+    .main-cols > #intro {
+      grid-column: 1;
+      grid-row: auto;
+      order: -1;
     }
   }
 
