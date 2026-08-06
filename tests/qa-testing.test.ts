@@ -77,9 +77,9 @@ describe('Page structure validation', () => {
   });
 });
 
-// ---- Visual regression baseline ----
+// ---- Design-token compliance (static source audit — not a screenshot test) ----
 
-describe('Visual regression baseline - component inventory', () => {
+describe('Design-token compliance - component style audit', () => {
   const componentDir = resolve(ROOT, 'src/components');
   const components = readdirSync(componentDir).filter((f) => f.endsWith('.astro'));
 

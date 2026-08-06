@@ -32,13 +32,27 @@ const preferButton = {
 
     return {
       JSXElement(node) {
-        if (
-          node.openingElement &&
-          node.openingElement.name &&
-          node.openingElement.name.name === 'button'
-        ) {
-          context.report({ node: node.openingElement, messageId: 'preferButton' });
-        }
+        const el = node.openingElement;
+        if (!el || !el.name || el.name.name !== 'button') return;
+        // Exempt buttons carrying attributes the <Button> component cannot express
+        // (its props are variant/size/href/class/type/disabled/aria-label/id): a role,
+        // tabindex, or any aria-* other than aria-label. Those are legitimately raw
+        // (menubar checkbox toggles, disclosure buttons, decorative aria-hidden chrome),
+        // so the rule shouldn't nudge them toward <Button>.
+        const unexpressible = (el.attributes || []).some((a) => {
+          if (a.type !== 'JSXAttribute' || !a.name || !a.name.name) return false;
+          const n = String(a.name.name);
+          return n === 'role' || n === 'tabindex' || (n.startsWith('aria-') && n !== 'aria-label');
+        });
+        if (unexpressible) return;
+        // Exempt content-less buttons: an empty <button> is a decorative/icon control
+        // (e.g. CSS-triangle carousel arrows) that <Button>'s label-slot model doesn't
+        // fit — converting would inject its inline-flex/gap padding and break the shape.
+        const hasContent = (node.children || []).some((c) =>
+          c.type === 'JSXText' ? c.value.trim() !== '' : true,
+        );
+        if (!hasContent) return;
+        context.report({ node: el, messageId: 'preferButton' });
       },
     };
   },
