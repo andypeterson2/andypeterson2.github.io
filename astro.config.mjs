@@ -58,5 +58,15 @@ export default defineConfig({
     // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
     // other prefixes the app reads (BaseLayout).
     envPrefix: ['PUBLIC_', 'SITE_', 'PLAUSIBLE_', 'PREVIEW_'],
+    build: {
+      // Never inline fonts. Vite's default inlines assets < 4KB as base64, which
+      // for the small System-6 woff2 faces bloats the render-blocking CSS by ~20KB
+      // (base64 is +33% and lands in the critical bundle) — the main FCP drag on
+      // throttled connections. As files they load in parallel and stay cacheable.
+      // Small SVGs/PNGs still inline (returning undefined = default), which keeps
+      // the ~22 system.css UI SVGs out of the request waterfall.
+      assetsInlineLimit: (filePath) =>
+        /\.(woff2?|ttf|otf|eot)$/i.test(filePath) ? false : undefined,
+    },
   },
 });
