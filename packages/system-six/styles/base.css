@@ -84,9 +84,24 @@ a:hover {
 }
 
 /* Window title bars: scale the title with the type system (system.css pins a
-   fixed size) so it stays above body copy in the fluid scale. */
+   fixed size) so it stays above body copy in the fluid scale, and give the bar
+   more vertical breathing room. system.css hard-codes height:24px (border-box),
+   so padding alone just eats into that fixed height and the tall title overflows
+   it — height:auto lets the bar grow to fit the title, and the padding then
+   becomes real striped space above and below the heading. */
+.title-bar {
+  height: auto;
+  padding-top: clamp(5px, 0.7vw, 9px);
+  padding-bottom: clamp(5px, 0.7vw, 9px);
+}
+
 .title-bar .title {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
+  /* Pad the white title block itself (system.css leaves it zero vertical), so
+     the heading text has room above and below rather than sitting tight against
+     the striped bar. */
+  padding-top: clamp(2px, 0.4vw, 5px);
+  padding-bottom: clamp(2px, 0.4vw, 5px);
 }
 
 /* ── Code — use Monaco from system.css fonts ── */
