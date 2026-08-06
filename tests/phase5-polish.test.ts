@@ -128,8 +128,11 @@ describe('Back to top button', () => {
     expect(layoutSrc).toContain('aria-label="Back to top"');
   });
 
-  test('uses system.css btn class', () => {
-    expect(layoutSrc).toContain('class="btn back-to-top"');
+  test('uses the design-system <Button> (renders system.css .btn) for back-to-top', () => {
+    // Was a raw <button class="btn back-to-top">; now the design-system Button
+    // component (variant secondary → system.css .btn) carrying the back-to-top class.
+    expect(layoutSrc).toContain('<Button');
+    expect(layoutSrc).toContain('class="back-to-top"');
   });
 
   test('scroll listener toggles visible class', () => {

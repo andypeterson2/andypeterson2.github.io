@@ -47,6 +47,16 @@ export default [
     },
   },
   {
+    // App pages (src/pages/projects/*/app.astro) host full-bleed, self-contained apps
+    // with their own bespoke control styling (e.g. the nonogram's .nono-btn — a
+    // standalone button system, not additive to system.css .btn), not portfolio chrome,
+    // so the portfolio <Button> rule doesn't apply to their controls.
+    files: ['src/pages/projects/*/app.astro'],
+    rules: {
+      'design-system/prefer-button': 'off',
+    },
+  },
+  {
     // Superproject-owned shared browser scripts (classic <script> files, not
     // modules). Lint without the type-aware config (they have no tsconfig).
     files: ['public/js/**/*.js'],

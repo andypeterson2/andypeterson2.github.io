@@ -12,6 +12,7 @@ import '@sakun/system.css/dist/system.css';
 import 'bootstrap-icons/font/bootstrap-icons.min.css';
 import '../../packages/system-six/styles/styles.css';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
+import Button from '../components/Button.astro';
 import { type Crumb } from '../lib/breadcrumbs';
 
 interface Props {
@@ -50,7 +51,7 @@ const windowTitle = title || siteConfig.title;
       try {
         if (localStorage.getItem('sm-theme') === 'dark')
           document.documentElement.dataset.theme = 'dark';
-      } catch (e) {
+      } catch {
         /* private mode — default to light */
       }
     </script>
@@ -159,9 +160,15 @@ const windowTitle = title || siteConfig.title;
       </div>
     </div>
 
-    <button id="back-to-top" class="btn back-to-top" aria-label="Back to top" type="button">
+    <Button
+      variant="secondary"
+      id="back-to-top"
+      class="back-to-top"
+      aria-label="Back to top"
+      type="button"
+    >
       &uarr; Top
-    </button>
+    </Button>
 
     <script>
       // Mobile floating nav — a hamburger that toggles a small menu.
@@ -196,7 +203,7 @@ const windowTitle = title || siteConfig.title;
           document.documentElement.dataset.theme = t;
           try {
             localStorage.setItem('sm-theme', t);
-          } catch (e) {
+          } catch {
             /* private mode */
           }
           const label = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
@@ -222,7 +229,6 @@ const windowTitle = title || siteConfig.title;
       const btn = document.getElementById('back-to-top');
       if (btn) {
         const pane = document.querySelector('.site-pane');
-        const scrollTarget = pane || window;
         const getScroll = () => (pane ? pane.scrollTop : window.scrollY);
         (pane || window).addEventListener('scroll', () => {
           btn.classList.toggle('visible', getScroll() > 400);
