@@ -1,9 +1,16 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 # Gated on CI: this runs only after the "CI" workflow finishes on main, and the
-# build job below is guarded on a successful conclusion — so a red build cannot
-# deploy. Deploy-on-every-push-to-main is preserved (CI itself runs on every such
-# push). workflow_dispatch stays available for manual redeploys.
+# job below is guarded on a successful conclusion — so a red build (lint, the
+# name-leakage PII gate, tests, CSP check, e2e, Lighthouse) cannot deploy.
+# Deploy-on-every-push-to-main is preserved (CI itself runs on every such push).
+# workflow_dispatch stays available for manual redeploys.
+#
+# Deploy is wrangler-driven (prebuilt dist uploaded to Cloudflare Pages) rather
+# than Cloudflare's git integration ON PURPOSE: the git integration builds and
+# ships independently of this repo's CI, which would bypass the PII gate. Keeping
+# the deploy inside the CI-gated workflow means nothing reaches production that
+# CI hasn't validated.
 on:
   workflow_run:
     workflows: ["CI"]
@@ -13,16 +20,14 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: cf-pages
   cancel-in-progress: false
 
 jobs:
-  build:
-    # Manual runs always build; workflow_run-triggered runs only when CI passed.
+  deploy:
+    # Manual runs always deploy; workflow_run-triggered runs only when CI passed.
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -50,16 +55,13 @@ jobs:
           SITE_GITHUB: ${{ vars.SITE_GITHUB }}
           SITE_LINKEDIN: ${{ vars.SITE_LINKEDIN }}
 
-      - uses: actions/upload-pages-artifact@v5
+      - name: Deploy dist to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+          # Repo secrets. CLOUDFLARE_API_TOKEN: a scoped token with Account ▸
+          # Cloudflare Pages ▸ Edit. CLOUDFLARE_ACCOUNT_ID: the account id.
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # --branch=main marks this a PRODUCTION deployment (production branch =
+          # main), so it publishes to the custom domain, not a preview URL.
+          command: pages deploy dist --project-name=andypeterson-dev --branch=main
