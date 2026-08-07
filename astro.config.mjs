@@ -68,6 +68,15 @@ export default defineConfig({
     },
   },
   site: process.env.SITE_URL || 'https://andypeterson.dev',
+  build: {
+    // Inline every page's CSS into a <style> in the HTML instead of emitting
+    // render-blocking <link> stylesheets. The purged critical path is small, and
+    // eliminating the stylesheet request removes the biggest remaining FCP/LCP
+    // cost (~984ms of estimated render-blocking savings). Astro hashes the inline
+    // styles into the CSP for us; scripts/purge-css.mjs then shrinks the inlined
+    // system.css/bootstrap-icons in place and re-computes those style hashes.
+    inlineStylesheets: 'always',
+  },
   redirects: {
     '/underconstruction.html': '/',
     '/underconstruction': '/',
