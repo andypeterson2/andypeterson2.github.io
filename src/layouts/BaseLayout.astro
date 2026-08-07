@@ -11,6 +11,18 @@ import { siteConfig } from '../config/site';
 import '@sakun/system.css/dist/system.css';
 import 'bootstrap-icons/font/bootstrap-icons.min.css';
 import '../../packages/system-six/styles/styles.css';
+// Preload the above-the-fold pixel faces so the real font is cached before the text
+// first lays out: Chicago_12 (--font-ui — window titles + the name plate, the mobile
+// LCP element), Monaco (--font-mono — window body copy incl. the intro, the desktop LCP
+// element), and Geneva_9 (--font-sans — headings/section labels). Imported with ?url so
+// Vite emits + fingerprints them and hands back the hashed path for a <link rel=preload>.
+// All three are tiny same-origin woff2 (~4/~2.4/~3KB, ~9KB total); kicking the download
+// off at HTML parse — in parallel with the stylesheet, not after it — is what lets
+// font-display paint the pixel font on the first frame instead of the system fallback
+// the LCP text was rendering in.
+import chicago12Url from '@sakun/system.css/dist/ChiKareGo2.woff2?url';
+import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
+import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
 import Button from '../components/Button.astro';
 import { type Crumb } from '../lib/breadcrumbs';
@@ -45,6 +57,14 @@ const windowTitle = title || siteConfig.title;
     {isPreviewDeploy && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
     <link rel="canonical" href={canonicalUrl.href} />
+
+    <!-- Preload the above-the-fold pixel fonts (see frontmatter) so they win the race
+         against first paint — the fix for the LCP text painting in a fallback face.
+         crossorigin is required even same-origin: @font-face fetches are CORS-anonymous,
+         so the preload must match or it double-downloads. -->
+    <link rel="preload" href={chicago12Url} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={monacoUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={geneva9Url} as="font" type="font/woff2" crossorigin />
 
     <!-- No-FOUC theme bootstrap: apply the saved theme before first paint. -->
     <script is:inline>

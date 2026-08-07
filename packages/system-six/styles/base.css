@@ -22,6 +22,17 @@ body {
   color: #000;
 }
 
+/* system.css sets `.window { font-family: Inconsolata, Menlo, Chicago, Geneva }` for
+   window body copy — a monospace intent, but a leaky one: none of Inconsolata/Menlo are
+   loaded here, so it lands on Menlo only on macOS and falls through to the non-mono
+   Chicago pixel face on Windows/Linux. Re-assert our own mono token so the intended
+   monospace look renders as Monaco (a loaded pixel-mono webfont) on EVERY platform, and
+   so the preloaded Monaco lands on the LCP intro paragraph. Title bars keep Chicago_12
+   via their own --font-ui rule. */
+.window {
+  font-family: var(--font-mono);
+}
+
 /* ── Dark mode — the page-scale inversion (L4) ──
    The site is 1-bit black/white with only monochrome-SVG images, so a single
    photographic negative flips everything correctly at once: text, borders, the
