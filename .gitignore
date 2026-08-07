@@ -31,3 +31,8 @@ __pycache__/
 # copies stay on disk for dev; production serves them from an external host.
 /public/resume.pdf
 /public/cv.pdf
+
+# Local scratch copy of the PROTECTED_NAMES patterns used to set the CI secret.
+# It is raw PII by definition — never commit it (belt-and-suspenders alongside
+# the name-leakage gate, which only scans src/ + public/, not the repo root).
+/secret.txt
