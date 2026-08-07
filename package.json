@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/purge-css.mjs",
     "preview": "astro preview",
     "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}'",
     "lint:styles": "stylelint 'src/**/*.{css,astro}'",
@@ -38,6 +38,7 @@
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.4",
     "prettier-plugin-astro": "^0.14.1",
+    "purgecss": "^8.0.0",
     "stylelint": "^17.14.0",
     "stylelint-config-html": "^2.0.0",
     "stylelint-config-standard": "^40.0.0",
