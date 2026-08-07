@@ -35,7 +35,12 @@ const detailPages = [
 
 for (const { name, path } of detailPages) {
   test(`${name} has no critical accessibility violations`, async ({ page }) => {
+    // Emulate reduced motion BEFORE navigating so the screenshot carousel's 4s auto-rotate
+    // never starts — otherwise it mutates the DOM mid-audit and axe flakes under parallel
+    // load. Then let the page settle (fonts/images) before analyzing.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(path);
+    await page.waitForLoadState('networkidle');
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .disableRules(['color-contrast'])
