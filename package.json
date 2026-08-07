@@ -35,11 +35,11 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^10.6.0",
     "eslint-plugin-astro": "^1.7.0",
-    "postcss-html": "^1.8.1",
+    "postcss-html": "^2.0.0",
     "prettier": "^3.9.4",
     "prettier-plugin-astro": "^0.14.1",
     "stylelint": "^17.14.0",
-    "stylelint-config-html": "^1.1.0",
+    "stylelint-config-html": "^2.0.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4"
