@@ -16,7 +16,9 @@
 <svelte:window onkeydown={onKey} />
 
 <button class="scrim" aria-label="Close" onclick={close}></button>
-<aside class="drawer" role="dialog" aria-label={title}>
+<!-- div, not <aside>: a non-interactive landmark element can't carry the interactive
+     role="dialog" (Svelte a11y). A generic div takes the dialog role cleanly. -->
+<div class="drawer" role="dialog" aria-label={title}>
   <div class="titlebar">
     <button class="close" aria-label="Close" onclick={close}></button>
     <span class="title">{title}</span>
@@ -25,7 +27,7 @@
   <div class="body">
     {@render children()}
   </div>
-</aside>
+</div>
 
 <style>
   .scrim {
