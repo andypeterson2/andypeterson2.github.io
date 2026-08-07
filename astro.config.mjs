@@ -3,6 +3,28 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 
+// Inline PostCSS plugin — add `font-display: swap` to any @font-face missing it, so the
+// System-6 text faces paint immediately in a fallback and swap in (killing the FOIT that
+// makes the home page's LCP a text block that waits ~2.6s on the font). Skips the
+// bootstrap-icons face, which already sets font-display:block (icon glyphs shouldn't flash
+// boxes). Runs over the vendored system.css through Vite's CSS pipeline — no node_modules
+// patch, and it matches on @font-face structure so it survives system.css version bumps.
+const fontDisplaySwap = {
+  postcssPlugin: 'font-display-swap',
+  AtRule: {
+    'font-face': (rule) => {
+      let family = '';
+      let hasDisplay = false;
+      rule.walkDecls((decl) => {
+        if (decl.prop === 'font-family') family = decl.value.replace(/['"]/g, '').trim();
+        if (decl.prop === 'font-display') hasDisplay = true;
+      });
+      if (hasDisplay || family.toLowerCase() === 'bootstrap-icons') return;
+      rule.append({ prop: 'font-display', value: 'swap' });
+    },
+  },
+};
+
 export default defineConfig({
   devToolbar: { enabled: false },
   integrations: [sitemap(), svelte()],
@@ -27,10 +49,9 @@ export default defineConfig({
       },
       directives: [
         "default-src 'self'",
-        // Vite inlines the small System-6 woff2 fonts as data: URIs in the bundled
-        // CSS (fewer requests, no FOIT), so data: is required here — same rationale
-        // as img-src's data: for the inlined SVGs. No external font origins.
-        "font-src 'self' data:",
+        // Fonts ship as same-origin files (vite.build.assetsInlineLimit below never
+        // inlines them), so 'self' suffices — no data: or external font origins.
+        "font-src 'self'",
         "img-src 'self' data:",
         // api.andypeterson.dev is the gateway the CV editor fetches (credentialed,
         // behind Cloudflare Access). Without it here the CSP would block those calls.
@@ -58,6 +79,10 @@ export default defineConfig({
     // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
     // other prefixes the app reads (BaseLayout).
     envPrefix: ['PUBLIC_', 'SITE_', 'PLAUSIBLE_', 'PREVIEW_'],
+    css: {
+      // Run the font-display:swap plugin (defined above) over the bundled CSS.
+      postcss: { plugins: [fontDisplaySwap] },
+    },
     build: {
       // Never inline fonts. Vite's default inlines assets < 4KB as base64, which
       // for the small System-6 woff2 faces bloats the render-blocking CSS by ~20KB
