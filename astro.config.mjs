@@ -3,14 +3,18 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 
-// Inline PostCSS plugin — add `font-display: swap` to any @font-face missing it, so the
-// System-6 text faces paint immediately in a fallback and swap in (killing the FOIT that
-// makes the home page's LCP a text block that waits ~2.6s on the font). Skips the
-// bootstrap-icons face, which already sets font-display:block (icon glyphs shouldn't flash
-// boxes). Runs over the vendored system.css through Vite's CSS pipeline — no node_modules
-// patch, and it matches on @font-face structure so it survives system.css version bumps.
-const fontDisplaySwap = {
-  postcssPlugin: 'font-display-swap',
+// Inline PostCSS plugin — add `font-display: optional` to any @font-face missing it. The
+// System-6 text faces paint within a ~100ms block in the fallback stack and are NEVER
+// swapped in mid-page, so there's no FOIT (invisible text, the old ~2.6s LCP wait) AND no
+// reflow: `swap` was measured to spike CLS to ~0.13 here because these pixel fonts have
+// very different metrics from the fallback, and that layout shift cost more than the LCP
+// gain. The small same-origin woff2 files usually load inside the block window, so the real
+// font still renders; on a slow first load the fallback shows and the font is cached for
+// next time. Skips the bootstrap-icons face (already font-display:block; icons must not
+// flash). Runs over the vendored system.css via Vite — no node_modules patch, matches on
+// @font-face structure so it survives version bumps.
+const fontDisplayOptional = {
+  postcssPlugin: 'font-display-optional',
   AtRule: {
     'font-face': (rule) => {
       let family = '';
@@ -20,7 +24,7 @@ const fontDisplaySwap = {
         if (decl.prop === 'font-display') hasDisplay = true;
       });
       if (hasDisplay || family.toLowerCase() === 'bootstrap-icons') return;
-      rule.append({ prop: 'font-display', value: 'swap' });
+      rule.append({ prop: 'font-display', value: 'optional' });
     },
   },
 };
@@ -80,8 +84,8 @@ export default defineConfig({
     // other prefixes the app reads (BaseLayout).
     envPrefix: ['PUBLIC_', 'SITE_', 'PLAUSIBLE_', 'PREVIEW_'],
     css: {
-      // Run the font-display:swap plugin (defined above) over the bundled CSS.
-      postcss: { plugins: [fontDisplaySwap] },
+      // Run the font-display:optional plugin (defined above) over the bundled CSS.
+      postcss: { plugins: [fontDisplayOptional] },
     },
     build: {
       // Never inline fonts. Vite's default inlines assets < 4KB as base64, which
