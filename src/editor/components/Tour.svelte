@@ -130,7 +130,6 @@
     class="tour floating-panel"
     class:at-top={narratorTop}
     data-tour
-    role="region"
     aria-label="Guided tour"
   >
     <div class="tbar">

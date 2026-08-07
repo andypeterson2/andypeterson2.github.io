@@ -68,13 +68,21 @@ export default defineConfig({
     },
   },
   site: process.env.SITE_URL || 'https://andypeterson.dev',
+  markdown: {
+    // No writeup uses fenced code, and Shiki (Astro's default highlighter) emits inline
+    // styles our hashed-inline CSP blocks — so highlighting is off rather than shipping a
+    // config-time CSP warning + dead Shiki work on every build. If code blocks are ever
+    // added, switch to 'prism' (class-based, CSP-safe) with a Prism theme.
+    syntaxHighlight: false,
+  },
   redirects: {
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
     // About merged into the home page (bio + skills + timeline with projects).
+    // One entry only: trailingSlash defaults to 'ignore', so '/about' also covers
+    // '/about/' — defining both collides (a hard error in future Astro versions).
     '/about': '/',
-    '/about/': '/',
   },
   vite: {
     // Expose the site's own env prefixes to import.meta.env. Vite only surfaces

@@ -24,6 +24,11 @@
   // seed carries none — see demo.ts). Applied synchronously so the first paint is
   // already the owner, not blank fields.
   let { identity }: { identity?: Partial<Personal> } = $props();
+  // identity is a static prop (server-resolved, handed down once at hydration and never
+  // reassigned), so reading it here at init — not in an $effect — is intentional: the
+  // overlay must apply synchronously before first paint. svelte-ignore silences the
+  // state_referenced_locally advisory that assumes props change over time.
+  // svelte-ignore state_referenced_locally
   if (identity) editor.hydrateDemoIdentity(identity);
 
   const person = $derived(editor.person);

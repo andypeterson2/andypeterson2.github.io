@@ -16,10 +16,14 @@
 
   let open = $state<number | null>(null); // desktop: index of the open pull-down
   let allOpen = $state(false); // mobile: the single ☰ panel
-  let root: HTMLDivElement;
-  let hamburgerEl: HTMLButtonElement | undefined;
-  let titleEls: HTMLButtonElement[] = [];
-  let itemEls: HTMLButtonElement[] = [];
+  // bind:this targets — declared with $state so Svelte 5 tracks them without the
+  // non_reactive_update / binding_property_non_reactive dev warnings. All reads are
+  // already guarded (root?., titleEls[i]?.focus(), !root || …), so the `| undefined`
+  // that $state() introduces is a no-op at the call sites.
+  let root = $state<HTMLDivElement>();
+  let hamburgerEl = $state<HTMLButtonElement>();
+  let titleEls = $state<HTMLButtonElement[]>([]);
+  let itemEls = $state<HTMLButtonElement[]>([]);
 
   // Which idiom to render. Tracked in JS (not just CSS) because the two are
   // structurally different — four independent dropdowns vs. one grouped panel.
@@ -153,7 +157,7 @@
     >
     {#if allOpen}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <div class="drop mega" role="menu" aria-label="Editor commands" onkeydown={onMegaKey}>
+      <div class="drop mega" role="menu" tabindex="-1" aria-label="Editor commands" onkeydown={onMegaKey}>
         {#each menus as menu (menu.title)}
           <div class="group-label" role="presentation">{menu.title}</div>
           {#each menu.items as item (item.label)}
@@ -196,7 +200,7 @@
         >
         {#if open === mi}
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-          <div class="drop" role="menu" aria-label={menu.title} onkeydown={(e) => onMenuKey(e, mi)}>
+          <div class="drop" role="menu" tabindex="-1" aria-label={menu.title} onkeydown={(e) => onMenuKey(e, mi)}>
             {#each menu.items as item, ii (item.label)}
               {#if item.separatorBefore}
                 <div class="sep" role="separator"></div>
