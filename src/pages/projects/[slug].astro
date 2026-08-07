@@ -147,6 +147,10 @@ const relatedProjects = projects
 
     function startAuto() {
       if (total <= 1) return;
+      // Respect prefers-reduced-motion (WCAG 2.2.2 Pause, Stop, Hide): don't auto-advance.
+      // This also lets the a11y audit settle the DOM by emulating reduced motion rather
+      // than racing the rotation timer.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       stopAuto();
       autoTimer = setInterval(() => show(current + 1), 4000);
     }
