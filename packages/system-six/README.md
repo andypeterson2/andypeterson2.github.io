@@ -21,9 +21,7 @@ Load four things on the page, then import the bundle:
   </script>
   <!-- 2. System 6 chrome -->
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css@0.1.11/dist/system.css" />
-  <!-- 3. bootstrap-icons — only for <s6-theme-toggle>'s glyph -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <!-- 4. the design layer (tokens, base idiom, dark mode, dither, element layout) -->
+  <!-- 3. the design layer (tokens, base idiom, dark mode, dither, element layout) -->
   <link rel="stylesheet" href="system-six/styles/styles.css" />
 </head>
 

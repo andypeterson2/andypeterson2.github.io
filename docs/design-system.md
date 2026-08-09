@@ -9,10 +9,10 @@ appears only to report machine state.** Every name below is verified present in 
 ## Setup — what's on the page
 
 - **Base chrome:** [`@sakun/system.css@0.1.11`](https://unpkg.com/@sakun/system.css@0.1.11)
-  (a faithful **Apple System 6**), CDN-loaded with SRI in `BaseLayout.astro`. It owns the
-  chrome classes: **`.window`**, **`.title-bar`** (+ `.title`), **`.details-bar`**,
-  **`.window-body`**, **`.btn`**, plus scrollbars, inputs, menus, dialogs. Bootstrap-icons
-  (`<i class="bi bi-…">`) is also loaded.
+  (a faithful **Apple System 6**), vendored and bundled same-origin by `BaseLayout.astro`. It
+  owns the chrome classes: **`.window`**, **`.title-bar`** (+ `.title`), **`.details-bar`**,
+  **`.window-body`**, **`.btn`**, plus scrollbars, inputs, menus, dialogs. Icons are inline
+  SVGs (no icon font).
 - **Local layers**, imported by `BaseLayout.astro` in this order — read them before styling:
   1. `src/styles/tokens.css` — the entire token vocabulary (short; authoritative).
   2. `src/styles/base.css` — resets, the invert idiom, **dark mode**, `.section-rule`,

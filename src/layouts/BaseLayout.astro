@@ -3,13 +3,13 @@ import { siteConfig } from '../config/site';
 // The design system's CSS is owned by the system-six package (single source of
 // truth); the site consumes its one @import closure. tokens + base idiom + dark
 // mode + dither + element layout, in order.
-// Vendored same-origin (previously render-blocking CDN <link>s to unpkg/jsdelivr):
-// the System-6 UI framework + the Bootstrap Icons font. Importing them into the
-// build bundles them same-origin, minifies them, and fingerprints their font/SVG
-// assets locally — which also resolves the CSP block on system.css's button.svg.
+// Vendored same-origin (previously a render-blocking CDN <link> to unpkg/jsdelivr):
+// the System-6 UI framework. Importing it into the build bundles it same-origin,
+// minifies it, and fingerprints its font/SVG assets locally — which also resolves
+// the CSP block on system.css's button.svg. (Bootstrap Icons is gone: the five
+// contact glyphs it shipped a 127KB icon font for are now inline SVGs in index.astro.)
 // Must precede the design-system closure below so our tokens/base overrides win.
 import '@sakun/system.css/dist/system.css';
-import 'bootstrap-icons/font/bootstrap-icons.min.css';
 import '../../packages/system-six/styles/styles.css';
 // Preload the above-the-fold pixel faces so the real font is cached before the text
 // first lays out: Chicago_12 (--font-ui — window titles + the name plate, the mobile
