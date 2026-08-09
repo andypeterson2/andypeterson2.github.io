@@ -39,7 +39,8 @@ export default defineConfig({
         resources: [
           "'self'",
           'https://cdn.socket.io',
-          'https://plausible.io',
+          // Cloudflare Web Analytics beacon (beacon.min.js) — see BaseLayout.astro.
+          'https://static.cloudflareinsights.com',
           // Hash of the no-FOUC theme bootstrap — an `is:inline` <script> in
           // BaseLayout.astro that Astro deliberately does NOT auto-hash. If that
           // script's bytes change, this hash must change with it, or the CSP
@@ -57,9 +58,10 @@ export default defineConfig({
         // inlines them), so 'self' suffices — no data: or external font origins.
         "font-src 'self'",
         "img-src 'self' data:",
-        // api.andypeterson.dev is the gateway the CV editor fetches (credentialed,
-        // behind Cloudflare Access). Without it here the CSP would block those calls.
-        `connect-src 'self' https://plausible.io https://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
+        // cloudflareinsights.com is where the Web Analytics beacon POSTs its RUM data
+        // (/cdn-cgi/rum). api.andypeterson.dev is the gateway the CV editor fetches
+        // (credentialed, behind Cloudflare Access). Without these the CSP blocks them.
+        `connect-src 'self' https://cloudflareinsights.com https://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self' mailto:",
@@ -90,7 +92,7 @@ export default defineConfig({
     // SITE_* and silently renders "Portfolio" with empty contacts — the identity
     // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
     // other prefixes the app reads (BaseLayout).
-    envPrefix: ['PUBLIC_', 'SITE_', 'PLAUSIBLE_', 'PREVIEW_'],
+    envPrefix: ['PUBLIC_', 'SITE_', 'CF_', 'PREVIEW_'],
     css: {
       // Run the font-display:optional plugin (defined above) over the bundled CSS.
       postcss: { plugins: [fontDisplayOptional] },

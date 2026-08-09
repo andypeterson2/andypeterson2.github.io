@@ -48,7 +48,7 @@
 | `SITE_LINKEDIN` | `''` | `linkedin` |
 
 **`.env.example`** also documents optional variables:
-- `PLAUSIBLE_DOMAIN` — analytics domain
+- `CF_BEACON_TOKEN` — Cloudflare Web Analytics beacon token (optional; unset → no analytics script)
 - `PREVIEW_DEPLOY` — if `"true"`, adds `noindex` meta tag
 
 ---
@@ -115,7 +115,7 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 | Feature | Detail |
 |---------|--------|
 | Props | `title`, `description`, `ogImage`, `breadcrumbs` (custom override) |
-| Head | Meta tags, CSP via `<meta>`, Open Graph, Twitter Card, structured data (Person schema), Plausible analytics |
+| Head | Meta tags, CSP via `<meta>`, Open Graph, Twitter Card, structured data (Person schema), Cloudflare Web Analytics beacon |
 | Skip link | Hidden by default, shown on `:focus` |
 | Desktop nav (>768px) | Menubar with heart-icon home link, About, Projects links |
 | Mobile nav (<=768px) | Heart icon + `<select>` dropdown |
@@ -181,12 +181,12 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 
 | Directive | Sources |
 |-----------|---------|
-| `script-src` | `'self'`, `cdn.socket.io`, `unpkg.com`, `plausible.io`, `cdn.jsdelivr.net` |
-| `style-src` | `'self'`, `unpkg.com`, `cdn.jsdelivr.net` |
+| `script-src` | `'self'`, `cdn.socket.io`, `static.cloudflareinsights.com`, + per-page inline-script hashes |
+| `style-src` | `'self'`, + per-page inline-style hashes |
 | `default-src` | `'self'` |
-| `font-src` | `'self'`, `unpkg.com`, `cdn.jsdelivr.net` |
+| `font-src` | `'self'` |
 | `img-src` | `'self'`, `data:` |
-| `connect-src` | `'self'`, `plausible.io` (+ `http://localhost:*`, `ws://localhost:*`, `wss://localhost:*` in dev only) |
+| `connect-src` | `'self'`, `cloudflareinsights.com`, `api.andypeterson.dev` (+ `http://localhost:*`, `ws://localhost:*`, `wss://localhost:*` in dev only) |
 | `object-src` | `'none'` |
 | `base-uri` | `'self'` |
 | `form-action` | `'self'`, `mailto:` |
@@ -215,7 +215,7 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 
 - **Sitemap:** auto-generated via `@astrojs/sitemap`
 - **robots.txt:** `User-agent: * / Allow: /`
-- **Plausible Analytics:** loaded in `BaseLayout.astro` head
+- **Cloudflare Web Analytics:** manual beacon in `BaseLayout.astro` head, gated on `CF_BEACON_TOKEN`
 - **Open Graph & Twitter Card:** meta tags in layout
 - **Structured Data:** Person schema (JSON-LD) in layout
 - **Canonical URL:** set per page

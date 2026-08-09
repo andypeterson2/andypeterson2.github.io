@@ -25,6 +25,7 @@ import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
 import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
 import Button from '../components/Button.astro';
+import CfBeacon from '../components/CfBeacon.astro';
 import { type Crumb } from '../lib/breadcrumbs';
 
 interface Props {
@@ -43,7 +44,12 @@ const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
-const plausibleDomain = import.meta.env.PLAUSIBLE_DOMAIN;
+// Cloudflare Web Analytics beacon token (public - ships in the client HTML). Set the
+// CF_BEACON_TOKEN repo variable to enable; unset means no analytics script. The beacon is
+// injected manually via components/CfBeacon.astro (not Cloudflare's automatic setup), so
+// the strict hashed CSP stays intact. (ASCII-only comment: the astro-eslint parser
+// miscounts offsets on non-ASCII frontmatter chars and throws a spurious parse error.)
+const cfBeaconToken = import.meta.env.CF_BEACON_TOKEN;
 const windowTitle = title || siteConfig.title;
 ---
 
@@ -109,11 +115,7 @@ const windowTitle = title || siteConfig.title;
       })}
     />
 
-    {
-      plausibleDomain && (
-        <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
-      )
-    }
+    {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}
 
     <!-- Error boundary removed — app pages handle errors via their own UI -->
   </head>
