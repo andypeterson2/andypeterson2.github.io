@@ -1,13 +1,13 @@
-## Quantum Protein Kernel
+## Quantum ML Classifier Platform
 
 **Source repo:** [`andypeterson2/quantum-machine-learning`](https://github.com/andypeterson2/quantum-machine-learning) — API-only backend. The portal owns the frontend under `public/classifiers/`.
 
-<a id="qpk-overview"></a>
+<a id="qmc-overview"></a>
 ### Overview
 
 Multi-dataset classifier platform comparing classical and quantum-hybrid neural network approaches. Plugin architecture for datasets (MNIST, Iris). Features live training via SSE, real-time loss curves, draw-to-predict (MNIST), form-to-predict (Iris), model persistence, early stopping, knowledge distillation, ensemble evaluation, and ablation studies.
 
-<a id="qpk-core-abstractions"></a>
+<a id="qmc-core-abstractions"></a>
 ### Core Abstractions
 
 #### BaseModel ABC (`base_model.py`)
@@ -45,7 +45,7 @@ Subclasses: MNISTNet, LinearNet, SVMNet, Quadratic, Polynomial, QVC, QiskitCNN, 
 
 **Optional methods:** `get_val_loader` (enables early stopping), `get_default_hyperparams`, `get_ui_config`.
 
-<a id="qpk-dataset-plugins"></a>
+<a id="qmc-dataset-plugins"></a>
 ### Dataset Plugins
 
 #### MNIST Plugin
@@ -94,7 +94,7 @@ Subclasses: MNISTNet, LinearNet, SVMNet, Quadratic, Polynomial, QVC, QiskitCNN, 
 
 IrisQVC uses PennyLane: 24 trainable parameters (2 layers x 4 qubits x 3 rotations).
 
-<a id="qpk-training-evaluation-prediction"></a>
+<a id="qmc-training-evaluation-prediction"></a>
 ### Training, Evaluation, Prediction
 
 #### Trainer (`trainer.py`)
@@ -127,7 +127,7 @@ Returns: `TrainResult` with model, epochs_completed, best_val_accuracy, history,
 - Applies softmax to logits
 - Returns probability array of shape `(num_classes,)`
 
-<a id="qpk-model-registry--persistence"></a>
+<a id="qmc-model-registry--persistence"></a>
 ### Model Registry & Persistence
 
 #### ModelRegistry (`model_registry.py`)
@@ -154,7 +154,7 @@ Thread-safe in-memory store, namespaced by dataset.
 | `load(filename)` | Read checkpoint, reconstruct model via `plugin_registry.create_model()`, set eval mode. Uses `weights_only=True`. |
 | `list_files()` | List available checkpoints with metadata. |
 
-<a id="qpk-rest-api--routes"></a>
+<a id="qmc-rest-api--routes"></a>
 ### REST API & Routes
 
 **Request hook:** `url_value_preprocessor` resolves dataset slug -> plugin lookup on `g.plugin`. Unknown datasets return 404.
@@ -215,7 +215,7 @@ Spawns daemon thread, queues events, streams via `sse_response(queue)`.
 | `/d/<dataset>/models/disk/<filename>/load` | POST | Load checkpoint into session (auto-dedup names) |
 | `/d/<dataset>/model-info/<model_type>` | GET | Render MODELS.md section as HTML |
 
-<a id="qpk-special-layers--loss-functions"></a>
+<a id="qmc-special-layers--loss-functions"></a>
 ### Special Layers & Loss Functions
 
 #### Quadratic Layer (`layers.py`)
@@ -244,7 +244,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 - Measurement with finite-difference gradient estimation (parameter-shift rule)
 - Integration into PyTorch backpropagation
 
-<a id="qpk-frontend"></a>
+<a id="qmc-frontend"></a>
 ### Frontend
 
 **Templates:** `classifiers/templates/index.html` — SPA with Jinja2 `UI_CONFIG` injection (plugin metadata, model types, default hyperparams). Renders dataset-specific input widget (canvas for MNIST, form for Iris). Two-column layout: left (train/config), right (canvas/form + model table).
@@ -259,7 +259,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 
 **Static CSS:** `css/app.css` — dark/light theming, layout, canvas styles, chart rendering.
 
-<a id="qpk-testing"></a>
+<a id="qmc-testing"></a>
 ### Testing
 
 **425+ tests:**
@@ -283,7 +283,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 | `dom/test_dom_integration.py` | DOM-based integration tests |
 | `test_documentation.py` | Docstring completeness, examples |
 
-<a id="qpk-cicd"></a>
+<a id="qmc-cicd"></a>
 ### CI/CD
 
 **`.github/workflows/ci.yml`** — 3 jobs:
@@ -292,7 +292,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 2. **lint** (Python 3.12): `ruff check classifiers/ tests/`
 3. **docker**: `docker build -t qml-classifiers .`
 
-<a id="qpk-docker"></a>
+<a id="qmc-docker"></a>
 ### Docker
 
 **Dockerfile:**
@@ -306,7 +306,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 - Port: `127.0.0.1:${CLASSIFIER_PORT}:${CLASSIFIER_PORT}`
 - Environment: `CLASSIFIERS_PORT`, `CLASSIFIERS_HOST=0.0.0.0`, `CLASSIFIERS_CORS_ORIGINS`, `DEV_CERT_DIR=""`
 
-<a id="qpk-dependencies"></a>
+<a id="qmc-dependencies"></a>
 ### Dependencies
 
 | Purpose | Package | Version |
@@ -326,7 +326,7 @@ Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` fo
 | Dev: e2e | pytest-playwright | >=0.5 |
 | Dev: lint | ruff | >=0.3 |
 
-<a id="qpk-architectural-patterns"></a>
+<a id="qmc-architectural-patterns"></a>
 ### Architectural Patterns
 
 1. **Plugin Architecture (OCP):** `DatasetPlugin` ABC is the sole extension point; new datasets require only a new subpackage under `classifiers/datasets/`

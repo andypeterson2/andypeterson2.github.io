@@ -329,4 +329,4 @@ Protected by `threading.Lock`. Socket.IO helpers: `emit_status()`, `set_busy()`.
 
 ---
 
-<a id="quantum-protein-kernel"></a>
+<a id="quantum-ml-classifier"></a>

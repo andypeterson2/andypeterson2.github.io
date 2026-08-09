@@ -1,6 +1,6 @@
 # Backend API Contract
 
-The four project backends — **cv**, **nonogram**, **classifiers** (quantum-protein-kernel), and **qvc** — each run as a standalone HTTP service that **functions with no frontend**. This document plus the JSON Schemas in [`schemas/`](./schemas/) are the cross-repo source of truth for the conventions every backend shares.
+The four project backends — **cv**, **nonogram**, **classifiers** (quantum-ml-classifier), and **qvc** — each run as a standalone HTTP service that **functions with no frontend**. This document plus the JSON Schemas in [`schemas/`](./schemas/) are the cross-repo source of truth for the conventions every backend shares.
 
 Because the backends live in **separate repos** and **two languages** (cv is Node/Express; the others are Python/Flask), the contract cannot be a shared code import. Instead it is this written artifact: the portal owns the canonical [`schemas/`](./schemas/), and **each app's own CI** enforces it — a `tests/contract/` live-HTTP test boots the service and validates real responses against a vendored copy of the schemas.
 

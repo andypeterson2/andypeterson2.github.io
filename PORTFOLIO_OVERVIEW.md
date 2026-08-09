@@ -19,7 +19,7 @@ matching + optional local embeddings, and `xelatex` PDF compilation.
 
 A quantum nonogram (picross) solver — a Python/Flask backend with a web client.
 
-## [Quantum Protein Kernel](docs/quantum-protein-kernel.md) — [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) · frontend in `public/classifiers/`
+## [Quantum ML Classifier Platform](docs/quantum-ml-classifier.md) — [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) · frontend in `public/classifiers/`
 
 Quantum machine-learning image classifiers (PyTorch + Qiskit) served via Flask.
 

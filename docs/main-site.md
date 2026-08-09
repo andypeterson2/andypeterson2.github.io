@@ -62,7 +62,7 @@
 |---------|------|----------|---------|-------------|------|
 | Quantum Video Chat | `quantum-video-chat` | — | external link-out (standalone app) | `qvc` | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
 | Quantum Nonogram Solver | `quantum-nonogram-solver` | — | `/projects/quantum-nonogram-solver/app/` | `nonogram` | `Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver` |
-| Quantum ML Classifier Platform | `quantum-protein-kernel` | — | `/projects/quantum-protein-kernel/app/` | `quantum-protein-kernel` | `andypeterson2/quantum-machine-learning` |
+| Quantum ML Classifier Platform | `quantum-ml-classifier` | — | `/projects/quantum-ml-classifier/app/` | `quantum-ml-classifier` | `andypeterson2/quantum-machine-learning` |
 | LaTeX Resume Editor | `latex-resume-editor` | — | `/projects/latex-resume-editor/app/` | `cv` | `andypeterson2/cv` |
 
 All four are marked `active` and `featured`. Each has a custom icon, description, longDescription, and optional screenshots and appLinks arrays.
@@ -85,7 +85,7 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 | `404.astro` | Quantum-themed error page with system.css window styling ("Lost in the superposition"), error action links |
 | `projects/latex-resume-editor/app.astro` | App wrapper (iframe/embed) |
 | `projects/quantum-nonogram-solver/app.astro` | App wrapper |
-| `projects/quantum-protein-kernel/app.astro` | App wrapper |
+| `projects/quantum-ml-classifier/app.astro` | App wrapper |
 | `projects/quantum-video-chat/client.astro` | App wrapper |
 | `projects/quantum-video-chat/server.astro` | App wrapper |
 | `classifiers/index.astro` | App wrapper |
@@ -398,7 +398,7 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 | Service | Default Port |
 |---------|-------------|
 | Astro dev server | 4321 |
-| Classifiers (QPK) | 5001 |
+| Classifiers | 5001 |
 | CV Editor | 3001 |
 | Nonogram | 5055 |
 | Video Chat Server | 5050 |
