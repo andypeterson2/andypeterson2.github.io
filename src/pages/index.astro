@@ -16,7 +16,7 @@ const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
 // presentation), not in the core project data.
 const projectTimeline: TimelineItem[] = [
   { slug: 'latex-resume-editor', period: '2025' },
-  { slug: 'quantum-protein-kernel', period: '2024' },
+  { slug: 'quantum-ml-classifier', period: '2024' },
   { slug: 'quantum-nonogram-solver', period: '2024' },
   { slug: 'quantum-video-chat', period: '2024' },
 ].map((e) => ({ type: 'project', period: e.period, project: bySlug(e.slug) }));

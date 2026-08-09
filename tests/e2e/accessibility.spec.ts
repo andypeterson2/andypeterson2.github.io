@@ -29,7 +29,7 @@ for (const { name, path } of cleanPages) {
 const detailPages = [
   { name: 'Project detail (QVC)', path: '/projects/quantum-video-chat/' },
   { name: 'Project detail (Nonogram)', path: '/projects/quantum-nonogram-solver/' },
-  { name: 'Project detail (QPK)', path: '/projects/quantum-protein-kernel/' },
+  { name: 'Project detail (ML classifier)', path: '/projects/quantum-ml-classifier/' },
   { name: 'Project detail (CV editor)', path: '/projects/latex-resume-editor/' },
 ];
 

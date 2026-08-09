@@ -83,7 +83,7 @@ export const projects: Project[] = [
   },
   {
     title: 'Quantum ML Classifier Platform',
-    slug: 'quantum-protein-kernel',
+    slug: 'quantum-ml-classifier',
     description:
       'Extensible machine learning platform benchmarking quantum-enhanced classifiers against classical baselines.',
     longDescription:
@@ -91,7 +91,7 @@ export const projects: Project[] = [
     category: 'quantum',
     status: 'active',
     featured: true,
-    appUrl: '/projects/quantum-protein-kernel/app/',
+    appUrl: '/projects/quantum-ml-classifier/app/',
     icon: 'microscope.svg',
     screenshots: [],
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',

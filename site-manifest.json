@@ -25,6 +25,18 @@
       "title": "LaTeX Resume Editor"
     },
     {
+      "path": "/projects/quantum-ml-classifier/",
+      "title": "Quantum ML Classifier Platform"
+    },
+    {
+      "path": "/projects/quantum-ml-classifier/app/",
+      "title": "Classifier",
+      "backend": {
+        "service": "classifiers",
+        "defaultPort": 5001
+      }
+    },
+    {
       "path": "/projects/quantum-nonogram-solver/",
       "title": "Quantum Nonogram Solver"
     },
@@ -34,18 +46,6 @@
       "backend": {
         "service": "nonogram",
         "defaultPort": 5055
-      }
-    },
-    {
-      "path": "/projects/quantum-protein-kernel/",
-      "title": "Quantum ML Classifier Platform"
-    },
-    {
-      "path": "/projects/quantum-protein-kernel/app/",
-      "title": "Classifier",
-      "backend": {
-        "service": "classifiers",
-        "defaultPort": 5001
       }
     },
     {
