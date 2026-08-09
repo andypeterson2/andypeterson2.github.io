@@ -25,7 +25,7 @@ function clearSolverResults() {
 
   elHistSvg.innerHTML = "";
   state.histData = null;
-  elQuPlaceholder.style.display = "";
+  elQuPlaceholder.style.display = "block";
 
   clearMetrics();
 }

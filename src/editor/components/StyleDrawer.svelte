@@ -29,7 +29,7 @@
       <button
         class="swatch"
         class:on={editor.style.accentColor === c.key}
-        style="background:{c.hex}"
+        style:background={c.hex}
         title={c.label}
         aria-label={c.label}
         onclick={() => pickAccent(c.key)}

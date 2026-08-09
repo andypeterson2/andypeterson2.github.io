@@ -84,9 +84,19 @@
       document.getElementById(`sec-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
+
+  // Paint the accent as a CSS custom property at runtime via the CSSOM, NOT a
+  // reactive `style:--accent` directive: that directive server-renders to a
+  // style="…" attribute, which the site's strict hashed CSP refuses. A scripted
+  // setProperty is a style mutation CSP allows. Pre-hydration the header colour
+  // falls back to var(--accent, #3a3934); the island hydrates and re-paints it.
+  let docEl = $state<HTMLElement>();
+  $effect(() => {
+    docEl?.style.setProperty('--accent', editor.accentHex);
+  });
 </script>
 
-<article class="doc" style="--accent: {editor.accentHex}">
+<article class="doc" bind:this={docEl}>
   {#if personalSel}
     <PersonalEdit />
   {:else}

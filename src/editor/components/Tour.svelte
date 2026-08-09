@@ -120,7 +120,10 @@
 {#if box}
   <div
     class="spotlight"
-    style="--spot: {editor.accentHex}; transform: translate({box.x}px, {box.y}px); width: {box.w}px; height: {box.h}px;"
+    style:--spot={editor.accentHex}
+    style:transform="translate({box.x}px, {box.y}px)"
+    style:width="{box.w}px"
+    style:height="{box.h}px"
     aria-hidden="true"
   ></div>
 {/if}
