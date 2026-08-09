@@ -11,3 +11,7 @@
 /resume                  /  301
 /underconstruction       /  301
 /underconstruction.html  /  301
+
+# Project slug renamed quantum-protein-kernel → quantum-ml-classifier (matches
+# the title). Splat covers the detail page and its /app/ subpath.
+/projects/quantum-protein-kernel/*  /projects/quantum-ml-classifier/:splat  301

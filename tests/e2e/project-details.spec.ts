@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const PROJECTS = [
   { slug: 'quantum-video-chat', title: 'Quantum Video Chat' },
   { slug: 'quantum-nonogram-solver', title: 'Quantum Nonogram Solver' },
-  { slug: 'quantum-protein-kernel', title: 'Quantum ML Classifier Platform' },
+  { slug: 'quantum-ml-classifier', title: 'Quantum ML Classifier Platform' },
   { slug: 'latex-resume-editor', title: 'LaTeX Resume Editor' },
 ];
 

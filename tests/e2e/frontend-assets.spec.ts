@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Owned frontend asset serving', () => {
   const assets = [
-    // classifiers (quantum-protein-kernel) embed
+    // classifiers (quantum-ml-classifier) embed
     '/classifiers/js/app.js',
     '/classifiers/js/connection.js',
     '/classifiers/js/sse.js',
