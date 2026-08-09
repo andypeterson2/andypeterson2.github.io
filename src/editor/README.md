@@ -1,6 +1,6 @@
 # CV editor (document-first)
 
-The résumé / CV / cover-letter editor: a **Svelte 5 island** mounted by Astro at
+The resume / CV / cover-letter editor: a **Svelte 5 island** mounted by Astro at
 [`/projects/latex-resume-editor/app/`](../pages/projects/latex-resume-editor/app.astro),
 built to static HTML on GitHub Pages and backed by the **Access-gated cv REST
 API** at `api.andypeterson.dev/cv`. The portal owns this frontend; the backend
@@ -21,7 +21,7 @@ There is no server at runtime — everything below the API boundary is static.
 ```
 Editor.svelte          root shell — menubar, toolbar, statusbar, drawers, save toast
 components/
-  Document.svelte      the rendered résumé (sections → entries → bullets)
+  Document.svelte      the rendered resume (sections → entries → bullets)
   EntryEdit.svelte     type-aware inline editor for one entry
   PersonalEdit.svelte  the header/contact fields
   LetterEditor.svelte  cover-letter mode (header + paragraphs)
@@ -32,7 +32,7 @@ lib/
   store.svelte.ts      EditorState — the single reactive store (see below)
   api.ts               REST client, the wire⇄view mappers, LaTeX escaping, auth
   types.ts             Person / Section / Entry / Item / Variant / LetterSection
-  demo.ts              the offline demo résumé (owner's public CV) + demo letters
+  demo.ts              the offline demo resume (owner's public CV) + demo letters
   section-types.ts     the section catalog (fields, labels, defaults) per type
   variant-lens.ts      resolves which entries a variant's rules include/exclude
   export.ts            builds the import-compatible JSON snapshot

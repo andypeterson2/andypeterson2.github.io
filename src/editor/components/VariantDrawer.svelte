@@ -19,7 +19,7 @@
 </script>
 
 <p class="note">
-  A variant is a lens on your main résumé. Pick one to preview what it keeps — excluded entries
+  A variant is a lens on your main resume. Pick one to preview what it keeps — excluded entries
   and bullets dim in place. Editing here never changes the main.
 </p>
 

@@ -1,4 +1,4 @@
-// The variants concern — the list of alternate lenses (CV / résumé / cover
+// The variants concern — the list of alternate lenses (CV / resume / cover
 // letter) over the main document, and their include/exclude rules — lifted out
 // of EditorState (tech-debt #11). This slice is the most cross-cutting: the
 // active-lens pointer (`activeVariantId`) is read by several store derivations

@@ -1,9 +1,9 @@
 ---
-title: LaTeX Résumé Editor
+title: LaTeX Resume Editor
 summary: A document editor with a normalized database, a gated REST API, and server-side XeLaTeX — plus a live in-browser demo that needs no backend.
 ---
 
-A web editor for résumés, CVs, and cover letters, backed by a normalized **SQLite database as the one source of truth** — content lives as structured records, not a blob of markup.
+A web editor for resumes, CVs, and cover letters, backed by a normalized **SQLite database as the one source of truth** — content lives as structured records, not a blob of markup.
 
 ## How it works
 

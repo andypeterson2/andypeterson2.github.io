@@ -11,7 +11,7 @@ Framework config, design tokens, components, security/SEO, and the CI/CD pipelin
 
 ## [CV Editor](docs/cv-editor.md) — [andypeterson2/cv](https://github.com/andypeterson2/cv) · frontend in `public/cv/`
 
-A normalized LaTeX résumé / CV / cover-letter editor: a stateless REST API over a
+A normalized LaTeX resume / CV / cover-letter editor: a stateless REST API over a
 SQLite store, an MCP server exposing it as tools, tag-based variants with fuzzy
 matching + optional local embeddings, and `xelatex` PDF compilation.
 

@@ -1,6 +1,6 @@
 import type { Person, Personal, LetterSection } from './types';
 
-// The résumé rendered when not connected to a backend (see design doc §4). This is
+// The resume rendered when not connected to a backend (see design doc §4). This is
 // the owner's own professional history — the same public narrative the About page
 // carries — so a visitor sees a real CV, not a fictional placeholder.
 //

@@ -35,7 +35,7 @@ export function tourSteps(): TourStep[] {
   return [
     {
       id: 'inline',
-      caption: 'The résumé is the interface. Click any line and it opens for editing, in place.',
+      caption: 'The resume is the interface. Click any line and it opens for editing, in place.',
       spot: '[data-tour-spot="experience"]',
       enter() {
         const section = experience();
@@ -78,7 +78,7 @@ export function tourSteps(): TourStep[] {
       caption: `A variant is a saved lens over that one document. This one keeps only what is tagged #${LENS_TAG}.`,
       spot: '[data-tour-spot="variants"]',
       // Phones: the variant picker is folded into the ☰ menu, so frame the document
-      // the lens just re-rendered — the visible effect is right there in the résumé.
+      // the lens just re-rendered — the visible effect is right there in the resume.
       spotMobile: '[data-tour-spot="document"]',
       enter() {
         editor.tags.highlight = null;

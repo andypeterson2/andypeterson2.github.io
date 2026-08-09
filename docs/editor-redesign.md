@@ -1,7 +1,7 @@
 # CV Editor — Redesign (Document-First)
 
 > **Status:** ✅ shipped & live. This was the north star for the ground-up frontend
-> rewrite of the LaTeX résumé editor; the rewrite is built, deployed, and live at
+> rewrite of the LaTeX resume editor; the rewrite is built, deployed, and live at
 > [`/projects/latex-resume-editor/app/`](https://andypeterson.dev/projects/latex-resume-editor/app/).
 > The document-first frontend lives in [`src/editor/`](../src/editor/README.md); this
 > doc is retained as the design rationale behind it. The backend (cv on Railway) and
@@ -11,15 +11,15 @@
 
 ## 1. Concept
 
-**Edit the résumé as the document it is** — one centered, editable document, not a three-pane
-IDE. The résumé *looks like a résumé while you edit it*; the compiled PDF is a **toggle**, not a
+**Edit the resume as the document it is** — one centered, editable document, not a three-pane
+IDE. The resume *looks like a resume while you edit it*; the compiled PDF is a **toggle**, not a
 permanent pane.
 
 - **Rejected: three-pane** (outline · form · preview). Too dense, needs a wide screen, three
   focuses competing, reads "tool" not "document."
 - **Aesthetic: System 6 / classic Mac** — honor the portal's existing `system.css` identity
   (hairline black chrome, striped window title bars, selection via inversion, warm paper).
-  UI chrome in a sans; the résumé prose in a serif — different materials.
+  UI chrome in a sans; the resume prose in a serif — different materials.
 - **Honest caveat:** the inline document is a *friendly approximation*, not the LaTeX truth.
   You **write** in the document; you **verify** in the preview. That's why preview matters and
   why it's one tap away.

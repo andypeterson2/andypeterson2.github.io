@@ -22,7 +22,7 @@ The sub-app repositories:
 
 | App | Repo | Backend |
 |-----|------|---------|
-| LaTeX résumé editor | [andypeterson2/cv](https://github.com/andypeterson2/cv) | Express · :3001 |
+| LaTeX resume editor | [andypeterson2/cv](https://github.com/andypeterson2/cv) | Express · :3001 |
 | Quantum nonogram solver | [quantum-nonogram-solver](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver) | Flask · :5055 |
 | ML classifier platform | [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) | Flask · :5001 |
 | Quantum video chat | [Quantum-Video-Chat](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat) | Flask · :5050 |
