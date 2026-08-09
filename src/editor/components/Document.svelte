@@ -470,7 +470,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Mobile: the résumé renders in a narrow column, so the role/date row and the
+  /* Mobile: the resume renders in a narrow column, so the role/date row and the
      skill category/list grid get crushed (a role wraps to 4 lines beside its date).
      Stack them — role over date, category over list — so each gets the full width. */
   @media (max-width: 640px) {

@@ -77,7 +77,7 @@ for name in "${NAMES[@]}"; do
     FOUND=1
   fi
 
-  # Committed PDFs — extract text and search (catches PII baked into rendered résumés)
+  # Committed PDFs — extract text and search (catches PII baked into rendered resumes)
   if [ $HAVE_PDFTOTEXT -eq 1 ]; then
     while IFS= read -r pdf; do
       if pdftotext "$pdf" - 2>/dev/null | grep -Eqi "$name"; then

@@ -18,7 +18,7 @@ export function findFirstEntry(person: Person): Entry | null {
   return findExperience(person)?.entries[0] ?? null;
 }
 
-/** A CV/résumé variant that includes LENS_TAG — the one the lens step demonstrates. */
+/** A CV/resume variant that includes LENS_TAG — the one the lens step demonstrates. */
 export function findLensVariant(person: Person): Variant | null {
   return (
     person.variants.find((v) => v.kind !== 'coverletter' && v.rules.include.includes(LENS_TAG)) ??

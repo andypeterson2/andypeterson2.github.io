@@ -22,7 +22,7 @@
   </p>
 {:else}
   <p class="note">
-    Each profile is a separate résumé — its own sections, variants, and personal info. The name here
+    Each profile is a separate resume — its own sections, variants, and personal info. The name here
     is just its label in this switcher; the name on the CV is set in the document header.
   </p>
 

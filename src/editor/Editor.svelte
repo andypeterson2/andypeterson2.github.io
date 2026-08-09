@@ -89,7 +89,7 @@
   });
 
   // Grouped the way a System-6 user reaches for them. File is document-level: which
-  // résumé you're in (Profiles), then getting it out (Export) or starting over (Reset).
+  // resume you're in (Profiles), then getting it out (Export) or starting over (Reset).
   // Edit is the change timeline — Undo/Redo and the checkpoint History that extends it.
   // View is the shaping surface: the preview toggle and the panels that re-shape the one
   // document (Variants, Tags, Layout, Style). Dead commands render disabled, never as
@@ -323,7 +323,7 @@
         <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
         <button
           class="btn"
-          title="Export this résumé as JSON"
+          title="Export this resume as JSON"
           data-tour-spot="export"
           disabled={editor.noProfiles}
           onclick={() => editor.exportJson()}>⤓ Export</button
@@ -339,7 +339,7 @@
           {#if editor.noProfiles}
             <div class="no-profiles">
               <p class="np-title">No profiles yet</p>
-              <p class="np-sub">Create your first résumé profile to start editing.</p>
+              <p class="np-sub">Create your first resume profile to start editing.</p>
               <button class="np-btn" onclick={() => editor.addPerson()}
                 >＋ Create your first profile</button
               >
@@ -640,7 +640,7 @@
 
   /* ── Mobile / tablet (≤768px) ── A fixed shell: a persistent top bar (the floating
      site-nav on the left — from BaseLayout — and the editor ☰ Menu on the right), the
-     résumé filling the middle as the ONLY scroll region, and the connection status
+     resume filling the middle as the ONLY scroll region, and the connection status
      pinned across the bottom. The three regions cover the viewport edge-to-edge, so no
      background ever shows between them. No title.
 
@@ -697,7 +697,7 @@
       display: none;
     }
 
-    /* Résumé: fixed between the two bars, edge-to-edge; only its body scrolls, so the
+    /* Resume: fixed between the two bars, edge-to-edge; only its body scrolls, so the
        three fixed regions together cover the whole viewport (no grey gaps). system.css's
        global `.window` also adds margin:16px + min-width:320px — override those too. */
     .window {

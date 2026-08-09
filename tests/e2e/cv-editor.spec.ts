@@ -1373,7 +1373,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect.poll(() => posted).toBe(1);
   });
 
-  test('exports the résumé as import-compatible JSON (works offline)', async ({ page }) => {
+  test('exports the resume as import-compatible JSON (works offline)', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 

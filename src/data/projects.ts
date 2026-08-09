@@ -24,7 +24,7 @@ export const projects: Project[] = [
     description:
       'Full-stack document editor with a REST API, SQLite persistence, and server-side LaTeX compilation.',
     longDescription:
-      'Edit a résumé as structured data, then save a variant — a reusable tag-rule lens that turns one master document into many targeted CVs, each compiled to a real PDF server-side. The live demo runs the actual editor with no backend, so you can try the whole thing right here before signing in anywhere.',
+      'Edit a resume as structured data, then save a variant — a reusable tag-rule lens that turns one master document into many targeted CVs, each compiled to a real PDF server-side. The live demo runs the actual editor with no backend, so you can try the whole thing right here before signing in anywhere.',
     category: 'tools',
     status: 'active',
     featured: true,
