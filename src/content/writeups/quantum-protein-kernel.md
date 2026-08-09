@@ -17,7 +17,7 @@ A custom **40+ component UI kit** with dark/light theming, a **draw-to-predict c
 
 ## What's real
 
-Covered by **425 tests** across model architectures, training loops, API routes, and persistence. Models emit raw logits, and the exact preprocessing and softmax that run server-side are being ported to run **in the browser** for a zero-backend inference demo.
+Covered by **425 tests** across model architectures, training loops, API routes, and persistence. Models emit raw logits, and the exact preprocessing and softmax that run server-side are **also ported to run in the browser** — draw a digit or enter flower measurements and it predicts with nothing running, on weights exported from the same model the backend serves.
 
 ## Stack
 

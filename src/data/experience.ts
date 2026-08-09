@@ -17,13 +17,13 @@ export const experience: ExperienceEntry[] = [
     bullets: [
       'Built a frame-level encryption pipeline for live video with sub-millisecond latency overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).',
       'Simulated a noisy quantum channel (Poisson photon source, fiber attenuation, detector modeling) to validate protocol correctness — used to verify eavesdrop detection via error rate anomalies.',
-      "Presented algorithmic research to IBM's VP of Quantum during campus visit.",
+      "Presented algorithmic research to IBM's VP of Quantum during a campus visit.",
     ],
   },
   {
     date: '2021 – 2024',
     role: 'Co-Founder / President',
-    org: 'Quantum Computing at UC, San Diego (QCSD)',
+    org: 'Quantum Computing at UC San Diego (QCSD)',
     bullets: [
       'Co-founded to fill a gap in undergraduate quantum computing education at UCSD. Restructured processes and formalized handoffs before graduating — org survived complete leadership turnover and is now nationally chartered as QCSA.',
     ],
@@ -42,7 +42,7 @@ export const experience: ExperienceEntry[] = [
     role: 'Web Developer',
     org: 'RIT Esports · Remote',
     bullets: [
-      'Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active visitors across 6 varsity esports teams with 99.9% uptime.',
+      'Built and deployed a MERN-stack platform via Docker serving 2,400 monthly active users across 6 varsity esports teams with 99.9% uptime.',
     ],
   },
   {
@@ -50,7 +50,7 @@ export const experience: ExperienceEntry[] = [
     role: 'Co-Founder',
     org: 'San Diego CTF',
     bullets: [
-      "Co-founded San Diego's largest annual cybersecurity competition — hundreds of competitors across 20+ countries, running for two annual iterations.",
+      "Co-founded San Diego's largest annual cybersecurity competition — hundreds of competitors across 20+ countries — and ran its first two years; it has continued annually since.",
       'Built the Discord bot submission interface (Discord.JS) used by all competitors across both years — zero onboarding friction.',
     ],
   },
