@@ -1,0 +1,16 @@
+---
+// Cloudflare Web Analytics beacon, injected MANUALLY (not via Cloudflare's automatic
+// setup) so the strict hashed CSP stays intact — auto-injection also adds an inline
+// loader we'd have to hash, and Cloudflare can change its bytes at any time. Rendered by
+// BaseLayout only when CF_BEACON_TOKEN is set. Lives in its own component so the <script>
+// sits at template top level (the astro-eslint parser mishandles a <script> inside a
+// `{cond && (<script/>)}` expression).
+interface Props {
+  token: string;
+}
+const { token } = Astro.props;
+const beacon = JSON.stringify({ token });
+---
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={beacon}
+></script>
