@@ -24,7 +24,7 @@ export const projects: Project[] = [
     description:
       'Full-stack document editor with a REST API, SQLite persistence, and server-side LaTeX compilation.',
     longDescription:
-      'A web-based editor for résumés, CVs, and cover letters, backed by a normalized SQLite database as the single source of truth. An Express backend exposes a granular REST API with JSON Schema validation across 20+ endpoints, reached through a Cloudflare Worker gateway gated by Cloudflare Access. The frontend is a Svelte 5 island: edit the document inline, save a "variant" as a reusable tag-rule lens over the same content, reorder by drag or keyboard, restyle and re-layout live, and track changes with checkpoint history and undo/redo. Documents compile server-side through XeLaTeX (Awesome-CV). A live in-browser demo runs the real editor with no backend — degrading gracefully instead of erroring — so any visitor can try it on GitHub Pages. Driven by a deterministic, backend-mocked end-to-end suite plus unit tests across its logic tier.',
+      'Edit a résumé as structured data, then save a variant — a reusable tag-rule lens that turns one master document into many targeted CVs, each compiled to a real PDF server-side. The live demo runs the actual editor with no backend, so you can try the whole thing right here before signing in anywhere.',
     category: 'tools',
     status: 'active',
     featured: true,
@@ -45,7 +45,7 @@ export const projects: Project[] = [
     description:
       'End-to-end encrypted video chat secured by quantum key distribution, built at Qualcomm Institute.',
     longDescription:
-      'Built during my research internship at Qualcomm Institute, this is a peer-to-peer video communication system where encryption keys are established through a simulated BB84 quantum key distribution protocol. The system implements the full QKD pipeline — sifting, error estimation, Cascade error correction, and Toeplitz privacy amplification — then uses the resulting keys for AES-128-GCM encryption of WebRTC media streams via Insertable Streams. Includes automatic eavesdropper detection that rejects and re-exchanges keys when the quantum bit error rate exceeds 11% — an intercept-resend attack can be switched on mid-call to watch the error rate spike and the key be discarded. Backed by 94 tests across the Python signaling server and JavaScript client.',
+      'Switch on an eavesdropper mid-call and watch the encryption break, then heal. This is end-to-end encrypted, peer-to-peer video whose keys come from a simulated BB84 quantum exchange; when an intercept-resend attack pushes the quantum bit error rate past 11%, the protocol discards the key and re-exchanges. Built during my research internship at Qualcomm Institute.',
     category: 'quantum',
     status: 'active',
     featured: true,
@@ -66,7 +66,7 @@ export const projects: Project[] = [
     description:
       'Grover-accelerated constraint satisfaction solver with real IBM quantum hardware support, built at Qualcomm Institute.',
     longDescription:
-      'Developed at Qualcomm Institute to explore practical quantum advantage in combinatorial optimization. Encodes nonogram puzzles as Boolean satisfiability problems and solves them using both a classical brute-force solver and a Grover-based quantum solver that achieves a quadratic speedup over classical search. Features a browser-based UI with a canvas puzzle editor, real-time probability histograms, and side-by-side classical vs. quantum comparison. Validated on real IBM quantum hardware — a 2x2 puzzle achieved 32.3% correct-state probability versus 6.25% random chance. The codebase is built around a clean solver abstraction layer, and includes comprehensive tests covering Boolean encoding, solver correctness, and hardware integration.',
+      'Draw a nonogram and watch two solvers race on the same puzzle — a classical brute-force search and a Grover-based quantum one. The classical path runs entirely in your browser; the quantum runs are real measurements from IBM hardware, where a 2×2 puzzle hit the correct state 32.3% of the time against 6.25% by chance.',
     category: 'quantum',
     status: 'active',
     featured: true,
@@ -87,7 +87,7 @@ export const projects: Project[] = [
     description:
       'Extensible machine learning platform benchmarking quantum-enhanced classifiers against classical baselines.',
     longDescription:
-      'A full-stack classifier platform with a plugin architecture that lets new datasets be added without modifying existing code. Supports 6+ model architectures per dataset — including CNNs, SVMs, and quantum kernel methods via Qiskit — with real-time training curves streamed over Server-Sent Events. The evaluation pipeline includes per-class accuracy breakdowns, knowledge distillation, ensemble methods, and ablation studies. Features a 40+ component custom UI kit with dark/light theming, a draw-to-predict canvas for MNIST, and a form-based predictor for Iris. Covered by 425 tests across model architectures, training loops, API routes, and persistence.',
+      'Draw a digit or enter flower measurements and get a prediction instantly — in your browser, on weights exported from the same models the backend trains. Behind it: a platform where a new dataset drops in as a plugin, trains with live curves over Server-Sent Events, and runs six-plus model architectures from CNNs to quantum-kernel methods.',
     category: 'quantum',
     status: 'active',
     featured: true,
