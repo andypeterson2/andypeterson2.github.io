@@ -5,8 +5,8 @@
  * classes are also exported for typing and direct use.
  *
  * Styling lives entirely in `system-six/styles/styles.css` — the components
- * only emit the classes it defines. Load that stylesheet (plus system.css,
- * and bootstrap-icons for the theme toggle's glyph) on the page.
+ * only emit the classes it defines. Load that stylesheet (plus system.css) on
+ * the page; icons are inlined SVGs, so no icon font is required.
  */
 import './elements/window';
 import './elements/button';

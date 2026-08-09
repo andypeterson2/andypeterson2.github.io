@@ -5,8 +5,9 @@
  * `data-theme` on `<html>` and persists to `localStorage["sm-theme"]`; the page
  * inverts via the single `html[data-theme=dark]` filter in base.css.
  *
- * Two things the consumer supplies: bootstrap-icons (for the `bi-circle-half`
- * glyph) and a no-FOUC bootstrap in <head> — a 3-line inline script that reads
+ * The icon (a half-filled circle) is an inlined SVG, so the component is
+ * self-contained — no icon-font dependency. The one thing the consumer supplies
+ * is a no-FOUC bootstrap in <head>: a 3-line inline script that reads
  * localStorage and sets `data-theme` before first paint (see the README).
  */
 export class S6ThemeToggle extends HTMLElement {
@@ -19,7 +20,8 @@ export class S6ThemeToggle extends HTMLElement {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'theme-toggle';
-    btn.innerHTML = '<i class="bi bi-circle-half" aria-hidden="true"></i>';
+    btn.innerHTML =
+      '<svg viewBox="0 0 16 16" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/></svg>';
 
     const sync = (): void => {
       const dark = document.documentElement.dataset.theme === 'dark';

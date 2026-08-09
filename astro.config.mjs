@@ -10,20 +10,17 @@ import svelte from '@astrojs/svelte';
 // very different metrics from the fallback, and that layout shift cost more than the LCP
 // gain. The small same-origin woff2 files usually load inside the block window, so the real
 // font still renders; on a slow first load the fallback shows and the font is cached for
-// next time. Skips the bootstrap-icons face (already font-display:block; icons must not
-// flash). Runs over the vendored system.css via Vite — no node_modules patch, matches on
-// @font-face structure so it survives version bumps.
+// next time. Runs over the vendored system.css via Vite — no node_modules patch, matches
+// on @font-face structure so it survives version bumps.
 const fontDisplayOptional = {
   postcssPlugin: 'font-display-optional',
   AtRule: {
     'font-face': (rule) => {
-      let family = '';
       let hasDisplay = false;
       rule.walkDecls((decl) => {
-        if (decl.prop === 'font-family') family = decl.value.replace(/['"]/g, '').trim();
         if (decl.prop === 'font-display') hasDisplay = true;
       });
-      if (hasDisplay || family.toLowerCase() === 'bootstrap-icons') return;
+      if (hasDisplay) return;
       rule.append({ prop: 'font-display', value: 'optional' });
     },
   },

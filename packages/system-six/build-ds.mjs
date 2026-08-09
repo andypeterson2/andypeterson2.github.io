@@ -6,7 +6,6 @@ import { mkdir, writeFile, copyFile, rm } from 'node:fs/promises';
 
 const OUT = 'ds-bundle';
 const SYSTEM_CSS = 'https://unpkg.com/@sakun/system.css@0.1.11/dist/system.css';
-const BI = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css';
 
 // A self-contained 1-bit glyph for the finder-icon examples (no external asset).
 const GLYPH =
@@ -68,7 +67,6 @@ const card = (c) => `<!-- @dsCard group="${c.group}" -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<link rel="stylesheet" href="${BI}" />
 <link rel="stylesheet" href="../../../styles.css" />
 <script src="../../../_ds_bundle.js"></script>
 <style>body{margin:0;padding:20px;background:#fff;font-family:var(--font-sans)}.ex{display:flex;gap:14px;flex-wrap:wrap;align-items:center}</style>

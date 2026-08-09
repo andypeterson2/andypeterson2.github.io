@@ -1,10 +1,10 @@
 // Post-build purge of the render-blocking BaseLayout stylesheet.
 //
 // BaseLayout.astro globally imports the vendored @sakun/system.css (a full
-// System-6 framework) and bootstrap-icons — together ~117KB of CSS that ships in
-// one BaseLayout.<hash>.css on EVERY page and is the main FCP drag. The site
-// actually uses ~5 of bootstrap-icons' ~2050 icon classes and a fraction of
-// system.css, so the overwhelming majority of that file is dead weight.
+// System-6 framework) — ~37KB of CSS that ships in one BaseLayout.<hash>.css on
+// EVERY page and is a real FCP drag. The site uses only a fraction of system.css,
+// so the majority of that file is dead weight. (Icons are inline SVGs now — the
+// bootstrap-icons font that used to bloat this bundle is gone.)
 //
 // We purge ONLY that one file, scanning the REAL built output:
 //   • dist/**/*.html — every static class that lands in the markup, including
@@ -15,7 +15,7 @@
 //     add('sn-green'), className = "ui-toast", etc. (verified: every runtime
 //     class defined in BaseLayout.css shows up as such a literal).
 //
-// system.css/bootstrap-icons here are global (unscoped), so a used selector on
+// system.css here is global (unscoped), so a used selector on
 // ANY page keeps the rule for every page — exactly what we want for a shared
 // stylesheet. The per-page component CSS and the classifier/nonogram app CSS are
 // deliberately left untouched: small, authored by us, and dense with
