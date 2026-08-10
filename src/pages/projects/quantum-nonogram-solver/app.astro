@@ -189,7 +189,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(.nonogram-table .col-clue) {
     background: var(--dither-light);
     text-align: center;
-    font-size: 12px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     border: 1px solid #ccc;
     padding: 2px;
@@ -211,7 +211,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.clue-slot) {
-    font-size: 11px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     color: #333;
     min-width: 12px;
@@ -238,13 +238,13 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   :global(#grid-size-label) {
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #333;
   }
 
   /* ── Status line ── */
   .status-line {
-    font-size: 12px;
+    font-size: var(--text-3xs);
     color: #666;
     padding: 4px 0;
     text-align: center;
@@ -267,7 +267,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .trials-label {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -278,14 +278,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     border: 2px solid #000;
     background: #fff;
     padding: 4px 6px;
-    font-size: 13px;
+    font-size: var(--text-3xs);
     text-align: center;
   }
 
   /* Gallery — pre-computed REAL quantum runs, rendered with no backend. */
   .gallery-label {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -294,7 +294,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .gallery-label select {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     border: 2px solid #000;
     background: #fff;
     padding: 3px 6px;
@@ -311,7 +311,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   :global(.placeholder-msg) {
     color: #999;
-    font-size: 12px;
+    font-size: var(--text-3xs);
     font-style: italic;
     padding: 8px 0;
   }
@@ -331,7 +331,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.sol-grid-label) {
-    font-size: 10px;
+    font-size: var(--text-4xs);
     color: #666;
     font-weight: 600;
   }
@@ -375,7 +375,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .threshold-label {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -386,7 +386,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     border: 2px solid #000;
     background: #fff;
     padding: 4px 6px;
-    font-size: 12px;
+    font-size: var(--text-3xs);
     text-align: center;
   }
 
@@ -400,7 +400,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   /* ── Metrics ── */
   :global(#metrics-pane) {
-    font-size: 12px;
+    font-size: var(--text-3xs);
   }
 
   :global(#metrics-pane:not(.visible)) {
@@ -410,14 +410,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(.metrics-table) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: var(--text-3xs);
   }
 
   :global(.metrics-table th) {
     background: #000;
     color: #fff;
     font-family: var(--font-ui);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     padding: 4px 8px;
     text-align: left;
