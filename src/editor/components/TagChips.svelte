@@ -50,9 +50,9 @@
     gap: 2px;
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: #3a3934;
+    color: var(--ink-2);
     background: var(--chrome-hi);
-    border: 1px solid #cfcec6;
+    border: 1px solid var(--paper-4);
     border-radius: 10px;
     padding: 1px 3px 1px 7px;
   }
@@ -66,7 +66,7 @@
     padding: 0 1px;
   }
   .cx:hover {
-    color: #9c2b3f;
+    color: var(--accent);
   }
   .tag-in {
     font-family: var(--mono);

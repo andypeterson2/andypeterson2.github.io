@@ -132,7 +132,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
   }
   .in {
     font-family: var(--sans);

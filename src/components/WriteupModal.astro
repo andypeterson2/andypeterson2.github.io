@@ -136,7 +136,7 @@ const modalId = `writeup-${slug}`;
     align-items: center;
     justify-content: center;
     padding: clamp(12px, 3vw, 40px);
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .writeup-overlay[hidden] {
@@ -148,9 +148,9 @@ const modalId = `writeup-${slug}`;
     flex-direction: column;
     width: min(680px, 100%);
     max-height: 85vh;
-    background: var(--surface, #fff);
-    color: var(--ink, #000);
-    border: 3px solid #000;
+    background: var(--surface, var(--paper));
+    color: var(--ink, var(--ink));
+    border: 3px solid var(--ink);
   }
 
   .writeup-titlebar {
@@ -160,9 +160,9 @@ const modalId = `writeup-${slug}`;
     gap: 8px;
     flex-shrink: 0;
     padding: 6px 8px 6px 14px;
-    background: #000;
-    color: #fff;
-    border-bottom: 3px solid #000;
+    background: var(--ink);
+    color: var(--paper);
+    border-bottom: 3px solid var(--ink);
   }
 
   .writeup-title {
@@ -178,17 +178,17 @@ const modalId = `writeup-${slug}`;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    color: #000;
-    border: 2px solid #000;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2px solid var(--ink);
     cursor: pointer;
     font-size: var(--text-3xs);
     line-height: 1;
   }
 
   .writeup-close:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .writeup-content {
@@ -206,7 +206,7 @@ const modalId = `writeup-${slug}`;
     letter-spacing: 0.06em;
     margin: 1.4em 0 0.5em;
     padding-bottom: 0.2em;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid var(--ink);
   }
 
   .writeup-content :global(h2:first-child) {
@@ -239,8 +239,8 @@ const modalId = `writeup-${slug}`;
   .writeup-content :global(code) {
     font-family: var(--font-mono, ui-monospace, monospace);
     font-size: 0.92em;
-    background: #fff;
-    border: 1px solid #000;
+    background: var(--paper);
+    border: 1px solid var(--ink);
     padding: 0.05em 0.35em;
   }
 

@@ -27,12 +27,12 @@
 <style>
   .note {
     font-size: var(--text-4xs);
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0 0 16px;
   }
   .empty {
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
   }
   .list {
     display: flex;

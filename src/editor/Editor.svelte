@@ -508,7 +508,7 @@
     position: fixed;
     inset: 0;
     z-index: 60;
-    background: rgb(28 27 25 / 30%);
+    background: var(--scrim-soft);
     border: 0;
     padding: 0;
     cursor: pointer;
@@ -572,10 +572,10 @@
   .invite .txt b { font-weight: 700; }
   .invite .btn { font-size: var(--text-3xs); padding: 4px 10px; }
   .invite .btn.tour-start { width: 100%; padding: 10px; font-size: var(--text-3xs); }
-  .invite .link { align-self: center; background: none; border: 0; padding: 0; font: inherit; color: #45433d; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+  .invite .link { align-self: center; background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); text-decoration: underline; cursor: pointer; white-space: nowrap; }
   .invite .link:hover { color: var(--ink); }
   .invite .x { display: none; } /* the titlebar close box replaces it */
-  .invite.busy { color: #45433d; }
+  .invite.busy { color: var(--ink-2); }
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
@@ -588,7 +588,7 @@
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }
-  .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
+  .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
   .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
   button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
@@ -612,8 +612,8 @@
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
   .doc-scroll { max-height: min(82vh, 960px); overflow: auto; background: var(--paper); }
   .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
-  .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: #3a3934; margin: 0; }
-  .np-sub { font-size: var(--text-3xs); color: #55534e; margin: 0 0 10px; }
+  .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: var(--ink-2); margin: 0; }
+  .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
   .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
   .np-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
@@ -623,17 +623,17 @@
   .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
-  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: #55534e; text-align: center; line-height: 1.7; }
-  .pv-link { font: inherit; color: #2b6cb0; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
-  .pv-frame { flex: 1; width: 100%; border: 0; background: #fff; }
-  .pv-log { flex: 1; overflow: auto; background: #1c1b19; }
-  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
+  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: var(--ink-3); text-align: center; line-height: 1.7; }
+  .pv-link { font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .pv-frame { flex: 1; width: 100%; border: 0; background: var(--paper); }
+  .pv-log { flex: 1; overflow: auto; background: var(--ink); }
+  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: var(--paper-3); white-space: pre-wrap; word-break: break-word; }
   /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
      the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
      regardless of the side widths. */
-  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: #3a3934; }
+  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: var(--ink-2); }
   .sb-l { justify-self: start; white-space: nowrap; }
-  .sb-r { justify-self: end; white-space: nowrap; color: #57554f; }
+  .sb-r { justify-self: end; white-space: nowrap; color: var(--ink-3); }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
      from the shared .floating-panel primitive (lib/styles.css); only the row layout

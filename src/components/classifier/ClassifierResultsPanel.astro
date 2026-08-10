@@ -61,13 +61,13 @@
   .app-table th,
   .app-table td {
     padding: 3px 6px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--paper-3);
     text-align: left;
   }
 
   .app-table th {
     font-weight: 700;
-    background: #f5f5f5;
+    background: var(--paper-2);
   }
 
   .metrics-wrap {
@@ -80,7 +80,7 @@
     position: sticky;
     left: 0;
     z-index: 3;
-    background: #f5f5f5;
+    background: var(--paper-2);
   }
 
   :global(.model-col-head) {
@@ -92,18 +92,18 @@
   }
 
   :global(.metrics-section-row > td) {
-    background: #fff;
-    color: #666;
+    background: var(--paper);
+    color: var(--color-text-muted);
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 4px 6px;
-    border-top: 1px solid #ccc;
+    border-top: 1px solid var(--paper-4);
   }
 
   :global(.metric-label) {
-    background: #f5f5f5;
+    background: var(--paper-2);
     font-size: var(--text-4xs);
     font-weight: 600;
     text-transform: uppercase;
@@ -114,11 +114,11 @@
     position: sticky;
     left: 0;
     z-index: 2;
-    border-right: 1px solid #ddd;
+    border-right: 1px solid var(--paper-3);
   }
 
   :global(.cfg-cell) {
-    color: #666;
+    color: var(--color-text-muted);
   }
 
   /* ── Colour helpers ── */
@@ -127,7 +127,7 @@
   }
 
   :global(.pred-model-name) {
-    color: #666;
+    color: var(--color-text-muted);
   }
 
   :global(.conf-high) {
@@ -135,7 +135,7 @@
   }
 
   :global(.conf-low) {
-    color: #999;
+    color: var(--ink-4);
   }
 
   :global(.acc-high) {
@@ -155,7 +155,7 @@
     width: 100%;
     max-width: 280px;
     aspect-ratio: 1;
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
     cursor: crosshair;
     image-rendering: pixelated;
   }
@@ -170,13 +170,13 @@
   .progress-bar {
     height: 14px;
     background: var(--dither-light);
-    border: 1.5px solid #000;
+    border: 1.5px solid var(--ink);
     margin-bottom: 4px;
   }
 
   .progress-bar-fill {
     height: 100%;
-    background: #000;
+    background: var(--ink);
     width: 0%;
     transition: width 0.2s;
   }
@@ -201,7 +201,7 @@
 
   :global(#tabular-col .feature-input) {
     width: 90px;
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
     padding: 3px 6px;
     font-size: var(--text-3xs);
     text-align: right;

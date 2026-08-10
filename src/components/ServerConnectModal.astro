@@ -35,26 +35,26 @@
     width: 0.45em;
     height: 0.45em;
     border-radius: 50%;
-    background-color: #999 !important;
+    background-color: var(--ink-4) !important;
     opacity: 0.5;
     flex-shrink: 0;
     pointer-events: none;
   }
 
   .sn-dot.sn-green {
-    background-color: #22c55e !important;
+    background-color: var(--color-success) !important;
     opacity: 1;
     box-shadow: 0 0 5px rgb(34 197 94 / 50%);
   }
 
   .sn-dot.sn-yellow {
-    background-color: #eab308 !important;
+    background-color: var(--color-warning) !important;
     opacity: 1;
     box-shadow: 0 0 5px rgb(234 179 8 / 50%);
   }
 
   .sn-dot.sn-red {
-    background-color: #ef4444 !important;
+    background-color: var(--color-danger) !important;
     opacity: 1;
     box-shadow: 0 0 5px rgb(239 68 68 / 50%);
   }
@@ -63,7 +63,7 @@
   .sn-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgb(0 0 0 / 40%);
+    background: var(--scrim);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,8 +82,8 @@
   }
 
   .sn-modal {
-    background: #fff;
-    border: 3px solid #000;
+    background: var(--paper);
+    border: 3px solid var(--ink);
     padding: 20px 24px;
     min-width: 320px;
     max-width: 90vw;
@@ -108,14 +108,14 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #333;
-    border-bottom: 1px solid #ccc;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--paper-4);
     padding-bottom: 12px;
     margin-bottom: 16px;
   }
 
   .sn-modal-footer {
-    border-top: 1px solid #ccc;
+    border-top: 1px solid var(--paper-4);
     padding-top: 12px;
     margin-top: 16px;
     display: flex;
@@ -133,7 +133,7 @@
     display: grid;
     grid-template-columns: 52px 1fr;
     align-items: center;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--paper-2);
     padding: 8px 0;
   }
 
@@ -144,16 +144,16 @@
   .sn-form-row label {
     font-size: var(--text-4xs);
     font-weight: 500;
-    color: #666;
+    color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
 
   .sn-form-row input {
     width: 100%;
-    background: #f5f5f5;
-    border: 1px solid #ccc;
-    color: #000;
+    background: var(--paper-2);
+    border: 1px solid var(--paper-4);
+    color: var(--ink);
     font-size: var(--text-3xs);
     padding: 6px 9px;
     outline: none;
@@ -162,7 +162,7 @@
   }
 
   .sn-form-row input:focus {
-    border-color: #06c;
+    border-color: var(--link);
   }
 
   .sn-form-row input::-webkit-inner-spin-button,
@@ -179,24 +179,24 @@
     height: 28px;
     padding: 0 16px;
     font-size: var(--text-3xs);
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
     cursor: pointer;
-    background: #fff;
-    color: #000;
+    background: var(--paper);
+    color: var(--ink);
     font-family: var(--font-ui);
   }
 
   .sn-btn:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .sn-btn-primary {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .sn-btn-primary:hover {
-    background: #333;
+    background: var(--ink-2);
   }
 </style>

@@ -329,8 +329,8 @@ const windowTitle = title || siteConfig.title;
     top: -100%;
     left: 0;
     padding: 8px 16px;
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
     z-index: 9999;
     text-decoration: none;
   }
@@ -340,17 +340,17 @@ const windowTitle = title || siteConfig.title;
   }
 
   html {
-    background: #000;
+    background: var(--ink);
   }
 
   body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: #fff url('/bg-pattern.svg') repeat;
+    background: var(--paper) url('/bg-pattern.svg') repeat;
     background-size: 2.5vw 2.5vw;
     image-rendering: pixelated;
-    border: 0.5vw solid #000;
+    border: 0.5vw solid var(--ink);
     border-radius: 1.25vw;
     overflow: hidden;
     box-sizing: border-box;
@@ -364,8 +364,8 @@ const windowTitle = title || siteConfig.title;
        hover highlight runs flush top-to-bottom. */
     padding: 0;
     font-size: var(--text-xs);
-    border-bottom: 3px solid #000;
-    background: #fff;
+    border-bottom: 3px solid var(--ink);
+    background: var(--paper);
     box-sizing: border-box;
     position: sticky;
     top: 0;
@@ -413,8 +413,8 @@ const windowTitle = title || siteConfig.title;
   .site-menubar a:focus-visible,
   .site-menubar .theme-toggle:hover,
   .site-menubar .theme-toggle:focus-visible {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .heart-icon {
@@ -451,8 +451,8 @@ const windowTitle = title || siteConfig.title;
 
   .theme-toggle:hover,
   .theme-toggle:focus-visible {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .mnav-toggle {
@@ -488,7 +488,7 @@ const windowTitle = title || siteConfig.title;
 
   .site-window .separator {
     height: 1px;
-    background: #000;
+    background: var(--ink);
     flex-shrink: 0;
     margin-top: 0.25vh;
   }
@@ -512,9 +512,9 @@ const windowTitle = title || siteConfig.title;
     height: 44px;
     font-size: var(--text-sm);
     line-height: 1;
-    color: #000;
-    background: #fff;
-    border: 2px solid #000;
+    color: var(--ink);
+    background: var(--paper);
+    border: 2px solid var(--ink);
     border-radius: 3px;
     box-shadow: var(--shadow-focus);
     cursor: pointer;
@@ -530,8 +530,8 @@ const windowTitle = title || siteConfig.title;
     margin: 6px 0 0;
     padding: 4px;
     min-width: 172px;
-    background: #fff;
-    border: 2px solid #000;
+    background: var(--paper);
+    border: 2px solid var(--ink);
     box-shadow: var(--shadow-focus);
     font-family: var(--font-ui);
   }
@@ -545,15 +545,15 @@ const windowTitle = title || siteConfig.title;
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    color: #000;
+    color: var(--ink);
     text-decoration: none;
     font-size: var(--text-xs);
   }
 
   .mobile-nav-menu a:hover,
   .mobile-nav-menu a:focus-visible {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   /* ── Back to top ── */

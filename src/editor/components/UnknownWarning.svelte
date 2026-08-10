@@ -29,11 +29,11 @@
     gap: 7px;
     margin: 12px 0 0;
     padding-top: 10px;
-    border-top: 1px solid #e2e0d8;
+    border-top: 1px solid var(--paper-3);
     font-family: var(--sans);
     font-size: var(--text-4xs);
     line-height: 1.45;
-    color: #6b6960;
+    color: var(--color-text-muted);
   }
   .warn .wg {
     color: var(--state-busy);

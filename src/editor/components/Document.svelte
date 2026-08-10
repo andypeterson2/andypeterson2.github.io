@@ -89,7 +89,7 @@
   // reactive `style:--accent` directive: that directive server-renders to a
   // style="…" attribute, which the site's strict hashed CSP refuses. A scripted
   // setProperty is a style mutation CSP allows. Pre-hydration the header colour
-  // falls back to var(--accent, #3a3934); the island hydrates and re-paints it.
+  // falls back to var(--accent, var(--ink-2)); the island hydrates and re-paints it.
   let docEl = $state<HTMLElement>();
   $effect(() => {
     docEl?.style.setProperty('--accent', editor.accentHex);
@@ -297,7 +297,7 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 40px 46px 54px;
-    color: #232220;
+    color: var(--ink);
   }
   .doc-head {
     cursor: pointer;
@@ -307,8 +307,8 @@
     margin: -6px -10px 0;
   }
   .doc-head:hover {
-    border-color: #e2e0d8;
-    background: #faf9f3;
+    border-color: var(--paper-3);
+    background: var(--paper-2);
   }
   .doc-head h1 {
     font-size: var(--text-lg);
@@ -316,16 +316,16 @@
     margin: 0 0 4px;
   }
   .doc-head h1.untitled {
-    color: #a8a6a0;
+    color: var(--ink-5);
   }
   .contact {
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0;
   }
   .sec {
     margin-top: 28px;
-    border-top: 1px solid #d9d7cf;
+    border-top: 1px solid var(--paper-4);
     padding-top: 15px;
   }
   .sec-head {
@@ -340,7 +340,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: var(--accent, #3a3934);
+    color: var(--accent, var(--ink-2));
     margin: 0;
   }
   .sec-tools {
@@ -396,8 +396,8 @@
     color: var(--ink);
   }
   .tool.danger:hover {
-    border-color: #9c2b3f;
-    color: #9c2b3f;
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .para {
     font-size: var(--text-2xs);
@@ -428,8 +428,8 @@
     margin: 2px -10px;
   }
   .entry-hit:hover {
-    border-color: #e2e0d8;
-    background: #faf9f3;
+    border-color: var(--paper-3);
+    background: var(--paper-2);
   }
   .entry {
     padding: 9px 10px;
@@ -439,8 +439,8 @@
     cursor: pointer;
   }
   .entry:hover {
-    border-color: #e2e0d8;
-    background: #faf9f3;
+    border-color: var(--paper-3);
+    background: var(--paper-2);
   }
   .entry:focus-visible,
   .entry-hit:focus-visible,
@@ -465,7 +465,7 @@
   .entry-date {
     font-family: var(--mono);
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
@@ -502,7 +502,7 @@
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
     border-radius: 6px;
@@ -515,7 +515,7 @@
   .add-section {
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
     border-radius: 6px;
@@ -562,7 +562,7 @@
   }
   .pick-desc {
     font-size: var(--text-4xs);
-    color: #55534e;
+    color: var(--ink-3);
   }
   .pick-cancel {
     margin-top: 6px;

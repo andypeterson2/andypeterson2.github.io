@@ -1,20 +1,18 @@
 /* System-6 tokens + base for the CV editor. Component styles reference these vars. */
 :root {
-  --ink: #1c1b19;
+  /* Neutrals (--ink / --paper) and the status light now come from the global tokens
+     (packages/system-six/styles/tokens.css) — one warm system shared by the site and
+     the editor. This file keeps only what is genuinely document-specific: the print
+     faces, the two shadows, and the on-dark link. */
+  --chrome: var(--paper);
+  --chrome-hi: var(--paper);
+  --dim: var(--ink-4);
 
-  /* Chrome + surfaces are pure white to match the portfolio (the app's own ink
-     and accent colours are unchanged — only the backgrounds are neutralised). */
-  --paper: #fff;
-  --chrome: #fff;
-  --chrome-hi: #fff;
-  --dim: #8f8d86;
-
-  /* Semantic state. Demo deliberately has NO colour: its dot is hollow (paper on
-     ink), the System-6 idiom for "unset". Red belongs to real errors — not to the
-     one mode every visitor of this site will ever see. */
-  --state-live: #2f7d4c;
-  --state-busy: #d9a520;
-  --state-error: #b3261e;
+  /* Semantic state routes to the shared status light. Demo deliberately has NO
+     colour: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
+  --state-live: var(--color-success);
+  --state-busy: var(--color-warning);
+  --state-error: var(--color-danger);
   --link-on-ink: #9ec7ff;
   --sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;

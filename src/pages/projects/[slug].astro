@@ -205,8 +205,8 @@ const relatedProjects = projects
   .screenshot-controls {
     position: relative;
     height: clamp(10px, 1.4vw, 18px);
-    background: #fff;
-    border: 3px solid #000;
+    background: var(--paper);
+    border: 3px solid var(--ink);
     border-bottom: none;
     border-radius: clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px) 0 0;
     cursor: pointer;
@@ -228,19 +228,19 @@ const relatedProjects = projects
 
   .arrow-left {
     left: 25%;
-    border-right: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid #000;
+    border-right: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid var(--ink);
   }
 
   .arrow-right {
     right: 25%;
-    border-left: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid #000;
+    border-left: calc(clamp(10px, 1.4vw, 18px) * 0.7) solid var(--ink);
   }
 
   .screenshot-stage {
     position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
-    border: 3px solid #000;
+    border: 3px solid var(--ink);
     border-radius: 0 0 clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px);
     overflow: hidden;
     background: var(--dither-light);
@@ -297,16 +297,16 @@ const relatedProjects = projects
     font-family: var(--font-ui);
     font-size: var(--text-xs);
     padding: clamp(3px, 0.4vw, 6px) clamp(8px, 1vw, 14px);
-    border: 2px solid #000;
-    background: #fff;
-    color: #000;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
     text-decoration: none;
     cursor: pointer;
   }
 
   .project-btn:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   /* ── Sections ── */
@@ -326,14 +326,14 @@ const relatedProjects = projects
     align-items: center;
     gap: clamp(8px, 1vw, 16px);
     text-decoration: none;
-    color: #000;
+    color: var(--ink);
     padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
   }
 
   .related-item:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .related-item:hover .related-icon {
@@ -373,15 +373,15 @@ const relatedProjects = projects
     flex-direction: column;
     gap: clamp(2px, 0.3vw, 4px);
     text-decoration: none;
-    color: #000;
+    color: var(--ink);
     padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
     max-width: 45%;
   }
 
   .nav-link:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .nav-next {
@@ -457,11 +457,11 @@ const relatedProjects = projects
     }
 
     .arrow-left::after {
-      border-right: 10px solid #000;
+      border-right: 10px solid var(--ink);
     }
 
     .arrow-right::after {
-      border-left: 10px solid #000;
+      border-left: 10px solid var(--ink);
     }
   }
 </style>

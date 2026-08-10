@@ -90,8 +90,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 <style>
   /* ── Buttons ── */
   .nono-btn {
-    background: #fff;
-    border: 2px solid #000;
+    background: var(--paper);
+    border: 2px solid var(--ink);
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
     padding: 6px 14px;
@@ -100,8 +100,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   .nono-btn:hover {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .nono-btn:disabled {
@@ -110,8 +110,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   .nono-btn:disabled:hover {
-    background: #fff;
-    color: #000;
+    background: var(--paper);
+    color: var(--ink);
   }
 
   .nono-btn-sm {
@@ -120,14 +120,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   .nono-btn-run {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
     font-size: var(--text-3xs);
     padding: 6px 16px;
   }
 
   .nono-btn-run:hover {
-    background: #333;
+    background: var(--ink-2);
   }
 
   .nono-btn-run:disabled {
@@ -143,7 +143,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .nono-left {
     width: 40%;
-    border-right: 2px solid #000;
+    border-right: 2px solid var(--ink);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -172,13 +172,13 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(.nonogram-table td.cell) {
     width: 24px;
     height: 24px;
-    border: 1px solid #000;
-    background: #fff;
+    border: 1px solid var(--ink);
+    background: var(--paper);
     cursor: crosshair;
   }
 
   :global(.nonogram-table td.cell.filled) {
-    background: #000;
+    background: var(--ink);
   }
 
   :global(.nonogram-table .corner-cell) {
@@ -191,7 +191,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     text-align: center;
     font-size: var(--text-3xs);
     font-weight: 600;
-    border: 1px solid #ccc;
+    border: 1px solid var(--paper-4);
     padding: 2px;
   }
 
@@ -213,7 +213,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(.clue-slot) {
     font-size: var(--text-4xs);
     font-weight: 700;
-    color: #333;
+    color: var(--ink-2);
     min-width: 12px;
     text-align: center;
   }
@@ -239,23 +239,23 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   :global(#grid-size-label) {
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
-    color: #333;
+    color: var(--ink-2);
   }
 
   /* ── Status line ── */
   .status-line {
     font-size: var(--text-3xs);
-    color: #666;
+    color: var(--color-text-muted);
     padding: 4px 0;
     text-align: center;
   }
 
   :global(.status-line.status-err) {
-    color: #c00;
+    color: var(--color-danger);
   }
 
   :global(.status-line.status-ok) {
-    color: #060;
+    color: var(--color-success);
   }
 
   /* ── Controls bar ── */
@@ -275,8 +275,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .trials-label input {
     width: 50px;
-    border: 2px solid #000;
-    background: #fff;
+    border: 2px solid var(--ink);
+    background: var(--paper);
     padding: 4px 6px;
     font-size: var(--text-3xs);
     text-align: center;
@@ -295,8 +295,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   .gallery-label select {
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
-    border: 2px solid #000;
-    background: #fff;
+    border: 2px solid var(--ink);
+    background: var(--paper);
     padding: 3px 6px;
     max-width: 190px;
   }
@@ -310,7 +310,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.placeholder-msg) {
-    color: #999;
+    color: var(--ink-4);
     font-size: var(--text-3xs);
     font-style: italic;
     padding: 8px 0;
@@ -332,7 +332,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   :global(.sol-grid-label) {
     font-size: var(--text-4xs);
-    color: #666;
+    color: var(--color-text-muted);
     font-weight: 600;
   }
 
@@ -356,15 +356,15 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.sol-table td) {
-    border: 1px solid #ccc;
+    border: 1px solid var(--paper-4);
   }
 
   :global(.sol-table td.f) {
-    background: #000;
+    background: var(--ink);
   }
 
   :global(.sol-table td.e) {
-    background: #fff;
+    background: var(--paper);
   }
 
   /* ── Histogram ── */
@@ -383,8 +383,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .threshold-label input {
     width: 60px;
-    border: 2px solid #000;
-    background: #fff;
+    border: 2px solid var(--ink);
+    background: var(--paper);
     padding: 4px 6px;
     font-size: var(--text-3xs);
     text-align: center;
@@ -392,9 +392,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
   .histogram-area {
     height: 220px;
-    border: 2px solid #000;
+    border: 2px solid var(--ink);
     position: relative;
-    background: #fff;
+    background: var(--paper);
     overflow: hidden;
   }
 
@@ -414,8 +414,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.metrics-table th) {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
     text-transform: uppercase;
@@ -424,12 +424,12 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   }
 
   :global(.metrics-table td) {
-    border: 1px solid #ccc;
+    border: 1px solid var(--paper-4);
     padding: 3px 8px;
   }
 
   :global(.metrics-table .metric-label) {
     font-weight: 600;
-    background: #f5f5f5;
+    background: var(--paper-2);
   }
 </style>

@@ -75,7 +75,7 @@
 <style>
   .note {
     font-size: var(--text-4xs);
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0 0 16px;
   }
   .group {
@@ -86,7 +86,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #4a4944;
+    color: var(--ink-2);
     margin-bottom: 8px;
   }
   .swatches {
@@ -114,7 +114,7 @@
   }
   .custom span {
     font-size: var(--text-4xs);
-    color: #55534e;
+    color: var(--ink-3);
   }
   .in {
     font-family: var(--sans);

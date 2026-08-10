@@ -244,7 +244,7 @@
   .wheel {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: #57554f;
+    color: var(--ink-3);
     margin: 6px 0 0;
   }
   .row {

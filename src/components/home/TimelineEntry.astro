@@ -105,7 +105,7 @@ const { entry } = Astro.props;
     top: 8px;
     width: 7px;
     height: 7px;
-    background: #000;
+    background: var(--ink);
     transform: translateX(-3px);
   }
 
@@ -204,9 +204,9 @@ const { entry } = Astro.props;
   .tl-metric {
     font-size: var(--text-xs);
     line-height: 1.4;
-    border: 1px solid #000;
+    border: 1px solid var(--ink);
     padding: 2px 7px;
-    color: #000;
+    color: var(--ink);
   }
 
   .tl-metric b {
@@ -216,7 +216,7 @@ const { entry } = Astro.props;
     /* The mono value has a smaller x-height, so match the surrounding label by
        sizing it up. em keeps it proportional to the chip across breakpoints. */
     font-size: 1.5em;
-    color: #000;
+    color: var(--ink);
   }
 
   .tl-tech {
@@ -231,8 +231,8 @@ const { entry } = Astro.props;
     font-family: var(--font-ui);
     font-size: var(--text-xs);
     padding: 1px 6px;
-    border: 1px solid #000;
-    color: #000;
+    border: 1px solid var(--ink);
+    color: var(--ink);
   }
 
   .tl-actions {
