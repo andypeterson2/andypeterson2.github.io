@@ -6,6 +6,7 @@
 !.prettierignore
 !.stylelintrc.json
 !.stylelintrc.fontsize.json
+!.stylelintrc.tokens.json
 !.github/
 !.nvmrc
 
