@@ -161,7 +161,7 @@
     border-radius: var(--radius);
     padding: 3px 9px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .sym-toggle.on {
     background: var(--ink);

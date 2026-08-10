@@ -184,7 +184,7 @@
     background: var(--paper);
     color: var(--ink);
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .mini.primary {
     background: var(--ink);

@@ -17,7 +17,14 @@
   --sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
   --mono: 'SF Mono', ui-monospace, 'Menlo', 'DejaVu Sans Mono', monospace;
-  --shadow: 2px 2px 0 var(--ink);
+  --shadow: var(--shadow-focus); /* alias the shared press */
+
+  /* Editor-specific shadows: the selected-item ring, the accent press, and the two
+     directional drops the side drawer casts (left on desktop, up on mobile). */
+  --shadow-ring: inset 0 0 0 2px var(--ink);
+  --shadow-accent: 1px 1px 0 var(--accent);
+  --shadow-drawer: -4px 0 0 rgb(28 27 25 / 50%);
+  --shadow-drawer-top: 0 -4px 0 rgb(28 27 25 / 50%);
 
   /* The deeper drop a panel floating over the document casts, as opposed to the
      flat 2px a button presses off the page. Named because two components share

@@ -291,8 +291,7 @@
     border: 2px solid var(--spot, var(--ink));
     border-radius: var(--radius-sm);
     will-change: transform, width, height;
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
       0 3px 16px rgb(28 27 25 / 20%);
     transition:
       transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
@@ -303,13 +302,11 @@
   @keyframes spot-pulse {
     0%,
     100% {
-      box-shadow:
-        0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
         0 3px 16px rgb(28 27 25 / 20%);
     }
     50% {
-      box-shadow:
-        0 0 0 7px color-mix(in srgb, var(--spot, var(--ink)) 9%, transparent),
+      box-shadow: 0 0 0 7px color-mix(in srgb, var(--spot, var(--ink)) 9%, transparent),
         0 3px 16px rgb(28 27 25 / 20%);
     }
   }

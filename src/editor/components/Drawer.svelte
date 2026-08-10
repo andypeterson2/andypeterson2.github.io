@@ -48,7 +48,7 @@
     width: min(400px, 92vw);
     background: var(--paper);
     border-left: 2px solid var(--ink);
-    box-shadow: -4px 0 0 rgb(28 27 25 / 50%);
+    box-shadow: var(--shadow-drawer);
     z-index: 41;
     display: flex;
     flex-direction: column;
@@ -125,7 +125,7 @@
       max-height: 82vh;
       border-left: 0;
       border-top: 2px solid var(--ink);
-      box-shadow: 0 -4px 0 rgb(28 27 25 / 50%);
+      box-shadow: var(--shadow-drawer-top);
       animation: slideup 0.16s ease;
     }
     @keyframes slideup {
