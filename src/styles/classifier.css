@@ -8,7 +8,7 @@
 }
 
 #classifier-app .card-title {
-  font-size: clamp(11px, 1.5vw, 18px);
+  font-size: var(--text-2xs);
   font-weight: 700;
   margin: 0 0 6px;
   text-transform: uppercase;
@@ -17,7 +17,7 @@
 
 #classifier-app label {
   display: block;
-  font-size: clamp(9px, 1.1vw, 13px);
+  font-size: var(--text-3xs);
   font-weight: 600;
   margin: 4px 0 2px;
   text-transform: uppercase;
@@ -30,7 +30,7 @@
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: clamp(9px, 1.2vw, 14px);
+  font-size: var(--text-3xs);
   padding: 3px 6px;
   border: 1.5px solid #000;
   background: #fff;
@@ -38,7 +38,7 @@
 
 #classifier-app .btn {
   font-family: var(--font-ui);
-  font-size: clamp(9px, 1.2vw, 14px);
+  font-size: var(--text-3xs);
   padding: 3px 10px;
   border: 2px solid #000;
   background: #fff;
@@ -76,7 +76,7 @@
 }
 
 #classifier-app .btn-sm {
-  font-size: clamp(8px, 1vw, 12px);
+  font-size: var(--text-4xs);
   padding: 2px 6px;
 }
 

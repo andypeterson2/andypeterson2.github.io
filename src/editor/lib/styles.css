@@ -46,7 +46,7 @@
   border: 1px solid var(--ink);
   box-shadow: var(--shadow-float);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-3xs);
   color: var(--ink);
 }
 
