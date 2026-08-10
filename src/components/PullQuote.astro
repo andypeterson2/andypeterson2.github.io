@@ -15,9 +15,9 @@ const { cite } = Astro.props;
   .pull-quote {
     margin: var(--space-8) 0;
     padding: var(--space-4) var(--space-6);
-    border-left: 4px solid #000;
-    border-top: 1px solid #000;
-    border-bottom: 1px solid #000;
+    border-left: 4px solid var(--ink);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
   }
 
   .pull-quote p {
@@ -33,6 +33,6 @@ const { cite } = Astro.props;
     font-family: var(--font-mono);
     font-size: var(--text-3xs);
     font-style: normal;
-    color: #666;
+    color: var(--color-text-muted);
   }
 </style>

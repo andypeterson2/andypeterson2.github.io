@@ -61,12 +61,12 @@
   .note {
     font-size: var(--text-4xs);
     line-height: 1.55;
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0 0 16px;
   }
   .link {
     font: inherit;
-    color: #2b6cb0;
+    color: var(--link);
     background: none;
     border: 0;
     padding: 0;
@@ -120,7 +120,7 @@
     width: 100%;
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
     border-radius: 6px;
@@ -130,7 +130,7 @@
   .edit {
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid #d9d7cf;
+    border-top: 1px solid var(--paper-4);
     display: flex;
     flex-direction: column;
     gap: 13px;
@@ -145,7 +145,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
   }
   .in {
     font-family: var(--sans);
@@ -161,13 +161,13 @@
     align-self: flex-start;
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #9c2b3f;
+    color: var(--accent);
     background: var(--paper);
-    border: 1px solid #9c2b3f;
+    border: 1px solid var(--accent);
     border-radius: 6px;
     padding: 5px 12px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 #9c2b3f;
+    box-shadow: 1px 1px 0 var(--accent);
   }
   .del:active {
     transform: translate(1px, 1px);

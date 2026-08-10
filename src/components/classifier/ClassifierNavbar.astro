@@ -16,7 +16,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 4px 8px;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid var(--ink);
     background: var(--dither-light);
     flex-shrink: 0;
   }
@@ -38,8 +38,8 @@
     position: absolute;
     top: 100%;
     left: 0;
-    background: #fff;
-    border: 2px solid #000;
+    background: var(--paper);
+    border: 2px solid var(--ink);
     z-index: 50;
     min-width: 150px;
   }
@@ -62,7 +62,7 @@
 
   :global(.ui-dropdown-item:hover),
   :global(.ui-dropdown-item.active) {
-    background: #000;
-    color: #fff;
+    background: var(--ink);
+    color: var(--paper);
   }
 </style>

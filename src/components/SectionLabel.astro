@@ -23,7 +23,7 @@ const { label, class: className } = Astro.props;
   .section-label-rule {
     width: 24px;
     height: 2px;
-    background: #000;
+    background: var(--ink);
     flex-shrink: 0;
   }
 
@@ -33,7 +33,7 @@ const { label, class: className } = Astro.props;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #000;
+    color: var(--ink);
     white-space: nowrap;
   }
 </style>

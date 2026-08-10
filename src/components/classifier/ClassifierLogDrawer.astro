@@ -5,8 +5,8 @@
 
 <style>
   .log-drawer {
-    border-top: 2px solid #000;
-    background: #fff;
+    border-top: 2px solid var(--ink);
+    background: var(--paper);
     max-height: 30vh;
     overflow: hidden;
     flex-shrink: 0;
@@ -24,7 +24,7 @@
     letter-spacing: 0.05em;
     background: var(--dither-light);
     cursor: pointer;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--paper-4);
   }
 
   .log-terminal {
@@ -45,12 +45,12 @@
   }
 
   :global(.log-time) {
-    color: #999;
+    color: var(--ink-4);
     flex-shrink: 0;
   }
 
   :global(.log-msg) {
-    color: #333;
+    color: var(--ink-2);
   }
 
   :global(.log-ok) {

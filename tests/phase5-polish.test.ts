@@ -36,9 +36,9 @@ describe('Print stylesheet', () => {
     expect(printSection).toContain('background: transparent');
   });
 
-  test('sets text color to black', () => {
+  test('sets text color to ink', () => {
     const printSection = baseCss.split('@media print')[1] || '';
-    expect(printSection).toContain('color: #000');
+    expect(printSection).toContain('color: var(--ink)');
   });
 
   test('shows link URLs after anchor text', () => {

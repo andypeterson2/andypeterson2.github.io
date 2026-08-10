@@ -14,10 +14,10 @@ appears only to report machine state.** Every name below is verified present in 
   **`.window-body`**, **`.btn`**, plus scrollbars, inputs, menus, dialogs. Icons are inline
   SVGs (no icon font).
 - **Local layers**, imported by `BaseLayout.astro` in this order — read them before styling:
-  1. `src/styles/tokens.css` — the entire token vocabulary (short; authoritative).
-  2. `src/styles/base.css` — resets, the invert idiom, **dark mode**, `.section-rule`,
-     `.finder-icon` / `.icon-grid`, print + reduced-motion.
-  3. `src/styles/dither.css` — the 1-bit ordered fills.
+  1. `packages/system-six/styles/tokens.css` — the entire token vocabulary (short; authoritative).
+  2. `packages/system-six/styles/base.css` — resets, the invert idiom, **dark mode**,
+     `.section-rule`, `.finder-icon` / `.icon-grid`, print + reduced-motion.
+  3. `packages/system-six/styles/dither.css` — the 1-bit ordered fills.
 - **No provider/wrapper framework** — it's CSS classes + tokens. The "wrapper" is a System-6
   window: `.window` › `.title-bar` › `.window-body`.
 - **Fonts** (loaded by system.css `@font-face`): Chicago = chrome titles only, Geneva = body,
@@ -28,13 +28,18 @@ appears only to report machine state.** Every name below is verified present in 
 Not utility-first (no Tailwind), not prop-based. You compose **system.css chrome classes** and
 reach for **`var(--*)` tokens** for the local vocabulary. The rules:
 
-**Color — monochrome ink, plus a status light.**
-- Ink `var(--color-text)` `#000` · ground `var(--color-bg)` `#fff` · edges `var(--color-border)`
-  `#000` · one gray `var(--color-text-muted)` `#666` for **de-emphasized text only**.
-- The **only** hues are the status scale — `var(--color-success)` · `var(--color-warning)` ·
-  `var(--color-danger)` — used **exclusively** to report machine state (connected, warning,
-  error/compromised). Never add a color; never use color for hierarchy or decoration. There is
-  deliberately **no** `--color-surface`, `--color-accent`, or `--color-secondary`.
+**Color — one warm ink, plus a status light and a single accent.**
+- Ink `var(--ink)` `#1c1b19` (a warm near-black — **no pure `#000`**) on ground `var(--paper)`
+  `#fff`; every edge uses the ink. A short **warm-gray ramp** carries hierarchy — `--ink-2`
+  `#45433d` → `--ink-3` `#55534e` → `--color-text-muted` `#6b6960` (de-emphasized text) →
+  `--ink-4` / `--ink-5` (faint, hairline) — with warm paper tints `--paper-2…4` for fills. The
+  site and the résumé editor share this one system (the editor's `--ink`/`--dim`/`--state-*` alias
+  straight to it). Grays are tint tokens now, but dense fills are still 1-bit **dither**, not flat.
+- The status scale — `var(--color-success)` · `var(--color-warning)` · `var(--color-danger)` —
+  reports machine state (connected, warning, error) and nothing else.
+- One **accent**, `var(--accent)` `#9c2b3f` (crimson) — the résumé's section labels and the
+  editor's active state — plus a contained `var(--link)` for the few inline links. That is the
+  whole hue budget; do not add a second accent, and never use color for hierarchy or decoration.
 
 **Grays are dither, never flat.**
 - Fills use the 1-bit ramp — classes `.dither-light` (~12.5%) · `.dither-25` · `.dither-50`
@@ -71,6 +76,15 @@ explicitly outside the shared set. `em` (relative/icon scaling) and print `pt` s
 The whole codebase is migrated, so `.stylelintrc.fontsize.json` carries **no exemptions** — the
 gate enforces `font-size` everywhere, site chrome and all three apps alike.
 
+**Color — always a token, and CI enforces it too.** Never write a raw `#hex` / `rgb()` on
+`color`, `background`, `border`, `outline`, `fill`, or `stroke` — reach for a token: the warm ink
+ramp (`--ink`, `--ink-2…5`, `--color-text-muted`), the paper tints (`--paper`, `--paper-2…4`), the
+status light, `--accent`, `--link`, or a `--scrim`. Colours are *defined* in exactly two places —
+`tokens.css` and the editor's `lib/styles.css` — and used through `var()` everywhere else. The gate
+is `.stylelintrc.tokens.json` (wired into `npm run lint` as `lint:tokens`); like the font-size gate
+it covers css + astro + svelte + `packages/` with **no exemptions**, so a raw colour anywhere
+fails CI.
+
 **The scale** (`tokens.css`, px min→max): `--text-root` **16px fixed** (the body root — the one
 non-fluid token) · then the fluid steps `--text-4xs` 10–12 · `--text-3xs` 12–14 · `--text-2xs`
 14–17 · `--text-xs` 16–20 · `--text-sm` 18–23 · `--text-base` 21–28 · `--text-lg` 25–36 ·
@@ -106,7 +120,7 @@ introduce raster images or off-scale colors, or you'll break the single-negative
 
 ## Where the truth lives
 
-`src/styles/{tokens,base,dither}.css` (the vocabulary) · the CDN `system.css` (the chrome) ·
+`packages/system-six/styles/{tokens,base,dither}.css` (the vocabulary) · the vendored `system.css` (the chrome) ·
 [`design-ethos.md`](./design-ethos.md) (the laws — read it to know what a *correct* choice is
 here; the razor is *"does this make the interface more honestly 1-bit?"*, which answers "does it
 look right" and "is it truer" at once).

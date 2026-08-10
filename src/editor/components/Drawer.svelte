@@ -33,7 +33,7 @@
   .scrim {
     position: fixed;
     inset: 0;
-    background: rgb(28 27 25 / 28%);
+    background: var(--scrim-soft);
     border: 0;
     padding: 0;
     cursor: pointer;

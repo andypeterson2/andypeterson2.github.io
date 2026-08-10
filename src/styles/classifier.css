@@ -2,9 +2,9 @@
    Imported globally from ClassifierApp.astro so they apply across all child components. */
 
 #classifier-app .card {
-  border: 2px solid #000;
+  border: 2px solid var(--ink);
   padding: 8px 10px;
-  background: #fff;
+  background: var(--paper);
 }
 
 #classifier-app .card-title {
@@ -32,41 +32,41 @@
   font-family: inherit;
   font-size: var(--text-3xs);
   padding: 3px 6px;
-  border: 1.5px solid #000;
-  background: #fff;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
 }
 
 #classifier-app .btn {
   font-family: var(--font-ui);
   font-size: var(--text-3xs);
   padding: 3px 10px;
-  border: 2px solid #000;
-  background: #fff;
-  color: #000;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
   cursor: pointer;
 }
 
 #classifier-app .btn:hover {
-  background: #000;
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
 }
 
 #classifier-app .btn-primary {
-  background: #000;
-  color: #fff;
+  background: var(--ink);
+  color: var(--paper);
 }
 
 #classifier-app .btn-primary:hover {
-  background: #333;
+  background: var(--ink-2);
 }
 
 #classifier-app .btn-danger {
-  color: #c00;
+  color: var(--color-danger);
 }
 
 #classifier-app .btn-danger:hover {
-  background: #c00;
-  color: #fff;
+  background: var(--color-danger);
+  color: var(--paper);
 }
 
 #classifier-app .btn-block {

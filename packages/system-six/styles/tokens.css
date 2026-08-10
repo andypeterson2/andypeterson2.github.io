@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Design Tokens — CSS Custom Properties
-   System 6 monochrome palette. Black and white only.
+   System 6 palette: one warm ink on paper (a warm-gray ramp, no pure black),
+   plus the status light and a single résumé accent. Grays are dither, not tint.
    Typography: Chicago / Geneva / Monaco (loaded by system.css @font-face).
    Hand-maintained source of truth. tokens.json pipeline is not in use.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -13,13 +14,38 @@
      was describing a design this site refuses. Most chrome uses literal
      #000/#fff through system.css; these name the same values for code that
      prefers a token. State changes are inversions (L4), not new colors. */
-  --color-bg: #fff; /* the ground */
-  --color-text: #000; /* the ink */
-  --color-text-inverse: #fff; /* ink on black — selection, hover, dark chrome */
-  --color-border: #000; /* every rule and edge */
-  --color-text-muted: #666; /* the ONE gray: de-emphasized text — the single
-                               concession to modern readability. Everything
-                               else that reads as "gray" is 1-bit dither. */
+  --paper: #fff; /* the ground */
+  --ink: #1c1b19; /* the ink — one warm near-black for text, borders, and chrome.
+                     Warm, not pure #000: the site and the résumé editor now share
+                     this single neutral so nothing reads as two colour systems. */
+  --ink-2: #45433d; /* dark warm gray — strong secondary text / headings */
+  --ink-3: #55534e; /* mid warm gray — labels, captions */
+  --ink-4: #8f8d86; /* light warm gray — faint text, dim icons */
+  --ink-5: #a8a6a0; /* lightest warm gray — hairlines, disabled */
+  --paper-2: #f4f2ec; /* faint warm fill */
+  --paper-3: #e3e1d9; /* light warm fill — chrome surfaces */
+  --paper-4: #d4d2ca; /* mid warm fill — dividers, denser chrome */
+
+  /* Semantic aliases — existing var(--color-*) usage warms for free through these. */
+  --color-bg: var(--paper);
+  --color-text: var(--ink);
+  --color-text-inverse: var(--paper); /* ink on ink — selection, hover, dark chrome */
+  --color-border: var(--ink); /* every rule and edge */
+  --color-text-muted: #6b6960; /* the one muted gray — de-emphasized text, warmed
+                                  from #666 to sit in the same family as the ink. */
+
+  /* One accent hue — the résumé document's section labels and the editor's active
+     state. Distinct from the status light below; site chrome stays inkless. */
+  --accent: #9c2b3f;
+
+  /* The one link hue that survives from the apps (a couple of inline links + an
+     on-dark reference). A token so it stays contained, not a colour free-for-all. */
+  --link: #2b6cb0;
+
+  /* Scrims — the ink at low alpha behind a modal / drawer. Named so the handful of
+     overlays share one dim instead of each picking its own transparency. */
+  --scrim: rgb(28 27 25 / 50%); /* modal backdrop */
+  --scrim-soft: rgb(28 27 25 / 30%); /* drawer / invite backdrop */
 
   /* ── status light — the ONLY color, ever (L3) ──
      Color appears when, and only when, the machine reports state. If nothing

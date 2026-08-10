@@ -45,14 +45,14 @@
   .hint {
     font-size: var(--text-4xs);
     line-height: 1.45;
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0 0 9px;
   }
   .hint code {
     font-family: var(--mono);
     font-size: 0.92em;
     background: var(--paper);
-    border: 1px solid var(--faint, #d9d7cf);
+    border: 1px solid var(--faint, var(--paper-4));
     padding: 0 3px;
   }
   .cat {
@@ -61,7 +61,7 @@
     align-items: start;
     gap: 10px;
     padding: 5px 0;
-    border-top: 1px solid #e2e0d8;
+    border-top: 1px solid var(--paper-3);
   }
   .cat:first-of-type {
     border-top: 0;

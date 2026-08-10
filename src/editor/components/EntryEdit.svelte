@@ -200,7 +200,7 @@
     color: var(--paper);
   }
   .mini.danger {
-    color: #9c2b3f;
+    color: var(--accent);
   }
   .mini:active {
     transform: translate(1px, 1px);
@@ -222,7 +222,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
     padding-top: 3px;
   }
   .fld {
@@ -235,7 +235,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
   }
   .in {
     font-family: var(--sans);
@@ -257,7 +257,7 @@
   }
   .bl-wrap {
     margin-top: 13px;
-    border-top: 1px solid #e2e0d8;
+    border-top: 1px solid var(--paper-3);
     padding-top: 11px;
     display: flex;
     flex-direction: column;
@@ -309,7 +309,7 @@
     align-self: flex-start;
     border-style: dashed;
     box-shadow: none;
-    color: #55534e;
+    color: var(--ink-3);
   }
 
   /* Narrow phones: the fixed 116px label column leaves too little for the input, so

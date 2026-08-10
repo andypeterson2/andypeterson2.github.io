@@ -144,7 +144,7 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 40px 46px 54px;
-    color: #232220;
+    color: var(--ink);
   }
   .ltools {
     display: flex;
@@ -177,14 +177,14 @@
     margin: 0 0 16px;
   }
   .lh h1.untitled {
-    color: #a8a6a0;
+    color: var(--ink-5);
   }
   .fields {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding-bottom: 20px;
-    border-bottom: 1px solid #d9d7cf;
+    border-bottom: 1px solid var(--paper-4);
   }
   .fld {
     display: grid;
@@ -197,7 +197,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
     padding-top: 8px;
   }
   .in {
@@ -274,20 +274,20 @@
     cursor: pointer;
   }
   .del:hover {
-    border-color: #9c2b3f;
-    color: #9c2b3f;
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #8a887f;
+    color: var(--ink-4);
     margin: 0;
   }
   .add {
     align-self: flex-start;
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: #55534e;
+    color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
     border-radius: 6px;
@@ -296,7 +296,7 @@
   }
   .lf {
     padding-top: 20px;
-    border-top: 1px solid #d9d7cf;
+    border-top: 1px solid var(--paper-4);
   }
   .signoff {
     font-size: var(--text-2xs);

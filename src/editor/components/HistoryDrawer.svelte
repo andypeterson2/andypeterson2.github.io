@@ -217,7 +217,7 @@
     gap: 5px;
     margin-bottom: 14px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--faint, #e4e2db);
+    border-bottom: 1px solid var(--faint, var(--paper-3));
   }
   .chip {
     font-family: var(--mono);
@@ -254,7 +254,7 @@
   .note {
     font-size: var(--text-4xs);
     line-height: 1.5;
-    color: #55534e;
+    color: var(--ink-3);
     margin: 0 0 16px;
   }
   .make {
@@ -291,7 +291,7 @@
   .empty {
     font-size: var(--text-3xs);
     line-height: 1.6;
-    color: #77756e;
+    color: var(--color-text-muted);
     text-align: center;
     margin: 26px 0;
   }
@@ -308,7 +308,7 @@
     align-items: center;
     gap: 10px;
     padding: 9px 0;
-    border-bottom: 1px solid var(--faint, #e4e2db);
+    border-bottom: 1px solid var(--faint, var(--paper-3));
   }
   .row:last-child {
     border-bottom: 0;
@@ -340,18 +340,18 @@
   }
   .name.untitled {
     font-weight: 400;
-    color: #77756e;
+    color: var(--color-text-muted);
   }
   .tagb {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     font-weight: 400;
-    color: #8a6d1a;
+    color: var(--color-warning);
     margin-left: 4px;
   }
   .time {
     font-size: var(--text-4xs);
-    color: #8f8d86;
+    color: var(--ink-4);
     font-variant-numeric: tabular-nums;
   }
   .tag-in {
@@ -397,7 +397,7 @@
   .back {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: #55534e;
+    color: var(--ink-3);
     background: none;
     border: 0;
     padding: 2px 0;
@@ -420,16 +420,16 @@
     font-size: var(--text-4xs);
     margin: 0 0 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--faint, #e4e2db);
+    border-bottom: 1px solid var(--faint, var(--paper-3));
   }
   .s-add {
-    color: var(--state-live, #2f7d4c);
+    color: var(--state-live, var(--color-success));
   }
   .s-del {
-    color: var(--state-error, #b3261e);
+    color: var(--state-error, var(--color-danger));
   }
   .s-chg {
-    color: #8a6d1a;
+    color: var(--color-warning);
   }
   .grp {
     margin-bottom: 16px;
@@ -442,7 +442,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #4a4944;
+    color: var(--ink-2);
     margin-bottom: 8px;
   }
   .badge {
@@ -456,24 +456,24 @@
     border: 1px solid currentColor;
   }
   .b-added {
-    color: var(--state-live, #2f7d4c);
+    color: var(--state-live, var(--color-success));
   }
   .b-removed {
-    color: var(--state-error, #b3261e);
+    color: var(--state-error, var(--color-danger));
   }
   .b-changed {
-    color: #8a6d1a;
+    color: var(--color-warning);
   }
   .ent {
     padding: 6px 0 6px 10px;
-    border-left: 2px solid var(--faint, #e4e2db);
+    border-left: 2px solid var(--faint, var(--paper-3));
     margin-bottom: 6px;
   }
   .ent.e-added {
-    border-left-color: var(--state-live, #2f7d4c);
+    border-left-color: var(--state-live, var(--color-success));
   }
   .ent.e-removed {
-    border-left-color: var(--state-error, #b3261e);
+    border-left-color: var(--state-error, var(--color-danger));
   }
   .ent-l {
     display: flex;
@@ -489,7 +489,7 @@
   }
   .ent-label.strike {
     text-decoration: line-through;
-    color: #77756e;
+    color: var(--color-text-muted);
   }
   .mk {
     font-family: var(--mono);
@@ -514,20 +514,20 @@
   .itm {
     font-size: var(--text-4xs);
     line-height: 1.5;
-    color: #4a4944;
+    color: var(--ink-2);
     margin-top: 3px;
     word-break: break-word;
   }
   .fk {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: #8f8d86;
+    color: var(--ink-4);
   }
   .ins {
-    color: var(--state-live, #2f7d4c);
+    color: var(--state-live, var(--color-success));
   }
   .del {
-    color: var(--state-error, #b3261e);
+    color: var(--state-error, var(--color-danger));
     text-decoration: line-through;
   }
 </style>
