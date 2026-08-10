@@ -582,7 +582,7 @@
      the "Home" size). The .title patch's own vertical padding drives that growth. */
   .titlebar { display: flex; align-items: center; gap: 8px; min-height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
   .close { width: 11px; height: 11px; background: var(--paper); border: 1px solid var(--ink); }
-  .title { font-size: var(--text-base); font-weight: 700; line-height: 1.1; background: var(--paper); padding: 12px; margin: 0 auto; }
+  .title { font-family: var(--font-ui); font-size: var(--text-base); font-weight: 700; line-height: 1.1; background: var(--paper); padding: 12px; margin: 0 auto; }
   .app-title { font-size: var(--text-lg); }
   .fill { width: 11px; }
   .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
