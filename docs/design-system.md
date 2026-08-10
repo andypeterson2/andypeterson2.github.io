@@ -68,8 +68,14 @@ chrome and the three embedded apps (editor / nonogram / classifier) included. Th
 are the dense end for app toolbars/tables. A size that's genuinely specific to one app gets its
 own **named** custom token (e.g. `--text-app-*`) — still a token, so the gate passes, just
 explicitly outside the shared set. `em` (relative/icon scaling) and print `pt` stay allowed.
-The `ignoreFiles` list in `.stylelintrc.fontsize.json` is the **migration backlog** — files
-still on raw px, being converted element-by-element; it only ever shrinks.
+The whole codebase is migrated, so `.stylelintrc.fontsize.json` carries **no exemptions** — the
+gate enforces `font-size` everywhere, site chrome and all three apps alike.
+
+**The scale** (`tokens.css`, px min→max): `--text-root` **16px fixed** (the body root — the one
+non-fluid token) · then the fluid steps `--text-4xs` 10–12 · `--text-3xs` 12–14 · `--text-2xs`
+14–17 · `--text-xs` 16–20 · `--text-sm` 18–23 · `--text-base` 21–28 · `--text-lg` 25–36 ·
+`--text-xl` 30–46 · `--text-2xl` 37–58 · `--text-3xl` 45–72 · `--text-4xl` 54–88. Steps are
+~a minor third apart; `4xs`/`3xs` are the dense end for app chrome, `lg`+ for display headings.
 
 ## Dark mode — do nothing special
 
