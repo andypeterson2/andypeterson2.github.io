@@ -5,6 +5,7 @@
 !.prettierrc
 !.prettierignore
 !.stylelintrc.json
+!.stylelintrc.fontsize.json
 !.github/
 !.nvmrc
 
