@@ -118,6 +118,14 @@ export class HistoryController {
     if (this.restoring) return;
     const version = this.versions.find((v) => v.id === id);
     if (!version) return;
+    // Recoverability: capture the current (pre-restore) document as a checkpoint before we
+    // replace it and drop the undo stack — the same guard switchTo runs before leaving a
+    // branch. The drift-check skips it when nothing changed (incl. the switchTo path, which
+    // already snapshotted), so it never double-saves.
+    const here = this.#tip(this.currentBranch);
+    if (!here || !diffDocuments(here.doc, this.host.capture()).empty) {
+      await this.snapshot('Auto-saved before restore');
+    }
     this.restoring = true;
     try {
       const pid = this.host.activePersonId();
@@ -226,6 +234,12 @@ export class HistoryController {
   async cherryRestore(versionId: number, entryId: number) {
     const source = await this.#docFor(versionId);
     if (!source) return;
+    // Recoverability: cherry-restore overwrites an entry and drops undo, so checkpoint the
+    // current document first (same guard as restore).
+    const here = this.#tip(this.currentBranch);
+    if (!here || !diffDocuments(here.doc, this.host.capture()).empty) {
+      await this.snapshot('Auto-saved before restore');
+    }
     const ok = this.host.applyEntry(source, entryId);
     this.host.announce(
       ok ? 'Restored one entry from the checkpoint.' : 'Could not place that entry.',
