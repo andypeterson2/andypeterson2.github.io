@@ -468,7 +468,7 @@
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
-  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: 0.75vw 0.75vw 0 0; font-family: var(--font-ui); font-size: clamp(14px, 1.6vw, 18px); position: sticky; top: 0; z-index: 5; }
+  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: 0.75vw 0.75vw 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: 5; }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
