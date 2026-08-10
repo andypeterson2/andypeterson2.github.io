@@ -483,7 +483,7 @@ const windowTitle = title || siteConfig.title;
   }
 
   .site-window .title-bar .title {
-    font-size: clamp(18px, 2.67vw, 42px);
+    font-size: var(--text-lg);
   }
 
   .site-window .separator {
@@ -510,7 +510,7 @@ const windowTitle = title || siteConfig.title;
     justify-content: center;
     width: 44px;
     height: 44px;
-    font-size: 22px;
+    font-size: var(--text-sm);
     line-height: 1;
     color: #000;
     background: #fff;
@@ -547,7 +547,7 @@ const windowTitle = title || siteConfig.title;
     padding: 10px 12px;
     color: #000;
     text-decoration: none;
-    font-size: 16px;
+    font-size: var(--text-xs);
   }
 
   .mobile-nav-menu a:hover,
