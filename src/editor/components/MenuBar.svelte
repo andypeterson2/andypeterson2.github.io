@@ -353,7 +353,7 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow);
     padding: 9px 14px;
     cursor: pointer;

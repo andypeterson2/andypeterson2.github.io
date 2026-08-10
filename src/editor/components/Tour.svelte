@@ -289,7 +289,7 @@
     z-index: 50; /* above the drawers (41), below the narrator (100) */
     pointer-events: none;
     border: 2px solid var(--spot, var(--ink));
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     will-change: transform, width, height;
     box-shadow:
       0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),

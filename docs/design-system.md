@@ -54,8 +54,10 @@ reach for **`var(--*)` tokens** for the local vocabulary. The rules:
 `filter:invert(1)`. Style interactive states as inversion, **never** a color-shift, glow, or
 elevation.
 
-**Hard edges.** 1–2px solid `#000` borders, **no border-radius**, hard shadow
-`var(--shadow-focus)` (`2px 2px 0 #000`). Never blur or soften.
+**Hard edges, gently-rounded controls.** 1–2px solid ink borders. Content and windows stay
+hard-edged, but controls (buttons, inputs, chips) use the small **`--radius-*`** scale — the
+rounding of a real System-6 button, never ad-hoc px (a `border-radius` gate enforces it). Hard
+shadow `var(--shadow-focus)` (`2px 2px 0` ink). Never blur or soften.
 
 **Hierarchy is typographic and spatial, never chromatic.** Rank by weight, size (`--text-*`),
 uppercase + `--tracking-wide`, dither density, chrome, and whitespace (`--space-*`). If you

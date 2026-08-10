@@ -108,6 +108,19 @@
   --space-24: 6rem;
   --space-32: 8rem;
 
+  /* ── radius — System-6 controls are gently rounded (buttons, inputs, chips); content
+     and windows stay hard-edged. A small named scale instead of ad-hoc px, plus fluid
+     corners for the chrome that scales with the viewport. ── */
+  --radius-sm: 4px; /* tight insets, small chips */
+  --radius: 6px; /* default — buttons, inputs */
+  --radius-md: 8px; /* cards, larger controls */
+  --radius-lg: 12px; /* panels */
+  --radius-pill: 20px; /* pills / tags */
+  --radius-round: 50%; /* dots, circular controls */
+  --radius-menubar: 0.75vw; /* menu-bar top corners (site + editor) */
+  --radius-frame: 1.25vw; /* the site's outer window corner */
+  --radius-card: clamp(4px, 0.5vw, 8px); /* project-card image corners */
+
   /* ── shadows ── */
   --shadow-focus: 2px 2px 0 #000;
 

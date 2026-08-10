@@ -351,7 +351,7 @@ const windowTitle = title || siteConfig.title;
     background-size: 2.5vw 2.5vw;
     image-rendering: pixelated;
     border: 0.5vw solid var(--ink);
-    border-radius: 1.25vw;
+    border-radius: var(--radius-frame);
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -371,7 +371,7 @@ const windowTitle = title || siteConfig.title;
     top: 0;
     z-index: 100;
 
-    --menubar-radius: 0.75vw;
+    --menubar-radius: var(--radius-menubar);
 
     border-radius: var(--menubar-radius) var(--menubar-radius) 0 0;
 
@@ -515,7 +515,7 @@ const windowTitle = title || siteConfig.title;
     color: var(--ink);
     background: var(--paper);
     border: 2px solid var(--ink);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     box-shadow: var(--shadow-focus);
     cursor: pointer;
   }

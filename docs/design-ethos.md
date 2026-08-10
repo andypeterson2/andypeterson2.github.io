@@ -40,8 +40,10 @@ Five laws are *already* in the CSS, unnamed. Naming them is half the work.
 3. **Every state change is an inversion.** Hover, `::selection`, and focus all flip black↔white
    (`a:hover{background:#000;color:#fff}`, `.finder-icon:hover .icon-glyph{filter:invert(1)}`).
    No glows, no color-shift, no elevation. One motion, everywhere.
-4. **Hard truth, no blur.** 1–2px solid `#000`, hard `2px 2px 0` shadows, zero border-radius.
-   The pixel is honest about being a pixel.
+4. **Hard truth, no blur.** 1–2px solid ink, hard `2px 2px 0` shadows, no soft blur. Content and
+   windows are hard-edged; controls (buttons, inputs, chips) take the gentle rounding an authentic
+   System-6 button has — a small `--radius-*` scale, never ad-hoc px. The pixel is honest about
+   being a pixel.
 5. **The OS is the information architecture.** Finder icons, windows, and the menu bar *are* the
    navigation — not a metaphor layered on top of a nav, the nav itself.
 
