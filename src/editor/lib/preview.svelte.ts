@@ -20,15 +20,25 @@ export class PreviewController {
 
   #connected: () => boolean;
   #activeVariant: () => Variant | null;
+  #activePersonId: () => number | null;
 
-  constructor(connected: () => boolean, activeVariant: () => Variant | null) {
+  constructor(
+    connected: () => boolean,
+    activeVariant: () => Variant | null,
+    activePersonId: () => number | null,
+  ) {
     this.#connected = connected;
     this.#activeVariant = activeVariant;
+    this.#activePersonId = activePersonId;
   }
 
-  /** can compile only a real variant on a live backend */
+  /**
+   * Compilable on a live backend when there's something to compile: a named variant,
+   * or — for the "Main" (no-variant) view — a loaded profile, which compiles the full
+   * document via the base-compile route. The demo is never connected, so it never compiles.
+   */
   get compilable(): boolean {
-    return this.#connected() && this.#activeVariant() !== null;
+    return this.#connected() && (this.#activeVariant() !== null || this.#activePersonId() !== null);
   }
 
   toggle() {
@@ -43,13 +53,15 @@ export class PreviewController {
     this.state = 'idle';
   }
 
-  /** Compile the active variant to a PDF and show it (manual — xelatex is costly). */
+  /** Compile the active variant — or the full "Main" document — to a PDF (manual; xelatex is costly). */
   async compile() {
+    if (!this.#connected()) return;
     const v = this.#activeVariant();
-    if (!this.#connected() || !v) return;
+    const pid = this.#activePersonId();
+    if (!v && pid == null) return;
     this.state = 'compiling';
     this.log = null;
-    const res = await api.compilePdf(v.id);
+    const res = v ? await api.compilePdf(v.id) : await api.compileMainPdf(pid!);
     if (res.ok && res.data) {
       if (this.url) URL.revokeObjectURL(this.url);
       this.url = URL.createObjectURL(res.data);

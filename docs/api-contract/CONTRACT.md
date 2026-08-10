@@ -6,7 +6,7 @@ Because the backends live in **separate repos** and **two languages** (cv is Nod
 
 ## Conventions
 
-1. **JSON over HTTP.** All API routes live under `/api/...` and speak `application/json` (binary exceptions are explicit, e.g. CV's `GET /api/variants/:id/pdf`).
+1. **JSON over HTTP.** All API routes live under `/api/...` and speak `application/json` (binary exceptions are explicit, e.g. CV's `GET /api/variants/:id/pdf` for a named variant and `GET /api/variants/main/:pid/pdf` for the full "main" document — both return inline `application/pdf`, are rate-limited, and are owner-gated as compile GETs).
 2. **Curl-able rule.** *Every operation is reachable over plain synchronous HTTP.* Real-time transports (Socket.IO / SSE / WebRTC) are an **optional additive layer** for live updates — never the only way to obtain a result. Where an operation was streaming-only, a synchronous `/...sync` equivalent is added that returns the full result in the HTTP response.
 3. **Three well-known routes** on every service: `GET /health`, `GET /api` (discovery), and the error envelope on every failure.
 4. **CORS via env.** Allowed origins come from one environment variable per service; no hard-coded origin lists.

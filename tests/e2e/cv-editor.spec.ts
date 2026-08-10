@@ -1027,6 +1027,30 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
   });
 
+  test('compiles the Main document via the base-compile route', async ({ page }) => {
+    await mockAdaWithVariant(page);
+    let mainHits = 0;
+    // No variant selected → the editor stays on "Main" (the full document), which now
+    // compiles through the person-keyed base-compile route.
+    await page.route(/\/cv\/api\/variants\/main\/7\/pdf$/, (r) => {
+      mainHits += 1;
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+    });
+    await gotoEditor(page);
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    await page.getByRole('button', { name: /Preview/ }).click();
+    const preview = page.locator('.preview');
+    await preview.getByRole('button', { name: /Compile/ }).click();
+
+    const frame = preview.locator('iframe.pv-frame');
+    await expect(frame).toBeVisible();
+    await expect(frame).toHaveAttribute('src', /^blob:/);
+    await expect.poll(() => mainHits).toBe(1);
+    // The download link carries the Main filename.
+    await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute('download', 'Main.pdf');
+  });
+
   test('surfaces the LaTeX log when a compile fails', async ({ page }) => {
     await mockAdaWithVariant(page);
     await page.route(/\/cv\/api\/variants\/50\/pdf$/, (r) =>
