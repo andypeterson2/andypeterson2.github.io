@@ -556,12 +556,12 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  .workspace { max-width: 1320px; margin: 18px auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
-  .workspace-body { padding: 18px 22px; }
+  .workspace { max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
+  .workspace-body { padding: var(--pane-pad-y) var(--pane-pad-x); }
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
      and striped titlebar, matching the document and drawer windows. */
-  .toolbar-window { margin-bottom: 16px; }
+  .toolbar-window { margin-bottom: var(--window-gap); }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }

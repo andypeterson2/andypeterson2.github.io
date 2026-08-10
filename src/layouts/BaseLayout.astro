@@ -464,7 +464,7 @@ const windowTitle = title || siteConfig.title;
   .site-canvas {
     flex: 1;
     display: flex;
-    padding: 0.5vw 2vw;
+    padding: var(--canvas-pad-y) var(--canvas-pad-x);
     box-sizing: border-box;
     min-height: 0;
   }
@@ -496,7 +496,7 @@ const windowTitle = title || siteConfig.title;
   .site-pane {
     flex: 1;
     overflow-y: auto;
-    padding: 1vw 4vw;
+    padding: var(--pane-pad-y) var(--pane-pad-x);
   }
 
   /* ── Mobile floating nav: hidden on desktop (the .site-menubar serves there) ── */

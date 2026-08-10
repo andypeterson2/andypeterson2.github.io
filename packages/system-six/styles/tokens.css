@@ -108,6 +108,16 @@
   --space-24: 6rem;
   --space-32: 8rem;
 
+  /* ── chrome spacing — the shared System-6 window gaps, so the site and the apps
+     frame content identically. These are the *between / around* spacings; the content
+     *within* an app window (the résumé layout, app panels) stays bespoke. Fluid, from
+     the site (the basis). ── */
+  --canvas-pad-y: 0.5vw; /* gap above/below the outer window (below the menu bar) */
+  --canvas-pad-x: 2vw; /* gap left/right of the outer window */
+  --pane-pad-y: 1vw; /* padding inside a window, around its content / nested windows */
+  --pane-pad-x: 4vw;
+  --window-gap: clamp(8px, 1vw, 14px); /* gap between stacked windows */
+
   /* ── radius — System-6 controls are gently rounded (buttons, inputs, chips); content
      and windows stay hard-edged. A small named scale instead of ad-hoc px, plus fluid
      corners for the chrome that scales with the viewport. ── */
