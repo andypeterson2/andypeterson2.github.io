@@ -55,8 +55,8 @@
     animation: slide 0.16s ease;
   }
   /* Mirrors the window titlebar in Editor.svelte so a drawer reads as the same kind of
-     System-6 window as the toolbar / document / invite: the 28px title in the .window
-     mono the others inherit, 11px close/fill, and min-height so the bar grows with it. */
+     System-6 window as the toolbar / document / invite: the 28px Chicago title, 11px
+     close/fill, and min-height so the bar grows with it. */
   .titlebar {
     display: flex;
     align-items: center;
@@ -82,7 +82,7 @@
     padding: 0;
   }
   .title {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--text-base);
     font-weight: 700;
     line-height: 1.1;
