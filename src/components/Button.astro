@@ -43,14 +43,14 @@ const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
 
   .btn-sm,
   :global(.btn-default).btn-sm {
-    font-size: 0.75rem;
+    font-size: var(--text-3xs);
     padding: 2px 8px;
     gap: 4px;
   }
 
   .btn-lg,
   :global(.btn-default).btn-lg {
-    font-size: 1.25rem;
+    font-size: var(--text-sm);
     padding: 8px 20px;
     gap: 8px;
   }
