@@ -258,14 +258,14 @@
          the inline invitation strip and both are display:none. -->
     <button class="invite-scrim" aria-label="Dismiss" onclick={() => (inviteOpen = false)}></button>
     <div class="invite" id="demo-invite" role="status">
-      <div class="invite-tbar">
+      <div class="titlebar invite-tbar">
         <button
-          class="invite-close"
+          class="close invite-close"
           aria-label="Dismiss"
           onclick={() => (inviteOpen = false)}
         ></button>
-        <span class="invite-ttl">CV Editor</span>
-        <span class="invite-fill"></span>
+        <span class="title">Resume Editor</span>
+        <span class="fill"></span>
       </div>
       <span class="txt"
         >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
@@ -532,40 +532,17 @@
     font-size: var(--text-3xs);
     line-height: 1.4;
   }
+  /* The invite reuses the shared window titlebar (.titlebar / .title / .close / .fill)
+     so it stays consistent with every other editor window and can't drift again. It
+     only adds the bleed to the popup's padded edges, and keeps its close box a real
+     (functional) button rather than the decorative span the windows use. */
   .invite-tbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 22px;
-    margin: -14px -14px 2px; /* bleed the titlebar to the window edges */
-    padding: 0 8px;
-    border-bottom: 1px solid var(--ink);
-    background-image: repeating-linear-gradient(
-      to bottom,
-      var(--ink) 0,
-      var(--ink) 1px,
-      var(--paper) 1px,
-      var(--paper) 3px
-    );
+    margin: -14px -14px 2px;
   }
   .invite-close {
-    width: 12px;
-    height: 12px;
-    background: var(--paper);
-    border: 1px solid var(--ink);
     padding: 0;
     cursor: pointer;
     flex: none;
-  }
-  .invite-ttl {
-    font-size: var(--text-3xs);
-    font-weight: 700;
-    background: var(--paper);
-    padding: 0 10px;
-    margin: 0 auto;
-  }
-  .invite-fill {
-    width: 12px;
   }
   .invite .mk { font-size: var(--text-2xs); flex: none; align-self: flex-start; line-height: 1.4; }
   .invite .txt { min-width: 0; }
