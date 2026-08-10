@@ -74,7 +74,7 @@
 
 <style>
   .note {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: #55534e;
     margin: 0 0 16px;
   }
@@ -82,7 +82,7 @@
     margin-bottom: 18px;
   }
   .lbl {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -113,12 +113,12 @@
     margin-top: 10px;
   }
   .custom span {
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: #55534e;
   }
   .in {
     font-family: var(--sans);
-    font-size: 15px;
+    font-size: var(--text-2xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);

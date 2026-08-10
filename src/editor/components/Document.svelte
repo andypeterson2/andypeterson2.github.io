@@ -311,7 +311,7 @@
     background: #faf9f3;
   }
   .doc-head h1 {
-    font-size: 30px;
+    font-size: var(--text-lg);
     font-weight: 700;
     margin: 0 0 4px;
   }
@@ -319,7 +319,7 @@
     color: #a8a6a0;
   }
   .contact {
-    font-size: 13.5px;
+    font-size: var(--text-3xs);
     color: #55534e;
     margin: 0;
   }
@@ -336,7 +336,7 @@
   }
   .sec-head h2 {
     font-family: var(--sans);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
@@ -350,7 +350,7 @@
   }
   .grip {
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     line-height: 1;
     color: var(--dim);
     background: none;
@@ -382,7 +382,7 @@
   }
   .tool {
     font-family: var(--sans);
-    font-size: 14px;
+    font-size: var(--text-2xs);
     line-height: 1;
     color: var(--dim);
     background: none;
@@ -400,7 +400,7 @@
     color: #9c2b3f;
   }
   .para {
-    font-size: 14px;
+    font-size: var(--text-2xs);
     line-height: 1.55;
     margin: 0;
   }
@@ -408,7 +408,7 @@
     display: grid;
     grid-template-columns: 132px 1fr;
     gap: 12px;
-    font-size: 14px;
+    font-size: var(--text-2xs);
     margin: 4px 0;
   }
   .skill-cat {
@@ -459,12 +459,12 @@
     gap: 14px;
   }
   .entry-title {
-    font-size: 15px;
+    font-size: var(--text-2xs);
     font-weight: 600;
   }
   .entry-date {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     color: #55534e;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -489,19 +489,19 @@
     padding-left: 20px;
   }
   li {
-    font-size: 14px;
+    font-size: var(--text-2xs);
     line-height: 1.55;
     margin: 3px 0;
   }
   .tag {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: var(--dim);
     margin-left: 6px;
   }
   .empty {
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #55534e;
     background: none;
     border: 1px dashed var(--dim);
@@ -514,7 +514,7 @@
   }
   .add-section {
     font-family: var(--sans);
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     color: #55534e;
     background: none;
     border: 1px dashed var(--dim);
@@ -532,7 +532,7 @@
   }
   .pick-cat {
     font-family: var(--sans);
-    font-size: 10px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -556,19 +556,19 @@
     background: var(--chrome-hi);
   }
   .pick-label {
-    font-size: 13.5px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--ink);
   }
   .pick-desc {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: #55534e;
   }
   .pick-cancel {
     margin-top: 6px;
     width: 100%;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     border: 1px solid var(--ink);
     border-radius: 6px;
     background: var(--paper);

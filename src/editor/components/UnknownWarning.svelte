@@ -31,13 +31,13 @@
     padding-top: 10px;
     border-top: 1px solid #e2e0d8;
     font-family: var(--sans);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     line-height: 1.45;
     color: #6b6960;
   }
   .warn .wg {
     color: var(--state-busy);
-    font-size: 12px;
+    font-size: var(--text-3xs);
   }
   .warn b {
     font-family: var(--serif);

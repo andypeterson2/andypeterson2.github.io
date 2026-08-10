@@ -26,12 +26,12 @@
 
 <style>
   .note {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: #55534e;
     margin: 0 0 16px;
   }
   .empty {
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #55534e;
   }
   .list {
@@ -60,16 +60,16 @@
     box-shadow: none;
   }
   .tag {
-    font-size: 12px;
+    font-size: var(--text-3xs);
   }
   .count {
-    font-size: 10px;
+    font-size: var(--text-4xs);
     opacity: 0.65;
   }
   .clear {
     margin-top: 16px;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     border: 1px solid var(--ink);
     border-radius: 6px;
     background: var(--paper);

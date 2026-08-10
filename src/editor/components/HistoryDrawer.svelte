@@ -221,7 +221,7 @@
   }
   .chip {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
@@ -243,7 +243,7 @@
   }
   .fork-in {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -252,7 +252,7 @@
     width: 110px;
   }
   .note {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     line-height: 1.5;
     color: #55534e;
     margin: 0 0 16px;
@@ -265,7 +265,7 @@
   }
   .in {
     font-family: var(--sans);
-    font-size: 14px;
+    font-size: var(--text-2xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -275,7 +275,7 @@
   }
   .snap {
     font-family: var(--sans);
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     font-weight: 700;
     color: var(--paper);
     background: var(--ink);
@@ -289,7 +289,7 @@
     transform: translateY(1px);
   }
   .empty {
-    font-size: 12px;
+    font-size: var(--text-3xs);
     line-height: 1.6;
     color: #77756e;
     text-align: center;
@@ -331,7 +331,7 @@
     min-width: 0;
   }
   .name {
-    font-size: 13px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--ink);
     overflow: hidden;
@@ -344,19 +344,19 @@
   }
   .tagb {
     font-family: var(--mono);
-    font-size: 9.5px;
+    font-size: var(--text-4xs);
     font-weight: 400;
     color: #8a6d1a;
     margin-left: 4px;
   }
   .time {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     color: #8f8d86;
     font-variant-numeric: tabular-nums;
   }
   .tag-in {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -372,7 +372,7 @@
   }
   .act {
     font-family: var(--sans);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     color: var(--ink);
     background: var(--paper);
@@ -396,7 +396,7 @@
   /* ── compare view ── */
   .back {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: #55534e;
     background: none;
     border: 0;
@@ -408,7 +408,7 @@
     color: var(--ink);
   }
   .cmp-title {
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: var(--ink);
     margin: 0 0 12px;
   }
@@ -417,7 +417,7 @@
     flex-wrap: wrap;
     gap: 10px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     margin: 0 0 16px;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--faint, #e4e2db);
@@ -438,7 +438,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -447,7 +447,7 @@
   }
   .badge {
     font-family: var(--mono);
-    font-size: 9px;
+    font-size: var(--text-4xs);
     font-weight: 400;
     text-transform: lowercase;
     letter-spacing: 0;
@@ -481,7 +481,7 @@
     gap: 5px;
   }
   .ent-label {
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--ink);
     flex: 1;
@@ -497,7 +497,7 @@
   }
   .cherry {
     font-family: var(--sans);
-    font-size: 10px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     color: var(--ink);
     background: var(--chrome-hi);
@@ -512,7 +512,7 @@
   }
   .fld,
   .itm {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     line-height: 1.5;
     color: #4a4944;
     margin-top: 3px;
@@ -520,7 +520,7 @@
   }
   .fk {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: var(--text-4xs);
     color: #8f8d86;
   }
   .ins {

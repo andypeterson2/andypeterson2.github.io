@@ -164,7 +164,7 @@
     margin-bottom: 11px;
   }
   .etype {
-    font-size: 10px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--dim);
@@ -176,7 +176,7 @@
   }
   .mini {
     font-family: var(--sans);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     font-weight: 600;
     border: 1px solid var(--ink);
     border-radius: 6px;
@@ -192,7 +192,7 @@
   }
   .mini.sym-toggle {
     font-family: var(--serif);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     padding: 3px 9px;
   }
   .mini.sym-toggle.on {
@@ -219,7 +219,7 @@
     margin-top: 11px;
   }
   .tags-lbl {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #4a4944;
@@ -232,14 +232,14 @@
     gap: 12px;
   }
   .lbl {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #4a4944;
   }
   .in {
     font-family: var(--sans);
-    font-size: 16px;
+    font-size: var(--text-xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -270,7 +270,7 @@
   }
   .grip {
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     line-height: 1.7;
     color: var(--dim);
     background: none;
@@ -292,17 +292,17 @@
     gap: 5px;
   }
   .bl-title {
-    font-size: 13.5px;
+    font-size: var(--text-3xs);
     font-weight: 600;
   }
   .bl-content {
     font-family: var(--serif);
-    font-size: 14px;
+    font-size: var(--text-2xs);
     resize: vertical;
   }
   .x {
     padding: 2px 8px;
-    font-size: 14px;
+    font-size: var(--text-2xs);
     line-height: 1;
   }
   .add {

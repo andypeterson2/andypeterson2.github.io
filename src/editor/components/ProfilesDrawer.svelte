@@ -59,7 +59,7 @@
 
 <style>
   .note {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     line-height: 1.55;
     color: #55534e;
     margin: 0 0 16px;
@@ -112,14 +112,14 @@
     box-shadow: inset 0 0 0 2px var(--ink);
   }
   .opt-name {
-    font-size: 13px;
+    font-size: var(--text-3xs);
     font-weight: 700;
   }
   .new {
     margin-top: 10px;
     width: 100%;
     font-family: var(--sans);
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     color: #55534e;
     background: none;
     border: 1px dashed var(--dim);
@@ -142,14 +142,14 @@
     gap: 10px;
   }
   .rlbl {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #4a4944;
   }
   .in {
     font-family: var(--sans);
-    font-size: 15px;
+    font-size: var(--text-2xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -160,7 +160,7 @@
   .del {
     align-self: flex-start;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     color: #9c2b3f;
     background: var(--paper);
     border: 1px solid #9c2b3f;
