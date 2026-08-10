@@ -473,7 +473,7 @@
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
   .site-nav { display: flex; align-items: stretch; }
-  .navlink { display: flex; align-items: center; padding: 0.6vh 1vw; font: inherit; color: var(--ink); background: none; border: 0; text-decoration: none; cursor: pointer; }
+  .navlink { display: flex; align-items: center; padding: 0.6vh 1vw; font: inherit; line-height: 1; color: var(--ink); background: none; border: 0; text-decoration: none; cursor: pointer; }
   .navlink:hover,
   .navlink:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
   /* The heart is the leftmost item, so it carries the menubar's rounded corner. */

@@ -250,6 +250,9 @@
     background: none;
     border: 0;
     padding: 0.6vh 1vw;
+    /* Match the site nav items exactly so the bar is the same height on every page:
+       same padding + border, and line-height:1 (not the inherited 30px). */
+    line-height: 1;
     cursor: pointer;
   }
   .menu:disabled {
