@@ -130,6 +130,18 @@
   --shadow-glow-warning: 0 0 5px rgb(234 179 8 / 50%);
   --shadow-glow-danger: 0 0 5px rgb(239 68 68 / 50%);
 
+  /* ── z-index — one semantic stack so layering is legible instead of a guess. These
+     name the page-level layers, low → high; single-digit raw z-index stays fine for
+     local within-component stacking (e.g. a sticky table's own header cells). ── */
+  --z-sticky: 10; /* sticky chrome — menubars, statusbar, back-to-top */
+  --z-dropdown: 20; /* menus, dropdowns, popovers */
+  --z-drawer: 30; /* side drawers + their scrim */
+  --z-overlay: 40; /* the demo invite + the tour spotlight */
+  --z-toast: 50; /* toasts / the guided-tour narrator */
+  --z-nav: 60; /* the floating mobile nav — above chrome, below modals */
+  --z-modal: 100; /* modal dialogs + their scrims */
+  --z-max: 9999; /* skip-link — always on top (a11y) */
+
   /* ── layout ── */
   --max-width: 66.25rem;
   --content-width: 42.5rem;

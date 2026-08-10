@@ -15,7 +15,8 @@
       "fill": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "stroke": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "border-radius": ["/px/", "/vw/", "/vh/", "/rem/", "/%/", "/clamp/"],
-      "box-shadow": ["/^(?!none|0|var\\()/"]
+      "box-shadow": ["/^(?!none|0|var\\()/"],
+      "z-index": ["/^[0-9]{2,}$/"]
     }
   },
   "overrides": [{ "files": ["**/*.svelte"], "customSyntax": "postcss-html" }],

@@ -471,7 +471,7 @@
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
-  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: 5; }
+  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: var(--z-sticky); }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
@@ -507,7 +507,7 @@
   .invite-scrim {
     position: fixed;
     inset: 0;
-    z-index: 60;
+    z-index: var(--z-overlay);
     background: var(--scrim-soft);
     border: 0;
     padding: 0;
@@ -515,7 +515,7 @@
   }
   .invite {
     position: fixed;
-    z-index: 61;
+    z-index: var(--z-overlay);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -656,7 +656,7 @@
       margin: 0;
       justify-content: flex-end;
       align-items: center;
-      z-index: 5;
+      z-index: var(--z-sticky);
     }
     .toolbar {
       display: none; /* its buttons all moved into the ☰ menu */
@@ -678,7 +678,7 @@
       background: var(--paper);
       border-top: 1px solid var(--ink);
       font-size: var(--text-3xs);
-      z-index: 5;
+      z-index: var(--z-sticky);
     }
     .sb-l,
     .sb-r {
