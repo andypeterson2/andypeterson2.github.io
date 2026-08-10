@@ -622,7 +622,7 @@
   .save-toast .st-btn:hover { background: var(--ink); color: var(--paper); }
   .save-toast .st-x { padding: 2px 6px; }
   @media (prefers-reduced-motion: no-preference) {
-    .save-toast { animation: toast-in 160ms ease-out; }
+    .save-toast { animation: toast-in var(--dur) ease-out; }
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
   }
 

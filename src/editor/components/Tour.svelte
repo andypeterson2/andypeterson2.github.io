@@ -293,8 +293,7 @@
     will-change: transform, width, height;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
       0 3px 16px rgb(28 27 25 / 20%);
-    transition:
-      transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
+    transition: transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
       width 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
       height 0.32s cubic-bezier(0.22, 0.68, 0.24, 1);
     animation: spot-pulse 1.9s ease-in-out infinite;

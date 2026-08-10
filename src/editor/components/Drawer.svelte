@@ -38,7 +38,7 @@
     padding: 0;
     cursor: pointer;
     z-index: var(--z-drawer);
-    animation: fade 0.12s ease;
+    animation: fade var(--dur-fast) ease;
   }
   .drawer {
     position: fixed;
@@ -52,7 +52,7 @@
     z-index: var(--z-drawer);
     display: flex;
     flex-direction: column;
-    animation: slide 0.16s ease;
+    animation: slide var(--dur) ease;
   }
   /* Mirrors the window titlebar in Editor.svelte so a drawer reads as the same kind of
      System-6 window as the toolbar / document / invite: the 28px Chicago title, 11px
@@ -126,7 +126,7 @@
       border-left: 0;
       border-top: 2px solid var(--ink);
       box-shadow: var(--shadow-drawer-top);
-      animation: slideup 0.16s ease;
+      animation: slideup var(--dur) ease;
     }
     @keyframes slideup {
       from {
