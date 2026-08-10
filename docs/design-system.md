@@ -59,6 +59,18 @@ reach for a color to show importance, stop — that's not this system.
 **Type roles:** `--font-ui` (Chicago) for window/section titles only · `--font-sans` (Geneva)
 for body + headings · `--font-mono` (Monaco) for data/code.
 
+**Font size — always a `--text-*` token, and CI enforces it.** Never hardcode a `font-size`
+(`13px`, `0.75rem`, a hand-rolled `clamp()`). Pick a step from the fluid scale (`--text-4xs` …
+`--text-4xl` in `tokens.css`) so the *same kind of element is the same size everywhere* — site
+chrome and the three embedded apps (editor / nonogram / classifier) included. The gate is
+`npm run lint:fontsize` (a stylelint `declaration-property-value-disallowed-list` on
+`font-size`, wired into `npm run lint`): it fails on any raw `px`/`rem`/`clamp`. `4xs`/`3xs`
+are the dense end for app toolbars/tables. A size that's genuinely specific to one app gets its
+own **named** custom token (e.g. `--text-app-*`) — still a token, so the gate passes, just
+explicitly outside the shared set. `em` (relative/icon scaling) and print `pt` stay allowed.
+The `ignoreFiles` list in `.stylelintrc.fontsize.json` is the **migration backlog** — files
+still on raw px, being converted element-by-element; it only ever shrinks.
+
 ## Dark mode — do nothing special
 
 Set `data-theme="dark"` on `<html>` and the whole page inverts as one filter
