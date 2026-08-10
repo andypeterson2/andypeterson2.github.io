@@ -43,7 +43,18 @@
      ceiling (clamp), so text is comfortable at any width — not tiny on laptops /
      tablets and huge only on ultra-wide. One source of truth: components pick a
      step (var(--text-*)) instead of hand-rolling a clamp. Steps are ~one minor
-     third apart. */
+     third apart. A stylelint gate (declaration-property-value-disallowed-list on
+     font-size) refuses raw px/rem/clamp, so every size must be a token — this is
+     what keeps alike elements the same size across the site and the apps.
+
+     `4xs`/`3xs` are the dense end for embedded-app chrome (editor / nonogram /
+     classifier toolbars, tables, labels). They keep a tight clamp so the apps
+     stay one system with the site, not a second scale. Sizes that are genuinely
+     specific to one app (a nonogram clue-slot, a classifier metric cell) get
+     their own NAMED custom token near where they're used — still a token (the
+     gate passes), just explicitly outside this shared set. */
+  --text-4xs: clamp(10px, 1.4vw, 12px);
+  --text-3xs: clamp(12px, 1.7vw, 14px);
   --text-2xs: clamp(14px, 2vw, 17px);
   --text-xs: clamp(16px, 2.4vw, 20px);
   --text-sm: clamp(18px, 2.7vw, 23px);
