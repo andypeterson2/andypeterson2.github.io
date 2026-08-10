@@ -526,7 +526,7 @@
     color: var(--ink);
     border: 1px solid var(--ink);
     box-shadow: var(--shadow-float);
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     line-height: 1.4;
   }
   .invite-tbar {
@@ -555,7 +555,7 @@
     flex: none;
   }
   .invite-ttl {
-    font-size: 12px;
+    font-size: var(--text-3xs);
     font-weight: 700;
     background: var(--paper);
     padding: 0 10px;
@@ -564,11 +564,11 @@
   .invite-fill {
     width: 12px;
   }
-  .invite .mk { font-size: 14px; flex: none; align-self: flex-start; line-height: 1.4; }
+  .invite .mk { font-size: var(--text-2xs); flex: none; align-self: flex-start; line-height: 1.4; }
   .invite .txt { min-width: 0; }
   .invite .txt b { font-weight: 700; }
-  .invite .btn { font-size: 12px; padding: 4px 10px; }
-  .invite .btn.tour-start { width: 100%; padding: 10px; font-size: 13px; }
+  .invite .btn { font-size: var(--text-3xs); padding: 4px 10px; }
+  .invite .btn.tour-start { width: 100%; padding: 10px; font-size: var(--text-3xs); }
   .invite .link { align-self: center; background: none; border: 0; padding: 0; font: inherit; color: #45433d; text-decoration: underline; cursor: pointer; white-space: nowrap; }
   .invite .link:hover { color: var(--ink); }
   .invite .x { display: none; } /* the titlebar close box replaces it */
@@ -581,13 +581,13 @@
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }
-  .field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
-  .popup { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
+  .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: #4a4944; }
+  .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
   button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .popup.lens { background: var(--ink); color: var(--paper); }
-  .btn { font-size: 12.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
-  .btn.icon { padding: 5px 9px; font-size: 14px; }
+  .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
+  .btn.icon { padding: 5px 9px; font-size: var(--text-2xs); }
   .btn.on { background: var(--ink); color: var(--paper); }
   .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
@@ -595,32 +595,32 @@
   .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
   .titlebar { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
   .close { width: 11px; height: 11px; background: var(--paper); border: 1px solid var(--ink); }
-  .title { font-size: 12.5px; font-weight: 700; background: var(--paper); padding: 0 12px; margin: 0 auto; }
+  .title { font-size: var(--text-3xs); font-weight: 700; background: var(--paper); padding: 0 12px; margin: 0 auto; }
   .fill { width: 11px; }
   .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
   .doc-scroll { max-height: min(82vh, 960px); overflow: auto; background: var(--paper); }
   .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
-  .np-title { font-family: var(--serif); font-size: 22px; font-weight: 700; color: #3a3934; margin: 0; }
-  .np-sub { font-size: 13.5px; color: #55534e; margin: 0 0 10px; }
-  .np-btn { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
+  .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: #3a3934; margin: 0; }
+  .np-sub { font-size: var(--text-3xs); color: #55534e; margin: 0 0 10px; }
+  .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
   .np-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
-  .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: 12px; font-weight: 700; }
-  .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 400; }
-  .pv-btn { font-family: var(--sans); font-size: 11.5px; font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
+  .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
+  .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
+  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
   .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
-  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: 12px; color: #55534e; text-align: center; line-height: 1.7; }
+  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: #55534e; text-align: center; line-height: 1.7; }
   .pv-link { font: inherit; color: #2b6cb0; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   .pv-frame { flex: 1; width: 100%; border: 0; background: #fff; }
   .pv-log { flex: 1; overflow: auto; background: #1c1b19; }
-  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 11px; line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
+  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: #e8e6df; white-space: pre-wrap; word-break: break-word; }
   /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
      the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
      regardless of the side widths. */
-  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #3a3934; }
+  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: #3a3934; }
   .sb-l { justify-self: start; white-space: nowrap; }
   .sb-r { justify-self: end; white-space: nowrap; color: #57554f; }
 
@@ -628,9 +628,9 @@
      from the shared .floating-panel primitive (lib/styles.css); only the row layout
      is the toast's own. */
   .save-toast { display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; }
-  .save-toast .st-icon { color: var(--state-error); font-size: 14px; line-height: 1; }
+  .save-toast .st-icon { color: var(--state-error); font-size: var(--text-2xs); line-height: 1; }
   .save-toast .st-msg { flex: 1; line-height: 1.35; }
-  .save-toast .st-btn { font-family: var(--mono); font-size: 12px; border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
+  .save-toast .st-btn { font-family: var(--mono); font-size: var(--text-3xs); border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
   .save-toast .st-btn:hover { background: var(--ink); color: var(--paper); }
   .save-toast .st-x { padding: 2px 6px; }
   @media (prefers-reduced-motion: no-preference) {
@@ -689,7 +689,7 @@
       align-items: center;
       background: var(--paper);
       border-top: 1px solid var(--ink);
-      font-size: 12.5px;
+      font-size: var(--text-3xs);
       z-index: 5;
     }
     .sb-l,

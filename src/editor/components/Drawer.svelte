@@ -80,7 +80,7 @@
   }
   .title {
     font-family: var(--sans);
-    font-size: 12.5px;
+    font-size: var(--text-3xs);
     font-weight: 700;
     background: var(--paper);
     padding: 0 12px;

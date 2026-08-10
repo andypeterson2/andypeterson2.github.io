@@ -43,7 +43,7 @@
     overflow-y: auto;
   }
   .hint {
-    font-size: 11px;
+    font-size: var(--text-4xs);
     line-height: 1.45;
     color: #55534e;
     margin: 0 0 9px;
@@ -68,7 +68,7 @@
   }
   .cat-name {
     font-family: var(--mono);
-    font-size: 9.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--dim);
@@ -84,7 +84,7 @@
     height: 26px;
     padding: 0 5px;
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: var(--text-2xs);
     line-height: 1;
     color: var(--ink);
     background: var(--paper);

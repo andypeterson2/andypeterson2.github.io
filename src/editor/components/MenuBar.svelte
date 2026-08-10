@@ -283,7 +283,7 @@
     width: 100%;
     text-align: left;
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     font-weight: 400;
     color: var(--ink);
     background: none;
@@ -298,7 +298,7 @@
     width: 16px;
     flex: none;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     line-height: 1;
   }
   .label {
@@ -307,7 +307,7 @@
   .accel {
     padding-left: 22px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: var(--dim);
   }
   .item:hover:not(:disabled) .accel,
@@ -344,7 +344,7 @@
     gap: 8px;
     min-height: 40px;
     font-family: var(--sans);
-    font-size: 14px;
+    font-size: var(--text-2xs);
     font-weight: 700;
     line-height: 1;
     color: var(--ink);
@@ -356,7 +356,7 @@
     cursor: pointer;
   }
   .hamburger .hb-icon {
-    font-size: 18px;
+    font-size: var(--text-xs);
   }
   .hamburger:active {
     transform: translate(1px, 1px);
@@ -381,13 +381,13 @@
   }
   /* Bigger touch rows in the ☰ panel than in the desktop pull-downs. */
   .drop.mega .item {
-    font-size: 14px;
+    font-size: var(--text-2xs);
     padding: 10px 16px 10px 8px;
   }
   .group-label {
     padding: 9px 14px 3px 8px;
     font-family: var(--sans);
-    font-size: 10px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;

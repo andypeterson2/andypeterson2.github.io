@@ -222,7 +222,7 @@
   }
   .ttl {
     font-family: var(--sans);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     font-weight: 700;
     background: var(--paper);
     padding: 0 10px;
@@ -236,14 +236,14 @@
   }
   .cap {
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     line-height: 1.45;
     margin: 0;
     text-wrap: balance;
   }
   .wheel {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: #57554f;
     margin: 6px 0 0;
   }
@@ -255,7 +255,7 @@
   }
   .count {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     font-variant-numeric: tabular-nums;
     color: var(--dim);
   }
@@ -264,7 +264,7 @@
   }
   .tbtn {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--text-3xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);

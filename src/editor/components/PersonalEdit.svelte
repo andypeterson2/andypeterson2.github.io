@@ -81,7 +81,7 @@
     margin-bottom: 12px;
   }
   .etype {
-    font-size: 10px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--dim);
@@ -93,7 +93,7 @@
   }
   .mini {
     font-family: var(--sans);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     font-weight: 600;
     border: 1px solid var(--ink);
     border-radius: 6px;
@@ -105,7 +105,7 @@
   }
   .mini.sym-toggle {
     font-family: var(--serif);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     padding: 3px 9px;
     background: var(--paper);
     color: var(--ink);
@@ -129,14 +129,14 @@
     gap: 4px;
   }
   .lbl {
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #4a4944;
   }
   .in {
     font-family: var(--sans);
-    font-size: 16px;
+    font-size: var(--text-xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);

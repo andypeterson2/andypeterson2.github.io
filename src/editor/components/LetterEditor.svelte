@@ -153,7 +153,7 @@
   }
   .sym-toggle {
     font-family: var(--serif);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--ink);
     background: var(--paper);
@@ -172,7 +172,7 @@
     box-shadow: none;
   }
   .lh h1 {
-    font-size: 30px;
+    font-size: var(--text-lg);
     font-weight: 700;
     margin: 0 0 16px;
   }
@@ -194,7 +194,7 @@
   }
   .lbl {
     font-family: var(--sans);
-    font-size: 10.5px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #4a4944;
@@ -202,7 +202,7 @@
   }
   .in {
     font-family: var(--sans);
-    font-size: 16px;
+    font-size: var(--text-xs);
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
@@ -231,7 +231,7 @@
   }
   .grip {
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     line-height: 1.6;
     color: var(--dim);
     background: none;
@@ -253,18 +253,18 @@
     gap: 5px;
   }
   .lead {
-    font-size: 13.5px;
+    font-size: var(--text-3xs);
     font-weight: 600;
   }
   .body {
     font-family: var(--serif);
-    font-size: 15px;
+    font-size: var(--text-2xs);
     line-height: 1.55;
     resize: vertical;
   }
   .del {
     font-family: var(--sans);
-    font-size: 15px;
+    font-size: var(--text-2xs);
     line-height: 1;
     color: var(--dim);
     background: none;
@@ -279,14 +279,14 @@
   }
   .empty {
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #8a887f;
     margin: 0;
   }
   .add {
     align-self: flex-start;
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #55534e;
     background: none;
     border: 1px dashed var(--dim);
@@ -299,7 +299,7 @@
     border-top: 1px solid #d9d7cf;
   }
   .signoff {
-    font-size: 15px;
+    font-size: var(--text-2xs);
     margin: 14px 0 0;
   }
   :global([data-dragging]) {

@@ -30,12 +30,12 @@
 
 <style>
   .note {
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: #55534e;
     margin: 0 0 16px;
   }
   .empty {
-    font-size: 13px;
+    font-size: var(--text-3xs);
     color: #55534e;
   }
   .list {
@@ -76,12 +76,12 @@
     background: var(--ink);
   }
   .name {
-    font-size: 13.5px;
+    font-size: var(--text-3xs);
     font-weight: 600;
   }
   .badge {
     margin-left: auto;
-    font-size: 10px;
+    font-size: var(--text-4xs);
     text-transform: uppercase;
     color: #9c2b3f;
   }

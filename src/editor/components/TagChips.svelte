@@ -49,7 +49,7 @@
     align-items: center;
     gap: 2px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: var(--text-4xs);
     color: #3a3934;
     background: var(--chrome-hi);
     border: 1px solid #cfcec6;
@@ -61,7 +61,7 @@
     border: 0;
     color: var(--dim);
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--text-3xs);
     line-height: 1;
     padding: 0 1px;
   }
@@ -70,7 +70,7 @@
   }
   .tag-in {
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: var(--text-4xs);
     color: var(--ink);
     background: none;
     border: 0;
