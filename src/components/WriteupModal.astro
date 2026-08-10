@@ -167,7 +167,7 @@ const modalId = `writeup-${slug}`;
 
   .writeup-title {
     font-family: var(--font-ui);
-    font-size: clamp(13px, 1.6vw, 18px);
+    font-size: var(--text-xs);
     font-weight: 700;
   }
 
@@ -182,7 +182,7 @@ const modalId = `writeup-${slug}`;
     color: #000;
     border: 2px solid #000;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--text-3xs);
     line-height: 1;
   }
 
@@ -194,14 +194,14 @@ const modalId = `writeup-${slug}`;
   .writeup-content {
     overflow-y: auto;
     padding: clamp(14px, 2.2vw, 26px);
-    font-size: clamp(12px, 1.3vw, 15px);
+    font-size: var(--text-2xs);
     line-height: 1.6;
   }
 
   /* Markdown content — System-6 flavored. */
   .writeup-content :global(h2) {
     font-family: var(--font-ui);
-    font-size: clamp(12px, 1.3vw, 15px);
+    font-size: var(--text-xs);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin: 1.4em 0 0.5em;
