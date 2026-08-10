@@ -7,11 +7,17 @@
   });
 </script>
 
-<p class="note">The LaTeX template used to compile the PDF.</p>
-
-{#if editor.layouts.length === 0}
+{#if !editor.connected}
+  <p class="note">
+    Layouts live on the server.
+    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to choose the LaTeX
+    template your PDF compiles with.
+  </p>
+{:else if editor.layouts.length === 0}
+  <p class="note">The LaTeX template used to compile the PDF.</p>
   <p class="empty">No layouts available.</p>
 {:else}
+  <p class="note">The LaTeX template used to compile the PDF.</p>
   <div class="list">
     {#each editor.layouts as l (l.id)}
       <button
@@ -33,6 +39,15 @@
     font-size: var(--text-4xs);
     color: var(--ink-3);
     margin: 0 0 16px;
+  }
+  .link {
+    font: inherit;
+    color: var(--link);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
   }
   .empty {
     font-size: var(--text-3xs);

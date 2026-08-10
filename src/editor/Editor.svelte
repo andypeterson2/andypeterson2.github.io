@@ -426,7 +426,6 @@
                 ? 'connected'
                 : 'Sign in with Google to save changes'}</span>
         </button>
-        <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
     </div>
     </div>
@@ -610,7 +609,6 @@
      regardless of the side widths. */
   .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: var(--ink-2); }
   .sb-l { justify-self: start; white-space: nowrap; }
-  .sb-r { justify-self: end; white-space: nowrap; color: var(--ink-3); }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
      from the shared .floating-panel primitive (lib/styles.css); only the row layout
@@ -680,8 +678,7 @@
       font-size: var(--text-3xs);
       z-index: var(--z-sticky);
     }
-    .sb-l,
-    .sb-r {
+    .sb-l {
       display: none;
     }
 

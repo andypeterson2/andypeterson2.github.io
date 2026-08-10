@@ -20,7 +20,17 @@
   }
 </script>
 
-<p class="note">Applies to the compiled PDF, across every profile.</p>
+<!-- Controls stay live offline: changing the accent re-themes the document in place
+     (a demo can try styles); they just don't persist until sign-in. So only the note
+     changes when disconnected — the controls are always shown. -->
+{#if editor.connected}
+  <p class="note">Applies to the compiled PDF, across every profile.</p>
+{:else}
+  <p class="note">
+    Try styles here — the accent re-themes the document live.
+    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to save them to your PDF.
+  </p>
+{/if}
 
 <div class="group">
   <div class="lbl">Accent color</div>
@@ -38,22 +48,13 @@
   </div>
   <label class="custom">
     <span>Custom</span>
-    <input
-      class="in"
-      placeholder="#RRGGBB"
-      bind:value={editor.style.customHex}
-      oninput={applyCustom}
-    />
+    <input class="in" placeholder="#RRGGBB" bind:value={editor.style.customHex} oninput={applyCustom} />
   </label>
 </div>
 
 <div class="group">
   <div class="lbl">Page size</div>
-  <select
-    class="in"
-    bind:value={editor.style.pageSize}
-    onchange={() => editor.saveStyle('pageSize')}
-  >
+  <select class="in" bind:value={editor.style.pageSize} onchange={() => editor.saveStyle('pageSize')}>
     <option value="letterpaper">US Letter</option>
     <option value="a4paper">A4</option>
   </select>
@@ -61,11 +62,7 @@
 
 <div class="group">
   <div class="lbl">Base font size</div>
-  <select
-    class="in"
-    bind:value={editor.style.fontSize}
-    onchange={() => editor.saveStyle('fontSize')}
-  >
+  <select class="in" bind:value={editor.style.fontSize} onchange={() => editor.saveStyle('fontSize')}>
     <option value="10pt">10 pt</option>
     <option value="11pt">11 pt</option>
     <option value="12pt">12 pt</option>
@@ -77,6 +74,15 @@
     font-size: var(--text-4xs);
     color: var(--ink-3);
     margin: 0 0 16px;
+  }
+  .link {
+    font: inherit;
+    color: var(--link);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
   }
   .group {
     margin-bottom: 18px;
