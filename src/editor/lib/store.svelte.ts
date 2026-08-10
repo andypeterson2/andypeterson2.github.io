@@ -78,6 +78,7 @@ class EditorState {
   preview = new PreviewController(
     () => this.connected,
     () => this.activeVariant,
+    () => this.activePersonId,
   );
   /** the undo/redo history behind the Edit menu (undo.svelte.ts). */
   undo = new UndoController({ announce: (msg) => this.say(msg) });

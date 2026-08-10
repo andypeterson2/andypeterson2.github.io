@@ -308,20 +308,16 @@
           onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
         ></span
       >
-      <button
-        class="btn icon settings-btn"
-        class:on={editor.openDrawer === 'variant'}
-        title="Variant settings"
-        onclick={() => (editor.openDrawer = 'variant')}>⚙</button
-      >
       <span class="sp"></span>
-      <!-- The panel/action buttons. `display:contents` on desktop keeps them flat in
-           the toolbar flow (the .sp above pushes them right); on mobile the group
-           becomes a full-width even grid so they line up instead of wrapping ragged. -->
+      <!-- Action buttons grouped by job: shape (Tags/Layout/Style), a hairline
+           separator, then output (Preview/Export). `display:contents` keeps them flat
+           in the toolbar flex (the .sp above pushes the whole group right); the toolbar
+           is hidden entirely on mobile. -->
       <div class="actions">
         <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
         <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
         <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
+        <span class="tbar-sep" aria-hidden="true"></span>
         <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
         <button
           class="btn"
@@ -373,14 +369,8 @@
             <div class="pv-body">
               {#if !editor.connected}
                 <div class="pv-note">Sign in and connect to compile a live PDF.</div>
-              {:else if !editor.activeVariant}
-                <div class="pv-note">
-                  Pick a <button class="pv-link" onclick={() => (editor.openDrawer = 'variant')}
-                    >variant</button
-                  > to compile its PDF.<br /><small
-                    >Main is the editing view — variants are the deliverables.</small
-                  >
-                </div>
+              {:else if !editor.preview.compilable}
+                <div class="pv-note">Choose a profile to compile its PDF.</div>
               {:else if editor.preview.state === 'compiling'}
                 <div class="pv-note">
                   Compiling {editor.variantLabel}…<br /><small>running xelatex — a few seconds</small>
@@ -570,11 +560,13 @@
   button.popup:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .popup.lens { background: var(--ink); color: var(--paper); }
   .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
-  .btn.icon { padding: 5px 9px; font-size: var(--text-2xs); }
   .btn.on { background: var(--ink); color: var(--paper); }
   .btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .sp { flex: 1; }
+  /* Hairline between the shape group (Tags/Layout/Style) and the output group
+     (Preview/Export). --ink-5 is the palette's designated hairline ink. */
+  .tbar-sep { align-self: stretch; width: 1px; margin: 2px 2px; background: var(--ink-5); }
   .window { background: var(--paper); border: 1.5px solid var(--ink); }
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
      carry --text-base (the 28px content-card size), the outer frame --text-lg (36px,
@@ -600,7 +592,6 @@
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
   .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: var(--ink-3); text-align: center; line-height: 1.7; }
-  .pv-link { font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
   .pv-frame { flex: 1; width: 100%; border: 0; background: var(--paper); }
   .pv-log { flex: 1; overflow: auto; background: var(--ink); }
   .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: var(--paper-3); white-space: pre-wrap; word-break: break-word; }
