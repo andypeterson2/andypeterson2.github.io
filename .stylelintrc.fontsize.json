@@ -1,0 +1,10 @@
+{
+  "extends": ["stylelint-config-html/astro"],
+  "rules": {
+    "declaration-property-value-disallowed-list": {
+      "font-size": ["/px/", "/rem/", "/^clamp/"]
+    }
+  },
+  "overrides": [{ "files": ["**/*.svelte"], "customSyntax": "postcss-html" }],
+  "ignoreFiles": ["node_modules/**", "dist/**"]
+}
