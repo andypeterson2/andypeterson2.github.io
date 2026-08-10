@@ -91,7 +91,7 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .sym:hover {
     background: var(--ink);

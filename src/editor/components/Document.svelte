@@ -574,6 +574,6 @@
     background: var(--paper);
     padding: 5px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
 </style>

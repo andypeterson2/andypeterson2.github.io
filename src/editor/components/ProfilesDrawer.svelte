@@ -89,7 +89,7 @@
     border-radius: var(--radius-md);
     padding: 8px 11px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
     font-family: var(--sans);
   }
   .opt.on {
@@ -109,7 +109,7 @@
   }
   .opt.on .radio {
     border-color: var(--paper);
-    box-shadow: inset 0 0 0 2px var(--ink);
+    box-shadow: var(--shadow-ring);
   }
   .opt-name {
     font-size: var(--text-3xs);
@@ -167,7 +167,7 @@
     border-radius: var(--radius);
     padding: 5px 12px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--accent);
+    box-shadow: var(--shadow-accent);
   }
   .del:active {
     transform: translate(1px, 1px);

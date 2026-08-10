@@ -556,7 +556,7 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  .workspace { max-width: 1320px; margin: 18px auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
+  .workspace { max-width: 1320px; margin: 18px auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
   .workspace-body { padding: 18px 22px; }
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
@@ -568,15 +568,15 @@
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
   .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 4px 10px; box-shadow: var(--shadow); }
   button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+  button.popup:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .popup.lens { background: var(--ink); color: var(--paper); }
   .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
   .btn.icon { padding: 5px 9px; font-size: var(--text-2xs); }
   .btn.on { background: var(--ink); color: var(--paper); }
-  .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .sp { flex: 1; }
-  .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
+  .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
      carry --text-base (the 28px content-card size), the outer frame --text-lg (36px,
      the "Home" size). The .title patch's own vertical padding drives that growth. */
@@ -592,11 +592,11 @@
   .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: var(--ink-2); margin: 0; }
   .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
   .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
-  .np-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+  .np-btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
   .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
   .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
-  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
+  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: var(--shadow-sm); }
   .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }

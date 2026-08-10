@@ -121,8 +121,14 @@
   --radius-frame: 1.25vw; /* the site's outer window corner */
   --radius-card: clamp(4px, 0.5vw, 8px); /* project-card image corners */
 
-  /* ── shadows ── */
-  --shadow-focus: 2px 2px 0 #000;
+  /* ── shadows — hard 1-bit drops (no blur), warmed to the ink; plus the status glows
+     the connect / health widgets use to report machine state. ── */
+  --shadow-sm: 1px 1px 0 var(--ink); /* the small button press */
+  --shadow-focus: 2px 2px 0 var(--ink); /* the standard press (warmed from #000) */
+  --shadow-window: 4px 4px 0 rgb(28 27 25 / 55%); /* the deeper window drop */
+  --shadow-glow-success: 0 0 5px rgb(34 197 94 / 50%);
+  --shadow-glow-warning: 0 0 5px rgb(234 179 8 / 50%);
+  --shadow-glow-danger: 0 0 5px rgb(239 68 68 / 50%);
 
   /* ── layout ── */
   --max-width: 66.25rem;

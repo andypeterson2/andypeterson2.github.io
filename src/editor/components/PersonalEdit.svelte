@@ -101,7 +101,7 @@
     background: var(--ink);
     color: var(--paper);
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .mini.sym-toggle {
     font-family: var(--serif);

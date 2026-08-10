@@ -1,9 +1,6 @@
 {
   "extends": ["stylelint-config-standard", "stylelint-config-html/astro"],
   "rules": {
-    "declaration-property-value-disallowed-list": {
-      "box-shadow": ["/^(?!none|0|var\\()/"]
-    },
     "custom-property-pattern": null,
     "selector-class-pattern": null,
     "no-descending-specificity": null,

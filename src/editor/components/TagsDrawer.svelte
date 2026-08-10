@@ -49,7 +49,7 @@
     padding: 4px 10px;
     cursor: pointer;
     font-family: var(--mono);
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .row.on {
     background: var(--ink);
@@ -75,6 +75,6 @@
     background: var(--paper);
     padding: 6px 12px;
     cursor: pointer;
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
 </style>

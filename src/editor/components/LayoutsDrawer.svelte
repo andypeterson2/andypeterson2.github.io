@@ -54,7 +54,7 @@
     padding: 9px 11px;
     cursor: pointer;
     font-family: var(--sans);
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .row.on {
     background: var(--chrome-hi);

@@ -363,7 +363,7 @@
   }
   .hamburger:active {
     transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0 var(--ink);
+    box-shadow: var(--shadow-sm);
   }
   .hamburger[aria-expanded='true'] {
     background: var(--ink);
