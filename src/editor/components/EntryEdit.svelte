@@ -150,7 +150,7 @@
 <style>
   .edit {
     border: 1px solid var(--ink);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--paper);
     box-shadow: var(--shadow);
     padding: 13px 14px;
@@ -179,7 +179,7 @@
     font-size: var(--text-4xs);
     font-weight: 600;
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 3px 10px;
     background: var(--paper);
     color: var(--ink);
@@ -243,7 +243,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 7px 10px;
     width: 100%;
   }

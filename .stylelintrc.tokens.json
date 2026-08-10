@@ -13,7 +13,8 @@
       "border-left": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "outline": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "fill": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
-      "stroke": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"]
+      "stroke": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
+      "border-radius": ["/px/", "/vw/", "/vh/", "/rem/", "/%/", "/clamp/"]
     }
   },
   "overrides": [{ "files": ["**/*.svelte"], "customSyntax": "postcss-html" }],

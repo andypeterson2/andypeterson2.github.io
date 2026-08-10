@@ -2,7 +2,6 @@
   "extends": ["stylelint-config-standard", "stylelint-config-html/astro"],
   "rules": {
     "declaration-property-value-disallowed-list": {
-      "border-radius": ["/^[4-9]px/", "/^[1-9]\\d+px/"],
       "box-shadow": ["/^(?!none|0|var\\()/"]
     },
     "custom-property-pattern": null,

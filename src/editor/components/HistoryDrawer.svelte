@@ -225,7 +225,7 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 20px;
+    border-radius: var(--radius-pill);
     padding: 3px 10px;
     cursor: pointer;
   }
@@ -247,7 +247,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 3px 8px;
     width: 110px;
   }
@@ -269,7 +269,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 6px 9px;
     width: 100%;
   }
@@ -280,7 +280,7 @@
     color: var(--paper);
     background: var(--ink);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 6px 12px;
     cursor: pointer;
     white-space: nowrap;
@@ -316,7 +316,7 @@
   .dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     border: 1px solid var(--ink);
     background: var(--paper);
     justify-self: center;
@@ -360,7 +360,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 3px 7px;
     margin-top: 4px;
     width: 100%;
@@ -377,7 +377,7 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 3px 10px;
     cursor: pointer;
   }
@@ -452,7 +452,7 @@
     text-transform: lowercase;
     letter-spacing: 0;
     padding: 1px 6px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: 1px solid currentColor;
   }
   .b-added {
@@ -502,7 +502,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 1px 7px;
     cursor: pointer;
     white-space: nowrap;

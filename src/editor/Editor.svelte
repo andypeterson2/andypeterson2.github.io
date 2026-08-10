@@ -471,7 +471,7 @@
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
-  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: 0.75vw 0.75vw 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: 5; }
+  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: 5; }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
@@ -490,7 +490,7 @@
   }
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: var(--radius-round); background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
   .dot.live { background: var(--state-live); }
   .dot.busy { background: var(--state-busy); }
   /* The connection status + sign-in CTA lives in the status bar's centre column
@@ -566,11 +566,11 @@
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }
   .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
-  .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 7px; padding: 4px 10px; box-shadow: var(--shadow); }
+  .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 4px 10px; box-shadow: var(--shadow); }
   button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.popup:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .popup.lens { background: var(--ink); color: var(--paper); }
-  .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
+  .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
   .btn.icon { padding: 5px 9px; font-size: var(--text-2xs); }
   .btn.on { background: var(--ink); color: var(--paper); }
   .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
@@ -591,12 +591,12 @@
   .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
   .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: var(--ink-2); margin: 0; }
   .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
-  .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
+  .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
   .np-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
   .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
   .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
   .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
-  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
+  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: 1px 1px 0 var(--ink); }
   .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }

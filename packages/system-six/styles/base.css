@@ -90,7 +90,7 @@ a:hover {
    the a:hover invert-fill above would square off the corners. Round the fill to
    match the frame so a highlighted button keeps its rounded shape. */
 .btn {
-  border-radius: 7px;
+  border-radius: var(--radius);
   font-size: var(--text-xs);
 }
 
@@ -260,7 +260,7 @@ pre code {
   font-size: var(--text-xs);
   padding: clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 14px);
   border: 2px solid var(--ink);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--paper);
   color: var(--ink);
   line-height: 1.3;

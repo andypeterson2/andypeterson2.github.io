@@ -50,7 +50,7 @@
     text-align: left;
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 7px;
+    border-radius: var(--radius);
     padding: 9px 11px;
     cursor: pointer;
     font-family: var(--sans);
@@ -67,7 +67,7 @@
   .dot {
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     border: 1px solid var(--ink);
     background: var(--paper);
     flex-shrink: 0;

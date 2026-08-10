@@ -53,7 +53,7 @@
     color: var(--ink-2);
     background: var(--chrome-hi);
     border: 1px solid var(--paper-4);
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 1px 3px 1px 7px;
   }
   .cx {

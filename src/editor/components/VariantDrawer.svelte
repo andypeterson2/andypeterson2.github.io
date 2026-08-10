@@ -118,7 +118,7 @@
     text-align: left;
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 8px 11px;
     cursor: pointer;
     box-shadow: 1px 1px 0 var(--ink);
@@ -135,7 +135,7 @@
   .radio {
     width: 11px;
     height: 11px;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     border: 1.5px solid currentColor;
     flex: none;
   }
@@ -171,7 +171,7 @@
     color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 7px 12px;
     cursor: pointer;
   }
@@ -201,7 +201,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 6px 9px;
     width: 100%;
   }
@@ -237,7 +237,7 @@
     color: var(--accent);
     background: var(--paper);
     border: 1px solid var(--accent);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 5px 12px;
     cursor: pointer;
     box-shadow: 1px 1px 0 var(--accent);

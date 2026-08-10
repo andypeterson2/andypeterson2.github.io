@@ -97,7 +97,7 @@
   .swatch {
     aspect-ratio: 1;
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     cursor: pointer;
     padding: 0;
   }
@@ -122,7 +122,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 6px 9px;
     width: 100%;
   }

@@ -35,7 +35,7 @@
 <style>
   .palette {
     border: 1px solid var(--ink);
-    border-radius: 7px;
+    border-radius: var(--radius);
     background: var(--chrome-hi);
     padding: 9px 11px 11px;
     margin: 0 0 11px;
@@ -89,7 +89,7 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     box-shadow: 1px 1px 0 var(--ink);
   }

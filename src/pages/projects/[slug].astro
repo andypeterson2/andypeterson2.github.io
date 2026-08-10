@@ -208,7 +208,7 @@ const relatedProjects = projects
     background: var(--paper);
     border: 3px solid var(--ink);
     border-bottom: none;
-    border-radius: clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px) 0 0;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
     cursor: pointer;
   }
 
@@ -241,7 +241,7 @@ const relatedProjects = projects
     width: 100%;
     aspect-ratio: 4 / 3;
     border: 3px solid var(--ink);
-    border-radius: 0 0 clamp(4px, 0.5vw, 8px) clamp(4px, 0.5vw, 8px);
+    border-radius: 0 0 var(--radius-card) var(--radius-card);
     overflow: hidden;
     background: var(--dither-light);
   }

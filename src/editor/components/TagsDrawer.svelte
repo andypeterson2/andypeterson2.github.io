@@ -45,7 +45,7 @@
     gap: 6px;
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: 4px 10px;
     cursor: pointer;
     font-family: var(--mono);
@@ -71,7 +71,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: var(--paper);
     padding: 6px 12px;
     cursor: pointer;

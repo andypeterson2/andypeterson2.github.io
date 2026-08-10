@@ -302,7 +302,7 @@
   .doc-head {
     cursor: pointer;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--radius);
     padding: 6px 10px;
     margin: -6px -10px 0;
   }
@@ -375,7 +375,7 @@
   :global([data-over]) {
     outline: 2px dashed var(--dim);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: var(--radius);
   }
   .sec:hover .sec-tools {
     opacity: 1;
@@ -387,7 +387,7 @@
     color: var(--dim);
     background: none;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 2px 7px;
     cursor: pointer;
   }
@@ -417,7 +417,7 @@
   .entry-hit {
     cursor: pointer;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius);
   }
   .para.entry-hit {
     padding: 6px 10px;
@@ -435,7 +435,7 @@
     padding: 9px 10px;
     margin: 2px -10px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius);
     cursor: pointer;
   }
   .entry:hover {
@@ -505,7 +505,7 @@
     color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 8px 12px;
     cursor: pointer;
   }
@@ -518,14 +518,14 @@
     color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 7px 12px;
     cursor: pointer;
     width: 100%;
   }
   .picker {
     border: 1px solid var(--ink);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--paper);
     box-shadow: var(--shadow);
     padding: 8px;
@@ -547,7 +547,7 @@
     text-align: left;
     background: none;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 6px 8px;
     cursor: pointer;
     font-family: var(--sans);
@@ -570,7 +570,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     background: var(--paper);
     padding: 5px;
     cursor: pointer;

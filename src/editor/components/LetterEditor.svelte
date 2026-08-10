@@ -158,7 +158,7 @@
     color: var(--ink);
     background: var(--paper);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 3px 9px;
     cursor: pointer;
     box-shadow: 1px 1px 0 var(--ink);
@@ -206,7 +206,7 @@
     color: var(--ink);
     background: var(--chrome-hi);
     border: 1px solid var(--ink);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 7px 10px;
     width: 100%;
   }
@@ -269,7 +269,7 @@
     color: var(--dim);
     background: none;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 4px 8px;
     cursor: pointer;
   }
@@ -290,7 +290,7 @@
     color: var(--ink-3);
     background: none;
     border: 1px dashed var(--dim);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 8px 12px;
     cursor: pointer;
   }
@@ -308,7 +308,7 @@
   :global([data-over]) {
     outline: 2px dashed var(--dim);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: var(--radius);
   }
 
   /* Narrow phones: stack the recipient/salutation label over its input so each field
