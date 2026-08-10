@@ -162,6 +162,17 @@
   --tracking-tight: -0.02em;
   --tracking-normal: 0;
   --tracking-wide: 0.1em;
+
+  /* ── motion — a few short UI durations, tokenized so transitions feel consistent.
+     Effect-specific timings stay inline (the tour's 1.9s spotlight pulse, its custom
+     cubic-bezier glide) — they're hand-tuned to one effect, not a shared UI speed. ── */
+  --dur-fast: 0.12s; /* quick fades */
+  --dur: 0.16s; /* slides, standard UI motion */
+  --dur-slow: 0.3s; /* slower reveals */
+
+  /* ── breakpoints — the whole site uses exactly two: 768px (tablet/mobile chrome)
+     and 640px (narrow phone). CSS vars can't be used in @media, so this is the
+     reference, not a token: a new query should reuse one of these, not invent a third. */
 }
 
 /* ── Reduced motion ── */

@@ -346,7 +346,7 @@
   .sec-tools {
     margin-left: auto;
     opacity: 0.35;
-    transition: opacity 0.12s;
+    transition: opacity var(--dur-fast);
   }
   .grip {
     font-family: var(--sans);
@@ -358,7 +358,7 @@
     padding: 2px 4px;
     cursor: grab;
     opacity: 0.3;
-    transition: opacity 0.12s;
+    transition: opacity var(--dur-fast);
   }
   .sec:hover .grip {
     opacity: 0.85;
@@ -450,7 +450,7 @@
   }
   .dim {
     opacity: 0.28;
-    transition: opacity 0.15s;
+    transition: opacity var(--dur);
   }
   .entry-line {
     display: flex;
