@@ -15,10 +15,10 @@ The site does not have a bespoke design system. It **adopts an operating system*
   from unpkg with SRI (`BaseLayout.astro:48`). It owns the chrome: windows, title bars, the
   menu bar, buttons, inputs, scrollbars, dialogs.
 - **Local layer, three files, deliberately thin:**
-  - `src/styles/tokens.css` — *"System 6 monochrome palette. Black and white only. Hand-maintained
-    source of truth. tokens.json pipeline is not in use."* Type roles (Chicago / Geneva / Monaco),
-    the space/size scale, and four semantic colors.
-  - `src/styles/base.css` — *"system.css provides… We only add what it doesn't cover."*
+  - `packages/system-six/styles/tokens.css` — *"System 6 palette: one warm ink on paper (a
+    warm-gray ramp, no pure black), plus the status light and a single résumé accent."* Type roles
+    (Chicago / Geneva / Monaco), the space/size scale, a warm ink ramp, the status scale, and one accent.
+  - `packages/system-six/styles/base.css` — *"system.css provides… We only add what it doesn't cover."*
   - `public/ui-kit/ui-kit.js` — the behaviors system.css can't express: the theme toggle
     (`data-theme` + `localStorage["sm-theme"]`) and the connect widget's **status dot**
     (`ui-connect-dot[data-state]`).
@@ -33,8 +33,10 @@ comes from committing to a real, coherent visual language instead of inventing o
 Five laws are *already* in the CSS, unnamed. Naming them is half the work.
 
 1. **Adopt the machine, don't theme it.** `base.css` adds only gaps. Restraint is the method.
-2. **Monochrome is content; color is signal.** Everything a person *reads* is black/white/gray.
-   Across the whole portfolio, the four semantic colors appear ~10 times total — color is genuinely rare.
+2. **Warm near-monochrome is content; color is signal.** Almost everything a person *reads* is warm
+   ink on paper — a near-black `--ink` and a short warm-gray ramp, not pure black/white/gray. The one
+   standing exception is the résumé's crimson `--accent`; past it, the status scale is the only color,
+   and it stays genuinely rare — reserved for machine state.
 3. **Every state change is an inversion.** Hover, `::selection`, and focus all flip black↔white
    (`a:hover{background:#000;color:#fff}`, `.finder-icon:hover .icon-glyph{filter:invert(1)}`).
    No glows, no color-shift, no elevation. One motion, everywhere.
@@ -86,6 +88,14 @@ token ever returns. `tokens.css` now states L2/L3/L5 as its own docstring. The f
 keeping: **the biggest lie wasn't a wrong value, it was a whole vocabulary nobody used** —
 honesty here meant deletion, like gap A's white insets.
 
+**(Reopened — warm-palette iteration.** The later "standardize to warm" pass brought `--accent`
+back, but *earned* this time: one crimson (`#9c2b3f`) on the résumé's section labels and the
+editor's active state — real uses, not dead cargo. And the site no longer draws with literal
+`#000/#fff`; it draws through `var(--ink)` / `var(--paper)` — a single warm ink, a gray ramp, and
+paper tints, every value a token behind a `lint:tokens` gate. The iteration-4 finding still holds —
+*delete the vocabulary nobody uses* — but a vocabulary the design genuinely needs is honest to name.
+See `docs/design-system.md`.)**
+
 **C. "Color = signal" is a practice, not a law.** It's true in the code but written nowhere, so
 every new feature re-decides it — the QBER stepper, the health dots, and demo/live each invented
 their own greens and reds. Unwritten, it drifts.
@@ -100,9 +110,15 @@ Seven laws. Each names the **channel** it works through, so decisions have somew
   own idiom. *(unchanged; still the foundation)*
 - **L2 — One ink.** Content is 1-bit: black on white, inverted in dark mode. **Grays are
   *dithered*, never flat.** *(closes gap A — the tokens' own stated intent, finally executed)*
+  **(Warm-palette update: the "one ink" is now a warm near-black, `--ink #1c1b19`, and de-emphasized
+  *text* runs a short warm-gray ramp (`--ink-2…5`) instead of a lone `#666`. This is ink for text —
+  *fills* are still dither, never a flat gray palette — and the whole-page invert still holds.)**
 - **L3 — Color is a status light.** Color appears *only* when the machine reports state:
   success, warning, danger, live. If nothing is happening, there is no color. *(promotes practice
   C to law; makes the rare color moments mean something)*
+  **(Warm-palette update: one standing exception now — the résumé's `--accent` crimson, a deliberate
+  brand mark on section labels + the editor's active state. It is the single decorative hue; every
+  other color still obeys the law.)**
 - **L4 — State is inversion, at every scale.** From the whole page (dark mode) to a single cell
   (a selected item, a failed QBER round), every "on / active / selected / changed" is a black↔white
   flip. *(generalizes idiom #3 into the site's one motion language)*
