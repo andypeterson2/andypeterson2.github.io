@@ -285,6 +285,8 @@
   {/if}
 
   <div class="workspace">
+    <div class="titlebar app-titlebar"><span class="close"></span><span class="title app-title">Resume Editor</span><span class="fill"></span></div>
+    <div class="workspace-body">
     <div class="window toolbar-window">
       <div class="titlebar"><span class="close"></span><span class="title">Toolbar</span><span class="fill"></span></div>
       <div class="toolbar">
@@ -426,6 +428,7 @@
         </button>
         <span class="sb-r">⌘K · ⤒ jump to</span>
       </div>
+    </div>
     </div>
   </div>
 
@@ -573,7 +576,11 @@
   .invite .link:hover { color: var(--ink); }
   .invite .x { display: none; } /* the titlebar close box replaces it */
   .invite.busy { color: #45433d; }
-  .workspace { max-width: 1320px; margin: 0 auto; padding: 18px 22px 0; }
+  /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
+     mirroring the home page's outer window. The toolbar + document are nested windows
+     inside its body, exactly as the home cards nest inside the "Home" window. */
+  .workspace { max-width: 1320px; margin: 18px auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
+  .workspace-body { padding: 18px 22px; }
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
      and striped titlebar, matching the document and drawer windows. */
@@ -593,9 +600,13 @@
   .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .sp { flex: 1; }
   .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: 4px 4px 0 rgba(28, 27, 25, 0.55); }
-  .titlebar { display: flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
+  /* min-height (not a fixed height) so the bar grows with its title: nested windows
+     carry --text-base (the 28px content-card size), the outer frame --text-lg (36px,
+     the "Home" size). The .title patch's own vertical padding drives that growth. */
+  .titlebar { display: flex; align-items: center; gap: 8px; min-height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
   .close { width: 11px; height: 11px; background: var(--paper); border: 1px solid var(--ink); }
-  .title { font-size: var(--text-3xs); font-weight: 700; background: var(--paper); padding: 0 12px; margin: 0 auto; }
+  .title { font-size: var(--text-base); font-weight: 700; line-height: 1.1; background: var(--paper); padding: 12px; margin: 0 auto; }
+  .app-title { font-size: var(--text-lg); }
   .fill { width: 11px; }
   .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
@@ -717,6 +728,22 @@
     }
     .titlebar {
       flex: none;
+    }
+    /* The outer "Resume Editor" frame is desktop chrome. On phones the editor is a
+       full-bleed fixed layout (menubar / document / status are each position:fixed),
+       so drop the frame and let the fixed windows fill the viewport as before. */
+    .app-titlebar {
+      display: none;
+    }
+    .workspace {
+      max-width: none;
+      margin: 0;
+      border: 0;
+      box-shadow: none;
+      background: none;
+    }
+    .workspace-body {
+      padding: 0;
     }
     .wbody,
     .wbody.split {
