@@ -37,7 +37,7 @@
     border: 0;
     padding: 0;
     cursor: pointer;
-    z-index: 40;
+    z-index: var(--z-drawer);
     animation: fade 0.12s ease;
   }
   .drawer {
@@ -49,7 +49,7 @@
     background: var(--paper);
     border-left: 2px solid var(--ink);
     box-shadow: var(--shadow-drawer);
-    z-index: 41;
+    z-index: var(--z-drawer);
     display: flex;
     flex-direction: column;
     animation: slide 0.16s ease;

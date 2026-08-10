@@ -286,7 +286,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 50; /* above the drawers (41), below the narrator (100) */
+    z-index: var(--z-overlay); /* above the drawers (41), below the narrator (100) */
     pointer-events: none;
     border: 2px solid var(--spot, var(--ink));
     border-radius: var(--radius-sm);

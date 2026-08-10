@@ -79,6 +79,8 @@
     min-width: 80px;
     position: sticky;
     left: 0;
+    /* Local within-table stacking (above the sticky row/col headers), not a page
+       layer — so a small raw value, not a --z-* token. */
     z-index: 3;
     background: var(--paper-2);
   }
