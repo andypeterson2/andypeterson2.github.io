@@ -54,11 +54,14 @@
     flex-direction: column;
     animation: slide 0.16s ease;
   }
+  /* Mirrors the window titlebar in Editor.svelte so a drawer reads as the same kind of
+     System-6 window as the toolbar / document / invite: the 28px title in the .window
+     mono the others inherit, 11px close/fill, and min-height so the bar grows with it. */
   .titlebar {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 24px;
+    min-height: 22px;
     padding: 0 8px;
     border-bottom: 1px solid var(--ink);
     background-image: repeating-linear-gradient(
@@ -71,23 +74,24 @@
     flex-shrink: 0;
   }
   .close {
-    width: 12px;
-    height: 12px;
+    width: 11px;
+    height: 11px;
     background: var(--paper);
     border: 1px solid var(--ink);
     cursor: pointer;
     padding: 0;
   }
   .title {
-    font-family: var(--sans);
-    font-size: var(--text-3xs);
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
     font-weight: 700;
+    line-height: 1.1;
     background: var(--paper);
-    padding: 0 12px;
+    padding: 12px;
     margin: 0 auto;
   }
   .fill {
-    width: 12px;
+    width: 11px;
   }
   .body {
     flex: 1;
