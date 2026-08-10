@@ -282,7 +282,7 @@ const timeline: TimelineItem[] = [
      than Intro + the long timeline, spanning it never stretches the rows, so the left
      stack stays tight. Collapses to one column (DOM order) on narrow screens. */
   .main-cols {
-    --col-gap: clamp(8px, 1vw, 14px);
+    --col-gap: var(--window-gap);
 
     display: grid;
     grid-template-columns: clamp(200px, 26%, 260px) minmax(0, 1fr);
