@@ -556,7 +556,7 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  .workspace { max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
+  .workspace { max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 2px solid var(--ink); border-right-width: 4px; border-bottom-width: 4px; }
   .workspace-body { padding: var(--pane-pad-y) var(--pane-pad-x); }
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
@@ -576,7 +576,7 @@
   .btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
   .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .sp { flex: 1; }
-  .window { background: var(--paper); border: 1px solid var(--ink); box-shadow: var(--shadow-window); }
+  .window { background: var(--paper); border: 1.5px solid var(--ink); }
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
      carry --text-base (the 28px content-card size), the outer frame --text-lg (36px,
      the "Home" size). The .title patch's own vertical padding drives that growth. */
