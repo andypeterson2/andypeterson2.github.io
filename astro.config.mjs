@@ -60,6 +60,11 @@ export default defineConfig({
         // (credentialed, behind Cloudflare Access). Without these the CSP blocks them.
         `connect-src 'self' https://cloudflareinsights.com https://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
+        // The compiled-PDF preview renders in an <iframe src="blob:…"> (URL.createObjectURL
+        // of the fetched PDF). With no frame-src, iframes fall back to default-src 'self',
+        // which blocks blob: → the pane shows the browser's "This content is blocked". Allow
+        // same-origin + blob: so the compiled PDF renders.
+        "frame-src 'self' blob:",
         "base-uri 'self'",
         "form-action 'self' mailto:",
         "frame-ancestors 'none'",
