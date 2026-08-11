@@ -385,7 +385,14 @@
               {:else if editor.preview.state === 'error'}
                 <div class="pv-log"><pre>{editor.preview.log}</pre></div>
               {:else if editor.preview.url}
-                <iframe class="pv-frame" title="Compiled PDF preview" src={editor.preview.url}></iframe>
+                <!-- #toolbar=0 hides the viewer chrome; view=FitH fits the page to the pane
+                     width so the text renders at a readable size (the download link in
+                     pv-bar covers what the viewer toolbar offered). -->
+                <iframe
+                  class="pv-frame"
+                  title="Compiled PDF preview"
+                  src={`${editor.preview.url}#toolbar=0&view=FitH`}
+                ></iframe>
               {:else}
                 <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
               {/if}
