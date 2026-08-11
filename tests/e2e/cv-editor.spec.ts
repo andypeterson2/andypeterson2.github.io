@@ -1051,6 +1051,27 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute('download', 'Main.pdf');
   });
 
+  test('the toolbar Compile button opens the pane and compiles (no Preview click first)', async ({
+    page,
+  }) => {
+    await mockAdaWithVariant(page);
+    let hits = 0;
+    await page.route(/\/cv\/api\/variants\/main\/7\/pdf$/, (r) => {
+      hits += 1;
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+    });
+    await gotoEditor(page);
+    await expect(page.locator('.conn')).toContainText('connected');
+
+    // Compile straight from the toolbar — the pane opens and renders the PDF, no
+    // separate "open Preview first" step.
+    await page.locator('.toolbar').getByRole('button', { name: /Compile/ }).click();
+    const preview = page.locator('.preview');
+    await expect(preview).toBeVisible();
+    await expect(preview.locator('iframe.pv-frame')).toHaveAttribute('src', /^blob:/);
+    await expect.poll(() => hits).toBe(1);
+  });
+
   test('surfaces the LaTeX log when a compile fails', async ({ page }) => {
     await mockAdaWithVariant(page);
     await page.route(/\/cv\/api\/variants\/50\/pdf$/, (r) =>

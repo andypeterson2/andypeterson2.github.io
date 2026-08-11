@@ -321,6 +321,13 @@
         <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
         <button
           class="btn"
+          title="Compile this resume to a PDF"
+          disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
+          onclick={() => editor.preview.openAndCompile()}
+          >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</button
+        >
+        <button
+          class="btn"
           title="Export this resume as JSON"
           data-tour-spot="export"
           disabled={editor.noProfiles}

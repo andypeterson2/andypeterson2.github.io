@@ -45,6 +45,12 @@ export class PreviewController {
     this.open = !this.open;
   }
 
+  /** Toolbar one-click: reveal the preview pane and compile (the pane also offers Recompile). */
+  async openAndCompile() {
+    this.open = true;
+    await this.compile();
+  }
+
   /** Drop any compiled PDF — call when the active variant changes (it's now stale). */
   reset() {
     if (this.url) URL.revokeObjectURL(this.url);

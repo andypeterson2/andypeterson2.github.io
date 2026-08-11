@@ -101,6 +101,20 @@ describe('PreviewController', () => {
     expect(p.url).toBe('blob:fake');
   });
 
+  test('openAndCompile reveals the pane and compiles in one call', async () => {
+    (api.compileMainPdf as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: new Blob(['%PDF']),
+    });
+    const p = make(true, null, 9);
+    expect(p.open).toBe(false);
+    await p.openAndCompile();
+    expect(p.open).toBe(true);
+    expect(api.compileMainPdf).toHaveBeenCalledWith(9);
+    expect(p.state).toBe('ready');
+  });
+
   test('compile failure → error state with the compiler log', async () => {
     (api.compilePdf as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
