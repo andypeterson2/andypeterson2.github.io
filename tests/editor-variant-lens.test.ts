@@ -10,6 +10,7 @@ import {
   sectionScopedOut,
   entryIncluded,
   itemIncluded,
+  entryFieldsFor,
   countIncludedEntries,
 } from '../src/editor/lib/variant-lens';
 import type { Variant, Section, Entry } from '../src/editor/lib/types';
@@ -86,6 +87,48 @@ describe('entry / item inclusion', () => {
     expect(entryIncluded(entry(1, ['ops']), v)).toBe(false);
     expect(itemIncluded({ id: 1, content: '', tags: ['backend'] }, v)).toBe(true);
     expect(itemIncluded({ id: 1, content: '', tags: [] }, v)).toBe(false);
+  });
+
+  test('a manual `included` override wins over the tag rules (both directions)', () => {
+    const rules = { include: ['backend'], exclude: [] };
+    const forcedIn = variant({
+      rules,
+      entryOverrides: {
+        1: { included: 1, textOverride: null, sortOverride: null, fieldsOverride: null },
+      },
+    });
+    // Tag rules would drop #ops, but the override forces it in.
+    expect(entryIncluded(entry(1, ['ops']), forcedIn)).toBe(true);
+    const forcedOut = variant({
+      rules,
+      itemOverrides: { 9: { included: 0, textOverride: null, sortOverride: null } },
+    });
+    // Tag rules would keep #backend, but the override forces it out.
+    expect(itemIncluded({ id: 9, content: '', tags: ['backend'] }, forcedOut)).toBe(false);
+  });
+});
+
+describe('entryFieldsFor — per-variant field overrides', () => {
+  const e: Entry = { id: 7, fields: { position: 'Analyst', date: '2020' }, tags: [], items: [] };
+
+  test('no variant → the base fields, unchanged (same reference)', () => {
+    expect(entryFieldsFor(e, null)).toBe(e.fields);
+  });
+  test('a variant with no override for this entry → the base fields', () => {
+    expect(entryFieldsFor(e, variant({ id: 1 }))).toBe(e.fields);
+  });
+  test('a fields_override patches the named fields and leaves the rest', () => {
+    const v = variant({
+      entryOverrides: {
+        7: {
+          included: null,
+          textOverride: null,
+          sortOverride: null,
+          fieldsOverride: { position: 'Senior Analyst' },
+        },
+      },
+    });
+    expect(entryFieldsFor(e, v)).toEqual({ position: 'Senior Analyst', date: '2020' });
   });
 });
 

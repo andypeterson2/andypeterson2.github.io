@@ -158,3 +158,54 @@ describe('CvApi.fetchPerson / fetchActive', () => {
     expect(res.error?.code).toBe('auth_required');
   });
 });
+
+describe('CvApi.setVariantOverride — whole-row override write', () => {
+  test('entry target: tex-escapes fieldsOverride and coerces included → boolean', async () => {
+    fetchMock.mockResolvedValue(respond(200, {}));
+    await api().setVariantOverride(50, {
+      targetType: 'entry',
+      targetId: 11,
+      included: 1,
+      fieldsOverride: { position: 'Lead 50%' },
+    });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://test.example/cv/api/variants/50/overrides');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body)).toEqual({
+      targetType: 'entry',
+      targetId: 11,
+      included: true, // number → boolean for the schema
+      textOverride: null,
+      sortOverride: null,
+      fieldsOverride: { position: 'Lead 50\\%' }, // tex-escaped on the way out
+    });
+  });
+
+  test('item target: omits fieldsOverride and passes a null included through', async () => {
+    fetchMock.mockResolvedValue(respond(200, {}));
+    await api().setVariantOverride(50, { targetType: 'item', targetId: 200, included: 0 });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toEqual({
+      targetType: 'item',
+      targetId: 200,
+      included: false,
+      textOverride: null,
+      sortOverride: null,
+    });
+    expect('fieldsOverride' in body).toBe(false);
+  });
+
+  test('a null included stays null; a textOverride is tex-escaped; fieldsOverride null when absent', async () => {
+    fetchMock.mockResolvedValue(respond(200, {}));
+    await api().setVariantOverride(50, {
+      targetType: 'entry',
+      targetId: 11,
+      included: null,
+      textOverride: 'a & b',
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.included).toBeNull();
+    expect(body.textOverride).toBe('a \\& b');
+    expect(body.fieldsOverride).toBeNull();
+  });
+});
