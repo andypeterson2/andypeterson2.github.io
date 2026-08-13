@@ -17,6 +17,7 @@
   import VariantDrawer from './components/VariantDrawer.svelte';
   import ProfilesDrawer from './components/ProfilesDrawer.svelte';
   import HistoryDrawer from './components/HistoryDrawer.svelte';
+  import PdfView from './components/PdfView.svelte';
 
   // The owner's identity (name + public contacts) resolved from siteConfig on the
   // server and handed down by the Astro page. Overlaid onto the demo person so a
@@ -385,14 +386,10 @@
               {:else if editor.preview.state === 'error'}
                 <div class="pv-log"><pre>{editor.preview.log}</pre></div>
               {:else if editor.preview.url}
-                <!-- #toolbar=0 hides the viewer chrome; view=FitH fits the page to the pane
-                     width so the text renders at a readable size (the download link in
-                     pv-bar covers what the viewer toolbar offered). -->
-                <iframe
-                  class="pv-frame"
-                  title="Compiled PDF preview"
-                  src={`${editor.preview.url}#toolbar=0&view=FitH`}
-                ></iframe>
+                <!-- Rendered page-by-page onto width-fitted canvases (PdfView), NOT handed
+                     to Chrome's built-in iframe viewer — which ignored the fit fragment and
+                     left the page small at the top. The download link in pv-bar remains. -->
+                <PdfView url={editor.preview.url} />
               {:else}
                 <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
               {/if}
@@ -598,7 +595,11 @@
   .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
   .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
   .np-btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
-  .preview { display: flex; flex-direction: column; border-left: 1px solid var(--ink); background: var(--chrome); }
+  /* Cap the preview column to the same height as the document column (.doc-scroll)
+     so a tall PDF scrolls INSIDE the pane (pv-pages) instead of growing the whole
+     shell past the viewport — which left dead space below the pages ("doesn't reach
+     the bottom"). min-height:0 lets the inner pv-pages actually shrink + scroll. */
+  .preview { display: flex; flex-direction: column; min-height: 0; max-height: min(82vh, 960px); border-left: 1px solid var(--ink); background: var(--chrome); }
   .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
   .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
   .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: var(--shadow-sm); }
@@ -606,7 +607,6 @@
   .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
   .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
   .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: var(--ink-3); text-align: center; line-height: 1.7; }
-  .pv-frame { flex: 1; width: 100%; border: 0; background: var(--paper); }
   .pv-log { flex: 1; overflow: auto; background: var(--ink); }
   .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: var(--paper-3); white-space: pre-wrap; word-break: break-word; }
   /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
@@ -741,6 +741,7 @@
     .preview {
       flex: 1;
       min-height: 0;
+      max-height: none;
       border-left: 0;
       border-top: 1px solid var(--ink);
     }
