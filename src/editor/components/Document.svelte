@@ -4,7 +4,7 @@
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
-  import { entryIncluded, itemIncluded, sectionScopedOut } from '../lib/variant-lens';
+  import { entryIncluded, itemIncluded, sectionScopedOut, entryFieldsFor } from '../lib/variant-lens';
   import type { Section, Entry, Item } from '../lib/types';
 
   const person = $derived(editor.person);
@@ -73,6 +73,10 @@
   function itemDim(section: Section, e: Entry, it: Item): boolean {
     if (!lens || sectionDim(section) || !entryIncluded(e, lens)) return false;
     return !itemIncluded(it, lens);
+  }
+  /** The fields to DISPLAY for an entry — patched by the active variant's field overrides. */
+  function fieldsOf(e: Entry): Record<string, string> {
+    return lens ? entryFieldsFor(e, lens) : e.fields;
   }
 
   // Scroll a newly-created section into view once it renders.
@@ -155,7 +159,7 @@
             onclick={() => pick(section.id, pe.id)}
             onkeydown={(e) => onKey(e, () => pick(section.id, pe.id))}
           >
-            {pe.fields.text || 'Click to write a summary…'}
+            {fieldsOf(pe).text || 'Click to write a summary…'}
           </div>
         {:else}
           <button class="empty" onclick={() => editor.addEntry(section)}>＋ Add text</button>
@@ -177,7 +181,13 @@
               onclick={() => pick(section.id, e.id)}
               onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
-              <span class="skill-cat">{e.fields.category}</span><span>{e.fields.skills}</span>
+              <span class="skill-cat">{fieldsOf(e).category}</span><span class="skill-list"
+                >{#if e.items.length}{#each e.items as it, i (it.id)}{#if i > 0}, {/if}<span
+                      class="skill-item"
+                      class:dim={itemDim(section, e, it)}
+                      >{it.content}{#each it.tags as t}<span class="tag">#{t}</span>{/each}</span
+                    >{/each}{:else}{e.fields.skills}{/if}</span
+                >
             </div>
           {/if}
         {/each}
@@ -199,8 +209,8 @@
               onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
-                <span class="entry-title">{[e.fields.award, e.fields.issuer].filter(Boolean).join(' · ')}</span>
-                <span class="entry-date">{e.fields.date ?? ''}</span>
+                <span class="entry-title">{[fieldsOf(e).award, fieldsOf(e).issuer].filter(Boolean).join(' · ')}</span>
+                <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
               </div>
             </div>
           {/if}
@@ -223,8 +233,8 @@
               onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
-                <span class="entry-title">{e.fields.name}</span>
-                <span class="entry-date">{e.fields.relation ?? ''}</span>
+                <span class="entry-title">{fieldsOf(e).name}</span>
+                <span class="entry-date">{fieldsOf(e).relation ?? ''}</span>
               </div>
             </div>
           {/if}
@@ -247,8 +257,8 @@
               onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
             >
               <div class="entry-line">
-                <span class="entry-title">{[entryLead(section.type, e.fields), e.fields.organization].filter(Boolean).join(' · ')}</span>
-                <span class="entry-date">{e.fields.date ?? ''}</span>
+                <span class="entry-title">{[entryLead(section.type, fieldsOf(e)), fieldsOf(e).organization].filter(Boolean).join(' · ')}</span>
+                <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
               </div>
               {#if hasBullets(section.type) && e.items.length}
                 <ul>

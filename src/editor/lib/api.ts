@@ -14,6 +14,8 @@ import type {
   Item,
   Entry,
   Variant,
+  EntryOverride,
+  ItemOverride,
   CoverletterHeader,
   LetterSection,
 } from './types';
@@ -59,6 +61,12 @@ interface RawMainSection {
   title: string;
   entries?: RawMainEntry[];
 }
+interface RawOverride {
+  included?: number | null;
+  textOverride?: string | null;
+  sortOverride?: number | null;
+  fieldsOverride?: Record<string, string> | null;
+}
 interface RawMainVariant {
   id: number;
   name: string;
@@ -66,6 +74,8 @@ interface RawMainVariant {
   layout_id?: string | null;
   rules?: { include?: string[]; exclude?: string[] };
   sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
+  entryOverrides?: Record<string, RawOverride>;
+  itemOverrides?: Record<string, RawOverride>;
 }
 interface RawLetterSection {
   id: number;
@@ -141,6 +151,33 @@ function mapEntry(e: RawMainEntry): Entry {
   for (const [k, v] of Object.entries(e.fields ?? {})) fields[k] = untex(v);
   return { id: e.id, fields, items: (e.items ?? []).map(mapItem), tags: e.tags ?? [] };
 }
+function mapEntryOverrides(raw?: Record<string, RawOverride>): Record<string, EntryOverride> {
+  const out: Record<string, EntryOverride> = {};
+  for (const [id, o] of Object.entries(raw ?? {})) {
+    out[id] = {
+      included: o.included ?? null,
+      textOverride: o.textOverride == null ? null : untex(o.textOverride),
+      sortOverride: o.sortOverride ?? null,
+      fieldsOverride: o.fieldsOverride
+        ? Object.fromEntries(
+            Object.entries(o.fieldsOverride).map(([k, val]) => [k, untex(String(val))]),
+          )
+        : null,
+    };
+  }
+  return out;
+}
+function mapItemOverrides(raw?: Record<string, RawOverride>): Record<string, ItemOverride> {
+  const out: Record<string, ItemOverride> = {};
+  for (const [id, o] of Object.entries(raw ?? {})) {
+    out[id] = {
+      included: o.included ?? null,
+      textOverride: o.textOverride == null ? null : untex(o.textOverride),
+      sortOverride: o.sortOverride ?? null,
+    };
+  }
+  return out;
+}
 function mapVariant(v: RawMainVariant): Variant {
   return {
     id: v.id,
@@ -149,6 +186,8 @@ function mapVariant(v: RawMainVariant): Variant {
     layoutId: v.layout_id ?? null,
     rules: { include: v.rules?.include ?? [], exclude: v.rules?.exclude ?? [] },
     sections: (v.sections ?? []).map((r) => ({ sectionId: r.section_id, enabled: !!r.enabled })),
+    entryOverrides: mapEntryOverrides(v.entryOverrides),
+    itemOverrides: mapItemOverrides(v.itemOverrides),
   };
 }
 /** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */

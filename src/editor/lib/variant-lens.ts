@@ -32,12 +32,28 @@ export function sectionScopedOut(section: Section, variant: Variant): boolean {
   return ref ? !ref.enabled : true;
 }
 
+// A manual `included` override wins (1 = force in, 0 = force out); else fall back
+// to the tag rules. Mirrors the backend resolver's _included().
 export function entryIncluded(entry: Entry, variant: Variant): boolean {
+  const ov = variant.entryOverrides?.[entry.id];
+  if (ov && ov.included != null) return !!ov.included;
   return matchesTags(entry.tags, variant.rules);
 }
 
 export function itemIncluded(item: Item, variant: Variant): boolean {
+  const ov = variant.itemOverrides?.[item.id];
+  if (ov && ov.included != null) return !!ov.included;
   return matchesTags(item.tags, variant.rules);
+}
+
+/**
+ * The entry's fields as this variant would render them: base fields patched by
+ * the variant's per-entry `fields_override` (role subheading, date, …). Returns
+ * the base fields untouched when there's no variant or no patch.
+ */
+export function entryFieldsFor(entry: Entry, variant: Variant | null): Record<string, string> {
+  const fo = variant?.entryOverrides?.[entry.id]?.fieldsOverride;
+  return fo ? { ...entry.fields, ...fo } : entry.fields;
 }
 
 /** Count entries the variant keeps across the whole document (for "shows X of Y"). */
