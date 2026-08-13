@@ -66,23 +66,41 @@
   {:else}
     <div class="fields">
       {#each def?.fields ?? [] as f (f.key)}
-        <label class="fld">
-          <span class="lbl">{f.label}</span>
-          {#if f.options}
-            <select class="in" bind:value={entry.fields[f.key]} onchange={() => editor.saveEntry(entry)}>
-              {#each f.options as opt (opt)}<option value={opt}>{opt || '—'}</option>{/each}
-            </select>
-          {:else}
-            <input
-              class="in"
-              placeholder={f.label}
-              bind:value={entry.fields[f.key]}
-              oninput={() => editor.saveEntry(entry)}
-            />
-          {/if}
-        </label>
+        {#if !(def?.latexType === 'cvskills' && f.key === 'skills')}
+          <label class="fld">
+            <span class="lbl">{f.label}</span>
+            {#if f.options}
+              <select class="in" bind:value={entry.fields[f.key]} onchange={() => editor.saveEntry(entry)}>
+                {#each f.options as opt (opt)}<option value={opt}>{opt || '—'}</option>{/each}
+              </select>
+            {:else}
+              <input
+                class="in"
+                placeholder={f.label}
+                bind:value={entry.fields[f.key]}
+                oninput={() => editor.saveEntry(entry)}
+              />
+            {/if}
+          </label>
+        {/if}
       {/each}
     </div>
+
+    {#if def?.latexType === 'cvskills'}
+      <!-- Skills are item rows now (migration 016) — edited via MCP for now, shown read-only here. -->
+      <div class="skills-ro">
+        <span class="lbl">Skills <small class="ro-note">· edit via MCP</small></span>
+        <div class="skill-tokens">
+          {#if entry.items.length}
+            {#each entry.items as it (it.id)}<span class="skill-ro">{it.content}</span>{/each}
+          {:else if entry.fields.skills}
+            <span class="skill-ro">{entry.fields.skills}</span>
+          {:else}
+            <span class="ro-note">none yet</span>
+          {/if}
+        </div>
+      </div>
+    {/if}
 
     <div class="tags-row">
       <span class="tags-lbl">Tags</span>
@@ -236,6 +254,33 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--ink-2);
+  }
+  .skills-ro {
+    display: grid;
+    grid-template-columns: 116px 1fr;
+    align-items: start;
+    gap: 12px;
+    margin-top: 9px;
+  }
+  .skill-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skill-ro {
+    font-size: var(--text-3xs);
+    color: var(--ink);
+    background: var(--chrome-hi);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius);
+    padding: 3px 8px;
+  }
+  .ro-note {
+    font-size: var(--text-4xs);
+    color: var(--ink-3);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
   }
   .in {
     font-family: var(--sans);

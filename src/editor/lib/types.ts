@@ -83,6 +83,23 @@ export interface VariantSectionRef {
   enabled: boolean;
 }
 
+/** A per-variant exception for one entry — overrides tag rules and/or fields. */
+export interface EntryOverride {
+  /** 1 = force in, 0 = force out, null = defer to tags. */
+  included: number | null;
+  textOverride: string | null;
+  sortOverride: number | null;
+  /** Sparse per-variant field patch merged over the entry's fields. */
+  fieldsOverride: Record<string, string> | null;
+}
+
+/** A per-variant exception for one bullet (items have no fields). */
+export interface ItemOverride {
+  included: number | null;
+  textOverride: string | null;
+  sortOverride: number | null;
+}
+
 export interface Variant {
   id: number;
   name: string;
@@ -91,6 +108,9 @@ export interface Variant {
   rules: VariantRules;
   /** Explicit section scope; empty = every section is in. */
   sections: VariantSectionRef[];
+  /** Manual overrides keyed by entry/item id (from getMain), so the lens can show them live. */
+  entryOverrides?: Record<string, EntryOverride>;
+  itemOverrides?: Record<string, ItemOverride>;
 }
 
 /** A selected node in the document (what the inspector edits). */
