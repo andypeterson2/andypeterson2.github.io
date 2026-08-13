@@ -13,8 +13,11 @@ export class PreviewController {
   open = $state(false);
   /** compile lifecycle of the active variant's PDF */
   state = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
-  /** object URL of the compiled PDF, or null */
+  /** object URL of the compiled PDF, or null (used by the download link) */
   url = $state<string | null>(null);
+  /** the compiled PDF Blob itself — PdfView reads it via .arrayBuffer(), so nothing
+   *  ever fetch()es the blob: URL (which the strict CSP's connect-src would block). */
+  blob = $state<Blob | null>(null);
   /** compiler log shown on failure */
   log = $state<string | null>(null);
 
@@ -55,6 +58,7 @@ export class PreviewController {
   reset() {
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = null;
+    this.blob = null;
     this.log = null;
     this.state = 'idle';
   }
@@ -70,6 +74,7 @@ export class PreviewController {
     const res = v ? await api.compilePdf(v.id) : await api.compileMainPdf(pid!);
     if (res.ok && res.data) {
       if (this.url) URL.revokeObjectURL(this.url);
+      this.blob = res.data;
       this.url = URL.createObjectURL(res.data);
       this.state = 'ready';
     } else {

@@ -388,8 +388,9 @@
               {:else if editor.preview.url}
                 <!-- Rendered page-by-page onto width-fitted canvases (PdfView), NOT handed
                      to Chrome's built-in iframe viewer — which ignored the fit fragment and
-                     left the page small at the top. The download link in pv-bar remains. -->
-                <PdfView url={editor.preview.url} />
+                     left the page small at the top. PdfView reads the Blob directly (no
+                     fetch of the blob: URL, which connect-src blocks). Download link remains. -->
+                <PdfView blob={editor.preview.blob} />
               {:else}
                 <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
               {/if}
