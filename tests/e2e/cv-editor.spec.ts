@@ -9,6 +9,11 @@ import { DWELL_MS } from '../../src/editor/lib/tour';
  * that fetch (abort / 403) to stay deterministic and never touch the real gateway.
  */
 
+// A real, minimal 2-page US-Letter PDF (valid xref) so pdf.js actually renders it
+// to canvases in the preview — a bare "%PDF" stub would fail to parse.
+const MINIMAL_PDF =
+  '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n5 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page One) Tj ET\nendstream\nendobj\n6 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page Two) Tj ET\nendstream\nendobj\n7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000121 00000 n \n0000000247 00000 n \n0000000373 00000 n \n0000000462 00000 n \n0000000551 00000 n \ntrailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n621\n%%EOF\n';
+
 /** Mock a signed-in profile that owns one no-rules variant ("Full CV", id 50). */
 async function mockAdaWithVariant(page: Page) {
   const main = {
@@ -1152,7 +1157,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     let pdfHits = 0;
     await page.route(/\/cv\/api\/variants\/50\/pdf$/, (r) => {
       pdfHits += 1;
-      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
@@ -1162,9 +1167,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 
-    const frame = preview.locator('iframe.pv-frame');
-    await expect(frame).toBeVisible();
-    await expect(frame).toHaveAttribute('src', /^blob:/);
+    // pdf.js paints one <canvas> per page into the pane (the 2-page fixture → 2).
+    await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
+    // The pane scrolls internally (pages taller than the viewport-capped column) rather
+    // than growing the shell — guards the "doesn't reach the bottom" regression.
+    const scrolls = await preview.locator('.pv-pages').evaluate(
+      (el) => el.scrollHeight > el.clientHeight + 4 && el.clientHeight <= window.innerHeight,
+    );
+    expect(scrolls).toBe(true);
     await expect.poll(() => pdfHits).toBe(1);
     // The download link carries the variant filename.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
@@ -1180,7 +1190,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // compiles through the person-keyed base-compile route.
     await page.route(/\/cv\/api\/variants\/main\/7\/pdf$/, (r) => {
       mainHits += 1;
-      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
@@ -1189,9 +1199,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 
-    const frame = preview.locator('iframe.pv-frame');
-    await expect(frame).toBeVisible();
-    await expect(frame).toHaveAttribute('src', /^blob:/);
+    await expect(preview.locator('.pv-pages canvas').first()).toBeVisible();
     await expect.poll(() => mainHits).toBe(1);
     // The download link carries the Main filename.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute('download', 'Main.pdf');
@@ -1204,7 +1212,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     let hits = 0;
     await page.route(/\/cv\/api\/variants\/main\/7\/pdf$/, (r) => {
       hits += 1;
-      return r.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.4\n%%EOF\n' });
+      return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page);
     await expect(page.locator('.conn')).toContainText('connected');
@@ -1214,7 +1222,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.toolbar').getByRole('button', { name: /Compile/ }).click();
     const preview = page.locator('.preview');
     await expect(preview).toBeVisible();
-    await expect(preview.locator('iframe.pv-frame')).toHaveAttribute('src', /^blob:/);
+    await expect(preview.locator('.pv-pages canvas').first()).toBeVisible();
     await expect.poll(() => hits).toBe(1);
   });
 
@@ -1239,7 +1247,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await preview.getByRole('button', { name: /Compile/ }).click();
 
     await expect(preview.locator('.pv-log')).toContainText('Undefined control sequence');
-    await expect(preview.locator('iframe.pv-frame')).toHaveCount(0);
+    await expect(preview.locator('.pv-pages')).toHaveCount(0);
   });
 
   test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {

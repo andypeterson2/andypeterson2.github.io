@@ -43,7 +43,7 @@ export default defineConfig({
           // script's bytes change, this hash must change with it, or the CSP
           // blocks it in production (silent FOUC). tests/integration/csp.test.ts
           // recomputes it from the built HTML and fails if they drift.
-          "'sha256-HtnKF9Q9BqMM7MpvEnYWNeMRvr0cAXf7QDRakU++yxI='",
+          "'sha256-9N93WdvhYx8jyvhhVqe+hD2/gNkNOZi3/WBWVXO3xho='",
         ],
       },
       styleDirective: {
@@ -60,10 +60,12 @@ export default defineConfig({
         // (credentialed, behind Cloudflare Access). Without these the CSP blocks them.
         `connect-src 'self' https://cloudflareinsights.com https://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
-        // The compiled-PDF preview renders in an <iframe src="blob:…"> (URL.createObjectURL
-        // of the fetched PDF). With no frame-src, iframes fall back to default-src 'self',
-        // which blocks blob: → the pane shows the browser's "This content is blocked". Allow
-        // same-origin + blob: so the compiled PDF renders.
+        // pdf.js renders the compiled PDF onto canvases (see PdfView.svelte); its worker
+        // ships as a same-origin ?url asset, so worker-src needs 'self' (blob: covers pdf.js's
+        // fallback worker path). isEvalSupported:false keeps it off 'unsafe-eval'.
+        "worker-src 'self' blob:",
+        // blob: is retained here defensively — the PDF no longer uses a blob: <iframe>, but a
+        // downloaded blob: URL (the pv-bar download link) must remain navigable.
         "frame-src 'self' blob:",
         "base-uri 'self'",
         "form-action 'self' mailto:",
@@ -99,6 +101,10 @@ export default defineConfig({
       // Run the font-display:optional plugin (defined above) over the bundled CSS.
       postcss: { plugins: [fontDisplayOptional] },
     },
+    // pdf.js is dynamically imported (PdfView) so it prod-chunks lazily; pre-bundle it
+    // in dev so the first preview render doesn't trigger a mid-session Vite re-optimize
+    // (which would reload the page out from under an in-flight compile / e2e).
+    optimizeDeps: { include: ['pdfjs-dist'] },
     build: {
       // Never inline fonts. Vite's default inlines assets < 4KB as base64, which
       // for the small System-6 woff2 faces bloats the render-blocking CSS by ~20KB
