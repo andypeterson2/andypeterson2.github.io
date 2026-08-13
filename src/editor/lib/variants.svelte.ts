@@ -8,7 +8,66 @@
 // load or clear the cover letter for the newly-active lens).
 import { api } from './api';
 import type { SaveHost } from './host';
-import type { Variant } from './types';
+import type { Variant, Entry, Item, EntryOverride, ItemOverride } from './types';
+
+/** True when a resolved override carries no signal — the backend drops such a row. */
+function emptyEntryOv(o: EntryOverride): boolean {
+  return (
+    o.included == null &&
+    o.textOverride == null &&
+    o.sortOverride == null &&
+    o.fieldsOverride == null
+  );
+}
+function emptyItemOv(o: ItemOverride): boolean {
+  return o.included == null && o.textOverride == null && o.sortOverride == null;
+}
+/** Structural copy so an undo snapshot never aliases the live proxy it was taken from. */
+function cloneEntryOv(o: EntryOverride | null): EntryOverride | null {
+  return o ? { ...o, fieldsOverride: o.fieldsOverride ? { ...o.fieldsOverride } : null } : null;
+}
+function cloneItemOv(o: ItemOverride | null): ItemOverride | null {
+  return o ? { ...o } : null;
+}
+/** Fold one field edit into an entry override; matching Main auto-clears the key. */
+function withField(
+  before: EntryOverride | null,
+  key: string,
+  value: string,
+  base: string,
+): EntryOverride | null {
+  const fo: Record<string, string> = { ...(before?.fieldsOverride ?? {}) };
+  if (value === base) delete fo[key];
+  else fo[key] = value;
+  const next: EntryOverride = {
+    included: before?.included ?? null,
+    textOverride: before?.textOverride ?? null,
+    sortOverride: before?.sortOverride ?? null,
+    fieldsOverride: Object.keys(fo).length ? fo : null,
+  };
+  return emptyEntryOv(next) ? null : next;
+}
+/** Fold an include tri-state (1 force-in / 0 force-out / null default) into an override. */
+function withEntryIncluded(
+  before: EntryOverride | null,
+  state: number | null,
+): EntryOverride | null {
+  const next: EntryOverride = {
+    included: state,
+    textOverride: before?.textOverride ?? null,
+    sortOverride: before?.sortOverride ?? null,
+    fieldsOverride: before?.fieldsOverride ?? null,
+  };
+  return emptyEntryOv(next) ? null : next;
+}
+function withItemIncluded(before: ItemOverride | null, state: number | null): ItemOverride | null {
+  const next: ItemOverride = {
+    included: state,
+    textOverride: before?.textOverride ?? null,
+    sortOverride: before?.sortOverride ?? null,
+  };
+  return emptyItemOv(next) ? null : next;
+}
 
 /** The shared save infra plus the reads/writes the variants concern needs. */
 export interface VariantHost extends SaveHost {
@@ -104,5 +163,87 @@ export class VariantController {
     });
     this.host.markDirty();
     await this.host.persist(() => api.setVariantRules(variant.id, variant.rules));
+  }
+
+  // ---- per-variant overrides (field patch + force include/exclude) ----
+  // Every override write sends the WHOLE row (the backend upsert is whole-row and
+  // deletes when all fields are null), so each method computes the complete next
+  // state from the current one. `variant` is a live proxy in `person.variants`, so
+  // mutating `entryOverrides`/`itemOverrides` re-runs the lens instantly. undo/redo
+  // carry snapshots straight to `_applyEntryOverride`, so they never re-record.
+
+  /** Set (or, when it equals Main, clear) this variant's override of one entry field. */
+  async setEntryFieldOverride(variant: Variant, entry: Entry, key: string, value: string) {
+    const before = cloneEntryOv(variant.entryOverrides?.[entry.id] ?? null);
+    const after = withField(before, key, value, entry.fields[key] ?? '');
+    this.host.record({
+      label: `Override ${key}`,
+      undo: () => this._applyEntryOverride(variant, entry.id, before),
+      redo: () => this._applyEntryOverride(variant, entry.id, after),
+    });
+    await this._applyEntryOverride(variant, entry.id, after);
+  }
+
+  /** Drop this variant's override of one entry field, reverting it to Main. */
+  resetEntryField(variant: Variant, entry: Entry, key: string) {
+    return this.setEntryFieldOverride(variant, entry, key, entry.fields[key] ?? '');
+  }
+
+  /** Force an entry in (1) / out (0) of this variant, or clear to tag-rule default (null). */
+  async setEntryIncluded(variant: Variant, entry: Entry, state: number | null) {
+    const before = cloneEntryOv(variant.entryOverrides?.[entry.id] ?? null);
+    const after = withEntryIncluded(before, state);
+    this.host.record({
+      label: state == null ? 'Reset visibility' : state ? 'Always show' : 'Hide',
+      undo: () => this._applyEntryOverride(variant, entry.id, before),
+      redo: () => this._applyEntryOverride(variant, entry.id, after),
+    });
+    await this._applyEntryOverride(variant, entry.id, after);
+  }
+
+  /** Force a bullet/skill in (1) / out (0) of this variant, or clear to default (null). */
+  async setItemIncluded(variant: Variant, item: Item, state: number | null) {
+    const before = cloneItemOv(variant.itemOverrides?.[item.id] ?? null);
+    const after = withItemIncluded(before, state);
+    this.host.record({
+      label: state == null ? 'Reset visibility' : state ? 'Always show' : 'Hide',
+      undo: () => this._applyItemOverride(variant, item.id, before),
+      redo: () => this._applyItemOverride(variant, item.id, after),
+    });
+    await this._applyItemOverride(variant, item.id, after);
+  }
+
+  /** Land an entry override in the live proxy + backend (null removes the row). */
+  private async _applyEntryOverride(variant: Variant, entryId: number, ov: EntryOverride | null) {
+    const map = (variant.entryOverrides ??= {});
+    if (ov) map[entryId] = cloneEntryOv(ov)!;
+    else delete map[entryId];
+    this.host.markDirty();
+    await this.host.persist(() =>
+      api.setVariantOverride(variant.id, {
+        targetType: 'entry',
+        targetId: entryId,
+        included: ov?.included ?? null,
+        textOverride: ov?.textOverride ?? null,
+        sortOverride: ov?.sortOverride ?? null,
+        fieldsOverride: ov?.fieldsOverride ?? null,
+      }),
+    );
+  }
+
+  private async _applyItemOverride(variant: Variant, itemId: number, ov: ItemOverride | null) {
+    const map = (variant.itemOverrides ??= {});
+    if (ov) map[itemId] = cloneItemOv(ov)!;
+    else delete map[itemId];
+    this.host.markDirty();
+    await this.host.persist(() =>
+      api.setVariantOverride(variant.id, {
+        targetType: 'item',
+        targetId: itemId,
+        included: ov?.included ?? null,
+        textOverride: ov?.textOverride ?? null,
+        sortOverride: ov?.sortOverride ?? null,
+      }),
+    );
   }
 }

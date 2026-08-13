@@ -5,9 +5,10 @@
 // (cv/editor/lib/db/variants.js#_matchesTags + section scoping). Keeping it in
 // sync with that file is a deliberate tradeoff: the lens works offline and
 // updates instantly as rules change, at the cost of mirroring ~5 lines of logic
-// (pinned by variant-lens.test.ts). NOTE: per-entry/item manual *overrides* are
-// not part of the /persons/:pid response and so are not reflected here — the compiled PDF (via
-// GET /variants/:id/resolve) stays authoritative for those.
+// (pinned by variant-lens.test.ts). Per-entry/item manual *overrides* now ride the
+// getMain payload, so they ARE applied here — `included` forces visibility and
+// `fieldsOverride` patches the rendered fields (see entryIncluded / entryFieldsFor).
+// The compiled PDF (GET /variants/:id/resolve) remains the authority at export time.
 import type { Variant, VariantRules, Section, Entry, Item } from './types';
 
 /**

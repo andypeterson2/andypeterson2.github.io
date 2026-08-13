@@ -483,6 +483,35 @@ export class CvApi {
   setVariantRules(id: number, rules: { include: string[]; exclude: string[] }) {
     return this.req(`/variants/${id}/rules`, { method: 'PUT', body: JSON.stringify(rules) });
   }
+  /**
+   * Set (or clear) a per-variant override on an entry or item. The backend upsert is
+   * whole-row and deletes the row when every field is null, so callers pass the
+   * COMPLETE desired state, not a sparse patch. `fieldsOverride` (entry only) and
+   * `textOverride` are tex-escaped on the way out; reads `untex` in `mapVariant`.
+   */
+  setVariantOverride(
+    id: number,
+    o: {
+      targetType: 'entry' | 'item';
+      targetId: number;
+      included?: number | boolean | null;
+      textOverride?: string | null;
+      sortOverride?: number | null;
+      fieldsOverride?: Record<string, string> | null;
+    },
+  ) {
+    const body: Record<string, unknown> = {
+      targetType: o.targetType,
+      targetId: o.targetId,
+      included: o.included == null ? null : !!o.included,
+      textOverride: o.textOverride == null ? null : tex(o.textOverride),
+      sortOverride: o.sortOverride ?? null,
+    };
+    if (o.targetType === 'entry') {
+      body.fieldsOverride = o.fieldsOverride ? texFields(o.fieldsOverride) : null;
+    }
+    return this.req(`/variants/${id}/overrides`, { method: 'PUT', body: JSON.stringify(body) });
+  }
 
   // ---- cover letter: header (per person) + body paragraphs (per variant) ----
   updateCoverletter(pid: number, patch: Record<string, string>) {
