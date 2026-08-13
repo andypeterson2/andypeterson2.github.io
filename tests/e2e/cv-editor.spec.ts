@@ -990,6 +990,151 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc .dim')).toHaveCount(0);
   });
 
+  test('skills edit as items: add and tag a skill, and see it in the document (demo)', async ({
+    page,
+  }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+
+    // A cvskills group now opens the bullet editor — each skill is its own item row.
+    await page.locator('.doc .skill').filter({ hasText: 'Languages' }).click();
+    const edit = page.locator('.doc .edit');
+    await expect(edit).toBeVisible();
+    await expect(edit.locator('.bl')).toHaveCount(5); // Python … SQL
+    // The add control is relabelled by the type's itemLabel ("Skill", not "Bullet").
+    await expect(edit.locator('.mini.add')).toHaveText(/skill/i);
+
+    // Add a skill, type into the new row.
+    await edit.locator('.mini.add').click();
+    await expect(edit.locator('.bl')).toHaveCount(6);
+    await edit.locator('.bl .bl-content').last().fill('Rust');
+
+    // Per-skill tags — the whole point of promoting skills to items.
+    const firstTagIn = edit.locator('.bl').first().locator('.tag-in');
+    await firstTagIn.fill('systems');
+    await firstTagIn.press('Enter');
+    await expect(edit.locator('.bl').first().locator('.chip')).toContainText('#systems');
+
+    // Close the editor → the group re-renders with the new skill in the document.
+    await edit.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('.doc .skill').filter({ hasText: 'Languages' })).toContainText('Rust');
+  });
+
+  test('a variant field edit writes an override (not the base), shown live; reset restores Main', async ({
+    page,
+  }) => {
+    await mockAdaWithVariant(page);
+    const overrides: Array<Record<string, unknown>> = [];
+    await page.route(/\/cv\/api\/variants\/50\/overrides$/, (r) => {
+      overrides.push(r.request().postDataJSON());
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    // A base field write would go here — it must NOT fire while a variant is active.
+    let baseWrites = 0;
+    await page.route(/\/cv\/api\/entries\/11$/, (r) => {
+      baseWrites += 1;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await gotoEditor(page);
+    await expect(page.locator('.conn')).toContainText('connected');
+    await selectFullCV(page);
+
+    // The entry editor announces the mode unmistakably.
+    await page.locator('.doc .entry').first().click();
+    const edit = page.locator('.doc .edit');
+    await expect(edit.locator('.vmode')).toContainText('Full CV');
+
+    // Editing Position writes a per-variant fields_override, not the base entry.
+    await edit.locator('.fld').first().locator('input').fill('Senior Analyst');
+    await expect
+      .poll(() => overrides.at(-1))
+      .toMatchObject({
+        targetType: 'entry',
+        targetId: 11,
+        fieldsOverride: { position: 'Senior Analyst' },
+      });
+
+    // The lens shows it live once the editor closes; the base was never written.
+    await edit.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('.doc .entry').first()).toContainText('Senior Analyst');
+    expect(baseWrites).toBe(0);
+
+    // Reopen → the field carries a "reset to Main"; using it clears the override.
+    await page.locator('.doc .entry').first().click();
+    await edit.locator('.fld').first().locator('.ov-reset').click();
+    await expect.poll(() => overrides.at(-1)?.fieldsOverride).toBeNull();
+    await edit.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('.doc .entry').first()).toContainText('Analyst');
+    await expect(page.locator('.doc .entry').first()).not.toContainText('Senior Analyst');
+  });
+
+  test('a variant can hide a single skill: the item override dims it in-document', async ({
+    page,
+  }) => {
+    const main = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 3,
+          type: 'skills',
+          title: 'Skills',
+          entries: [
+            {
+              id: 20,
+              fields: { category: 'Languages' },
+              tags: [],
+              items: [
+                { id: 200, content: 'Python', tags: [] },
+                { id: 201, content: 'Rust', tags: [] },
+              ],
+            },
+          ],
+        },
+      ],
+      variants: [
+        { id: 50, name: 'Full CV', kind: 'cv', rules: { include: [], exclude: [] }, sections: [] },
+      ],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
+    );
+    const overrides: Array<Record<string, unknown>> = [];
+    await page.route(/\/cv\/api\/variants\/50\/overrides$/, (r) => {
+      overrides.push(r.request().postDataJSON());
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    await gotoEditor(page);
+    await expect(page.locator('.conn')).toContainText('connected');
+    await selectFullCV(page);
+
+    // Open the skills group; in variant mode each skill gets an Auto/Always/Never control.
+    await page.locator('.doc .skill').filter({ hasText: 'Languages' }).click();
+    const edit = page.locator('.doc .edit');
+    await expect(edit.locator('.vmode')).toBeVisible();
+    const python = edit.locator('.bl.ro').filter({ hasText: 'Python' });
+    await python.getByRole('button', { name: 'Never' }).click();
+
+    // The item override persists as targetType:item, force-out (included:false).
+    await expect
+      .poll(() => overrides.at(-1))
+      .toMatchObject({ targetType: 'item', targetId: 200, included: false });
+
+    // Close → the hidden skill dims in the document while the other stays lit.
+    await edit.getByRole('button', { name: 'Done' }).click();
+    await expect(page.locator('.doc .skill-item').filter({ hasText: 'Python' })).toHaveClass(/dim/);
+    await expect(page.locator('.doc .skill-item').filter({ hasText: 'Rust' })).not.toHaveClass(
+      /dim/,
+    );
+  });
+
   test('the preview pane prompts to connect in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);

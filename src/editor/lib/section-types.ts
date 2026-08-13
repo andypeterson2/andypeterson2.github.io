@@ -207,6 +207,9 @@ export const SECTION_TYPES: Record<string, SectionTypeDef> = {
     category: 'other',
     entryLabel: 'Skill Group',
     titleField: 'category',
+    // Each skill is its own item row (migration 016) — reuse the bullet editor.
+    hasItems: true,
+    itemLabel: 'Skill',
     fields: [
       { key: 'category', label: 'Category' },
       { key: 'skills', label: 'Skills' },
