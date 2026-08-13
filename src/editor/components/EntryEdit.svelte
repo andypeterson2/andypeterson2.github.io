@@ -76,9 +76,9 @@
 
 {#snippet inclSeg(state: number | null, set: (s: number | null) => void)}
   <div class="seg" role="group" aria-label="Visibility in this variant">
-    <button type="button" class:on={state == null} onclick={() => set(null)}>Auto</button>
-    <button type="button" class:on={state === 1} onclick={() => set(1)}>Always</button>
-    <button type="button" class:on={state === 0} onclick={() => set(0)}>Never</button>
+    <button type="button" class:on={state == null} onclick={() => set(null)}>Follow tags</button>
+    <button type="button" class:on={state === 1} onclick={() => set(1)}>Force show</button>
+    <button type="button" class:on={state === 0} onclick={() => set(0)}>Force hide</button>
   </div>
 {/snippet}
 
@@ -416,7 +416,7 @@
     padding: 4px 7px;
   }
 
-  /* Segmented Auto / Always / Never control for per-entry + per-item visibility. */
+  /* Segmented Follow-tags / Force-show / Force-hide control for per-entry + per-item visibility. */
   .ov-incl {
     display: grid;
     grid-template-columns: 116px 1fr;

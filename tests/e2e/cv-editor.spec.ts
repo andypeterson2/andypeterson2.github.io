@@ -1115,12 +1115,13 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
-    // Open the skills group; in variant mode each skill gets an Auto/Always/Never control.
+    // Open the skills group; in variant mode each skill gets a Follow-tags / Force-show /
+    // Force-hide control.
     await page.locator('.doc .skill').filter({ hasText: 'Languages' }).click();
     const edit = page.locator('.doc .edit');
     await expect(edit.locator('.vmode')).toBeVisible();
     const python = edit.locator('.bl.ro').filter({ hasText: 'Python' });
-    await python.getByRole('button', { name: 'Never' }).click();
+    await python.getByRole('button', { name: 'Force hide' }).click();
 
     // The item override persists as targetType:item, force-out (included:false).
     await expect
