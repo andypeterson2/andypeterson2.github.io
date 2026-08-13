@@ -1,18 +1,21 @@
 <script lang="ts">
-  // Renders a compiled PDF (a blob: URL) onto width-fitted canvases stacked in a
-  // scrollable column — instead of an <iframe> that hands the blob to Chrome's
-  // built-in PDF viewer. That viewer ignores the #view=FitH / #zoom=page-width
-  // fragment inside an iframe, so the page rendered small at the top with dead
-  // space below ("doesn't reach the bottom"). Painting the pages ourselves gives
-  // exact control: each page fills the pane width, and multi-page docs scroll.
+  // Renders a compiled PDF onto width-fitted canvases stacked in a scrollable column
+  // — instead of an <iframe> that hands the blob to Chrome's built-in viewer, which
+  // ignores the #view=FitH / #zoom=page-width fragment inside an iframe (the page
+  // rendered small at the top with dead space below).
   //
-  // pdf.js is DYNAMICALLY imported the first time a PDF renders, so its ~300KB
-  // never lands in the initial editor bundle (this island is client:load). The
-  // worker ships as a same-origin asset (?url), so it loads under the site's strict
-  // CSP (worker-src 'self' blob:); isEvalSupported:false keeps it off 'unsafe-eval'.
+  // Two things make this work under the site's strict CSP:
+  //  1. We take the compiled Blob and read it with `.arrayBuffer()` — we never
+  //     fetch() the blob: URL, which `connect-src` (no blob:) would block.
+  //  2. pdf.js v4 is PURE JS (no .wasm), and isEvalSupported:false makes it use its
+  //     JS PostScript interpreter — so it needs neither 'unsafe-eval' nor
+  //     'wasm-unsafe-eval'. (v5/v6 fall back to a quickjs-eval WASM that the CSP
+  //     blocks; v4 is the CSP-clean line.) pdf.js is dynamically imported so its
+  //     ~300KB stays out of the initial island bundle; its worker ships as a
+  //     same-origin ?url asset (worker-src 'self').
   import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-  let { url }: { url: string } = $props();
+  let { blob }: { blob: Blob | null } = $props();
 
   let host = $state<HTMLDivElement>();
   let status = $state<'loading' | 'ready' | 'error'>('loading');
@@ -21,13 +24,13 @@
   let token = 0;
   let lastWidth = 0;
 
-  async function render(u: string, el: HTMLDivElement) {
+  async function render(b: Blob, el: HTMLDivElement) {
     const mine = ++token;
     status = 'loading';
     try {
       const pdfjs = await import('pdfjs-dist');
       pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-      const data = await (await fetch(u)).arrayBuffer();
+      const data = await b.arrayBuffer();
       if (mine !== token) return;
       const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
       if (mine !== token) return;
@@ -61,11 +64,11 @@
     }
   }
 
-  // (Re)render whenever the compiled PDF changes.
+  // (Re)render whenever a new PDF is compiled.
   $effect(() => {
-    const u = url;
+    const b = blob;
     const el = host;
-    if (u && el) void render(u, el);
+    if (b && el) void render(b, el);
   });
 
   // Re-render at the new width when the pane resizes past a threshold, so the pages
@@ -81,7 +84,7 @@
       lastWidth = w;
       clearTimeout(t);
       t = setTimeout(() => {
-        if (url && host) void render(url, host);
+        if (blob && host) void render(blob, host);
       }, 150);
     });
     ro.observe(el);
