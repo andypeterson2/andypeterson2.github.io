@@ -6,12 +6,13 @@ vi.mock('../src/editor/lib/api', () => ({
     renameVariant: vi.fn(async () => ({ ok: true, status: 200 })),
     deleteVariant: vi.fn(async () => ({ ok: true, status: 200 })),
     setVariantRules: vi.fn(async () => ({ ok: true, status: 200 })),
+    setVariantOverride: vi.fn(async () => ({ ok: true, status: 200 })),
   },
 }));
 
 import { api } from '../src/editor/lib/api';
 import { VariantController, type VariantHost } from '../src/editor/lib/variants.svelte';
-import type { Variant } from '../src/editor/lib/types';
+import type { Variant, Entry, Item } from '../src/editor/lib/types';
 
 const variant = (over: Partial<Variant> = {}): Variant => ({
   id: 1,
@@ -169,5 +170,107 @@ describe('VariantController — include/exclude rules (undoable)', () => {
     expect(h.records.at(-1)?.label).toBe('Remove #web');
     await h.records.at(-1)?.undo();
     expect(v.rules.include).toContain('web');
+  });
+});
+
+describe('VariantController — per-variant overrides (field patch + force include/out)', () => {
+  const entry = (over: Partial<Entry> = {}): Entry => ({
+    id: 11,
+    fields: { position: 'Analyst' },
+    tags: [],
+    items: [],
+    ...over,
+  });
+  const item = (over: Partial<Item> = {}): Item => ({ id: 200, content: 'Python', tags: [], ...over });
+
+  test('setEntryFieldOverride writes a fields patch, records undo, persists the whole row', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    await new VariantController(h.host).setEntryFieldOverride(v, entry(), 'position', 'Senior Analyst');
+    expect(v.entryOverrides?.[11]?.fieldsOverride).toEqual({ position: 'Senior Analyst' });
+    expect(api.setVariantOverride).toHaveBeenCalledWith(42, {
+      targetType: 'entry',
+      targetId: 11,
+      included: null,
+      textOverride: null,
+      sortOverride: null,
+      fieldsOverride: { position: 'Senior Analyst' },
+    });
+    expect(h.records.at(-1)?.label).toBe('Override position');
+  });
+
+  test('typing a field back to its Main value auto-clears the override row', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const e = entry();
+    const c = new VariantController(h.host);
+    await c.setEntryFieldOverride(v, e, 'position', 'Senior Analyst');
+    await c.setEntryFieldOverride(v, e, 'position', 'Analyst'); // === base → clears the key → row drops
+    expect(v.entryOverrides?.[11]).toBeUndefined();
+  });
+
+  test('resetEntryField reverts a single field to Main', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const e = entry();
+    const c = new VariantController(h.host);
+    await c.setEntryFieldOverride(v, e, 'date', '2024');
+    await c.resetEntryField(v, e, 'date');
+    expect(v.entryOverrides?.[11]).toBeUndefined();
+  });
+
+  test('setEntryIncluded forces out (0) then clears back to auto (null), dropping the row', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const e = entry();
+    const c = new VariantController(h.host);
+    await c.setEntryIncluded(v, e, 0);
+    expect(v.entryOverrides?.[11]?.included).toBe(0);
+    expect(api.setVariantOverride).toHaveBeenLastCalledWith(
+      42,
+      expect.objectContaining({ targetType: 'entry', targetId: 11, included: 0 }),
+    );
+    await c.setEntryIncluded(v, e, null);
+    expect(v.entryOverrides?.[11]).toBeUndefined();
+  });
+
+  test('a field patch and a force-in coexist on one row (neither wipes the other)', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const e = entry();
+    const c = new VariantController(h.host);
+    await c.setEntryFieldOverride(v, e, 'position', 'X');
+    await c.setEntryIncluded(v, e, 1);
+    expect(v.entryOverrides?.[11]).toMatchObject({ included: 1, fieldsOverride: { position: 'X' } });
+  });
+
+  test('setItemIncluded targets an item and drops the row on reset', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const c = new VariantController(h.host);
+    await c.setItemIncluded(v, item(), 0);
+    expect(v.itemOverrides?.[200]?.included).toBe(0);
+    expect(api.setVariantOverride).toHaveBeenLastCalledWith(42, {
+      targetType: 'item',
+      targetId: 200,
+      included: 0,
+      textOverride: null,
+      sortOverride: null,
+    });
+    await c.setItemIncluded(v, item(), null);
+    expect(v.itemOverrides?.[200]).toBeUndefined();
+  });
+
+  test('undo restores the prior override state; redo re-applies', async () => {
+    const h = makeHost({ connected: true });
+    const v = variant({ id: 42 });
+    const e = entry();
+    const c = new VariantController(h.host);
+    await c.setEntryFieldOverride(v, e, 'position', 'Senior');
+    const rec = h.records.at(-1)!;
+    await rec.undo();
+    expect(v.entryOverrides?.[11]).toBeUndefined();
+    await rec.redo();
+    expect(v.entryOverrides?.[11]?.fieldsOverride).toEqual({ position: 'Senior' });
   });
 });
