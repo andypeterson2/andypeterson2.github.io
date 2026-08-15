@@ -222,6 +222,37 @@ function mapMain(m: RawMain): Person {
 export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
+  // ---- self-hosted Google sign-in (multi-user, phase 2/4) ----
+  // Auth lives at the gateway ROOT (/auth/*), a sibling of the /cv app — not under
+  // /cv/api — so these bypass `req()` and hit `authBase` directly.
+  /** The gateway origin (…/cv → …). */
+  get authBase(): string {
+    return this.base.replace(/\/cv\/?$/, '');
+  }
+  /** Full-page Google sign-in URL; `redirect` returns the browser to the editor. */
+  loginUrl(redirect: string): string {
+    return `${this.authBase}/auth/login?redirect=${encodeURIComponent(redirect)}`;
+  }
+  /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
+  async me(): Promise<{ authenticated: boolean; email: string | null; name: string | null }> {
+    try {
+      const res = await fetch(`${this.authBase}/auth/me`, { credentials: 'include' });
+      if (!res.ok) return { authenticated: false, email: null, name: null };
+      const d = (await res.json()) as { authenticated?: boolean; email?: string; name?: string };
+      return { authenticated: !!d.authenticated, email: d.email ?? null, name: d.name ?? null };
+    } catch {
+      return { authenticated: false, email: null, name: null };
+    }
+  }
+  /** Drop the session server-side. Best-effort; never throws. */
+  async logout(): Promise<void> {
+    try {
+      await fetch(`${this.authBase}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      /* best-effort — the local reset happens regardless */
+    }
+  }
+
   private async req<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
     try {
       // redirect:'follow' (the default): an AUTHENTICATED request can pass

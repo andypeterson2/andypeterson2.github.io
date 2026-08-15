@@ -428,6 +428,16 @@
                 ? 'connected'
                 : 'Sign in with Google to save changes'}</span>
         </button>
+        {#if editor.connected && editor.identity}
+          <span class="sb-r account">
+            <span class="acct-who" title={editor.identity.email ?? ''}
+              >{editor.identity.name || editor.identity.email || 'Signed in'}</span
+            >
+            <button class="acct-out" onclick={() => editor.signOut()}>Sign out</button>
+          </span>
+        {:else}
+          <span class="sb-r"></span>
+        {/if}
       </div>
     </div>
     </div>
@@ -615,6 +625,11 @@
      regardless of the side widths. */
   .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: var(--ink-2); }
   .sb-l { justify-self: start; white-space: nowrap; }
+  .sb-r { justify-self: end; white-space: nowrap; }
+  .account { display: inline-flex; align-items: center; gap: 8px; }
+  .acct-who { max-width: 180px; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+  .acct-out { font-family: var(--mono); font-size: var(--text-4xs); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .acct-out:hover { color: var(--ink); }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
      from the shared .floating-panel primitive (lib/styles.css); only the row layout

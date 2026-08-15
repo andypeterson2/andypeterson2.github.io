@@ -1685,4 +1685,52 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.statusbar')).toContainText('saved');
     expect(puts).toBe(2);
   });
+
+  test('self-hosted session: signed-out shows the Google sign-in CTA, no account menu', async ({
+    page,
+  }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page); // gotoEditor defaults /auth/me → 401 (signed out)
+    await expect(page.locator('.conn')).toContainText('Sign in with Google');
+    await expect(page.locator('.statusbar .account')).toHaveCount(0);
+  });
+
+  test('signed in: the account menu shows the identity and Sign out drops the session', async ({
+    page,
+  }) => {
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 9, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          person: { id: 9, name: 'Ada Lovelace' },
+          personal: { firstName: 'Ada', lastName: 'Lovelace' },
+          sections: [],
+          variants: [],
+        }),
+      }),
+    );
+    let loggedOut = false;
+    await page.route('**/auth/logout', (r) => {
+      loggedOut = true;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+
+    await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada Lovelace' } });
+
+    await expect(page.locator('.conn')).toContainText('connected');
+    const account = page.locator('.statusbar .account');
+    await expect(account).toContainText('Ada Lovelace');
+
+    // Sign out drops the server session (then the store reloads back to the demo).
+    await account.getByRole('button', { name: 'Sign out' }).click();
+    await expect.poll(() => loggedOut).toBe(true);
+  });
 });
