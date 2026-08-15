@@ -251,13 +251,28 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
 });
 
 describe('EditorState — connect() (api spied on the singleton)', () => {
+  // A signed-in session: connect() only reaches the backend once /auth/me confirms one.
+  const signIn = () =>
+    vi.spyOn(api, 'me').mockResolvedValue({ authenticated: true, email: 'ada@example.com', name: 'Ada' });
+
+  test('not signed in stays in the local demo — never touches the backend', async () => {
+    vi.spyOn(api, 'me').mockResolvedValue({ authenticated: false, email: null, name: null });
+    const fetchActive = vi.spyOn(api, 'fetchActive');
+    await editor.connect();
+    expect(editor.identity).toBeNull();
+    expect(editor.connected).toBe(false);
+    expect(fetchActive).not.toHaveBeenCalled(); // the shared public person is never loaded/written
+  });
+
   test('loads the newest profile and goes live', async () => {
+    signIn();
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: true,
       status: 200,
       data: { person: person({ id: 8, name: 'Ada' }), persons: [{ id: 8, name: 'Ada' }] },
     });
     await editor.connect();
+    expect(editor.identity).toEqual({ email: 'ada@example.com', name: 'Ada' });
     expect(editor.connected).toBe(true);
     expect(editor.activePersonId).toBe(8);
     expect(editor.persons).toEqual([{ id: 8, name: 'Ada' }]);
@@ -266,6 +281,7 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
   });
 
   test('a signed-in account with zero profiles enters the empty state', async () => {
+    signIn();
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: false,
       status: 404,
@@ -278,6 +294,7 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
   });
 
   test('auth_required stays offline and raises the sign-in prompt', async () => {
+    signIn();
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: false,
       status: 403,
@@ -289,6 +306,7 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
   });
 
   test('a network error is classified via the health probe (reachable → signin, down → offline)', async () => {
+    signIn();
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: false,
       status: 0,

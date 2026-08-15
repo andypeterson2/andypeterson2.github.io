@@ -1004,6 +1004,15 @@ class EditorState {
     // signed in over its empty state.
     const who = await api.me();
     this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
+    // Not signed in ⇒ stay in the local demo. Since the Access flip the cv backend
+    // answers anonymous requests with the SHARED public person, so connecting a
+    // logged-out visitor would both look like a saving session and let their edits
+    // land on everyone's demo. The demo is local until there's a real session;
+    // signing in re-runs connect() and loads your data.
+    if (!this.identity) {
+      this.connecting = false;
+      return;
+    }
     const res = await api.fetchActive();
     if (res.ok && res.data) {
       this.connecting = false;
