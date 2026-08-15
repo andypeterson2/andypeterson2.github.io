@@ -90,6 +90,8 @@ class EditorState {
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
   signingIn = $state(false);
+  /** The signed-in Google account (self-hosted session), or null when logged out. */
+  identity = $state<{ email: string | null; name: string | null } | null>(null);
   /** Profiles available to the signed-in identity (empty in demo). */
   persons = $state<PersonMeta[]>([]);
   activePersonId = $state<number | null>(null);
@@ -997,6 +999,11 @@ class EditorState {
     if (this.connecting) return;
     this.connecting = true;
     this.connectError = null;
+    // Who is signed in (self-hosted session) — drives the account menu. Independent
+    // of whether they have any résumés yet, so a brand-new account still shows as
+    // signed in over its empty state.
+    const who = await api.me();
+    this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
     const res = await api.fetchActive();
     if (res.ok && res.data) {
       this.connecting = false;
@@ -1083,35 +1090,22 @@ class EditorState {
   }
 
   /**
-   * Sign in via Cloudflare Access. A hand-built /cdn-cgi/access/login URL can't
-   * be matched to the app, and Access won't redirect cross-domain back to the
-   * GitHub-Pages editor anyway. Instead open the protected API in a popup so
-   * Cloudflare runs its own login on api.andypeterson.dev, then poll until the
-   * session cookie lets us load the real CV.
+   * Sign in with Google (self-hosted OIDC, multi-tenancy phase 2). A full-page
+   * redirect to the gateway's /auth/login, which runs the Google flow and returns
+   * here with a session cookie; `redirect` carries the browser back to this editor.
    */
   signIn() {
     if (typeof window === 'undefined') return;
-    const loginUrl = 'https://api.andypeterson.dev/cv/api/persons';
-    const popup = window.open(loginUrl, 'cv-access-login', 'width=540,height=680');
-    if (!popup) {
-      // Popup blocked — fall back to a full-page login (browser back returns here).
-      window.location.href = loginUrl;
-      return;
-    }
     this.signingIn = true;
     this.connectError = null;
-    let tries = 0;
-    const poll = setInterval(() => {
-      void (async () => {
-        tries += 1;
-        await this.connect();
-        if (this.connected || tries >= 40 || popup.closed) {
-          clearInterval(poll);
-          this.signingIn = false;
-          if (this.connected && !popup.closed) popup.close();
-        }
-      })();
-    }, 2500);
+    window.location.href = api.loginUrl(window.location.href);
+  }
+
+  /** Sign out: drop the server session, forget the identity, return to the demo. */
+  async signOut() {
+    await api.logout();
+    this.identity = null;
+    if (typeof window !== 'undefined') window.location.reload();
   }
 }
 

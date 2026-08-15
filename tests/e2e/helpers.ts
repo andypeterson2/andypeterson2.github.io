@@ -18,8 +18,17 @@ export const EDITOR_APP = '/projects/latex-resume-editor/app/';
 export async function gotoEditor(
   page: Page,
   path = EDITOR_APP,
-  opts: { keepInvite?: boolean } = {},
+  opts: { keepInvite?: boolean; signedIn?: { email: string; name: string } | null } = {},
 ) {
+  // The editor probes /auth/me on mount (self-hosted Google session). Mock it here so
+  // every test is hermetic: signed out (401) by default, or a given identity (200).
+  await page.route('**/auth/me', (r) =>
+    r.fulfill({
+      status: opts.signedIn ? 200 : 401,
+      contentType: 'application/json',
+      body: JSON.stringify(opts.signedIn ? { authenticated: true, ...opts.signedIn } : { authenticated: false }),
+    }),
+  );
   await page.goto(path);
   await expect(page.locator('.stage[data-hydrated]')).toBeAttached({ timeout: 15000 });
 
