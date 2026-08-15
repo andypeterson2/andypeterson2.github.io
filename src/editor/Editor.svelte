@@ -428,7 +428,7 @@
                 ? 'connected'
                 : 'Sign in with Google to save changes'}</span>
         </button>
-        {#if editor.connected && editor.identity}
+        {#if editor.identity}
           <span class="sb-r account">
             <span class="acct-who" title={editor.identity.email ?? ''}
               >{editor.identity.name || editor.identity.email || 'Signed in'}</span
