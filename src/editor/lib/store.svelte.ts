@@ -772,7 +772,7 @@ class EditorState {
     // characters + leading/trailing dots/spaces (\w would flatten accents to dashes).
     const label =
       (this.profileLabel || 'resume')
-        .replace(/[/\\:*?"<>| -]+/g, '-')
+        .replace(/[/\\:*?"<>|\x00-\x1f]+/g, '-')
         .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume';
     let data: unknown;
     if (this.connected && this.activePersonId != null) {
