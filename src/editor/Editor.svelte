@@ -338,7 +338,7 @@
     </div>
     </div>
 
-    <div class="window">
+    <div class="window doc-window">
       <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
       <div class="wbody" class:split={editor.preview.open}>
         <div class="doc-scroll" data-tour-spot="document">
@@ -476,13 +476,17 @@
 </div>
 
 <style>
-  .stage { min-height: 100vh; padding-bottom: 34px; }
+  /* Fill the viewport exactly (the site-pane ancestor is a definite-height flex child
+     of the 100vh body), then lay the editor out as a flex column whose middle
+     (.workspace) fills and whose document/preview panes scroll INTERNALLY — so the
+     page itself never scrolls and the editor is always exactly window-tall. */
+  .stage { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   /* Mirrors the portfolio menubar (BaseLayout .site-menubar): Chicago face, 3px
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
-  .menubar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: var(--z-sticky); }
+  .menubar { flex: none; display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: var(--z-sticky); }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
@@ -567,12 +571,14 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  .workspace { max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 2px solid var(--ink); border-right-width: 4px; border-bottom-width: 4px; }
-  .workspace-body { padding: var(--pane-pad-y) var(--pane-pad-x); }
+  .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 2px solid var(--ink); border-right-width: 4px; border-bottom-width: 4px; }
+  .workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: var(--pane-pad-y) var(--pane-pad-x); }
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
      and striped titlebar, matching the document and drawer windows. */
-  .toolbar-window { margin-bottom: var(--window-gap); }
+  .toolbar-window { flex: none; margin-bottom: var(--window-gap); }
+  /* The document window fills the remaining height; its .wbody panes scroll inside it. */
+  .doc-window { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
   .actions { display: contents; }
@@ -598,9 +604,9 @@
   .title { font-family: var(--font-ui); font-size: var(--text-base); font-weight: 700; line-height: 1.1; background: var(--paper); padding: 12px; margin: 0 auto; }
   .app-title { font-size: var(--text-lg); }
   .fill { width: 11px; }
-  .wbody { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .wbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
   .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
-  .doc-scroll { max-height: min(82vh, 960px); overflow: auto; background: var(--paper); }
+  .doc-scroll { min-height: 0; overflow: auto; background: var(--paper); }
   .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
   .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: var(--ink-2); margin: 0; }
   .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
@@ -610,7 +616,7 @@
      so a tall PDF scrolls INSIDE the pane (pv-pages) instead of growing the whole
      shell past the viewport — which left dead space below the pages ("doesn't reach
      the bottom"). min-height:0 lets the inner pv-pages actually shrink + scroll. */
-  .preview { display: flex; flex-direction: column; min-height: 0; max-height: min(82vh, 960px); border-left: 1px solid var(--ink); background: var(--chrome); }
+  .preview { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--ink); background: var(--chrome); }
   .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
   .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
   .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: var(--shadow-sm); }
