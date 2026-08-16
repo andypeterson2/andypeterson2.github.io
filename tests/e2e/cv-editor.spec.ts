@@ -15,6 +15,9 @@ const MINIMAL_PDF =
   '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n5 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page One) Tj ET\nendstream\nendobj\n6 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page Two) Tj ET\nendstream\nendobj\n7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000121 00000 n \n0000000247 00000 n \n0000000373 00000 n \n0000000462 00000 n \n0000000551 00000 n \ntrailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n621\n%%EOF\n';
 
 /** Mock a signed-in profile that owns one no-rules variant ("Full CV", id 50). */
+/** The signed-in identity used by every connected test (only sessions connect now). */
+const ADA = { email: 'ada@example.com', name: 'Ada Lovelace' };
+
 async function mockAdaWithVariant(page: Page) {
   const main = {
     person: { id: 7, name: 'Ada Lovelace' },
@@ -314,7 +317,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       calls.push(`PATCH order ${JSON.stringify(r.request().postDataJSON().ids)}`);
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
 
     page.on('dialog', (d) => d.accept());
@@ -464,7 +467,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/entries\/\d+$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
     );
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
     // fetchActive defaults to the highest id → Ada (8). Edit her position field.
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
@@ -528,7 +531,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // resetDemo() is a no-op when connected — there is real data to protect. Say so
     // in the menu instead of offering a command that silently does nothing.
     await mockAdaWithVariant(page);
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
 
     await openMenu(page, 'File');
@@ -642,7 +645,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/cv/api/**', (r) => r.abort()); // specific persons routes (below) win
     await mockAdaWithVariant(page);
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
     await expect(page.locator('.tour-start')).toHaveCount(0); // the demo invite strip is gone
@@ -715,7 +718,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/persons\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
     await expect(page.locator('.conn')).toContainText('connected');
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
@@ -758,7 +761,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       putBody = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     const inline = page.locator('.doc .edit');
@@ -803,7 +806,7 @@ test.describe('CV editor (document-first rewrite)', () => {
         body: JSON.stringify({ id: 99 }),
       });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();
@@ -839,7 +842,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
     page.on('dialog', (d) => void d.accept());
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     const exp = page.locator('.sec').filter({ hasText: 'Experience' }).first();
@@ -880,7 +883,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       orderBody = r.request().postDataJSON();
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     const entries = page.locator('.sec .entry');
@@ -1040,7 +1043,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       baseWrites += 1;
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -1116,7 +1119,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       overrides.push(r.request().postDataJSON());
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -1159,7 +1162,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       pdfHits += 1;
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -1192,7 +1195,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       mainHits += 1;
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     await page.getByRole('button', { name: /Preview/ }).click();
@@ -1214,7 +1217,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       hits += 1;
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     // Compile straight from the toolbar — the pane opens and renders the PDF, no
@@ -1238,7 +1241,7 @@ test.describe('CV editor (document-first rewrite)', () => {
         }),
       }),
     );
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
@@ -1329,7 +1332,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     page.on('dialog', (d) => void d.accept());
 
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
@@ -1410,7 +1413,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
     page.on('dialog', (d) => void d.accept());
 
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
@@ -1554,7 +1557,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
 
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     await selectVariant(page, 'Cover Letter');
@@ -1621,7 +1624,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) =>
       r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' }),
     );
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();
@@ -1665,7 +1668,7 @@ test.describe('CV editor (document-first rewrite)', () => {
         : r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
 
-    await gotoEditor(page);
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.conn')).toContainText('connected');
 
     // Edit Position → debounced PUT /entries/11, which fails the first time.
