@@ -60,7 +60,7 @@ jobs:
           CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
 
       - name: Deploy dist to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           # Repo secrets. CLOUDFLARE_API_TOKEN: a scoped token with Account ▸
           # Cloudflare Pages ▸ Edit. CLOUDFLARE_ACCOUNT_ID: the account id.
