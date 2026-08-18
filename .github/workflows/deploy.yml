@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write # stamp a deploy/cloudflare-pages commit status (green deployed / red skipped)
 
 concurrency:
   group: cf-pages
@@ -68,3 +69,35 @@ jobs:
           # --branch=main marks this a PRODUCTION deployment (production branch =
           # main), so it publishes to the custom domain, not a preview URL.
           command: pages deploy dist --project-name=andypeterson-dev --branch=main
+
+      - name: Stamp the commit as deployed
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.workflow_run?.head_sha || context.sha;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner, repo: context.repo.repo, sha,
+              state: 'success', context: 'deploy/cloudflare-pages',
+              description: 'Deployed to production',
+            });
+
+  # A workflow_run trigger whose CI did NOT pass means the deploy above was skipped.
+  # Make that LOUD — a red commit status + a failing run — instead of a silent skip
+  # that reads as "nothing happened" (which once got misread as "deployed").
+  report-skipped:
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Flag that production was NOT updated
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner, repo: context.repo.repo, sha: run.head_sha,
+              state: 'failure', context: 'deploy/cloudflare-pages',
+              description: `Skipped — CI ${run.conclusion}; prod NOT updated`,
+              target_url: run.html_url,
+            });
+            core.setFailed(`Deploy skipped: CI concluded '${run.conclusion}' for ${run.head_sha.slice(0,7)} — production was NOT updated.`);
