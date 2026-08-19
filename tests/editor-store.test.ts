@@ -253,7 +253,9 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
 describe('EditorState — connect() (api spied on the singleton)', () => {
   // A signed-in session: connect() only reaches the backend once /auth/me confirms one.
   const signIn = () =>
-    vi.spyOn(api, 'me').mockResolvedValue({ authenticated: true, email: 'ada@example.com', name: 'Ada' });
+    vi
+      .spyOn(api, 'me')
+      .mockResolvedValue({ authenticated: true, email: 'ada@example.com', name: 'Ada' });
 
   test('not signed in stays in the local demo — never touches the backend', async () => {
     vi.spyOn(api, 'me').mockResolvedValue({ authenticated: false, email: null, name: null });
@@ -457,5 +459,196 @@ describe('EditorState — profile CRUD + restore', () => {
     });
     await editor.reloadActive();
     expect(editor.person.name).toBe('Reloaded');
+  });
+});
+
+// The field editors debounce their PUT (600ms), so these drive fake timers to the
+// flush; the undo/redo inverse persists AT ONCE (no debounce), which is why the same
+// tests can assert both halves without a second timer advance.
+describe('EditorState — connected field autosave (debounced PUT + undo/redo inverse)', () => {
+  beforeEach(() => {
+    editor.connected = true;
+    editor.activePersonId = 7;
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  test('saveEntry flags saving, debounces updateEntry, and undo/redo persist the flip', async () => {
+    const spy = vi.spyOn(api, 'updateEntry').mockResolvedValue({ ok: true, status: 200 });
+    const entry = experience().entries[0];
+    const [field] = Object.keys(entry.fields);
+    const original = String(entry.fields[field] ?? '');
+    entry.fields[field] = `${original} — edited`;
+
+    editor.saveEntry(entry);
+    expect(editor.saveState).toBe('saving'); // pending synchronously…
+    expect(spy).not.toHaveBeenCalled(); // …but the PUT waits out the debounce window
+    await vi.runAllTimersAsync();
+    expect(spy).toHaveBeenCalledWith(entry.id, entry.fields);
+
+    // undo restores the old value and writes it back immediately (applyEntryField)
+    spy.mockClear();
+    await editor.undo.undo();
+    expect(entry.fields[field]).toBe(original);
+    expect(spy).toHaveBeenCalledWith(entry.id, entry.fields);
+
+    // redo replays the edit, also without waiting for a debounce
+    spy.mockClear();
+    await editor.undo.redo();
+    expect(entry.fields[field]).toBe(`${original} — edited`);
+    expect(spy).toHaveBeenCalled();
+  });
+
+  test('saveItem debounces updateItem (content + lead-in) and undo persists the inverse', async () => {
+    const spy = vi.spyOn(api, 'updateItem').mockResolvedValue({ ok: true, status: 200 });
+    const entry = editor.person.sections.flatMap((s) => s.entries).find((e) => e.items.length);
+    expect(entry).toBeDefined();
+    const item = entry!.items[0];
+    item.content = 'Reworded bullet';
+
+    editor.saveItem(item);
+    await vi.runAllTimersAsync();
+    expect(spy).toHaveBeenCalledWith(item.id, {
+      content: 'Reworded bullet',
+      title: item.title ?? '',
+    });
+
+    spy.mockClear();
+    await editor.undo.undo();
+    expect(spy).toHaveBeenCalled(); // applyItemField wrote the old value straight back
+  });
+
+  test('savePersonal debounces updatePersonal for the active profile', async () => {
+    const spy = vi.spyOn(api, 'updatePersonal').mockResolvedValue({ ok: true, status: 200 });
+    (editor.person.personal as Record<string, string>).email = 'ada@lovelace.dev';
+
+    editor.savePersonal('email');
+    await vi.runAllTimersAsync();
+    expect(spy).toHaveBeenCalledWith(7, { email: 'ada@lovelace.dev' });
+
+    spy.mockClear();
+    await editor.undo.undo();
+    expect(spy).toHaveBeenCalled(); // applyPersonalField persists the inverse at once
+  });
+
+  test('saveStyle debounces a namespaced patchSettings write; undo restores via applyStyle', async () => {
+    const spy = vi.spyOn(api, 'patchSettings').mockResolvedValue({ ok: true, status: 200 });
+    (editor.style as Record<string, string>).accentColor = 'crimson';
+
+    editor.saveStyle('accentColor');
+    expect(editor.saveState).toBe('saving');
+    await vi.runAllTimersAsync();
+    expect(spy).toHaveBeenCalledWith({ 'style.accentColor': 'crimson' });
+
+    spy.mockClear();
+    await editor.undo.undo();
+    expect(editor.style.accentColor).toBe('spinel'); // back to the demo default
+    expect(spy).toHaveBeenCalledWith({ 'style.accentColor': 'spinel' });
+  });
+});
+
+describe('EditorState — connected reorder + style/layout drawers + sign-out', () => {
+  beforeEach(() => {
+    editor.connected = true;
+    editor.activePersonId = 7;
+  });
+
+  test('reorderEntries persists the section’s new entry order', async () => {
+    const spy = vi.spyOn(api, 'reorderEntries').mockResolvedValue({ ok: true, status: 200 });
+    const sec = experience();
+    expect(sec.entries.length).toBeGreaterThanOrEqual(2);
+    const ids = sec.entries.map((e) => e.id);
+    await editor.reorderEntries(sec, 0, 1);
+    expect(sec.entries.map((e) => e.id)).toEqual([ids[1], ids[0], ...ids.slice(2)]);
+    expect(spy).toHaveBeenCalledWith(
+      sec.id,
+      sec.entries.map((e) => e.id),
+    );
+  });
+
+  test('reorderItems persists the entry’s new bullet order', async () => {
+    const spy = vi.spyOn(api, 'reorderItems').mockResolvedValue({ ok: true, status: 200 });
+    const entry = editor.person.sections.flatMap((s) => s.entries).find((e) => e.items.length >= 2);
+    expect(entry).toBeDefined();
+    const ids = entry!.items.map((i) => i.id);
+    await editor.reorderItems(entry!, 0, 1);
+    expect(entry!.items.map((i) => i.id)).toEqual([ids[1], ids[0], ...ids.slice(2)]);
+    expect(spy).toHaveBeenCalledWith(
+      entry!.id,
+      entry!.items.map((i) => i.id),
+    );
+  });
+
+  test('reorderSections persists the profile’s new section order', async () => {
+    const spy = vi.spyOn(api, 'reorderSections').mockResolvedValue({ ok: true, status: 200 });
+    const ids = editor.person.sections.map((s) => s.id);
+    expect(ids.length).toBeGreaterThanOrEqual(2);
+    await editor.reorderSections(0, 1);
+    expect(editor.person.sections.map((s) => s.id)).toEqual([ids[1], ids[0], ...ids.slice(2)]);
+    expect(spy).toHaveBeenCalledWith(
+      7,
+      editor.person.sections.map((s) => s.id),
+    );
+  });
+
+  test('loadStyle folds fetched settings into the style model', async () => {
+    vi.spyOn(api, 'getSettings').mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { 'style.accentColor': 'zzz-accent' },
+    });
+    await editor.loadStyle();
+    expect(editor.style.accentColor).toBe('zzz-accent');
+  });
+
+  test('loadLayouts populates the installed layouts + default', async () => {
+    vi.spyOn(api, 'getLayouts').mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { layouts: [{ id: 'classic', name: 'Classic' }], default: 'classic' },
+    });
+    await editor.loadLayouts();
+    expect(editor.layouts).toEqual([{ id: 'classic', name: 'Classic' }]);
+    expect(editor.defaultLayout).toBe('classic');
+  });
+
+  test('chooseLayout selects a default layout and persists it', async () => {
+    const spy = vi.spyOn(api, 'setDefaultLayout').mockResolvedValue({ ok: true, status: 200 });
+    await editor.chooseLayout('awesome-cv');
+    expect(editor.defaultLayout).toBe('awesome-cv');
+    expect(spy).toHaveBeenCalledWith('awesome-cv');
+  });
+
+  test('loadStyle and loadLayouts are inert while disconnected', async () => {
+    editor.connected = false;
+    const s = vi.spyOn(api, 'getSettings');
+    const l = vi.spyOn(api, 'getLayouts');
+    await editor.loadStyle();
+    await editor.loadLayouts();
+    expect(s).not.toHaveBeenCalled();
+    expect(l).not.toHaveBeenCalled();
+  });
+
+  test('signOut drops the server session and forgets the identity', async () => {
+    const logout = vi.spyOn(api, 'logout').mockResolvedValue(undefined);
+    editor.identity = { email: 'ada@example.com', name: 'Ada' };
+    await editor.signOut();
+    expect(logout).toHaveBeenCalled();
+    expect(editor.identity).toBeNull();
+  });
+
+  test('applyEntryFrom overwrites an entry already present in its section', () => {
+    const sec = experience();
+    const target = sec.entries[0];
+    const [field] = Object.keys(target.fields);
+    const source: Person = JSON.parse(JSON.stringify(editor.person));
+    const srcEntry = source.sections
+      .find((s) => s.id === sec.id)!
+      .entries.find((e) => e.id === target.id)!;
+    srcEntry.fields[field] = 'FROM_CHECKPOINT';
+    const before = sec.entries.length;
+    expect(editor.applyEntryFrom(source, target.id)).toBe(true);
+    expect(sec.entries.length).toBe(before); // overwrite in place, not a re-add
+    expect(sec.entries[0].fields[field]).toBe('FROM_CHECKPOINT');
   });
 });

@@ -37,12 +37,14 @@ export default defineConfig({
         'dist/**',
         'coverage/**',
       ],
-      // Honest floor (current ~66% stmts/lines, ~60% branch, ~57% func).
+      // Honest floor (current ~73-75% stmts/lines, ~66% branch, ~65% func after the
+      // store's connected autosave / reorder / style-drawer paths were unit-tested).
+      // Ratchet just below the real number; raise as coverage grows — never loosen.
       thresholds: {
-        lines: 65,
-        functions: 54,
-        branches: 56,
-        statements: 63,
+        lines: 73,
+        functions: 62,
+        branches: 63,
+        statements: 71,
       },
     },
   },
