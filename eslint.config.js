@@ -76,4 +76,81 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    // Portal-owned classifier app scripts (the "ML/AI page") — classic <script>
+    // files ported from the Flask app, not modules; no tsconfig, so no type-aware
+    // rules. Bringing 1,777 LOC under the linter (tech-debt A1). `no-undef` is the
+    // high-value rule here: it catches typo'd/undefined references in vanilla JS.
+    files: ['public/classifiers/js/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'script',
+      globals: {
+        // Browser APIs used across the classifier scripts.
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        Headers: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        EventSource: 'readonly',
+        WebSocket: 'readonly',
+        CustomEvent: 'readonly',
+        Event: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        FormData: 'readonly',
+        Image: 'readonly',
+        ImageData: 'readonly',
+        navigator: 'readonly',
+        location: 'readonly',
+        history: 'readonly',
+        performance: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
+        alert: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        getComputedStyle: 'readonly',
+        MutationObserver: 'readonly',
+        ResizeObserver: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        DOMParser: 'readonly',
+        AbortController: 'readonly',
+        // Cross-file globals seeded by sibling scripts loaded before app.js (see
+        // ClassifierApp.astro load order). Writable = defined by a classifier script
+        // and read by another (the implicit contract Item D/B would turn into imports);
+        // readonly = owned by the shared public/js/ scripts.
+        API_BASE: 'writable',
+        UI_CONFIG: 'writable',
+        CLASSIFIER_DATASETS: 'writable',
+        apiFetch: 'writable', // app.js → used by sse.js
+        consumeSSE: 'writable', // sse.js → used by app.js
+        MiniChart: 'writable', // chart.js → used by app.js
+        connectionManager: 'writable', // connection.js → used by app.js
+        ClassifierInfer: 'writable', // infer.js → used by app.js
+        ServiceConfig: 'readonly',
+        UIKit: 'readonly',
+        SitePass: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+      'no-undef': 'error',
+    },
+  },
 ];

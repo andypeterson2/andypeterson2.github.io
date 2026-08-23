@@ -149,7 +149,7 @@ class MiniChart {
     ctx.restore();
 
     // Draw series
-    for (const [name, s] of Object.entries(this.series)) {
+    for (const [, s] of Object.entries(this.series)) {
       if (s.points.length === 0) continue;
       const scaleFn = s.yAxis === "left" ? scaleYL : scaleYR;
       ctx.strokeStyle = s.color;

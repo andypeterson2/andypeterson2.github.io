@@ -8,7 +8,11 @@ import { resolve } from 'path';
 const ROOT = resolve(import.meta.dirname!, '..');
 
 describe('Classifiers page', () => {
-  const src = readFileSync(resolve(ROOT, 'src/pages/classifiers/index.astro'), 'utf-8');
+  // Canonical app page (the /classifiers alias was retired — redirects to this).
+  const src = readFileSync(
+    resolve(ROOT, 'src/pages/projects/quantum-ml-classifier/app.astro'),
+    'utf-8',
+  );
 
   test('uses BaseLayout', () => {
     expect(src).toContain('BaseLayout');

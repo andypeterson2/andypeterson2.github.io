@@ -53,7 +53,7 @@ for (const { name, path } of detailPages) {
 
 // App pages: block backends so the shell can render, then audit.
 const appPages = [
-  { name: 'Classifier shell', path: '/classifiers/' },
+  { name: 'Classifier shell', path: '/projects/quantum-ml-classifier/app/' },
 ];
 
 for (const { name, path } of appPages) {
