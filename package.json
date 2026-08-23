@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build && node scripts/purge-css.mjs",
     "preview": "astro preview",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}' && npm run lint:fontsize && npm run lint:tokens",
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' 'public/classifiers/js/**/*.js' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}' && npm run lint:fontsize && npm run lint:tokens",
     "lint:styles": "stylelint 'src/**/*.{css,astro}'",
     "lint:fontsize": "stylelint 'src/**/*.{css,astro,svelte}' 'packages/system-six/styles/*.css' --config .stylelintrc.fontsize.json",
     "lint:tokens": "stylelint 'src/**/*.{css,astro,svelte}' 'packages/system-six/styles/*.css' --config .stylelintrc.tokens.json",

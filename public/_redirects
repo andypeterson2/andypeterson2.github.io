@@ -15,3 +15,9 @@
 # Project slug renamed quantum-protein-kernel → quantum-ml-classifier (matches
 # the title). Splat covers the detail page and its /app/ subpath.
 /projects/quantum-protein-kernel/*  /projects/quantum-ml-classifier/:splat  301
+
+# /classifiers was a byte-identical orphan alias of the canonical app page.
+# EXACT-PATH ONLY — a splat (/classifiers/*) would clobber the /classifiers/js|models/*
+# static assets the surviving app page loads.
+/classifiers   /projects/quantum-ml-classifier/app/  301
+/classifiers/  /projects/quantum-ml-classifier/app/  301

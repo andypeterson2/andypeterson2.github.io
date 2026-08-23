@@ -980,7 +980,7 @@ document.addEventListener("click", async (e) => {
         addLog(msg);
       }
     },
-    (event) => {
+    (_event) => {
       addLog(`Ablation complete for '${modelName}'`, "ok");
     },
     (err) => { addLog(`Ablation error: ${err}`, "err"); }
