@@ -1,14 +1,14 @@
 name: Deploy to Cloudflare Pages
 
 # Gated on CI: this runs only after the "CI" workflow finishes on main, and the
-# job below is guarded on a successful conclusion — so a red build (lint, the
-# name-leakage PII gate, tests, CSP check, e2e, Lighthouse) cannot deploy.
+# job below is guarded on a successful conclusion — so a red build (lint, tests,
+# CSP check, e2e, Lighthouse) cannot deploy.
 # Deploy-on-every-push-to-main is preserved (CI itself runs on every such push).
 # workflow_dispatch stays available for manual redeploys.
 #
 # Deploy is wrangler-driven (prebuilt dist uploaded to Cloudflare Pages) rather
 # than Cloudflare's git integration ON PURPOSE: the git integration builds and
-# ships independently of this repo's CI, which would bypass the PII gate. Keeping
+# ships independently of this repo's CI, which would bypass its gates. Keeping
 # the deploy inside the CI-gated workflow means nothing reaches production that
 # CI hasn't validated.
 on:

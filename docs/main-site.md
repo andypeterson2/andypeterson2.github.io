@@ -203,11 +203,6 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 | `Permissions-Policy` | `camera=(self), microphone=(self), geolocation=()` |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
 
-**`scripts/check-name-leakage.sh`:**
-- Reads `PROTECTED_NAMES` env var (comma-separated)
-- Scans `src/` recursively for hardcoded names in `.ts`, `.tsx`, `.astro`, `.mdx`, `.css` files
-- Reports findings with file paths, suggests using `site.config.ts` variables instead
-
 ---
 
 <a id="seo--analytics"></a>
@@ -320,7 +315,7 @@ Both configs test URLs: `/`, `/projects/`, `/projects/latex-resume-editor/app/`
 Triggers: push to `main`, pull requests.
 
 **Job 1: `astro-build`** (Node 22)
-- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, name-leakage check (`scripts/check-name-leakage.sh`), `npm test -- --coverage`, `npm run build`
+- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, `npm test -- --coverage`, `npm run build`
 - Uploads `coverage/` and `dist/` as artifacts
 
 **Job 2: `e2e-tests`** (Node 22, needs `astro-build`)
