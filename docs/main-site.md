@@ -315,7 +315,7 @@ Both configs test URLs: `/`, `/projects/`, `/projects/latex-resume-editor/app/`
 Triggers: push to `main`, pull requests.
 
 **Job 1: `astro-build`** (Node 22)
-- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, `npm test -- --coverage`, `npm run build`
+- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, `npm run typecheck`, `npm test -- --coverage`, `npm run build`
 - Uploads `coverage/` and `dist/` as artifacts
 
 **Job 2: `e2e-tests`** (Node 22, needs `astro-build`)

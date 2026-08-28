@@ -17,7 +17,9 @@ export default defineConfig({
     exclude: ['tests/integration/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      // json-summary + lcov: machine-readable output so coverage can be diffed
+      // across runs / surfaced in CI, not just eyeballed in the HTML report.
+      reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
       // Measure the WHOLE logic surface — the portal lib (src/lib/**) and the editor
       // lib (src/editor/lib/**) — without cherry-picking the well-covered files (that
@@ -37,9 +39,9 @@ export default defineConfig({
         'dist/**',
         'coverage/**',
       ],
-      // Honest floor (current ~73-75% stmts/lines, ~66% branch, ~65% func after the
-      // store's connected autosave / reorder / style-drawer paths were unit-tested).
+      // Honest floor (2026-08: 72.5% stmts, 74.7% lines, 65.8% branch, 64.6% func).
       // Ratchet just below the real number; raise as coverage grows — never loosen.
+      // Current actuals live in coverage/coverage-summary.json after `npm test -- --coverage`.
       thresholds: {
         lines: 73,
         functions: 62,

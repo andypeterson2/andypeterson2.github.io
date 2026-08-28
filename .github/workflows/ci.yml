@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test -- --coverage
       - uses: actions/upload-artifact@v7
         if: always()
@@ -79,6 +80,25 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  integration-tests:
+    # Post-build assertions on the actual dist/ artifact (CSP meta, project
+    # routing, sitemap) — the same artifact the deploy workflow ships.
+    needs: astro-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Run integration tests against the built artifact
+        run: npx vitest run --config vitest.integration.config.ts
 
   contract-schemas:
     # The live-HTTP contract tests run in each app's own repo (they boot a backend).
