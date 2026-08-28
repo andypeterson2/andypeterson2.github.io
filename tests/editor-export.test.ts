@@ -34,6 +34,7 @@ describe('buildExport', () => {
         ],
       }),
       () => [],
+      () => ({}),
     );
 
     expect(doc.sections[0]).toMatchObject({ slug: 'experience', type: 'experience', sortOrder: 0 });

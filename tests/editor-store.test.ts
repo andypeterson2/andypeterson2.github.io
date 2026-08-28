@@ -605,10 +605,10 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     vi.spyOn(api, 'getLayouts').mockResolvedValue({
       ok: true,
       status: 200,
-      data: { layouts: [{ id: 'classic', name: 'Classic' }], default: 'classic' },
+      data: { layouts: [{ id: 'classic', name: 'Classic', status: 'ok' }], default: 'classic' },
     });
     await editor.loadLayouts();
-    expect(editor.layouts).toEqual([{ id: 'classic', name: 'Classic' }]);
+    expect(editor.layouts).toEqual([{ id: 'classic', name: 'Classic', status: 'ok' }]);
     expect(editor.defaultLayout).toBe('classic');
   });
 

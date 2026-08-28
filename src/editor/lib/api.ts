@@ -191,13 +191,13 @@ function mapVariant(v: RawMainVariant): Variant {
   };
 }
 /** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */
-function mapCoverletter(cl?: Record<string, string>): CoverletterHeader {
+function mapCoverletter(cl?: Record<string, string>): CoverletterHeader & Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(cl ?? {})) {
     if (k === 'tex' || k === 'sections') continue;
     out[k] = untex(v);
   }
-  return out as CoverletterHeader;
+  return out as CoverletterHeader & Record<string, string>;
 }
 /** GET /persons/:pid → the editor's Person. Rows arrive pre-ordered. */
 function mapMain(m: RawMain): Person {
