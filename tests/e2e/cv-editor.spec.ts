@@ -771,7 +771,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Edit Position with a '%' → debounced PUT /entries/11 with it escaped to '\%'.
     await inline.locator('.fld').first().locator('input').fill('Lead 50%');
     await expect(page.locator('.statusbar')).toContainText('saved', { timeout: 5000 });
-    expect(putBody?.fields?.position).toBe('Lead 50\\%');
+    await expect.poll(() => putBody?.fields?.position).toBe('Lead 50\\%');
   });
 
   test('creates a section against the backend when connected', async ({ page }) => {
@@ -813,7 +813,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.picker .pick').filter({ hasText: 'Skills' }).first().click();
 
     await expect.poll(() => postBody?.type).toBe('skills');
-    expect(postBody?.slug).toBe('skills');
+    await expect.poll(() => postBody?.slug).toBe('skills');
     await expect(page.locator('.sec-head h2').filter({ hasText: 'Skills' })).toBeVisible();
   });
 

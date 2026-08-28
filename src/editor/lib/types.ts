@@ -1,7 +1,7 @@
 // Data model for the CV editor — mirrors the cv API's normalized person tree
 // returned by GET /api/persons/:id. See docs/editor-redesign.md §3.
 
-export interface Personal {
+export type Personal = {
   firstName?: string;
   lastName?: string;
   position?: string;
@@ -17,7 +17,7 @@ export interface Personal {
   quote?: string;
   photoEnabled?: string;
   photoFile?: string;
-}
+};
 
 /** A bullet within an entry. Carries both a short `title` and `content`. */
 export interface Item {
@@ -45,7 +45,7 @@ export interface Section {
 }
 
 /** The cover-letter header (per-person `coverletter.*` settings). */
-export interface CoverletterHeader {
+export type CoverletterHeader = {
   title?: string;
   recipientName?: string;
   recipientAddress?: string;
@@ -53,7 +53,7 @@ export interface CoverletterHeader {
   closing?: string;
   enclosureLabel?: string;
   enclosureContent?: string;
-}
+};
 
 /** A body paragraph of a cover letter (per coverletter variant). */
 export interface LetterSection {

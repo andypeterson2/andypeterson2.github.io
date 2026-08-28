@@ -4,7 +4,7 @@
  * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { resolve, join } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');

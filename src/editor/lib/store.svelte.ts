@@ -418,7 +418,10 @@ class EditorState {
   }
   private pushPersonal(pid: number, key: string) {
     void this.persist(
-      () => api.updatePersonal(pid, { [key]: this.person.personal[key] ?? '' }),
+      () =>
+        api.updatePersonal(pid, {
+          [key]: (this.person.personal as Record<string, string>)[key] ?? '',
+        }),
       () => this.pushPersonal(pid, key),
     );
   }

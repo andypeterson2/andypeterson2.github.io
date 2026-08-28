@@ -54,7 +54,7 @@ function slugOf(person: Person, sectionId: number | string): string {
 export function buildExport(
   person: Person,
   letterFor: (v: Variant) => LetterSection[],
-  headerFor: (v: Variant) => Record<string, string>,
+  headerFor: (v: Variant) => Record<string, string | undefined>,
 ): ExportDoc {
   const name =
     person.name ||
