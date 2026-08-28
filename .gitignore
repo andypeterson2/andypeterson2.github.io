@@ -28,13 +28,11 @@ __pycache__/
 *.pyc
 *.egg-info/
 
-# Resume/CV PDFs are served externally, never committed: they carry PII that the
-# name-leakage gate (scripts/check-name-leakage.sh) scans PDF text for. Local
+# Resume/CV PDFs are served externally, never committed: they carry PII. Local
 # copies stay on disk for dev; production serves them from an external host.
 /public/resume.pdf
 /public/cv.pdf
 
-# Local scratch copy of the PROTECTED_NAMES patterns used to set the CI secret.
-# It is raw PII by definition — never commit it (belt-and-suspenders alongside
-# the name-leakage gate, which only scans src/ + public/, not the repo root).
+# Local scratch file with raw PII (patterns for the retired name-leakage gate).
+# Never commit it.
 /secret.txt

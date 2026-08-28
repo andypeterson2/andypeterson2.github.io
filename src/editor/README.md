@@ -104,7 +104,7 @@ Not signed in → the editor renders the owner's **public CV** (`demo.ts`) and i
 fully editable **locally**. The professional history is hardcoded (the same public
 narrative as the About page), but the identity — name + contacts — is NOT: it is
 resolved from `siteConfig` on the server and passed in as the `identity` prop, so
-committed source carries no protected PII (the name-leakage CI gate) and only the
+committed source carries no protected PII and only the
 public business contacts (email / GitHub / LinkedIn) ever render. Nothing persists;
 a **Download JSON** action
 exports the current document in the same shape the backend's import accepts, so

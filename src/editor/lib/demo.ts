@@ -7,9 +7,9 @@ import type { Person, Personal, LetterSection } from './types';
 // IDENTITY IS NOT HARDCODED HERE. The name, email, and handles are left blank in
 // the seed and overlaid at runtime from `siteConfig` (env-driven), which the Astro
 // page passes to <Editor> as a prop (see createDemoPerson + Editor.svelte). That
-// keeps this committed file free of the protected strings the name-leakage CI gate
-// scans for — no name, no private email, no phone, no home address. Only the public
-// business contacts (email / GitHub / LinkedIn) ever render, and only from env.
+// keeps this committed file free of protected identity strings — no name, no
+// private email, no phone, no home address. Only the public business contacts
+// (email / GitHub / LinkedIn) ever render, and only from env.
 //
 // This is a SEED, not a shared instance: the store wraps whatever it's handed in
 // `$state`, which proxies and therefore *mutates* it. Every caller takes its own
