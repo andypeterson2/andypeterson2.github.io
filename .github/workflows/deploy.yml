@@ -4,7 +4,8 @@ name: Deploy to Cloudflare Pages
 # job below is guarded on a successful conclusion — so a red build (lint, tests,
 # CSP check, e2e, Lighthouse) cannot deploy.
 # Deploy-on-every-push-to-main is preserved (CI itself runs on every such push).
-# workflow_dispatch stays available for manual redeploys.
+# workflow_dispatch stays available for manual redeploys — but it verifies the
+# commit has a successful CI run before shipping (no gate bypass).
 #
 # Deploy is wrangler-driven (prebuilt dist uploaded to Cloudflare Pages) rather
 # than Cloudflare's git integration ON PURPOSE: the git integration builds and
@@ -28,10 +29,27 @@ concurrency:
 
 jobs:
   deploy:
-    # Manual runs always deploy; workflow_run-triggered runs only when CI passed.
+    # workflow_run-triggered runs deploy only when CI passed; manual runs are
+    # verified against the commit's CI history in the first step below.
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Verify CI passed for this commit (manual dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: 'ci.yml', head_sha: context.sha, per_page: 20,
+            });
+            const ok = runs.data.workflow_runs.some((r) => r.conclusion === 'success');
+            if (!ok) {
+              core.setFailed(
+                `No successful CI run for ${context.sha.slice(0, 7)} — manual deploys only ship CI-validated commits. Run the CI workflow on this commit first.`,
+              );
+            }
+
       - uses: actions/checkout@v7
         with:
           # Deploy exactly the commit CI validated (falls back to the dispatched ref).
