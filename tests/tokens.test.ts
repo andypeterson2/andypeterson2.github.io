@@ -95,7 +95,7 @@ describe('Base CSS', () => {
 });
 
 describe('Component Files Exist', () => {
-  const components = ['Button.astro', 'SectionLabel.astro', 'PullQuote.astro'];
+  const components = ['Button.astro', 'WriteupModal.astro', 'ServerConnectModal.astro'];
 
   test.each(components)('%s component exists', (filename) => {
     expect(existsSync(resolve(ROOT, 'src/components', filename))).toBe(true);
@@ -119,18 +119,6 @@ describe('Button Component', () => {
 
   test('supports href for link-style buttons', () => {
     expect(buttonSrc).toContain('href');
-  });
-});
-
-describe('SectionLabel Component', () => {
-  const src = readFileSync(resolve(ROOT, 'src/components/SectionLabel.astro'), 'utf-8');
-
-  test('renders label text', () => {
-    expect(src).toContain('label');
-  });
-
-  test('has decorative line', () => {
-    expect(src).toContain('section-label-rule');
   });
 });
 

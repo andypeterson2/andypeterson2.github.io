@@ -9,11 +9,11 @@ services:
     user: "1000:1000"
     security_opt:
       - no-new-privileges:true
-    command: sh -c "npm install && npx astro dev --host 0.0.0.0 --port ${ASTRO_PORT}"
+    command: sh -c "npm install && npx astro dev --host 0.0.0.0 --port ${ASTRO_PORT:-4322}"
     ports:
-      - "127.0.0.1:${ASTRO_PORT}:${ASTRO_PORT}"
+      - "127.0.0.1:${ASTRO_PORT:-4322}:${ASTRO_PORT:-4322}"
     environment:
-      SITE_URL: "http://localhost:${ASTRO_PORT}"
+      SITE_URL: "http://localhost:${ASTRO_PORT:-4322}"
       NODE_ENV: development
     volumes:
       - .:/app
@@ -21,7 +21,12 @@ services:
     working_dir: /app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${ASTRO_PORT} || exit 1"]
+      # node:22-slim ships no curl/wget — probe with node's own fetch.
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:'+(process.env.ASTRO_PORT||4322)).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3

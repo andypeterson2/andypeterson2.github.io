@@ -1,11 +1,8 @@
 [project]
-name = "andypeterson-portfolio"
+name = "andypeterson-portfolio-scripts"
 version = "1.0.0"
-description = "Monorepo for andypeterson.dev portfolio and sub-projects"
-requires-python = ">=3.10"
-
-# Root-level shared Python tooling configuration.
-# Individual projects inherit these settings via ruff/mypy config discovery.
+description = "Tooling config for this repo's helper scripts (scripts/*.py); the site itself is Node/Astro"
+requires-python = ">=3.12"
 
 [tool.ruff]
 target-version = "py312"
@@ -13,16 +10,3 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B", "S", "T20", "SIM", "RUF"]
-
-[tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S108", "S603", "S607", "S310"]
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-check_untyped_defs = true
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-timeout = 300

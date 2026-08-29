@@ -98,7 +98,7 @@ nvm install 22 && nvm use 22
 ```
 
 ### Docker port conflicts
-The dev container uses `ASTRO_PORT` (see `.env`). Adjust it if the port is in use.
+The dev container uses `ASTRO_PORT` (defaults to 4322; override in `.env`). Adjust it if the port is in use.
 
 ### Stale build artifacts
 ```bash

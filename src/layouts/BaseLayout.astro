@@ -26,14 +26,11 @@ import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
 import ServerConnectModal from '../components/ServerConnectModal.astro';
 import Button from '../components/Button.astro';
 import CfBeacon from '../components/CfBeacon.astro';
-import { type Crumb } from '../lib/breadcrumbs';
 
 interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
-  /** Accepted for source compatibility; the flat layout no longer renders a breadcrumb bar. */
-  breadcrumbs?: Crumb[];
   /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
 }

@@ -22,8 +22,8 @@ lint: ## Lint (eslint + prettier + stylelint)
 build: ## Build the Astro site
 	npm run build
 
-docker-build: ## Build the portal Docker image
-	docker compose build
+docker-build: ## Build the static-preview Docker image (Dockerfile; compose runs a dev container instead)
+	docker build -t portfolio-preview .
 
 docker-up: ## Start the portal dev container (profile: dev)
 	docker compose --profile dev up -d

@@ -15,14 +15,6 @@ const identity = {
 };
 ---
 
-<BaseLayout
-  title="LaTeX Resume Editor"
-  bare
-  breadcrumbs={[
-    { label: 'projects', href: '/projects/' },
-    { label: 'latex resume editor', href: '/projects/latex-resume-editor/' },
-    { label: 'app' },
-  ]}
->
+<BaseLayout title="LaTeX Resume Editor" bare>
   <Editor client:load identity={identity} />
 </BaseLayout>

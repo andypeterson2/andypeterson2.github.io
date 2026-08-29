@@ -162,7 +162,7 @@ describe('Design system component usage', () => {
     const components = readdirSync(resolve(srcDir, 'components'));
     expect(components.length).toBeGreaterThanOrEqual(3);
     expect(components).toContain('Button.astro');
-    expect(components).toContain('SectionLabel.astro');
+    expect(components).toContain('WriteupModal.astro');
   });
 });
 

@@ -111,7 +111,6 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 | `WriteupModal.astro` | "?" trigger + System-6 modal rendering a project writeup from the `writeups` content collection at build time (CSP-safe, no client-side markdown). |
 | `classifier/` | `ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer` — the classifier app's panels. |
 | `home/` | `SidebarWindow`, `SidebarEntry`, `SkillGroup`, `TimelineEntry` — home-page building blocks. |
-| `PullQuote.astro`, `SectionLabel.astro` | **Currently unused** — no page or layout imports them. |
 
 ---
 
@@ -122,7 +121,7 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 
 | Feature | Detail |
 |---------|--------|
-| Props | `title`, `description`, `ogImage`, `breadcrumbs` (accepted for source compatibility only — the flat layout no longer renders a breadcrumb bar), `bare` (full-bleed app pages: hides portal chrome, keeps head/SEO) |
+| Props | `title`, `description`, `ogImage`, `bare` (full-bleed app pages: hides portal chrome, keeps head/SEO) |
 | Head | Meta tags, hashed CSP via `<meta>` (build-emitted), Open Graph, Twitter Card, Person JSON-LD, canonical URL, favicon, optional `CfBeacon`, preloads for the three above-the-fold pixel fonts (Chicago/Monaco/Geneva woff2), and an inline no-FOUC theme bootstrap that applies the saved `sm-theme` before first paint |
 | Styles | Imports the vendored `@sakun/system.css` then the `packages/system-six/styles/styles.css` closure (tokens → base → dither → elements), same-origin — no CDN links |
 | Skip link | Hidden by default, shown on `:focus` |
@@ -213,7 +212,6 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 | `scripts/export-nonogram-gallery.py` | Runs the nonogram repo's benchmark in-process over curated puzzles and caches real solver output to `public/nonogram/gallery/*.json` — the "spend once, show forever" gallery. Manual; needs the nonogram repo's venv. |
 | `scripts/eslint-plugin-design-system.js` | Custom ESLint rules `design-system/prefer-button` (`<button>` → `<Button>`) and `design-system/prefer-tag` (`<span class="tag">` → `<Tag>`). |
 | `scripts/new-page.sh` | Scaffolds `src/pages/<slug>.astro` from a `BaseLayout` template. |
-| `scripts/serve.py` | Python static server with `Cache-Control: no-store` (port 8000 default). |
 
 ---
 
@@ -238,8 +236,6 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 - Base URL `http://localhost:4321`; web server `npm run dev` (reused locally); 1 retry and 1 worker in CI; trace on first retry.
 
 **Contract tests:** each backend owns its live-HTTP contract test in its own repo (`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend. The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them in the `contract-schemas` CI job. See [`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md).
-
-**Smoke tests (Python, `tests/smoke/`):** `test_docker_services.py` — Docker container health checks.
 
 **Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
 
@@ -322,7 +318,7 @@ Platform summary: static `dist/` from `astro build`, served by Cloudflare Pages 
 | `make test-e2e` | End-to-end tests (playwright) |
 | `make lint` | eslint + prettier + stylelint |
 | `make build` | Build the Astro site |
-| `make docker-build` | Build the portal Docker image |
+| `make docker-build` | Build the static-preview Docker image from the `Dockerfile` (compose runs a dev container instead) |
 | `make docker-up` | Start the portal dev container (profile: dev) |
 | `make docker-down` | Stop containers |
 | `make clean` | Remove `dist`/`.astro` |
@@ -341,10 +337,8 @@ Tool versions are npm ranges in `package.json` (currently ESLint 10.x, Prettier 
 - Custom `design-system` plugin from `scripts/eslint-plugin-design-system.js`: `prefer-button` (warn) on pages/layouts, `prefer-tag`
 - The vendored classifier frontend JS (`public/classifiers/js/`) is linted too, with its own rule tier
 
-**Python (`pyproject.toml`, shared root config for the repo's Python — `scripts/*.py` and `tests/smoke/`; ruff is not part of `npm run lint` or the portal CI):**
-- Ruff: target py312, line length 100, select `E, W, F, I, N, UP, B, S, T20, SIM, RUF`; tests may ignore `S101, S108, S603, S607, S310`
-- MyPy: `python_version = "3.12"`, `warn_return_any`, `check_untyped_defs`
-- Pytest: `testpaths = ["tests"]`, `timeout = 300`
+**Python (`pyproject.toml` — tooling config for the helper scripts in `scripts/*.py`; ruff is not part of `npm run lint` or the portal CI):**
+- Ruff: target py312, line length 100, select `E, W, F, I, N, UP, B, S, T20, SIM, RUF`
 
 ---
 

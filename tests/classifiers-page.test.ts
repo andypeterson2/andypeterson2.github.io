@@ -31,8 +31,4 @@ describe('Classifiers page', () => {
     expect(src).toContain('data-port="5001"');
   });
 
-  test('has breadcrumbs linking to the quantum ml classifier project', () => {
-    expect(src).toContain('quantum ml classifier');
-    expect(src).toContain('/projects/quantum-ml-classifier/');
-  });
 });
