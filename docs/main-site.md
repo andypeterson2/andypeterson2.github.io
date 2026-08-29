@@ -1,33 +1,36 @@
 ## Main Site (andypeterson.dev)
 
+Technical reference for the portal — a static Astro site with Svelte islands, deployed to Cloudflare Pages. Where a value is likely to drift (dependency versions, coverage thresholds, port numbers), this doc points at the source file that owns it instead of copying it.
+
 <a id="framework--core-configuration"></a>
 ### Framework & Core Configuration
 
 | Property | Value |
 |----------|-------|
-| Framework | Astro 6.1.2 |
-| Node Requirement | >= 22.0.0 |
-| TypeScript Target | ES2022 (extends `astro/tsconfigs/strict`) |
+| Framework | Astro 7 (`astro` `^7.1.6` — `package.json` is authoritative) |
+| UI islands | Svelte 5 via `@astrojs/svelte` (the CV editor is a Svelte island; see below) |
+| Node requirement | >= 22.0.0 (`engines` in `package.json`) |
+| TypeScript | extends `astro/tsconfigs/strict` (`tsconfig.json`) |
 | Domain | `andypeterson.dev` (CNAME) |
 | Site URL | `process.env.SITE_URL \|\| 'https://andypeterson.dev'` |
-| Dev Toolbar | Disabled |
-| Integrations | `@astrojs/sitemap` |
+| Dev toolbar | Disabled |
+| Integrations | `@astrojs/sitemap`, `@astrojs/svelte` |
 
-**Astro Configuration Highlights (`astro.config.mjs`):**
+**Astro configuration highlights (`astro.config.mjs`):**
 
-- **Redirects:**
-  - `/underconstruction.html` -> `/`
-  - `/underconstruction` -> `/`
-  - `/resume` -> `/`
-- **Content Security Policy:** declared via the `security.csp` block (see the Security section below).
-- **Sub-app delivery:** each sub-app's frontend is owned as static assets under `public/<app>/`
-  (`public/nonogram/`, `public/classifiers/`, `public/video-chat/`, `public/cv/`) and embedded by
-  the Astro pages in `src/pages/projects/**`. The former `serve-subprojects` dev middleware was
-  removed (Phase E) — no path-rewriting glue remains.
+- **Redirects** (build-time meta-refresh fallbacks; the live 301s are in `public/_redirects`, see [Pages & Routing](#pages--routing)):
+  - `/underconstruction.html` → `/`
+  - `/underconstruction` → `/`
+  - `/resume` → `/`
+  - `/about` → `/` (the about page was merged into the home page)
+- **Content Security Policy:** declared via the `security.csp` block (see [Security](#security)).
+- **Markdown:** syntax highlighting is off (Shiki emits inline styles the hashed CSP blocks; no writeup uses fenced code).
+- **Vite:** `envPrefix` exposes `PUBLIC_`/`SITE_`/`CF_`/`PREVIEW_` vars to `import.meta.env`; a custom `assetsInlineLimit` keeps fonts as files (never base64-inlined); an inline PostCSS plugin adds `font-display: optional` to every `@font-face`.
+- **Sub-app delivery:** each backend-driven app's frontend is owned by this repo — static assets under `public/<app>/` (`public/nonogram/`, `public/classifiers/`) or a Svelte island in `src/` (the CV editor lives in `src/editor/`) — and embedded by the Astro pages in `src/pages/projects/**`. Backends live in their own repos and are consumed only over HTTP.
 
-**TypeScript Configuration (`tsconfig.json`):**
+**TypeScript configuration (`tsconfig.json`):**
 - Extends: `astro/tsconfigs/strict`
-- Includes: `.astro/types.d.ts`, `src/**/*.*`, `tests/**/*`
+- Includes: `.astro/types.d.ts`, `src/**/*`, `tests/**/*`
 - Excludes: `dist`, `node_modules`, `packages`
 
 ---
@@ -35,60 +38,62 @@
 <a id="site-identity--configuration"></a>
 ### Site Identity & Configuration
 
-**`src/config/site.ts`** exports a `SiteConfig` interface driven entirely by environment variables:
+Identity is resolved from environment variables by the pure resolver **`src/lib/site-config.ts`** (`resolveSiteConfig()`, unit-tested), which **`src/config/site.ts`** wraps with `import.meta.env` to export the `siteConfig` singleton.
 
 | Variable | Default | Field |
 |----------|---------|-------|
 | `SITE_DISPLAY_NAME` | `'Portfolio'` | `displayName`, `firstName`, `lastName` (derived) |
 | `SITE_DOMAIN` | `'localhost'` | `domain` |
 | `SITE_EMAIL` | `''` | `email` |
-| `SITE_TITLE` | `'Portfolio'` | `title` |
+| `SITE_TITLE` | `'Projects'` | `title` |
 | `SITE_DESCRIPTION` | `'Personal portfolio and project showcase'` | `description` |
 | `SITE_GITHUB` | `''` | `github` |
 | `SITE_LINKEDIN` | `''` | `linkedin` |
 
-**`.env.example`** also documents optional variables:
+In CI and deploy these come from GitHub repository *variables* (they are public identity, not secrets). **`.env.example`** documents the local set, plus:
 - `CF_BEACON_TOKEN` — Cloudflare Web Analytics beacon token (optional; unset → no analytics script)
-- `PREVIEW_DEPLOY` — if `"true"`, adds `noindex` meta tag
+- `PREVIEW_DEPLOY` — if `"true"`, adds a `noindex, nofollow` meta tag
+- `ASTRO_PORT` — dev-server port used by `docker-compose.yml`
 
 ---
 
 <a id="project-registry"></a>
 ### Project Registry
 
-**`src/data/projects.ts`** defines a `Project` interface and four project entries:
+**`src/data/projects.ts`** defines the `Project` interface and four entries:
 
-| Project | Slug | Category | App URL | Package Dir | Repo |
-|---------|------|----------|---------|-------------|------|
-| Quantum Video Chat | `quantum-video-chat` | — | external link-out (standalone app) | `qvc` | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
-| Quantum Nonogram Solver | `quantum-nonogram-solver` | — | `/projects/quantum-nonogram-solver/app/` | `nonogram` | `Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver` |
-| Quantum ML Classifier Platform | `quantum-ml-classifier` | — | `/projects/quantum-ml-classifier/app/` | `quantum-ml-classifier` | `andypeterson2/quantum-machine-learning` |
-| LaTeX Resume Editor | `latex-resume-editor` | — | `/projects/latex-resume-editor/app/` | `cv` | `andypeterson2/cv` |
+| Project | Slug | App URL | Repo |
+|---------|------|---------|------|
+| LaTeX Resume Editor | `latex-resume-editor` | `/projects/latex-resume-editor/app/` | `andypeterson2/cv` |
+| Quantum Video Chat | `quantum-video-chat` | external (GitHub Pages standalone app) | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
+| Quantum Nonogram Solver | `quantum-nonogram-solver` | `/projects/quantum-nonogram-solver/app/` | `Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver` |
+| Quantum ML Classifier Platform | `quantum-ml-classifier` | `/projects/quantum-ml-classifier/app/` | `andypeterson2/quantum-machine-learning` |
 
-All four are marked `active` and `featured`. Each has a custom icon, description, longDescription, and optional screenshots and appLinks arrays.
+All four are `active` and `featured`. Each entry carries icon, descriptions, cited `metrics`, and `tech` tags rendered on the showcase pages.
 
-**`site-manifest.json`** is auto-generated (`scripts/generate-manifest.py`) and catalogs the portal's app entry points with metadata (icon, backend port). It is a generated artifact, not the runtime port source — each page's `<meta name="site-backend" data-port>` is the authored default.
+**`site-manifest.json`** is auto-generated by `scripts/generate-manifest.py` from the **built** `dist/` routes and catalogs the portal's app entry points with metadata (nav label/icon, backend hint). It is a generated artifact, not the runtime port source — each page's `<meta name="site-backend" data-port>` is the authored default.
 
 ---
 
 <a id="pages--routing"></a>
 ### Pages & Routing
 
-**`src/pages/` directory:**
+**`src/pages/`** (the complete set):
 
 | File | Purpose |
 |------|---------|
-| `index.astro` | Home page — greeting, tagline, featured projects in finder-icon grid, CTA |
-| `about.astro` | Bio section with headshot, education/skills/experience windows, timeline, contact buttons |
-| `projects/index.astro` | All projects in finder-icon grid layout |
-| `projects/[slug].astro` | Dynamic project detail — hero section, launch/source buttons, screenshot carousel with auto-rotation, README rendering from `packageDir`, responsive float layout |
-| `404.astro` | Quantum-themed error page with system.css window styling ("Lost in the superposition"), error action links |
-| `projects/latex-resume-editor/app.astro` | App wrapper (iframe/embed) |
-| `projects/quantum-nonogram-solver/app.astro` | App wrapper |
-| `projects/quantum-ml-classifier/app.astro` | App wrapper |
-| `projects/quantum-video-chat/client.astro` | App wrapper |
-| `projects/quantum-video-chat/server.astro` | App wrapper |
-| `classifiers/index.astro` | App wrapper |
+| `index.astro` | Home page — bio, skills, education/certifications sidebar windows, and a merged experience + projects timeline (the former about page lives here) |
+| `projects/index.astro` | All projects in a finder-icon grid |
+| `projects/[slug].astro` | Static-path project detail pages from `src/data/projects.ts`, with `WriteupModal` writeups from the `src/content/writeups` collection |
+| `404.astro` | Quantum-themed error page with system.css window styling |
+| `projects/latex-resume-editor/app.astro` | Full-bleed (`bare`) page mounting the `src/editor/Editor.svelte` island with `client:load`; passes the owner identity from env (never committed as source) |
+| `projects/quantum-ml-classifier/app.astro` | Classifier app page — renders `ClassifierApp.astro`, declares `<meta name="site-backend" content="classifiers" data-port="5001">` |
+| `projects/quantum-nonogram-solver/app.astro` | Nonogram app page (embeds `public/nonogram/` assets) |
+
+**Redirects** exist in two layers, deliberately:
+
+- **`public/_redirects`** — native 301s served by Cloudflare Pages (the live layer): `/about`, `/about/`, `/resume`, `/underconstruction`, `/underconstruction.html` → `/`; `/projects/quantum-protein-kernel/*` → `/projects/quantum-ml-classifier/:splat` (slug rename); `/classifiers` and `/classifiers/` (exact-path only, so `/classifiers/js|models/*` assets keep resolving) → `/projects/quantum-ml-classifier/app/`.
+- **`astro.config.mjs` `redirects`** — the same core paths as build-time meta-refresh HTML, kept as a fallback for any origin that ignores `_redirects`.
 
 ---
 
@@ -97,102 +102,78 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 
 **`src/components/`:**
 
-| Component | Props | Behavior |
-|-----------|-------|----------|
-| `Button.astro` | `variant` (`primary`/`secondary`/`ghost`), `size` (`sm`/`md`/`lg`), `href?`, `class?` | Renders `<a>` if `href`, `<button>` otherwise. Uses system.css btn classes. |
-| `SectionLabel.astro` | `label`, `class?` | Decorative horizontal line with centered label text. |
-| `PullQuote.astro` | `cite?` | Blockquote with left/top/bottom borders, monospace citation, italicized body. |
-| `ClassifierApp.astro` | — | Full ML classifier UI: split layout with train/models/saved on left, draw canvas or tabular predictor on right, chart area below. Loads `connection.js`, `sse.js`, `chart.js`, `app.js`. |
-| `ServerConnectModal.astro` | — | Vanilla JS IIFE: detects `<meta name="site-backend">` tags, injects nav items with status dots, renders connection modals per service. Dispatches `navbar:connect`/`navbar:disconnect` custom events. Exports `widget.getUrl()` and `widget.setStatus()`. |
+| Component | Purpose |
+|-----------|---------|
+| `Button.astro` | Props: `variant` (`primary`/`secondary`/`ghost`), `size` (`sm`/`md`/`lg`), `href?`, `class?`, `type?`, `disabled?`, `aria-label?`, `id?`. Renders `<a>` if `href`, `<button>` otherwise; maps onto system.css `.btn`/`.btn-default`. |
+| `CfBeacon.astro` | Injects the Cloudflare Web Analytics beacon script (used by `BaseLayout` when `CF_BEACON_TOKEN` is set). |
+| `ClassifierApp.astro` | The classifier UI shell — composes the `classifier/` sub-components and loads the `public/classifiers/js/` scripts in order (see `docs/quantum-ml-classifier.md`). |
+| `ServerConnectModal.astro` | Backend connect UI: loads `public/js/pass.js` (gateway token pass), `service-config.js` (URL resolution: URL param > localStorage > per-page meta default), `contract-client.js` (health/discovery client), and `server-connect-modal.js` (nav items with status dots + per-service connect modals). Mounted globally by `BaseLayout`. |
+| `WriteupModal.astro` | "?" trigger + System-6 modal rendering a project writeup from the `writeups` content collection at build time (CSP-safe, no client-side markdown). |
+| `classifier/` | `ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer` — the classifier app's panels. |
+| `home/` | `SidebarWindow`, `SidebarEntry`, `SkillGroup`, `TimelineEntry` — home-page building blocks. |
+| `PullQuote.astro`, `SectionLabel.astro` | **Currently unused** — no page or layout imports them. |
 
 ---
 
 <a id="layouts"></a>
 ### Layouts
 
-**`src/layouts/BaseLayout.astro`:**
+**`src/layouts/BaseLayout.astro`** (the only layout):
 
 | Feature | Detail |
 |---------|--------|
-| Props | `title`, `description`, `ogImage`, `breadcrumbs` (custom override) |
-| Head | Meta tags, CSP via `<meta>`, Open Graph, Twitter Card, structured data (Person schema), Cloudflare Web Analytics beacon |
+| Props | `title`, `description`, `ogImage`, `breadcrumbs` (accepted for source compatibility only — the flat layout no longer renders a breadcrumb bar), `bare` (full-bleed app pages: hides portal chrome, keeps head/SEO) |
+| Head | Meta tags, hashed CSP via `<meta>` (build-emitted), Open Graph, Twitter Card, Person JSON-LD, canonical URL, favicon, optional `CfBeacon`, preloads for the three above-the-fold pixel fonts (Chicago/Monaco/Geneva woff2), and an inline no-FOUC theme bootstrap that applies the saved `sm-theme` before first paint |
+| Styles | Imports the vendored `@sakun/system.css` then the `packages/system-six/styles/styles.css` closure (tokens → base → dither → elements), same-origin — no CDN links |
 | Skip link | Hidden by default, shown on `:focus` |
-| Desktop nav (>768px) | Menubar with heart-icon home link, About, Projects links |
-| Mobile nav (<=768px) | Heart icon + `<select>` dropdown |
-| Window structure | Title bar with `<h1>`, details bar with breadcrumb trail, main pane with `<slot>` |
-| Back-to-top | Fixed button, visible after 400px scroll |
-| Breadcrumbs | Auto-generated from `pathname` unless custom provided |
-| Responsive | Switches layout at 768px, removes border/radius on mobile |
+| Desktop nav (>768px) | Sticky menubar: heart-icon **theme toggle** (light/dark, persisted to `localStorage.sm-theme`), then Home and Projects links. No About link, no breadcrumbs bar. |
+| Mobile nav (≤768px) | One floating hamburger button (top-left) opening a small menu: Theme toggle, Home, Projects. Deliberately *not* hidden on `bare` pages — it is the way back out of a full-bleed app. |
+| Window structure | One System-6 window: title bar with `<h1>` (page title), window pane with `<slot>` |
+| Back-to-top | Fixed `Button`, visible after 400px of pane scroll |
+| Responsive | Switches nav mode at 768px; drops the body border/frame on mobile |
+| Global | `<ServerConnectModal />` mounted on every page |
 
 ---
 
 <a id="design-tokens--styling"></a>
 ### Design Tokens & Styling
 
-**`src/styles/tokens.css`** — CSS custom properties on `:root`:
+The design system is owned by the **`packages/system-six/`** package — the site consumes one `@import` closure (`packages/system-six/styles/styles.css`) from `BaseLayout.astro`:
 
-| Category | Tokens |
-|----------|--------|
-| Colors (monochrome) | `--color-bg`, `--color-surface`, `--color-text`, `--color-accent`, `--color-success`, `--color-warn`, `--color-danger`, `--color-text-muted`, `--color-text-inverse`, `--color-accent-hover` (all black/white/gray) |
-| Fonts | `--font-sans` (Geneva), `--font-ui` (Chicago), `--font-mono` (Monaco) |
-| Patterns | `--pattern-checker`, `--pattern-light`, `--pattern-diagonal` |
-| Font sizes | `--text-xs` through `--text-4xl` (fixed values, no `clamp()`) |
-| Spacing | `--space-1` through `--space-32` (0.25rem to 8rem, multiples of 0.25rem) |
-| Shadows | `--shadow-focus` (2px 2px 0 #000) |
-| Layout | `--max-width` (66.25rem), `--content-width` (42.5rem) |
-| Line heights | `--leading-tight`, `--leading-normal`, `--leading-relaxed` |
-| Tracking | `--tracking-tight`, `--tracking-normal`, `--tracking-wide` |
-| Motion | `@media (prefers-reduced-motion: reduce)` disables all animations |
+1. `tokens.css` — the entire token vocabulary (authoritative; short enough to read)
+2. `base.css` — resets, the invert idiom, dark mode, print/reduced-motion
+3. `dither.css` — the 1-bit ordered fills
+4. `elements.css` — shared element layout
 
-**`src/styles/base.css`** — Global resets and utilities:
-- `box-sizing: border-box` universally
-- Body: `--font-sans`, 16px, line-height 1.5, black on white
-- Typography: H1-H6 sized from `--text-4xl` downward, `--font-sans`
-- Links: color inherit, underline on hover (inverted bg)
-- Code: monospace, inline padding/border, #eee background
-- Utilities: `.sr-only`, `.container` (max-width centered), `.separator` (border-top)
-- Section rule: flex with horizontal lines flanking text
-- Icon grid: CSS Grid with auto-fill, `clamp()` sizing (100px-180px min)
-- Finder icons: flex column, hover inverts icon and highlights label
-- Selection: black background, white text
-- Print: removes backgrounds, shows URLs after links, hides nav/buttons
+`src/styles/` holds only `classifier.css` (the classifier app's page styles). There is no `src/styles/tokens.css` or `base.css`.
 
-**`DESIGN_SYSTEM.md`** — Canonical design rules:
-- `tokens.css` is the single source of truth
-- No raw hex values (use `--color-*` tokens)
-- Pure monochrome: black, white, grays only; color never carries meaning alone
-- All spacing in multiples of 4px (use `--space-*` tokens)
-- Border radius: 0px (structural), 2px (interactive), 3px (system UI), 50% (avatars only)
-- Typography: Geneva (body/headings), Chicago (chrome only), Monaco (mono, max `--text-sm`)
-- Use design system `<Button>`, `<Card>`, `<CodeBlock>` over raw HTML
-- 48px minimum touch targets
-- `aria-label` for unlabeled elements
-- Test in light and dark modes
-- Use Astro `<Image>` from `astro:assets`, never raw `<img>`
-- Descriptive alt text (no "image of" prefix), lazy loading by default
-- Shadows: nav bar only (`0 1px 3px rgba(0,0,0,0.06)`), modals (`0 4px 16px rgba(0,0,0,0.10)`), nothing else
+In one line, the token language: one warm ink (`--ink: #1c1b19`) on paper with warm-gray ramps (`--ink-2..5`, `--paper-2..4`), a single crimson accent (`--accent: #9c2b3f`, résumé/editor only), color otherwise reserved for machine-state status lights, hard 1-bit shadows (no blur), a fluid `clamp()` type scale enforced by a stylelint gate, and a semantic z-index stack. **Do not copy token values into docs or code — read `packages/system-six/styles/tokens.css`.** The rules for building with the system (and the design rationale) live in [`docs/design-system.md`](./design-system.md) and [`docs/design-ethos.md`](./design-ethos.md); the root `DESIGN_SYSTEM.md` points into these.
 
 ---
 
 <a id="security"></a>
 ### Security
 
-**Content Security Policy (via `astro.config.mjs` security block):**
+**Content Security Policy** (built per page via the `security.csp` block in `astro.config.mjs`, delivered as a hashed `<meta>` tag):
 
 | Directive | Sources |
 |-----------|---------|
-| `script-src` | `'self'`, `cdn.socket.io`, `static.cloudflareinsights.com`, + per-page inline-script hashes |
-| `style-src` | `'self'`, + per-page inline-style hashes |
+| `script-src` | `'self'`, `cdn.socket.io`, `static.cloudflareinsights.com`, a pinned hash for the inline no-FOUC theme script, + per-page inline-script hashes |
+| `style-src` | `'self'` + per-page inline-style hashes |
 | `default-src` | `'self'` |
 | `font-src` | `'self'` |
 | `img-src` | `'self'`, `data:` |
-| `connect-src` | `'self'`, `cloudflareinsights.com`, `api.andypeterson.dev` (+ `http://localhost:*`, `ws://localhost:*`, `wss://localhost:*` in dev only) |
+| `connect-src` | `'self'`, `https://cloudflareinsights.com`, `https://api.andypeterson.dev` (+ `http://localhost:*`, `ws://localhost:*`, `wss://localhost:*` outside production) |
+| `worker-src` | `'self'`, `blob:` (pdf.js worker for the CV editor preview) |
+| `frame-src` | `'self'`, `blob:` |
 | `object-src` | `'none'` |
 | `base-uri` | `'self'` |
 | `form-action` | `'self'`, `mailto:` |
-| `frame-ancestors` | `'none'` |
+| `frame-ancestors` | `'none'` (named in the policy, but ignored in `<meta>` delivery per spec — anti-framing is enforced by the edge `X-Frame-Options` header below) |
 
-**`public/_headers`** (applied to all paths):
+`scripts/check-security-headers.sh` runs in CI after every build and asserts the CSP meta actually ships in `dist/`; with `--live` it checks the deployed site's edge headers.
+
+**`public/_headers`** — served natively by Cloudflare Pages at the edge on every response:
 
 | Header | Value |
 |--------|-------|
@@ -200,21 +181,23 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 | `X-Frame-Options` | `DENY` |
 | `X-XSS-Protection` | `0` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(self), microphone=(self), geolocation=()` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
+
+Rationale and the edge/meta split are documented in [`docs/security-headers.md`](./security-headers.md).
 
 ---
 
 <a id="seo--analytics"></a>
 ### SEO & Analytics
 
-- **Sitemap:** auto-generated via `@astrojs/sitemap`
-- **robots.txt:** `User-agent: * / Allow: /`
-- **Cloudflare Web Analytics:** manual beacon in `BaseLayout.astro` head, gated on `CF_BEACON_TOKEN`
-- **Open Graph & Twitter Card:** meta tags in layout
-- **Structured Data:** Person schema (JSON-LD) in layout
+- **Sitemap:** auto-generated via `@astrojs/sitemap` (validated by `tests/integration/sitemap.test.ts`)
+- **robots.txt:** `User-agent: *` / `Allow: /`
+- **Cloudflare Web Analytics:** `CfBeacon.astro`, gated on `CF_BEACON_TOKEN`
+- **Open Graph & Twitter Card:** meta tags in `BaseLayout`
+- **Structured data:** Person schema (JSON-LD) in `BaseLayout`
 - **Canonical URL:** set per page
-- **Favicon:** in `public/`
+- **Favicon:** `public/favicon.svg`
 
 ---
 
@@ -223,153 +206,84 @@ All four are marked `active` and `featured`. Each has a custom icon, description
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/generate-manifest.py` | Scans all `index.html` files recursively, extracts `<meta>` tags (`site-nav-label`, `site-nav-icon`, `site-nav-pin`, `site-backend`), falls back to `<title>`, generates `site-manifest.json`. Excludes dockerfiles, images, lib, nginx, shared, tests, documents, node_modules, dist, templates. Skips Jinja templates. |
-| `scripts/eslint-plugin-design-system.js` | Custom ESLint plugin with two rules: `prefer-button` (warns when `<button>` used instead of `<Button>` component) and `prefer-tag` (warns when `<span class="tag">` used instead of `<Tag>` component). Both skip `src/components/`. |
-| `scripts/new-page.sh` | Takes `page-name` arg, creates `src/pages/${SLUG}.astro` from template with `BaseLayout`, page sections, and responsive CSS. |
-| `scripts/serve.py` | Python `SimpleHTTPRequestHandler` with `Cache-Control: no-store` headers. Port 8000 default, configurable via arg. |
+| `scripts/purge-css.mjs` | Post-build (chained in `npm run build`): purges the render-blocking BaseLayout stylesheet (the vendored system.css) against the real `dist/` HTML+JS, rewriting it in place. App CSS is deliberately untouched. |
+| `scripts/check-security-headers.sh` | CI gate asserting the hashed CSP `<meta>` ships in `dist/`; `--live <url>` checks the deployed edge headers. |
+| `scripts/generate-manifest.py` | Scans the built `dist/` routes for `site-nav-*`/`site-backend` meta tags and writes `site-manifest.json`. Run after `astro build`. |
+| `scripts/export-classifier-models.py` | Trains the two linear classifier models (MNIST, Iris) and exports browser-runnable weights to `public/classifiers/models/*.json` for the zero-backend demo tier. Manual; needs a PyTorch env (e.g. the classifier repo's venv). See `docs/quantum-ml-classifier.md`. |
+| `scripts/export-nonogram-gallery.py` | Runs the nonogram repo's benchmark in-process over curated puzzles and caches real solver output to `public/nonogram/gallery/*.json` — the "spend once, show forever" gallery. Manual; needs the nonogram repo's venv. |
+| `scripts/eslint-plugin-design-system.js` | Custom ESLint rules `design-system/prefer-button` (`<button>` → `<Button>`) and `design-system/prefer-tag` (`<span class="tag">` → `<Tag>`). |
+| `scripts/new-page.sh` | Scaffolds `src/pages/<slug>.astro` from a `BaseLayout` template. |
+| `scripts/serve.py` | Python static server with `Cache-Control: no-store` (port 8000 default). |
 
 ---
 
 <a id="testing"></a>
 ### Testing
 
-**Unit & Component Tests (Vitest):**
+**Unit & component tests (Vitest, `vitest.config.ts`):**
 
-| Config | Value |
-|--------|-------|
-| Config file | `vitest.config.ts` |
-| Pattern | `tests/**/*.test.ts` |
-| Coverage provider | v8 |
-| Coverage includes | `src/**/*.{ts,astro}` |
-| Coverage excludes | `src/env.d.ts` |
-| Coverage reporters | text, html |
+- Pattern `tests/**/*.test.ts`, excluding `tests/integration/**` (those need `dist/`).
+- The Svelte plugin compiles `.svelte.ts` runes modules with the `browser` resolve condition, so the editor's reactive controllers (undo, tags, variants, letters, …) are unit-testable.
+- Coverage: v8 over `src/lib/**` and `src/editor/lib/**` (the whole logic surface, not cherry-picked files), reporters `text`/`html`/`json-summary`/`lcov`. Thresholds are a regression **ratchet** set just below the current honest numbers — read them from `vitest.config.ts`, and current actuals from `coverage/coverage-summary.json`; `.astro`/`.svelte` glue is e2e-covered instead.
+- The suite in `tests/` covers pages/SEO/security assertions, tokens, project data, service config, the contract client, SSE fallback, classifier components, and the editor (the `editor-*.test.ts` files).
 
-Test files in `tests/`:
+**Integration tests (Vitest, `vitest.integration.config.ts`):**
 
-| File | Coverage |
-|------|----------|
-| `pages.test.ts` | Nav ARIA, system.css patterns, page existence, skip-to-content, window structure, home/project links, accessibility (prefers-reduced-motion, ARIA), SEO (meta description, viewport, OG, Twitter Card, canonical, favicon), security headers |
-| `tokens.test.ts` | Token CSS `:root` monochrome variables, no light theme overrides, prefers-reduced-motion, spacing tokens, fixed font sizes, base CSS resets, component existence/props |
-| `blog.test.ts` | 404 quantum-themed messaging, navigation suggestions, system.css window |
-| `project-detail.test.ts` | Project detail rendering |
-| `deployment.test.ts` | Deployment validation |
-| `privacy-seo.test.ts` | Privacy and SEO compliance |
-| `qa-testing.test.ts` | QA test suite |
-| `phase5-polish.test.ts` | Polish phase tests |
+- `tests/integration/` — post-build assertions against the actual `dist/` artifact: CSP meta (including the pinned inline-script hash), project routing, sitemap. Run with `npm run test:integration` (chains `astro build`).
 
-**E2E Tests (Playwright):**
+**E2E tests (Playwright, `playwright.config.ts`):**
 
-| Config | Value |
-|--------|-------|
-| Config file | `playwright.config.ts` |
-| Test directory | `tests/e2e/` |
-| Browser | Chromium only (Desktop Chrome) |
-| Base URL | `http://localhost:4321` |
-| Parallel | Enabled |
-| Retries | 1 in CI, 0 locally |
-| Workers | 1 in CI, unlimited locally |
-| Trace | On first retry |
-| Web server | `npm run dev` on port 4321, reuses existing |
+- `tests/e2e/` — navigation, pages, responsive, accessibility (axe), keyboard nav, performance, project details, server-connect, classifier app, CV editor, error paths, frontend assets, token propagation.
+- Chromium (Desktop Chrome) by default; firefox + webkit only when `E2E_ALL_BROWSERS=1` (full sweeps), keeping PR feedback fast.
+- Base URL `http://localhost:4321`; web server `npm run dev` (reused locally); 1 retry and 1 worker in CI; trace on first retry.
 
-E2E spec files:
+**Contract tests:** each backend owns its live-HTTP contract test in its own repo (`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend. The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them in the `contract-schemas` CI job. See [`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md).
 
-| Spec | Coverage |
-|------|----------|
-| `navigation.spec.ts` | Home renders with title/featured projects, desktop menubar links, breadcrumbs, heart icon, back-to-top button |
-| `pages.spec.ts` | Core pages render without errors, 404 content, project index lists finder icons (>=3), icon links, about page sections |
-| `responsive.spec.ts` | Responsive layout tests |
-| `qvc-client.spec.ts` | QVC client tests |
-| `server-connect.spec.ts` | Server connection modal tests |
+**Smoke tests (Python, `tests/smoke/`):** `test_docker_services.py` — Docker container health checks.
 
-**Contract Tests (Python):** each backend now owns its own contract test in its repo
-(`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend.
-The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them
-in the `contract-schemas` CI job.
-
-**Smoke Tests (Python, `tests/smoke/`):**
-- `test_docker_services.py` — Docker container health checks
-
-**Lighthouse CI:**
-
-| Config | Form Factor | CPU Slowdown |
-|--------|-------------|--------------|
-| `.lighthouserc.json` | Desktop | None (screen emulation disabled) |
-| `.lighthouserc.mobile.json` | Mobile | 4x multiplier |
-
-Both configs test URLs: `/`, `/projects/`, `/projects/latex-resume-editor/app/`
-
-| Assertion | Threshold |
-|-----------|-----------|
-| Performance | warn at 0.5 |
-| Accessibility | error at 0.85 |
-| Best Practices | error at 0.85 |
-| SEO | error at 1.0 |
+**Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
 
 ---
 
 <a id="cicd-pipelines"></a>
 ### CI/CD Pipelines
 
-**`.github/workflows/ci.yml`** — Continuous Integration (portal-only; each sub-app has its own CI in its own repo):
+**`.github/workflows/ci.yml`** — Continuous Integration (portal-only; each sub-app has its own CI in its own repo). Triggers: push to `main`, pull requests. Six jobs:
 
-Triggers: push to `main`, pull requests.
+1. **`astro-build`** (Node 22): `npm ci`, `npm audit --audit-level=high`, `npm run lint`, `npm run typecheck`, `npm test -- --coverage`, `npm run build` (with the `SITE_*` repo variables so the tested build matches production), then `scripts/check-security-headers.sh` verifies the CSP ships. Uploads `coverage/` and `dist/` as artifacts.
+2. **`e2e-tests`** (needs `astro-build`): installs Playwright Chromium, downloads the `dist/` artifact, runs `npx playwright test` (chromium-only on PRs; firefox/webkit in full sweeps). Uploads the Playwright report on failure.
+3. **`integration-tests`** (needs `astro-build`): downloads the `dist/` artifact and runs `npx vitest run --config vitest.integration.config.ts` against it — the same artifact the deploy ships.
+4. **`contract-schemas`** (Python 3.12): validates every `docs/api-contract/schemas/*.json` is a well-formed JSON Schema (Draft 2020-12).
+5. **`lighthouse-desktop`** (needs `astro-build`): `treosh/lighthouse-ci-action` (pinned by SHA, v12) with `.lighthouserc.json`.
+6. **`lighthouse-mobile`** (needs `astro-build`): same, with `.lighthouserc.mobile.json`.
 
-**Job 1: `astro-build`** (Node 22)
-- `npm ci`, `npm audit --audit-level=high`, `npm run lint`, `npm run typecheck`, `npm test -- --coverage`, `npm run build`
-- Uploads `coverage/` and `dist/` as artifacts
+**`.github/workflows/codeql.yml`** — CodeQL static analysis, `javascript-typescript` only (build-mode `none`); each app repo runs its own CodeQL for its own languages. Push/PR to `main` plus a weekly schedule.
 
-**Job 2: `e2e-tests`** (Node 22, needs `astro-build`)
-- Installs Playwright Chromium, downloads the `dist/` artifact, runs `npx playwright test` (PR runs are Chromium-only; firefox/webkit in full sweeps)
-
-**Job 3: `contract-schemas`** (Python 3.12)
-- Validates every `docs/api-contract/schemas/*.json` is a well-formed JSON Schema (`jsonschema` Draft 2020-12). The live-HTTP contract tests live in each app's own repo.
-
-**Job 4: `lighthouse-desktop`** (needs `astro-build`)
-- `treosh/lighthouse-ci-action@v12` against the built `dist/` with `.lighthouserc.json`
-
-**Job 5: `lighthouse-mobile`** (needs `astro-build`)
-- Same, with `.lighthouserc.mobile.json`
-
-**`.github/workflows/codeql.yml`** — CodeQL static analysis (`analyze` job) on a language matrix.
-
----
-
-**`.github/workflows/deploy.yml`** — GitHub Pages Deployment:
-
-Triggers: `workflow_run` after the **CI** workflow completes on `main` (deploys only when CI passed), plus manual `workflow_dispatch`.
-
-| Step | Action |
-|------|--------|
-| Checkout | The CI-validated commit (`workflow_run.head_sha`); no submodules |
-| Setup Node | v22, npm caching |
-| Build | `npm ci && npm run build` |
-| Upload | `dist/` via `actions/upload-pages-artifact@v3` |
-| Deploy | `actions/deploy-pages@v4` |
-
-Permissions: `pages: write`, `id-token: write`, `contents: read`
-
----
-
-**`.github/workflows/generate-manifest.yml`** — Auto-manifest:
-
-Triggers: push to `main` (ignoring `site-manifest.json` changes).
-
-| Step | Action |
-|------|--------|
-| Setup Python | 3.12 |
-| Generate | `python3 scripts/generate-manifest.py` |
-| Commit | If changed, commits as `github-actions[bot]` |
+**`.github/workflows/generate-manifest.yml`** — on push to `main` (ignoring `site-manifest.json` itself): `npm ci && npm run build`, then `python3 scripts/generate-manifest.py dist`, committing the regenerated manifest as `github-actions[bot]` if it changed.
 
 ---
 
 <a id="deployment"></a>
 ### Deployment
 
-- **Platform:** GitHub Pages
-- **Output:** Static site in `dist/` from `astro build`
-- **Domain:** `andypeterson.dev` (CNAME)
-- **Artifact upload:** `actions/upload-pages-artifact` + `actions/deploy-pages`
-- **Environment:** `github-pages`
+**`.github/workflows/deploy.yml`** — Cloudflare Pages, gated on CI:
+
+- **Triggers:** `workflow_run` when the **CI** workflow completes on `main`, plus manual `workflow_dispatch`.
+- **Gate:** the `deploy` job runs only when CI concluded `success`. A manual dispatch first queries the commit's CI history and **fails if that commit has no successful CI run** — there is no gate bypass.
+- **Why wrangler, not Cloudflare's git integration:** the git integration would build and ship independently of this repo's CI; keeping the deploy inside the CI-gated workflow means nothing reaches production that CI hasn't validated.
+
+| Step | Action |
+|------|--------|
+| Checkout | The CI-validated commit (`workflow_run.head_sha`, falling back to the dispatched ref) |
+| Setup Node | v22, npm caching |
+| Build | `npm ci && npm run build` with the `SITE_*` / `CF_BEACON_TOKEN` repository variables |
+| Deploy | `cloudflare/wrangler-action@v3` → `pages deploy dist --project-name=andypeterson-dev --branch=main` (production branch, so it publishes to the custom domain). Secrets: `CLOUDFLARE_API_TOKEN` (scoped Pages Edit), `CLOUDFLARE_ACCOUNT_ID` |
+| Status | On success, stamps a green `deploy/cloudflare-pages` commit status |
+
+- **Permissions:** `contents: read`, `statuses: write`. Concurrency group `cf-pages` (no cancel-in-progress).
+- **`report-skipped` job:** when the triggering CI run did *not* pass, it stamps a **red** `deploy/cloudflare-pages` commit status and fails loudly, so a skipped deploy can never be misread as "deployed".
+
+Platform summary: static `dist/` from `astro build`, served by Cloudflare Pages on `andypeterson.dev`; `public/_redirects` and `public/_headers` are honored natively at the edge.
 
 ---
 
@@ -385,23 +299,15 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 | Image | `node:22-slim` |
 | Command | `sh -c "npm install && npx astro dev --host 0.0.0.0 --port ${ASTRO_PORT}"` |
 | Port | `127.0.0.1:${ASTRO_PORT}:${ASTRO_PORT}` |
-| Environment | `SITE_URL="http://localhost:${ASTRO_PORT}"` |
+| Environment | `SITE_URL="http://localhost:${ASTRO_PORT}"`, `NODE_ENV=development` |
 | Volumes | `.:/app`, `website_node_modules:/app/node_modules` |
+| Hardening | `no-new-privileges`, non-root user, cpu/memory limits, healthcheck |
 
-**Service Ports (from `DEVELOPMENT.md`):**
+**Backend default ports** (authoritative table and instructions in `DEVELOPMENT.md`): classifiers 5001, cv editor 3001, nonogram 5055, qvc signaling 5050. The Astro dev server runs on 4321 (`ASTRO_PORT` in Docker).
 
-| Service | Default Port |
-|---------|-------------|
-| Astro dev server | 4321 |
-| Classifiers | 5001 |
-| CV Editor | 3001 |
-| Nonogram | 5055 |
-| Video Chat Server | 5050 |
-| Video Chat Client A | 5002 |
+**URL resolution priority chain:** per-service URL params → unified `?backend=` param → localStorage → the page's `<meta name="site-backend" data-port>` default.
 
-**URL Resolution Priority Chain:** URL params -> unified `?backend=` param -> localStorage -> defaults
-
-**No submodules:** the portal is standalone — each app lives in its own repo and is consumed only as an HTTP API (its built frontend is owned under `public/<app>/`).
+**No submodules:** the portal is standalone — each app lives in its own repo and is consumed only as an HTTP API (its frontend is owned by this repo, under `public/<app>/` or `src/editor/`).
 
 ---
 
@@ -426,28 +332,27 @@ Triggers: push to `main` (ignoring `site-manifest.json` changes).
 <a id="linting--formatting"></a>
 ### Linting & Formatting
 
-| Tool | Version | Scope |
-|------|---------|-------|
-| ESLint | 10.1.0 | TypeScript, TSX, Astro files |
-| Prettier | 3.8.1 | TypeScript, TSX, Astro, CSS |
-| Stylelint | 17.5.0 | CSS, Astro files |
-| Ruff | latest | Python (`scripts/`, `tests/smoke/`) |
+Tool versions are npm ranges in `package.json` (currently ESLint 10.x, Prettier 3.x, Stylelint 17.x) — read them there rather than from this doc.
 
-**ESLint Configuration (`eslint.config.js`):**
-- Uses `eslint-plugin-astro` (recommended config)
-- TypeScript ESLint parser
-- Custom design-system plugin from `scripts/`
-- Rules: `no-unused-vars` (warn, ignoring `_` prefix), `no-explicit-any` (warn)
-- Design system: `prefer-button` (warn) for `.astro` pages/layouts
+`npm run lint` chains: ESLint (`src/**` TS/TSX/Astro plus `public/classifiers/js/**/*.js`), Prettier check, Stylelint, and two extra Stylelint passes with dedicated configs — `lint:fontsize` (`.stylelintrc.fontsize.json`: every `font-size` must be a token) and `lint:tokens` (`.stylelintrc.tokens.json`), both also covering `packages/system-six/styles/`.
 
-**Python Configuration (`pyproject.toml`):**
-- Target: Python 3.12
-- Line length: 100
-- Ruff select: E, W, F, I, N, UP, B, S, T20, SIM, RUF
-- Per-file ignores: tests may ignore S101, S108, S603, S607, S310
+**ESLint (`eslint.config.js`):**
+- `eslint-plugin-astro` (recommended) + TypeScript ESLint parser
+- Custom `design-system` plugin from `scripts/eslint-plugin-design-system.js`: `prefer-button` (warn) on pages/layouts, `prefer-tag`
+- The vendored classifier frontend JS (`public/classifiers/js/`) is linted too, with its own rule tier
+
+**Python (`pyproject.toml`, shared root config for the repo's Python — `scripts/*.py` and `tests/smoke/`; ruff is not part of `npm run lint` or the portal CI):**
+- Ruff: target py312, line length 100, select `E, W, F, I, N, UP, B, S, T20, SIM, RUF`; tests may ignore `S101, S108, S603, S607, S310`
 - MyPy: `python_version = "3.12"`, `warn_return_any`, `check_untyped_defs`
 - Pytest: `testpaths = ["tests"]`, `timeout = 300`
 
 ---
 
-<a id="cv-editor"></a>
+### Related docs
+
+- [`docs/cv-editor.md`](./cv-editor.md) — the LaTeX Resume Editor (the `src/editor/` Svelte island and its backend)
+- [`docs/quantum-ml-classifier.md`](./quantum-ml-classifier.md) — the classifier platform and its browser-inference demo tier
+- [`docs/nonogram.md`](./nonogram.md) — the nonogram solver
+- [`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md) — the cross-repo backend API contract
+- [`docs/design-system.md`](./design-system.md) / [`docs/design-ethos.md`](./design-ethos.md) — the design system
+- [`docs/security-headers.md`](./security-headers.md) — security header rationale

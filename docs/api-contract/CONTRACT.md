@@ -20,12 +20,14 @@ Liveness probe. Required keys `status` and `service`; when `status` is `ok`, `ve
 { "status": "ok", "service": "nonogram", "version": "1.4.0", "uptime_s": 132.7 }
 ```
 
-| Service | Current | Target delta |
+All four services implement this:
+
+| Service | Route(s) | Body |
 |---|---|---|
-| cv | `GET /api/health` → `{status, service:'cv', persons}` | add `version`, `uptime_s`; also expose at `/health` (keep `/api/health` as alias) |
-| classifiers | `GET /health` → `{status, uptime, clients, timestamp}` | add `service:'classifiers'`, `version`; rename/duplicate `uptime` → `uptime_s` |
-| qvc (middleware) | `GET /health` → JSON | add `service:'qvc'`, `version`, `uptime_s` |
-| **nonogram** | **none** | **add `GET /health`** — the one true gap |
+| cv | `GET /health` (plus `GET /api/health`, kept as a legacy alias) | `{status, service:'cv', version, uptime_s}` (`editor/lib/health.js`) |
+| classifiers | `GET /health` | `{status, service:'classifiers', version, uptime_s, uptime, clients, timestamp}` — `uptime` is a legacy alias of `uptime_s` for pre-contract clients (`classifiers/routes/main.py`) |
+| qvc (signaling) | `GET /health` | `{status, service:'qvc', version, uptime_s}` (`signaling/server.py`) |
+| nonogram | `GET /health` | `{status, service:'nonogram', version, uptime_s}` (`tools/routes/meta.py`) |
 
 ## Error envelope — [`schemas/error.schema.json`](./schemas/error.schema.json)
 
@@ -37,7 +39,7 @@ Every 4xx/5xx response body is exactly:
 
 - `code` — stable `snake_case` slug clients may switch on. `message` — human text, not stable. `details` — optional, any JSON.
 - The HTTP status carries the class (400/404/409/422/500); the envelope never restates it.
-- Centralize per repo: classifiers already has `routes/errors.py:error_response()` (change its body); nonogram adds a `respond_error()` helper + Flask errorhandler; cv adds an Express error-handling middleware in `editor/server.js` with a `sendError(res, status, code, msg)` helper.
+- Centralized per repo: classifiers in `classifiers/routes/errors.py:error_response()`; nonogram in `tools/errors.py:respond_error()` plus Flask errorhandlers for `HTTPException` and `Exception`; cv via an Express error-handling middleware (and a JSON 404 catch-all) in `editor/server.js`.
 
 ## `GET /api` — discovery — [`schemas/manifest.schema.json`](./schemas/manifest.schema.json)
 
@@ -70,25 +72,26 @@ One comma-separated variable per service; default allows localhost (any port) pl
 | classifiers | `CLASSIFIERS_CORS_ORIGINS` | `http://localhost:*,https://andypeterson.dev` |
 | qvc | `QVC_CORS_ORIGINS` | `http://localhost:*,https://andypeterson.dev` |
 
-Three of four already read these; cv's hard-coded fallback list in `editor/server.js` is the one substantive change (its `cors` package needs a function/regex origin to honor the `:*` wildcard).
+All four read these. The Flask services pass the split list to `flask-cors`; cv (whose `cors` package can't match a `:*` wildcard from a string list) implements the default with a function origin in `editor/server.js` — a localhost/127.0.0.1 any-port regex plus the production origin (`CV_PROD_ORIGIN`), with `CV_CORS_ORIGINS` adding extra exact origins.
 
 ## Per-service summary
 
 Ports are the canonical defaults, configurable via `PORT`/env. The frontend resolves each backend's URL at runtime via `ServiceConfig` — URL param > `localStorage` > the per-page `<meta name="site-backend" data-port>` default, which is the authored source of truth for the port. `site-manifest.json` is a generated catalog of app entry points (built by `scripts/generate-manifest.py`), not the runtime port source.
 
-| Service | Lang | Default port | Streaming layer | Sync routes added (Phase B) |
+| Service | Lang | Default port | Streaming layer | Sync routes (curl-able equivalents) |
 |---|---|---|---|---|
 | cv | Node/Express | **3001** | — (already synchronous CRUD + PDF) | none needed |
 | nonogram | Python/Flask | 5055 | Socket.IO (`cl_done`,`qu_done`,`bench_done`) | `/api/solve/{classical,quantum}/sync`, `/api/benchmark/sync` |
-| classifiers | Python/Flask | 5001 | SSE (train/eval streams) | `/train/sync`, `/evaluate/sync` |
+| classifiers | Python/Flask | 5001 | SSE (train/eval streams) | `/d/<dataset>/train/sync`, `/d/<dataset>/evaluate/sync` |
 | qvc | Python/Flask | 5050 (signaling) | WebRTC + signaling WS | none — see exemption below |
 
 **qvc exemption.** qvc's "operation" is connection brokering, which is already synchronous REST (`/health`, `/peer_connection`, `/disconnect`, `/peer_disconnected`, signaling `/admin/*`). The media + BB84/QKD path is inherently peer-to-peer in the browser; it is the explicit live-only layer and is exempt from the curl-able rule. This is documented, not a gap.
 
 ## Enforcement
 
-- Each app repo has its own `tests/contract/test_<service>_api.py` that hits its **live** backend over HTTP (`<SERVICE>_URL` env, `skipif` when down) and validates `/health`, `/api`, the error envelope, and the `/sync` routes against a vendored copy of [`schemas/`](./schemas/) via `jsonschema`.
-- Each app's CI runs a `contract` job that boots the service on a temp port, curls `/health`, then runs that contract test — so removing or breaking a route fails that app's PR. The portal's CI separately validates that the canonical schemas are well-formed JSON Schemas.
+- cv, nonogram, and classifiers each have their own `tests/contract/test_<service>_api.py` that hits the **live** backend over HTTP (`<SERVICE>_URL` env, `skipif` when down) and validates `/health`, `/api`, the error envelope, and the `/sync` routes against a vendored copy of [`schemas/`](./schemas/) via `jsonschema`; each of those repos' CI runs a `contract` job that boots the service, curls `/health`, then runs the contract test — so removing or breaking a route fails that app's PR.
+- qvc implements the contract routes but does not yet have a dedicated `tests/contract/` suite or CI contract job; its signaling test suite covers the REST surface.
+- The portal's CI separately validates that the canonical schemas are well-formed JSON Schemas.
 
 ## Versioning
 

@@ -1,6 +1,6 @@
 ---
 title: Quantum ML Classifier Platform
-summary: A plugin-based ML platform benchmarking quantum-enhanced classifiers against classical baselines, with 425 tests.
+summary: A plugin-based ML platform benchmarking quantum-enhanced classifiers against classical baselines, with 438 tests.
 ---
 
 An extensible platform for training, evaluating, and comparing classifiers — built so you add a new dataset as a **plugin**, with no changes to existing code.
@@ -17,7 +17,7 @@ A custom **40+ component UI kit** with dark/light theming, a **draw-to-predict c
 
 ## Verification
 
-There are **425 tests**, across model architectures, training loops, API routes, and persistence. Models emit raw logits. The same server-side preprocessing and softmax will move **into the browser**, for a zero-backend inference demo.
+There are **438 tests**, across model architectures, training loops, API routes, and persistence. Models emit raw logits. The same preprocessing and softmax also operate **in the browser**, for a zero-backend inference demo.
 
 ## Stack
 

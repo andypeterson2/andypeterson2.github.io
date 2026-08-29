@@ -1,341 +1,178 @@
 ## Quantum ML Classifier Platform
 
-**Source repo:** [`andypeterson2/quantum-machine-learning`](https://github.com/andypeterson2/quantum-machine-learning) — API-only backend. The portal owns the frontend under `public/classifiers/`.
+**Source repo:** [`andypeterson2/quantum-machine-learning`](https://github.com/andypeterson2/quantum-machine-learning) — an **API-only** Flask backend (`create_app()` sets `static_folder=None`; it serves no templates and no static files). The portal (this repo) owns the entire frontend: the page shell in `src/components/ClassifierApp.astro` + `src/components/classifier/`, and the app scripts and demo-model weights under `public/classifiers/`.
 
 <a id="qmc-overview"></a>
 ### Overview
 
-Multi-dataset classifier platform comparing classical and quantum-hybrid neural network approaches. Plugin architecture for datasets (MNIST, Iris). Features live training via SSE, real-time loss curves, draw-to-predict (MNIST), form-to-predict (Iris), model persistence, early stopping, knowledge distillation, ensemble evaluation, and ablation studies.
+Multi-dataset classifier platform comparing classical and quantum-hybrid neural network approaches. Plugin architecture for datasets (MNIST, Iris). Live training over Server-Sent Events with real-time loss curves, draw-to-predict (MNIST), form-to-predict (Iris), model persistence, early stopping, knowledge distillation, ensemble evaluation, and ablation studies — plus a **zero-backend demo tier** that runs real inference entirely in the visitor's browser.
+
+<a id="qmc-frontend"></a>
+### Frontend (this repo) — two tiers
+
+The page at `/projects/quantum-ml-classifier/app/` (`src/pages/projects/quantum-ml-classifier/app.astro`) renders `src/components/ClassifierApp.astro`, which composes the UI from `src/components/classifier/` (`ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer`; styles in `src/styles/classifier.css`) and loads the scripts in this order:
+
+| Script | Purpose |
+|--------|---------|
+| `/ui-kit/icons.js`, `/ui-kit/ui-kit.js` | Shared UI-kit runtime (defines the global `UIKit`) |
+| `/classifiers/js/connection.js` | `ConnectionManager` — backend connection state machine (idle → connecting → connected → degraded → disconnected) driving the status dot |
+| `/classifiers/js/sse.js` | SSE stream consumer (POST to an SSE endpoint, dispatch typed events) |
+| `/classifiers/js/chart.js` | `MiniChart` — dependency-free dual-axis canvas chart for training curves (loss + accuracy) |
+| `/classifiers/js/config.js` | Portal bootstrap — seeds `window.API_BASE` / `window.UI_CONFIG` / `window.CLASSIFIER_DATASETS` (the Flask template used to inject these; as a static embed this file supplies safe defaults and keeps `API_BASE` live against `ServiceConfig` / `navbar:connect`) |
+| `/classifiers/js/infer.js` | **In-browser inference** for the demo tier (see below) |
+| `/classifiers/js/app.js` | App logic: state, canvas drawing, model table, form handling, train/evaluate/predict flows |
+
+**Tier 1 — live backend.** When a backend is connected (URL resolved by `ServiceConfig`: URL param > `localStorage` > the page's `<meta name="site-backend" content="classifiers" data-port="5001">` default), the app drives the real REST/SSE API below: training with live curves, evaluation, ensembles, ablation, model persistence.
+
+**Tier 2 — zero-backend browser inference (the demo tier).** When no backend is connected (`app.js` checks the `ConnectionManager` state), prediction still works, with nothing running server-side:
+
+- `public/classifiers/js/infer.js` loads a compact linear model from `public/classifiers/models/<dataset>.json` and runs the forward pass in plain JavaScript — normalise → hand-written matmul → softmax → argmax. No backend, no WASM, no libraries. It returns the same `{prediction, confidence, probs}` shape as the server's `/predict` route, so the existing renderers work unchanged.
+- The weight files (`mnist.json`: 784→10, browser-measured test accuracy 92.4%; `iris.json`: 4→3, test accuracy 100%, plus per-feature ranges for the input form) carry `{kind: "linear", classes, normalize (the exact scale/mean/std the browser must reproduce), weight, test_accuracy}`. The printed accuracies are the honest numbers the site surfaces.
+- They are exported by **`scripts/export-classifier-models.py`** — a manual build/provenance tool, not part of the site's JS pipeline. It trains the two single-layer models with PyTorch (deterministic, seeded) and needs a PyTorch environment, e.g. the classifier repo's venv: `~/Projects/quantum-machine-learning/.venv/bin/python scripts/export-classifier-models.py`.
+
+This is what lets a visitor draw a digit or enter flower measurements and get a real prediction from real trained weights with zero infrastructure awake.
 
 <a id="qmc-core-abstractions"></a>
-### Core Abstractions
+### Backend Core Abstractions
+
+All paths below are in the `quantum-machine-learning` repo, under `classifiers/`.
 
 #### BaseModel ABC (`base_model.py`)
 
-| Method | Signature | Default |
-|--------|-----------|---------|
-| `forward` | `(x: torch.Tensor) -> torch.Tensor` | Abstract — returns logits |
-| `loss_fn` | `(output, target) -> torch.Tensor` | Cross-entropy |
-
-Subclasses: MNISTNet, LinearNet, SVMNet, Quadratic, Polynomial, QVC, QiskitCNN, QiskitLinear, IrisLinear, IrisSVM, IrisQVC.
+Abstract `forward(x) -> logits`; `loss_fn(output, target)` defaults to cross-entropy. Subclasses live with their dataset: `datasets/mnist/models.py` (MNISTNet, LinearNet, SVMNet, MNISTQuadraticNet, MNISTPolynomialNet, QiskitCNN, QiskitLinear) and `datasets/iris/models.py` (IrisLinear, IrisSVM, IrisQVC).
 
 #### DatasetPlugin ABC (`dataset_plugin.py`)
 
-**Required attributes:**
+The sole extension point for new datasets.
 
-| Attribute | Type | Purpose |
-|-----------|------|---------|
-| `name` | str | URL slug ("mnist", "iris") |
-| `display_name` | str | UI label |
-| `input_type` | `Literal["image", "tabular"]` | Input modality |
-| `num_classes` | int | Number of output classes |
-| `class_labels` | list[str] | Human-readable labels |
-| `image_size` | tuple[int,int] \| None | Image dimensions |
-| `image_channels` | int \| None | Channel count |
-| `feature_names` | list[str] \| None | Tabular feature names |
+**Required attributes:** `name` (URL slug), `display_name`, `input_type` (`"image"` | `"tabular"`), `num_classes`, `class_labels`; optional `image_size`, `image_channels`, `feature_names`.
 
-**Required methods:**
-
-| Method | Purpose |
-|--------|---------|
-| `get_train_loader(batch_size)` | Training DataLoader |
-| `get_test_loader(batch_size)` | Test DataLoader |
-| `preprocess(raw_input)` | PIL.Image or dict -> tensor |
-| `get_model_types()` | `dict[str, type[BaseModel]]` |
+**Required methods:** `get_train_loader(batch_size)`, `get_test_loader(batch_size)`, `preprocess(raw_input)`, `get_model_types()`.
 
 **Optional methods:** `get_val_loader` (enables early stopping), `get_default_hyperparams`, `get_ui_config`.
+
+Plugins register via `plugin_registry.py` (`get_plugin` / `list_plugins` / `create_model`).
 
 <a id="qmc-dataset-plugins"></a>
 ### Dataset Plugins
 
-#### MNIST Plugin
+#### MNIST (`datasets/mnist/`)
 
-| Property | Value |
-|----------|-------|
-| Name | `mnist` |
-| Display name | MNIST Handwritten Digits |
-| Input type | image |
-| Classes | 10 (digits 0-9) |
-| Image size | 28x28, 1 channel |
-| Train/Val/Test | 55,000 / 5,000 / 10,000 |
-| Normalization | z-score (mean=0.1307, std=0.3081) |
+28×28 grayscale, 10 classes, z-score normalization (mean 0.1307, std 0.3081), 55,000 train / 5,000 val / 10,000 test. Model types: `CNN`, `Linear`, `SVM`, `Quadratic`, `Polynomial` always; `Qiskit-CNN` and `Qiskit-Linear` only when qiskit is importable.
 
-**Model types (7):**
+#### Iris (`datasets/iris/`)
 
-| Model | Architecture | Approx Accuracy |
-|-------|-------------|-----------------|
-| CNN (MNISTNet) | Conv2d(1->32) + Conv2d(32->64) + FC(9216->128->10) | ~99% |
-| Linear (LinearNet) | Flatten + Linear(784->10) | ~92% |
-| SVM (SVMNet) | Flatten + Linear(784->10) + hinge loss | ~91-92% |
-| Quadratic | CNN + Quadratic(32->16) + FC(16->10) | ~98-99% |
-| Polynomial | CNN + Polynomial layer + FC(->10) | ~98-99% |
-| Qiskit-CNN | CNN + QiskitQLayer quantum circuit | Optional |
-| Qiskit-Linear | Linear + QiskitQLayer quantum circuit | Optional |
-
-#### Iris Plugin
-
-| Property | Value |
-|----------|-------|
-| Name | `iris` |
-| Display name | Iris Flower Classification |
-| Input type | tabular |
-| Classes | 3 (setosa, versicolor, virginica) |
-| Features | sepal_length, sepal_width, petal_length, petal_width |
-| Train/Val/Test | 96 / 24 / 30 (stratified, seed 42) |
-| Normalization | z-score per training set statistics |
-
-**Model types (3):**
-
-| Model | Architecture | Approx Accuracy |
-|-------|-------------|-----------------|
-| Linear (IrisLinear) | Linear(4->3) | ~95-97% |
-| SVM (IrisSVM) | Linear(4->3) + hinge loss | ~94-96% |
-| QVC (IrisQVC) | 4 qubits, AngleEmbedding(Y) -> StronglyEntanglingLayers(2) -> measure Z0,Z1,Z2 | ~93-96% |
-
-IrisQVC uses PennyLane: 24 trainable parameters (2 layers x 4 qubits x 3 rotations).
+Tabular, 4 features, 3 classes, z-score per training-set statistics. 80/20 stratified train/test split (seed 42); the val loader further splits the training data 80/20. Model types: `Linear`, `SVM` always; `QVC` (PennyLane variational circuit) only when PennyLane is importable. Iris-tuned defaults: `{epochs: 50, batch_size: 16, lr: 0.01}`.
 
 <a id="qmc-training-evaluation-prediction"></a>
 ### Training, Evaluation, Prediction
 
-#### Trainer (`trainer.py`)
-
-Constructor: `model_cls`, `train_loader`, `dataset`, `epochs=3`, `lr=1e-3`, `config=TrainingConfig?`, `val_loader?`, `early_stop_min_accuracy=0.6`
-
-`train(on_status)` loop:
-1. Instantiate model, create Adam optimizer
-2. For each epoch -> for each batch -> forward -> loss -> backward -> step
-3. **Distillation:** blends student loss with teacher output (MSE) via `distill_weight`
-4. **Regularization:** adds `regularization_fn(model)` to loss if provided
-5. **Validation checkpoints:** runs `val_loader` every `val_gap` batches
-6. **Early stopping:** halts if no improvement for `patience` epochs (after `early_stop_min_accuracy` met)
-
-Returns: `TrainResult` with model, epochs_completed, best_val_accuracy, history, num_params, stopped_early.
-
-#### Evaluator (`evaluator.py`)
-
-| Mode | Input | Output |
-|------|-------|--------|
-| Single | `evaluate(model, test_loader, ...)` | `EvalResult`: accuracy, avg_loss, per_class_accuracy, num_params |
-| Ensemble | `ensemble_evaluate(models, test_loader, ...)` | Majority vote with logit-sum tie-breaking |
-| Ablation | `ablation_evaluate(model, test_loader, ...)` | Per-layer accuracy drop (deep-copies model, zeros each layer's params) |
-
-#### Predictor (`predictor.py`)
-
-`Predictor(model, plugin)` -> `predict(raw_input)`:
-- Delegates preprocessing to plugin
-- Runs model in eval mode (no gradients)
-- Applies softmax to logits
-- Returns probability array of shape `(num_classes,)`
-
-<a id="qmc-model-registry--persistence"></a>
-### Model Registry & Persistence
-
-#### ModelRegistry (`model_registry.py`)
-
-Thread-safe in-memory store, namespaced by dataset.
-
-| Method | Purpose |
-|--------|---------|
-| `add(dataset, name, model, ...)` | Register trained model |
-| `remove(dataset, name)` | Delete model |
-| `get(dataset, name)` | Retrieve `ModelEntry` |
-| `names(dataset)` | List model names |
-| `items(dataset)` | List all entries |
-| `update_eval_result(...)` | Attach evaluation results |
-| `next_name(dataset)` | Auto-increment ("Model 1", "Model 2", ...) |
-
-`ModelEntry` fields: model, model_type, dataset, epochs, batch_size, lr, eval_result, training_history, num_params.
-
-#### ModelPersistence (`persistence.py`)
-
-| Method | Purpose |
-|--------|---------|
-| `save(name, entry)` | Write `.pt` checkpoint (state_dict, metadata, history). Sanitizes filename. |
-| `load(filename)` | Read checkpoint, reconstruct model via `plugin_registry.create_model()`, set eval mode. Uses `weights_only=True`. |
-| `list_files()` | List available checkpoints with metadata. |
+- **Trainer (`trainer.py`):** Adam training loop with optional knowledge distillation (teacher output blended via `distill_weight`), regularization hooks, validation checkpoints every `val_gap` batches, and early stopping (`patience`, gated on `early_stop_min_accuracy`). Returns a `TrainResult` (model, epochs_completed, best_val_accuracy, history, num_params, stopped_early).
+- **Evaluator (`evaluator.py`):** `evaluate` (accuracy, avg loss, per-class accuracy), `ensemble_evaluate` (majority vote, logit-sum tie-break), `ablation_evaluate` (per-layer accuracy drop by zeroing each layer on a deep copy).
+- **Predictor (`predictor.py`):** delegates preprocessing to the plugin, runs the model in eval mode, softmaxes logits into a probability array.
+- **ModelRegistry (`model_registry.py`):** thread-safe in-memory store namespaced by dataset (`add`, `remove`, `get`, `names`, `items`, `next_name`, `update_eval_result`, `update_training_meta`).
+- **ModelPersistence (`persistence.py`):** `.pt` checkpoints (state_dict + metadata + history) with filename sanitization/validation; `load()` reconstructs via `plugin_registry.create_model()` with `weights_only=True`.
+- **Special layers & losses:** `layers.py` (`Quadratic`: pairwise products + linear terms; `Polynomial`: `exp(W·log(|x|+1))` with clamping), `losses.py` (Crammer-Singer multi-class hinge), `qiskit_layers.py` (parametric quantum circuit layer with parameter-shift gradients, integrated into PyTorch backprop).
 
 <a id="qmc-rest-api--routes"></a>
 ### REST API & Routes
 
-**Request hook:** `url_value_preprocessor` resolves dataset slug -> plugin lookup on `g.plugin`. Unknown datasets return 404.
+Route modules live in `classifiers/routes/`. The service follows the shared backend contract ([`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md)): JSON over HTTP, `{error: {code, message, details?}}` envelope on every failure (`routes/errors.py:error_response()`), CORS origins from `CLASSIFIERS_CORS_ORIGINS`, and a synchronous equivalent for every streaming operation.
 
-#### Main Routes
+#### Top-level (`routes/main.py`)
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /` | Redirect to first dataset's index |
-| `GET /d/<dataset>/` | Render SPA (`index.html` with Jinja2 `UI_CONFIG`) |
-| `GET /api/datasets` | JSON list of `{name, display_name, input_type}` |
-| `GET /api/datasets/<name>/config` | `{ui_config, model_types}` |
-| `GET /health` | `{status, uptime, clients, timestamp}` |
+| `GET /health` | `{status, service:'classifiers', version, uptime_s, uptime (legacy alias), clients, timestamp}` |
+| `GET /api` | Discovery: every HTTP endpoint (iterated from `url_map`) plus the hand-listed SSE channels |
+| `GET /api/datasets` | Registered plugins: `[{name, display_name, input_type}, …]` |
+| `GET /api/datasets/<name>/config` | `{ui_config, model_types}` for one dataset |
 
-#### Training Route
+#### Dataset-scoped (`routes/dataset_routes.py`, prefix `/d/<dataset>`)
 
-`POST /d/<dataset>/train`
+A blueprint-level `url_value_preprocessor` resolves the slug to a plugin on `g.plugin`; unknown datasets get a 404 envelope before any view runs. Endpoint groups are registered by sub-modules:
 
-```json
-{
-  "model_type": "CNN",
-  "epochs": 3,
-  "batch_size": 64,
-  "lr": 0.001,
-  "name": "My Model",
-  "patience": 5,
-  "val_gap": 50,
-  "teacher": "Model 1",
-  "distill_weight": 0.5
-}
-```
-
-Response: **SSE stream** of events:
-- `{"type": "status", "msg": "Epoch 1/3 - batch 50/938 - loss: 0.4521"}`
-- `{"type": "history", "epoch": 0, "batch": 50, "train_loss": 0.45, "val_accuracy": 0.95}`
-- `{"type": "done", "name": "...", "model_type": "...", "num_params": 123456, ...}`
-- `{"type": "error", "msg": "..."}`
-
-Spawns daemon thread, queues events, streams via `sse_response(queue)`.
-
-#### Evaluation Routes
+**Training (`train_routes.py`):**
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/d/<dataset>/evaluate` | POST | SSE stream evaluating all registered models |
-| `/d/<dataset>/ensemble` | POST | `{"model_names": [...]}` -> ensemble accuracy |
-| `/d/<dataset>/ablation` | POST | `{"model_name": "..."}` -> SSE stream of per-layer accuracy drops |
+| `/d/<dataset>/train` | POST | SSE stream of `status` / `history` / `done` / `error` events (daemon thread + queue → `routes/sse.py:sse_response()`). Body: `model_type`, `epochs`, `batch_size`, `lr`, `name?`, `patience?`, `val_gap?`, `teacher?`, `distill_weight?` |
+| `/d/<dataset>/train/sync` | POST | Same inputs; trains to completion and returns the final result in the response body (scripts/CI/curl) |
 
-#### Model Routes
+**Evaluation (`eval_routes.py`):**
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/d/<dataset>/predict` | POST | `{"image": "<b64>"}` or `{"features": {...}}` -> per-model predictions |
-| `/d/<dataset>/models` | GET | List all session models with metadata |
+| `/d/<dataset>/evaluate` | POST | SSE stream evaluating registered models |
+| `/d/<dataset>/evaluate/sync` | POST | Synchronous equivalent — full results in the response |
+| `/d/<dataset>/ensemble` | POST | `{"model_names": [...]}` → ensemble accuracy |
+| `/d/<dataset>/ablation` | POST | `{"model_name": "..."}` → per-layer accuracy drops |
+
+**Models (`model_routes.py`):**
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/d/<dataset>/predict` | POST | `{"image": "<b64>"}` or `{"features": {...}}` → per-model predictions |
+| `/d/<dataset>/models` | GET | List session models with metadata |
 | `/d/<dataset>/models/<name>` | DELETE | Remove model from session |
 | `/d/<dataset>/models/<name>/export` | POST | Save to disk as `.pt` |
 | `/d/<dataset>/models/disk` | GET | List `.pt` files for this dataset |
-| `/d/<dataset>/models/disk/<filename>/load` | POST | Load checkpoint into session (auto-dedup names) |
-| `/d/<dataset>/model-info/<model_type>` | GET | Render MODELS.md section as HTML |
+| `/d/<dataset>/models/disk/<filename>/load` | POST | Load a checkpoint into the session |
+| `/d/<dataset>/model-info/<model_type>` | GET | `{"html": ...}` — the model's MODELS.md section rendered to HTML |
 
-<a id="qmc-special-layers--loss-functions"></a>
-### Special Layers & Loss Functions
+**Connection lifecycle (`routes/connection_routes.py`):**
 
-#### Quadratic Layer (`layers.py`)
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/connect` | GET | Persistent SSE heartbeat stream (periodic pings; drives the client-count in `/health`) |
+| `/pong` | POST | Heartbeat reply |
+| `/disconnect` | POST | Graceful disconnect |
 
-```
-forward(x):  z = concat(x^T * x, x)  ->  fc(z)
-```
-Includes pairwise products + original linear terms. `input_dim * (input_dim + 1)` features.
+<a id="qmc-running--docker"></a>
+### Running & Docker
 
-#### Polynomial Layer (`layers.py`)
+**Local:** `python -m classifiers` (also `make run`). Binds a **random ephemeral port** unless `CLASSIFIERS_PORT` is set; the chosen port is written back to the env so Werkzeug's reloader child reuses it. Optional dev HTTPS via certs in `DEV_CERT_DIR` / `.certs/`. Host via `CLASSIFIERS_HOST` (default `127.0.0.1`).
 
-```
-forward(x):  y = exp(W * log(|x| + 1))
-```
-With clamping at [-10, 10] to prevent overflow.
+**Dockerfile:**
+- Base `python:3.12-slim`; installs CPU-only `torch==2.2.2+cpu` / `torchvision==0.17.2+cpu` from the PyTorch wheel index, then `requirements.txt`.
+- Installs the pinned quantum extras (`pennylane`, `qiskit`, `qiskit-aer`, with `numpy` re-pinned for torch compatibility — see the Dockerfile comments for the lockstep constraint), so the quantum models light up in the image.
+- `CLASSIFIERS_DEBUG=0` (never the Werkzeug debugger in the image).
+- **Entry: gunicorn** (not `python -m classifiers`): `gthread` worker class, **1 worker** (the model registry is per-process in-memory state) × 8 threads, `--timeout 0` (SSE/training stream unbounded), binding `$PORT` (default **8080**, `EXPOSE 8080`) to `classifiers.wsgi:app`.
 
-#### Multi-class Hinge Loss (`losses.py`)
-
-Crammer-Singer formulation: `sum of max(0, score_j - score_correct + margin)` for j != correct. Used by SVM models.
-
-#### Qiskit Quantum Layer (`qiskit_layers.py`)
-
-`QiskitQLayer` — Multi-headed parametric quantum circuit:
-- Feature encoding via parameterized RX gates
-- Linear entanglement topology (reduced depth)
-- Measurement with finite-difference gradient estimation (parameter-shift rule)
-- Integration into PyTorch backpropagation
-
-<a id="qmc-frontend"></a>
-### Frontend
-
-**Templates:** `classifiers/templates/index.html` — SPA with Jinja2 `UI_CONFIG` injection (plugin metadata, model types, default hyperparams). Renders dataset-specific input widget (canvas for MNIST, form for Iris). Two-column layout: left (train/config), right (canvas/form + model table).
-
-**Static JS:**
-
-| File | Purpose |
-|------|---------|
-| `js/app.js` | State management, canvas drawing, model table, form handling, localStorage persistence |
-| `js/sse.js` | SSE event consumer, progress streaming, queue handling |
-| `js/chart.js` | Canvas-based training curve rendering (loss/accuracy plots) |
-
-**Static CSS:** `css/app.css` — dark/light theming, layout, canvas styles, chart rendering.
+**docker-compose.yml:** service `classifier`, port `127.0.0.1:${CLASSIFIER_PORT}:${CLASSIFIER_PORT}`, env `CLASSIFIERS_PORT`, `CLASSIFIERS_HOST=0.0.0.0`, `CLASSIFIERS_CORS_ORIGINS`, `DEV_CERT_DIR=""`.
 
 <a id="qmc-testing"></a>
 ### Testing
 
-**425+ tests:**
-
-| File | Coverage |
-|------|----------|
-| `test_base_model.py` | BaseModel construction, forward passes |
-| `test_model.py` | Individual model architecture tests |
-| `test_all_models_train.py` | Training loop for all architectures |
-| `test_trainer.py` | Trainer with early stopping, distillation, history |
-| `test_evaluator.py` | Single, ensemble, ablation evaluation |
-| `test_predictor.py` | Inference pipeline, preprocessing |
-| `test_model_registry.py` | Registry CRUD, namespacing |
-| `test_persistence.py` | Save/load checkpoints, filename safety |
-| `test_routes.py` | Flask endpoints, request/response formats |
-| `test_plugin_registry.py` | Plugin discovery, registration |
-| `test_iris.py` | Iris plugin data loading, models |
-| `test_layers.py` | Quadratic, Polynomial forward/backward |
-| `test_qiskit_layers.py` | Qiskit circuit layer (conditional) |
-| `test_integration.py` | Full training -> evaluation -> prediction pipeline |
-| `dom/test_dom_integration.py` | DOM-based integration tests |
-| `test_documentation.py` | Docstring completeness, examples |
+**438 test functions** at last count, in `tests/`: model/architecture suites (`test_base_model.py`, `test_model.py`, `test_all_models_train.py`, `test_linear_model.py`, `test_svm_model.py`, `test_advanced_models.py`), pipeline (`test_trainer.py`, `test_evaluator.py`, `test_predictor.py`, `test_training_config.py`), registry/persistence (`test_model_registry.py`, `test_persistence.py`), plugins (`test_plugin_registry.py`, `test_iris.py`), layers (`test_layers.py`, `test_qiskit_layers.py` — conditional), routes (`test_routes.py`, `test_routes_advanced.py`, `test_cors.py`), integration (`test_integration.py`, `test_phase2_pipeline.py`, `test_phase3_crosscutting.py`), honesty gates (`test_accuracy_claims.py`, `test_documentation.py`), and the live-HTTP contract suite (`tests/contract/test_classifier_api.py`, validating `/health`, `/api`, the error envelope, and the `/sync` routes against the vendored schemas).
 
 <a id="qmc-cicd"></a>
 ### CI/CD
 
-**`.github/workflows/ci.yml`** — 3 jobs:
+**`.github/workflows/ci.yml`** — 4 jobs (Python 3.12):
 
-1. **test** (Python 3.12): `pip install -r requirements.txt pytest`, `pytest tests/ -v`
-2. **lint** (Python 3.12): `ruff check classifiers/ tests/`
-3. **docker**: `docker build -t qml-classifiers .`
-
-<a id="qmc-docker"></a>
-### Docker
-
-**Dockerfile:**
-- Base: `python:3.12-slim`
-- Installs PyTorch 2.2.2+cpu from official PyTorch wheels (no GPU)
-- Mounts `.certs/` for optional HTTPS
-- Entry: `python -m classifiers`
-
-**docker-compose.yml:**
-- Service: `classifier`
-- Port: `127.0.0.1:${CLASSIFIER_PORT}:${CLASSIFIER_PORT}`
-- Environment: `CLASSIFIERS_PORT`, `CLASSIFIERS_HOST=0.0.0.0`, `CLASSIFIERS_CORS_ORIGINS`, `DEV_CERT_DIR=""`
+1. **test** — install deps, `python -m pytest tests/ -v`
+2. **contract** — boots the app on port 5001, curls `/health` until up, then runs `tests/contract/` against the live server (`CLASSIFIERS_URL`)
+3. **lint** — `ruff check classifiers/ tests/`
+4. **docker** — `docker build -t qml-classifiers .`
 
 <a id="qmc-dependencies"></a>
 ### Dependencies
 
-| Purpose | Package | Version |
-|---------|---------|---------|
-| Web framework | flask | >=3.0 |
-| CORS | flask-cors | >=6.0 |
-| Deep learning | torch | >=2.2 |
-| Vision | torchvision | >=0.17 |
-| Arrays | numpy | >=1.26 |
-| Images | Pillow | >=12.0 |
-| Markdown | mistune | >=3.0 |
-| ML utilities | scikit-learn | >=1.5 |
-| Quantum (optional) | qiskit | >=1.0 |
-| Quantum (optional) | qiskit-aer | >=0.13 |
-| Quantum (optional) | pennylane | >=0.35 |
-| Dev: tests | pytest | >=8.0 |
-| Dev: e2e | pytest-playwright | >=0.5 |
-| Dev: lint | ruff | >=0.3 |
+Pinned in `requirements.txt` (flask, flask-cors, gunicorn, numpy, Pillow, mistune, scikit-learn; torch/torchvision installed separately per environment — CPU wheels in Docker/CI, manual locally). The quantum stack (pennylane, qiskit, qiskit-aer) is optional and pinned in the Dockerfile; the code gates each quantum model on its library being importable. Read the actual pins from `requirements.txt` and the Dockerfile rather than this doc.
 
 <a id="qmc-architectural-patterns"></a>
 ### Architectural Patterns
 
-1. **Plugin Architecture (OCP):** `DatasetPlugin` ABC is the sole extension point; new datasets require only a new subpackage under `classifiers/datasets/`
-2. **Dependency Inversion (DIP):** Services in `app.extensions[...]`; routes access via `current_app.extensions[key]`
-3. **Single Responsibility (SRP):** Trainer, Evaluator, Predictor, Registry, Persistence are each separate modules
-4. **SSE for long operations:** Training, evaluation, ablation stream progress via queue -> Flask streaming response
-5. **Daemon threads:** Long-running ops execute in background threads with queue-based progress
-6. **Thread safety:** `ModelRegistry` uses `threading.Lock`; `ConnectionTracker` tracks SSE clients
-7. **Lazy imports:** Qiskit and PennyLane imported only when quantum models instantiated
+1. **API-only service:** the backend owns no UI (`static_folder=None`); the portal owns the frontend and talks to it over the shared contract
+2. **Plugin architecture (OCP):** `DatasetPlugin` is the sole extension point; a new dataset is a new subpackage under `classifiers/datasets/`
+3. **Dependency inversion (DIP):** services live in `app.extensions[...]`; routes access them via `current_app.extensions[key]`
+4. **Single responsibility (SRP):** Trainer, Evaluator, Predictor, Registry, Persistence are separate modules; route groups are separate sub-modules
+5. **Streaming is additive:** every SSE operation has a synchronous `/sync` (or plain REST) equivalent — SSE is never the only path to a result
+6. **Daemon threads + queues:** long-running ops stream progress through a queue into `sse_response()`
+7. **Thread safety:** `ModelRegistry` uses a lock; the connection tracker counts SSE clients
+8. **Lazy quantum imports:** Qiskit and PennyLane are imported only when a quantum model is instantiated, so lean deploys work without them
+9. **Two-tier frontend:** the same UI runs against the live API or fully client-side on exported weights (the demo tier)
 
 ---
 

@@ -9,7 +9,7 @@ reference: the [Quantum Algorithm Glossary](docs/quantum-glossary.md).
 The Astro static site that hosts the projects below — the portfolio shell.
 Framework config, design tokens, components, security/SEO, and the CI/CD pipeline.
 
-## [CV Editor](docs/cv-editor.md) — [andypeterson2/cv](https://github.com/andypeterson2/cv) · frontend in `public/cv/`
+## [CV Editor](docs/cv-editor.md) — [andypeterson2/cv](https://github.com/andypeterson2/cv) · frontend: Svelte island in `src/editor/`
 
 A normalized LaTeX resume / CV / cover-letter editor: a stateless REST API over a
 SQLite store, an MCP server exposing it as tools, tag-based variants with fuzzy

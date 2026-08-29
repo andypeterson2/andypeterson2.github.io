@@ -8,9 +8,10 @@ Requires **Node ≥ 22** (`nvm use 22`). Start the Astro dev server:
 npm run dev
 ```
 
-This launches Astro on `localhost:4321`. Each sub-app's frontend is owned by this repo and served as static
-assets under `public/<app>/` and embedded by the Astro pages in `src/pages/projects/**`,
-so the full site is navigable from a single dev server — no custom dev middleware, no
+This launches Astro on `localhost:4321`. Each sub-app's frontend is owned by this repo —
+the classifier and nonogram as static assets under `public/<app>/` embedded by the Astro
+pages in `src/pages/projects/**`, the CV editor as a Svelte island under `src/editor/` —
+so the full site is navigable from a single dev server: no custom dev middleware, no
 submodules.
 
 ## Backend Services
@@ -35,7 +36,7 @@ Backend URLs are resolved at runtime by `public/js/service-config.js`:
 4. **Defaults** -- the page's `<meta name="site-backend" data-port>` value
 
 So you can point any sub-app at a local backend without code changes — e.g.
-`http://localhost:4321/classifiers/?backend=http://localhost:5001`.
+`http://localhost:4321/projects/quantum-ml-classifier/app/?backend=http://localhost:5001`.
 
 ## Backend API Contract
 
@@ -54,13 +55,14 @@ validates that the JSON schemas under `docs/api-contract/schemas/` are well-form
 
 ## Frontends
 
-Each sub-app's frontend is **owned by this repo** under `public/<app>/` and served
-statically — edit it here directly. Backends live in their own repos; the frontend talks
-to them over the API contract.
+Each sub-app's frontend is **owned by this repo** — edit it here directly. The
+classifier and nonogram frontends are static assets under `public/<app>/`; the CV
+editor is a Svelte island under `src/editor/`. Backends live in their own repos; the
+frontends talk to them over the API contract.
 
 ## Adding a New Project
 
-1. Add its frontend under `public/<slug>/` (owned here, edited directly).
+1. Add its frontend — static assets under `public/<slug>/`, or a Svelte island under `src/`.
 2. Add an Astro page under `src/pages/projects/<slug>/` that embeds the assets and, if it
    has a backend, declares it with `<meta name="site-backend" content="<service>" data-port="<port>">`.
 3. Add an entry to `src/data/projects.ts` (typed by the `Project` interface).
@@ -76,14 +78,16 @@ make lint       # eslint + prettier + stylelint
 npm run format  # auto-fix formatting
 ```
 
-Run `make test && make lint` before pushing. CI runs the same checks on your PR.
+Run `make test && make lint && npm run typecheck` before pushing. CI runs those plus
+`npm audit`, the production build + CSP check, the integration suite against the built
+`dist/`, Playwright e2e, and Lighthouse budgets.
 
 ## UI Kit (design system)
 
 The design system lives in its own repo, [andypeterson2/ui-kit](https://github.com/andypeterson2/ui-kit).
 Its runtime (`icons.js`, `ui-kit.js`) is owned by this repo at `public/ui-kit/`. To develop
-components with Storybook, clone that repo and run
-`npm install && npm run storybook`.
+components with Storybook, clone that repo and run `npm install && npm run storybook`
+**there** (this repo has no storybook script).
 
 ## Troubleshooting
 
