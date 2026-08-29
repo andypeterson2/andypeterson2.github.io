@@ -16,8 +16,9 @@ test: ## Run unit tests (vitest)
 test-e2e: ## Run end-to-end tests (playwright)
 	npm run test:e2e
 
-lint: ## Lint (eslint + prettier + stylelint)
+lint: ## Lint (eslint + prettier + stylelint + ruff for scripts/*.py)
 	npm run lint
+	ruff check .
 
 build: ## Build the Astro site
 	npm run build

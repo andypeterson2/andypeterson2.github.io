@@ -21,8 +21,8 @@ export interface UndoCommand {
   mergeKey?: string;
   /** epoch ms, for the coalescing window */
   at: number;
-  undo(): void | Promise<void>;
-  redo(): void | Promise<void>;
+  undo: () => void | Promise<void>;
+  redo: () => void | Promise<void>;
 }
 
 /** A command before the stack timestamps it. */
@@ -164,7 +164,7 @@ export class FieldShadow {
 
   /** Re-seed a whole document + the global style object — a fresh set of objects. */
   reseat(person: Person, style: Record<string, string>): void {
-    this.seed(person.personal, person.personal as Record<string, string>);
+    this.seed(person.personal, person.personal);
     this.seed(style, style);
     for (const section of person.sections)
       for (const entry of section.entries) {

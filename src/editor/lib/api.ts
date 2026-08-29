@@ -10,7 +10,6 @@
 // profile only. Contract: cv/editor/routes/persons.js (the GET /persons/:pid route).
 import type {
   Person,
-  Personal,
   Item,
   Entry,
   Variant,
@@ -24,7 +23,10 @@ import { GLYPH_BY_CMD } from './symbols';
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
 
-export type ApiError = { code: string; message: string };
+export interface ApiError {
+  code: string;
+  message: string;
+}
 export interface ApiResult<T> {
   ok: boolean;
   status: number;
@@ -70,7 +72,8 @@ interface RawOverride {
 interface RawMainVariant {
   id: number;
   name: string;
-  kind: string;
+  /** absent in older rows — mapVariant defaults it to 'cv' */
+  kind?: string;
   layout_id?: string | null;
   rules?: { include?: string[]; exclude?: string[] };
   sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
@@ -159,9 +162,7 @@ function mapEntryOverrides(raw?: Record<string, RawOverride>): Record<string, En
       textOverride: o.textOverride == null ? null : untex(o.textOverride),
       sortOverride: o.sortOverride ?? null,
       fieldsOverride: o.fieldsOverride
-        ? Object.fromEntries(
-            Object.entries(o.fieldsOverride).map(([k, val]) => [k, untex(String(val))]),
-          )
+        ? Object.fromEntries(Object.entries(o.fieldsOverride).map(([k, val]) => [k, untex(val)]))
         : null,
     };
   }
@@ -182,7 +183,7 @@ function mapVariant(v: RawMainVariant): Variant {
   return {
     id: v.id,
     name: v.name,
-    kind: (v.kind as Variant['kind']) ?? 'cv',
+    kind: (v.kind ?? 'cv') as Variant['kind'],
     layoutId: v.layout_id ?? null,
     rules: { include: v.rules?.include ?? [], exclude: v.rules?.exclude ?? [] },
     sections: (v.sections ?? []).map((r) => ({ sectionId: r.section_id, enabled: !!r.enabled })),
@@ -197,7 +198,7 @@ function mapCoverletter(cl?: Record<string, string>): CoverletterHeader & Record
     if (k === 'tex' || k === 'sections') continue;
     out[k] = untex(v);
   }
-  return out as CoverletterHeader & Record<string, string>;
+  return out;
 }
 /** GET /persons/:pid → the editor's Person. Rows arrive pre-ordered. */
 function mapMain(m: RawMain): Person {
@@ -206,7 +207,7 @@ function mapMain(m: RawMain): Person {
   return {
     id: m.person.id,
     name: m.person.name,
-    personal: personal as Personal,
+    personal: personal,
     sections: (m.sections ?? []).map((s) => ({
       id: s.id,
       slug: s.slug,
@@ -296,7 +297,7 @@ export class CvApi {
     return this.req<{ status: string; service: string }>('/health');
   }
   listPersons() {
-    return this.req<{ persons: PersonMeta[] }>('/persons');
+    return this.req<{ persons?: PersonMeta[] }>('/persons');
   }
   private getMain(pid: number | string) {
     return this.req<RawMain>(`/persons/${pid}`);
@@ -362,7 +363,7 @@ export class CvApi {
     return this.req<{
       versions: {
         id: number;
-        label: string;
+        label?: string;
         createdAt: number;
         branch: string;
         tag?: string | null;
@@ -476,8 +477,8 @@ export class CvApi {
   }
   getLayouts() {
     return this.req<{
-      layouts: { id: string; name: string; status: string }[];
-      default: string | null;
+      layouts?: { id: string; name: string; status: string }[];
+      default?: string | null;
     }>('/layouts');
   }
   setDefaultLayout(id: string) {

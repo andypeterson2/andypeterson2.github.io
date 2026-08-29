@@ -9,6 +9,4 @@ import { resolveSiteConfig, type SiteConfig } from '../lib/site-config';
 
 export type { SiteConfig };
 
-export const siteConfig: SiteConfig = resolveSiteConfig(
-  import.meta.env as Record<string, string | undefined>,
-);
+export const siteConfig: SiteConfig = resolveSiteConfig(import.meta.env);

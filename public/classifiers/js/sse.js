@@ -49,6 +49,7 @@ function _readWithTimeout(reader, ms) {
  * @param {Function} onDone   - Called once when a "done" event arrives.
  * @param {Function} onError  - Called once when an "error" event arrives.
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity, max-params -- grandfathered (34, 6 params); the stream/fallback split is the typed-module refactor's job
 async function consumeSSE(url, body, onStatus, onDone, onError, syncUrl) {
   var _fetch = typeof apiFetch === "function" ? apiFetch : fetch;
   var res;
@@ -115,6 +116,7 @@ async function consumeSSE(url, body, onStatus, onDone, onError, syncUrl) {
  * @param {Function} onError
  * @param {string}   [reason] - Why the stream was unavailable (shown to the user).
  */
+// eslint-disable-next-line max-params -- mirrors consumeSSE's callback surface; grandfathered with it
 async function _consumeSync(syncUrl, body, onStatus, onDone, onError, reason) {
   if (!(window.SiteContract && window.SiteContract.request)) {
     onError(reason || "Live stream unavailable");

@@ -422,6 +422,7 @@ function buildPredictionTable() {
 
 // ── Columnar metrics table (TEST card) ───────────────────────────────────────
 
+// eslint-disable-next-line sonarjs/cognitive-complexity -- grandfathered at 17; slated for the typed-module refactor of public/ JS
 function buildMetricsTable() {
   const names  = Object.keys(state.models);
   const labels = UI_CONFIG.class_labels;

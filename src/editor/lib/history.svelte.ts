@@ -177,7 +177,7 @@ export class HistoryController {
   }
 
   /** Tag a checkpoint with a frozen provenance name (or clear it with ''). */
-  async tag(id: number, name: string) {
+  tag(id: number, name: string) {
     const version = this.versions.find((v) => v.id === id);
     if (!version) return;
     version.tag = name.trim() || undefined;

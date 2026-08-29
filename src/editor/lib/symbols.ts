@@ -117,9 +117,7 @@ export const SYMBOLS: SymbolDef[] = [
 ];
 
 /** bare control word (no backslash) → glyph, for the escape transform's lookup. */
-export const GLYPH_BY_CMD: Map<string, string> = new Map(
-  SYMBOLS.map((s) => [s.cmd.slice(1), s.glyph]),
-);
+export const GLYPH_BY_CMD = new Map<string, string>(SYMBOLS.map((s) => [s.cmd.slice(1), s.glyph]));
 
 /** Is `\name` (pass the bare `name`) a permitted symbol command? */
 export function isPermitted(name: string): boolean {

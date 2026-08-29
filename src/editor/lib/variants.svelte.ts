@@ -37,6 +37,7 @@ function withField(
   base: string,
 ): EntryOverride | null {
   const fo: Record<string, string> = { ...(before?.fieldsOverride ?? {}) };
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- removing one field's override from a plain record keyed by field name
   if (value === base) delete fo[key];
   else fo[key] = value;
   const next: EntryOverride = {
@@ -216,7 +217,9 @@ export class VariantController {
   /** Land an entry override in the live proxy + backend (null removes the row). */
   private async _applyEntryOverride(variant: Variant, entryId: number, ov: EntryOverride | null) {
     const map = (variant.entryOverrides ??= {});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- cloneEntryOv(nonNull) is non-null by construction
     if (ov) map[entryId] = cloneEntryOv(ov)!;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null override = remove the row, keyed by entry id
     else delete map[entryId];
     this.host.markDirty();
     await this.host.persist(() =>
@@ -233,7 +236,9 @@ export class VariantController {
 
   private async _applyItemOverride(variant: Variant, itemId: number, ov: ItemOverride | null) {
     const map = (variant.itemOverrides ??= {});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- cloneItemOv(nonNull) is non-null by construction
     if (ov) map[itemId] = cloneItemOv(ov)!;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null override = remove the row, keyed by item id
     else delete map[itemId];
     this.host.markDirty();
     await this.host.persist(() =>

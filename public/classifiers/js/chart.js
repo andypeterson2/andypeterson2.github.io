@@ -48,6 +48,7 @@ class MiniChart {
   }
 
   /** Redraw the chart. */
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- grandfathered at 23; slated for the typed-module refactor of public/ JS
   render() {
     const { canvas, ctx, padding: p } = this;
     const dpr = window.devicePixelRatio || 1;

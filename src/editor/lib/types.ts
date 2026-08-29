@@ -1,6 +1,8 @@
 // Data model for the CV editor — mirrors the cv API's normalized person tree
 // returned by GET /api/persons/:id. See docs/editor-redesign.md §3.
 
+// A type alias ON PURPOSE (not an interface): all-optional string shapes get an
+// implicit index signature only as aliases, which texMap/diffFields rely on.
 export type Personal = {
   firstName?: string;
   lastName?: string;
@@ -45,6 +47,7 @@ export interface Section {
 }
 
 /** The cover-letter header (per-person `coverletter.*` settings). */
+// Type alias ON PURPOSE — same implicit-index-signature reason as Personal.
 export type CoverletterHeader = {
   title?: string;
   recipientName?: string;

@@ -44,7 +44,7 @@ def main():
     for index_html in sorted(scan_dir.rglob("index.html")):
         rel = index_html.parent.relative_to(scan_dir)
         if any(
-            p.startswith(".") or p.startswith("_") or p in EXCLUDED_PARTS
+            p.startswith((".", "_")) or p in EXCLUDED_PARTS
             for p in rel.parts
         ):
             continue

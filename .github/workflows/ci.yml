@@ -21,6 +21,10 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - run: npm run lint
+      - name: Lint the Python helper scripts
+        # Compatible-release pin — the enforced rule set must not float with
+        # ruff releases (fleet lint baseline).
+        run: pip install "ruff~=0.15.16" && ruff check .
       - run: npm run typecheck
       - run: npm test -- --coverage
       - uses: actions/upload-artifact@v7

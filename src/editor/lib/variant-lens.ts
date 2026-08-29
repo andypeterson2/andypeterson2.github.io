@@ -37,13 +37,13 @@ export function sectionScopedOut(section: Section, variant: Variant): boolean {
 // to the tag rules. Mirrors the backend resolver's _included().
 export function entryIncluded(entry: Entry, variant: Variant): boolean {
   const ov = variant.entryOverrides?.[entry.id];
-  if (ov && ov.included != null) return !!ov.included;
+  if (ov?.included != null) return !!ov.included;
   return matchesTags(entry.tags, variant.rules);
 }
 
 export function itemIncluded(item: Item, variant: Variant): boolean {
   const ov = variant.itemOverrides?.[item.id];
-  if (ov && ov.included != null) return !!ov.included;
+  if (ov?.included != null) return !!ov.included;
   return matchesTags(item.tags, variant.rules);
 }
 

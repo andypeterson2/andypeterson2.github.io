@@ -9,7 +9,7 @@
 - [ ] Tested in both light and dark mode
 - [ ] Touch targets meet 48px minimum on mobile
 - [ ] Images have appropriate alt text
-- [ ] Passes `npm run lint:styles` (Stylelint)
+- [ ] Passes `npm run lint` (ESLint + Prettier + Stylelint)
 - [ ] Lighthouse score above 90 on all categories
 - [ ] No new border-radius values outside 0/2/3/50%
 - [ ] No new box-shadow values outside approved set
