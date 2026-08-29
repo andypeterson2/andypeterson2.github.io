@@ -221,7 +221,6 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 | `scripts/purge-css.mjs` | Post-build (chained in `npm run build`): purges the render-blocking BaseLayout stylesheet (the vendored system.css) against the real `dist/` HTML+JS, rewriting it in place. App CSS is deliberately untouched. |
 | `scripts/check-security-headers.sh` | CI gate asserting the hashed CSP `<meta>` ships in `dist/`; `--live <url>` checks the deployed edge headers. |
 | `scripts/generate-manifest.py` | Scans the built `dist/` routes for `site-nav-*`/`site-backend` meta tags and writes `site-manifest.json`. Run after `astro build`. |
-| `scripts/export-classifier-models.py` | Trains the two linear classifier models (MNIST, Iris) and exports browser-runnable weights to `public/classifiers/models/*.json` for the zero-backend demo tier. Manual; needs a PyTorch env (e.g. the classifier repo's venv). See `docs/quantum-ml-classifier.md`. |
 | `scripts/export-nonogram-gallery.py` | Runs the nonogram repo's benchmark in-process over curated puzzles and caches real solver output to `public/nonogram/gallery/*.json` — the "spend once, show forever" gallery. Manual; needs the nonogram repo's venv. |
 | `scripts/eslint-plugin-design-system.js` | Custom ESLint rules `design-system/prefer-button` (`<button>` → `<Button>`) and `design-system/prefer-tag` (`<span class="tag">` → `<Tag>`). |
 | `scripts/new-page.sh` | Scaffolds `src/pages/<slug>.astro` from a `BaseLayout` template. |

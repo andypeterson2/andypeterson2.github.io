@@ -87,7 +87,7 @@ export const projects: Project[] = [
     icon: 'microscope.svg',
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
-      { value: '92.4% / 100%', label: 'MNIST / Iris — predicted in your browser' },
+      { value: '92.1% / 90.0%', label: 'MNIST / Iris — predicted in your browser' },
       { value: '6+', label: 'model architectures per dataset' },
       { value: '438', label: 'tests' },
     ],
