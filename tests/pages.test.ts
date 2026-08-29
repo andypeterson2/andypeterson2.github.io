@@ -18,9 +18,9 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 
-  test('renders nav links for existing pages', () => {
+  test('renders nav links (home + the timeline anchor)', () => {
     expect(layoutSrc).toContain('href="/"');
-    expect(layoutSrc).toContain('href="/projects/"');
+    expect(layoutSrc).toContain('href="/#projects"');
   });
 
   test('uses valid ARIA menubar pattern', () => {
@@ -39,11 +39,7 @@ describe('Nav (inline in BaseLayout)', () => {
 // ---- URL Routing ----
 
 describe('URL Routing', () => {
-  const pages = [
-    'src/pages/index.astro',
-    'src/pages/projects/index.astro',
-    'src/pages/404.astro',
-  ];
+  const pages = ['src/pages/index.astro', 'src/pages/404.astro'];
 
   test.each(pages)('%s exists', (page) => {
     expect(existsSync(resolve(ROOT, page))).toBe(true);
@@ -132,32 +128,14 @@ describe('Home Page', () => {
   });
 });
 
-// ---- Projects Page ----
+// ---- Projects data (shown on the home timeline; the grid page is retired) ----
 
-describe('Projects Page', () => {
-  const projectsSrc = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
-
+describe('Projects data', () => {
   test('lists multiple projects', () => {
     const projectsData = readFileSync(resolve(ROOT, 'src/data/projects.ts'), 'utf-8');
     expect(projectsData).toContain('Quantum Video Chat');
     expect(projectsData).toContain('Quantum Nonogram Solver');
     expect(projectsData).toContain('Quantum ML Classifier Platform');
-  });
-
-  test('uses finder-icon grid layout', () => {
-    expect(projectsSrc).toContain('finder-icon');
-    expect(projectsSrc).toContain('icon-grid');
-  });
-
-  test('uses responsive grid (via base.css)', () => {
-    const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
-    expect(baseCss).toContain('grid-template-columns');
-    expect(baseCss).toContain('auto-fill');
-  });
-
-  test('projects link to detail pages', () => {
-    expect(projectsSrc).toContain('/projects/');
-    expect(projectsSrc).toContain('project.slug');
   });
 });
 

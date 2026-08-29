@@ -31,7 +31,9 @@ function load(search: string, page: { origin: string; hostname: string } = PROD)
     },
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).window = { location: { search, origin: page.origin, hostname: page.hostname } };
+  (globalThis as any).window = {
+    location: { search, origin: page.origin, hostname: page.hostname },
+  };
   (0, eval)(code); // sets window.ServiceConfig; URL/URLSearchParams/console are Node globals
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (globalThis as any).window.ServiceConfig;

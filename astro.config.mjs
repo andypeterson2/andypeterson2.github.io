@@ -89,6 +89,13 @@ export default defineConfig({
     // One entry only: trailingSlash defaults to 'ignore', so '/about' also covers
     // '/about/' — defining both collides (a hard error in future Astro versions).
     '/about': '/',
+    // The legacy project-detail surface is retired — the home timeline is the
+    // one showcase surface. Exact paths only (the /app/ demo pages live on).
+    '/projects': '/#projects',
+    '/projects/latex-resume-editor': '/#latex-resume-editor',
+    '/projects/quantum-video-chat': '/#quantum-video-chat',
+    '/projects/quantum-nonogram-solver': '/#quantum-nonogram-solver',
+    '/projects/quantum-ml-classifier': '/#quantum-ml-classifier',
   },
   vite: {
     // Expose the site's own env prefixes to import.meta.env. Vite only surfaces

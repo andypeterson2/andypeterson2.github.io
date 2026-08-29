@@ -82,18 +82,20 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 
 | File | Purpose |
 |------|---------|
-| `index.astro` | Home page — bio, skills, education/certifications sidebar windows, and a merged experience + projects timeline (the former about page lives here) |
-| `projects/index.astro` | All projects in a finder-icon grid |
-| `projects/[slug].astro` | Static-path project detail pages from `src/data/projects.ts`, with `WriteupModal` writeups from the `src/content/writeups` collection |
+| `index.astro` | Home page — bio, skills, education/certifications sidebar windows, and a merged experience + projects timeline (the former about page lives here). The timeline window carries `id="projects"` and each project entry carries `id="<slug>"`, so it is the anchor target for every retired `/projects/…` URL |
 | `404.astro` | Quantum-themed error page with system.css window styling |
-| `projects/latex-resume-editor/app.astro` | Full-bleed (`bare`) page mounting the `src/editor/Editor.svelte` island with `client:load`; passes the owner identity from env (never committed as source) |
-| `projects/quantum-ml-classifier/app.astro` | Classifier app page — renders `ClassifierApp.astro`, declares `<meta name="site-backend" content="classifiers" data-port="5001">` |
-| `projects/quantum-nonogram-solver/app.astro` | Nonogram app page (embeds `public/nonogram/` assets) |
+| `projects/latex-resume-editor/app.astro` | Full-bleed demo page (`DemoShell` with `bare`) mounting the `src/editor/Editor.svelte` island with `client:load`; passes the owner identity from env (never committed as source) |
+| `projects/quantum-ml-classifier/app.astro` | Classifier demo page — renders `ClassifierApp.astro` inside `DemoShell`, declaring its backend via the `backend` prop (`classifiers`, port 5001) |
+| `projects/quantum-nonogram-solver/app.astro` | Nonogram demo page — `DemoShell` with the `nonogram` backend prop and the `public/nonogram/` scripts passed via `scripts` |
+
+The legacy project-detail surface (`projects/index.astro` grid + `projects/[slug].astro`
+detail pages) is retired: the home timeline is the one showcase surface, and every old
+detail URL 301s to its anchored timeline entry (see Redirects below).
 
 **Redirects** exist in two layers, deliberately:
 
-- **`public/_redirects`** — native 301s served by Cloudflare Pages (the live layer): `/about`, `/about/`, `/resume`, `/underconstruction`, `/underconstruction.html` → `/`; `/projects/quantum-protein-kernel/*` → `/projects/quantum-ml-classifier/:splat` (slug rename); `/classifiers` and `/classifiers/` (exact-path only, so `/classifiers/js|models/*` assets keep resolving) → `/projects/quantum-ml-classifier/app/`.
-- **`astro.config.mjs` `redirects`** — the same core paths as build-time meta-refresh HTML, kept as a fallback for any origin that ignores `_redirects`.
+- **`public/_redirects`** — native 301s served by Cloudflare Pages (the live layer): `/about`, `/about/`, `/resume`, `/underconstruction`, `/underconstruction.html` → `/`; `/projects/quantum-protein-kernel/*` → `/projects/quantum-ml-classifier/:splat` (slug rename); `/classifiers` and `/classifiers/` (exact-path only, so `/classifiers/js|models/*` assets keep resolving) → `/projects/quantum-ml-classifier/app/`; retired detail surface: `/projects` + `/projects/` → `/#projects` and each `/projects/<slug>` (with and without trailing slash) → `/#<slug>` — exact paths only, because a `/projects/*` splat would clobber the surviving `/projects/<slug>/app/` demo pages.
+- **`astro.config.mjs` `redirects`** — the same core paths (including `/projects` and the per-slug anchor redirects) as build-time meta-refresh HTML, kept as a fallback for any origin that ignores `_redirects`.
 
 ---
 
@@ -117,7 +119,7 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 <a id="layouts"></a>
 ### Layouts
 
-**`src/layouts/BaseLayout.astro`** (the only layout):
+**`src/layouts/BaseLayout.astro`** (the base for every page):
 
 | Feature | Detail |
 |---------|--------|
@@ -125,12 +127,23 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 | Head | Meta tags, hashed CSP via `<meta>` (build-emitted), Open Graph, Twitter Card, Person JSON-LD, canonical URL, favicon, optional `CfBeacon`, preloads for the three above-the-fold pixel fonts (Chicago/Monaco/Geneva woff2), and an inline no-FOUC theme bootstrap that applies the saved `sm-theme` before first paint |
 | Styles | Imports the vendored `@sakun/system.css` then the `packages/system-six/styles/styles.css` closure (tokens → base → dither → elements), same-origin — no CDN links |
 | Skip link | Hidden by default, shown on `:focus` |
-| Desktop nav (>768px) | Sticky menubar: heart-icon **theme toggle** (light/dark, persisted to `localStorage.sm-theme`), then Home and Projects links. No About link, no breadcrumbs bar. |
+| Desktop nav (>768px) | Sticky menubar: heart-icon **theme toggle** (light/dark, persisted to `localStorage.sm-theme`), then Home and Projects (`/#projects`, the timeline anchor) links. No About link, no breadcrumbs bar. |
 | Mobile nav (≤768px) | One floating hamburger button (top-left) opening a small menu: Theme toggle, Home, Projects. Deliberately *not* hidden on `bare` pages — it is the way back out of a full-bleed app. |
 | Window structure | One System-6 window: title bar with `<h1>` (page title), window pane with `<slot>` |
 | Back-to-top | Fixed `Button`, visible after 400px of pane scroll |
 | Responsive | Switches nav mode at 768px; drops the body border/frame on mobile |
 | Global | `<ServerConnectModal />` mounted on every page |
+
+**`src/layouts/DemoShell.astro`** — the one way demo (`/projects/<slug>/app/`) pages mount.
+Wraps `BaseLayout` and owns the demo-page conventions so app pages stay declarative:
+
+| Prop | Detail |
+|------|--------|
+| `title` / `description` / `bare` | Forwarded to `BaseLayout` |
+| `backend` | `{ service, port, label }` — emits the `<meta name="site-backend" content data-port data-label>` tag that `service-config.js` and the manifest generator read |
+| `scripts` | Site-served script URLs rendered `is:inline` after the page content (e.g. the nonogram's `public/nonogram/js/*` files) |
+
+A `head` slot forwards extra head tags (e.g. SRI-pinned CDN scripts) through to `BaseLayout`.
 
 ---
 
@@ -237,7 +250,7 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 
 **Contract tests:** each backend owns its live-HTTP contract test in its own repo (`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend. The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them in the `contract-schemas` CI job. See [`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md).
 
-**Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
+**Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/quantum-ml-classifier/app/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
 
 ---
 

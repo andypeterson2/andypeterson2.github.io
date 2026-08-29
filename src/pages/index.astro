@@ -157,7 +157,7 @@ const timeline: TimelineItem[] = [
     </div>
 
     <!-- Right column · row 2: unified timeline (experience + projects) -->
-    <div class="window timeline-window">
+    <div class="window timeline-window" id="projects">
       <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
       <div class="timeline">
         {timeline.map((entry) => <TimelineEntry entry={entry} />)}

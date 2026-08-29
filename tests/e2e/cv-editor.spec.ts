@@ -1025,7 +1025,9 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Close the editor → the group re-renders with the new skill in the document.
     await edit.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('.doc .skill').filter({ hasText: 'Languages' })).toContainText('Rust');
+    await expect(page.locator('.doc .skill').filter({ hasText: 'Languages' })).toContainText(
+      'Rust',
+    );
   });
 
   test('a variant field edit writes an override (not the base), shown live; reset restores Main', async ({
@@ -1174,9 +1176,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
     // The pane scrolls internally (pages taller than the viewport-capped column) rather
     // than growing the shell — guards the "doesn't reach the bottom" regression.
-    const scrolls = await preview.locator('.pv-pages').evaluate(
-      (el) => el.scrollHeight > el.clientHeight + 4 && el.clientHeight <= window.innerHeight,
-    );
+    const scrolls = await preview
+      .locator('.pv-pages')
+      .evaluate(
+        (el) => el.scrollHeight > el.clientHeight + 4 && el.clientHeight <= window.innerHeight,
+      );
     expect(scrolls).toBe(true);
     await expect.poll(() => pdfHits).toBe(1);
     // The download link carries the variant filename.
@@ -1205,7 +1209,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(preview.locator('.pv-pages canvas').first()).toBeVisible();
     await expect.poll(() => mainHits).toBe(1);
     // The download link carries the Main filename.
-    await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute('download', 'Main.pdf');
+    await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
+      'download',
+      'Main.pdf',
+    );
   });
 
   test('the toolbar Compile button opens the pane and compiles (no Preview click first)', async ({
@@ -1222,7 +1229,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Compile straight from the toolbar — the pane opens and renders the PDF, no
     // separate "open Preview first" step.
-    await page.locator('.toolbar').getByRole('button', { name: /Compile/ }).click();
+    await page
+      .locator('.toolbar')
+      .getByRole('button', { name: /Compile/ })
+      .click();
     const preview = page.locator('.preview');
     await expect(preview).toBeVisible();
     await expect(preview.locator('.pv-pages canvas').first()).toBeVisible();
@@ -1726,7 +1736,9 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
 
-    await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada Lovelace' } });
+    await gotoEditor(page, EDITOR_APP, {
+      signedIn: { email: 'ada@example.com', name: 'Ada Lovelace' },
+    });
 
     await expect(page.locator('.conn')).toContainText('connected');
     const account = page.locator('.statusbar .account');

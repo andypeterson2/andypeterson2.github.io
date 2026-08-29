@@ -63,8 +63,10 @@ frontends talk to them over the API contract.
 ## Adding a New Project
 
 1. Add its frontend — static assets under `public/<slug>/`, or a Svelte island under `src/`.
-2. Add an Astro page under `src/pages/projects/<slug>/` that embeds the assets and, if it
-   has a backend, declares it with `<meta name="site-backend" content="<service>" data-port="<port>">`.
+2. Add an `app.astro` page under `src/pages/projects/<slug>/` that mounts through
+   `src/layouts/DemoShell.astro` — pass `backend={{ service, port, label }}` if it has a
+   backend (DemoShell emits the `site-backend` meta) and `scripts={[...]}` for its
+   `public/<slug>/` scripts.
 3. Add an entry to `src/data/projects.ts` (typed by the `Project` interface).
 4. Run `npm run build && python3 scripts/generate-manifest.py dist` to refresh the manifest
    (the pre-commit hook also regenerates it from the latest build).

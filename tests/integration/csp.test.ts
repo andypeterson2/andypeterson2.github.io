@@ -25,11 +25,14 @@ describe('CSP: no-FOUC theme bootstrap', () => {
   test.runIf(hasDist)('the inline bootstrap hash is present in the CSP', () => {
     const html = readFileSync(indexPath, 'utf-8');
 
-    const inlineScripts = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
-      (m) => m[1],
-    );
+    const inlineScripts = [
+      ...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g),
+    ].map((m) => m[1]);
     const boot = inlineScripts.find((s) => /localStorage\.getItem\(['"]sm-theme['"]\)/.test(s));
-    expect(boot, 'no-FOUC theme bootstrap not found as an inline script in dist/index.html').toBeTruthy();
+    expect(
+      boot,
+      'no-FOUC theme bootstrap not found as an inline script in dist/index.html',
+    ).toBeTruthy();
 
     const hash = 'sha256-' + createHash('sha256').update(boot!, 'utf8').digest('base64');
     const csp = (html.match(/content-security-policy[^>]*content="([^"]*)"/i) || [])[1] || '';

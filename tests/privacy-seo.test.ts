@@ -135,11 +135,11 @@ describe('Design system component usage', () => {
     return files;
   }
 
-  test('pages use BaseLayout', () => {
+  test('pages mount through BaseLayout or DemoShell (which wraps it)', () => {
     const pages = getAllAstroFiles(resolve(srcDir, 'pages')).filter((f) => !f.includes('404'));
     for (const page of pages) {
       const content = readFileSync(page, 'utf-8');
-      expect(content, `${page} does not use BaseLayout`).toContain('BaseLayout');
+      expect(content, `${page} does not use a site shell`).toMatch(/BaseLayout|DemoShell/);
     }
   });
 

@@ -10,10 +10,7 @@ const ROOT = resolve(import.meta.dirname!, '..');
 describe('XSS prevention', () => {
   // The classifier frontend is vendored under public/ (its source lives in the
   // quantum-machine-learning repo); test the asset we actually ship.
-  const appJs = readFileSync(
-    resolve(ROOT, 'public/classifiers/js/app.js'),
-    'utf-8',
-  );
+  const appJs = readFileSync(resolve(ROOT, 'public/classifiers/js/app.js'), 'utf-8');
 
   test('classifier app.js strips event-handler attributes from parsed HTML', () => {
     // fetchModelInfo parses HTML from a server response. Before assigning to

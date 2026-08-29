@@ -12,8 +12,9 @@ test.describe('Site navigation', () => {
     await page.goto('/');
     const nav = page.locator('.site-menubar');
 
-    await nav.locator('a[href="/projects/"]').click();
-    await expect(page).toHaveURL('/projects/');
+    await nav.locator('a[href="/#projects"]').click();
+    await expect(page).toHaveURL(/\/#projects$/);
+    await expect(page.locator('#projects')).toBeVisible();
 
     // "Home" links back to the root (the flat layout renamed About → Home).
     await nav.locator('a[href="/"]').click();
@@ -21,7 +22,7 @@ test.describe('Site navigation', () => {
   });
 
   test('subpages have no breadcrumb bar (flat layout)', async ({ page }) => {
-    await page.goto('/projects/');
+    await page.goto('/projects/quantum-ml-classifier/app/');
     // The breadcrumb details-bar was removed; the menubar is the only nav chrome.
     await expect(page.locator('.site-window .details-bar')).toHaveCount(0);
     await expect(page.locator('.site-menubar a[href="/"]')).toBeVisible();

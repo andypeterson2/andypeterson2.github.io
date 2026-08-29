@@ -1,16 +1,18 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DemoShell from '../../../layouts/DemoShell.astro';
 ---
 
-<BaseLayout title="Nonogram Solver">
-  <meta
-    slot="head"
-    name="site-backend"
-    content="nonogram"
-    data-port="5055"
-    data-label="Nonogram Backend"
-  />
-
+<DemoShell
+  title="Nonogram Solver"
+  backend={{ service: 'nonogram', port: 5055, label: 'Nonogram Backend' }}
+  scripts={[
+    '/nonogram/js/state.js',
+    '/nonogram/js/grid.js',
+    '/nonogram/js/solver.js',
+    '/nonogram/js/classical-solver.js',
+    '/nonogram/js/app.js',
+  ]}
+>
   <!-- App shell -->
   <div id="nonogram-app">
     <div class="nono-columns">
@@ -73,12 +75,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     src="https://cdn.socket.io/4.7.5/socket.io.min.js"
     crossorigin="anonymous"
     integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"></script>
-  <script is:inline src="/nonogram/js/state.js"></script>
-  <script is:inline src="/nonogram/js/grid.js"></script>
-  <script is:inline src="/nonogram/js/solver.js"></script>
-  <script is:inline src="/nonogram/js/classical-solver.js"></script>
-  <script is:inline src="/nonogram/js/app.js"></script>
-</BaseLayout>
+</DemoShell>
 
 <style>
   /* ── Buttons ── */

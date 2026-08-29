@@ -1,50 +1,32 @@
 import { test, expect } from '@playwright/test';
 
-const PROJECTS = [
-  { slug: 'quantum-video-chat', title: 'Quantum Video Chat' },
-  { slug: 'quantum-nonogram-solver', title: 'Quantum Nonogram Solver' },
-  { slug: 'quantum-ml-classifier', title: 'Quantum ML Classifier Platform' },
-  { slug: 'latex-resume-editor', title: 'LaTeX Resume Editor' },
+// The legacy project-detail surface is retired: every old detail URL 301s to
+// the project's anchored entry on the home timeline — one surface, one story.
+const SLUGS = [
+  'quantum-video-chat',
+  'quantum-nonogram-solver',
+  'quantum-ml-classifier',
+  'latex-resume-editor',
 ];
 
-test.describe('Project detail pages', () => {
-  for (const { slug, title } of PROJECTS) {
-    test(`${slug} detail renders title and hero description`, async ({ page }) => {
-      const errors: string[] = [];
-      page.on('pageerror', (err) => errors.push(err.message));
-
+test.describe('Retired detail pages redirect to the timeline', () => {
+  for (const slug of SLUGS) {
+    test(`/projects/${slug}/ lands on the anchored timeline entry`, async ({ page }) => {
       await page.goto(`/projects/${slug}/`);
-      await expect(page).toHaveTitle(new RegExp(title));
-      await expect(page.locator('.hero-desc')).toBeVisible();
-      expect(errors).toEqual([]);
-    });
-
-    test(`${slug} links to its GitHub repo`, async ({ page }) => {
-      await page.goto(`/projects/${slug}/`);
-      const repoLink = page.locator('a[href*="github.com"]').first();
-      await expect(repoLink).toBeVisible();
-      const href = await repoLink.getAttribute('href');
-      expect(href).toMatch(/^https:\/\/github\.com\//);
+      await expect(page).toHaveURL(new RegExp(`/#${slug}$`));
+      await expect(page.locator(`.timeline-entry--project#${slug}`)).toBeVisible();
     });
   }
 
-  test('related projects section appears when siblings exist', async ({ page }) => {
-    // quantum-video-chat shares category "quantum" with others
-    await page.goto('/projects/quantum-video-chat/');
-    const related = page.locator('.related-list .related-item');
-    const count = await related.count();
-    expect(count).toBeGreaterThan(0);
+  test('/projects/ lands on the timeline section', async ({ page }) => {
+    await page.goto('/projects/');
+    await expect(page).toHaveURL(/\/#projects$/);
+    await expect(page.locator('#projects')).toBeVisible();
   });
 
-  test('related project links navigate to correct detail pages', async ({ page }) => {
-    await page.goto('/projects/quantum-video-chat/');
-    const firstRelated = page.locator('.related-list .related-item').first();
-    const href = await firstRelated.getAttribute('href');
-    expect(href).toMatch(/^\/projects\/[\w-]+\/$/);
-  });
-
-  test('project navigation section renders prev/next links', async ({ page }) => {
-    await page.goto('/projects/quantum-nonogram-solver/');
-    await expect(page.locator('.project-nav')).toBeAttached();
+  test('the /app/ demo pages survive the redirects', async ({ page }) => {
+    await page.goto('/projects/quantum-ml-classifier/app/');
+    await expect(page).toHaveURL(/\/projects\/quantum-ml-classifier\/app\/$/);
+    await expect(page.locator('#classifier-app')).toBeAttached();
   });
 });

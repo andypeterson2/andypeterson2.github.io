@@ -104,7 +104,10 @@ describe('VariantController — add', () => {
   });
 
   test('connected but the create fails: rolls back and falls to Main', async () => {
-    (api.createVariant as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, status: 500 });
+    (api.createVariant as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
     const h = makeHost({ connected: true, pid: 7 });
     await new VariantController(h.host).add('Doomed');
     expect(h.variants).toHaveLength(0); // rolled back
@@ -181,12 +184,22 @@ describe('VariantController — per-variant overrides (field patch + force inclu
     items: [],
     ...over,
   });
-  const item = (over: Partial<Item> = {}): Item => ({ id: 200, content: 'Python', tags: [], ...over });
+  const item = (over: Partial<Item> = {}): Item => ({
+    id: 200,
+    content: 'Python',
+    tags: [],
+    ...over,
+  });
 
   test('setEntryFieldOverride writes a fields patch, records undo, persists the whole row', async () => {
     const h = makeHost({ connected: true });
     const v = variant({ id: 42 });
-    await new VariantController(h.host).setEntryFieldOverride(v, entry(), 'position', 'Senior Analyst');
+    await new VariantController(h.host).setEntryFieldOverride(
+      v,
+      entry(),
+      'position',
+      'Senior Analyst',
+    );
     expect(v.entryOverrides?.[11]?.fieldsOverride).toEqual({ position: 'Senior Analyst' });
     expect(api.setVariantOverride).toHaveBeenCalledWith(42, {
       targetType: 'entry',
@@ -241,7 +254,10 @@ describe('VariantController — per-variant overrides (field patch + force inclu
     const c = new VariantController(h.host);
     await c.setEntryFieldOverride(v, e, 'position', 'X');
     await c.setEntryIncluded(v, e, 1);
-    expect(v.entryOverrides?.[11]).toMatchObject({ included: 1, fieldsOverride: { position: 'X' } });
+    expect(v.entryOverrides?.[11]).toMatchObject({
+      included: 1,
+      fieldsOverride: { position: 'X' },
+    });
   });
 
   test('setItemIncluded targets an item and drops the row on reset', async () => {

@@ -14,21 +14,16 @@ describe('Classifiers page', () => {
     'utf-8',
   );
 
-  test('uses BaseLayout', () => {
-    expect(src).toContain('BaseLayout');
+  test('mounts through DemoShell', () => {
+    expect(src).toContain('DemoShell');
   });
 
   test('includes ClassifierApp component', () => {
     expect(src).toContain('ClassifierApp');
   });
 
-  test('declares site-backend meta for classifier service', () => {
-    expect(src).toContain('name="site-backend"');
-    expect(src).toContain('content="classifiers"');
+  test('declares the classifier backend via the DemoShell prop', () => {
+    expect(src).toContain("service: 'classifiers'");
+    expect(src).toContain('port: 5001');
   });
-
-  test('specifies backend port', () => {
-    expect(src).toContain('data-port="5001"');
-  });
-
 });

@@ -124,7 +124,11 @@ describe('TagController — vocab + spotlight', () => {
         type: 'experience',
         title: 'Experience',
         entries: [
-          entry({ id: 1, tags: ['quantum', 'leadership'], items: [item({ id: 1, tags: ['quantum'] })] }),
+          entry({
+            id: 1,
+            tags: ['quantum', 'leadership'],
+            items: [item({ id: 1, tags: ['quantum'] })],
+          }),
           entry({ id: 2, tags: ['leadership'] }),
         ],
       },

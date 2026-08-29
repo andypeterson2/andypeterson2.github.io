@@ -26,7 +26,9 @@ export async function gotoEditor(
     r.fulfill({
       status: opts.signedIn ? 200 : 401,
       contentType: 'application/json',
-      body: JSON.stringify(opts.signedIn ? { authenticated: true, ...opts.signedIn } : { authenticated: false }),
+      body: JSON.stringify(
+        opts.signedIn ? { authenticated: true, ...opts.signedIn } : { authenticated: false },
+      ),
     }),
   );
   await page.goto(path);
