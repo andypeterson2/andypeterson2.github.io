@@ -63,15 +63,23 @@ export class PreviewController {
     this.state = 'idle';
   }
 
+  /** The compile call for the current target — variant, Main (needs a person id), or nothing. */
+  #compileCall(): (() => ReturnType<typeof api.compilePdf>) | null {
+    const v = this.#activeVariant();
+    if (v) return () => api.compilePdf(v.id);
+    const pid = this.#activePersonId();
+    if (pid != null) return () => api.compileMainPdf(pid);
+    return null;
+  }
+
   /** Compile the active variant — or the full "Main" document — to a PDF (manual; xelatex is costly). */
   async compile() {
     if (!this.#connected()) return;
-    const v = this.#activeVariant();
-    const pid = this.#activePersonId();
-    if (!v && pid == null) return;
+    const call = this.#compileCall();
+    if (!call) return;
     this.state = 'compiling';
     this.log = null;
-    const res = v ? await api.compilePdf(v.id) : await api.compileMainPdf(pid!);
+    const res = await call();
     if (res.ok && res.data) {
       if (this.url) URL.revokeObjectURL(this.url);
       this.blob = res.data;

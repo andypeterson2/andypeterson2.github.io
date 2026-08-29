@@ -10,8 +10,7 @@
     "dev": "astro dev",
     "build": "astro build && node scripts/purge-css.mjs",
     "preview": "astro preview",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}' 'public/classifiers/js/**/*.js' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}' && npm run lint:fontsize && npm run lint:tokens",
-    "lint:styles": "stylelint 'src/**/*.{css,astro}'",
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' 'public/classifiers/js/**/*.js' 'public/js/**/*.js' 'public/nonogram/js/**/*.js' 'public/ui-kit/*.js' && prettier --check 'src/**/*.{ts,tsx,astro,css}' && stylelint 'src/**/*.{css,astro}' && npm run lint:fontsize && npm run lint:tokens",
     "lint:fontsize": "stylelint 'src/**/*.{css,astro,svelte}' 'packages/system-six/styles/*.css' --config .stylelintrc.fontsize.json",
     "lint:tokens": "stylelint 'src/**/*.{css,astro,svelte}' 'packages/system-six/styles/*.css' --config .stylelintrc.tokens.json",
     "format": "prettier --write 'src/**/*.{ts,tsx,astro,css}'",
@@ -40,6 +39,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^10.6.0",
     "eslint-plugin-astro": "^1.7.0",
+    "eslint-plugin-sonarjs": "^3.0.7",
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.4",
     "prettier-plugin-astro": "^0.14.1",
@@ -48,6 +48,7 @@
     "stylelint-config-html": "^2.0.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "~8.62.0",
     "vitest": "^4.1.4"
   }
 }

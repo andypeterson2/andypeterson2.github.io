@@ -9,4 +9,30 @@ target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "N", "UP", "B", "S", "T20", "SIM", "RUF"]
+# The fleet lint baseline: complexity budgets (C90/PLR) + rewrite-to-shorter
+# families (SIM/RET/C4/PIE/PERF/FURB/PTH) on top of the correctness floor.
+select = [
+  "E", "W", "F", "I",
+  "N", "UP", "B", "A",
+  "S", "T20",
+  "C90", "PLR", "PLW", "PLE",
+  "SIM", "RET", "RSE", "PIE", "C4",
+  "PERF", "FURB", "PTH",
+  "ARG", "ISC", "TID", "TRY", "RUF",
+]
+ignore = [
+  "TRY003",   # long exception messages — verbosity pedantry
+  "PLR2004",  # magic-value comparisons — noisy outside tests
+  "RUF001", "RUF002", "RUF003",  # typographic chars in prose/output are intentional
+  "PERF203",  # try/except in loop — flags legitimate per-item error isolation
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# These are CLI/export tools: printing is their output channel.
+"scripts/**" = ["T201"]
+# The gallery notes are curated display copy — long one-line strings beat
+# concat gymnastics (ISC would flag the wrapped forms).
+"scripts/export-nonogram-gallery.py" = ["T201", "E501"]

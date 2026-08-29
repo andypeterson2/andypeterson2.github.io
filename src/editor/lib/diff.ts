@@ -184,10 +184,7 @@ function tally(personal: FieldChange[], sections: SectionDiff[]): DocDiff['count
  * this checkpoint."
  */
 export function diffDocuments(base: Person, target: Person): DocDiff {
-  const personal = diffFields(
-    (base.personal || {}) as Record<string, string>,
-    (target.personal || {}) as Record<string, string>,
-  );
+  const personal = diffFields(base.personal || {}, target.personal || {});
   const sections = diffSections(base.sections || [], target.sections || []);
   return {
     personal,

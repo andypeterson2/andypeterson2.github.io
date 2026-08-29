@@ -10,7 +10,7 @@ export interface Project {
   icon: string;
   repoUrl: string;
   /** Real, cited numbers shown on the one-page showcase (no handwaving). */
-  metrics?: Array<{ value: string; label: string }>;
+  metrics?: { value: string; label: string }[];
   /** Stack tags shown on the showcase card. */
   tech?: string[];
 }

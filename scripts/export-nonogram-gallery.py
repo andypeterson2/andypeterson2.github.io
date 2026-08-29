@@ -63,14 +63,13 @@ def build_app():
     """Build the nonogram Flask app in-process (mirrors the repo's own test fixture)."""
     from flask import Flask
     from flask_socketio import SocketIO
-
     from tools import state as app_state
     from tools.config import MAX_CONTENT_LENGTH
     from tools.routes import ALL_BLUEPRINTS
 
     app = Flask(__name__)
     app.config["TESTING"] = True
-    app.config["SECRET_KEY"] = "gallery"
+    app.config["SECRET_KEY"] = "gallery"  # noqa: S105 — throwaway key for an in-process test app; nothing is served
     app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
     sio = SocketIO(app, async_mode="threading")

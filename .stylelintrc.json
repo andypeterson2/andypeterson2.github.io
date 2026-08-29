@@ -15,7 +15,6 @@
   "overrides": [],
   "ignoreFiles": [
     "node_modules/**",
-    "dist/**",
-    "src/tokens/tokens.generated.css"
+    "dist/**"
   ]
 }

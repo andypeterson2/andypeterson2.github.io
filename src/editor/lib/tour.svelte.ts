@@ -43,7 +43,7 @@ export type TourState = 'idle' | 'playing' | 'paused' | 'done';
 
 export class TourController {
   state = $state<TourState>('idle');
-  index = $state(0);
+  index: number = $state(0);
   /** raw: steps are immutable data, and deep-proxying their `enter` closures buys nothing. */
   steps = $state.raw<TourStep[]>([]);
   /** reduced motion → no auto-advance; the visitor steps through with Next ▸. */

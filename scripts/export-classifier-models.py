@@ -27,7 +27,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "public" / "classifiers" / "models"
@@ -89,7 +89,7 @@ def export_iris() -> tuple[dict, float]:
     from sklearn.model_selection import train_test_split
 
     d = load_iris()
-    X = d.data.astype(np.float32)
+    X = d.data.astype(np.float32)  # noqa: N806 — sklearn's feature-matrix naming convention
     y = d.target.astype(np.int64)
     x_tr, x_te, y_tr, y_te = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
