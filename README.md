@@ -7,15 +7,16 @@ and talks to their optional backends over a shared HTTP API contract.
 ## Directory Structure
 
 ```
-src/                      Astro 6 portal (pages, layouts, components, styles)
+src/                      Astro 7 portal (pages, layouts, components)
+src/editor/               The CV editor — a Svelte 5 island (components + runes stores)
 public/                   Served as-is, including owned sub-app frontends:
-  classifiers/ nonogram/                   each app's frontend JS/CSS
+  classifiers/ nonogram/                   each app's frontend JS + model/gallery assets
   ui-kit/                                  ui-kit runtime (icons.js, ui-kit.js)
-  js/                                      portal scripts (contract client, modal)
-public/js/       Shared browser scripts (service config, nav, theme bootstrap)
+  js/                                      portal scripts (contract client, service config, modal)
+packages/system-six/      The portal's design-system CSS (tokens + element styles)
 docs/api-contract/        The written API contract (CONTRACT.md + JSON schemas)
 scripts/                  Manifest generator, CI helpers
-tests/                    Vitest (unit) + Playwright (e2e)
+tests/                    Vitest (unit + integration) + Playwright (e2e)
 ```
 
 The sub-app repositories:
@@ -46,38 +47,41 @@ No `--recursive` and no submodules — the portal builds entirely from this repo
 The portal is static and deploys without any backend. To exercise a sub-app's live
 backend, clone its repo and run it (see that repo's README), then point the portal at
 it with a query param — e.g.
-`http://localhost:4321/classifiers/?backend=http://localhost:5001`.
+`http://localhost:4321/projects/quantum-ml-classifier/app/?backend=http://localhost:5001`.
 `public/js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
 localStorage, or the page's default port).
 
 ## Frontends
 
-Each sub-app's frontend is **owned by this repo** under `public/<app>/` and edited here
-directly (no submodules, no vendoring). Backends live in their own repos; the frontend
-talks to them over the API contract.
+Each sub-app's frontend is **owned by this repo** and edited here directly (no
+submodules, no vendoring): the classifier and nonogram frontends live under
+`public/<app>/`, and the CV editor is a Svelte 5 island under `src/editor/`. Backends
+live in their own repos; the frontends talk to them over the API contract.
 
 ## Testing
 
 ```bash
-make test       # vitest unit tests
-make test-e2e   # playwright e2e
-make lint       # eslint + prettier + stylelint
-npm run format  # auto-fix formatting
+make test          # vitest unit tests
+make test-e2e      # playwright e2e
+make lint          # eslint + prettier + stylelint
+npm run typecheck  # astro check
+npm run format     # auto-fix formatting
 ```
 
 ## Deployment
 
-Pushed to GitHub Pages (`andypeterson.dev`) by `.github/workflows/deploy.yml` after CI
-passes — a portal-only static build, no submodules.
+Deployed to Cloudflare Pages (`andypeterson.dev`) by `.github/workflows/deploy.yml`
+after CI passes — a portal-only static build (prebuilt `dist/` uploaded via wrangler),
+no submodules.
 
 ## Tech Stack
 
-| Layer    | Tools                            |
-|----------|----------------------------------|
-| Frontend | Astro 6, TypeScript, system.css  |
-| Testing  | Vitest, Playwright               |
-| Infra    | GitHub Actions, GitHub Pages     |
-| Linting  | ESLint, Prettier, Stylelint      |
+| Layer    | Tools                                     |
+|----------|-------------------------------------------|
+| Frontend | Astro 7, Svelte 5, TypeScript, system.css |
+| Testing  | Vitest, Playwright                        |
+| Infra    | GitHub Actions, Cloudflare Pages          |
+| Linting  | ESLint, Prettier, Stylelint, astro check  |
 
 ## License
 
