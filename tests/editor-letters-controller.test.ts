@@ -25,11 +25,13 @@ const variant = (over: Partial<Variant> = {}): Variant => ({
 });
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
-function makeHost(opts: {
-  connected?: boolean;
-  variant?: Variant | null;
-  coverletter?: Record<string, string>;
-} = {}) {
+function makeHost(
+  opts: {
+    connected?: boolean;
+    variant?: Variant | null;
+    coverletter?: Record<string, string>;
+  } = {},
+) {
   let seq = 2000;
   const records: Parameters<LetterHost['record']>[0][] = [];
   const calls = { markDirty: 0, persist: 0, announce: [] as string[] };
@@ -70,7 +72,8 @@ describe('LetterController — load', () => {
   test('offline: a cover-letter variant loads the demo paragraphs + shared header', () => {
     const v = variant({ id: 3, kind: 'coverletter' }); // DEMO_LETTERS is keyed by id 3
     const c = new LetterController(
-      makeHost({ connected: false, variant: v, coverletter: { opening: 'Dear Hiring Team,' } }).host,
+      makeHost({ connected: false, variant: v, coverletter: { opening: 'Dear Hiring Team,' } })
+        .host,
     );
     c.load();
     expect(c.sections.length).toBeGreaterThan(0);

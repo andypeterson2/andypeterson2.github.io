@@ -24,13 +24,15 @@ describe('Sitemap generation', () => {
     expect(existsSync(resolve(DIST, 'sitemap-0.xml'))).toBe(true);
   });
 
-  test.runIf(hasDist)('sitemap contains entries for every project slug', () => {
+  test.runIf(hasDist)('sitemap contains every local demo page (detail surface retired)', () => {
     const xml = readFileSync(resolve(DIST, 'sitemap-0.xml'), 'utf-8');
-    for (const project of projects) {
+    for (const project of projects.filter((p) => p.appUrl?.startsWith('/'))) {
       expect(xml, `missing sitemap entry for ${project.slug}`).toContain(
-        `/projects/${project.slug}/`,
+        `/projects/${project.slug}/app/`,
       );
     }
+    // The retired detail pages must NOT resurface.
+    expect(xml).not.toMatch(/\/projects\/[\w-]+\/<\/loc>/);
   });
 
   test.runIf(hasDist)('sitemap contains core pages', () => {

@@ -5,7 +5,6 @@ import AxeBuilder from '@axe-core/playwright';
 const cleanPages = [
   // The bio, experience/project timeline and long-form about all live on '/'.
   { name: 'Home', path: '/' },
-  { name: 'Projects index', path: '/projects/' },
   { name: '404', path: '/intentionally-missing/' },
 ];
 
@@ -23,21 +22,15 @@ for (const { name, path } of cleanPages) {
   });
 }
 
-// Project detail pages have pre-existing color-contrast issues (#999 on #eee)
-// tracked as a separate follow-up. Audit them for critical violations only and
-// disable the color-contrast rule until the design tokens are adjusted.
-const detailPages = [
-  { name: 'Project detail (QVC)', path: '/projects/quantum-video-chat/' },
-  { name: 'Project detail (Nonogram)', path: '/projects/quantum-nonogram-solver/' },
-  { name: 'Project detail (ML classifier)', path: '/projects/quantum-ml-classifier/' },
-  { name: 'Project detail (CV editor)', path: '/projects/latex-resume-editor/' },
+// The legacy detail pages are retired (they 301 to the home timeline), so the
+// audits that covered them now cover the surviving demo pages instead.
+const demoPages = [
+  { name: 'Nonogram demo', path: '/projects/quantum-nonogram-solver/app/' },
+  { name: 'CV editor demo', path: '/projects/latex-resume-editor/app/' },
 ];
 
-for (const { name, path } of detailPages) {
+for (const { name, path } of demoPages) {
   test(`${name} has no critical accessibility violations`, async ({ page }) => {
-    // Emulate reduced motion BEFORE navigating so the screenshot carousel's 4s auto-rotate
-    // never starts — otherwise it mutates the DOM mid-audit and axe flakes under parallel
-    // load. Then let the page settle (fonts/images) before analyzing.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(path);
     await page.waitForLoadState('networkidle');
@@ -52,9 +45,7 @@ for (const { name, path } of detailPages) {
 }
 
 // App pages: block backends so the shell can render, then audit.
-const appPages = [
-  { name: 'Classifier shell', path: '/projects/quantum-ml-classifier/app/' },
-];
+const appPages = [{ name: 'Classifier shell', path: '/projects/quantum-ml-classifier/app/' }];
 
 for (const { name, path } of appPages) {
   test(`${name} shell has no critical accessibility violations`, async ({ page }) => {

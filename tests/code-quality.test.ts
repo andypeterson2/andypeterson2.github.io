@@ -21,4 +21,3 @@ describe('Button props typing', () => {
     expect(src).not.toContain('[key: string]: unknown');
   });
 });
-

@@ -120,7 +120,10 @@ describe('HistoryController — connected (persisted)', () => {
     const { host } = makeHost({ connected: () => true, activePersonId: () => 7 });
     const h = new HistoryController(host);
     await h.snapshot('milestone');
-    expect(api.commitVersion).toHaveBeenCalledWith(7, expect.objectContaining({ label: 'milestone' }));
+    expect(api.commitVersion).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ label: 'milestone' }),
+    );
     expect(h.versions[0].id).toBe(900); // reconciled from the server response
   });
 

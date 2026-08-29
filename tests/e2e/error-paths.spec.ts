@@ -38,7 +38,9 @@ test.describe('Backend error-envelope surfacing', () => {
     const busy = {
       status: 409,
       contentType: 'application/json',
-      body: JSON.stringify({ error: { code: 'solver_busy', message: 'A solve is already running' } }),
+      body: JSON.stringify({
+        error: { code: 'solver_busy', message: 'A solve is already running' },
+      }),
     };
     await page.route('**/api/benchmark', (r) => r.fulfill(busy));
     await page.route('**/api/benchmark/sync', (r) => r.fulfill(busy));
@@ -75,8 +77,14 @@ test.describe('Sync-REST fallback when streaming is unavailable', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          report: {}, solutions: [], qu_counts: {}, qu_counts_per_trial: null,
-          rows: 0, cols: 0, cl_times: [], qu_times: [],
+          report: {},
+          solutions: [],
+          qu_counts: {},
+          qu_counts_per_trial: null,
+          rows: 0,
+          cols: 0,
+          cl_times: [],
+          qu_times: [],
         }),
       });
     });

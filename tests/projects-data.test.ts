@@ -19,7 +19,6 @@ describe('projects.ts data integrity', () => {
       expect(p.slug, `${p.title} missing slug`).toBeTruthy();
       expect(p.description, `${p.slug} missing description`).toBeTruthy();
       expect(p.longDescription, `${p.slug} missing longDescription`).toBeTruthy();
-      expect(p.category, `${p.slug} missing category`).toBeTruthy();
       expect(p.icon, `${p.slug} missing icon`).toBeTruthy();
       expect(p.repoUrl, `${p.slug} missing repoUrl`).toBeTruthy();
     }
@@ -47,9 +46,7 @@ describe('projects.ts data integrity', () => {
 
   test('repo URLs are valid GitHub URLs', () => {
     for (const p of projects) {
-      expect(p.repoUrl, `${p.slug} repoUrl not a GitHub URL`).toMatch(
-        /^https:\/\/github\.com\//,
-      );
+      expect(p.repoUrl, `${p.slug} repoUrl not a GitHub URL`).toMatch(/^https:\/\/github\.com\//);
     }
   });
 

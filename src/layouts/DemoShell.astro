@@ -1,0 +1,38 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+// The one way a demo page mounts. Every project demo — and the Phase-5
+// notebook/demo pages to come — declares three things instead of hand-wiring
+// them: the layout mode (chromed or full-bleed), an optional live backend
+// (one prop emits the site-backend meta that drives the menubar status dot
+// and connect modal), and an ordered manifest of classic scripts.
+interface Props {
+  title: string;
+  description?: string;
+  /** Full-bleed apps (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
+  bare?: boolean;
+  /** The demo's optional live backend, declared once. */
+  backend?: { service: string; port: number; label: string };
+  /** Classic (non-module) scripts, loaded in order after the app markup. */
+  scripts?: string[];
+}
+const { title, description, bare, backend, scripts = [] } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} bare={bare}>
+  <Fragment slot="head">
+    {
+      backend && (
+        <meta
+          name="site-backend"
+          content={backend.service}
+          data-port={String(backend.port)}
+          data-label={backend.label}
+        />
+      )
+    }
+    <slot name="head" />
+  </Fragment>
+  <slot />
+  {scripts.map((src) => <script is:inline src={src} />)}
+</BaseLayout>

@@ -46,8 +46,8 @@ test.describe('Performance assertions', () => {
     }
   });
 
-  test('projects page loads without long tasks over 1 second', async ({ page }) => {
-    await page.goto('/projects/');
+  test('classifier demo page loads without long tasks over 1 second', async ({ page }) => {
+    await page.goto('/projects/quantum-ml-classifier/app/');
     await page.waitForLoadState('load');
     const longTasks = await page.evaluate(() => {
       const tasks = performance.getEntriesByType('longtask') as PerformanceEntry[];
@@ -56,8 +56,8 @@ test.describe('Performance assertions', () => {
     expect(longTasks).toBe(0);
   });
 
-  test('project detail page total load under 5 seconds in dev', async ({ page }) => {
-    await page.goto('/projects/quantum-video-chat/');
+  test('nonogram demo page total load under 5 seconds in dev', async ({ page }) => {
+    await page.goto('/projects/quantum-nonogram-solver/app/');
     const { load } = await getTimings(page);
     expect(load).toBeLessThan(5000);
   });

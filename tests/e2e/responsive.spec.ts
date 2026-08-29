@@ -20,7 +20,7 @@ test.describe('Responsive layout', () => {
     await page.goto('/');
     await page.locator('.mobile-nav-btn').click();
     await page.locator('#mobile-nav-menu a').filter({ hasText: 'Projects' }).click();
-    await expect(page).toHaveURL('/projects/');
+    await expect(page).toHaveURL(/\/#projects$/);
   });
 
   test('window chrome renders at all breakpoints', async ({ page }) => {

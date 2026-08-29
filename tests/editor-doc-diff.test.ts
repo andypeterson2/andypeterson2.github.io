@@ -96,7 +96,12 @@ describe('diffDocuments', () => {
   test('an added entry and an added section are detected', () => {
     const b = clone(doc());
     b.sections[0].entries.push({ id: 101, fields: { position: 'Intern' }, items: [], tags: [] });
-    b.sections.push({ id: 11, type: 'skills', title: 'Skills', entries: [{ id: 200, fields: { category: 'Langs' }, items: [], tags: [] }] });
+    b.sections.push({
+      id: 11,
+      type: 'skills',
+      title: 'Skills',
+      entries: [{ id: 200, fields: { category: 'Langs' }, items: [], tags: [] }],
+    });
     const d = diffDocuments(doc(), b);
     const changedSec = d.sections.find((s) => s.id === 10)!;
     expect(changedSec.entries).toContainEqual(expect.objectContaining({ kind: 'added', id: 101 }));
@@ -126,11 +131,18 @@ describe('diffDocuments', () => {
 
 describe('entryLabel', () => {
   test('prefers position · organization', () => {
-    const e: Entry = { id: 1, fields: { position: 'Engineer', organization: 'Acme' }, items: [], tags: [] };
+    const e: Entry = {
+      id: 1,
+      fields: { position: 'Engineer', organization: 'Acme' },
+      items: [],
+      tags: [],
+    };
     expect(entryLabel(e)).toBe('Engineer · Acme');
   });
   test('falls back through title / category / id', () => {
-    expect(entryLabel({ id: 2, fields: { category: 'Languages' }, items: [], tags: [] })).toBe('Languages');
+    expect(entryLabel({ id: 2, fields: { category: 'Languages' }, items: [], tags: [] })).toBe(
+      'Languages',
+    );
     expect(entryLabel({ id: 3, fields: {}, items: [], tags: [] })).toBe('entry #3');
   });
 });

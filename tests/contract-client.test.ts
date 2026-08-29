@@ -46,7 +46,9 @@ beforeAll(async () => {
             { method: 'POST', path: '/api/solve/classical/sync', summary: 'Solve synchronously.' },
             { method: 'GET', path: '/api/config', summary: 'Solver config.' },
           ],
-          streaming: [{ protocol: 'socket.io', event: 'cl_done', description: 'Classical result.' }],
+          streaming: [
+            { protocol: 'socket.io', event: 'cl_done', description: 'Classical result.' },
+          ],
         });
       // cv-style: /health is absent (404), /api/health is the alias.
       case '/cv/health':
@@ -58,7 +60,12 @@ beforeAll(async () => {
           error: { code: 'invalid_clues', message: 'rows must be 1..30', details: { rows: 99 } },
         });
       case '/degraded':
-        return send(res, 200, { status: 'degraded', service: 'qvc', version: '1.0.0', uptime_s: 1 });
+        return send(res, 200, {
+          status: 'degraded',
+          service: 'qvc',
+          version: '1.0.0',
+          uptime_s: 1,
+        });
       case '/plain500':
         return send(res, 500, 'internal boom'); // non-JSON, no envelope
       default:

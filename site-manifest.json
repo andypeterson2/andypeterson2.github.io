@@ -5,20 +5,8 @@
       "title": "Home"
     },
     {
-      "path": "/projects/",
-      "title": "Projects"
-    },
-    {
-      "path": "/projects/latex-resume-editor/",
-      "title": "LaTeX Resume Editor"
-    },
-    {
       "path": "/projects/latex-resume-editor/app/",
       "title": "LaTeX Resume Editor"
-    },
-    {
-      "path": "/projects/quantum-ml-classifier/",
-      "title": "Quantum ML Classifier Platform"
     },
     {
       "path": "/projects/quantum-ml-classifier/app/",
@@ -29,20 +17,12 @@
       }
     },
     {
-      "path": "/projects/quantum-nonogram-solver/",
-      "title": "Quantum Nonogram Solver"
-    },
-    {
       "path": "/projects/quantum-nonogram-solver/app/",
       "title": "Nonogram Solver",
       "backend": {
         "service": "nonogram",
         "defaultPort": 5055
       }
-    },
-    {
-      "path": "/projects/quantum-video-chat/",
-      "title": "Quantum Video Chat"
     }
   ]
 }

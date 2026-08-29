@@ -62,8 +62,8 @@ describe('section-types — the Add-section picker groups', () => {
     expect(Object.keys(cats).sort()).toEqual(['achievements', 'other', 'roles']);
     const total = cats.roles.length + cats.achievements.length + cats.other.length;
     expect(total).toBe(VALID_SECTION_TYPES.length); // every type is placed exactly once
-    expect([...cats.roles, ...cats.achievements, ...cats.other].every((p) => p.key && p.label)).toBe(
-      true,
-    );
+    expect(
+      [...cats.roles, ...cats.achievements, ...cats.other].every((p) => p.key && p.label),
+    ).toBe(true);
   });
 });

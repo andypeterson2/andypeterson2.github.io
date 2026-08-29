@@ -21,3 +21,17 @@
 # static assets the surviving app page loads.
 /classifiers   /projects/quantum-ml-classifier/app/  301
 /classifiers/  /projects/quantum-ml-classifier/app/  301
+
+# Legacy project-detail surface retired — the home timeline (anchored per slug)
+# is the one showcase surface. EXACT PATHS ONLY: a /projects/* splat would
+# clobber the surviving /projects/<slug>/app/ demo pages.
+/projects                             /#projects  301
+/projects/                            /#projects  301
+/projects/latex-resume-editor         /#latex-resume-editor  301
+/projects/latex-resume-editor/        /#latex-resume-editor  301
+/projects/quantum-video-chat          /#quantum-video-chat  301
+/projects/quantum-video-chat/         /#quantum-video-chat  301
+/projects/quantum-nonogram-solver     /#quantum-nonogram-solver  301
+/projects/quantum-nonogram-solver/    /#quantum-nonogram-solver  301
+/projects/quantum-ml-classifier       /#quantum-ml-classifier  301
+/projects/quantum-ml-classifier/      /#quantum-ml-classifier  301

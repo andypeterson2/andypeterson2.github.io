@@ -1,10 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Core pages render without errors', () => {
-  const pages = [
-    { path: '/', title: /Home/ },
-    { path: '/projects/', title: /Projects/ },
-  ];
+  const pages = [{ path: '/', title: /Home/ }];
 
   for (const { path, title } of pages) {
     test(`${path} renders with correct title`, async ({ page }) => {
@@ -25,20 +22,23 @@ test.describe('Core pages render without errors', () => {
   });
 });
 
-test.describe('Projects index', () => {
-  test('lists all projects as finder icons', async ({ page }) => {
-    await page.goto('/projects/');
-    const icons = page.locator('.icon-grid .finder-icon');
-    await expect(icons.first()).toBeVisible();
-    const count = await icons.count();
-    expect(count).toBeGreaterThanOrEqual(3);
+test.describe('Project timeline (the one showcase surface)', () => {
+  test('lists all projects as timeline entries', async ({ page }) => {
+    await page.goto('/');
+    const entries = page.locator('.timeline-entry--project');
+    await expect(entries.first()).toBeVisible();
+    const count = await entries.count();
+    expect(count).toBeGreaterThanOrEqual(4);
   });
 
-  test('project icons link to detail pages', async ({ page }) => {
-    await page.goto('/projects/');
-    const firstLink = page.locator('.icon-grid .finder-icon').first();
-    const href = await firstLink.getAttribute('href');
-    expect(href).toMatch(/^\/projects\/[\w-]+\/$/);
+  test('project entries link to their repos', async ({ page }) => {
+    await page.goto('/');
+    const repoLink = page
+      .locator('.timeline-entry--project')
+      .first()
+      .locator('a[href*="github.com"]')
+      .first();
+    await expect(repoLink).toBeAttached();
   });
 });
 
@@ -82,4 +82,3 @@ test.describe('Home page about content', () => {
     await expect(page).toHaveURL('/');
   });
 });
-
