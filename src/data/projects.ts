@@ -7,9 +7,7 @@ export interface Project {
   status: 'active' | 'archived';
   featured: boolean;
   appUrl?: string;
-  appLinks?: Array<{ label: string; href: string }>;
   icon: string;
-  screenshots: string[];
   repoUrl: string;
   /** Real, cited numbers shown on the one-page showcase (no handwaving). */
   metrics?: Array<{ value: string; label: string }>;
@@ -30,7 +28,6 @@ export const projects: Project[] = [
     featured: true,
     appUrl: '/projects/latex-resume-editor/app/',
     icon: 'code.svg',
-    screenshots: [],
     repoUrl: 'https://github.com/andypeterson2/cv',
     metrics: [
       { value: '20+', label: 'REST endpoints, JSON-Schema validated' },
@@ -51,7 +48,6 @@ export const projects: Project[] = [
     featured: true,
     appUrl: 'https://quantum-interns-at-qualcomm-institiute.github.io/Quantum-Video-Chat/',
     icon: 'video_dark.svg',
-    screenshots: [],
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
     metrics: [
       { value: 'BB84', label: 'QKD: sift → QBER → Cascade → Toeplitz' },
@@ -72,7 +68,6 @@ export const projects: Project[] = [
     featured: true,
     appUrl: '/projects/quantum-nonogram-solver/app/',
     icon: 'grid_light.svg',
-    screenshots: [],
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     metrics: [
       { value: '32.3%', label: 'correct state on real IBM hardware (6.25% by chance)' },
@@ -93,12 +88,11 @@ export const projects: Project[] = [
     featured: true,
     appUrl: '/projects/quantum-ml-classifier/app/',
     icon: 'microscope.svg',
-    screenshots: [],
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
       { value: '92.4% / 100%', label: 'MNIST / Iris — predicted in your browser' },
       { value: '6+', label: 'model architectures per dataset' },
-      { value: '425', label: 'tests' },
+      { value: '438', label: 'tests' },
     ],
     tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask'],
   },

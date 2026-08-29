@@ -1,9 +1,9 @@
 /**
- * Print stylesheet, breadcrumbs, pull quote, error boundary,
- * and back-to-top button tests.
+ * Print stylesheet, error boundary, and back-to-top button tests.
  * Updated for system.css monochrome architecture.
  * Removed: IntersectionObserver animations, view transitions,
- * timeline hover transitions, smooth scroll, theme toggle in print.
+ * timeline hover transitions, smooth scroll, theme toggle in print,
+ * breadcrumbs, and the pull-quote component (deleted as unused).
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -75,33 +75,6 @@ describe('Flat layout — no breadcrumb details-bar', () => {
   test('the heart is the theme toggle', () => {
     expect(layoutSrc).toContain('heart-toggle');
     expect(layoutSrc).toContain('theme-toggle');
-  });
-});
-
-// ---- Pull quote block ----
-
-describe('Pull quote component', () => {
-  const pullQuoteSrc = readFileSync(resolve(ROOT, 'src/components/PullQuote.astro'), 'utf-8');
-
-  test('component file exists', () => {
-    expect(existsSync(resolve(ROOT, 'src/components/PullQuote.astro'))).toBe(true);
-  });
-
-  test('renders blockquote element', () => {
-    expect(pullQuoteSrc).toContain('<blockquote');
-    expect(pullQuoteSrc).toContain('pull-quote');
-  });
-
-  test('has border-left styling', () => {
-    expect(pullQuoteSrc).toContain('border-left');
-  });
-
-  test('supports optional cite prop', () => {
-    expect(pullQuoteSrc).toContain('cite');
-  });
-
-  test('uses italic styling', () => {
-    expect(pullQuoteSrc).toContain('font-style: italic');
   });
 });
 
