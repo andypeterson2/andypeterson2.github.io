@@ -5,20 +5,16 @@
       "title": "Home"
     },
     {
-      "path": "/projects/latex-resume-editor/app/",
-      "title": "LaTeX Resume Editor"
-    },
-    {
-      "path": "/projects/qsvm-iris/app/",
-      "title": "QSVM Paper Recreation"
-    },
-    {
-      "path": "/projects/quantum-ml-classifier/app/",
-      "title": "Classifier",
+      "path": "/projects/ai-ml/app/",
+      "title": "AI / Machine Learning",
       "backend": {
         "service": "classifiers",
         "defaultPort": 5001
       }
+    },
+    {
+      "path": "/projects/latex-resume-editor/app/",
+      "title": "LaTeX Resume Editor"
     },
     {
       "path": "/projects/quantum-nonogram-solver/app/",
