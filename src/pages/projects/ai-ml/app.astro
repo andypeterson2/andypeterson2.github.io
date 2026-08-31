@@ -1,0 +1,211 @@
+---
+import DemoShell from '../../../layouts/DemoShell.astro';
+import ClassifierApp from '../../../components/ClassifierApp.astro';
+// The executed QSVM notebook, exported by the classifier repo's
+// `make export-site` (nbconvert basic template + LaTeX pre-rendered to native
+// MathML, so this page ships zero notebook JS and clears the CSP with no CDN).
+// A provenance comment at the top of the file records the source commit.
+import notebookHtml from '../../../content/notebooks/qsvm-iris.html?raw';
+---
+
+<DemoShell
+  title="AI / Machine Learning"
+  description="Machine learning classifiers you can train and run in the browser, plus a NISQ-era quantum SVM paper (arXiv:1909.11988) recreated end-to-end in Qiskit."
+  backend={{ service: 'classifiers', port: 5001, label: 'Classifier Backend' }}
+>
+  <div id="ai-ml-page" data-view="demo">
+    <nav class="section-switcher" aria-label="Page sections">
+      <a href="#demo" class="switcher-btn" data-section="demo" aria-current="page">Live demo</a>
+      <a href="#notebook" class="switcher-btn" data-section="notebook">Paper recreation</a>
+    </nav>
+    <section id="demo" class="section-demo">
+      <ClassifierApp />
+    </section>
+    <section id="notebook" class="section-notebook">
+      <article class="notebook" set:html={notebookHtml} />
+    </section>
+  </div>
+</DemoShell>
+
+<script>
+  // Progressive enhancement: without JS the two sections render stacked (the
+  // notebook stays fully readable); with it, they become hash-driven views.
+  const page = document.getElementById('ai-ml-page');
+  if (page) {
+    const links = page.querySelectorAll<HTMLAnchorElement>('.section-switcher a');
+    const apply = () => {
+      const view = location.hash === '#notebook' ? 'notebook' : 'demo';
+      page.dataset.view = view;
+      for (const link of links) {
+        if (link.dataset.section === view) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      }
+      // Each view owns the pane: start it at the top rather than wherever the
+      // other view left it.
+      document.querySelector('.window-pane')?.scrollTo(0, 0);
+    };
+    page.classList.add('tabs');
+    apply();
+    window.addEventListener('hashchange', apply);
+  }
+</script>
+
+<style>
+  .section-switcher {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.75rem;
+    justify-content: center;
+
+    /* Pinned inside the scrolling pane: a #notebook deep-link anchor-scrolls
+       past the switcher on load, and long notebook reads need the way back. */
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    background: var(--paper);
+  }
+
+  .switcher-btn {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--ink);
+    padding: 0.2rem 0.9rem;
+    background: var(--paper);
+  }
+
+  .switcher-btn:hover,
+  .switcher-btn[aria-current] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* No-JS default: both sections stack. The demo gets a definite box so
+     #classifier-app's height:100% resolves; the notebook flows beneath. */
+  .section-demo {
+    height: 80vh;
+  }
+
+  /* Tab mode (the script adds .tabs): one view at a time, hash-driven. */
+  #ai-ml-page.tabs {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #ai-ml-page.tabs[data-view='demo'] {
+    height: 100%;
+  }
+
+  #ai-ml-page.tabs .section-switcher {
+    flex-shrink: 0;
+  }
+
+  #ai-ml-page.tabs[data-view='demo'] .section-demo {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #ai-ml-page.tabs[data-view='demo'] .section-notebook {
+    display: none;
+  }
+
+  #ai-ml-page.tabs[data-view='notebook'] .section-demo {
+    display: none;
+  }
+</style>
+
+<!-- Global (unscoped) on purpose: Astro's scoping can't reach set:html content,
+     so every selector is nested under .notebook instead. -->
+<style is:global>
+  .notebook {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+    font-family: var(--font-sans);
+    line-height: var(--leading-relaxed);
+  }
+
+  /* The notebook is a 400KB+ DOM; let the browser skip layout/paint for
+     off-screen cells instead of paying for all of them at first render. */
+  .notebook .cell {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
+  }
+
+  /* nbconvert's In[n]/Out[n] gutters — dead weight in a reading page. */
+  .notebook .prompt {
+    display: none;
+  }
+
+  .notebook .anchor-link {
+    display: none;
+  }
+
+  .notebook h1,
+  .notebook h2,
+  .notebook h3 {
+    font-family: var(--font-ui);
+    line-height: var(--leading-tight);
+    margin: 1.75em 0 0.5em;
+  }
+
+  .notebook h1 {
+    margin-top: 0.25em;
+  }
+
+  .notebook p,
+  .notebook li {
+    max-width: 65ch;
+  }
+
+  /* Code cells and text outputs: monospace panes that scroll sideways rather
+     than breaking the page. */
+  .notebook .highlight pre,
+  .notebook .output_text pre,
+  .notebook .output_stream pre {
+    overflow-x: auto;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+    line-height: var(--leading-normal);
+  }
+
+  .notebook .output_text pre,
+  .notebook .output_stream pre {
+    border-style: dashed;
+  }
+
+  .notebook code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  /* Monochrome site, monochrome code: pygments emits token spans, but the
+     System-6 ethos says no syntax rainbow — comments recede, the rest is ink. */
+  .notebook .highlight .c1,
+  .notebook .highlight .c,
+  .notebook .highlight .ch {
+    color: var(--color-text-muted);
+  }
+
+  .notebook .output_png {
+    text-align: center;
+  }
+
+  .notebook .output_png img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .notebook math {
+    font-size: 1.05em;
+  }
+
+  .notebook math[display='block'] {
+    margin: 0.75em 0;
+  }
+</style>

@@ -74,7 +74,7 @@ describe('DemoShell', () => {
   });
 
   test.each([
-    'src/pages/projects/quantum-ml-classifier/app.astro',
+    'src/pages/projects/ai-ml/app.astro',
     'src/pages/projects/quantum-nonogram-solver/app.astro',
     'src/pages/projects/latex-resume-editor/app.astro',
   ])('%s mounts through DemoShell', (page) => {

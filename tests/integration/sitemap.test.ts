@@ -27,9 +27,9 @@ describe('Sitemap generation', () => {
   test.runIf(hasDist)('sitemap contains every local demo page (detail surface retired)', () => {
     const xml = readFileSync(resolve(DIST, 'sitemap-0.xml'), 'utf-8');
     for (const project of projects.filter((p) => p.appUrl?.startsWith('/'))) {
-      expect(xml, `missing sitemap entry for ${project.slug}`).toContain(
-        `/projects/${project.slug}/app/`,
-      );
+      // The demo URL is the card's appUrl (not slug-derived — the classifier
+      // demo lives on the /projects/ai-ml/app/ umbrella).
+      expect(xml, `missing sitemap entry for ${project.slug}`).toContain(project.appUrl!);
     }
     // The retired detail pages must NOT resurface.
     expect(xml).not.toMatch(/\/projects\/[\w-]+\/<\/loc>/);

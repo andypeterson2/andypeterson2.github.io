@@ -45,7 +45,7 @@ for (const { name, path } of demoPages) {
 }
 
 // App pages: block backends so the shell can render, then audit.
-const appPages = [{ name: 'Classifier shell', path: '/projects/quantum-ml-classifier/app/' }];
+const appPages = [{ name: 'Classifier shell', path: '/projects/ai-ml/app/' }];
 
 for (const { name, path } of appPages) {
   test(`${name} shell has no critical accessibility violations`, async ({ page }) => {
