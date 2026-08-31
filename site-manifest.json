@@ -9,6 +9,10 @@
       "title": "LaTeX Resume Editor"
     },
     {
+      "path": "/projects/qsvm-iris/app/",
+      "title": "QSVM Paper Recreation"
+    },
+    {
       "path": "/projects/quantum-ml-classifier/app/",
       "title": "Classifier",
       "backend": {

@@ -33,6 +33,10 @@ The page at `/projects/quantum-ml-classifier/app/` (`src/pages/projects/quantum-
 This is what lets a visitor draw a digit or enter flower measurements and get a real prediction from real trained weights with zero infrastructure awake.
 
 <a id="qmc-core-abstractions"></a>
+### The QSVM notebook lane
+
+The AI/ML page's second section is the executed QSVM paper-recreation notebook (Yang et al. 2019, arXiv:1909.11988). It lives in the classifier repo at `notebooks/qsvm-iris/` with its **own venv** (qiskit 2.x wants numpy 2; the service venv is pinned to torch 2.2 / numpy < 2) and is rendered by `make export-site` into this repo's `src/content/notebooks/qsvm-iris.html` — nbconvert's chrome-free `basic` template with LaTeX pre-rendered to native MathML, so the page ships zero notebook JavaScript and clears the CSP with no CDN. A provenance comment at the top stamps the source commit, mirroring the weight-export convention above.
+
 ### Backend Core Abstractions
 
 All paths below are in the `quantum-machine-learning` repo, under `classifiers/`.

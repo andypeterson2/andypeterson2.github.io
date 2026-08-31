@@ -96,6 +96,10 @@ export default defineConfig({
     '/projects/quantum-video-chat': '/#quantum-video-chat',
     '/projects/quantum-nonogram-solver': '/#quantum-nonogram-solver',
     '/projects/quantum-ml-classifier': '/#quantum-ml-classifier',
+    // The classifier demo moved under the AI/ML umbrella page.
+    '/projects/quantum-ml-classifier/app': '/projects/ai-ml/app/',
+    // /projects/ai-ml without /app/ anchors to the timeline card.
+    '/projects/ai-ml': '/#quantum-ml-classifier',
   },
   vite: {
     // Expose the site's own env prefixes to import.meta.env. Vite only surfaces

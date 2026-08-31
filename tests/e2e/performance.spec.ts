@@ -47,7 +47,7 @@ test.describe('Performance assertions', () => {
   });
 
   test('classifier demo page loads without long tasks over 1 second', async ({ page }) => {
-    await page.goto('/projects/quantum-ml-classifier/app/');
+    await page.goto('/projects/ai-ml/app/');
     await page.waitForLoadState('load');
     const longTasks = await page.evaluate(() => {
       const tasks = performance.getEntriesByType('longtask') as PerformanceEntry[];

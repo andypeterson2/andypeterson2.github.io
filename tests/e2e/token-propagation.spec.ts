@@ -47,7 +47,7 @@ test.describe('Design token runtime propagation', () => {
   }) => {
     await page.route('**/api/**', (route) => route.abort());
     await page.route('**/health', (route) => route.abort());
-    await page.goto('/projects/quantum-ml-classifier/app/');
+    await page.goto('/projects/ai-ml/app/');
 
     // Inject test elements using the semantic color classes into the app.
     // This verifies the CSS selectors and tokens resolve together.

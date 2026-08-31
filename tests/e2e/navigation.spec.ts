@@ -22,7 +22,7 @@ test.describe('Site navigation', () => {
   });
 
   test('subpages have no breadcrumb bar (flat layout)', async ({ page }) => {
-    await page.goto('/projects/quantum-ml-classifier/app/');
+    await page.goto('/projects/ai-ml/app/');
     // The breadcrumb details-bar was removed; the menubar is the only nav chrome.
     await expect(page.locator('.site-window .details-bar')).toHaveCount(0);
     await expect(page.locator('.site-menubar a[href="/"]')).toBeVisible();

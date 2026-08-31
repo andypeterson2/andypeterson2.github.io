@@ -78,19 +78,20 @@ export const projects: Project[] = [
     title: 'Quantum ML Classifier Platform',
     slug: 'quantum-ml-classifier',
     description:
-      'Extensible machine learning platform benchmarking quantum-enhanced classifiers against classical baselines.',
+      'Extensible ML platform benchmarking quantum-enhanced classifiers against classical baselines — plus a NISQ-era quantum SVM paper recreated end-to-end in Qiskit.',
     longDescription:
-      'Draw a digit or enter flower measurements and get a prediction instantly — in your browser, on weights exported from the same models the backend trains. Behind it: a platform where a new dataset drops in as a plugin, trains with live curves over Server-Sent Events, and runs six-plus model architectures from CNNs to quantum-kernel methods.',
+      'Draw a digit or enter flower measurements and get a prediction instantly — in your browser, on weights exported from the same models the backend trains. Behind it: a platform where a new dataset drops in as a plugin, trains with live curves over Server-Sent Events, and runs six-plus model architectures from CNNs to quantum-kernel methods. The same page carries the deep end: Yang et al.’s NISQ-era quantum SVM (arXiv:1909.11988) rebuilt as an executed notebook — kernel oracle, 4-qubit optimized HHL solver, noise analysis — reproducing the paper’s 97% on Iris.',
     status: 'active',
     featured: true,
-    appUrl: '/projects/quantum-ml-classifier/app/',
+    appUrl: '/projects/ai-ml/app/',
     icon: 'microscope.svg',
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
       { value: '92.1% / 90.0%', label: 'MNIST / Iris — predicted in your browser' },
+      { value: '97%', label: 'Iris, QSVM paper recreation — the paper’s simulated result' },
+      { value: '91%', label: 'MNIST 6-vs-9 on the paper’s pixel-ratio features' },
       { value: '6+', label: 'model architectures per dataset' },
-      { value: '438', label: 'tests' },
     ],
-    tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask'],
+    tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask', 'Jupyter'],
   },
 ];

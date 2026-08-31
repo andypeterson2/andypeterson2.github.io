@@ -12,15 +12,29 @@
 /underconstruction       /  301
 /underconstruction.html  /  301
 
-# Project slug renamed quantum-protein-kernel → quantum-ml-classifier (matches
-# the title). Splat covers the detail page and its /app/ subpath.
-/projects/quantum-protein-kernel/*  /projects/quantum-ml-classifier/:splat  301
+# Slug renamed quantum-protein-kernel → quantum-ml-classifier, whose demo then
+# moved under the AI/ML umbrella. Enumerated exact paths (no splat, no chains):
+# the detail page anchors to the timeline card, the /app deep link lands on the
+# umbrella demo.
+/projects/quantum-protein-kernel        /#quantum-ml-classifier  301
+/projects/quantum-protein-kernel/       /#quantum-ml-classifier  301
+/projects/quantum-protein-kernel/app    /projects/ai-ml/app/  301
+/projects/quantum-protein-kernel/app/   /projects/ai-ml/app/  301
 
-# /classifiers was a byte-identical orphan alias of the canonical app page.
+# /classifiers was a byte-identical orphan alias of the canonical app page,
+# which now lives on the AI/ML umbrella (direct target — no chains).
 # EXACT-PATH ONLY — a splat (/classifiers/*) would clobber the /classifiers/js|models/*
-# static assets the surviving app page loads.
-/classifiers   /projects/quantum-ml-classifier/app/  301
-/classifiers/  /projects/quantum-ml-classifier/app/  301
+# static assets the surviving umbrella page loads.
+/classifiers   /projects/ai-ml/app/  301
+/classifiers/  /projects/ai-ml/app/  301
+
+# The classifier demo moved under the AI/ML umbrella page.
+/projects/quantum-ml-classifier/app   /projects/ai-ml/app/  301
+/projects/quantum-ml-classifier/app/  /projects/ai-ml/app/  301
+
+# /projects/ai-ml without /app/ isn't a page — anchor it to the timeline card.
+/projects/ai-ml   /#quantum-ml-classifier  301
+/projects/ai-ml/  /#quantum-ml-classifier  301
 
 # Legacy project-detail surface retired — the home timeline (anchored per slug)
 # is the one showcase surface. EXACT PATHS ONLY: a /projects/* splat would

@@ -67,7 +67,7 @@ In CI and deploy these come from GitHub repository *variables* (they are public 
 | LaTeX Resume Editor | `latex-resume-editor` | `/projects/latex-resume-editor/app/` | `andypeterson2/cv` |
 | Quantum Video Chat | `quantum-video-chat` | external (GitHub Pages standalone app) | `Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat` |
 | Quantum Nonogram Solver | `quantum-nonogram-solver` | `/projects/quantum-nonogram-solver/app/` | `Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver` |
-| Quantum ML Classifier Platform | `quantum-ml-classifier` | `/projects/quantum-ml-classifier/app/` | `andypeterson2/quantum-machine-learning` |
+| Quantum ML Classifier Platform | `quantum-ml-classifier` | `/projects/ai-ml/app/` | `andypeterson2/quantum-machine-learning` |
 
 All four are `active` and `featured`. Each entry carries icon, descriptions, cited `metrics`, and `tech` tags rendered on the showcase pages.
 
@@ -85,7 +85,7 @@ All four are `active` and `featured`. Each entry carries icon, descriptions, cit
 | `index.astro` | Home page — bio, skills, education/certifications sidebar windows, and a merged experience + projects timeline (the former about page lives here). The timeline window carries `id="projects"` and each project entry carries `id="<slug>"`, so it is the anchor target for every retired `/projects/…` URL |
 | `404.astro` | Quantum-themed error page with system.css window styling |
 | `projects/latex-resume-editor/app.astro` | Full-bleed demo page (`DemoShell` with `bare`) mounting the `src/editor/Editor.svelte` island with `client:load`; passes the owner identity from env (never committed as source) |
-| `projects/quantum-ml-classifier/app.astro` | Classifier demo page — renders `ClassifierApp.astro` inside `DemoShell`, declaring its backend via the `backend` prop (`classifiers`, port 5001) |
+| `projects/ai-ml/app.astro` | AI/ML umbrella page — the classifier demo (`ClassifierApp.astro` + the `classifiers` backend prop) and the QSVM paper-recreation notebook (exported from the classifier repo's `notebooks/qsvm-iris/` by `make export-site` into `src/content/notebooks/`, LaTeX pre-rendered to native MathML, provenance-stamped, embedded via `set:html`) as two hash-driven sections: `#notebook` deep-links the notebook, and without JS the sections render stacked |
 | `projects/quantum-nonogram-solver/app.astro` | Nonogram demo page — `DemoShell` with the `nonogram` backend prop and the `public/nonogram/` scripts passed via `scripts` |
 
 The legacy project-detail surface (`projects/index.astro` grid + `projects/[slug].astro`
@@ -94,7 +94,7 @@ detail URL 301s to its anchored timeline entry (see Redirects below).
 
 **Redirects** exist in two layers, deliberately:
 
-- **`public/_redirects`** — native 301s served by Cloudflare Pages (the live layer): `/about`, `/about/`, `/resume`, `/underconstruction`, `/underconstruction.html` → `/`; `/projects/quantum-protein-kernel/*` → `/projects/quantum-ml-classifier/:splat` (slug rename); `/classifiers` and `/classifiers/` (exact-path only, so `/classifiers/js|models/*` assets keep resolving) → `/projects/quantum-ml-classifier/app/`; retired detail surface: `/projects` + `/projects/` → `/#projects` and each `/projects/<slug>` (with and without trailing slash) → `/#<slug>` — exact paths only, because a `/projects/*` splat would clobber the surviving `/projects/<slug>/app/` demo pages.
+- **`public/_redirects`** — native 301s served by Cloudflare Pages (the live layer): `/about`, `/about/`, `/resume`, `/underconstruction`, `/underconstruction.html` → `/`; `/classifiers` and `/classifiers/` (exact-path only, so `/classifiers/js|models/*` assets keep resolving) → `/projects/ai-ml/app/`; retired detail surface: `/projects` + `/projects/` → `/#projects` and each `/projects/<slug>` (with and without trailing slash) → `/#<slug>` — exact paths only, because a `/projects/*` splat would clobber the surviving demo pages; AI/ML consolidation: `/projects/quantum-ml-classifier/app` (± slash), `/classifiers` (± slash), and `/projects/quantum-protein-kernel/app` (± slash) all → `/projects/ai-ml/app/` directly (no chains; the protein-kernel splat became four exact rules), and `/projects/ai-ml` (± slash) anchors to `/#quantum-ml-classifier`.
 - **`astro.config.mjs` `redirects`** — the same core paths (including `/projects` and the per-slug anchor redirects) as build-time meta-refresh HTML, kept as a fallback for any origin that ignores `_redirects`.
 
 ---
@@ -249,7 +249,7 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 
 **Contract tests:** each backend owns its live-HTTP contract test in its own repo (`tests/contract/test_<service>_api.py`), run by that app's CI against a booted backend. The portal keeps the canonical schemas (`docs/api-contract/schemas/`) and validates them in the `contract-schemas` CI job. See [`docs/api-contract/CONTRACT.md`](./api-contract/CONTRACT.md).
 
-**Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/quantum-ml-classifier/app/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
+**Lighthouse CI:** `.lighthouserc.json` (desktop, screen emulation disabled) and `.lighthouserc.mobile.json` (mobile, 4x CPU slowdown), both against the static `dist/` for `/`, `/projects/ai-ml/app/`, `/projects/latex-resume-editor/app/`, `/projects/quantum-nonogram-solver/app/`. Assertions: performance warn, accessibility/best-practices/SEO error — exact thresholds live in the two config files.
 
 ---
 

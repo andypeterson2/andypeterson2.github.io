@@ -25,8 +25,8 @@ test.describe('Retired detail pages redirect to the timeline', () => {
   });
 
   test('the /app/ demo pages survive the redirects', async ({ page }) => {
-    await page.goto('/projects/quantum-ml-classifier/app/');
-    await expect(page).toHaveURL(/\/projects\/quantum-ml-classifier\/app\/$/);
+    await page.goto('/projects/ai-ml/app/');
+    await expect(page).toHaveURL(/\/projects\/ai-ml\/app\/$/);
     await expect(page.locator('#classifier-app')).toBeAttached();
   });
 });
