@@ -369,6 +369,18 @@ function buildSessionModelsList() {
       paramsTag.textContent = paramsStr;
       row.appendChild(paramsTag);
     }
+    if (m._subset) {
+      // Binary-subset caveat (e.g. the QSVM answers only "6 vs 9").
+      const subsetTag = document.createElement("span");
+      subsetTag.className = "ui-list-tag";
+      subsetTag.textContent = m._subset;
+      row.appendChild(subsetTag);
+    }
+    if (m._local) {
+      // In-browser models have no backend to ablate/export/remove against.
+      sessionModels.appendChild(row);
+      continue;
+    }
     const ablationBtn = document.createElement("button");
     ablationBtn.className = "btn btn-icon btn-sm";
     ablationBtn.dataset.ablation = name;
@@ -411,7 +423,9 @@ function buildPredictionTable() {
     const predTd = document.createElement("td");
     predTd.innerHTML = p ? `<span class="pred-label">${p.prediction}</span>` : "—";
     const confTd = document.createElement("td");
-    confTd.innerHTML = p
+    // A sign classifier (QSVM) has no probability — render an honest dash
+    // rather than a fabricated percentage.
+    confTd.innerHTML = p && p.confidence != null
       ? `<span class="${confClass(p.confidence)}">${pct(p.confidence)}</span>` : "—";
     tr.appendChild(nameTd);
     tr.appendChild(predTd);
@@ -743,27 +757,29 @@ async function runPredict() {
   } catch (_) { /* silent */ }
 }
 
-// Demo tier: run the in-browser model over the current canvas / feature inputs,
-// producing the same shape the server /predict returns.
+// Demo tier: run every in-browser model over the current canvas / feature
+// inputs, producing the same shape the server /predict returns. Each model
+// reads its own feature subset (the QSVM uses 2 of the 4 iris inputs).
 async function runPredictLocal() {
-  const localName = Object.keys(state.models).find(n => state.models[n]._local);
-  if (!localName) return;
-  let model;
-  try {
-    model = await ClassifierInfer.loadModel(state.models[localName]._dataset);
-  } catch (_) {
-    return;
+  const locals = Object.keys(state.models).filter(n => state.models[n]._local);
+  for (const name of locals) {
+    let model;
+    try {
+      model = await ClassifierInfer.loadModel(state.models[name]._file);
+    } catch (_) {
+      continue;
+    }
+    let raw;
+    if (UI_CONFIG.input_type === "image") {
+      raw = Array.from(grid); // the 28×28 intensity grid (0–255) is the model input
+    } else {
+      raw = (model.features || []).map(f => {
+        const inp = document.querySelector(`.feature-input[data-feature="${f}"]`);
+        return inp ? parseFloat(inp.value) || 0 : 0;
+      });
+    }
+    state.predictions[name] = ClassifierInfer.predict(model, raw);
   }
-  let raw;
-  if (UI_CONFIG.input_type === "image") {
-    raw = Array.from(grid); // the 28×28 intensity grid (0–255) is the model input
-  } else {
-    raw = (model.features || []).map(f => {
-      const inp = document.querySelector(`.feature-input[data-feature="${f}"]`);
-      return inp ? parseFloat(inp.value) || 0 : 0;
-    });
-  }
-  state.predictions[localName] = ClassifierInfer.predict(model, raw);
   buildPredictionTable();
 }
 
@@ -810,7 +826,7 @@ async function switchDataset(name) {
   tabularCol.classList.toggle("hidden", image);
   state.models = {};
   state.predictions = {};
-  await initLocalModel(); // demo model for this dataset (rebuilds the tables)
+  await initLocalModels(); // demo models for this dataset (rebuilds the tables)
   loadModels();           // backend models too, when connected (no-op offline)
   if (image) {
     clearCanvas();
@@ -1002,35 +1018,46 @@ document.addEventListener("connection:statechange", (e) => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-// Demo tier: load the in-browser model so the canvas / feature form predicts
-// with no backend connected. Registered as a session model so the metrics table
-// surfaces its real test accuracy (no handwaving).
-async function initLocalModel() {
+// Demo tier: load the in-browser models (the primary linear model plus the
+// QSVM paper recreation) so the canvas / feature form predicts with no backend
+// connected. Registered as session models so the metrics table surfaces their
+// real test accuracies (no handwaving).
+async function initLocalModels() {
   if (typeof ClassifierInfer === "undefined") return;
-  const ds = (window.UI_CONFIG && window.UI_CONFIG.name) || "mnist";
-  let model;
-  try {
-    model = await ClassifierInfer.loadModel(ds);
-  } catch (_) {
-    return; // model asset missing — stay bare, no error
-  }
-  const numParams = model.weight.length * model.weight[0].length + model.bias.length;
-  state.models["Logistic Regression (in-browser)"] = {
-    model_type: "Linear",
-    epochs: "—",
-    batch_size: "—",
-    lr: null,
-    num_params: numParams,
-    training_history: [],
-    eval_result: {
-      accuracy: model.test_accuracy,
-      avg_loss: null,
-      per_class_accuracy: {},
+  const files = (window.UI_CONFIG && window.UI_CONFIG.local_models) ||
+    [(window.UI_CONFIG && window.UI_CONFIG.name) || "mnist"];
+  for (const file of files) {
+    let model;
+    try {
+      model = await ClassifierInfer.loadModel(file);
+    } catch (_) {
+      continue; // model asset missing — degrade to whatever loaded
+    }
+    const isQsvm = model.kind === "qsvm";
+    const numParams = isQsvm
+      ? model.num_params
+      : model.weight.length * model.weight[0].length + model.bias.length;
+    const label = (model.display && model.display.label)
+      ? `${model.display.label} (in-browser)`
+      : "Logistic Regression (in-browser)";
+    state.models[label] = {
+      model_type: isQsvm ? "QSVM" : "Linear",
+      epochs: "—",
+      batch_size: "—",
+      lr: null,
       num_params: numParams,
-    },
-    _local: true,
-    _dataset: ds,
-  };
+      training_history: [],
+      eval_result: {
+        accuracy: model.test_accuracy,
+        avg_loss: null,
+        per_class_accuracy: {},
+        num_params: numParams,
+      },
+      _local: true,
+      _file: file,
+      _subset: model.display && model.display.subset,
+    };
+  }
   buildSessionModelsList();
   buildMetricsTable();
   buildPredictionTable();
@@ -1038,7 +1065,7 @@ async function initLocalModel() {
 
 loadModels();
 loadSavedModels();
-initLocalModel();
+initLocalModels();
 renderDatasetMenu();
 modelNameInput.value = defaultName(document.getElementById("model-type").value);
 fetchModelInfo(document.getElementById("model-type").value);
