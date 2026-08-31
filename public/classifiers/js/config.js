@@ -25,6 +25,9 @@ window.CLASSIFIER_DATASETS = window.CLASSIFIER_DATASETS || [
     display_name: "MNIST Handwritten Digits",
     input_type: "image",
     class_labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    // In-browser model assets for the demo tier; the first is the primary
+    // (full-class) model that also defines the input form.
+    local_models: ["mnist", "qsvm-mnist"],
   },
   {
     name: "iris",
@@ -32,6 +35,7 @@ window.CLASSIFIER_DATASETS = window.CLASSIFIER_DATASETS || [
     input_type: "tabular",
     class_labels: ["setosa", "versicolor", "virginica"],
     features: ["sepal_length", "sepal_width", "petal_length", "petal_width"],
+    local_models: ["iris", "qsvm-iris"],
   },
 ];
 

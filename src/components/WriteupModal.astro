@@ -244,6 +244,26 @@ const modalId = `writeup-${slug}`;
     padding: 0.05em 0.35em;
   }
 
+  .writeup-content :global(h3) {
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    margin: 1.2em 0 0.4em;
+  }
+
+  /* Pre-rendered MathML (the QSVM narrative) — browsers render it natively. */
+  .writeup-content :global(math) {
+    font-size: 1.05em;
+  }
+
+  /* Display-equation wrapper. Deliberately NOT a scroll container: any
+     overflow:auto box holding block math paints phantom scrollbar stubs on
+     classic-scrollbar platforms (fractional vertical scrollable overflow from
+     the math layout). Every equation in the writeup is far narrower than the
+     dialog, so nothing is lost — keep new equations modest. */
+  .writeup-content :global(.math-scroll) {
+    margin: 0.75em 0;
+  }
+
   @media (width <= 600px) {
     .writeup-close {
       width: 34px;
