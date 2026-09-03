@@ -78,7 +78,7 @@ describe('SiteContract.request', () => {
     const r = await SiteContract.request(`${base}/health`);
     expect(r.ok).toBe(true);
     expect(r.status).toBe(200);
-    expect(r.data.service).toBe('nonogram');
+    expect((r.data as { service: string }).service).toBe('nonogram');
     expect(r.error).toBeNull();
   });
 
@@ -86,22 +86,22 @@ describe('SiteContract.request', () => {
     const r = await SiteContract.request(`${base}/boom`);
     expect(r.ok).toBe(false);
     expect(r.status).toBe(400);
-    expect(r.error.code).toBe('invalid_clues');
-    expect(r.error.message).toMatch(/rows/);
-    expect(r.error.details).toEqual({ rows: 99 });
+    expect(r.error?.code).toBe('invalid_clues');
+    expect(r.error?.message).toMatch(/rows/);
+    expect(r.error?.details).toEqual({ rows: 99 });
   });
 
   test('error without envelope → synthesised code http_<status>', async () => {
     const r = await SiteContract.request(`${base}/plain500`);
     expect(r.ok).toBe(false);
-    expect(r.error.code).toBe('http_500');
+    expect(r.error?.code).toBe('http_500');
   });
 
   test('network failure → network_error, never throws', async () => {
     const r = await SiteContract.request('http://127.0.0.1:1/nope', { timeoutMs: 500 });
     expect(r.ok).toBe(false);
     expect(r.status).toBe(0);
-    expect(['network_error', 'timeout']).toContain(r.error.code);
+    expect(['network_error', 'timeout']).toContain(r.error?.code);
   });
 });
 
@@ -129,10 +129,11 @@ describe('SiteContract.health', () => {
 
 describe('SiteContract.dotStatus', () => {
   test('maps health/status to dot states', () => {
-    expect(SiteContract.dotStatus({ reachable: true, status: 'ok' })).toBe('connected');
-    expect(SiteContract.dotStatus({ reachable: true, status: 'degraded' })).toBe('degraded');
-    expect(SiteContract.dotStatus({ reachable: true, status: 'error' })).toBe('error');
-    expect(SiteContract.dotStatus({ reachable: false })).toBe('error');
+    const h = { service: null, version: null, uptime_s: null, raw: null };
+    expect(SiteContract.dotStatus({ ...h, reachable: true, status: 'ok' })).toBe('connected');
+    expect(SiteContract.dotStatus({ ...h, reachable: true, status: 'degraded' })).toBe('degraded');
+    expect(SiteContract.dotStatus({ ...h, reachable: true, status: 'error' })).toBe('error');
+    expect(SiteContract.dotStatus({ ...h, reachable: false, status: 'error' })).toBe('error');
     expect(SiteContract.dotStatus(null)).toBe('error');
   });
 });
@@ -140,8 +141,8 @@ describe('SiteContract.dotStatus', () => {
 describe('SiteContract.discover + hasSyncEndpoint', () => {
   test('returns the discovery manifest', async () => {
     const m = await SiteContract.discover(base);
-    expect(m.service).toBe('nonogram');
-    expect(Array.isArray(m.endpoints)).toBe(true);
+    expect(m?.service).toBe('nonogram');
+    expect(Array.isArray(m?.endpoints)).toBe(true);
   });
 
   test('detects an advertised /sync route', async () => {
