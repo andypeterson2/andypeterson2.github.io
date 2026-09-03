@@ -19,6 +19,14 @@ import type {
   LetterSection,
 } from './types';
 import { GLYPH_BY_CMD } from './symbols';
+import type {
+  RawMain,
+  RawMainEntry,
+  RawMainItem,
+  RawMainVariant,
+  RawLetterSection,
+  RawOverride,
+} from './wire';
 
 /** The gateway's cv upstream. The cv API itself lives under `/api`. */
 const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
@@ -41,56 +49,6 @@ export interface PersonMeta {
 export interface ActiveLoad {
   person: Person;
   persons: PersonMeta[];
-}
-
-// ---- raw shapes as returned by GET /persons/:pid ----
-interface RawMainItem {
-  id: number;
-  title?: string;
-  content?: string;
-  tags?: string[];
-}
-interface RawMainEntry {
-  id: number;
-  fields?: Record<string, string>;
-  items?: RawMainItem[];
-  tags?: string[];
-}
-interface RawMainSection {
-  id: number | string;
-  slug?: string;
-  type: string;
-  title: string;
-  entries?: RawMainEntry[];
-}
-interface RawOverride {
-  included?: number | null;
-  textOverride?: string | null;
-  sortOverride?: number | null;
-  fieldsOverride?: Record<string, string> | null;
-}
-interface RawMainVariant {
-  id: number;
-  name: string;
-  /** absent in older rows — mapVariant defaults it to 'cv' */
-  kind?: string;
-  layout_id?: string | null;
-  rules?: { include?: string[]; exclude?: string[] };
-  sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
-  entryOverrides?: Record<string, RawOverride>;
-  itemOverrides?: Record<string, RawOverride>;
-}
-interface RawLetterSection {
-  id: number;
-  title?: string;
-  body?: string;
-}
-interface RawMain {
-  person: { id: number; name: string };
-  personal?: Record<string, string>;
-  sections?: RawMainSection[];
-  variants?: RawMainVariant[];
-  coverletter?: Record<string, string>;
 }
 
 /** Every LaTeX special → its literal-text escape. Full coverage, not the old subset. */
@@ -220,6 +178,16 @@ function mapMain(m: RawMain): Person {
   };
 }
 
+/** Narrow an unknown response body to the contract error envelope, if present. */
+function parseErrorEnvelope(data: unknown): ApiError | undefined {
+  if (typeof data !== 'object' || data === null || !('error' in data)) return undefined;
+  const err = data.error;
+  if (typeof err !== 'object' || err === null) return undefined;
+  const { code, message } = err as { code?: unknown; message?: unknown };
+  if (typeof code !== 'string' || typeof message !== 'string') return undefined;
+  return { code, message };
+}
+
 export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
@@ -275,15 +243,20 @@ export class CvApi {
         };
       }
       const isJson = res.headers.get('content-type')?.includes('json');
-      const data = isJson ? await res.json() : undefined;
+      const data: unknown = isJson ? await res.json() : undefined;
       if (!res.ok) {
         return {
           ok: false,
           status: res.status,
-          error: data?.error ?? { code: `http_${res.status}`, message: res.statusText },
+          error: parseErrorEnvelope(data) ?? {
+            code: `http_${res.status}`,
+            message: res.statusText,
+          },
         };
       }
-      return { ok: true, status: res.status, data };
+      // The one wire-boundary cast: the response body is trusted to match the
+      // endpoint's declared shape (see ./wire.ts); everything downstream is typed.
+      return { ok: true, status: res.status, data: data as T };
     } catch (e) {
       return {
         ok: false,

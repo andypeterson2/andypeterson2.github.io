@@ -87,10 +87,7 @@ export default [
         'error',
         { allowNumber: true, allowBoolean: true },
       ],
-      '@typescript-eslint/no-confusing-void-expression': [
-        'error',
-        { ignoreArrowShorthand: true },
-      ],
+      '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
       // `str || fallback` here is deliberate empty-string defaulting (env vars,
       // form fields); ?? would change behavior. Non-string cases still flag.
       '@typescript-eslint/prefer-nullish-coalescing': [
@@ -101,28 +98,7 @@ export default [
       // CoverletterHeader (types.ts) are aliases ON PURPOSE — all-optional
       // string shapes only get an implicit index signature as aliases.
       '@typescript-eslint/consistent-type-definitions': 'off',
-      // The editor's wire layer (REST JSON in api.ts and the stores fed by it)
-      // is untyped at the boundary, so the unsafe-* family fires ~470 times on
-      // value flow, not on real defects. Typing the wire layer is a tracked
-      // refactor; re-enable these with it. Until then `no-explicit-any` (in
-      // strict) still bans the explicit escape hatch.
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
       ...complexityBudgets,
-    },
-  },
-  {
-    // These two modules guard dynamic-key lookups and imported-document JSON —
-    // data the static types are optimistic about (same untyped-wire boundary as
-    // the unsafe-* carve-out above). Their "unnecessary" conditions are
-    // load-bearing runtime guards; re-enable when the wire layer is typed.
-    files: ['src/editor/lib/diff.ts', 'src/editor/lib/section-types.ts'],
-    rules: {
-      '@typescript-eslint/no-unnecessary-condition': 'off',
-      '@typescript-eslint/no-base-to-string': 'off',
     },
   },
   ...eslintPluginAstro.configs.recommended,
@@ -153,9 +129,7 @@ export default [
     },
   },
   // ── Svelte (the CV editor island): svelte/recommended + the fleet
-  // complexity budgets. TS script blocks are parsed but NOT type-aware —
-  // the type-aware tier for .svelte joins the typed-wire refactor (same
-  // boundary as the unsafe-* carve-out above).
+  // complexity budgets + the type-aware unsafe floor (projectService).
   ...eslintPluginSvelte.configs.recommended.map((c) => ({
     ...c,
     files: ['src/**/*.svelte'],
@@ -165,6 +139,7 @@ export default [
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser,
+        projectService: true,
         extraFileExtensions: ['.svelte'],
       },
     },
@@ -179,6 +154,14 @@ export default [
       // and flags them as unused. Removing them would resurface the build
       // warnings.
       'svelte/no-unused-svelte-ignore': 'off',
+      // The type-aware unsafe floor (matches the src TS tier). The full
+      // strict preset is not applied to .svelte; these are the rules that
+      // catch real any-leaks at the markup boundary.
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
       ...complexityBudgets,
     },
   },

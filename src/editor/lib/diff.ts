@@ -7,6 +7,19 @@
 // comparison reads as wholesale removed + added, which is honest if coarse.
 import type { Person, Section, Entry, Item } from './types';
 
+/**
+ * A value AS STORED: version-history `doc` snapshots round-trip through the
+ * backend as opaque JSON, so any nested field can be missing in old or
+ * imported rows. The domain types in ./types.ts describe a live, fully-mapped
+ * document; this wrapper describes what actually comes back — which is why
+ * the null-guards throughout this module are load-bearing, not decorative.
+ */
+export type Stored<T> = T extends (infer U)[]
+  ? Stored<U>[] | undefined
+  : T extends object
+    ? { [K in keyof T]?: Stored<T[K]> }
+    : T | undefined;
+
 export type ChangeKind = 'added' | 'removed' | 'changed';
 
 /** One field's before/after — a personal field or an entry field. */
@@ -50,11 +63,11 @@ export interface DocDiff {
   empty: boolean;
 }
 
-const str = (v: unknown): string => (v == null ? '' : String(v));
+const str = (v: string | null | undefined): string => v ?? '';
 
 /** A readable one-line label for an entry, from whatever fields it carries. */
-export function entryLabel(entry: Entry): string {
-  const f = entry.fields || {};
+export function entryLabel(entry: Stored<Entry> & { id: number | string }): string {
+  const f = entry.fields ?? {};
   const headline = [f.position, f.organization].filter(Boolean).join(' · ');
   return (
     headline ||
@@ -68,9 +81,12 @@ export function entryLabel(entry: Entry): string {
   );
 }
 
-function diffFields(a: Record<string, string>, b: Record<string, string>): FieldChange[] {
+function diffFields(
+  a: Stored<Record<string, string>> | undefined,
+  b: Stored<Record<string, string>> | undefined,
+): FieldChange[] {
   const out: FieldChange[] = [];
-  const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  const keys = new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})]);
   for (const key of keys) {
     const from = str(a?.[key]);
     const to = str(b?.[key]);
@@ -79,7 +95,19 @@ function diffFields(a: Record<string, string>, b: Record<string, string>): Field
   return out;
 }
 
-function diffItems(a: Item[], b: Item[]): ItemDiff[] {
+/** Id-matching is the whole design (see header) — a stored row that lost its
+ *  id cannot be matched and is skipped rather than colliding on `undefined`. */
+function withIds<T extends { id?: unknown }>(
+  rows: T[] | undefined,
+): (T & { id: number | string })[] {
+  return (rows ?? []).filter(
+    (r): r is T & { id: number | string } => typeof r.id === 'number' || typeof r.id === 'string',
+  );
+}
+
+function diffItems(aRaw: Stored<Item>[], bRaw: Stored<Item>[]): ItemDiff[] {
+  const a = withIds(aRaw).filter((i): i is typeof i & { id: number } => typeof i.id === 'number');
+  const b = withIds(bRaw).filter((i): i is typeof i & { id: number } => typeof i.id === 'number');
   const out: ItemDiff[] = [];
   const aById = new Map(a.map((i) => [i.id, i]));
   const bById = new Map(b.map((i) => [i.id, i]));
@@ -95,7 +123,9 @@ function diffItems(a: Item[], b: Item[]): ItemDiff[] {
   return out;
 }
 
-function diffEntries(a: Entry[], b: Entry[]): EntryDiff[] {
+function diffEntries(aRaw: Stored<Entry>[], bRaw: Stored<Entry>[]): EntryDiff[] {
+  const a = withIds(aRaw).filter((e): e is typeof e & { id: number } => typeof e.id === 'number');
+  const b = withIds(bRaw).filter((e): e is typeof e & { id: number } => typeof e.id === 'number');
   const out: EntryDiff[] = [];
   const aById = new Map(a.map((e) => [e.id, e]));
   const bById = new Map(b.map((e) => [e.id, e]));
@@ -105,7 +135,7 @@ function diffEntries(a: Entry[], b: Entry[]): EntryDiff[] {
       out.push({ kind: 'removed', id: ea.id, label: entryLabel(ea), fields: [], items: [] });
     } else {
       const fields = diffFields(ea.fields, eb.fields);
-      const items = diffItems(ea.items || [], eb.items || []);
+      const items = diffItems(ea.items ?? [], eb.items ?? []);
       if (fields.length || items.length)
         out.push({ kind: 'changed', id: ea.id, label: entryLabel(eb), fields, items });
     }
@@ -117,10 +147,14 @@ function diffEntries(a: Entry[], b: Entry[]): EntryDiff[] {
   return out;
 }
 
-const allEntries = (kind: ChangeKind, entries: Entry[]): EntryDiff[] =>
-  entries.map((e) => ({ kind, id: e.id, label: entryLabel(e), fields: [], items: [] }));
+const allEntries = (kind: ChangeKind, entries: Stored<Entry>[]): EntryDiff[] =>
+  withIds(entries)
+    .filter((e): e is typeof e & { id: number } => typeof e.id === 'number')
+    .map((e) => ({ kind, id: e.id, label: entryLabel(e), fields: [], items: [] }));
 
-function diffSections(a: Section[], b: Section[]): SectionDiff[] {
+function diffSections(aRaw: Stored<Section>[], bRaw: Stored<Section>[]): SectionDiff[] {
+  const a = withIds(aRaw);
+  const b = withIds(bRaw);
   const out: SectionDiff[] = [];
   const aById = new Map(a.map((s) => [s.id, s]));
   const bById = new Map(b.map((s) => [s.id, s]));
@@ -130,13 +164,13 @@ function diffSections(a: Section[], b: Section[]): SectionDiff[] {
       out.push({
         kind: 'removed',
         id: sa.id,
-        title: sa.title,
-        entries: allEntries('removed', sa.entries || []),
+        title: str(sa.title),
+        entries: allEntries('removed', sa.entries ?? []),
       });
     } else {
-      const entries = diffEntries(sa.entries || [], sb.entries || []);
+      const entries = diffEntries(sa.entries ?? [], sb.entries ?? []);
       if (entries.length || str(sa.title) !== str(sb.title))
-        out.push({ kind: 'changed', id: sa.id, title: sb.title, entries });
+        out.push({ kind: 'changed', id: sa.id, title: str(sb.title), entries });
     }
   }
   for (const sb of b) {
@@ -144,8 +178,8 @@ function diffSections(a: Section[], b: Section[]): SectionDiff[] {
       out.push({
         kind: 'added',
         id: sb.id,
-        title: sb.title,
-        entries: allEntries('added', sb.entries || []),
+        title: str(sb.title),
+        entries: allEntries('added', sb.entries ?? []),
       });
   }
   return out;
@@ -183,9 +217,9 @@ function tally(personal: FieldChange[], sections: SectionDiff[]): DocDiff['count
  * the reverse. So `diffDocuments(checkpoint, current)` reads as "what changed since
  * this checkpoint."
  */
-export function diffDocuments(base: Person, target: Person): DocDiff {
-  const personal = diffFields(base.personal || {}, target.personal || {});
-  const sections = diffSections(base.sections || [], target.sections || []);
+export function diffDocuments(base: Stored<Person>, target: Stored<Person>): DocDiff {
+  const personal = diffFields(base.personal ?? {}, target.personal ?? {});
+  const sections = diffSections(base.sections ?? [], target.sections ?? []);
   return {
     personal,
     sections,

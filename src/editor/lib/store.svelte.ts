@@ -141,7 +141,7 @@ class EditorState {
     ...this.saveHost,
     activeVariant: () => this.activeVariant,
     activeVariantId: () => this.activeVariantId,
-    coverletter: () => this.person.coverletter as Record<string, string>,
+    coverletter: () => this.person.coverletter,
   });
   /** the variants concern — alternate lenses + include/exclude rules (variants.svelte.ts). */
   variants = new VariantController({
@@ -176,7 +176,7 @@ class EditorState {
   history = new HistoryController({
     ...this.saveHost,
     activePersonId: () => this.activePersonId,
-    capture: () => $state.snapshot(this.person) as Person,
+    capture: () => $state.snapshot(this.person),
     apply: (doc) => this.restoreDocument(doc),
     reload: () => this.reloadActive(),
     applyEntry: (source, entryId) => this.applyEntryFrom(source, entryId),
@@ -195,7 +195,7 @@ class EditorState {
   private seq = 1000;
 
   constructor() {
-    this.#shadow.reseat(this.person, this.style as Record<string, string>);
+    this.#shadow.reseat(this.person, this.style);
   }
 
   // ---- undo plumbing ----
@@ -240,7 +240,7 @@ class EditorState {
   private rebase(scopeKey: string) {
     this.undo.setScope(scopeKey);
     this.undo.clear();
-    this.#shadow.reseat(this.person, this.style as Record<string, string>);
+    this.#shadow.reseat(this.person, this.style);
   }
 
   select(sel: Selection) {
@@ -591,7 +591,7 @@ class EditorState {
     let slug = type;
     let n = 2;
     while (existing.has(slug)) slug = `${type}-${n++}`;
-    const title = SECTION_TYPES[type].label;
+    const title = SECTION_TYPES[type]?.label ?? type;
     const index = this.person.sections.length;
     this.person.sections.push({ id: this.seq++, slug, type, title, entries: [] });
     const section = this.live(this.person.sections, index);
@@ -722,10 +722,10 @@ class EditorState {
     }
     // The fetched values are the new baseline: without this, the first style edit
     // would record the demo default as its "old" and undo would restore that.
-    this.#shadow.seed(this.style, this.style as Record<string, string>);
+    this.#shadow.seed(this.style, this.style);
   }
   saveStyle(field: 'accentColor' | 'customHex' | 'pageSize' | 'fontSize') {
-    const change = this.#shadow.diff(this.style, this.style as Record<string, string>);
+    const change = this.#shadow.diff(this.style, this.style);
     if (change) {
       const { key, old, next } = change;
       this.undo.record({
@@ -818,7 +818,7 @@ class EditorState {
       // the undo commands and the shadow hold. Re-assigning it later is idempotent
       // (Svelte returns an already-proxied object unchanged).
       this.#cache.set(pid, this.person);
-      this.#shadow.reseat(this.person, this.style as Record<string, string>);
+      this.#shadow.reseat(this.person, this.style);
     }
   }
 
@@ -890,7 +890,7 @@ class EditorState {
     }
     this.dirty = true;
     this.undo.clear();
-    this.#shadow.reseat(this.person, this.style as Record<string, string>);
+    this.#shadow.reseat(this.person, this.style);
     this.say('Restored one entry from the checkpoint.');
     return true;
   }
@@ -941,8 +941,8 @@ class EditorState {
       return;
     }
     this.#tourResume = {
-      doc: $state.snapshot(this.person) as Person,
-      selection: $state.snapshot(this.selection) as Selection,
+      doc: $state.snapshot(this.person),
+      selection: $state.snapshot(this.selection),
       activeVariantId: this.activeVariantId,
       openDrawer: this.openDrawer,
       highlight: this.tags.highlight,
@@ -970,7 +970,7 @@ class EditorState {
       this.undo.clear();
     } else {
       this.person = resume.doc;
-      this.#shadow.reseat(this.person, this.style as Record<string, string>);
+      this.#shadow.reseat(this.person, this.style);
     }
     // activate() resets the view to a clean Main; put the owner back where they were.
     this.selection = resume.selection;

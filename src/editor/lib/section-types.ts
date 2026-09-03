@@ -54,7 +54,10 @@ const roleFields: FieldDef[] = [
   { key: 'date', label: 'Date' },
 ];
 
-export const SECTION_TYPES: Record<string, SectionTypeDef> = {
+// Partial: the index is a dynamic slug that can come from STORED documents
+// (old snapshots, imports), so a lookup can genuinely miss — the guards in the
+// helpers below are load-bearing, and this type makes them provably necessary.
+export const SECTION_TYPES: Partial<Record<string, SectionTypeDef>> = {
   experience: {
     latexType: 'cventries',
     label: 'Experience',
@@ -278,7 +281,7 @@ export function hasBullets(type: string): boolean {
 }
 
 /** Derive an entry's display title from its fields, per the type's titleField. */
-export function entryTitle(type: string, fields: Record<string, string>): string {
+export function entryTitle(type: string, fields: Record<string, string | undefined>): string {
   const t = SECTION_TYPES[type];
   if (!t || t.isParagraph) return '(untitled)';
   return (
@@ -290,7 +293,7 @@ export function entryTitle(type: string, fields: Record<string, string>): string
 
 /** The lead display value for an entry (usually `position`), applying any
  *  combine rule — e.g. education combines `program` + `major` into one line. */
-export function entryLead(type: string, fields: Record<string, string>): string {
+export function entryLead(type: string, fields: Record<string, string | undefined>): string {
   const t = SECTION_TYPES[type];
   if (t?.combine) {
     const combined = t.combine.from
@@ -320,7 +323,9 @@ export function presetsByCategory() {
     other: [],
   };
   for (const [key, def] of Object.entries(SECTION_TYPES)) {
-    cats[def.category].push({ key, label: def.label, description: def.description });
+    // Object.entries over the Partial map types values as possibly-undefined;
+    // the literal above holds no undefined entries, but guard for the type.
+    if (def) cats[def.category].push({ key, label: def.label, description: def.description });
   }
   return cats;
 }
