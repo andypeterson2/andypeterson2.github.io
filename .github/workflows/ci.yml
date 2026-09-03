@@ -20,6 +20,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
+      # astro sync generates .astro/types.d.ts, which the type-aware lint
+      # (unsafe-* over src TS) needs — without it env/content types resolve
+      # as error-typed and the rules fire spuriously.
+      - run: npx astro sync
       - run: npm run lint
       - name: Lint the Python helper scripts
         # Compatible-release pin — the enforced rule set must not float with
