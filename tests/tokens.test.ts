@@ -110,11 +110,14 @@ describe('Button Component', () => {
     expect(buttonSrc).toContain('btn');
   });
 
-  test('supports variant prop', () => {
+  test('supports variant prop (every variant maps to a distinct rendering)', () => {
     expect(buttonSrc).toContain('variant');
     expect(buttonSrc).toContain('primary');
     expect(buttonSrc).toContain('secondary');
-    expect(buttonSrc).toContain('ghost');
+    expect(buttonSrc).toContain('solid');
+    expect(buttonSrc).toContain('danger');
+    // 'ghost' was an alias of 'secondary' — a lie in the type; it must not return.
+    expect(buttonSrc).not.toContain('ghost');
   });
 
   test('supports href for link-style buttons', () => {

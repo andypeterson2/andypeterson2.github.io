@@ -1,3 +1,7 @@
+---
+import Button from '../Button.astro';
+---
+
 <section class="card">
   <h2 class="card-title">Train</h2>
   <label for="model-type">Model</label>
@@ -38,7 +42,7 @@
     </div>
   </details>
 
-  <button id="train-btn" type="button" class="btn btn-primary btn-block">&#9654; Train</button>
+  <Button variant="solid" block id="train-btn" type="button">&#9654; Train</Button>
 </section>
 
 <style>

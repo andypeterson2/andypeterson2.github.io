@@ -27,22 +27,29 @@ const preferButton = {
   create(context) {
     const filename = context.filename || context.getFilename();
 
-    // Skip the Button component itself
-    if (filename.includes(COMPONENT_DIR)) return {};
+    // Skip only the Button component itself — other components are fair game
+    // (they get the rule at 'warn' via eslint.config.js).
+    if (filename.endsWith(`${COMPONENT_DIR}Button.astro`)) return {};
 
     return {
       JSXElement(node) {
         const el = node.openingElement;
         if (!el || !el.name || el.name.name !== 'button') return;
         // Exempt buttons carrying attributes the <Button> component cannot express
-        // (its props are variant/size/href/class/type/disabled/aria-label/id): a role,
-        // tabindex, or any aria-* other than aria-label. Those are legitimately raw
-        // (menubar checkbox toggles, disclosure buttons, decorative aria-hidden chrome),
-        // so the rule shouldn't nudge them toward <Button>.
+        // (its props are variant/size/block/href/class/type/disabled/aria-label/id):
+        // a role, tabindex, data-* hooks, or any aria-* other than aria-label. Those
+        // are legitimately raw (menubar checkbox toggles, disclosure buttons,
+        // data-attribute-driven modal triggers, decorative aria-hidden chrome), so
+        // the rule shouldn't nudge them toward <Button>.
         const unexpressible = (el.attributes || []).some((a) => {
           if (a.type !== 'JSXAttribute' || !a.name || !a.name.name) return false;
           const n = String(a.name.name);
-          return n === 'role' || n === 'tabindex' || (n.startsWith('aria-') && n !== 'aria-label');
+          return (
+            n === 'role' ||
+            n === 'tabindex' ||
+            n.startsWith('data-') ||
+            (n.startsWith('aria-') && n !== 'aria-label')
+          );
         });
         if (unexpressible) return;
         // Exempt content-less buttons: an empty <button> is a decorative/icon control
