@@ -35,10 +35,12 @@
     line-height: 1.45;
     color: var(--color-text-muted);
   }
+
   .warn .wg {
     color: var(--state-busy);
     font-size: var(--text-3xs);
   }
+
   .warn b {
     font-family: var(--serif);
     font-weight: 700;

@@ -48,13 +48,22 @@
   </div>
   <label class="custom">
     <span>Custom</span>
-    <input class="in" placeholder="#RRGGBB" bind:value={editor.style.customHex} oninput={applyCustom} />
+    <input
+      class="in"
+      placeholder="#RRGGBB"
+      bind:value={editor.style.customHex}
+      oninput={applyCustom}
+    />
   </label>
 </div>
 
 <div class="group">
   <div class="lbl">Page size</div>
-  <select class="in" bind:value={editor.style.pageSize} onchange={() => editor.saveStyle('pageSize')}>
+  <select
+    class="in"
+    bind:value={editor.style.pageSize}
+    onchange={() => editor.saveStyle('pageSize')}
+  >
     <option value="letterpaper">US Letter</option>
     <option value="a4paper">A4</option>
   </select>
@@ -62,7 +71,11 @@
 
 <div class="group">
   <div class="lbl">Base font size</div>
-  <select class="in" bind:value={editor.style.fontSize} onchange={() => editor.saveStyle('fontSize')}>
+  <select
+    class="in"
+    bind:value={editor.style.fontSize}
+    onchange={() => editor.saveStyle('fontSize')}
+  >
     <option value="10pt">10 pt</option>
     <option value="11pt">11 pt</option>
     <option value="12pt">12 pt</option>
@@ -75,6 +88,7 @@
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .link {
     font: inherit;
     color: var(--link);
@@ -84,9 +98,11 @@
     cursor: pointer;
     text-decoration: underline;
   }
+
   .group {
     margin-bottom: 18px;
   }
+
   .lbl {
     font-size: var(--text-4xs);
     font-weight: 700;
@@ -95,11 +111,13 @@
     color: var(--ink-2);
     margin-bottom: 8px;
   }
+
   .swatches {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 7px;
   }
+
   .swatch {
     aspect-ratio: 1;
     border: 1px solid var(--ink);
@@ -107,10 +125,12 @@
     cursor: pointer;
     padding: 0;
   }
+
   .swatch.on {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
+
   .custom {
     display: grid;
     grid-template-columns: 56px 1fr;
@@ -118,10 +138,12 @@
     gap: 10px;
     margin-top: 10px;
   }
+
   .custom span {
     font-size: var(--text-4xs);
     color: var(--ink-3);
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-2xs);

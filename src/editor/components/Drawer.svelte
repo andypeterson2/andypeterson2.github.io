@@ -40,6 +40,7 @@
     z-index: var(--z-drawer);
     animation: fade var(--dur-fast) ease;
   }
+
   .drawer {
     position: fixed;
     top: 0;
@@ -54,6 +55,7 @@
     flex-direction: column;
     animation: slide var(--dur) ease;
   }
+
   /* Mirrors the window titlebar in Editor.svelte so a drawer reads as the same kind of
      System-6 window as the toolbar / document / invite: the 28px Chicago title, 11px
      close/fill, and min-height so the bar grows with it. */
@@ -73,6 +75,7 @@
     );
     flex-shrink: 0;
   }
+
   .close {
     width: 11px;
     height: 11px;
@@ -81,6 +84,7 @@
     cursor: pointer;
     padding: 0;
   }
+
   .title {
     font-family: var(--font-ui);
     font-size: var(--text-base);
@@ -90,9 +94,11 @@
     padding: 12px;
     margin: 0 auto;
   }
+
   .fill {
     width: 11px;
   }
+
   .body {
     flex: 1;
     overflow: auto;
@@ -100,25 +106,30 @@
     font-family: var(--sans);
     color: var(--ink);
   }
+
   @keyframes fade {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
   }
+
   @keyframes slide {
     from {
       transform: translateX(100%);
     }
+
     to {
       transform: translateX(0);
     }
   }
+
   /* 768px matches the editor shell: inside the full-bleed touch layout a right-edge
      side panel looks wrong, so the drawer becomes a bottom sheet across that range. */
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .drawer {
       inset: auto 0 0;
       width: 100%;
@@ -128,10 +139,12 @@
       box-shadow: var(--shadow-drawer-top);
       animation: slideup var(--dur) ease;
     }
+
     @keyframes slideup {
       from {
         transform: translateY(100%);
       }
+
       to {
         transform: translateY(0);
       }

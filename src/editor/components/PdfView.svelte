@@ -118,6 +118,7 @@
     padding: 12px;
     background: var(--chrome);
   }
+
   /* Each rendered page fills the pane width (capped so it doesn't balloon on a wide
      monitor), keeps its aspect via height:auto, and reads as paper on the chrome. */
   .pv-pages :global(canvas.pv-page) {
@@ -127,6 +128,7 @@
     background: var(--paper);
     box-shadow: var(--shadow);
   }
+
   .pv-note {
     margin: auto;
     padding: 30px;

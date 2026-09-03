@@ -79,10 +79,13 @@
     <p class="empty">No changes since this checkpoint —<br />the document matches it exactly.</p>
   {:else}
     <p class="summary">
-      {#if compare.diff.counts.added}<span class="s-add">+{compare.diff.counts.added} added</span>{/if}
-      {#if compare.diff.counts.removed}<span class="s-del">−{compare.diff.counts.removed} removed</span
+      {#if compare.diff.counts.added}<span class="s-add">+{compare.diff.counts.added} added</span
         >{/if}
-      {#if compare.diff.counts.changed}<span class="s-chg">{compare.diff.counts.changed} changed</span
+      {#if compare.diff.counts.removed}<span class="s-del"
+          >−{compare.diff.counts.removed} removed</span
+        >{/if}
+      {#if compare.diff.counts.changed}<span class="s-chg"
+          >{compare.diff.counts.changed} changed</span
         >{/if}
     </p>
 
@@ -103,16 +106,18 @@
         {#each sec.entries as e (e.id)}
           <div class="ent e-{e.kind}">
             <div class="ent-l">
-              {#if e.kind === 'added'}<span class="mk ins">＋</span>{:else if e.kind === 'removed'}<span
-                  class="mk del">－</span
-                >{/if}
+              {#if e.kind === 'added'}<span class="mk ins">＋</span
+                >{:else if e.kind === 'removed'}<span class="mk del">－</span>{/if}
               <span class="ent-label" class:strike={e.kind === 'removed'}>{e.label}</span>
               {#if e.kind !== 'added'}
                 <button class="cherry" onclick={() => cherry(e.id)}>Restore this</button>
               {/if}
             </div>
             {#each e.fields as f (f.key)}
-              <div class="fld"><span class="fk">{f.key}</span> {@render deltaText(f.from, f.to)}</div>
+              <div class="fld">
+                <span class="fk">{f.key}</span>
+                {@render deltaText(f.from, f.to)}
+              </div>
             {/each}
             {#each e.items as it (it.id)}
               <div class="itm">
@@ -169,7 +174,9 @@
   </div>
 
   {#if editor.history.visible.length === 0}
-    <p class="empty">No checkpoints on <b>{editor.history.currentBranch}</b> yet.<br />Snapshot to begin.</p>
+    <p class="empty">
+      No checkpoints on <b>{editor.history.currentBranch}</b> yet.<br />Snapshot to begin.
+    </p>
   {:else}
     <ul class="list" aria-label="Checkpoints, newest first">
       {#each editor.history.visible as v, i (v.id)}
@@ -188,20 +195,28 @@
                 aria-label="Tag name"
                 bind:value={tagInput}
                 onkeydown={(e) =>
-                  e.key === 'Enter' ? saveTag(v.id) : e.key === 'Escape' ? (taggingId = null) : null}
+                  e.key === 'Enter'
+                    ? saveTag(v.id)
+                    : e.key === 'Escape'
+                      ? (taggingId = null)
+                      : null}
               />
             {/if}
           </div>
           <div class="acts">
-            <button class="act" disabled={comparing} onclick={() => openCompare(v.id, v.label || 'checkpoint')}
-              >Compare</button
+            <button
+              class="act"
+              disabled={comparing}
+              onclick={() => openCompare(v.id, v.label || 'checkpoint')}>Compare</button
             >
             <button
               class="act"
               disabled={editor.history.restoring}
               onclick={() => editor.history.restore(v.id)}>Restore</button
             >
-            <button class="act sm" onclick={() => startTag(v.id, v.tag)}>{v.tag ? 'Retag' : 'Tag'}</button>
+            <button class="act sm" onclick={() => startTag(v.id, v.tag)}
+              >{v.tag ? 'Retag' : 'Tag'}</button
+            >
           </div>
         </li>
       {/each}
@@ -219,6 +234,7 @@
     padding-bottom: 12px;
     border-bottom: 1px solid var(--faint, var(--paper-3));
   }
+
   .chip {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -229,18 +245,22 @@
     padding: 3px 10px;
     cursor: pointer;
   }
+
   .chip.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .chip.add,
   .chip.go {
     font-weight: 700;
   }
+
   .chip:disabled {
     opacity: 0.5;
     cursor: default;
   }
+
   .fork-in {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -251,18 +271,21 @@
     padding: 3px 8px;
     width: 110px;
   }
+
   .note {
     font-size: var(--text-4xs);
     line-height: 1.5;
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .make {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 8px;
     margin-bottom: 18px;
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-2xs);
@@ -273,6 +296,7 @@
     padding: 6px 9px;
     width: 100%;
   }
+
   .snap {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -285,9 +309,11 @@
     cursor: pointer;
     white-space: nowrap;
   }
+
   .snap:active {
     transform: translateY(1px);
   }
+
   .empty {
     font-size: var(--text-3xs);
     line-height: 1.6;
@@ -295,6 +321,7 @@
     text-align: center;
     margin: 26px 0;
   }
+
   .list {
     list-style: none;
     margin: 0;
@@ -302,6 +329,7 @@
     display: flex;
     flex-direction: column;
   }
+
   .row {
     display: grid;
     grid-template-columns: 14px 1fr auto;
@@ -310,9 +338,11 @@
     padding: 9px 0;
     border-bottom: 1px solid var(--faint, var(--paper-3));
   }
+
   .row:last-child {
     border-bottom: 0;
   }
+
   .dot {
     width: 8px;
     height: 8px;
@@ -321,15 +351,18 @@
     background: var(--paper);
     justify-self: center;
   }
+
   .dot.head {
     background: var(--ink);
   }
+
   .meta {
     display: flex;
     flex-direction: column;
     gap: 1px;
     min-width: 0;
   }
+
   .name {
     font-size: var(--text-3xs);
     font-weight: 600;
@@ -338,10 +371,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
   .name.untitled {
     font-weight: 400;
     color: var(--color-text-muted);
   }
+
   .tagb {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -349,11 +384,13 @@
     color: var(--color-warning);
     margin-left: 4px;
   }
+
   .time {
     font-size: var(--text-4xs);
     color: var(--ink-4);
     font-variant-numeric: tabular-nums;
   }
+
   .tag-in {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -365,11 +402,13 @@
     margin-top: 4px;
     width: 100%;
   }
+
   .acts {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
+
   .act {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -381,13 +420,16 @@
     padding: 3px 10px;
     cursor: pointer;
   }
+
   .act.sm {
     font-weight: 400;
     padding: 2px 10px;
   }
+
   .act:hover:not(:disabled) {
     background: var(--chrome-hi);
   }
+
   .act:disabled {
     opacity: 0.4;
     cursor: default;
@@ -404,14 +446,17 @@
     cursor: pointer;
     margin-bottom: 8px;
   }
+
   .back:hover {
     color: var(--ink);
   }
+
   .cmp-title {
     font-size: var(--text-3xs);
     color: var(--ink);
     margin: 0 0 12px;
   }
+
   .summary {
     display: flex;
     flex-wrap: wrap;
@@ -422,18 +467,23 @@
     padding-bottom: 12px;
     border-bottom: 1px solid var(--faint, var(--paper-3));
   }
+
   .s-add {
     color: var(--state-live, var(--color-success));
   }
+
   .s-del {
     color: var(--state-error, var(--color-danger));
   }
+
   .s-chg {
     color: var(--color-warning);
   }
+
   .grp {
     margin-bottom: 16px;
   }
+
   .grp-h {
     display: flex;
     align-items: center;
@@ -445,6 +495,7 @@
     color: var(--ink-2);
     margin-bottom: 8px;
   }
+
   .badge {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -453,33 +504,41 @@
     letter-spacing: 0;
     padding: 1px 6px;
     border-radius: var(--radius-md);
-    border: 1px solid currentColor;
+    border: 1px solid currentcolor;
   }
+
   .b-added {
     color: var(--state-live, var(--color-success));
   }
+
   .b-removed {
     color: var(--state-error, var(--color-danger));
   }
+
   .b-changed {
     color: var(--color-warning);
   }
+
   .ent {
     padding: 6px 0 6px 10px;
     border-left: 2px solid var(--faint, var(--paper-3));
     margin-bottom: 6px;
   }
+
   .ent.e-added {
     border-left-color: var(--state-live, var(--color-success));
   }
+
   .ent.e-removed {
     border-left-color: var(--state-error, var(--color-danger));
   }
+
   .ent-l {
     display: flex;
     align-items: baseline;
     gap: 5px;
   }
+
   .ent-label {
     font-size: var(--text-3xs);
     font-weight: 600;
@@ -487,14 +546,17 @@
     flex: 1;
     min-width: 0;
   }
+
   .ent-label.strike {
     text-decoration: line-through;
     color: var(--color-text-muted);
   }
+
   .mk {
     font-family: var(--mono);
     font-weight: 700;
   }
+
   .cherry {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -507,9 +569,11 @@
     cursor: pointer;
     white-space: nowrap;
   }
+
   .cherry:hover {
     background: var(--paper);
   }
+
   .fld,
   .itm {
     font-size: var(--text-4xs);
@@ -518,14 +582,17 @@
     margin-top: 3px;
     word-break: break-word;
   }
+
   .fk {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--ink-4);
   }
+
   .ins {
     color: var(--state-live, var(--color-success));
   }
+
   .del {
     color: var(--state-error, var(--color-danger));
     text-decoration: line-through;

@@ -190,12 +190,14 @@
   .tour {
     width: min(92vw, 430px);
   }
+
   /* Dynamic anchor (mobile only — see narratorTop): the narrator jumps to the top
      edge when the current spotlight sits low, so it never covers what it frames. */
   .tour.at-top {
     top: 8px;
     bottom: auto;
   }
+
   .tbar {
     display: flex;
     align-items: center;
@@ -211,6 +213,7 @@
       var(--paper) 3px
     );
   }
+
   .tclose {
     width: 11px;
     height: 11px;
@@ -220,6 +223,7 @@
     cursor: pointer;
     flex: none;
   }
+
   .ttl {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -228,12 +232,15 @@
     padding: 0 10px;
     margin: 0 auto;
   }
+
   .tfill {
     width: 11px;
   }
+
   .tbody {
     padding: 10px 12px 11px;
   }
+
   .cap {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -241,27 +248,32 @@
     margin: 0;
     text-wrap: balance;
   }
+
   .wheel {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--ink-3);
     margin: 6px 0 0;
   }
+
   .row {
     display: flex;
     align-items: center;
     gap: 6px;
     margin-top: 10px;
   }
+
   .count {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     font-variant-numeric: tabular-nums;
     color: var(--dim);
   }
+
   .gap {
     flex: 1;
   }
+
   .tbtn {
     font-family: var(--mono);
     font-size: var(--text-3xs);
@@ -271,10 +283,12 @@
     padding: 2px 8px;
     cursor: pointer;
   }
+
   .tbtn:hover {
     background: var(--ink);
     color: var(--paper);
   }
+
   .tbtn:focus-visible,
   .tclose:focus-visible {
     outline: 2px solid var(--ink);
@@ -291,24 +305,31 @@
     border: 2px solid var(--spot, var(--ink));
     border-radius: var(--radius-sm);
     will-change: transform, width, height;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
       0 3px 16px rgb(28 27 25 / 20%);
-    transition: transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
+    transition:
+      transform 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
       width 0.32s cubic-bezier(0.22, 0.68, 0.24, 1),
       height 0.32s cubic-bezier(0.22, 0.68, 0.24, 1);
     animation: spot-pulse 1.9s ease-in-out infinite;
   }
+
   @keyframes spot-pulse {
     0%,
     100% {
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--spot, var(--ink)) 24%, transparent),
         0 3px 16px rgb(28 27 25 / 20%);
     }
+
     50% {
-      box-shadow: 0 0 0 7px color-mix(in srgb, var(--spot, var(--ink)) 9%, transparent),
+      box-shadow:
+        0 0 0 7px color-mix(in srgb, var(--spot, var(--ink)) 9%, transparent),
         0 3px 16px rgb(28 27 25 / 20%);
     }
   }
+
   @media (prefers-reduced-motion: reduce) {
     .spotlight {
       transition: none;

@@ -19,8 +19,8 @@
 </script>
 
 <p class="note">
-  A variant is a lens on your main resume. Pick one to preview what it keeps — excluded entries
-  and bullets dim in place. Editing here never changes the main.
+  A variant is a lens on your main resume. Pick one to preview what it keeps — excluded entries and
+  bullets dim in place. Editing here never changes the main.
 </p>
 
 <div class="picker">
@@ -105,11 +105,13 @@
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .picker {
     display: flex;
     flex-direction: column;
     gap: 5px;
   }
+
   .opt {
     display: flex;
     align-items: center;
@@ -124,33 +126,37 @@
     box-shadow: var(--shadow-sm);
     font-family: var(--sans);
   }
+
   .opt.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .opt:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .radio {
     width: 11px;
     height: 11px;
     border-radius: var(--radius-round);
-    border: 1.5px solid currentColor;
+    border: 1.5px solid currentcolor;
     flex: none;
   }
+
   .opt.on .radio {
-    background:
-      radial-gradient(circle, var(--paper) 0 2.5px, transparent 3px),
-      var(--paper);
+    background: radial-gradient(circle, var(--paper) 0 2.5px, transparent 3px), var(--paper);
     background-clip: content-box;
     border-color: var(--paper);
     box-shadow: var(--shadow-ring);
   }
+
   .opt-name {
     font-size: var(--text-3xs);
     font-weight: 700;
   }
+
   .opt-meta {
     margin-left: auto;
     font-family: var(--mono);
@@ -158,12 +164,14 @@
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
   }
+
   .new-row {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
   }
+
   .new {
     width: 100%;
     font-family: var(--sans);
@@ -175,6 +183,7 @@
     padding: 7px 12px;
     cursor: pointer;
   }
+
   .edit {
     margin-top: 18px;
     padding-top: 16px;
@@ -183,18 +192,21 @@
     flex-direction: column;
     gap: 13px;
   }
+
   .rename {
     display: grid;
     grid-template-columns: 62px 1fr;
     align-items: center;
     gap: 10px;
   }
+
   .rlbl {
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--ink-2);
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-2xs);
@@ -205,12 +217,14 @@
     padding: 6px 9px;
     width: 100%;
   }
+
   .rule {
     display: grid;
     grid-template-columns: 62px 1fr;
     align-items: start;
     gap: 10px;
   }
+
   .rule-lbl {
     font-size: var(--text-4xs);
     text-transform: uppercase;
@@ -218,18 +232,22 @@
     font-weight: 700;
     padding-top: 3px;
   }
+
   .rule-lbl.inc {
     color: var(--color-success);
   }
+
   .rule-lbl.exc {
     color: var(--accent);
   }
+
   .hint {
     font-size: var(--text-4xs);
     line-height: 1.5;
     color: var(--color-text-muted);
     margin: 0;
   }
+
   .del {
     align-self: flex-start;
     font-family: var(--sans);
@@ -242,6 +260,7 @@
     cursor: pointer;
     box-shadow: var(--shadow-accent);
   }
+
   .del:active {
     transform: translate(1px, 1px);
     box-shadow: none;

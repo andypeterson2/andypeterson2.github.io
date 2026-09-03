@@ -1,4 +1,5 @@
 import eslintPluginAstro from 'eslint-plugin-astro';
+import eslintPluginSvelte from 'eslint-plugin-svelte';
 import tseslint from 'typescript-eslint';
 import sonarjs from 'eslint-plugin-sonarjs';
 import * as designSystem from './scripts/eslint-plugin-design-system.js';
@@ -149,6 +150,36 @@ export default [
     files: ['src/pages/projects/*/app.astro'],
     rules: {
       'design-system/prefer-button': 'off',
+    },
+  },
+  // ── Svelte (the CV editor island): svelte/recommended + the fleet
+  // complexity budgets. TS script blocks are parsed but NOT type-aware —
+  // the type-aware tier for .svelte joins the typed-wire refactor (same
+  // boundary as the unsafe-* carve-out above).
+  ...eslintPluginSvelte.configs.recommended.map((c) => ({
+    ...c,
+    files: ['src/**/*.svelte'],
+  })),
+  {
+    files: ['src/**/*.svelte'],
+    languageOptions: {
+      parserOptions: {
+        parser: tseslint.parser,
+        extraFileExtensions: ['.svelte'],
+      },
+    },
+    plugins: { sonarjs, '@typescript-eslint': tseslint.plugin },
+    rules: {
+      // The TS-aware rule — core no-unused-vars false-positives on parameter
+      // names inside type annotations.
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      // OFF: these svelte-ignore comments suppress COMPILER a11y warnings at
+      // build time; without svelte/valid-compile eslint can't see that use
+      // and flags them as unused. Removing them would resurface the build
+      // warnings.
+      'svelte/no-unused-svelte-ignore': 'off',
+      ...complexityBudgets,
     },
   },
   {

@@ -44,6 +44,7 @@
     align-items: center;
     gap: 5px;
   }
+
   .chip {
     display: inline-flex;
     align-items: center;
@@ -56,6 +57,7 @@
     border-radius: var(--radius-lg);
     padding: 1px 3px 1px 7px;
   }
+
   .cx {
     background: none;
     border: 0;
@@ -65,9 +67,11 @@
     line-height: 1;
     padding: 0 1px;
   }
+
   .cx:hover {
     color: var(--accent);
   }
+
   .tag-in {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -80,6 +84,7 @@
     flex: 1;
     outline: none;
   }
+
   .tag-in:focus {
     border-bottom-color: var(--dim);
   }
