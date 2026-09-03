@@ -131,6 +131,30 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
+  weights-sync:
+    # The browser model weights are canonical in the classifier repo
+    # (exports/web/, drift-checked by its CI) and shipped here by `make
+    # sync-web` — a bare cp that nothing else verifies. This job closes the
+    # silent-drift gap: if the classifier repo's canonical exports move and
+    # the copies here don't, CI fails instead of the site serving stale
+    # weights while both repos stay green.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare served weights against the classifier repo's canonical exports
+        run: |
+          set -e
+          for f in iris mnist qsvm-iris qsvm-mnist; do
+            curl -sf -o "/tmp/$f.json" \
+              "https://raw.githubusercontent.com/andypeterson2/quantum-machine-learning/main/exports/web/$f.json"
+            if ! diff -q "/tmp/$f.json" "public/classifiers/models/$f.json" >/dev/null; then
+              echo "DRIFT: public/classifiers/models/$f.json differs from the canonical export — run 'make sync-web' in quantum-machine-learning and commit"
+              diff "/tmp/$f.json" "public/classifiers/models/$f.json" || true
+              exit 1
+            fi
+            echo "in sync: $f.json"
+          done
+
   lighthouse-desktop:
     needs: astro-build
     runs-on: ubuntu-latest

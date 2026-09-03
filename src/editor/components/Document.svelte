@@ -4,7 +4,12 @@
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
-  import { entryIncluded, itemIncluded, sectionScopedOut, entryFieldsFor } from '../lib/variant-lens';
+  import {
+    entryIncluded,
+    itemIncluded,
+    sectionScopedOut,
+    entryFieldsFor,
+  } from '../lib/variant-lens';
   import type { Section, Entry, Item } from '../lib/types';
 
   const person = $derived(editor.person);
@@ -117,168 +122,190 @@
   {/if}
 
   <div class="sections" use:sortable={{ onReorder: (f, t) => editor.reorderSections(f, t) }}>
-  {#each person.sections as section, sIdx (section.id)}
-    {@const def = typeDef(section.type)}
-    <section
-      class="sec"
-      class:dim={sectionDim(section)}
-      data-sortable
-      id={`sec-${section.id}`}
-      data-tour-spot={section.type === 'experience' ? 'experience' : undefined}
-      use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
-    >
-      <div class="sec-head">
-        <button
-          class="grip"
-          data-drag-handle
-          draggable="true"
-          title="Drag, or press Alt+↑/↓ to reorder"
-          aria-label="Reorder section"
-          aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-          onkeydown={(ev) =>
-            reorderKeydown(ev, sIdx, person.sections.length, (f, t) => editor.reorderSections(f, t))}
-          onclick={(e) => e.stopPropagation()}>⠿</button
-        >
-        <h2>{section.title}</h2>
-        <span class="sec-tools">
-          <button class="tool" title="Add entry" aria-label="Add entry" onclick={() => editor.addEntry(section)}>＋</button>
-          <button class="tool danger" title="Delete section" aria-label="Delete section" onclick={() => confirmDelete(section)}>×</button>
-        </span>
-      </div>
-
-      {#if def?.isParagraph}
-        {@const pe = section.entries[0]}
-        {#if pe && selEntry === pe.id}
-          <EntryEdit {section} entry={pe} />
-        {:else if pe}
-          <div
-            class="para entry-hit"
-            class:dim={entryDim(section, pe)}
-            role="button"
-            tabindex="0"
-            onclick={() => pick(section.id, pe.id)}
-            onkeydown={(e) => onKey(e, () => pick(section.id, pe.id))}
+    {#each person.sections as section, sIdx (section.id)}
+      {@const def = typeDef(section.type)}
+      <section
+        class="sec"
+        class:dim={sectionDim(section)}
+        data-sortable
+        id={`sec-${section.id}`}
+        data-tour-spot={section.type === 'experience' ? 'experience' : undefined}
+        use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
+      >
+        <div class="sec-head">
+          <button
+            class="grip"
+            data-drag-handle
+            draggable="true"
+            title="Drag, or press Alt+↑/↓ to reorder"
+            aria-label="Reorder section"
+            aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+            onkeydown={(ev) =>
+              reorderKeydown(ev, sIdx, person.sections.length, (f, t) =>
+                editor.reorderSections(f, t),
+              )}
+            onclick={(e) => e.stopPropagation()}>⠿</button
           >
-            {fieldsOf(pe).text || 'Click to write a summary…'}
-          </div>
-        {:else}
-          <button class="empty" onclick={() => editor.addEntry(section)}>＋ Add text</button>
-        {/if}
-      {:else if def?.latexType === 'cvskills'}
-        {#each section.entries as e, eIdx (e.id)}
-          {#if selEntry === e.id}
-            <EntryEdit {section} entry={e} />
-          {:else}
-            <div
-              class="skill entry-hit"
-              class:dim={entryDim(section, e)}
-              role="button"
-              tabindex="0"
-              draggable="true"
-              data-drag-handle
-              data-sortable
-              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-              onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+          <h2>{section.title}</h2>
+          <span class="sec-tools">
+            <button
+              class="tool"
+              title="Add entry"
+              aria-label="Add entry"
+              onclick={() => editor.addEntry(section)}>＋</button
             >
-              <span class="skill-cat">{fieldsOf(e).category}</span><span class="skill-list"
-                >{#if e.items.length}{#each e.items as it, i (it.id)}{#if i > 0}, {/if}<span
-                      class="skill-item"
-                      class:dim={itemDim(section, e, it)}
-                      >{it.content}{#each it.tags as t}<span class="tag">#{t}</span>{/each}</span
-                    >{/each}{:else}{e.fields.skills}{/if}</span
-                >
-            </div>
-          {/if}
-        {/each}
-      {:else if def?.latexType === 'cvhonors'}
-        {#each section.entries as e, eIdx (e.id)}
-          {#if selEntry === e.id}
-            <EntryEdit {section} entry={e} />
-          {:else}
-            <div
-              class="entry"
-              class:dim={entryDim(section, e)}
-              role="button"
-              tabindex="0"
-              draggable="true"
-              data-drag-handle
-              data-sortable
-              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-              onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+            <button
+              class="tool danger"
+              title="Delete section"
+              aria-label="Delete section"
+              onclick={() => confirmDelete(section)}>×</button
             >
-              <div class="entry-line">
-                <span class="entry-title">{[fieldsOf(e).award, fieldsOf(e).issuer].filter(Boolean).join(' · ')}</span>
-                <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
-              </div>
-            </div>
-          {/if}
-        {/each}
-      {:else if def?.latexType === 'cvreferences'}
-        {#each section.entries as e, eIdx (e.id)}
-          {#if selEntry === e.id}
-            <EntryEdit {section} entry={e} />
-          {:else}
-            <div
-              class="entry"
-              class:dim={entryDim(section, e)}
-              role="button"
-              tabindex="0"
-              draggable="true"
-              data-drag-handle
-              data-sortable
-              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-              onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-            >
-              <div class="entry-line">
-                <span class="entry-title">{fieldsOf(e).name}</span>
-                <span class="entry-date">{fieldsOf(e).relation ?? ''}</span>
-              </div>
-            </div>
-          {/if}
-        {/each}
-      {:else}
-        {#each section.entries as e, eIdx (e.id)}
-          {#if selEntry === e.id}
-            <EntryEdit {section} entry={e} />
-          {:else}
-            <div
-              class="entry"
-              class:dim={entryDim(section, e)}
-              role="button"
-              tabindex="0"
-              draggable="true"
-              data-drag-handle
-              data-sortable
-              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-              onclick={() => pick(section.id, e.id)}
-              onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-            >
-              <div class="entry-line">
-                <span class="entry-title">{[entryLead(section.type, fieldsOf(e)), fieldsOf(e).organization].filter(Boolean).join(' · ')}</span>
-                <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
-              </div>
-              {#if hasBullets(section.type) && e.items.length}
-                <ul>
-                  {#each e.items as it (it.id)}
-                    <li class:dim={itemDim(section, e, it)}>{#if it.title}<b>{it.title}</b> — {/if}{it.content}{#each it.tags as t}<span class="tag">#{t}</span>{/each}</li>
-                  {/each}
-                </ul>
-              {/if}
-            </div>
-          {/if}
-        {/each}
-      {/if}
+          </span>
+        </div>
 
-      {#if !def?.isParagraph && section.entries.length === 0}
-        <button class="empty" onclick={() => editor.addEntry(section)}
-          >＋ Add {def?.entryLabel?.toLowerCase() ?? 'entry'}</button
-        >
-      {/if}
-    </section>
-  {/each}
+        {#if def?.isParagraph}
+          {@const pe = section.entries[0]}
+          {#if pe && selEntry === pe.id}
+            <EntryEdit {section} entry={pe} />
+          {:else if pe}
+            <div
+              class="para entry-hit"
+              class:dim={entryDim(section, pe)}
+              role="button"
+              tabindex="0"
+              onclick={() => pick(section.id, pe.id)}
+              onkeydown={(e) => onKey(e, () => pick(section.id, pe.id))}
+            >
+              {fieldsOf(pe).text || 'Click to write a summary…'}
+            </div>
+          {:else}
+            <button class="empty" onclick={() => editor.addEntry(section)}>＋ Add text</button>
+          {/if}
+        {:else if def?.latexType === 'cvskills'}
+          {#each section.entries as e, eIdx (e.id)}
+            {#if selEntry === e.id}
+              <EntryEdit {section} entry={e} />
+            {:else}
+              <div
+                class="skill entry-hit"
+                class:dim={entryDim(section, e)}
+                role="button"
+                tabindex="0"
+                draggable="true"
+                data-drag-handle
+                data-sortable
+                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                onclick={() => pick(section.id, e.id)}
+                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+              >
+                <span class="skill-cat">{fieldsOf(e).category}</span><span class="skill-list"
+                  >{#if e.items.length}{#each e.items as it, i (it.id)}{#if i > 0},
+                      {/if}<span class="skill-item" class:dim={itemDim(section, e, it)}
+                        >{it.content}{#each it.tags as t (t)}<span class="tag">#{t}</span
+                          >{/each}</span
+                      >{/each}{:else}{e.fields.skills}{/if}</span
+                >
+              </div>
+            {/if}
+          {/each}
+        {:else if def?.latexType === 'cvhonors'}
+          {#each section.entries as e, eIdx (e.id)}
+            {#if selEntry === e.id}
+              <EntryEdit {section} entry={e} />
+            {:else}
+              <div
+                class="entry"
+                class:dim={entryDim(section, e)}
+                role="button"
+                tabindex="0"
+                draggable="true"
+                data-drag-handle
+                data-sortable
+                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                onclick={() => pick(section.id, e.id)}
+                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+              >
+                <div class="entry-line">
+                  <span class="entry-title"
+                    >{[fieldsOf(e).award, fieldsOf(e).issuer].filter(Boolean).join(' · ')}</span
+                  >
+                  <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
+                </div>
+              </div>
+            {/if}
+          {/each}
+        {:else if def?.latexType === 'cvreferences'}
+          {#each section.entries as e, eIdx (e.id)}
+            {#if selEntry === e.id}
+              <EntryEdit {section} entry={e} />
+            {:else}
+              <div
+                class="entry"
+                class:dim={entryDim(section, e)}
+                role="button"
+                tabindex="0"
+                draggable="true"
+                data-drag-handle
+                data-sortable
+                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                onclick={() => pick(section.id, e.id)}
+                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+              >
+                <div class="entry-line">
+                  <span class="entry-title">{fieldsOf(e).name}</span>
+                  <span class="entry-date">{fieldsOf(e).relation ?? ''}</span>
+                </div>
+              </div>
+            {/if}
+          {/each}
+        {:else}
+          {#each section.entries as e, eIdx (e.id)}
+            {#if selEntry === e.id}
+              <EntryEdit {section} entry={e} />
+            {:else}
+              <div
+                class="entry"
+                class:dim={entryDim(section, e)}
+                role="button"
+                tabindex="0"
+                draggable="true"
+                data-drag-handle
+                data-sortable
+                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                onclick={() => pick(section.id, e.id)}
+                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
+              >
+                <div class="entry-line">
+                  <span class="entry-title"
+                    >{[entryLead(section.type, fieldsOf(e)), fieldsOf(e).organization]
+                      .filter(Boolean)
+                      .join(' · ')}</span
+                  >
+                  <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
+                </div>
+                {#if hasBullets(section.type) && e.items.length}
+                  <ul>
+                    {#each e.items as it (it.id)}
+                      <li class:dim={itemDim(section, e, it)}>
+                        {#if it.title}<b>{it.title}</b> —
+                        {/if}{it.content}{#each it.tags as t (t)}<span class="tag">#{t}</span
+                          >{/each}
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        {/if}
+
+        {#if !def?.isParagraph && section.entries.length === 0}
+          <button class="empty" onclick={() => editor.addEntry(section)}
+            >＋ Add {def?.entryLabel?.toLowerCase() ?? 'entry'}</button
+          >
+        {/if}
+      </section>
+    {/each}
   </div>
 
   <div class="add-wrap">
@@ -309,6 +336,7 @@
     padding: 40px 46px 54px;
     color: var(--ink);
   }
+
   .doc-head {
     cursor: pointer;
     border: 1px solid transparent;
@@ -316,34 +344,41 @@
     padding: 6px 10px;
     margin: -6px -10px 0;
   }
+
   .doc-head:hover {
     border-color: var(--paper-3);
     background: var(--paper-2);
   }
+
   .doc-head h1 {
     font-size: var(--text-lg);
     font-weight: 700;
     margin: 0 0 4px;
   }
+
   .doc-head h1.untitled {
     color: var(--ink-5);
   }
+
   .contact {
     font-size: var(--text-3xs);
     color: var(--ink-3);
     margin: 0;
   }
+
   .sec {
     margin-top: 28px;
     border-top: 1px solid var(--paper-4);
     padding-top: 15px;
   }
+
   .sec-head {
     display: flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 8px;
   }
+
   .sec-head h2 {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -353,11 +388,13 @@
     color: var(--accent, var(--ink-2));
     margin: 0;
   }
+
   .sec-tools {
     margin-left: auto;
     opacity: 0.35;
     transition: opacity var(--dur-fast);
   }
+
   .grip {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -370,26 +407,33 @@
     opacity: 0.3;
     transition: opacity var(--dur-fast);
   }
+
   .sec:hover .grip {
     opacity: 0.85;
   }
+
   .grip:hover {
     opacity: 1;
   }
+
   .grip:active {
     cursor: grabbing;
   }
+
   :global([data-dragging]) {
     opacity: 0.4;
   }
+
   :global([data-over]) {
     outline: 2px dashed var(--dim);
     outline-offset: 2px;
     border-radius: var(--radius);
   }
+
   .sec:hover .sec-tools {
     opacity: 1;
   }
+
   .tool {
     font-family: var(--sans);
     font-size: var(--text-2xs);
@@ -401,19 +445,23 @@
     padding: 2px 7px;
     cursor: pointer;
   }
+
   .tool:hover {
     border-color: var(--ink);
     color: var(--ink);
   }
+
   .tool.danger:hover {
     border-color: var(--accent);
     color: var(--accent);
   }
+
   .para {
     font-size: var(--text-2xs);
     line-height: 1.55;
     margin: 0;
   }
+
   .skill {
     display: grid;
     grid-template-columns: 132px 1fr;
@@ -421,26 +469,32 @@
     font-size: var(--text-2xs);
     margin: 4px 0;
   }
+
   .skill-cat {
     font-weight: 700;
   }
+
   .entry-hit {
     cursor: pointer;
     border: 1px solid transparent;
     border-radius: var(--radius);
   }
+
   .para.entry-hit {
     padding: 6px 10px;
     margin: 0 -10px;
   }
+
   .skill.entry-hit {
     padding: 6px 10px;
     margin: 2px -10px;
   }
+
   .entry-hit:hover {
     border-color: var(--paper-3);
     background: var(--paper-2);
   }
+
   .entry {
     padding: 9px 10px;
     margin: 2px -10px;
@@ -448,30 +502,36 @@
     border-radius: var(--radius);
     cursor: pointer;
   }
+
   .entry:hover {
     border-color: var(--paper-3);
     background: var(--paper-2);
   }
+
   .entry:focus-visible,
   .entry-hit:focus-visible,
   .doc-head:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 1px;
   }
+
   .dim {
     opacity: 0.28;
     transition: opacity var(--dur);
   }
+
   .entry-line {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 14px;
   }
+
   .entry-title {
     font-size: var(--text-2xs);
     font-weight: 600;
   }
+
   .entry-date {
     font-family: var(--mono);
     font-size: var(--text-3xs);
@@ -483,32 +543,37 @@
   /* Mobile: the resume renders in a narrow column, so the role/date row and the
      skill category/list grid get crushed (a role wraps to 4 lines beside its date).
      Stack them — role over date, category over list — so each gets the full width. */
-  @media (max-width: 640px) {
+  @media (width <= 640px) {
     .entry-line {
       flex-direction: column;
       align-items: flex-start;
       gap: 2px;
     }
+
     .skill {
       grid-template-columns: minmax(0, 1fr);
       gap: 2px;
     }
   }
+
   ul {
     margin: 6px 0 0;
     padding-left: 20px;
   }
+
   li {
     font-size: var(--text-2xs);
     line-height: 1.55;
     margin: 3px 0;
   }
+
   .tag {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--dim);
     margin-left: 6px;
   }
+
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -519,9 +584,11 @@
     padding: 8px 12px;
     cursor: pointer;
   }
+
   .add-wrap {
     margin-top: 22px;
   }
+
   .add-section {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -533,6 +600,7 @@
     cursor: pointer;
     width: 100%;
   }
+
   .picker {
     border: 1px solid var(--ink);
     border-radius: var(--radius-md);
@@ -540,6 +608,7 @@
     box-shadow: var(--shadow);
     padding: 8px;
   }
+
   .pick-cat {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -549,6 +618,7 @@
     color: var(--dim);
     padding: 8px 8px 4px;
   }
+
   .pick {
     display: flex;
     flex-direction: column;
@@ -562,18 +632,22 @@
     cursor: pointer;
     font-family: var(--sans);
   }
+
   .pick:hover {
     background: var(--chrome-hi);
   }
+
   .pick-label {
     font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--ink);
   }
+
   .pick-desc {
     font-size: var(--text-4xs);
     color: var(--ink-3);
   }
+
   .pick-cancel {
     margin-top: 6px;
     width: 100%;

@@ -2,9 +2,7 @@
   import { editor } from '../lib/store.svelte';
   import type { PersonMeta } from '../lib/api';
 
-  const activeMeta = $derived(
-    editor.persons.find((p) => p.id === editor.activePersonId) ?? null,
-  );
+  const activeMeta = $derived(editor.persons.find((p) => p.id === editor.activePersonId) ?? null);
 
   function confirmDelete(p: PersonMeta) {
     if (
@@ -17,7 +15,8 @@
 
 {#if !editor.connected}
   <p class="note">
-    Profiles live on the server. <button class="link" onclick={() => editor.signIn()}>Sign in</button
+    Profiles live on the server. <button class="link" onclick={() => editor.signIn()}
+      >Sign in</button
     > to create, switch, and manage them.
   </p>
 {:else}
@@ -64,6 +63,7 @@
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .link {
     font: inherit;
     color: var(--link);
@@ -73,11 +73,13 @@
     cursor: pointer;
     text-decoration: underline;
   }
+
   .picker {
     display: flex;
     flex-direction: column;
     gap: 5px;
   }
+
   .opt {
     display: flex;
     align-items: center;
@@ -92,29 +94,35 @@
     box-shadow: var(--shadow-sm);
     font-family: var(--sans);
   }
+
   .opt.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .opt:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .radio {
     width: 11px;
     height: 11px;
     border-radius: var(--radius-round);
-    border: 1.5px solid currentColor;
+    border: 1.5px solid currentcolor;
     flex: none;
   }
+
   .opt.on .radio {
     border-color: var(--paper);
     box-shadow: var(--shadow-ring);
   }
+
   .opt-name {
     font-size: var(--text-3xs);
     font-weight: 700;
   }
+
   .new {
     margin-top: 10px;
     width: 100%;
@@ -127,6 +135,7 @@
     padding: 7px 12px;
     cursor: pointer;
   }
+
   .edit {
     margin-top: 18px;
     padding-top: 16px;
@@ -135,18 +144,21 @@
     flex-direction: column;
     gap: 13px;
   }
+
   .rename {
     display: grid;
     grid-template-columns: 62px 1fr;
     align-items: center;
     gap: 10px;
   }
+
   .rlbl {
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--ink-2);
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-2xs);
@@ -157,6 +169,7 @@
     padding: 6px 9px;
     width: 100%;
   }
+
   .del {
     align-self: flex-start;
     font-family: var(--sans);
@@ -169,6 +182,7 @@
     cursor: pointer;
     box-shadow: var(--shadow-accent);
   }
+
   .del:active {
     transform: translate(1px, 1px);
     box-shadow: none;

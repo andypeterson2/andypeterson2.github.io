@@ -33,7 +33,9 @@
   if (identity) editor.hydrateDemoIdentity(identity);
 
   const person = $derived(editor.person);
-  const fullName = $derived(`${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim());
+  const fullName = $derived(
+    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim(),
+  );
 
   // Flips true once mounted → the stage gets `data-hydrated`, a deterministic
   // signal that event handlers are live (tests wait for it instead of racing).
@@ -183,9 +185,11 @@
     if (tour.state !== 'idle' && editor.connected !== tour.liveAtStart) tour.end();
   });
 
-  const inTourChrome = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-tour]');
+  const inTourChrome = (t: EventTarget | null) =>
+    t instanceof Element && !!t.closest('[data-tour]');
   const isEditable = (t: EventTarget | null) =>
-    t instanceof HTMLElement && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
+    t instanceof HTMLElement &&
+    (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
 
   /**
    * ⌘Z / ⇧⌘Z — but never inside a text field. There the browser's own undo is
@@ -260,10 +264,7 @@
     <button class="invite-scrim" aria-label="Dismiss" onclick={() => (inviteOpen = false)}></button>
     <div class="invite" id="demo-invite" role="status">
       <div class="titlebar invite-tbar">
-        <button
-          class="close invite-close"
-          aria-label="Dismiss"
-          onclick={() => (inviteOpen = false)}
+        <button class="close invite-close" aria-label="Dismiss" onclick={() => (inviteOpen = false)}
         ></button>
         <span class="title">Resume Editor</span>
         <span class="fill"></span>
@@ -286,160 +287,192 @@
   {/if}
 
   <div class="workspace">
-    <div class="titlebar app-titlebar"><span class="close"></span><span class="title app-title">Resume Editor</span><span class="fill"></span></div>
+    <div class="titlebar app-titlebar">
+      <span class="close"></span><span class="title app-title">Resume Editor</span><span
+        class="fill"
+      ></span>
+    </div>
     <div class="workspace-body">
-    <div class="window toolbar-window">
-      <div class="titlebar"><span class="close"></span><span class="title">Toolbar</span><span class="fill"></span></div>
-      <div class="toolbar">
-      <span class="field"
-        >Profile
-        <button
-          class="popup profile-btn"
-          title="Profiles"
-          onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
-        ></span
-      >
-      <span class="field"
-        >Variant
-        <button
-          class="popup variant-btn"
-          class:lens={editor.activeVariantId !== null}
-          title="Variants + the lens"
-          data-tour-spot="variants"
-          onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
-        ></span
-      >
-      <span class="sp"></span>
-      <!-- Action buttons grouped by job: shape (Tags/Layout/Style), a hairline
+      <div class="window toolbar-window">
+        <div class="titlebar">
+          <span class="close"></span><span class="title">Toolbar</span><span class="fill"></span>
+        </div>
+        <div class="toolbar">
+          <span class="field"
+            >Profile
+            <button
+              class="popup profile-btn"
+              title="Profiles"
+              onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
+            ></span
+          >
+          <span class="field"
+            >Variant
+            <button
+              class="popup variant-btn"
+              class:lens={editor.activeVariantId !== null}
+              title="Variants + the lens"
+              data-tour-spot="variants"
+              onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
+            ></span
+          >
+          <span class="sp"></span>
+          <!-- Action buttons grouped by job: shape (Tags/Layout/Style), a hairline
            separator, then output (Preview/Export). `display:contents` keeps them flat
            in the toolbar flex (the .sp above pushes the whole group right); the toolbar
            is hidden entirely on mobile. -->
-      <div class="actions">
-        <button class="btn" class:on={editor.openDrawer === 'tags'} onclick={() => (editor.openDrawer = 'tags')}>Tags</button>
-        <button class="btn" class:on={editor.openDrawer === 'layouts'} onclick={() => (editor.openDrawer = 'layouts')}>Layout</button>
-        <button class="btn" class:on={editor.openDrawer === 'style'} onclick={() => (editor.openDrawer = 'style')}>Style</button>
-        <span class="tbar-sep" aria-hidden="true"></span>
-        <button class="btn" class:on={editor.preview.open} onclick={() => editor.preview.toggle()}>◱ Preview</button>
-        <button
-          class="btn"
-          title="Compile this resume to a PDF"
-          disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
-          onclick={() => editor.preview.openAndCompile()}
-          >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</button
-        >
-        <button
-          class="btn"
-          title="Export this resume as JSON"
-          data-tour-spot="export"
-          disabled={editor.noProfiles}
-          onclick={() => editor.exportJson()}>⤓ Export</button
-        >
-      </div>
-    </div>
-    </div>
-
-    <div class="window doc-window">
-      <div class="titlebar"><span class="close"></span><span class="title">{fullName || editor.profileLabel} — {editor.variantLabel}</span><span class="fill"></span></div>
-      <div class="wbody" class:split={editor.preview.open}>
-        <div class="doc-scroll" data-tour-spot="document">
-          {#if editor.noProfiles}
-            <div class="no-profiles">
-              <p class="np-title">No profiles yet</p>
-              <p class="np-sub">Create your first resume profile to start editing.</p>
-              <button class="np-btn" onclick={() => editor.addPerson()}
-                >＋ Create your first profile</button
-              >
-            </div>
-          {:else if editor.letterMode}
-            <LetterEditor />
-          {:else}
-            <Document />
-          {/if}
+          <div class="actions">
+            <button
+              class="btn"
+              class:on={editor.openDrawer === 'tags'}
+              onclick={() => (editor.openDrawer = 'tags')}>Tags</button
+            >
+            <button
+              class="btn"
+              class:on={editor.openDrawer === 'layouts'}
+              onclick={() => (editor.openDrawer = 'layouts')}>Layout</button
+            >
+            <button
+              class="btn"
+              class:on={editor.openDrawer === 'style'}
+              onclick={() => (editor.openDrawer = 'style')}>Style</button
+            >
+            <span class="tbar-sep" aria-hidden="true"></span>
+            <button
+              class="btn"
+              class:on={editor.preview.open}
+              onclick={() => editor.preview.toggle()}>◱ Preview</button
+            >
+            <button
+              class="btn"
+              title="Compile this resume to a PDF"
+              disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
+              onclick={() => editor.preview.openAndCompile()}
+              >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</button
+            >
+            <button
+              class="btn"
+              title="Export this resume as JSON"
+              data-tour-spot="export"
+              disabled={editor.noProfiles}
+              onclick={() => editor.exportJson()}>⤓ Export</button
+            >
+          </div>
         </div>
-        {#if editor.preview.open}
-          <div class="preview">
-            <div class="pv-bar">
-              <span>{editor.variantLabel}.pdf</span>
-              <span class="pv-tools">
-                <button
-                  class="pv-btn"
-                  disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
-                  onclick={() => editor.preview.compile()}
-                  >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
+      </div>
+
+      <div class="window doc-window">
+        <div class="titlebar">
+          <span class="close"></span><span class="title"
+            >{fullName || editor.profileLabel} — {editor.variantLabel}</span
+          ><span class="fill"></span>
+        </div>
+        <div class="wbody" class:split={editor.preview.open}>
+          <div class="doc-scroll" data-tour-spot="document">
+            {#if editor.noProfiles}
+              <div class="no-profiles">
+                <p class="np-title">No profiles yet</p>
+                <p class="np-sub">Create your first resume profile to start editing.</p>
+                <button class="np-btn" onclick={() => editor.addPerson()}
+                  >＋ Create your first profile</button
                 >
-                {#if editor.preview.url}
-                  <a class="pv-btn" href={editor.preview.url} download={`${editor.variantLabel}.pdf`}
-                    >⤓ PDF</a
+              </div>
+            {:else if editor.letterMode}
+              <LetterEditor />
+            {:else}
+              <Document />
+            {/if}
+          </div>
+          {#if editor.preview.open}
+            <div class="preview">
+              <div class="pv-bar">
+                <span>{editor.variantLabel}.pdf</span>
+                <span class="pv-tools">
+                  <button
+                    class="pv-btn"
+                    disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
+                    onclick={() => editor.preview.compile()}
+                    >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
                   >
-                {/if}
-              </span>
-            </div>
-            <div class="pv-body">
-              {#if !editor.connected}
-                <div class="pv-note">Sign in and connect to compile a live PDF.</div>
-              {:else if !editor.preview.compilable}
-                <div class="pv-note">Choose a profile to compile its PDF.</div>
-              {:else if editor.preview.state === 'compiling'}
-                <div class="pv-note">
-                  Compiling {editor.variantLabel}…<br /><small>running xelatex — a few seconds</small>
-                </div>
-              {:else if editor.preview.state === 'error'}
-                <div class="pv-log"><pre>{editor.preview.log}</pre></div>
-              {:else if editor.preview.url}
-                <!-- Rendered page-by-page onto width-fitted canvases (PdfView), NOT handed
+                  {#if editor.preview.url}
+                    <a
+                      class="pv-btn"
+                      href={editor.preview.url}
+                      download={`${editor.variantLabel}.pdf`}>⤓ PDF</a
+                    >
+                  {/if}
+                </span>
+              </div>
+              <div class="pv-body">
+                {#if !editor.connected}
+                  <div class="pv-note">Sign in and connect to compile a live PDF.</div>
+                {:else if !editor.preview.compilable}
+                  <div class="pv-note">Choose a profile to compile its PDF.</div>
+                {:else if editor.preview.state === 'compiling'}
+                  <div class="pv-note">
+                    Compiling {editor.variantLabel}…<br /><small
+                      >running xelatex — a few seconds</small
+                    >
+                  </div>
+                {:else if editor.preview.state === 'error'}
+                  <div class="pv-log"><pre>{editor.preview.log}</pre></div>
+                {:else if editor.preview.url}
+                  <!-- Rendered page-by-page onto width-fitted canvases (PdfView), NOT handed
                      to Chrome's built-in iframe viewer — which ignored the fit fragment and
                      left the page small at the top. PdfView reads the Blob directly (no
                      fetch of the blob: URL, which connect-src blocks). Download link remains. -->
-                <PdfView blob={editor.preview.blob} />
-              {:else}
-                <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
-              {/if}
+                  <PdfView blob={editor.preview.blob} />
+                {:else}
+                  <div class="pv-note">Compile to preview {editor.variantLabel}.</div>
+                {/if}
+              </div>
             </div>
-          </div>
-        {/if}
-      </div>
-      <div class="statusbar">
-        <span class="sb-l"
-          >{editor.connected
-            ? editor.saveState === 'saving'
-              ? 'saving…'
-              : editor.saveState === 'error'
-                ? '⚠ save failed'
-                : '✓ saved'
-            : 'demo'} · {editor.variantLabel}</span
-        >
-        <button
-          class="conn"
-          class:cta={demoMode}
-          onclick={() => (demoMode ? editor.signIn() : editor.connect())}
-          disabled={editor.connecting || editor.signingIn}
-          title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
-        >
-          <span
-            class="dot"
-            class:live={editor.connected}
-            class:busy={editor.connecting || editor.signingIn}
-            aria-hidden="true"
-          ></span><span class="conn-label">{editor.signingIn
-            ? 'signing in…'
-            : editor.connecting
-              ? 'connecting…'
-              : editor.connected
-                ? 'connected'
-                : 'Sign in with Google to save changes'}</span>
-        </button>
-        {#if editor.identity}
-          <span class="sb-r account">
-            <span class="acct-who" title={editor.identity.email ?? ''}
-              >{editor.identity.name || editor.identity.email || 'Signed in'}</span
+          {/if}
+        </div>
+        <div class="statusbar">
+          <span class="sb-l"
+            >{editor.connected
+              ? editor.saveState === 'saving'
+                ? 'saving…'
+                : editor.saveState === 'error'
+                  ? '⚠ save failed'
+                  : '✓ saved'
+              : 'demo'} · {editor.variantLabel}</span
+          >
+          <button
+            class="conn"
+            class:cta={demoMode}
+            onclick={() => (demoMode ? editor.signIn() : editor.connect())}
+            disabled={editor.connecting || editor.signingIn}
+            title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
+          >
+            <span
+              class="dot"
+              class:live={editor.connected}
+              class:busy={editor.connecting || editor.signingIn}
+              aria-hidden="true"
+            ></span><span class="conn-label"
+              >{editor.signingIn
+                ? 'signing in…'
+                : editor.connecting
+                  ? 'connecting…'
+                  : editor.connected
+                    ? 'connected'
+                    : 'Sign in with Google to save changes'}</span
             >
-            <button class="acct-out" onclick={() => editor.signOut()}>Sign out</button>
-          </span>
-        {:else}
-          <span class="sb-r"></span>
-        {/if}
+          </button>
+          {#if editor.identity}
+            <span class="sb-r account">
+              <span class="acct-who" title={editor.identity.email ?? ''}
+                >{editor.identity.name || editor.identity.email || 'Signed in'}</span
+              >
+              <button class="acct-out" onclick={() => editor.signOut()}>Sign out</button>
+            </span>
+          {:else}
+            <span class="sb-r"></span>
+          {/if}
+        </div>
       </div>
-    </div>
     </div>
   </div>
 
@@ -468,8 +501,10 @@
       {#if editor.canRetry}
         <button class="st-btn st-retry" onclick={() => editor.retrySave()}>Retry</button>
       {/if}
-      <button class="st-btn st-x" aria-label="Dismiss save error" onclick={() => editor.dismissError()}
-        >✕</button
+      <button
+        class="st-btn st-x"
+        aria-label="Dismiss save error"
+        onclick={() => editor.dismissError()}>✕</button
       >
     </div>
   {/if}
@@ -480,41 +515,144 @@
      of the 100vh body), then lay the editor out as a flex column whose middle
      (.workspace) fills and whose document/preview panes scroll INTERNALLY — so the
      page itself never scrolls and the editor is always exactly window-tall. */
-  .stage { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* Mirrors the portfolio menubar (BaseLayout .site-menubar): Chicago face, 3px
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
-  .menubar { flex: none; display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--paper); border-bottom: 3px solid var(--ink); border-radius: var(--radius-menubar) var(--radius-menubar) 0 0; font-family: var(--font-ui); font-size: var(--text-xs); position: sticky; top: 0; z-index: var(--z-sticky); }
+  .menubar {
+    flex: none;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    background: var(--paper);
+    border-bottom: 3px solid var(--ink);
+    border-radius: var(--radius-menubar) var(--radius-menubar) 0 0;
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+  }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
      invert on hover, mirroring the portfolio menubar. */
-  .site-nav { display: flex; align-items: stretch; }
-  .navlink { display: flex; align-items: center; padding: 0.6vh 1vw; font: inherit; line-height: 1; color: var(--ink); background: none; border: 0; text-decoration: none; cursor: pointer; }
-  .navlink:hover,
-  .navlink:focus-visible { background: var(--ink); color: var(--paper); outline: none; }
-  /* The heart is the leftmost item, so it carries the menubar's rounded corner. */
-  .heart-toggle { border-top-left-radius: 0.75vw; }
-  .heart-icon { width: 1em; height: 1em; display: block; }
-  .heart-toggle:hover .heart-icon,
-  .heart-toggle:focus-visible .heart-icon { filter: invert(1); }
-  /* On phones the floating site-nav takes over (as on the portfolio). */
-  @media (max-width: 768px) {
-    .site-nav { display: none; }
+  .site-nav {
+    display: flex;
+    align-items: stretch;
   }
+
+  .navlink {
+    display: flex;
+    align-items: center;
+    padding: 0.6vh 1vw;
+    font: inherit;
+    line-height: 1;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .navlink:hover,
+  .navlink:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+    outline: none;
+  }
+
+  /* The heart is the leftmost item, so it carries the menubar's rounded corner. */
+  .heart-toggle {
+    border-top-left-radius: 0.75vw;
+  }
+
+  .heart-icon {
+    width: 1em;
+    height: 1em;
+    display: block;
+  }
+
+  .heart-toggle:hover .heart-icon,
+  .heart-toggle:focus-visible .heart-icon {
+    filter: invert(1);
+  }
+
+  /* On phones the floating site-nav takes over (as on the portfolio). */
+  @media (width <= 768px) {
+    .site-nav {
+      display: none;
+    }
+  }
+
   /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
      demo no longer borrows the colour we reserve for real errors. */
-  .dot { display: inline-block; width: 9px; height: 9px; border-radius: var(--radius-round); background: var(--paper); border: 1px solid var(--ink); vertical-align: -1px; margin-right: 5px; }
-  .dot.live { background: var(--state-live); }
-  .dot.busy { background: var(--state-busy); }
+  .dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: var(--radius-round);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    vertical-align: -1px;
+    margin-right: 5px;
+  }
+
+  .dot.live {
+    background: var(--state-live);
+  }
+
+  .dot.busy {
+    background: var(--state-busy);
+  }
+
   /* The connection status + sign-in CTA lives in the status bar's centre column
      (see .statusbar); justify-self keeps it centred there. */
-  .conn { font: inherit; justify-self: center; display: inline-flex; align-items: center; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
-  .conn:disabled { cursor: default; }
+  .conn {
+    font: inherit;
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .conn:disabled {
+    cursor: default;
+  }
+
   /* Sign-in CTA: drop the status dot and read as an obvious link. */
-  .conn.cta .dot { display: none; }
-  .conn.cta .conn-label { font-weight: 700; text-decoration: underline; color: var(--ink); }
+  .conn.cta .dot {
+    display: none;
+  }
+
+  .conn.cta .conn-label {
+    font-weight: 700;
+    text-decoration: underline;
+    color: var(--ink);
+  }
 
   /* The demo invitation — a centered System-6 pop-up window carrying the guided
      tour, over a dismiss scrim. Shown once, on load (see Editor's inviteOpen); the
@@ -528,6 +666,7 @@
     padding: 0;
     cursor: pointer;
   }
+
   .invite {
     position: fixed;
     z-index: var(--z-overlay);
@@ -547,6 +686,7 @@
     font-size: var(--text-3xs);
     line-height: 1.4;
   }
+
   /* The invite reuses the shared window titlebar (.titlebar / .title / .close / .fill)
      so it stays consistent with every other editor window and can't drift again. It
      only adds the bleed to the popup's padded edges, and keeps its close box a real
@@ -554,101 +694,511 @@
   .invite-tbar {
     margin: -14px -14px 2px;
   }
+
   .invite-close {
     padding: 0;
     cursor: pointer;
     flex: none;
   }
-  .invite .mk { font-size: var(--text-2xs); flex: none; align-self: flex-start; line-height: 1.4; }
-  .invite .txt { min-width: 0; }
-  .invite .txt b { font-weight: 700; }
-  .invite .btn { font-size: var(--text-3xs); padding: 4px 10px; }
-  .invite .btn.tour-start { width: 100%; padding: 10px; font-size: var(--text-3xs); }
-  .invite .link { align-self: center; background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); text-decoration: underline; cursor: pointer; white-space: nowrap; }
-  .invite .link:hover { color: var(--ink); }
-  .invite .x { display: none; } /* the titlebar close box replaces it */
-  .invite.busy { color: var(--ink-2); }
+
+  .invite .mk {
+    font-size: var(--text-2xs);
+    flex: none;
+    align-self: flex-start;
+    line-height: 1.4;
+  }
+
+  .invite .txt {
+    min-width: 0;
+  }
+
+  .invite .txt b {
+    font-weight: 700;
+  }
+
+  .invite .btn {
+    font-size: var(--text-3xs);
+    padding: 4px 10px;
+  }
+
+  .invite .btn.tour-start {
+    width: 100%;
+    padding: 10px;
+    font-size: var(--text-3xs);
+  }
+
+  .invite .link {
+    align-self: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--ink-2);
+    text-decoration: underline;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .invite .link:hover {
+    color: var(--ink);
+  }
+
+  .invite .x {
+    display: none;
+  } /* the titlebar close box replaces it */
+  .invite.busy {
+    color: var(--ink-2);
+  }
+
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; max-width: 1320px; margin: var(--canvas-pad-y) auto; background: var(--paper); border: 2px solid var(--ink); border-right-width: 4px; border-bottom-width: 4px; }
-  .workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: var(--pane-pad-y) var(--pane-pad-x); }
+  .workspace {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1320px;
+    margin: var(--canvas-pad-y) auto;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  .workspace-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--pane-pad-y) var(--pane-pad-x);
+  }
+
   /* The toolbar is the body of its own System-6 window (.toolbar-window) above
      the document — the .window wrapper supplies the paper/border/shadow chrome
      and striped titlebar, matching the document and drawer windows. */
-  .toolbar-window { flex: none; margin-bottom: var(--window-gap); }
+  .toolbar-window {
+    flex: none;
+    margin-bottom: var(--window-gap);
+  }
+
   /* The document window fills the remaining height; its .wbody panes scroll inside it. */
-  .doc-window { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; }
+  .doc-window {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
-  .actions { display: contents; }
-  .field { display: inline-flex; align-items: center; gap: 7px; font-size: var(--text-4xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); }
-  .popup { font-size: var(--text-3xs); font-weight: 700; text-transform: none; letter-spacing: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 4px 10px; box-shadow: var(--shadow); }
-  button.popup { font-family: var(--sans); color: var(--ink); cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  button.popup:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
-  .popup.lens { background: var(--ink); color: var(--paper); }
-  .btn { font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 5px 12px; box-shadow: var(--shadow); cursor: pointer; }
-  .btn.on { background: var(--ink); color: var(--paper); }
-  .btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
-  .btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
-  .sp { flex: 1; }
+  .actions {
+    display: contents;
+  }
+
+  .field {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: var(--text-4xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-2);
+  }
+
+  .popup {
+    font-size: var(--text-3xs);
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+    box-shadow: var(--shadow);
+  }
+
+  button.popup {
+    font-family: var(--sans);
+    color: var(--ink);
+    cursor: pointer;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  button.popup:active {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .popup.lens {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn {
+    font-size: var(--text-3xs);
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-md);
+    padding: 5px 12px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+
+  .btn.on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    box-shadow: none;
+  }
+
+  .sp {
+    flex: 1;
+  }
+
   /* Hairline between the shape group (Tags/Layout/Style) and the output group
      (Preview/Export). --ink-5 is the palette's designated hairline ink. */
-  .tbar-sep { align-self: stretch; width: 1px; margin: 2px 2px; background: var(--ink-5); }
-  .window { background: var(--paper); border: 1.5px solid var(--ink); }
+  .tbar-sep {
+    align-self: stretch;
+    width: 1px;
+    margin: 2px;
+    background: var(--ink-5);
+  }
+
+  .window {
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+  }
+
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
      carry --text-base (the 28px content-card size), the outer frame --text-lg (36px,
      the "Home" size). The .title patch's own vertical padding drives that growth. */
-  .titlebar { display: flex; align-items: center; gap: 8px; min-height: 22px; padding: 0 8px; border-bottom: 1px solid var(--ink); background-image: repeating-linear-gradient(to bottom, var(--ink) 0, var(--ink) 1px, var(--paper) 1px, var(--paper) 3px); }
-  .close { width: 11px; height: 11px; background: var(--paper); border: 1px solid var(--ink); }
-  .title { font-family: var(--font-ui); font-size: var(--text-base); font-weight: 700; line-height: 1.1; background: var(--paper); padding: 12px; margin: 0 auto; }
-  .app-title { font-size: var(--text-lg); }
-  .fill { width: 11px; }
-  .wbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-  .wbody.split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
-  .doc-scroll { min-height: 0; overflow: auto; background: var(--paper); }
-  .no-profiles { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: min(60vh, 520px); padding: 40px 24px; text-align: center; }
-  .np-title { font-family: var(--serif); font-size: var(--text-base); font-weight: 700; color: var(--ink-2); margin: 0; }
-  .np-sub { font-size: var(--text-3xs); color: var(--ink-3); margin: 0 0 10px; }
-  .np-btn { font-family: var(--sans); font-size: var(--text-3xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius-md); padding: 8px 16px; cursor: pointer; box-shadow: var(--shadow); }
-  .np-btn:active { transform: translate(1px, 1px); box-shadow: var(--shadow-sm); }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 22px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--ink);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--ink) 0,
+      var(--ink) 1px,
+      var(--paper) 1px,
+      var(--paper) 3px
+    );
+  }
+
+  .close {
+    width: 11px;
+    height: 11px;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+  }
+
+  .title {
+    font-family: var(--font-ui);
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: 1.1;
+    background: var(--paper);
+    padding: 12px;
+    margin: 0 auto;
+  }
+
+  .app-title {
+    font-size: var(--text-lg);
+  }
+
+  .fill {
+    width: 11px;
+  }
+
+  .wbody {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .wbody.split {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .doc-scroll {
+    min-height: 0;
+    overflow: auto;
+    background: var(--paper);
+  }
+
+  .no-profiles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: min(60vh, 520px);
+    padding: 40px 24px;
+    text-align: center;
+  }
+
+  .np-title {
+    font-family: var(--serif);
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .np-sub {
+    font-size: var(--text-3xs);
+    color: var(--ink-3);
+    margin: 0 0 10px;
+  }
+
+  .np-btn {
+    font-family: var(--sans);
+    font-size: var(--text-3xs);
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius-md);
+    padding: 8px 16px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+  .np-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: var(--shadow-sm);
+  }
+
   /* Cap the preview column to the same height as the document column (.doc-scroll)
      so a tall PDF scrolls INSIDE the pane (pv-pages) instead of growing the whole
      shell past the viewport — which left dead space below the pages ("doesn't reach
      the bottom"). min-height:0 lets the inner pv-pages actually shrink + scroll. */
-  .preview { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--ink); background: var(--chrome); }
-  .pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--ink); background: var(--chrome-hi); font-size: var(--text-3xs); font-weight: 700; }
-  .pv-tools { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--text-4xs); font-weight: 400; }
-  .pv-btn { font-family: var(--sans); font-size: var(--text-4xs); font-weight: 600; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); padding: 3px 9px; cursor: pointer; text-decoration: none; box-shadow: var(--shadow-sm); }
-  .pv-btn:active { transform: translate(1px, 1px); box-shadow: none; }
-  .pv-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
-  .pv-body { flex: 1; display: flex; min-height: 0; background: var(--chrome); }
-  .pv-note { margin: auto; padding: 30px; font-family: var(--mono); font-size: var(--text-3xs); color: var(--ink-3); text-align: center; line-height: 1.7; }
-  .pv-log { flex: 1; overflow: auto; background: var(--ink); }
-  .pv-log pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: var(--text-4xs); line-height: 1.5; color: var(--paper-3); white-space: pre-wrap; word-break: break-word; }
+  .preview {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--ink);
+    background: var(--chrome);
+  }
+
+  .pv-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    font-size: var(--text-3xs);
+    font-weight: 700;
+  }
+
+  .pv-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    font-weight: 400;
+  }
+
+  .pv-btn {
+    font-family: var(--sans);
+    font-size: var(--text-4xs);
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 3px 9px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pv-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+  }
+
+  .pv-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    box-shadow: none;
+  }
+
+  .pv-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    background: var(--chrome);
+  }
+
+  .pv-note {
+    margin: auto;
+    padding: 30px;
+    font-family: var(--mono);
+    font-size: var(--text-3xs);
+    color: var(--ink-3);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .pv-log {
+    flex: 1;
+    overflow: auto;
+    background: var(--ink);
+  }
+
+  .pv-log pre {
+    margin: 0;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    line-height: 1.5;
+    color: var(--paper-3);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
      the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
      regardless of the side widths. */
-  .statusbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; border-top: 1px solid var(--ink); background: var(--chrome-hi); padding: 5px 12px; font-family: var(--mono); font-size: var(--text-4xs); color: var(--ink-2); }
-  .sb-l { justify-self: start; white-space: nowrap; }
-  .sb-r { justify-self: end; white-space: nowrap; }
-  .account { display: inline-flex; align-items: center; gap: 8px; }
-  .acct-who { max-width: 180px; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-  .acct-out { font-family: var(--mono); font-size: var(--text-4xs); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
-  .acct-out:hover { color: var(--ink); }
+  .statusbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
+  }
+
+  .sb-l {
+    justify-self: start;
+    white-space: nowrap;
+  }
+
+  .sb-r {
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  .account {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .acct-who {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--ink);
+  }
+
+  .acct-out {
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--accent);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .acct-out:hover {
+    color: var(--ink);
+  }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
      from the shared .floating-panel primitive (lib/styles.css); only the row layout
      is the toast's own. */
-  .save-toast { display: flex; align-items: center; gap: 10px; max-width: min(92vw, 460px); padding: 8px 10px 8px 12px; }
-  .save-toast .st-icon { color: var(--state-error); font-size: var(--text-2xs); line-height: 1; }
-  .save-toast .st-msg { flex: 1; line-height: 1.35; }
-  .save-toast .st-btn { font-family: var(--mono); font-size: var(--text-3xs); border: 1px solid var(--ink); background: var(--chrome-hi); padding: 2px 8px; cursor: pointer; }
-  .save-toast .st-btn:hover { background: var(--ink); color: var(--paper); }
-  .save-toast .st-x { padding: 2px 6px; }
+  .save-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(92vw, 460px);
+    padding: 8px 10px 8px 12px;
+  }
+
+  .save-toast .st-icon {
+    color: var(--state-error);
+    font-size: var(--text-2xs);
+    line-height: 1;
+  }
+
+  .save-toast .st-msg {
+    flex: 1;
+    line-height: 1.35;
+  }
+
+  .save-toast .st-btn {
+    font-family: var(--mono);
+    font-size: var(--text-3xs);
+    border: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+
+  .save-toast .st-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .save-toast .st-x {
+    padding: 2px 6px;
+  }
+
   @media (prefers-reduced-motion: no-preference) {
-    .save-toast { animation: toast-in var(--dur) ease-out; }
-    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .save-toast {
+      animation: toast-in var(--dur) ease-out;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
   }
 
   /* ── Mobile / tablet (≤768px) ── A fixed shell: a persistent top bar (the floating
@@ -660,10 +1210,11 @@
      768px matches BaseLayout's own breakpoint: the site swaps to its floating nav at
      768, so the editor must enter this touch layout at the same width — otherwise the
      floating nav (top-left) lands on top of the desktop menubar in the 641–768 band. */
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .stage {
       --top-h: 58px;
       --bot-h: 44px;
+
       min-height: 0;
       padding-bottom: 0;
     }
@@ -683,6 +1234,7 @@
       align-items: center;
       z-index: var(--z-sticky);
     }
+
     .toolbar {
       display: none; /* its buttons all moved into the ☰ menu */
     }
@@ -705,6 +1257,7 @@
       font-size: var(--text-3xs);
       z-index: var(--z-sticky);
     }
+
     .sb-l {
       display: none;
     }
@@ -714,10 +1267,7 @@
        global `.window` also adds margin:16px + min-width:320px — override those too. */
     .window {
       position: fixed;
-      top: var(--top-h);
-      right: 0;
-      bottom: var(--bot-h);
-      left: 0;
+      inset: var(--top-h) 0 var(--bot-h) 0;
       display: flex;
       flex-direction: column;
       margin: 0;
@@ -727,15 +1277,18 @@
       border-top: 0;
       box-shadow: none;
     }
+
     .titlebar {
       flex: none;
     }
+
     /* The outer "Resume Editor" frame is desktop chrome. On phones the editor is a
        full-bleed fixed layout (menubar / document / status are each position:fixed),
        so drop the frame and let the fixed windows fill the viewport as before. */
     .app-titlebar {
       display: none;
     }
+
     .workspace {
       max-width: none;
       margin: 0;
@@ -743,9 +1296,11 @@
       box-shadow: none;
       background: none;
     }
+
     .workspace-body {
       padding: 0;
     }
+
     .wbody,
     .wbody.split {
       display: flex;
@@ -753,13 +1308,14 @@
       flex: 1;
       min-height: 0;
     }
+
     .doc-scroll {
       flex: 1;
       min-height: 0;
       max-height: none;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: hidden auto;
     }
+
     .preview {
       flex: 1;
       min-height: 0;

@@ -10,8 +10,8 @@
 {#if !editor.connected}
   <p class="note">
     Layouts live on the server.
-    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to choose the LaTeX
-    template your PDF compiles with.
+    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to choose the LaTeX template
+    your PDF compiles with.
   </p>
 {:else if editor.layouts.length === 0}
   <p class="note">The LaTeX template used to compile the PDF.</p>
@@ -40,6 +40,7 @@
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .link {
     font: inherit;
     color: var(--link);
@@ -49,15 +50,18 @@
     cursor: pointer;
     text-decoration: underline;
   }
+
   .empty {
     font-size: var(--text-3xs);
     color: var(--ink-3);
   }
+
   .list {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
+
   .row {
     display: flex;
     align-items: center;
@@ -71,14 +75,17 @@
     font-family: var(--sans);
     box-shadow: var(--shadow-sm);
   }
+
   .row.on {
     background: var(--chrome-hi);
   }
+
   .row:disabled {
     opacity: 0.5;
     cursor: default;
     box-shadow: none;
   }
+
   .dot {
     width: 10px;
     height: 10px;
@@ -87,13 +94,16 @@
     background: var(--paper);
     flex-shrink: 0;
   }
+
   .dot.sel {
     background: var(--ink);
   }
+
   .name {
     font-size: var(--text-3xs);
     font-weight: 600;
   }
+
   .badge {
     margin-left: auto;
     font-size: var(--text-4xs);

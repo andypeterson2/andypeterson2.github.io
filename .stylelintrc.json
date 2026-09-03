@@ -1,18 +1,38 @@
 {
-  "extends": ["stylelint-config-standard", "stylelint-config-html/astro"],
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-html/astro"
+  ],
   "rules": {
     "custom-property-pattern": null,
     "selector-class-pattern": null,
     "no-descending-specificity": null,
-    "selector-pseudo-class-no-unknown": [true, {
-      "ignorePseudoClasses": ["global"]
-    }],
-    "property-no-deprecated": [true, {
-      "ignoreProperties": ["clip"]
-    }],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": [
+          "global"
+        ]
+      }
+    ],
+    "property-no-deprecated": [
+      true,
+      {
+        "ignoreProperties": [
+          "clip"
+        ]
+      }
+    ],
     "declaration-property-value-keyword-no-deprecated": null
   },
-  "overrides": [],
+  "overrides": [
+    {
+      "files": [
+        "**/*.svelte"
+      ],
+      "customSyntax": "postcss-html"
+    }
+  ],
   "ignoreFiles": [
     "node_modules/**",
     "dist/**"

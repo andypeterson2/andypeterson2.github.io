@@ -11,8 +11,7 @@
 
 <div class="palette" role="group" aria-label="Insert a symbol">
   <p class="hint">
-    Type these directly, or <code>\command</code> (both become the symbol). Everything else prints
-    literally.
+    Type these directly, or <code>\command</code> (both become the symbol). Everything else prints literally.
   </p>
   {#each SYMBOL_CATEGORIES as cat (cat.name)}
     <div class="cat">
@@ -42,12 +41,14 @@
     max-height: 216px;
     overflow-y: auto;
   }
+
   .hint {
     font-size: var(--text-4xs);
     line-height: 1.45;
     color: var(--ink-3);
     margin: 0 0 9px;
   }
+
   .hint code {
     font-family: var(--mono);
     font-size: 0.92em;
@@ -55,6 +56,7 @@
     border: 1px solid var(--faint, var(--paper-4));
     padding: 0 3px;
   }
+
   .cat {
     display: grid;
     grid-template-columns: 74px 1fr;
@@ -63,9 +65,11 @@
     padding: 5px 0;
     border-top: 1px solid var(--paper-3);
   }
+
   .cat:first-of-type {
     border-top: 0;
   }
+
   .cat-name {
     font-family: var(--mono);
     font-size: var(--text-4xs);
@@ -74,11 +78,13 @@
     color: var(--dim);
     padding-top: 5px;
   }
+
   .chips {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
   }
+
   .sym {
     min-width: 26px;
     height: 26px;
@@ -93,14 +99,17 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
   }
+
   .sym:hover {
     background: var(--ink);
     color: var(--paper);
   }
+
   .sym:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .sym:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 1px;

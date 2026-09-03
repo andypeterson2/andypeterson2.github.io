@@ -30,15 +30,18 @@
     color: var(--ink-3);
     margin: 0 0 16px;
   }
+
   .empty {
     font-size: var(--text-3xs);
     color: var(--ink-3);
   }
+
   .list {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
   }
+
   .row {
     display: inline-flex;
     align-items: center;
@@ -51,21 +54,26 @@
     font-family: var(--mono);
     box-shadow: var(--shadow-sm);
   }
+
   .row.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .row:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .tag {
     font-size: var(--text-3xs);
   }
+
   .count {
     font-size: var(--text-4xs);
     opacity: 0.65;
   }
+
   .clear {
     margin-top: 16px;
     font-family: var(--sans);

@@ -74,12 +74,14 @@
     margin: 0 -10px;
     font-family: var(--sans);
   }
+
   .ehead {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
   }
+
   .etype {
     font-size: var(--text-4xs);
     text-transform: uppercase;
@@ -87,10 +89,12 @@
     color: var(--dim);
     font-weight: 700;
   }
+
   .eacts {
     display: flex;
     gap: 6px;
   }
+
   .mini {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -103,6 +107,7 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
   }
+
   .mini.sym-toggle {
     font-family: var(--serif);
     font-size: var(--text-3xs);
@@ -110,30 +115,36 @@
     background: var(--paper);
     color: var(--ink);
   }
+
   .mini.sym-toggle.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .mini:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 9px 16px;
   }
+
   .fld {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
+
   .lbl {
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--ink-2);
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-xs);
@@ -144,13 +155,15 @@
     padding: 7px 10px;
     width: 100%;
   }
+
   .in:focus {
     outline: 2px solid var(--ink);
     outline-offset: 1px;
   }
+
   /* Narrow column (the resume's own width, not the chrome breakpoint): stack the
      two-up identity fields so each input gets the full width. */
-  @media (max-width: 640px) {
+  @media (width <= 640px) {
     .grid {
       grid-template-columns: 1fr;
     }

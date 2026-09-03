@@ -157,7 +157,13 @@
     >
     {#if allOpen}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <div class="drop mega" role="menu" tabindex="-1" aria-label="Editor commands" onkeydown={onMegaKey}>
+      <div
+        class="drop mega"
+        role="menu"
+        tabindex="-1"
+        aria-label="Editor commands"
+        onkeydown={onMegaKey}
+      >
         {#each menus as menu (menu.title)}
           <div class="group-label" role="presentation">{menu.title}</div>
           {#each menu.items as item (item.label)}
@@ -200,7 +206,13 @@
         >
         {#if open === mi}
           <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-          <div class="drop" role="menu" tabindex="-1" aria-label={menu.title} onkeydown={(e) => onMenuKey(e, mi)}>
+          <div
+            class="drop"
+            role="menu"
+            tabindex="-1"
+            aria-label={menu.title}
+            onkeydown={(e) => onMenuKey(e, mi)}
+          >
             {#each menu.items as item, ii (item.label)}
               {#if item.separatorBefore}
                 <div class="sep" role="separator"></div>
@@ -237,10 +249,12 @@
     align-items: stretch;
     gap: 0;
   }
+
   .wrap {
     position: relative;
     display: flex;
   }
+
   .menu {
     font: inherit;
     font-weight: 400;
@@ -250,25 +264,30 @@
     background: none;
     border: 0;
     padding: 0.6vh 1vw;
+
     /* Match the site nav items exactly so the bar is the same height on every page:
        same padding + border, and line-height:1 (not the inherited 30px). */
     line-height: 1;
     cursor: pointer;
   }
+
   .menu:disabled {
     color: var(--dim);
     cursor: default;
   }
+
   .menu:hover:not(:disabled),
   .menu[aria-expanded='true'] {
     background: var(--ink);
     color: var(--paper);
   }
+
   .menu:focus-visible,
   .item:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
+
   .drop {
     position: absolute;
     top: calc(100% + 6px);
@@ -280,6 +299,7 @@
     border: 1px solid var(--ink);
     box-shadow: var(--shadow);
   }
+
   .item {
     display: flex;
     align-items: center;
@@ -304,33 +324,40 @@
     font-size: var(--text-4xs);
     line-height: 1;
   }
+
   .label {
     flex: 1;
   }
+
   .accel {
     padding-left: 22px;
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--dim);
   }
+
   .item:hover:not(:disabled) .accel,
   .item:focus-visible .accel {
     color: inherit;
     opacity: 0.7;
   }
+
   .item:disabled .accel {
     opacity: 0.7;
   }
+
   .item:hover:not(:disabled),
   .item:focus-visible {
     background: var(--ink);
     color: var(--paper);
     outline: none;
   }
+
   .item:disabled {
     color: var(--dim);
     cursor: default;
   }
+
   .sep {
     height: 1px;
     margin: 3px 0;
@@ -341,6 +368,7 @@
   .menus.mobile {
     position: relative;
   }
+
   .hamburger {
     display: inline-flex;
     align-items: center;
@@ -358,17 +386,21 @@
     padding: 9px 14px;
     cursor: pointer;
   }
+
   .hamburger .hb-icon {
     font-size: var(--text-xs);
   }
+
   .hamburger:active {
     transform: translate(1px, 1px);
     box-shadow: var(--shadow-sm);
   }
+
   .hamburger[aria-expanded='true'] {
     background: var(--ink);
     color: var(--paper);
   }
+
   /* Anchored to the button's right edge (the ☰ sits at the far right of the bar),
      so the panel opens leftward — into the viewport — instead of off the right edge.
      The max-width is a hard backstop: it can never exceed the screen, whatever the
@@ -382,11 +414,13 @@
     overflow: auto;
     padding-bottom: 6px;
   }
+
   /* Bigger touch rows in the ☰ panel than in the desktop pull-downs. */
   .drop.mega .item {
     font-size: var(--text-2xs);
     padding: 10px 16px 10px 8px;
   }
+
   .group-label {
     padding: 9px 14px 3px 8px;
     font-family: var(--sans);
@@ -396,6 +430,7 @@
     text-transform: uppercase;
     color: var(--dim);
   }
+
   .group-label:first-child {
     padding-top: 5px;
   }

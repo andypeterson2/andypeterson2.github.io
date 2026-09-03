@@ -68,8 +68,7 @@
           rows="2"
           placeholder="Company address"
           bind:value={cl.recipientAddress}
-          oninput={() => editor.letters.saveHeader('recipientAddress')}
-        ></textarea>
+          oninput={() => editor.letters.saveHeader('recipientAddress')}></textarea>
       </label>
       <label class="fld">
         <span class="lbl">Salutation</span>
@@ -107,8 +106,7 @@
             rows="4"
             placeholder="Write this paragraph…"
             bind:value={s.body}
-            oninput={() => editor.letters.saveParagraph(s)}
-          ></textarea>
+            oninput={() => editor.letters.saveParagraph(s)}></textarea>
         </div>
         <button
           class="del"
@@ -146,11 +144,13 @@
     padding: 40px 46px 54px;
     color: var(--ink);
   }
+
   .ltools {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 6px;
   }
+
   .sym-toggle {
     font-family: var(--serif);
     font-size: var(--text-3xs);
@@ -163,22 +163,27 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
   }
+
   .sym-toggle.on {
     background: var(--ink);
     color: var(--paper);
   }
+
   .sym-toggle:active {
     transform: translate(1px, 1px);
     box-shadow: none;
   }
+
   .lh h1 {
     font-size: var(--text-lg);
     font-weight: 700;
     margin: 0 0 16px;
   }
+
   .lh h1.untitled {
     color: var(--ink-5);
   }
+
   .fields {
     display: flex;
     flex-direction: column;
@@ -186,12 +191,14 @@
     padding-bottom: 20px;
     border-bottom: 1px solid var(--paper-4);
   }
+
   .fld {
     display: grid;
     grid-template-columns: 96px 1fr;
     align-items: start;
     gap: 12px;
   }
+
   .lbl {
     font-family: var(--sans);
     font-size: var(--text-4xs);
@@ -200,6 +207,7 @@
     color: var(--ink-2);
     padding-top: 8px;
   }
+
   .in {
     font-family: var(--sans);
     font-size: var(--text-xs);
@@ -210,25 +218,30 @@
     padding: 7px 10px;
     width: 100%;
   }
+
   .in:focus {
     outline: 2px solid var(--ink);
     outline-offset: 1px;
   }
+
   .addr {
     font-family: var(--sans);
     resize: vertical;
   }
+
   .paras {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 20px 0;
   }
+
   .para {
     display: flex;
     gap: 8px;
     align-items: flex-start;
   }
+
   .grip {
     font-family: var(--sans);
     font-size: var(--text-3xs);
@@ -240,28 +253,34 @@
     cursor: grab;
     opacity: 0.4;
   }
+
   .grip:hover {
     opacity: 1;
   }
+
   .grip:active {
     cursor: grabbing;
   }
+
   .para-ins {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 5px;
   }
+
   .lead {
     font-size: var(--text-3xs);
     font-weight: 600;
   }
+
   .body {
     font-family: var(--serif);
     font-size: var(--text-2xs);
     line-height: 1.55;
     resize: vertical;
   }
+
   .del {
     font-family: var(--sans);
     font-size: var(--text-2xs);
@@ -273,16 +292,19 @@
     padding: 4px 8px;
     cursor: pointer;
   }
+
   .del:hover {
     border-color: var(--accent);
     color: var(--accent);
   }
+
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
     color: var(--ink-4);
     margin: 0;
   }
+
   .add {
     align-self: flex-start;
     font-family: var(--sans);
@@ -294,17 +316,21 @@
     padding: 8px 12px;
     cursor: pointer;
   }
+
   .lf {
     padding-top: 20px;
     border-top: 1px solid var(--paper-4);
   }
+
   .signoff {
     font-size: var(--text-2xs);
     margin: 14px 0 0;
   }
+
   :global([data-dragging]) {
     opacity: 0.4;
   }
+
   :global([data-over]) {
     outline: 2px dashed var(--dim);
     outline-offset: 2px;
@@ -313,11 +339,12 @@
 
   /* Narrow phones: stack the recipient/salutation label over its input so each field
      gets the full width instead of squeezing beside a fixed 96px label. */
-  @media (max-width: 640px) {
+  @media (width <= 640px) {
     .fld {
       grid-template-columns: 1fr;
       gap: 4px;
     }
+
     .lbl {
       padding-top: 0;
     }
