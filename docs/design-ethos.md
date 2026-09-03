@@ -20,7 +20,7 @@ The site does not have a bespoke design system. It **adopts an operating system*
     warm-gray ramp, no pure black), plus the status light and a single résumé accent."* Type roles
     (Chicago / Geneva / Monaco), the space/size scale, a warm ink ramp, the status scale, and one accent.
   - `packages/system-six/styles/base.css` — *"system.css provides… We only add what it doesn't cover."*
-  - `public/ui-kit/ui-kit.js` — the behaviors system.css can't express: the theme toggle
+  - `src/apps/ui-kit/ui-kit.ts` — the behaviors system.css can't express: the theme toggle
     (`data-theme` + `localStorage["sm-theme"]`) and the connect widget's **status dot**
     (`ui-connect-dot[data-state]`).
 

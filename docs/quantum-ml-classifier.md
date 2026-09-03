@@ -12,21 +12,23 @@ Multi-dataset classifier platform comparing classical and quantum-hybrid neural 
 
 The page at `/projects/ai-ml/app/` (`src/pages/projects/ai-ml/app.astro`) renders `src/components/ClassifierApp.astro`, which composes the UI from `src/components/classifier/` (`ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer`; styles in `src/styles/classifier.css`) and loads the scripts in this order:
 
-| Script | Purpose |
+All of it ships as one Astro-bundled module (`src/apps/classifiers/entry.ts`):
+
+| Module (`src/apps/…`) | Purpose |
 |--------|---------|
-| `/ui-kit/icons.js`, `/ui-kit/ui-kit.js` | Shared UI-kit runtime (defines the global `UIKit`) |
-| `/classifiers/js/connection.js` | `ConnectionManager` — backend connection state machine (idle → connecting → connected → degraded → disconnected) driving the status dot |
-| `/classifiers/js/sse.js` | SSE stream consumer (POST to an SSE endpoint, dispatch typed events) |
-| `/classifiers/js/chart.js` | `MiniChart` — dependency-free dual-axis canvas chart for training curves (loss + accuracy) |
-| `/classifiers/js/config.js` | Portal bootstrap — seeds `window.API_BASE` / `window.UI_CONFIG` / `window.CLASSIFIER_DATASETS` (the Flask template used to inject these; as a static embed this file supplies safe defaults and keeps `API_BASE` live against `ServiceConfig` / `navbar:connect`) |
-| `/classifiers/js/infer.js` | **In-browser inference** for the demo tier (see below) |
-| `/classifiers/js/app.js` | App logic: state, canvas drawing, model table, form handling, train/evaluate/predict flows |
+| `ui-kit/icons.ts`, `ui-kit/ui-kit.ts` | Shared UI-kit runtime (also published as the `UIKit` global) |
+| `classifiers/connection.ts` | `connectionManager` — backend connection state machine (idle → connecting → connected → degraded → disconnected) driving the status dot |
+| `classifiers/sse.ts` | SSE stream consumer (POST to an SSE endpoint, dispatch typed events; sync-REST fallback) |
+| `classifiers/chart.ts` | `MiniChart` — dependency-free dual-axis canvas chart for training curves (loss + accuracy) |
+| `classifiers/config.ts` | Portal bootstrap — seeds `window.API_BASE` / `window.UI_CONFIG` / `window.CLASSIFIER_DATASETS` (the Flask template used to inject these; this module supplies safe defaults and keeps `API_BASE` live against `ServiceConfig` / `navbar:connect`) |
+| `classifiers/infer.ts` | **In-browser inference** for the demo tier (see below) |
+| `classifiers/app.ts` | App logic: state, canvas drawing, model table, form handling, train/evaluate/predict flows |
 
 **Tier 1 — live backend.** When a backend is connected (URL resolved by `ServiceConfig`: URL param > `localStorage` > the page's `<meta name="site-backend" content="classifiers" data-port="5001">` default), the app drives the real REST/SSE API below: training with live curves, evaluation, ensembles, ablation, model persistence.
 
-**Tier 2 — zero-backend browser inference (the demo tier).** When no backend is connected (`app.js` checks the `ConnectionManager` state), prediction still works, with nothing running server-side:
+**Tier 2 — zero-backend browser inference (the demo tier).** When no backend is connected (`app.ts` checks the connection-manager state), prediction still works, with nothing running server-side:
 
-- `public/classifiers/js/infer.js` loads a compact linear model from `public/classifiers/models/<dataset>.json` and runs the forward pass in plain JavaScript — normalise → hand-written matmul → softmax → argmax. No backend, no WASM, no libraries. It returns the same `{prediction, confidence, probs}` shape as the server's `/predict` route, so the existing renderers work unchanged.
+- `src/apps/classifiers/infer.ts` loads a compact linear model from `public/classifiers/models/<dataset>.json` and runs the forward pass in plain TypeScript — normalise → hand-written matmul → softmax → argmax. No backend, no WASM, no libraries. It returns the same `{prediction, confidence, probs}` shape as the server's `/predict` route, so the existing renderers work unchanged.
 - The weight files come in two kinds, all provenance-stamped. The linear baselines (`mnist.json`: 784→10, test accuracy 92.06%; `iris.json`: 4→3, test accuracy 90.0%, plus per-feature ranges for the input form) carry `{kind: "linear", classes, normalize (the exact scale/mean/std the browser must reproduce), weight, bias, test_accuracy, provenance}`. The QSVM paper recreations (`qsvm-mnist.json`: 6-vs-9, 91%; `qsvm-iris.json`: setosa-vs-versicolor, 97%) carry `{kind: "qsvm", classes (the binary pair), w, map: {a,b,c,d}, features, raw_input: "pixels"|"features", ink_threshold (mnist), test_accuracy, provenance}` — the paper's solved 2-D rule, no probabilities (the demo shows an honest "—" for confidence). All accuracies are measured, not asserted.
 - They are exported **by the classifier repo itself** (`make export-web` in `quantum-machine-learning`, then `make sync-web` to copy them here). The exporter (`classifiers/web_export.py`) trains each dataset's Linear model through the real plugin loaders and Trainer with the plugin's own default hyper-parameters — so "the same models the backend trains" is true by construction — and stamps a `provenance` block (source commit, dirty flag, date, seed, hyper-parameters, framework versions). That repo's CI drift-checks the committed exports against the live plugins on every run, including re-measuring the claimed accuracy from the committed weights.
 

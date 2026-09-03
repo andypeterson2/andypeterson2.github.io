@@ -1,27 +1,21 @@
 /**
- * Integration tests for public/js/contract-client.js (window.SiteContract).
+ * Integration tests for src/apps/shared/contract-client.ts (SiteContract).
  *
- * The client is a browser IIFE that attaches to `window`; here we shim `window`
- * to globalThis, eval the file, then exercise it against a real local HTTP stub
- * that speaks the backend API contract (health / discovery / error envelope).
- * This mirrors the live-HTTP contract tests each backend runs in its own repo.
+ * The module publishes window.SiteContract at import, so `window` is shimmed
+ * to globalThis before a dynamic import; the client is then exercised against
+ * a real local HTTP stub that speaks the backend API contract (health /
+ * discovery / error envelope). This mirrors the live-HTTP contract tests each
+ * backend runs in its own repo.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 // ── Load the browser client into this (node) context ──────────────────────────
+// The shim must precede the import (module side effect assigns window.SiteContract),
+// so the import is dynamic. fetch/AbortController exist globally in Node ≥18.
 (globalThis as { window?: unknown }).window = globalThis;
-const clientCode = readFileSync(
-  resolve(import.meta.dirname!, '../public/js/contract-client.js'),
-  'utf-8',
-);
-// Indirect eval runs in global scope, where fetch/AbortController exist (Node ≥18).
-(0, eval)(clientCode);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SiteContract = (globalThis as any).SiteContract;
+const { SiteContract } = await import('../src/apps/shared/contract-client');
 
 // ── A stub backend implementing the contract ──────────────────────────────────
 let server: http.Server;

@@ -69,8 +69,9 @@ describe('DemoShell', () => {
     expect(shellSrc).toContain('content={backend.service}');
   });
 
-  test('loads the declared classic scripts in order', () => {
-    expect(shellSrc).toContain('scripts.map((src) => <script is:inline src={src} />)');
+  test('carries no classic-script manifest (app code is bundled module entries)', () => {
+    expect(shellSrc).not.toContain('scripts.map');
+    expect(shellSrc).not.toContain('is:inline src=');
   });
 
   test.each([

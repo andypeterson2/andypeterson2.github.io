@@ -9,10 +9,9 @@ and talks to their optional backends over a shared HTTP API contract.
 ```
 src/                      Astro 7 portal (pages, layouts, components)
 src/editor/               The CV editor — a Svelte 5 island (components + runes stores)
-public/                   Served as-is, including owned sub-app frontends:
-  classifiers/ nonogram/                   each app's frontend JS + model/gallery assets
-  ui-kit/                                  ui-kit runtime (icons.js, ui-kit.js)
-  js/                                      portal scripts (contract client, service config, modal)
+src/apps/                 App frontends as typed modules (shared portal scripts,
+                          ui-kit runtime, classifier + nonogram apps), bundled per page
+public/                   Served as-is: model weights, the nonogram gallery, vendored socket.io
 packages/system-six/      The portal's design-system CSS (tokens + element styles)
 docs/api-contract/        The written API contract (CONTRACT.md + JSON schemas)
 scripts/                  Manifest generator, CI helpers
@@ -48,15 +47,16 @@ The portal is static and deploys without any backend. To exercise a sub-app's li
 backend, clone its repo and run it (see that repo's README), then point the portal at
 it with a query param — e.g.
 `http://localhost:4321/projects/ai-ml/app/?backend=http://localhost:5001`.
-`public/js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
+`src/apps/shared/service-config.ts` resolves backend URLs (`?backend=`, `?<svc>=`,
 localStorage, or the page's default port).
 
 ## Frontends
 
 Each sub-app's frontend is **owned by this repo** and edited here directly (no
-submodules, no vendoring): the classifier and nonogram frontends live under
-`public/<app>/`, and the CV editor is a Svelte 5 island under `src/editor/`. Backends
-live in their own repos; the frontends talk to them over the API contract.
+submodules, no vendoring): the classifier and nonogram frontends are TypeScript
+modules under `src/apps/<app>/` (static assets under `public/<app>/`), and the CV
+editor is a Svelte 5 island under `src/editor/`. Backends live in their own repos;
+the frontends talk to them over the API contract.
 
 ## Testing
 

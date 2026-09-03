@@ -108,8 +108,8 @@ detail URL 301s to its anchored timeline entry (see Redirects below).
 |-----------|---------|
 | `Button.astro` | Props: `variant` (`primary`/`secondary`/`ghost`), `size` (`sm`/`md`/`lg`), `href?`, `class?`, `type?`, `disabled?`, `aria-label?`, `id?`. Renders `<a>` if `href`, `<button>` otherwise; maps onto system.css `.btn`/`.btn-default`. |
 | `CfBeacon.astro` | Injects the Cloudflare Web Analytics beacon script (used by `BaseLayout` when `CF_BEACON_TOKEN` is set). |
-| `ClassifierApp.astro` | The classifier UI shell — composes the `classifier/` sub-components and loads the `public/classifiers/js/` scripts in order (see `docs/quantum-ml-classifier.md`). |
-| `ServerConnectModal.astro` | Backend connect UI: loads `public/js/pass.js` (gateway token pass), `service-config.js` (URL resolution: URL param > localStorage > per-page meta default), `contract-client.js` (health/discovery client), and `server-connect-modal.js` (nav items with status dots + per-service connect modals). Mounted globally by `BaseLayout`. |
+| `ClassifierApp.astro` | The classifier UI shell — composes the `classifier/` sub-components and imports the bundled `src/apps/classifiers/entry.ts` module (see `docs/quantum-ml-classifier.md`). |
+| `ServerConnectModal.astro` | Backend connect UI: imports the bundled `src/apps/shared/entry.ts` module — `pass.ts` (gateway token pass, fetch wrapper installed first), `service-config.ts` (URL resolution: URL param > localStorage > per-page meta default), `contract-client.ts` (health/discovery client), and `server-connect-modal.ts` (nav items with status dots + per-service connect modals). Mounted globally by `BaseLayout`. |
 | `WriteupModal.astro` | "?" trigger + System-6 modal rendering a project writeup from the `writeups` content collection at build time (CSP-safe, no client-side markdown). |
 | `classifier/` | `ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer` — the classifier app's panels. |
 | `home/` | `SidebarWindow`, `SidebarEntry`, `SkillGroup`, `TimelineEntry` — home-page building blocks. |
@@ -141,7 +141,6 @@ Wraps `BaseLayout` and owns the demo-page conventions so app pages stay declarat
 |------|--------|
 | `title` / `description` / `bare` | Forwarded to `BaseLayout` |
 | `backend` | `{ service, port, label }` — emits the `<meta name="site-backend" content data-port data-label>` tag that `service-config.js` and the manifest generator read |
-| `scripts` | Site-served script URLs rendered `is:inline` after the page content (e.g. the nonogram's `public/nonogram/js/*` files) |
 
 A `head` slot forwards extra head tags (e.g. SRI-pinned CDN scripts) through to `BaseLayout`.
 
@@ -342,12 +341,11 @@ Platform summary: static `dist/` from `astro build`, served by Cloudflare Pages 
 
 Tool versions are npm ranges in `package.json` (currently ESLint 10.x, Prettier 3.x, Stylelint 17.x) — read them there rather than from this doc.
 
-`npm run lint` chains: ESLint (`src/**` TS/TSX/Astro plus `public/classifiers/js/**/*.js`), Prettier check, Stylelint, and two extra Stylelint passes with dedicated configs — `lint:fontsize` (`.stylelintrc.fontsize.json`: every `font-size` must be a token) and `lint:tokens` (`.stylelintrc.tokens.json`), both also covering `packages/system-six/styles/`.
+`npm run lint` chains: ESLint (`src/**` TS/TSX/Astro/Svelte — the app frontends under `src/apps/` sit under the same strict type-aware tier), Prettier check, Stylelint, and two extra Stylelint passes with dedicated configs — `lint:fontsize` (`.stylelintrc.fontsize.json`: every `font-size` must be a token) and `lint:tokens` (`.stylelintrc.tokens.json`), both also covering `packages/system-six/styles/`.
 
 **ESLint (`eslint.config.js`):**
 - `eslint-plugin-astro` (recommended) + TypeScript ESLint parser
 - Custom `design-system` plugin from `scripts/eslint-plugin-design-system.js`: `prefer-button` (warn) on pages/layouts, `prefer-tag`
-- The classifier frontend JS this repo owns (`public/classifiers/js/`) is linted too, with its own rule tier
 
 **Python (`pyproject.toml` — tooling config for the helper scripts in `scripts/*.py`; ruff is not part of `npm run lint` or the portal CI):**
 - Ruff: target py312, line length 100, select `E, W, F, I, N, UP, B, S, T20, SIM, RUF`

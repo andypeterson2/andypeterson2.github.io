@@ -1,26 +1,16 @@
 /**
- * Tests for public/classifiers/js/sse.js — the consumeSSE() streaming consumer and its
- * synchronous-REST fallback. Loads the browser scripts into this (node) context with a
- * window shim, then drives them against a local HTTP stub that can stream SSE, return a
- * contract error envelope, or serve a /...sync route.
+ * Tests for src/apps/classifiers/sse.ts — the consumeSSE() streaming consumer
+ * and its synchronous-REST fallback, driven against a local HTTP stub that can
+ * stream SSE, return a contract error envelope, or serve a /...sync route.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// ── Load contract-client.js (window.SiteContract) then sse.js (consumeSSE) ─────
+// The sse module imports contract-client, which publishes window.SiteContract
+// at import — shim window first, so the import is dynamic.
 (globalThis as { window?: unknown }).window = globalThis;
-const dir = import.meta.dirname!;
-(0, eval)(readFileSync(resolve(dir, '../public/js/contract-client.js'), 'utf-8'));
-// sse.js declares functions in strict mode; append an explicit export so eval exposes them.
-(0, eval)(
-  readFileSync(resolve(dir, '../public/classifiers/js/sse.js'), 'utf-8') +
-    '\nglobalThis.__SSE = { consumeSSE };',
-);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const consumeSSE = (globalThis as any).__SSE.consumeSSE;
+const { consumeSSE } = await import('../src/apps/classifiers/sse');
 
 // ── Stub backend ──────────────────────────────────────────────────────────────
 let server: http.Server;
@@ -68,7 +58,7 @@ function collector() {
 describe('consumeSSE streaming', () => {
   test('parses an SSE stream and delivers the done event', async () => {
     const c = collector();
-    await consumeSSE(`${base}/stream-ok`, {}, c.onStatus, c.onDone, c.onError);
+    await consumeSSE(`${base}/stream-ok`, {}, c);
     expect(c.r.done).toMatchObject({ name: 'streamed', epochs: 5 });
     expect(c.r.status).toContain('working');
     expect(c.r.error).toBeNull();
@@ -81,10 +71,7 @@ describe('consumeSSE sync fallback', () => {
     await consumeSSE(
       `${base}/train`,
       { model_type: 'Linear' },
-      c.onStatus,
-      c.onDone,
-      c.onError,
-      `${base}/train/sync`,
+      { ...c, syncUrl: `${base}/train/sync` },
     );
     // The done payload came from /train/sync, delivered to onDone unchanged.
     expect(c.r.done).toMatchObject({ name: 'sync-model', model_type: 'Linear' });
@@ -93,7 +80,7 @@ describe('consumeSSE sync fallback', () => {
 
   test('surfaces the envelope error when no sync route is provided', async () => {
     const c = collector();
-    await consumeSSE(`${base}/train`, {}, c.onStatus, c.onDone, c.onError);
+    await consumeSSE(`${base}/train`, {}, c);
     expect(c.r.done).toBeNull();
     expect(String(c.r.error)).toMatch(/unavailable/);
   });

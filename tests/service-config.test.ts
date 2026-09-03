@@ -1,42 +1,41 @@
 /**
- * Tests for public/js/service-config.js (window.ServiceConfig) — focused on the
+ * Tests for src/apps/shared/service-config.ts (ServiceConfig) — focused on the
  * URL-param origin allowlist (the security property): a crafted ?backend=/?service=
  * link must not be able to repoint a frontend at an attacker origin.
  *
- * ServiceConfig is a browser IIFE that reads window.location + localStorage at load
- * time (`_params` is computed once). So each scenario re-evals the file against a
- * fresh window shim with a given page origin + query string — mirroring the
- * window-shim + eval pattern in tests/contract-client.test.ts.
+ * ServiceConfig initialises its state (URL params + stored map) lazily on first
+ * use, so each scenario swaps the window/localStorage shims and calls
+ * `_resetForTests()` to make the next call re-read them.
  */
 import { describe, test, expect, vi } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-
-const code = readFileSync(resolve(import.meta.dirname!, '../public/js/service-config.js'), 'utf-8');
 
 const PROD = { origin: 'https://andypeterson.dev', hostname: 'andypeterson.dev' };
 const DEV = { origin: 'http://localhost:4321', hostname: 'localhost' };
 
-/** Load a fresh ServiceConfig with a given query string + page origin. */
+// The module publishes window.ServiceConfig at import — shim window first.
+(globalThis as { window?: unknown }).window = {
+  location: { search: '', origin: PROD.origin, hostname: PROD.hostname },
+};
+const { ServiceConfig } = await import('../src/apps/shared/service-config');
+
+/** Point ServiceConfig at a fresh page origin + query string + empty storage. */
 function load(search: string, page: { origin: string; hostname: string } = PROD) {
   const store: Record<string, string> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).localStorage = {
+  (globalThis as { localStorage?: unknown }).localStorage = {
     getItem: (k: string) => (k in store ? store[k] : null),
     setItem: (k: string, v: string) => {
       store[k] = String(v);
     },
     removeItem: (k: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- test shim
       delete store[k];
     },
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).window = {
+  (globalThis as { window?: unknown }).window = {
     location: { search, origin: page.origin, hostname: page.hostname },
   };
-  (0, eval)(code); // sets window.ServiceConfig; URL/URLSearchParams/console are Node globals
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (globalThis as any).window.ServiceConfig;
+  ServiceConfig._resetForTests();
+  return ServiceConfig;
 }
 
 describe('ServiceConfig backend-origin allowlist', () => {
