@@ -372,7 +372,12 @@ function createBackendUI(cfg: BackendDef): void {
     );
   }
 
-  if (document.readyState === 'loading') {
+  // Wait for DOMContentLoaded unless the document is fully loaded: module
+  // scripts evaluate at readyState 'interactive', BEFORE the app tiers'
+  // modules later in the document have registered their navbar:* listeners.
+  // Deferring init past DOMContentLoaded preserves the classic-script era's
+  // ordering (apps first, then this modal's connect-ready dispatch).
+  if (document.readyState !== 'complete') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
