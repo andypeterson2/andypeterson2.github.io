@@ -54,7 +54,7 @@ export class UndoController {
   async #step(from: 'past' | 'future') {
     if (this.applying) return;
     const stack = from === 'past' ? this.past : this.future;
-    const cmd = stack[stack.length - 1];
+    const cmd = stack.at(-1);
     if (!cmd) return;
     this.applying = true;
     try {

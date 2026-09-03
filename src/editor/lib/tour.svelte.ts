@@ -85,7 +85,8 @@ export class TourController {
   async #enter() {
     this.#cancel();
     const run = this.#run;
-    const step = this.steps[this.index];
+    // .at() types as T | undefined, so the past-the-end guard below is honest.
+    const step = this.steps.at(this.index);
     if (!step) {
       this.#finish();
       return;

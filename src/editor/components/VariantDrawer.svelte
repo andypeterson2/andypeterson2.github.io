@@ -76,16 +76,16 @@
         <span class="rule-lbl inc">Include</span>
         <TagChips
           tags={v.rules.include}
-          onAdd={(t) => editor.variants.addRule(v, 'include', t)}
-          onRemove={(t) => editor.variants.removeRule(v, 'include', t)}
+          onAdd={(t: string) => editor.variants.addRule(v, 'include', t)}
+          onRemove={(t: string) => editor.variants.removeRule(v, 'include', t)}
         />
       </div>
       <div class="rule">
         <span class="rule-lbl exc">Exclude</span>
         <TagChips
           tags={v.rules.exclude}
-          onAdd={(t) => editor.variants.addRule(v, 'exclude', t)}
-          onRemove={(t) => editor.variants.removeRule(v, 'exclude', t)}
+          onAdd={(t: string) => editor.variants.addRule(v, 'exclude', t)}
+          onRemove={(t: string) => editor.variants.removeRule(v, 'exclude', t)}
         />
       </div>
       <p class="hint">

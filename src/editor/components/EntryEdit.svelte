@@ -210,8 +210,8 @@
         <span class="tags-lbl">Tags</span>
         <TagChips
           tags={entry.tags}
-          onAdd={(t) => editor.tags.addToEntry(entry, [t])}
-          onRemove={(t) => editor.tags.removeFromEntry(entry, t)}
+          onAdd={(t: string) => editor.tags.addToEntry(entry, [t])}
+          onRemove={(t: string) => editor.tags.removeFromEntry(entry, t)}
         />
       </div>
 
@@ -249,8 +249,8 @@
                   oninput={() => editor.saveItem(it)}></textarea>
                 <TagChips
                   tags={it.tags}
-                  onAdd={(t) => editor.tags.addToItem(it, [t])}
-                  onRemove={(t) => editor.tags.removeFromItem(it, t)}
+                  onAdd={(t: string) => editor.tags.addToItem(it, [t])}
+                  onRemove={(t: string) => editor.tags.removeFromItem(it, t)}
                 />
               </div>
               <button
