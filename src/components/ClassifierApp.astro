@@ -24,17 +24,12 @@ import '../styles/classifier.css';
   <ClassifierLogDrawer />
 </div>
 
-<!-- ui-kit runtime: defines the global UIKit (icons.js first — supplies UIKit.ICONS) -->
-<script is:inline src="/ui-kit/icons.js"></script>
-<script is:inline src="/ui-kit/ui-kit.js"></script>
-<script is:inline src="/classifiers/js/connection.js"></script>
-<script is:inline src="/classifiers/js/sse.js"></script>
-<script is:inline src="/classifiers/js/chart.js"></script>
-<!-- portal bootstrap: seeds window.API_BASE / window.UI_CONFIG before app.js reads them -->
-<script is:inline src="/classifiers/js/config.js"></script>
-<!-- in-browser inference for the demo tier (loads weights from /classifiers/models/) -->
-<script is:inline src="/classifiers/js/infer.js"></script>
-<script is:inline src="/classifiers/js/app.js"></script>
+<!-- Classifier tier (bundled module): config seeds window.API_BASE / UI_CONFIG,
+     then the app pulls in ui-kit, connection, sse, chart and the in-browser
+     inference (demo-tier weights from /classifiers/models/) as imports. -->
+<script>
+  import '../apps/classifiers/entry';
+</script>
 
 <style>
   #classifier-app {

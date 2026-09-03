@@ -131,9 +131,7 @@ export const ServiceConfig: ServiceConfigApi = {
   /** Remove a persisted service URL. */
   remove(name) {
     const s = state();
-    s.stored = Object.fromEntries(
-      Object.entries(s.stored).filter(([key]) => key !== name),
-    );
+    s.stored = Object.fromEntries(Object.entries(s.stored).filter(([key]) => key !== name));
     save(s.stored);
   },
 
