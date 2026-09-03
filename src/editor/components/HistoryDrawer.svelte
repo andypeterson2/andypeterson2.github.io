@@ -4,6 +4,7 @@
   // (fork an audience line, switch between them), tags (frozen provenance names),
   // and cherry-restore (lift one entry from a checkpoint via the diff). In the demo,
   // history is for this session only (ADR-001).
+  import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
   import type { DocDiff } from '../lib/diff';
@@ -135,11 +136,11 @@
   <!-- ── default view: branches + the checkpoint list ── -->
   <div class="branches" role="group" aria-label="Branches">
     {#each editor.history.branches as b (b)}
-      <button
-        class="chip"
-        class:on={b === editor.history.currentBranch}
+      <UiButton
+        variant="chip"
+        active={b === editor.history.currentBranch}
         disabled={editor.history.restoring}
-        onclick={() => editor.history.switchTo(b)}>⎇ {b}</button
+        onclick={() => editor.history.switchTo(b)}>⎇ {b}</UiButton
       >
     {/each}
     {#if forking}
@@ -151,9 +152,11 @@
         onkeydown={(e) =>
           e.key === 'Enter' ? doFork() : e.key === 'Escape' ? (forking = false) : null}
       />
-      <button class="chip go" onclick={doFork}>fork</button>
+      <UiButton variant="chip" class="go" onclick={doFork}>fork</UiButton>
     {:else}
-      <button class="chip add" onclick={() => (forking = true)} aria-label="New branch">＋</button>
+      <UiButton variant="chip" class="add" onclick={() => (forking = true)} aria-label="New branch"
+        >＋</UiButton
+      >
     {/if}
   </div>
 
@@ -204,18 +207,18 @@
             {/if}
           </div>
           <div class="acts">
-            <button
-              class="act"
+            <UiButton
+              variant="act"
               disabled={comparing}
-              onclick={() => openCompare(v.id, v.label || 'checkpoint')}>Compare</button
+              onclick={() => openCompare(v.id, v.label || 'checkpoint')}>Compare</UiButton
             >
-            <button
-              class="act"
+            <UiButton
+              variant="act"
               disabled={editor.history.restoring}
-              onclick={() => editor.history.restore(v.id)}>Restore</button
+              onclick={() => editor.history.restore(v.id)}>Restore</UiButton
             >
-            <button class="act sm" onclick={() => startTag(v.id, v.tag)}
-              >{v.tag ? 'Retag' : 'Tag'}</button
+            <UiButton variant="act" class="sm" onclick={() => startTag(v.id, v.tag)}
+              >{v.tag ? 'Retag' : 'Tag'}</UiButton
             >
           </div>
         </li>
@@ -235,31 +238,7 @@
     border-bottom: 1px solid var(--faint, var(--paper-3));
   }
 
-  .chip {
-    font-family: var(--mono);
-    font-size: var(--text-4xs);
-    color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-pill);
-    padding: 3px 10px;
-    cursor: pointer;
-  }
-
-  .chip.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .chip.add,
-  .chip.go {
-    font-weight: 700;
-  }
-
-  .chip:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  /* .chip (and go/add) live in lib/styles.css as the .ui.chip family. */
 
   .fork-in {
     font-family: var(--mono);
@@ -409,31 +388,7 @@
     gap: 4px;
   }
 
-  .act {
-    font-family: var(--sans);
-    font-size: var(--text-4xs);
-    font-weight: 700;
-    color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
-    padding: 3px 10px;
-    cursor: pointer;
-  }
-
-  .act.sm {
-    font-weight: 400;
-    padding: 2px 10px;
-  }
-
-  .act:hover:not(:disabled) {
-    background: var(--chrome-hi);
-  }
-
-  .act:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
+  /* .act (and sm) live in lib/styles.css as the .ui.act family. */
 
   /* ── compare view ── */
   .back {

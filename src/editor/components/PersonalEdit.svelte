@@ -3,6 +3,7 @@
   import { editor } from '../lib/store.svelte';
   import { symbolInput } from '../lib/symbol-input.svelte';
   import SymbolPalette from './SymbolPalette.svelte';
+  import UiButton from './ui/Button.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
 
   const FIELDS = [
@@ -32,14 +33,15 @@
   <div class="ehead">
     <span class="etype">Personal details</span>
     <span class="eacts">
-      <button
-        class="mini sym-toggle"
-        class:on={sym.open}
+      <UiButton
+        variant="mini"
+        class="sym-toggle"
+        active={sym.open}
         title="Insert a symbol"
         aria-expanded={sym.open}
-        onclick={() => sym.toggle()}>Ω</button
+        onclick={() => sym.toggle()}>Ω</UiButton
       >
-      <button class="mini primary" onclick={() => editor.clearSelection()}>Done</button>
+      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton>
     </span>
   </div>
 
@@ -95,36 +97,8 @@
     gap: 6px;
   }
 
-  .mini {
-    font-family: var(--sans);
-    font-size: var(--text-4xs);
-    font-weight: 600;
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
-    padding: 3px 10px;
-    background: var(--ink);
-    color: var(--paper);
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .mini.sym-toggle {
-    font-family: var(--serif);
-    font-size: var(--text-3xs);
-    padding: 3px 9px;
-    background: var(--paper);
-    color: var(--ink);
-  }
-
-  .mini.sym-toggle.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .mini:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
-  }
+  /* .mini lives in lib/styles.css as the .ui.mini family (this file's former
+     copy defaulted to the primary look; the markup now says tone="primary"). */
 
   .grid {
     display: grid;

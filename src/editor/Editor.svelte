@@ -5,6 +5,7 @@
   import { tour } from './lib/tour.svelte';
   import { tourIntent } from './lib/tour';
   import Tour from './components/Tour.svelte';
+  import UiButton from './components/ui/Button.svelte';
   import MenuBar from './components/MenuBar.svelte';
   import type { MenuDef } from './lib/menus';
   import type { Personal } from './lib/types';
@@ -273,11 +274,12 @@
         >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
         variants, export. <b>Nothing is saved until you sign in.</b></span
       >
-      <button
-        class="btn tour-start"
+      <UiButton
+        variant="toolbar"
+        class="tour-start"
         disabled={tour.state !== 'idle'}
         title="Watch the editor drive itself — touch anything to take over"
-        onclick={startTour}>▶ Guided tour</button
+        onclick={startTour}>▶ Guided tour</UiButton
       >
       {#if editor.connectError === 'offline'}
         <button class="link" onclick={() => editor.connect()}>Retry</button>
@@ -322,40 +324,40 @@
            in the toolbar flex (the .sp above pushes the whole group right); the toolbar
            is hidden entirely on mobile. -->
           <div class="actions">
-            <button
-              class="btn"
-              class:on={editor.openDrawer === 'tags'}
-              onclick={() => (editor.openDrawer = 'tags')}>Tags</button
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'tags'}
+              onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
             >
-            <button
-              class="btn"
-              class:on={editor.openDrawer === 'layouts'}
-              onclick={() => (editor.openDrawer = 'layouts')}>Layout</button
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'layouts'}
+              onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
             >
-            <button
-              class="btn"
-              class:on={editor.openDrawer === 'style'}
-              onclick={() => (editor.openDrawer = 'style')}>Style</button
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'style'}
+              onclick={() => (editor.openDrawer = 'style')}>Style</UiButton
             >
             <span class="tbar-sep" aria-hidden="true"></span>
-            <button
-              class="btn"
-              class:on={editor.preview.open}
-              onclick={() => editor.preview.toggle()}>◱ Preview</button
+            <UiButton
+              variant="toolbar"
+              active={editor.preview.open}
+              onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
             >
-            <button
-              class="btn"
+            <UiButton
+              variant="toolbar"
               title="Compile this resume to a PDF"
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
-              >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</button
+              >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
             >
-            <button
-              class="btn"
+            <UiButton
+              variant="toolbar"
               title="Export this resume as JSON"
               data-tour-spot="export"
               disabled={editor.noProfiles}
-              onclick={() => editor.exportJson()}>⤓ Export</button
+              onclick={() => editor.exportJson()}>⤓ Export</UiButton
             >
           </div>
         </div>
@@ -499,12 +501,13 @@
       <span class="st-icon" aria-hidden="true">⚠</span>
       <span class="st-msg">{editor.saveError}</span>
       {#if editor.canRetry}
-        <button class="st-btn st-retry" onclick={() => editor.retrySave()}>Retry</button>
+        <UiButton variant="toast" class="st-retry" onclick={() => editor.retrySave()}>Retry</UiButton>
       {/if}
-      <button
-        class="st-btn st-x"
+      <UiButton
+        variant="toast"
+        class="st-x"
         aria-label="Dismiss save error"
-        onclick={() => editor.dismissError()}>✕</button
+        onclick={() => editor.dismissError()}>✕</UiButton
       >
     </div>
   {/if}
@@ -716,12 +719,12 @@
     font-weight: 700;
   }
 
-  .invite .btn {
+  .invite :global(.ui.btn) {
     font-size: var(--text-3xs);
     padding: 4px 10px;
   }
 
-  .invite .btn.tour-start {
+  .invite :global(.ui.btn.tour-start) {
     width: 100%;
     padding: 10px;
     font-size: var(--text-3xs);
@@ -846,33 +849,7 @@
     color: var(--paper);
   }
 
-  .btn {
-    font-size: var(--text-3xs);
-    font-weight: 600;
-    color: var(--ink);
-    background: var(--paper);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-md);
-    padding: 5px 12px;
-    box-shadow: var(--shadow);
-    cursor: pointer;
-  }
-
-  .btn.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .btn:active {
-    transform: translate(1px, 1px);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-    box-shadow: none;
-  }
+  /* .btn (the toolbar family) lives in lib/styles.css as .ui.btn. */
 
   .sp {
     flex: 1;
@@ -1165,23 +1142,7 @@
     line-height: 1.35;
   }
 
-  .save-toast .st-btn {
-    font-family: var(--mono);
-    font-size: var(--text-3xs);
-    border: 1px solid var(--ink);
-    background: var(--chrome-hi);
-    padding: 2px 8px;
-    cursor: pointer;
-  }
-
-  .save-toast .st-btn:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .save-toast .st-x {
-    padding: 2px 6px;
-  }
+  /* .st-btn / .st-x (the toast family) live in lib/styles.css as .ui.st-btn. */
 
   @media (prefers-reduced-motion: no-preference) {
     .save-toast {

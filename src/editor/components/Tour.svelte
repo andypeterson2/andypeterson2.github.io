@@ -5,6 +5,7 @@
   //
   // `data-tour` marks this subtree as the tour's own chrome: events inside it are
   // controls, not interruptions.
+  import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { tour } from '../lib/tour.svelte';
   import { editor } from '../lib/store.svelte';
@@ -150,15 +151,15 @@
           <div class="row">
             <span class="count">{tour.total} of {tour.total}</span>
             <span class="gap"></span>
-            <button class="tbtn" onclick={() => tour.end()}>Close</button>
+            <UiButton variant="tour" onclick={() => tour.end()}>Close</UiButton>
           </div>
         {:else}
           <p class="cap">That was the tour. The demo is yours now — nothing you do is saved.</p>
           <div class="row">
             <span class="count">{tour.total} of {tour.total}</span>
             <span class="gap"></span>
-            <button class="tbtn" onclick={resetAndClose}>↺ Reset demo</button>
-            <button class="tbtn" onclick={() => tour.end()}>Close</button>
+            <UiButton variant="tour" onclick={resetAndClose}>↺ Reset demo</UiButton>
+            <UiButton variant="tour" onclick={() => tour.end()}>Close</UiButton>
           </div>
         {/if}
       {:else}
@@ -170,14 +171,14 @@
           <span class="count">{tour.index + 1} of {tour.total}</span>
           <span class="gap"></span>
           {#if paused}
-            <button class="tbtn" onclick={() => tour.resume()}>▶ Resume</button>
+            <UiButton variant="tour" onclick={() => tour.resume()}>▶ Resume</UiButton>
           {:else if !tour.manual}
-            <button class="tbtn" onclick={() => tour.takeover()}>⏸ Pause</button>
+            <UiButton variant="tour" onclick={() => tour.takeover()}>⏸ Pause</UiButton>
           {/if}
           {#if paused || tour.manual}
-            <button class="tbtn" onclick={() => tour.next()}>Next ▸</button>
+            <UiButton variant="tour" onclick={() => tour.next()}>Next ▸</UiButton>
           {/if}
-          <button class="tbtn" onclick={() => tour.end()}>✕ End</button>
+          <UiButton variant="tour" onclick={() => tour.end()}>✕ End</UiButton>
         </div>
       {/if}
     </div>
@@ -274,22 +275,8 @@
     flex: 1;
   }
 
-  .tbtn {
-    font-family: var(--mono);
-    font-size: var(--text-3xs);
-    color: var(--ink);
-    background: var(--chrome-hi);
-    border: 1px solid var(--ink);
-    padding: 2px 8px;
-    cursor: pointer;
-  }
+  /* .tbtn (the tour family, focus ring included) lives in lib/styles.css as .ui.tbtn. */
 
-  .tbtn:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .tbtn:focus-visible,
   .tclose:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 1px;

@@ -71,3 +71,256 @@ body {
   image-rendering: pixelated;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ── Button families — rendered by components/ui/Button.svelte ──────────────
+   One definition per family; components add only contextual layout (width,
+   margins) via `:global(.ui.<family>)` overrides in their own scope. The `.ui`
+   marker keeps these from bleeding onto same-named bespoke classes that remain
+   scoped inside components. `.on` is the shared selected/pressed modifier
+   (the component's `active` prop). */
+
+/* toolbar actions (Tags/Layout/Style/Preview/Compile/Export, tour start) */
+.ui.btn {
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 5px 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.ui.btn.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.ui.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* compact entry/personal editing actions */
+.ui.mini {
+  font-family: var(--sans);
+  font-size: var(--text-4xs);
+  font-weight: 600;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.ui.mini.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.mini.danger {
+  color: var(--accent);
+}
+
+.ui.mini.sym-toggle {
+  font-family: var(--serif);
+  font-size: var(--text-3xs);
+  padding: 3px 9px;
+}
+
+.ui.mini.sym-toggle.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* the bullet-row delete cross */
+.ui.mini.x {
+  padding: 2px 8px;
+  font-size: var(--text-2xs);
+  line-height: 1;
+}
+
+/* the dashed add-a-bullet affordance */
+.ui.mini.add {
+  align-self: flex-start;
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--ink-3);
+}
+
+.ui.mini:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* the tour bubble's mono controls */
+.ui.tbtn {
+  font-family: var(--mono);
+  font-size: var(--text-3xs);
+  color: var(--ink);
+  background: var(--chrome-hi);
+  border: 1px solid var(--ink);
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.ui.tbtn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.tbtn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* pill chips (history versions; go/add carry the weight) */
+.ui.chip {
+  font-family: var(--mono);
+  font-size: var(--text-4xs);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.ui.chip.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.chip.add,
+.ui.chip.go {
+  font-weight: 700;
+}
+
+.ui.chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* drawer action rows */
+.ui.act {
+  font-family: var(--sans);
+  font-size: var(--text-4xs);
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.ui.act.sm {
+  font-weight: 400;
+  padding: 2px 10px;
+}
+
+.ui.act:hover:not(:disabled) {
+  background: var(--chrome-hi);
+}
+
+.ui.act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* inline text-link button (drawer footers) */
+.ui.link {
+  font: inherit;
+  color: var(--link);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* full-width option row (profile/variant pickers) */
+.ui.opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 8px 11px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  font-family: var(--sans);
+}
+
+.ui.opt.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.opt:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* dashed "create new" affordance (full-width; margins stay contextual) */
+.ui.new {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: var(--text-3xs);
+  color: var(--ink-3);
+  background: none;
+  border: 1px dashed var(--dim);
+  border-radius: var(--radius);
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+/* accent-bordered destructive action */
+.ui.del {
+  align-self: flex-start;
+  font-family: var(--sans);
+  font-size: var(--text-3xs);
+  color: var(--accent);
+  background: var(--paper);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 5px 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-accent);
+}
+
+.ui.del:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* save-toast mono buttons */
+.ui.st-btn {
+  font-family: var(--mono);
+  font-size: var(--text-3xs);
+  border: 1px solid var(--ink);
+  background: var(--chrome-hi);
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.ui.st-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ui.st-btn.st-x {
+  padding: 2px 6px;
+}

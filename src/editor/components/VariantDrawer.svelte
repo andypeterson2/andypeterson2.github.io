@@ -1,4 +1,5 @@
 <script lang="ts">
+  import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import { countIncludedEntries } from '../lib/variant-lens';
   import TagChips from './TagChips.svelte';
@@ -24,33 +25,33 @@
 </p>
 
 <div class="picker">
-  <button
-    class="opt"
-    class:on={editor.activeVariantId === null}
+  <UiButton
+    variant="opt"
+    active={editor.activeVariantId === null}
     onclick={() => editor.variants.select(null)}
   >
     <span class="radio"></span>
     <span class="opt-name">Main</span>
     <span class="opt-meta">full document</span>
-  </button>
+  </UiButton>
   {#each variants as v (v.id)}
     {@const c = v.kind === 'coverletter' ? null : counts(v)}
-    <button
-      class="opt"
-      class:on={editor.activeVariantId === v.id}
+    <UiButton
+      variant="opt"
+      active={editor.activeVariantId === v.id}
       onclick={() => editor.variants.select(v.id)}
     >
       <span class="radio"></span>
       <span class="opt-name">{v.name}</span>
       <span class="opt-meta">{c ? `${c.shown}/${c.total} entries` : 'cover letter'}</span>
-    </button>
+    </UiButton>
   {/each}
 </div>
 
 <div class="new-row">
-  <button class="new" onclick={() => editor.variants.add('New variant')}>＋ New variant</button>
-  <button class="new" onclick={() => editor.variants.add('New cover letter', 'coverletter')}
-    >＋ New cover letter</button
+  <UiButton variant="new" onclick={() => editor.variants.add('New variant')}>＋ New variant</UiButton>
+  <UiButton variant="new" onclick={() => editor.variants.add('New cover letter', 'coverletter')}
+    >＋ New cover letter</UiButton
   >
 </div>
 
@@ -94,7 +95,7 @@
       </p>
     {/if}
 
-    <button class="del" onclick={() => confirmDelete(v)}>Delete {noun(v)}</button>
+    <UiButton variant="del" onclick={() => confirmDelete(v)}>Delete {noun(v)}</UiButton>
   </div>
 {/if}
 
@@ -112,30 +113,7 @@
     gap: 5px;
   }
 
-  .opt {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    width: 100%;
-    text-align: left;
-    background: var(--paper);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-md);
-    padding: 8px 11px;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    font-family: var(--sans);
-  }
-
-  .opt.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .opt:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
-  }
+  /* .opt / .new / .del come from the lib/styles.css button families. */
 
   .radio {
     width: 11px;
@@ -145,7 +123,7 @@
     flex: none;
   }
 
-  .opt.on .radio {
+  :global(.ui.opt.on) .radio {
     background: radial-gradient(circle, var(--paper) 0 2.5px, transparent 3px), var(--paper);
     background-clip: content-box;
     border-color: var(--paper);
@@ -170,18 +148,6 @@
     flex-direction: column;
     gap: 6px;
     margin-top: 10px;
-  }
-
-  .new {
-    width: 100%;
-    font-family: var(--sans);
-    font-size: var(--text-3xs);
-    color: var(--ink-3);
-    background: none;
-    border: 1px dashed var(--dim);
-    border-radius: var(--radius);
-    padding: 7px 12px;
-    cursor: pointer;
   }
 
   .edit {
@@ -248,21 +214,4 @@
     margin: 0;
   }
 
-  .del {
-    align-self: flex-start;
-    font-family: var(--sans);
-    font-size: var(--text-3xs);
-    color: var(--accent);
-    background: var(--paper);
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 5px 12px;
-    cursor: pointer;
-    box-shadow: var(--shadow-accent);
-  }
-
-  .del:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
-  }
 </style>

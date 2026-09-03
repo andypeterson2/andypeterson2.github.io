@@ -1,4 +1,5 @@
 <script lang="ts">
+  import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
   import { ACCENT_COLORS } from '../lib/accent';
@@ -28,7 +29,8 @@
 {:else}
   <p class="note">
     Try styles here — the accent re-themes the document live.
-    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to save them to your PDF.
+    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to save them to your
+    PDF.
   </p>
 {/if}
 
@@ -89,15 +91,7 @@
     margin: 0 0 16px;
   }
 
-  .link {
-    font: inherit;
-    color: var(--link);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+  /* .link comes from the lib/styles.css button families. */
 
   .group {
     margin-bottom: 18px;

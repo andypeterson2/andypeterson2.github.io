@@ -1,5 +1,6 @@
 <script lang="ts">
   import { editor } from '../lib/store.svelte';
+  import UiButton from './ui/Button.svelte';
   import type { PersonMeta } from '../lib/api';
 
   const activeMeta = $derived(editor.persons.find((p) => p.id === editor.activePersonId) ?? null);
@@ -15,8 +16,8 @@
 
 {#if !editor.connected}
   <p class="note">
-    Profiles live on the server. <button class="link" onclick={() => editor.signIn()}
-      >Sign in</button
+    Profiles live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
+      >Sign in</UiButton
     > to create, switch, and manage them.
   </p>
 {:else}
@@ -27,18 +28,20 @@
 
   <div class="picker">
     {#each editor.persons as p (p.id)}
-      <button
-        class="opt"
-        class:on={editor.activePersonId === p.id}
+      <UiButton
+        variant="opt"
+        active={editor.activePersonId === p.id}
         onclick={() => editor.selectPerson(p.id)}
       >
         <span class="radio"></span>
         <span class="opt-name">{p.name}</span>
-      </button>
+      </UiButton>
     {/each}
   </div>
 
-  <button class="new" onclick={() => editor.addPerson()}>＋ New profile</button>
+  <UiButton variant="new" class="new-profile" onclick={() => editor.addPerson()}
+    >＋ New profile</UiButton
+  >
 
   {#if activeMeta}
     {@const meta = activeMeta}
@@ -51,7 +54,7 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <button class="del" onclick={() => confirmDelete(meta)}>Delete profile</button>
+      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete profile</UiButton>
     </div>
   {/if}
 {/if}
@@ -64,45 +67,12 @@
     margin: 0 0 16px;
   }
 
-  .link {
-    font: inherit;
-    color: var(--link);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+  /* .link / .opt / .new / .del come from the lib/styles.css button families. */
 
   .picker {
     display: flex;
     flex-direction: column;
     gap: 5px;
-  }
-
-  .opt {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    width: 100%;
-    text-align: left;
-    background: var(--paper);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius-md);
-    padding: 8px 11px;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    font-family: var(--sans);
-  }
-
-  .opt.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .opt:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
   }
 
   .radio {
@@ -113,7 +83,7 @@
     flex: none;
   }
 
-  .opt.on .radio {
+  :global(.ui.opt.on) .radio {
     border-color: var(--paper);
     box-shadow: var(--shadow-ring);
   }
@@ -123,17 +93,8 @@
     font-weight: 700;
   }
 
-  .new {
+  .picker ~ :global(.ui.new.new-profile) {
     margin-top: 10px;
-    width: 100%;
-    font-family: var(--sans);
-    font-size: var(--text-3xs);
-    color: var(--ink-3);
-    background: none;
-    border: 1px dashed var(--dim);
-    border-radius: var(--radius);
-    padding: 7px 12px;
-    cursor: pointer;
   }
 
   .edit {
@@ -170,21 +131,4 @@
     width: 100%;
   }
 
-  .del {
-    align-self: flex-start;
-    font-family: var(--sans);
-    font-size: var(--text-3xs);
-    color: var(--accent);
-    background: var(--paper);
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 5px 12px;
-    cursor: pointer;
-    box-shadow: var(--shadow-accent);
-  }
-
-  .del:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
-  }
 </style>
