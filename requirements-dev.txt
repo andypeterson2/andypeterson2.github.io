@@ -1,0 +1,1 @@
+ruff~=0.15.16  # keep in lockstep with .github/workflows/ci.yml and the fleet pin
