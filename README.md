@@ -47,7 +47,7 @@ No `--recursive` and no submodules — the portal builds entirely from this repo
 The portal is static and deploys without any backend. To exercise a sub-app's live
 backend, clone its repo and run it (see that repo's README), then point the portal at
 it with a query param — e.g.
-`http://localhost:4321/projects/quantum-ml-classifier/app/?backend=http://localhost:5001`.
+`http://localhost:4321/projects/ai-ml/app/?backend=http://localhost:5001`.
 `public/js/service-config.js` resolves backend URLs (`?backend=`, `?<svc>=`,
 localStorage, or the page's default port).
 

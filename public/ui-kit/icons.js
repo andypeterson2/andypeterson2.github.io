@@ -8,7 +8,7 @@
  *   <script src="ui-kit/icons.js"></script>
  *   element.innerHTML = UIKit.ICONS.play;
  *   // or
- *   element.innerHTML = UIKit.icon("play");
+ *   element.innerHTML = UIKit.ICONS.play;
  */
 (function (root) {
   "use strict";
@@ -77,17 +77,6 @@
     arrowRight:   fa("fa-solid fa-arrow-right"),
     star:         fa("fa-regular fa-star"),
     codeBranch:   fa("fa-solid fa-code-branch"),
-  };
-
-  /**
-   * Get an icon's HTML markup by name.
-   *
-   * @param {string} name   - Icon name (key in UIKit.ICONS).
-   * @param {Object} [opts] - Options (reserved for future use: size, class).
-   * @returns {string} HTML string, or empty string if not found.
-   */
-  UIKit.icon = function (name, opts) {
-    return UIKit.ICONS[name] || "";
   };
 
   root.UIKit = UIKit;

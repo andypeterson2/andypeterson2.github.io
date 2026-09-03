@@ -1,5 +1,5 @@
 dist/
 node_modules/
-# (no submodules — app frontends are vendored under public/<app>/)
+# (no submodules — app frontends are owned by this repo under public/<app>/)
 package-lock.json
 *.md
