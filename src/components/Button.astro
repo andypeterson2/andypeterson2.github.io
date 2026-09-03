@@ -1,9 +1,16 @@
 ---
 interface Props {
-  /** Visual style variant. 'primary' uses bold beveled border (btn-default). */
-  variant?: 'primary' | 'secondary' | 'ghost';
+  /**
+   * Visual style. 'primary' = bold beveled border (system.css btn-default);
+   * 'secondary' = standard bevel (btn); 'solid' = solid ink fill (btn-primary);
+   * 'danger' = destructive accent (btn-danger). Every name maps to a distinct
+   * rendering — no alias variants.
+   */
+  variant?: 'primary' | 'secondary' | 'solid' | 'danger';
   /** Button size. Defaults to 'md'. */
   size?: 'sm' | 'md' | 'lg';
+  /** Full-width block button (btn-block). */
+  block?: boolean;
   /** If provided, renders as an anchor tag instead of button. */
   href?: string;
   /** Additional CSS classes. */
@@ -18,12 +25,18 @@ interface Props {
   id?: string;
 }
 
-const { variant = 'primary', size = 'md', href, class: className, ...rest } = Astro.props;
+const { variant = 'primary', size = 'md', block, href, class: className, ...rest } = Astro.props;
 const Tag = href ? 'a' : 'button';
-// primary = btn-default (bold beveled border), secondary/ghost = btn (standard bevel)
-const btnClass = variant === 'primary' ? 'btn-default' : 'btn';
+const VARIANT_CLASSES: Record<NonNullable<Props['variant']>, string> = {
+  primary: 'btn-default',
+  secondary: 'btn',
+  solid: 'btn btn-primary',
+  danger: 'btn btn-danger',
+};
 const sizeClass = size !== 'md' ? `btn-${size}` : '';
-const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
+const classes = [VARIANT_CLASSES[variant], sizeClass, block && 'btn-block', className]
+  .filter(Boolean)
+  .join(' ');
 ---
 
 <Tag class={classes} href={href} {...rest}>
@@ -31,8 +44,10 @@ const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
 </Tag>
 
 <style>
-  /* system.css .btn and .btn-default handle all styling.
-     We only add inline-flex for icon alignment and size variants. */
+  /* system.css .btn and .btn-default handle the base styling.
+     We add inline-flex for icon alignment, the size variants, and the
+     solid/danger/block modifiers (embed stylesheets like classifier.css may
+     re-skin these under their own scope — their ID selectors win). */
   .btn,
   .btn-default {
     display: inline-flex;
@@ -53,5 +68,28 @@ const classes = [btnClass, sizeClass, className].filter(Boolean).join(' ');
     font-size: var(--text-sm);
     padding: 8px 20px;
     gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn-primary:hover {
+    background: var(--ink-2);
+  }
+
+  .btn-danger {
+    color: var(--color-danger);
+  }
+
+  .btn-danger:hover {
+    background: var(--color-danger);
+    color: var(--paper);
+  }
+
+  .btn-block {
+    display: flex;
+    width: 100%;
   }
 </style>

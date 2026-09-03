@@ -1,10 +1,14 @@
+---
+import Button from '../Button.astro';
+---
+
 <!-- Draw card (image input) -->
 <section class="card" id="canvas-col" class:list={['hidden']}>
   <h2 class="card-title">Draw</h2>
   <canvas id="draw-canvas" width="280" height="280"></canvas>
   <div class="row">
-    <button id="clear-btn" type="button" class="btn">Clear</button>
-    <button id="predict-btn" type="button" class="btn btn-primary">Predict</button>
+    <Button variant="secondary" id="clear-btn" type="button">Clear</Button>
+    <Button variant="solid" id="predict-btn" type="button">Predict</Button>
   </div>
 </section>
 
@@ -12,7 +16,7 @@
 <section class="card" id="tabular-col" class:list={['hidden']}>
   <h2 class="card-title">Predict</h2>
   <div class="feature-inputs"></div>
-  <button id="predict-btn-tab" type="button" class="btn btn-primary btn-block">Predict</button>
+  <Button variant="solid" block id="predict-btn-tab" type="button">Predict</Button>
 </section>
 
 <!-- Predictions -->

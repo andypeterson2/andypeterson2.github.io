@@ -68,8 +68,21 @@ export default [
       'design-system': { rules: designSystem.rules },
     },
     rules: {
-      'design-system/prefer-button': 'warn',
+      // Error tier: portfolio chrome must use <Button> (the rule itself exempts
+      // buttons whose attributes <Button> cannot express).
+      'design-system/prefer-button': 'error',
       'design-system/prefer-tag': 'warn',
+    },
+  },
+  {
+    // Components get the nudge tier — bespoke controls are common here, so a
+    // warning marks candidates without blocking.
+    files: ['src/components/**/*.astro'],
+    plugins: {
+      'design-system': { rules: designSystem.rules },
+    },
+    rules: {
+      'design-system/prefer-button': 'warn',
     },
   },
   {

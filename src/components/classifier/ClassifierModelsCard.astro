@@ -1,8 +1,12 @@
+---
+import Button from '../Button.astro';
+---
+
 <!-- Session models -->
 <section class="card">
   <h2 class="card-title">Models</h2>
   <div id="session-models"></div>
-  <button id="ensemble-btn" type="button" class="btn btn-block hidden">Ensemble</button>
+  <Button variant="secondary" block id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
 </section>
 
 <!-- Saved models -->
@@ -12,9 +16,9 @@
     <select id="saved-select" aria-label="Saved model file"
       ><option value="">-- no saved models --</option></select
     >
-    <button id="refresh-saved-btn" class="btn btn-sm" aria-label="Refresh">&#8635;</button>
+    <Button variant="secondary" size="sm" id="refresh-saved-btn" aria-label="Refresh">&#8635;</Button>
   </div>
-  <button id="import-btn" type="button" class="btn btn-block" disabled>Import</button>
+  <Button variant="secondary" block id="import-btn" type="button" disabled>Import</Button>
 </section>
 
 <style>
