@@ -11,8 +11,8 @@
 {#if !editor.connected}
   <p class="note">
     Layouts live on the server.
-    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to choose the LaTeX
-    template your PDF compiles with.
+    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to choose the LaTeX template
+    your PDF compiles with.
   </p>
 {:else if editor.layouts.length === 0}
   <p class="note">The LaTeX template used to compile the PDF.</p>

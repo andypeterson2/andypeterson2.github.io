@@ -41,7 +41,8 @@
         aria-expanded={sym.open}
         onclick={() => sym.toggle()}>Ω</UiButton
       >
-      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton>
+      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton
+      >
     </span>
   </div>
 

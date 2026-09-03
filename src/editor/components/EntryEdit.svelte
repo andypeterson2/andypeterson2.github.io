@@ -107,7 +107,8 @@
           >Delete</UiButton
         >
       {/if}
-      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton>
+      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton
+      >
     </span>
   </div>
 
@@ -556,7 +557,6 @@
     font-size: var(--text-2xs);
     resize: vertical;
   }
-
 
   /* Narrow phones: the fixed 116px label column leaves too little for the input, so
      stack label over field — each then spans the full width. */
