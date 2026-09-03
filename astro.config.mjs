@@ -35,7 +35,6 @@ export default defineConfig({
       scriptDirective: {
         resources: [
           "'self'",
-          'https://cdn.socket.io',
           // Cloudflare Web Analytics beacon (beacon.min.js) — see BaseLayout.astro.
           'https://static.cloudflareinsights.com',
           // Hash of the no-FOUC theme bootstrap — an `is:inline` <script> in
