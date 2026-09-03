@@ -10,7 +10,7 @@ Multi-dataset classifier platform comparing classical and quantum-hybrid neural 
 <a id="qmc-frontend"></a>
 ### Frontend (this repo) — two tiers
 
-The page at `/projects/quantum-ml-classifier/app/` (`src/pages/projects/quantum-ml-classifier/app.astro`) renders `src/components/ClassifierApp.astro`, which composes the UI from `src/components/classifier/` (`ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer`; styles in `src/styles/classifier.css`) and loads the scripts in this order:
+The page at `/projects/ai-ml/app/` (`src/pages/projects/ai-ml/app.astro`) renders `src/components/ClassifierApp.astro`, which composes the UI from `src/components/classifier/` (`ClassifierNavbar`, `ClassifierTrainCard`, `ClassifierModelsCard`, `ClassifierResultsPanel`, `ClassifierLogDrawer`; styles in `src/styles/classifier.css`) and loads the scripts in this order:
 
 | Script | Purpose |
 |--------|---------|
@@ -148,7 +148,7 @@ A blueprint-level `url_value_preprocessor` resolves the slug to a plugin on `g.p
 <a id="qmc-testing"></a>
 ### Testing
 
-**438 test functions** at last count, in `tests/`: model/architecture suites (`test_base_model.py`, `test_model.py`, `test_all_models_train.py`, `test_linear_model.py`, `test_svm_model.py`, `test_advanced_models.py`), pipeline (`test_trainer.py`, `test_evaluator.py`, `test_predictor.py`, `test_training_config.py`), registry/persistence (`test_model_registry.py`, `test_persistence.py`), plugins (`test_plugin_registry.py`, `test_iris.py`), layers (`test_layers.py`, `test_qiskit_layers.py` — conditional), routes (`test_routes.py`, `test_routes_advanced.py`, `test_cors.py`), integration (`test_integration.py`, `test_phase2_pipeline.py`, `test_phase3_crosscutting.py`), honesty gates (`test_accuracy_claims.py`, `test_documentation.py`), and the live-HTTP contract suite (`tests/contract/test_classifier_api.py`, validating `/health`, `/api`, the error envelope, and the `/sync` routes against the vendored schemas).
+**454 test functions** at last count (the classifier repo's `test_documentation.py` asserts its README count against reality — check there for the current number), in `tests/`: model/architecture suites (`test_base_model.py`, `test_model.py`, `test_all_models_train.py`, `test_linear_model.py`, `test_svm_model.py`, `test_advanced_models.py`), pipeline (`test_trainer.py`, `test_evaluator.py`, `test_predictor.py`, `test_training_config.py`), registry/persistence (`test_model_registry.py`, `test_persistence.py`), plugins (`test_plugin_registry.py`, `test_iris.py`), layers (`test_layers.py`, `test_qiskit_layers.py` — conditional), routes (`test_routes.py`, `test_routes_advanced.py`, `test_cors.py`), integration (`test_integration.py`, `test_phase2_pipeline.py`, `test_phase3_crosscutting.py`), honesty gates (`test_documentation.py` — README count + path assertions; `test_accuracy_claims.py` is structural), export drift checks (`test_web_export.py` — re-scores the committed browser weights, linear and qsvm, on the real test splits), and the live-HTTP contract suite (`tests/contract/test_classifier_api.py`, validating `/health`, `/api`, the error envelope, and the `/sync` routes against the vendored schemas).
 
 <a id="qmc-cicd"></a>
 ### CI/CD

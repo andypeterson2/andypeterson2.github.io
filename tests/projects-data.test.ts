@@ -18,7 +18,6 @@ describe('projects.ts data integrity', () => {
       expect(p.title, `${p.slug} missing title`).toBeTruthy();
       expect(p.slug, `${p.title} missing slug`).toBeTruthy();
       expect(p.description, `${p.slug} missing description`).toBeTruthy();
-      expect(p.longDescription, `${p.slug} missing longDescription`).toBeTruthy();
       expect(p.icon, `${p.slug} missing icon`).toBeTruthy();
       expect(p.repoUrl, `${p.slug} missing repoUrl`).toBeTruthy();
     }

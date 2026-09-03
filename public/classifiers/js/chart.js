@@ -70,7 +70,6 @@ class MiniChart {
 
     // Compute ranges
     const leftSeries = Object.values(this.series).filter(s => s.yAxis === "left" && s.points.length > 0);
-    const rightSeries = Object.values(this.series).filter(s => s.yAxis === "right" && s.points.length > 0);
     const allPoints = Object.values(this.series).flatMap(s => s.points);
 
     if (allPoints.length === 0) {

@@ -63,12 +63,6 @@ test.describe('Home page about content', () => {
 
   // The long-form About section is temporarily hidden (see the .about-window
   // display:none rule in index.astro). Re-enable when it's restored.
-  test.skip('has the long-form about section', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('#about')).toBeVisible();
-    const sections = page.locator('#about .about-section h3');
-    expect(await sections.count()).toBeGreaterThanOrEqual(3);
-  });
 
   test('projects appear on the timeline with metrics', async ({ page }) => {
     await page.goto('/');

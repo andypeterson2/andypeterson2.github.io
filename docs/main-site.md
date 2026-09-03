@@ -347,7 +347,7 @@ Tool versions are npm ranges in `package.json` (currently ESLint 10.x, Prettier 
 **ESLint (`eslint.config.js`):**
 - `eslint-plugin-astro` (recommended) + TypeScript ESLint parser
 - Custom `design-system` plugin from `scripts/eslint-plugin-design-system.js`: `prefer-button` (warn) on pages/layouts, `prefer-tag`
-- The vendored classifier frontend JS (`public/classifiers/js/`) is linted too, with its own rule tier
+- The classifier frontend JS this repo owns (`public/classifiers/js/`) is linted too, with its own rule tier
 
 **Python (`pyproject.toml` — tooling config for the helper scripts in `scripts/*.py`; ruff is not part of `npm run lint` or the portal CI):**
 - Ruff: target py312, line length 100, select `E, W, F, I, N, UP, B, S, T20, SIM, RUF`

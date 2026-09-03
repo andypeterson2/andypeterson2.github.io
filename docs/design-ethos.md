@@ -11,10 +11,11 @@ consistent. It reads the current CSS back to itself, names where the implementat
 
 The site does not have a bespoke design system. It **adopts an operating system**:
 
-- **`@sakun/system.css@0.1.11`** — a faithful re-creation of Apple **System 6** (1988), loaded
-  from unpkg with SRI (`BaseLayout.astro:48`). It owns the chrome: windows, title bars, the
+- **`@sakun/system.css@0.1.11`** — a faithful re-creation of Apple **System 6** (1988), vendored
+  and bundled same-origin as a build dependency (imported by `BaseLayout.astro`; previously a
+  render-blocking CDN link). It owns the chrome: windows, title bars, the
   menu bar, buttons, inputs, scrollbars, dialogs.
-- **Local layer, three files, deliberately thin:**
+- **Local layer, deliberately thin (the `packages/system-six/styles/` closure: tokens → base → dither → elements):**
   - `packages/system-six/styles/tokens.css` — *"System 6 palette: one warm ink on paper (a
     warm-gray ramp, no pure black), plus the status light and a single résumé accent."* Type roles
     (Chicago / Geneva / Monaco), the space/size scale, a warm ink ramp, the status scale, and one accent.

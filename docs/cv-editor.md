@@ -223,7 +223,7 @@ Preset accent colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pin
 <a id="cv-testing"></a>
 ### Testing
 
-**Test runner:** Vitest 4.1.2 | **Config:** `vitest.config.js` with globals enabled | **Total: 525+ tests**
+**Test runner:** Vitest 4.x (see package.json) | **Config:** `vitest.config.ts` with globals enabled | **Total: 525+ tests**
 
 | Suite | File | Approx Tests | Scope |
 |-------|------|-------------|-------|

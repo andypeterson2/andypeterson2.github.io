@@ -36,7 +36,7 @@ Backend URLs are resolved at runtime by `public/js/service-config.js`:
 4. **Defaults** -- the page's `<meta name="site-backend" data-port>` value
 
 So you can point any sub-app at a local backend without code changes — e.g.
-`http://localhost:4321/projects/quantum-ml-classifier/app/?backend=http://localhost:5001`.
+`http://localhost:4321/projects/ai-ml/app/?backend=http://localhost:5001`.
 
 ## Backend API Contract
 
