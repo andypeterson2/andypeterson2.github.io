@@ -106,7 +106,7 @@ detail URL 301s to its anchored timeline entry (see Redirects below).
 
 | Component | Purpose |
 |-----------|---------|
-| `Button.astro` | Props: `variant` (`primary`/`secondary`/`ghost`), `size` (`sm`/`md`/`lg`), `href?`, `class?`, `type?`, `disabled?`, `aria-label?`, `id?`. Renders `<a>` if `href`, `<button>` otherwise; maps onto system.css `.btn`/`.btn-default`. |
+| `Button.astro` | Props: `variant` (`primary`/`secondary`/`solid`/`danger` — each a distinct rendering), `size` (`sm`/`md`/`lg`), `block?`, `href?`, `class?`, `type?`, `disabled?`, `aria-label?`, `id?`. Renders `<a>` if `href`, `<button>` otherwise; maps onto system.css `.btn`/`.btn-default` plus the component's own solid/danger/block modifiers. |
 | `CfBeacon.astro` | Injects the Cloudflare Web Analytics beacon script (used by `BaseLayout` when `CF_BEACON_TOKEN` is set). |
 | `ClassifierApp.astro` | The classifier UI shell — composes the `classifier/` sub-components and imports the bundled `src/apps/classifiers/entry.ts` module (see `docs/quantum-ml-classifier.md`). |
 | `ServerConnectModal.astro` | Backend connect UI: imports the bundled `src/apps/shared/entry.ts` module — `pass.ts` (gateway token pass, fetch wrapper installed first), `service-config.ts` (URL resolution: URL param > localStorage > per-page meta default), `contract-client.ts` (health/discovery client), and `server-connect-modal.ts` (nav items with status dots + per-service connect modals). Mounted globally by `BaseLayout`. |

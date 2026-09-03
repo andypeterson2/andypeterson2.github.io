@@ -10,6 +10,7 @@
   //    control. Item content, tags, and add/delete/reorder are shared base structure,
   //    so they're Main-only (shown read-only here) — that keeps the mode banner honest:
   //    everything this panel presents as editable really is variant-scoped.
+  import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
   import { itemIncluded } from '../lib/variant-lens';
@@ -93,19 +94,20 @@
       >{def?.label ?? section.type}{def?.entryLabel ? ` · ${def.entryLabel}` : ''}</span
     >
     <span class="eacts">
-      <button
-        class="mini sym-toggle"
-        class:on={sym.open}
+      <UiButton
+        variant="mini"
+        class="sym-toggle"
+        active={sym.open}
         title="Insert a symbol"
         aria-expanded={sym.open}
-        onclick={() => sym.toggle()}>Ω</button
+        onclick={() => sym.toggle()}>Ω</UiButton
       >
       {#if !overriding}
-        <button class="mini danger" onclick={() => editor.deleteEntry(section, entry.id)}
-          >Delete</button
+        <UiButton variant="mini" tone="danger" onclick={() => editor.deleteEntry(section, entry.id)}
+          >Delete</UiButton
         >
       {/if}
-      <button class="mini primary" onclick={() => editor.clearSelection()}>Done</button>
+      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton>
     </span>
   </div>
 
@@ -253,16 +255,18 @@
                   onRemove={(t: string) => editor.tags.removeFromItem(it, t)}
                 />
               </div>
-              <button
-                class="mini danger x"
+              <UiButton
+                variant="mini"
+                tone="danger"
+                class="x"
                 title="Delete bullet"
                 aria-label="Delete bullet"
-                onclick={() => editor.deleteBullet(entry, it.id)}>×</button
+                onclick={() => editor.deleteBullet(entry, it.id)}>×</UiButton
               >
             </div>
           {/each}
-          <button class="mini add" onclick={() => editor.addBullet(entry)}
-            >＋ {(def.itemLabel ?? 'bullet').toLowerCase()}</button
+          <UiButton variant="mini" class="add" onclick={() => editor.addBullet(entry)}
+            >＋ {(def.itemLabel ?? 'bullet').toLowerCase()}</UiButton
           >
         </div>
       {/if}
@@ -303,43 +307,8 @@
     gap: 6px;
   }
 
-  .mini {
-    font-family: var(--sans);
-    font-size: var(--text-4xs);
-    font-weight: 600;
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
-    padding: 3px 10px;
-    background: var(--paper);
-    color: var(--ink);
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .mini.primary {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .mini.sym-toggle {
-    font-family: var(--serif);
-    font-size: var(--text-3xs);
-    padding: 3px 9px;
-  }
-
-  .mini.sym-toggle.on {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .mini.danger {
-    color: var(--accent);
-  }
-
-  .mini:active {
-    transform: translate(1px, 1px);
-    box-shadow: none;
-  }
+  /* .mini and its modifiers (primary/danger/sym-toggle/x/add) live in
+     lib/styles.css as the .ui.mini family. */
 
   /* Variant-editing mode: the accent left-border makes the mode unmistakable, so a
      field edit is never mistaken for a base edit. */
@@ -588,18 +557,6 @@
     resize: vertical;
   }
 
-  .x {
-    padding: 2px 8px;
-    font-size: var(--text-2xs);
-    line-height: 1;
-  }
-
-  .add {
-    align-self: flex-start;
-    border-style: dashed;
-    box-shadow: none;
-    color: var(--ink-3);
-  }
 
   /* Narrow phones: the fixed 116px label column leaves too little for the input, so
      stack label over field — each then spans the full width. */

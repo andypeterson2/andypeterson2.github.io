@@ -1,4 +1,5 @@
 <script lang="ts">
+  import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
 
@@ -10,8 +11,8 @@
 {#if !editor.connected}
   <p class="note">
     Layouts live on the server.
-    <button class="link" onclick={() => editor.signIn()}>Sign in</button> to choose the LaTeX template
-    your PDF compiles with.
+    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to choose the LaTeX
+    template your PDF compiles with.
   </p>
 {:else if editor.layouts.length === 0}
   <p class="note">The LaTeX template used to compile the PDF.</p>
@@ -41,15 +42,7 @@
     margin: 0 0 16px;
   }
 
-  .link {
-    font: inherit;
-    color: var(--link);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+  /* .link comes from the lib/styles.css button families. */
 
   .empty {
     font-size: var(--text-3xs);
