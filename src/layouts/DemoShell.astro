@@ -1,10 +1,11 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 
-// The one way a demo page mounts. Every project demo declares three things
-// instead of hand-wiring them: the layout mode (chromed or full-bleed), an optional live backend
-// (one prop emits the site-backend meta that drives the menubar status dot
-// and connect modal), and an ordered manifest of classic scripts.
+// The one way a demo page mounts. Every project demo declares two things
+// instead of hand-wiring them: the layout mode (chromed or full-bleed) and an
+// optional live backend (one prop emits the site-backend meta that drives the
+// menubar status dot and connect modal). App code is a bundled module entry
+// each page imports itself.
 interface Props {
   title: string;
   description?: string;
@@ -12,10 +13,8 @@ interface Props {
   bare?: boolean;
   /** The demo's optional live backend, declared once. */
   backend?: { service: string; port: number; label: string };
-  /** Classic (non-module) scripts, loaded in order after the app markup. */
-  scripts?: string[];
 }
-const { title, description, bare, backend, scripts = [] } = Astro.props;
+const { title, description, bare, backend } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} bare={bare}>
@@ -33,5 +32,4 @@ const { title, description, bare, backend, scripts = [] } = Astro.props;
     <slot name="head" />
   </Fragment>
   <slot />
-  {scripts.map((src) => <script is:inline src={src} />)}
 </BaseLayout>
