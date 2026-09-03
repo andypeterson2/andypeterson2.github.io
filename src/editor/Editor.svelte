@@ -501,7 +501,9 @@
       <span class="st-icon" aria-hidden="true">⚠</span>
       <span class="st-msg">{editor.saveError}</span>
       {#if editor.canRetry}
-        <UiButton variant="toast" class="st-retry" onclick={() => editor.retrySave()}>Retry</UiButton>
+        <UiButton variant="toast" class="st-retry" onclick={() => editor.retrySave()}
+          >Retry</UiButton
+        >
       {/if}
       <UiButton
         variant="toast"

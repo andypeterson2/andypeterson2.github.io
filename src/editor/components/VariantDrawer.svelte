@@ -49,7 +49,9 @@
 </div>
 
 <div class="new-row">
-  <UiButton variant="new" onclick={() => editor.variants.add('New variant')}>＋ New variant</UiButton>
+  <UiButton variant="new" onclick={() => editor.variants.add('New variant')}
+    >＋ New variant</UiButton
+  >
   <UiButton variant="new" onclick={() => editor.variants.add('New cover letter', 'coverletter')}
     >＋ New cover letter</UiButton
   >
@@ -213,5 +215,4 @@
     color: var(--color-text-muted);
     margin: 0;
   }
-
 </style>

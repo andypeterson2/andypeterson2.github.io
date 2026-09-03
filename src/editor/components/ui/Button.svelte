@@ -59,9 +59,7 @@
     toast: 'st-btn',
   };
 
-  const classes = $derived(
-    ['ui', FAMILY[variant], tone, cls].filter(Boolean).join(' '),
-  );
+  const classes = $derived(['ui', FAMILY[variant], tone, cls].filter(Boolean).join(' '));
 </script>
 
 <button bind:this={el} class={classes} class:on={active} {...rest}>

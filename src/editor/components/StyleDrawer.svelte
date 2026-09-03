@@ -29,8 +29,7 @@
 {:else}
   <p class="note">
     Try styles here — the accent re-themes the document live.
-    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to save them to your
-    PDF.
+    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to save them to your PDF.
   </p>
 {/if}
 
