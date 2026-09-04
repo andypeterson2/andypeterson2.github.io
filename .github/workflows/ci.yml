@@ -148,7 +148,7 @@ jobs:
       - name: Compare served weights against the classifier repo's canonical exports
         run: |
           set -e
-          for f in iris mnist qsvm-iris qsvm-mnist; do
+          for f in iris mnist bb84 qsvm-iris qsvm-mnist qsvm-bb84; do
             curl -sf -o "/tmp/$f.json" \
               "https://raw.githubusercontent.com/andypeterson2/quantum-machine-learning/main/exports/web/$f.json"
             if ! diff -q "/tmp/$f.json" "public/classifiers/models/$f.json" >/dev/null; then
