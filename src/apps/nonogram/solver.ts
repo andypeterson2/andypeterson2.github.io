@@ -241,6 +241,9 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
   }
 
   entries.forEach(([bs, prob], i) => {
+    // The bitstring key is server data landing in SVG markup — accept only
+    // literal 0/1 strings (anything else is dropped, not escaped).
+    if (!/^[01]+$/.test(bs)) return;
     const above = prob >= threshold;
     const bH = Math.max(1, (prob / maxProb) * cH);
     const bx = (i * slot + (slot - bW) / 2).toFixed(1);

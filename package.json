@@ -41,6 +41,7 @@
     "eslint-plugin-astro": "^1.7.0",
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-svelte": "^3.23.0",
+    "jsdom": "^29.1.1",
     "postcss-html": "^2.0.0",
     "prettier": "^3.9.4",
     "prettier-plugin-astro": "^0.14.1",

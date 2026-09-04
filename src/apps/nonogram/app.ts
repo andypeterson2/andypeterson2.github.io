@@ -29,6 +29,7 @@ import {
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { SiteContract, type ContractResult } from '../shared/contract-client';
+import { ServiceConfig } from '../shared/service-config';
 import type { ConnectWidget } from '../shared/server-connect-modal';
 
 // ── Connection logic ───────────────────────────────────────────
@@ -48,6 +49,12 @@ document.addEventListener('navbar:connect-ready', (e) => {
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'nonogram' || !detail.url) return;
+  // Allowlist the origin before opening a socket to it — anything on the page
+  // can dispatch a CustomEvent, and this URL receives solver traffic.
+  if (!ServiceConfig.isAllowedUrl(detail.url)) {
+    console.warn('[nonogram] Ignoring navbar:connect URL outside the allowlist:', detail.url);
+    return;
+  }
   if (_navWidget) _navWidget.setStatus('connecting');
   if (socket) socket.disconnect();
   socket = io(detail.url);
