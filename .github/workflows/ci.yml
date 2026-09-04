@@ -19,7 +19,24 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=high
+      # Vulnerability findings fail; an npm advisory-endpoint outage (it has had
+      # multi-hour ones) becomes a loud warning — Dependabot alerts are the
+      # continuous CVE channel, and blocking deploys on npmjs uptime is the
+      # worse trade. Mirrors the gateway repo's audit gate.
+      - name: npm audit (outage-tolerant)
+        run: |
+          out=""
+          for attempt in 1 2 3; do
+            out=$(npm audit --audit-level=high 2>&1) && { echo "$out"; exit 0; }
+            echo "$out"
+            echo "npm audit attempt $attempt failed; retrying in 20s" >&2
+            sleep 20
+          done
+          if echo "$out" | grep -q "audit endpoint returned an error"; then
+            echo "::warning::npm audit skipped — registry advisory endpoint down (Dependabot alerts still cover CVEs)"
+            exit 0
+          fi
+          exit 1
       # astro sync generates .astro/types.d.ts, which the type-aware lint
       # (unsafe-* over src TS) needs — without it env/content types resolve
       # as error-typed and the rules fire spuriously.
