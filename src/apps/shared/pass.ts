@@ -89,12 +89,52 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 };
 
 // ── With a pass, activate the live tier: point the app at the gateway ──
-// Dispatches the same navbar:connect the connect modal uses, so the app's
-// existing connected path runs — now through the gateway, with the Bearer.
-function activateLive(): void {
+// The gated backends sleep when idle, so activation is HEALTH-GATED: announce a
+// waking state to the service's nav widget, warm-ping /health (each GET rides
+// free through the pass gate and wakes the box) with backoff for up to ~30s,
+// and only dispatch navbar:connect once the backend actually answers — the
+// recruiter never fires a real request into a cold box. On give-up the widget
+// returns to idle and the free client-side tier stands untouched.
+
+const WARM_DEADLINE_MS = 30_000;
+
+/** Ping the service's /health through the gateway until it answers (or we give up). */
+export async function warmUntilHealthy(
+  service: string,
+  deadlineMs: number = WARM_DEADLINE_MS,
+): Promise<boolean> {
+  const deadline = Date.now() + deadlineMs;
+  let delay = 1000;
+  while (Date.now() < deadline) {
+    try {
+      // Goes through the wrapped fetch → the pass Bearer is attached; GETs
+      // spend no quota. The first ping is what wakes a sleeping backend.
+      const r = await fetch(`${GATEWAY}/${service}/health`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (r.ok) return true;
+      // 402/401: the pass is bad — waking will never help; stop immediately.
+      if (r.status === 401 || r.status === 402) return false;
+    } catch {
+      /* still waking / network blip — retry below */
+    }
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    delay = Math.min(delay * 1.5, 5000);
+  }
+  return false;
+}
+
+async function activateLive(): Promise<void> {
   if (!active()) return;
   const service = document.querySelector('meta[name="site-backend"]')?.getAttribute('content');
   if (!service) return;
+  document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
+  if (!(await warmUntilHealthy(service))) {
+    document.dispatchEvent(new CustomEvent('navbar:connect-failed', { detail: { service } }));
+    return;
+  }
+  // Dispatches the same navbar:connect the connect modal uses, so the app's
+  // existing connected path runs — now through the gateway, with the Bearer.
   document.dispatchEvent(
     new CustomEvent('navbar:connect', {
       detail: { service, url: `${GATEWAY}/${service}` },
@@ -103,10 +143,10 @@ function activateLive(): void {
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(activateLive, 0); // after the apps have registered their listeners
+    setTimeout(() => void activateLive(), 0); // after the apps have registered their listeners
   });
 } else {
-  setTimeout(activateLive, 0);
+  setTimeout(() => void activateLive(), 0);
 }
 
 export const SitePass: SitePassApi = {
