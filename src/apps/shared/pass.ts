@@ -51,18 +51,20 @@ try {
   /* private-mode storage / history quirks — degrade to no pass */
 }
 
-// ── Attach the Bearer to cross-origin backend calls while a pass is held ──
+// ── Attach the Bearer to GATEWAY calls while a pass is held ──
 // One interception point covers every transport that goes through fetch
-// (SiteContract, the apps' raw fetch, Socket.IO's polling handshake). Same-
-// origin fetches (model weights, page assets) are left untouched.
+// (SiteContract, the apps' raw fetch, Socket.IO's polling handshake). The
+// header attaches ONLY to requests whose origin is the gateway itself: any
+// broader rule (the original implementation used "any cross-origin URL")
+// hands the recruiter token to whatever third-party host page code fetches.
 const originalFetch = window.fetch.bind(window);
 
-function isCrossOrigin(input: RequestInfo | URL): boolean {
+function isGatewayRequest(input: RequestInfo | URL): boolean {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   try {
-    return new URL(url, location.href).origin !== location.origin;
+    return new URL(url, location.href).origin === GATEWAY;
   } catch {
-    return false; // opaque input — treat as same-origin, no header
+    return false; // opaque input — no header
   }
 }
 
@@ -80,7 +82,7 @@ function withBearer(
 
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const pass = token();
-  if (pass && isCrossOrigin(input)) {
+  if (pass && isGatewayRequest(input)) {
     return originalFetch(input, withBearer(input, init, pass));
   }
   return originalFetch(input, init);

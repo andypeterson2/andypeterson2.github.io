@@ -20,6 +20,7 @@
 const STORAGE_KEY = 'service-config';
 
 export interface ServiceConfigApi {
+  isAllowedUrl(url: string): boolean;
   get(name: string, defaultUrl?: string): string;
   set(name: string, url: string): void;
   remove(name: string): void;
@@ -110,6 +111,11 @@ function fromParam(raw: string): string {
 }
 
 export const ServiceConfig: ServiceConfigApi = {
+  /** Public allowlist check — apps validate navbar:connect URLs with this. */
+  isAllowedUrl(url: string): boolean {
+    return isAllowed(normalise(url) || url);
+  },
+
   /** Get the base URL for a named service (no trailing slash). */
   get(name, defaultUrl) {
     const { params, stored } = state();

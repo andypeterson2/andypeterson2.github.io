@@ -106,7 +106,9 @@ export default defineConfig({
     // SITE_* and silently renders "Portfolio" with empty contacts — the identity
     // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
     // other prefixes the app reads (BaseLayout).
-    envPrefix: ['PUBLIC_', 'SITE_', 'CF_', 'PREVIEW_'],
+    // CF_ narrowed to the one beacon variable: a bare CF_ prefix would expose
+    // any Cloudflare-ish env var (API tokens included) to client code.
+    envPrefix: ['PUBLIC_', 'SITE_', 'CF_BEACON_TOKEN', 'PREVIEW_'],
     css: {
       // Run the font-display:optional plugin (defined above) over the bundled CSS.
       postcss: { plugins: [fontDisplayOptional] },

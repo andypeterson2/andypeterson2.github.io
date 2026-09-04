@@ -20,13 +20,22 @@ import { ClassifierInfer, type ClassifierModel, type Prediction } from './infer'
 // ── Shorthand ────────────────────────────────────────────────────────────────
 const ICONS = UIKit.ICONS;
 
+import { ServiceConfig } from '../shared/service-config';
+
 // ── Backend config ───────────────────────────────────────────────────────────
 // window.API_BASE / window.UI_CONFIG are seeded by config.ts (imported first);
 // API_BASE is refreshed whenever the user connects a backend, so the per-dataset
 // URL prefix is computed live via base() rather than frozen at module-load time.
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
-  if (detail.service === 'classifiers' && detail.url) window.API_BASE = detail.url;
+  if (detail.service !== 'classifiers' || !detail.url) return;
+  // Allowlist the origin before adopting it: anything on the page can dispatch
+  // a CustomEvent, and API_BASE decides where model inputs get POSTed.
+  if (!ServiceConfig.isAllowedUrl(detail.url)) {
+    console.warn('[classifiers] Ignoring navbar:connect URL outside the allowlist:', detail.url);
+    return;
+  }
+  window.API_BASE = detail.url;
 });
 
 /** Live URL prefix for all API calls scoped to the active dataset. */
@@ -257,6 +266,58 @@ applyInputVisibility();
 
 // ── Model info panel ─────────────────────────────────────────────────────────
 
+// Element/attribute allowlist for rendered MODELS.md sections. Anything not
+// listed is unwrapped (text kept) or, for script-bearing containers, removed.
+const INFO_DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META']);
+const INFO_ALLOWED_TAGS = new Set([
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'P',
+  'UL',
+  'OL',
+  'LI',
+  'STRONG',
+  'EM',
+  'B',
+  'I',
+  'CODE',
+  'PRE',
+  'TABLE',
+  'THEAD',
+  'TBODY',
+  'TR',
+  'TH',
+  'TD',
+  'A',
+  'BR',
+  'HR',
+  'BLOCKQUOTE',
+  'SPAN',
+  'DIV',
+  'SUB',
+  'SUP',
+]);
+
+function sanitizeInfoTree(root: HTMLElement): void {
+  for (const el of [...root.querySelectorAll('*')]) {
+    if (INFO_DROP_TAGS.has(el.tagName)) {
+      el.remove();
+      continue;
+    }
+    if (!INFO_ALLOWED_TAGS.has(el.tagName)) {
+      el.replaceWith(...el.childNodes); // unwrap unknown elements, keep text
+      continue;
+    }
+    for (const attr of [...el.attributes]) {
+      const name = attr.name.toLowerCase();
+      if (name === 'href' && /^(https?:|#|\/)/i.test(attr.value.trim())) continue;
+      el.removeAttribute(attr.name); // default-deny: no handlers, styles, srcs
+    }
+  }
+}
+
 async function fetchModelInfo(modelType: string): Promise<void> {
   const details = byId('model-info-details', HTMLElement);
   const panel = byId('model-info-panel', HTMLElement);
@@ -268,21 +329,12 @@ async function fetchModelInfo(modelType: string): Promise<void> {
     }
     const data = (await res.json()) as { html?: string };
     const doc = new DOMParser().parseFromString(data.html ?? '', 'text/html');
-    doc.querySelectorAll('script').forEach((s) => {
-      s.remove();
-    });
-    // Strip event-handler attributes (onerror, onload, etc.) and javascript: URIs
-    doc.body.querySelectorAll('*').forEach((el) => {
-      for (const attr of [...el.attributes]) {
-        if (
-          attr.name.startsWith('on') ||
-          (attr.name === 'href' && attr.value.trimStart().startsWith('javascript:'))
-        ) {
-          el.removeAttribute(attr.name);
-        }
-      }
-    });
-    panel.innerHTML = doc.body.innerHTML;
+    sanitizeInfoTree(doc.body);
+    // Adopt the sanitized NODES directly. Serializing back to a string and
+    // re-parsing (the old innerHTML round-trip) is the classic mXSS lane:
+    // markup that is inert in one parse can mutate into live script in the
+    // second. replaceChildren never re-parses.
+    panel.replaceChildren(...doc.body.childNodes);
     details.classList.remove('hidden');
   } catch {
     details.classList.add('hidden');
@@ -542,15 +594,27 @@ function buildPredictionTable(): void {
     const nameTd = document.createElement('td');
     nameTd.className = 'pred-model-name';
     nameTd.textContent = name;
+    // Server-supplied strings go through textContent, never innerHTML.
     const predTd = document.createElement('td');
-    predTd.innerHTML = p ? `<span class="pred-label">${p.prediction}</span>` : '—';
+    if (p) {
+      const span = document.createElement('span');
+      span.className = 'pred-label';
+      span.textContent = p.prediction;
+      predTd.appendChild(span);
+    } else {
+      predTd.textContent = '—';
+    }
     const confTd = document.createElement('td');
     // A sign classifier (QSVM) has no probability — render an honest dash
     // rather than a fabricated percentage.
-    confTd.innerHTML =
-      p?.confidence != null
-        ? `<span class="${confClass(p.confidence)}">${pct(p.confidence)}</span>`
-        : '—';
+    if (p?.confidence != null) {
+      const span = document.createElement('span');
+      span.className = confClass(p.confidence);
+      span.textContent = pct(p.confidence);
+      confTd.appendChild(span);
+    } else {
+      confTd.textContent = '—';
+    }
     tr.appendChild(nameTd);
     tr.appendChild(predTd);
     tr.appendChild(confTd);
