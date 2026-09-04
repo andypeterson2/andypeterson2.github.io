@@ -24,7 +24,7 @@ jobs:
       # The manifest is derived from the built routes, so build first.
       - run: npm run build
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
