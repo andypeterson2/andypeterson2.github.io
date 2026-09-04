@@ -29,9 +29,12 @@ concurrency:
 
 jobs:
   deploy:
-    # workflow_run-triggered runs deploy only when CI passed; manual runs are
-    # verified against the commit's CI history in the first step below.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # workflow_run-triggered runs deploy only when CI passed AND the run came
+    # from THIS repository. Without the head_repository check, a fork PR whose
+    # source branch is named "main" satisfies `branches: [main]` and this job —
+    # which holds CLOUDFLARE_API_TOKEN — would check out and build the fork's
+    # code. Manual runs are verified against the commit's CI history below.
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && (github.event_name != 'workflow_run' || (github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event == 'push')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify CI passed for this commit (manual dispatch only)
@@ -78,7 +81,9 @@ jobs:
           CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
 
       - name: Deploy dist to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        # SHA-pinned (v3.9.0): this step receives CLOUDFLARE_API_TOKEN — a mutable
+        # tag here would hand the token to whoever can retag the action repo.
+        uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0
         with:
           # Repo secrets. CLOUDFLARE_API_TOKEN: a scoped token with Account ▸
           # Cloudflare Pages ▸ Edit. CLOUDFLARE_ACCOUNT_ID: the account id.
