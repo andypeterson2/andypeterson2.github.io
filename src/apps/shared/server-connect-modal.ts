@@ -323,6 +323,7 @@ function createBackendUI(cfg: BackendDef): void {
   const STATUS_LABELS: Partial<Record<string, string>> = {
     connected: 'Connected',
     connecting: 'Connecting',
+    waking: 'Waking live backend\u2026',
     degraded: 'Degraded',
     disconnected: 'Disconnected',
     error: 'Error',
@@ -336,7 +337,8 @@ function createBackendUI(cfg: BackendDef): void {
     if (dot) {
       dot.className = 'sn-dot';
       if (s === 'connected') dot.classList.add('sn-green');
-      else if (s === 'connecting' || s === 'degraded') dot.classList.add('sn-yellow');
+      else if (s === 'connecting' || s === 'waking' || s === 'degraded')
+        dot.classList.add('sn-yellow');
       else if (s === 'disconnected' || s === 'error') dot.classList.add('sn-red');
       dot.setAttribute('aria-label', (STATUS_LABELS[s] ?? 'Idle') + ' — ' + navLabel);
       dot.setAttribute('role', 'status');
@@ -349,6 +351,23 @@ function createBackendUI(cfg: BackendDef): void {
       if (serverSubUl) serverSubUl.style.display = 'none';
     }
   }
+
+  // Pass-activated live tier (pass.ts): the backend may be waking from sleep —
+  // show that honestly until the health-gated activation either connects or
+  // gives up (back to idle; the free tier stands).
+  document.addEventListener('navbar:connect-pending', (e) => {
+    const detail = (e as CustomEvent<{ service?: string }>).detail;
+    if (detail.service !== service) return;
+    connState.status = 'waking';
+    updateNav();
+  });
+  document.addEventListener('navbar:connect-failed', (e) => {
+    const detail = (e as CustomEvent<{ service?: string }>).detail;
+    if (detail.service !== service) return;
+    connState.status = 'idle';
+    connState.connected = false;
+    updateNav();
+  });
 
   function dispatchReady(): void {
     const widget: ConnectWidget = {
