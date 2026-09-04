@@ -35,7 +35,7 @@ describe('Browser model weights', () => {
       readFileSync(resolve(ROOT, `public/classifiers/models/${name}.json`), 'utf-8'),
     ) as Record<string, unknown>;
 
-  for (const name of ['iris', 'mnist', 'qsvm-iris', 'qsvm-mnist']) {
+  for (const name of ['iris', 'mnist', 'bb84', 'qsvm-iris', 'qsvm-mnist', 'qsvm-bb84']) {
     test(`${name}.json carries exporter provenance`, () => {
       const prov = load(name).provenance as Record<string, unknown>;
       expect(prov).toBeDefined();
@@ -46,7 +46,7 @@ describe('Browser model weights', () => {
     });
   }
 
-  for (const dataset of ['iris', 'mnist']) {
+  for (const dataset of ['iris', 'mnist', 'bb84']) {
     test(`${dataset}.json matches the linear infer.js contract`, () => {
       const model = load(dataset);
       expect(model.kind).toBe('linear');
@@ -59,7 +59,7 @@ describe('Browser model weights', () => {
     });
   }
 
-  for (const dataset of ['iris', 'mnist']) {
+  for (const dataset of ['iris', 'mnist', 'bb84']) {
     test(`qsvm-${dataset}.json matches the qsvm infer.js contract`, () => {
       const model = load(`qsvm-${dataset}`);
       expect(model.kind).toBe('qsvm');

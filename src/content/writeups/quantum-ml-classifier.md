@@ -17,7 +17,7 @@ A custom **40+ component UI kit** with dark/light theming, a **draw-to-predict c
 
 ## What's real
 
-Covered by **454 test functions** across model architectures, training loops, API routes, and persistence. Models emit raw logits, and the exact preprocessing and softmax that run server-side are **also ported to run in the browser** — draw a digit or enter flower measurements and it predicts with nothing running, on weights exported from the same model the backend serves.
+Covered by **483 test functions** across model architectures, training loops, API routes, and persistence. Models emit raw logits, and the exact preprocessing and softmax that run server-side are **also ported to run in the browser** — draw a digit or enter flower measurements and it predicts with nothing running, on weights exported from the same model the backend serves.
 
 ## The QSVM paper recreation
 
@@ -60,6 +60,10 @@ What ships to your browser is the whole thing collapsed to six numbers:
 <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>s</mi><mo>&#x0003D;</mo><msub><mi>w</mi><mn>1</mn></msub><mspace width="0.167em" /><mo stretchy="false">&#x00028;</mo><mi>a</mi><msub><mi>f</mi><mn>1</mn></msub><mo>&#x0002B;</mo><mi>b</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>w</mi><mn>2</mn></msub><mspace width="0.167em" /><mo stretchy="false">&#x00028;</mo><mi>c</mi><msub><mi>f</mi><mn>2</mn></msub><mo>&#x0002B;</mo><mi>d</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
 Draw a six, and that one line — the paper's map plus one dot product — decides. The weights are exported closed-form from this repo with provenance stamped, and CI re-derives them on every run.
+
+## BB84: quantum ML guarding quantum crypto
+
+The newest plugin closes a loop between two of these projects: simulated **BB84 quantum-key-distribution sessions** — the quantum video chat's channel physics (Poisson photon source, fiber attenuation, detector efficiency, intercept-resend Eve) ported into the platform — classified as *clean* or *eavesdropped* from the two observables a QKD operator actually sees: the **QBER** and the **sifted-key rate**. Clean sessions carry channel noise and eavesdropped ones sweep partial, lossy interception, so the two regimes genuinely overlap near the protocol's 11% abort threshold: **95% linear accuracy**, and **90% through the same six-number QSVM rule above** — pick the BB84 dataset on the demo page and classify a session in your browser. The plugin also exercised the platform's core claim for real: the serving tier needed zero changes for the new dataset to appear.
 
 ## Stack
 

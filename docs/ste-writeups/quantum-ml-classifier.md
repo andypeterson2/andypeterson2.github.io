@@ -17,7 +17,7 @@ A custom **40+ component UI kit** with dark/light theming, a **draw-to-predict c
 
 ## Verification
 
-There are **454 test functions**, across model architectures, training loops, API routes, and persistence. Models emit raw logits. The same preprocessing and softmax also operate **in the browser**, for a zero-backend inference demo.
+There are **483 test functions**, across model architectures, training loops, API routes, and persistence. Models emit raw logits. The same preprocessing and softmax also operate **in the browser**, for a zero-backend inference demo.
 
 ## The QSVM paper recreation
 

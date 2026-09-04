@@ -43,6 +43,14 @@ export const CLASSIFIER_DATASETS: DatasetDef[] = [
     features: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'],
     local_models: ['iris', 'qsvm-iris'],
   },
+  {
+    name: 'bb84',
+    display_name: 'BB84 Eavesdropper Detection',
+    input_type: 'tabular',
+    class_labels: ['clean', 'eavesdropped'],
+    features: ['qber', 'sifted_key_rate'],
+    local_models: ['bb84', 'qsvm-bb84'],
+  },
 ];
 
 window.CLASSIFIER_DATASETS = CLASSIFIER_DATASETS;

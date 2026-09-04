@@ -5,7 +5,7 @@
 <a id="qmc-overview"></a>
 ### Overview
 
-Multi-dataset classifier platform comparing classical and quantum-hybrid neural network approaches. Plugin architecture for datasets (MNIST, Iris). Live training over Server-Sent Events with real-time loss curves, draw-to-predict (MNIST), form-to-predict (Iris), model persistence, early stopping, knowledge distillation, ensemble evaluation, and ablation studies — plus a **zero-backend demo tier** that runs real inference entirely in the visitor's browser.
+Multi-dataset classifier platform comparing classical and quantum-hybrid neural network approaches. Plugin architecture for datasets (MNIST, Iris, BB84 eavesdropper detection). Live training over Server-Sent Events with real-time loss curves, draw-to-predict (MNIST), form-to-predict (Iris), model persistence, early stopping, knowledge distillation, ensemble evaluation, and ablation studies — plus a **zero-backend demo tier** that runs real inference entirely in the visitor's browser.
 
 <a id="qmc-frontend"></a>
 ### Frontend (this repo) — two tiers
@@ -45,7 +45,7 @@ All paths below are in the `quantum-machine-learning` repo, under `classifiers/`
 
 #### BaseModel ABC (`base_model.py`)
 
-Abstract `forward(x) -> logits`; `loss_fn(output, target)` defaults to cross-entropy. Subclasses live with their dataset: `datasets/mnist/models.py` (MNISTNet, LinearNet, SVMNet, MNISTQuadraticNet, MNISTPolynomialNet, QiskitCNN, QiskitLinear) and `datasets/iris/models.py` (IrisLinear, IrisSVM, IrisQVC).
+Abstract `forward(x) -> logits`; `loss_fn(output, target)` defaults to cross-entropy. Subclasses live with their dataset: `datasets/mnist/models.py` (MNISTNet, LinearNet, SVMNet, MNISTQuadraticNet, MNISTPolynomialNet, QiskitCNN, QiskitLinear) and `datasets/iris/models.py` (IrisLinear, IrisSVM, IrisQVC), and `datasets/bb84/models.py` (BB84Linear, BB84SVM, BB84QVC).
 
 #### DatasetPlugin ABC (`dataset_plugin.py`)
 
@@ -69,6 +69,10 @@ Plugins register via `plugin_registry.py` (`get_plugin` / `list_plugins` / `crea
 #### Iris (`datasets/iris/`)
 
 Tabular, 4 features, 3 classes, z-score per training-set statistics. 80/20 stratified train/test split (seed 42); the val loader further splits the training data 80/20. Model types: `Linear`, `SVM` always; `QVC` (PennyLane variational circuit) only when PennyLane is importable. Iris-tuned defaults: `{epochs: 50, batch_size: 16, lr: 0.01}`.
+
+#### BB84 (`datasets/bb84/`)
+
+Tabular, 2 features (`qber`, `sifted_key_rate`), 2 classes (`clean`, `eavesdropped`). The data is **self-generated seeded simulation** (`datasets/bb84/simulate.py` — a NumPy port of the quantum-video-chat project's channel physics: Poisson source, fiber attenuation, detector efficiency, partial lossy intercept-resend Eve, plus channel noise so the regimes overlap near the 11% abort threshold), 2000 train / 500 test sessions, nothing to download — so its export drift checks run unconditionally in CI. Model types: `Linear`, `SVM` always; `QVC` (2-qubit PennyLane circuit) when PennyLane is importable. Defaults: `{epochs: 30, batch_size: 32, lr: 0.01}`.
 
 <a id="qmc-training-evaluation-prediction"></a>
 ### Training, Evaluation, Prediction
@@ -150,7 +154,7 @@ A blueprint-level `url_value_preprocessor` resolves the slug to a plugin on `g.p
 <a id="qmc-testing"></a>
 ### Testing
 
-**454 test functions** at last count (the classifier repo's `test_documentation.py` asserts its README count against reality — check there for the current number), in `tests/`: model/architecture suites (`test_base_model.py`, `test_model.py`, `test_all_models_train.py`, `test_linear_model.py`, `test_svm_model.py`, `test_advanced_models.py`), pipeline (`test_trainer.py`, `test_evaluator.py`, `test_predictor.py`, `test_training_config.py`), registry/persistence (`test_model_registry.py`, `test_persistence.py`), plugins (`test_plugin_registry.py`, `test_iris.py`), layers (`test_layers.py`, `test_qiskit_layers.py` — conditional), routes (`test_routes.py`, `test_routes_advanced.py`, `test_cors.py`), integration (`test_integration.py`, `test_phase2_pipeline.py`, `test_phase3_crosscutting.py`), honesty gates (`test_documentation.py` — README count + path assertions; `test_accuracy_claims.py` is structural), export drift checks (`test_web_export.py` — re-scores the committed browser weights, linear and qsvm, on the real test splits), and the live-HTTP contract suite (`tests/contract/test_classifier_api.py`, validating `/health`, `/api`, the error envelope, and the `/sync` routes against the vendored schemas).
+**483 test functions** at last count (the classifier repo's `test_documentation.py` asserts its README count against reality — check there for the current number), in `tests/`: model/architecture suites (`test_base_model.py`, `test_model.py`, `test_all_models_train.py`, `test_linear_model.py`, `test_svm_model.py`, `test_advanced_models.py`), pipeline (`test_trainer.py`, `test_evaluator.py`, `test_predictor.py`, `test_training_config.py`), registry/persistence (`test_model_registry.py`, `test_persistence.py`), plugins (`test_plugin_registry.py`, `test_iris.py`, `test_bb84.py`), layers (`test_layers.py`, `test_qiskit_layers.py` — conditional), routes (`test_routes.py`, `test_routes_advanced.py`, `test_cors.py`), integration (`test_integration.py`, `test_phase2_pipeline.py`, `test_phase3_crosscutting.py`), honesty gates (`test_documentation.py` — README count + path assertions; `test_accuracy_claims.py` is structural), export drift checks (`test_web_export.py` — re-scores the committed browser weights, linear and qsvm, on the real test splits), and the live-HTTP contract suite (`tests/contract/test_classifier_api.py`, validating `/health`, `/api`, the error envelope, and the `/sync` routes against the vendored schemas).
 
 <a id="qmc-cicd"></a>
 ### CI/CD
