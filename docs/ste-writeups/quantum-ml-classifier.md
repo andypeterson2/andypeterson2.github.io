@@ -39,7 +39,7 @@ The **kernel oracle** is a depth-1 circuit. Its raw measurement counts give the 
 
 ### Results — and the rule you operate
 
-**97% on Iris** (setosa vs versicolor from sepal width and petal length) — equal to the paper's simulated result. The same quantum solution, with only the map values changed, gets **91% on MNIST 6-vs-9** with the paper's pixel-ratio features — near the 92.5% limit of an unconstrained classical SVM on those features. The notebook ends with the paper's own noise measure: the Jensen–Shannon divergence between clean and noisy output distributions, under a depolarizing + readout model in place of the retired IBMQX2 computer.
+**97% on Iris** (setosa vs versicolor from sepal width and petal length) — equal to the paper's simulated result. The same quantum solution, with only the map values changed, gets **91.5% on MNIST 6-vs-9** with the paper's pixel-ratio features — near the 92.5% limit of an unconstrained classical SVM on those features. The notebook ends with the paper's own noise measure — the Jensen–Shannon divergence between clean and measured output distributions — first under a noise model in place of the retired IBMQX2 computer, then **on real hardware**: the circuit on ibm_marrakesh (2026, 8192 raw shots) scored **0.0127** against the paper's **0.130** on IBMQX2 in 2019 — ten times closer to the clean result. The hardware readout now supplies the deployed rule's quantum values.
 
 What goes to your browser is the full method in six numbers: the paper's map plus one dot product. Make a drawing of a six, and that one line decides. The weights come from the repo in closed form, with provenance data, and CI makes the derivation again on each run.
 
