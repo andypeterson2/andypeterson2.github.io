@@ -15,11 +15,21 @@ test.describe('ServerConnectModal + SiteContract', () => {
     await expect(page.locator('.sn-modal')).toHaveCount(0);
   });
 
-  test('nonogram app declares its backend meta', async ({ page }) => {
+  test('nonogram app declares its backend meta (deploy-based — no port)', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
     const backendMeta = page.locator('meta[name="site-backend"]');
     await expect(backendMeta).toHaveAttribute('content', 'nonogram');
-    await expect(backendMeta).toHaveAttribute('data-port', '5055');
+    // The manual host/port connect era is over: no local port is advertised.
+    await expect(backendMeta).not.toHaveAttribute('data-port', /.+/);
+  });
+
+  test('no manual connect UI exists — the dot is status-only', async ({ page }) => {
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    await expect(page.locator('.server-nav-item')).toHaveCount(1);
+    await page.locator('.server-nav-item').click();
+    // Clicking must not open any dialog; there is no host/port form to find.
+    await expect(page.locator('.sn-modal, .sn-modal-overlay')).toHaveCount(0);
+    await expect(page.locator('.sn-connect-form')).toHaveCount(0);
   });
 
   test('SiteContract is loaded and parses /health in the browser', async ({ page }) => {

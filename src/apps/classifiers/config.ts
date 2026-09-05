@@ -12,6 +12,7 @@
  */
 
 import { ServiceConfig } from '../shared/service-config';
+import { SitePass } from '../shared/pass';
 
 export interface DatasetDef {
   name: string;
@@ -61,4 +62,11 @@ window.UI_CONFIG ??= CLASSIFIER_DATASETS[0];
 // Backend origin, resolved the same way the rest of the portal resolves it
 // (?classifiers= / ?backend= / localStorage / default). navbar:connect will
 // overwrite this with the user-chosen URL.
-window.API_BASE ??= ServiceConfig.resolveBackend('classifiers', 'http://localhost:5001');
+// Deploy-based default: the gateway is the only production backend. A localhost
+// default here would bake a dead local option into the deployed page; local dev
+// still works via the allowlisted ?backend=/?classifiers= params (which admit
+// localhost only when the page itself is served from localhost).
+window.API_BASE ??= ServiceConfig.resolveBackend(
+  'classifiers',
+  SitePass.gatewayBase('classifiers'),
+);

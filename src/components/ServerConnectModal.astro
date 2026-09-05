@@ -1,12 +1,12 @@
 ---
 /**
- * Server-connect modal — adds nav items and connection dialogs for each
- * backend service declared on the page.
+ * Server status nav — adds a status-dot nav item for each backend service
+ * declared on the page. STATUS-ONLY: the manual host/port connect dialog is
+ * retired; backends are deploy-based and connect through the pass-activated
+ * gateway lane (see shared/pass.ts).
  *
  * Meta-tag format:
- *   <meta name="site-backend" content="service-key" data-port="8080" data-label="Label">
- *
- * Each service gets its own navbar item (with status dot), dropdown, and modal.
+ *   <meta name="site-backend" content="service-key" data-label="Label">
  */
 ---
 
@@ -52,146 +52,5 @@
     background-color: var(--color-danger) !important;
     opacity: 1;
     box-shadow: var(--shadow-glow-danger);
-  }
-
-  /* ── Connect modal (injected by JS) ── */
-  .sn-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--scrim);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: var(--z-modal);
-    animation: sn-fade-in var(--dur) ease;
-  }
-
-  @keyframes sn-fade-in {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  .sn-modal {
-    background: var(--paper);
-    border: 3px solid var(--ink);
-    padding: 20px 24px;
-    min-width: 320px;
-    max-width: 90vw;
-    font-family: var(--font-ui);
-    animation: sn-slide-in var(--dur) ease;
-  }
-
-  @keyframes sn-slide-in {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .sn-modal-header {
-    font-size: var(--text-2xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--ink-2);
-    border-bottom: 1px solid var(--paper-4);
-    padding-bottom: 12px;
-    margin-bottom: 16px;
-  }
-
-  .sn-modal-footer {
-    border-top: 1px solid var(--paper-4);
-    padding-top: 12px;
-    margin-top: 16px;
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-
-  .sn-connect-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .sn-form-row {
-    display: grid;
-    grid-template-columns: 52px 1fr;
-    align-items: center;
-    border-bottom: 1px solid var(--paper-2);
-    padding: 8px 0;
-  }
-
-  .sn-form-row:last-child {
-    border-bottom: none;
-  }
-
-  .sn-form-row label {
-    font-size: var(--text-4xs);
-    font-weight: 500;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .sn-form-row input {
-    width: 100%;
-    background: var(--paper-2);
-    border: 1px solid var(--paper-4);
-    color: var(--ink);
-    font-size: var(--text-3xs);
-    padding: 6px 9px;
-    outline: none;
-    font-family: monospace;
-    box-sizing: border-box;
-  }
-
-  .sn-form-row input:focus {
-    border-color: var(--link);
-  }
-
-  .sn-form-row input::-webkit-inner-spin-button,
-  .sn-form-row input::-webkit-outer-spin-button {
-    appearance: none;
-    margin: 0;
-  }
-
-  .sn-form-row input[type='number'] {
-    appearance: textfield;
-  }
-
-  .sn-btn {
-    height: 28px;
-    padding: 0 16px;
-    font-size: var(--text-3xs);
-    border: 2px solid var(--ink);
-    cursor: pointer;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-ui);
-  }
-
-  .sn-btn:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .sn-btn-primary {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .sn-btn-primary:hover {
-    background: var(--ink-2);
   }
 </style>

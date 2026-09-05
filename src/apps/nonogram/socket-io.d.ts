@@ -10,4 +10,11 @@ interface NonogramSocket {
   on(event: string, cb: (payload?: unknown) => void): void;
 }
 
-declare const io: (url: string) => NonogramSocket;
+interface NonogramSocketOptions {
+  /** engine.io endpoint path — '/nonogram/socket.io' when riding the gateway. */
+  path?: string;
+  /** extra query params on every transport request (the recruiter pass). */
+  query?: Record<string, string>;
+}
+
+declare const io: (url: string, opts?: NonogramSocketOptions) => NonogramSocket;

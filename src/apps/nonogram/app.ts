@@ -57,19 +57,20 @@ document.addEventListener('navbar:connect', (e) => {
   }
   if (_navWidget) _navWidget.setStatus('connecting');
   if (socket) socket.disconnect();
-  socket = io(detail.url);
+  // Socket.IO reads a URL's path as a NAMESPACE, not a prefix — connecting to
+  // https://gateway/nonogram would hit /socket.io at the gateway root (404).
+  // Split origin from prefix and hand the prefix to the engine.io `path`.
+  // The transport is XHR, which bypasses the pass fetch-wrapper, so the
+  // recruiter pass rides as ?pass= — the gateway authorizes on it and strips
+  // it before proxying upstream.
+  const target = new URL(detail.url);
+  const prefix = target.pathname.replace(/\/$/, '');
+  const opts: NonogramSocketOptions = { path: `${prefix}/socket.io` };
+  const pass = window.SitePass.token();
+  if (pass) opts.query = { pass };
+  socket = io(target.origin, opts);
   window.API_BASE = detail.url;
   bindSocket(socket);
-});
-
-document.addEventListener('navbar:disconnect', (e) => {
-  const detail = (e as CustomEvent<{ service?: string }>).detail;
-  if (detail.service !== 'nonogram') return;
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  if (_navWidget) _navWidget.setStatus('disconnected');
 });
 
 function bindSocket(s: NonogramSocket): void {
