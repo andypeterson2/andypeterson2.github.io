@@ -253,12 +253,6 @@ document.addEventListener('navbar:connect', (e) => {
   connectionManager.connect(detail.url);
 });
 
-document.addEventListener('navbar:disconnect', (e) => {
-  const detail = (e as CustomEvent<{ service?: string }>).detail;
-  if (detail.service !== 'classifiers') return;
-  connectionManager.disconnect();
-});
-
 // Bridge: navbar widget subscribes to connection:statechange
 let _navWidget: ConnectWidget | null = null;
 

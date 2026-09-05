@@ -19,9 +19,10 @@ describe('Classifiers page', () => {
     expect(src).toContain('ClassifierApp');
   });
 
-  test('declares the classifier backend via the DemoShell prop', () => {
+  test('declares the classifier backend via the DemoShell prop (deploy-based — no port)', () => {
+    const src = readFileSync(resolve(ROOT, 'src/pages/projects/ai-ml/app.astro'), 'utf-8');
     expect(src).toContain("service: 'classifiers'");
-    expect(src).toContain('port: 5001');
+    expect(src).not.toContain('port:'); // the manual host/port connect era is over
   });
 });
 

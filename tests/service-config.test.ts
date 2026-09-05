@@ -39,12 +39,12 @@ function load(search: string, page: { origin: string; hostname: string } = PROD)
 }
 
 describe('ServiceConfig backend-origin allowlist', () => {
-  test('rejects a crafted ?backend= attacker origin (prod) → falls through to default', () => {
+  test('rejects a crafted ?backend= attacker origin (prod) → falls through to an ALLOWED default', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sc = load('?backend=evil.example.com', PROD);
-    const url = sc.resolveBackend('nonogram', 'http://localhost:5055');
+    const url = sc.resolveBackend('nonogram', 'https://api.andypeterson.dev');
     expect(url).not.toContain('evil.example.com');
-    expect(url).toBe('http://localhost:5055'); // the trusted default, not the attacker URL
+    expect(url).toBe('https://api.andypeterson.dev'); // the deploy-based default
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -52,7 +52,9 @@ describe('ServiceConfig backend-origin allowlist', () => {
   test('rejects a crafted per-service ?nonogram= attacker origin (prod)', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sc = load('?nonogram=https://evil.example.com', PROD);
-    expect(sc.resolveBackend('nonogram', 'http://localhost:5055')).toBe('http://localhost:5055');
+    expect(sc.resolveBackend('nonogram', 'https://api.andypeterson.dev')).toBe(
+      'https://api.andypeterson.dev',
+    );
     vi.restoreAllMocks();
   });
 
@@ -67,13 +69,14 @@ describe('ServiceConfig backend-origin allowlist', () => {
   });
 
   test('allows localhost/LAN only when the page itself is dev', () => {
-    // dev page → localhost backend allowed
+    // dev page → localhost backend allowed (param AND default)
     const dev = load('?backend=http://localhost:9999', DEV);
     expect(dev.resolveBackend('nonogram', 'http://localhost:5055')).toBe('http://localhost:9999');
-    // prod page → localhost backend rejected (falls through to default)
+    // prod page → localhost param rejected, and a localhost DEFAULT is inert too:
+    // no local backend option can survive on the deployed site.
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const prod = load('?backend=http://localhost:9999', PROD);
-    expect(prod.resolveBackend('nonogram', 'http://localhost:5055')).toBe('http://localhost:5055');
+    expect(prod.resolveBackend('nonogram', 'http://localhost:5055')).toBe('');
     vi.restoreAllMocks();
   });
 
@@ -93,9 +96,23 @@ describe('ServiceConfig backend-origin allowlist', () => {
     vi.restoreAllMocks();
   });
 
-  test('the default and stored URLs are trusted (not gated by the allowlist)', () => {
+  test('defaults and stored URLs are allowlist-gated too — deploy-based everywhere', () => {
+    // A localhost default on a prod page resolves to NOTHING, not a dead local URL.
     const sc = load('', PROD);
-    // default passes through untouched even though it is a localhost origin in prod
-    expect(sc.resolveBackend('nonogram', 'http://localhost:5055')).toBe('http://localhost:5055');
+    expect(sc.resolveBackend('nonogram', 'http://localhost:5055')).toBe('');
+    // A gateway default resolves normally.
+    expect(sc.resolveBackend('nonogram', 'https://api.andypeterson.dev')).toBe(
+      'https://api.andypeterson.dev',
+    );
+    // A stale STORED localhost URL (manual-connect era) is ignored on prod…
+    const sc2 = load('', PROD);
+    sc2.set('nonogram', 'http://localhost:5055');
+    expect(sc2.resolveBackend('nonogram', 'https://api.andypeterson.dev')).toBe(
+      'https://api.andypeterson.dev',
+    );
+    // …but an allowed stored URL still wins over the default.
+    const sc3 = load('', PROD);
+    sc3.set('nonogram', 'https://api.andypeterson.dev');
+    expect(sc3.resolveBackend('nonogram', '')).toBe('https://api.andypeterson.dev');
   });
 });

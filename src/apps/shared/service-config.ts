@@ -165,8 +165,15 @@ export const ServiceConfig: ServiceConfigApi = {
       const url = fromParam(unified);
       if (url) return url;
     }
-    // 3. localStorage, then 4. default
-    return stored[name] ?? normalise(defaultUrl);
+    // 3. localStorage — allowlist-gated too: a stored localhost URL (from the
+    // retired manual-connect era, or a standalone app) must not resurrect a
+    // local backend on the deployed site.
+    const saved = stored[name];
+    if (saved && isAllowed(saved)) return saved;
+    // 4. default — same gate, so even a localhost default a caller passes is
+    // inert unless the page itself is served from localhost (dev).
+    const fallback = normalise(defaultUrl);
+    return fallback && isAllowed(fallback) ? fallback : '';
   },
 
   /** Get all configured services (storage overlaid by allowed URL params). */

@@ -2,10 +2,7 @@
 import DemoShell from '../../../layouts/DemoShell.astro';
 ---
 
-<DemoShell
-  title="Nonogram Solver"
-  backend={{ service: 'nonogram', port: 5055, label: 'Nonogram Backend' }}
->
+<DemoShell title="Nonogram Solver" backend={{ service: 'nonogram', label: 'Nonogram Backend' }}>
   <!-- App shell -->
   <div id="nonogram-app">
     <div class="nono-columns">

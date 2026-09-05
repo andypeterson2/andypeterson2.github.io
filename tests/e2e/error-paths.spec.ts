@@ -45,8 +45,15 @@ test.describe('Backend error-envelope surfacing', () => {
     await page.route('**/api/benchmark', (r) => r.fulfill(busy));
     await page.route('**/api/benchmark/sync', (r) => r.fulfill(busy));
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    await page.locator('.server-nav-item').click(); // open connect modal (defaults localhost:5055)
-    await page.locator('.sn-modal [data-action="connect"]').click(); // sets API_BASE
+    // The manual connect modal is retired; drive the app the way pass.ts does.
+    // localhost is allowlisted here because the page itself is on localhost.
+    await page.evaluate(() =>
+      document.dispatchEvent(
+        new CustomEvent('navbar:connect', {
+          detail: { service: 'nonogram', url: 'http://localhost:5055' },
+        }),
+      ),
+    );
     await page.locator('#btn-bench').click();
     // The status line surfaces the contract error code instead of failing silently.
     await expect(page.locator('#status-line')).toContainText('solver_busy', { timeout: 5000 });
@@ -89,8 +96,13 @@ test.describe('Sync-REST fallback when streaming is unavailable', () => {
       });
     });
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    await page.locator('.server-nav-item').click();
-    await page.locator('.sn-modal [data-action="connect"]').click();
+    await page.evaluate(() =>
+      document.dispatchEvent(
+        new CustomEvent('navbar:connect', {
+          detail: { service: 'nonogram', url: 'http://localhost:5055' },
+        }),
+      ),
+    );
     await page.waitForTimeout(600); // blocked socket settles → socket.connected stays false
     await page.locator('#btn-bench').click();
     await expect.poll(() => syncHit, { timeout: 10000 }).toBe(true);

@@ -11,24 +11,15 @@ interface Props {
   description?: string;
   /** Full-bleed apps (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
-  /** The demo's optional live backend, declared once. */
-  backend?: { service: string; port: number; label: string };
+  /** The demo's optional live backend, declared once (deploy-based; no port). */
+  backend?: { service: string; label: string };
 }
 const { title, description, bare, backend } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description} bare={bare}>
   <Fragment slot="head">
-    {
-      backend && (
-        <meta
-          name="site-backend"
-          content={backend.service}
-          data-port={String(backend.port)}
-          data-label={backend.label}
-        />
-      )
-    }
+    {backend && <meta name="site-backend" content={backend.service} data-label={backend.label} />}
     <slot name="head" />
   </Fragment>
   <slot />
