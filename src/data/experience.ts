@@ -10,11 +10,21 @@ export interface ExperienceEntry {
 // the unified timeline) live in the page that composes it, not here.
 export const experience: ExperienceEntry[] = [
   {
+    date: '2025 – present',
+    role: 'Independent engineering',
+    org: 'San Diego, CA',
+    bullets: [
+      'Made three demos run entirely in the browser (the nonogram solver, the ML classifier platform and the resume editor), with their live backends behind a pass-gated gateway.',
+      "Recreated a 2019 quantum SVM paper end to end in Qiskit and ran its circuit on ibm_marrakesh: a Jensen-Shannon divergence of 0.0127 against the paper's 0.130.",
+      'Built this site: static Astro under a hashed Content-Security-Policy, a 1-bit design system enforced by lint gates, and deploys gated on CI.',
+    ],
+  },
+  {
     date: '2022 – 2024',
     role: 'Research Intern',
     org: 'Qualcomm Institute (CALIT2) · San Diego, CA',
     bullets: [
-      'Built a frame-level encryption pipeline for live video with sub-millisecond latency overhead, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).',
+      'Built a frame-level encryption pipeline for live video, enabling real-time AES-128-GCM encryption (FFmpeg, WebRTC Insertable Streams).',
       'Simulated a noisy quantum channel (Poisson photon source, fiber attenuation, detector modeling) to validate protocol correctness — used to verify eavesdrop detection via error rate anomalies.',
       "Presented algorithmic research to IBM's VP of Quantum during a campus visit.",
     ],
