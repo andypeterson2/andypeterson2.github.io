@@ -48,7 +48,7 @@ const STATE_WORDS: Partial<Record<string, string>> = {
   waking: 'waking the live backend… (up to 30s)',
   connecting: 'connecting…',
   connected: 'live',
-  degraded: 'live · unstable',
+  degraded: 'live · checking…',
   disconnected: 'offline — in your browser',
   error: 'error — in your browser',
   failed: "live backend didn't wake — in your browser",
