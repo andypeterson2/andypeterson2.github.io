@@ -269,6 +269,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: center;
   }
 
+  /* No heading over an empty section: the Metrics rule appears with its table (M12). */
+  .section-rule:has(+ #metrics-pane:empty) {
+    display: none;
+  }
+
   /* The gallery entry's own note (e.g. how the same shape did on real hardware). */
   .gallery-note {
     margin: 0;
