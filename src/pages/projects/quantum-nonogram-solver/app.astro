@@ -18,11 +18,25 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           <button id="btn-random" class="nono-btn">Randomize</button>
         </div>
         <div class="grid-size-controls">
-          <button id="btn-add-row" class="nono-btn nono-btn-sm">+ Row</button>
-          <button id="btn-add-col" class="nono-btn nono-btn-sm">+ Col</button>
+          <span class="size-stepper" role="group" aria-label="Rows">
+            <button id="btn-remove-row" class="nono-btn nono-btn-sm" aria-label="Remove a row"
+              >−</button
+            >
+            <span class="stepper-label">Rows</span>
+            <button id="btn-add-row" class="nono-btn nono-btn-sm" aria-label="Add a row">+</button>
+          </span>
           <span id="grid-size-label">3 &times; 3</span>
+          <span class="size-stepper" role="group" aria-label="Columns">
+            <button id="btn-remove-col" class="nono-btn nono-btn-sm" aria-label="Remove a column"
+              >−</button
+            >
+            <span class="stepper-label">Cols</span>
+            <button id="btn-add-col" class="nono-btn nono-btn-sm" aria-label="Add a column"
+              >+</button
+            >
+          </span>
         </div>
-        <div id="status-line" class="status-line">Ready</div>
+        <div id="status-line" class="status-line">Ready — puzzles solve in your browser.</div>
         <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
@@ -223,9 +237,22 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   .grid-size-controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
     justify-content: center;
+  }
+
+  /* − Rows +  3 × 3  − Cols +: the grid shrinks as well as grows (M12). */
+  .size-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stepper-label {
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
   }
 
   :global(#grid-size-label) {
@@ -240,6 +267,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     color: var(--color-text-muted);
     padding: 4px 0;
     text-align: center;
+  }
+
+  /* No heading over an empty section: the Metrics rule appears with its table (M12). */
+  .section-rule:has(+ #metrics-pane:empty) {
+    display: none;
   }
 
   /* The gallery entry's own note (e.g. how the same shape did on real hardware). */

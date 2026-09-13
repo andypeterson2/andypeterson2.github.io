@@ -74,9 +74,17 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
+  // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
+  // same as signed out: offering "Sign in" again would just loop (audit M10).
+  const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
   // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
+  // The carried-over-edits offer is a real dialog: put focus on its answer.
+  $effect(() => {
+    if (editor.pendingDraft)
+      queueMicrotask(() => document.getElementById('draft-primary')?.focus());
+  });
 
   // Starting the tour dismisses the invitation first: on mobile the invite is a
   // popup window that would otherwise sit over the narrator, and on desktop the
@@ -113,7 +121,7 @@
           label: '↺ Reset demo',
           // A no-op when connected: there is real data to protect (store.resetDemo).
           disabled: editor.connected,
-          onSelect: () => editor.resetDemo(),
+          onSelect: () => editor.requestResetDemo(),
         },
       ],
     },
@@ -255,7 +263,32 @@
     <div class="invite busy" role="status">
       <span class="mk" aria-hidden="true">◆</span>
       <span class="txt"
-        >Signing in… finish the Google login in the new tab — the editor connects automatically.</span
+        >Redirecting to Google sign-in… you'll come back here, and your edits come with you.</span
+      >
+    </div>
+  {:else if editor.pendingDraft}
+    <!-- Demo edits carried across sign-in (audit C1): offer them as a profile. -->
+    <div class="invite-scrim" aria-hidden="true"></div>
+    <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
+      <div class="titlebar invite-tbar">
+        <span class="title" id="draft-title">Your demo edits</span>
+        <span class="fill"></span>
+      </div>
+      <span class="txt"
+        >You edited the demo before signing in. Bring those edits into your account as a new
+        profile? Your name and email replace the sample's contact details.</span
+      >
+      <UiButton
+        variant="toolbar"
+        class="tour-start"
+        tone="primary"
+        id="draft-primary"
+        disabled={editor.importingDraft}
+        onclick={() => void editor.importDraft()}
+        >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
+      >
+      <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
+        >Start fresh instead</button
       >
     </div>
   {:else if demoMode && inviteOpen}
@@ -271,8 +304,9 @@
         <span class="fill"></span>
       </div>
       <span class="txt"
-        >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
-        variants, export. <b>Nothing is saved until you sign in.</b></span
+        >This is the real editor, running in your browser. Edit anything — drag, tag, switch
+        variants, export. <b>Nothing is saved until you sign in — then your edits come with you.</b
+        ></span
       >
       <UiButton
         variant="toolbar"
@@ -347,7 +381,9 @@
             >
             <UiButton
               variant="toolbar"
-              title="Compile this resume to a PDF"
+              title={editor.preview.compilable
+                ? 'Compile this résumé to a PDF'
+                : 'Compiling to PDF needs an account — sign in to compile'}
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
               >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
@@ -407,7 +443,7 @@
               </div>
               <div class="pv-body">
                 {#if !editor.connected}
-                  <div class="pv-note">Sign in and connect to compile a live PDF.</div>
+                  <div class="pv-note">Sign in to compile this résumé to a PDF.</div>
                 {:else if !editor.preview.compilable}
                   <div class="pv-note">Choose a profile to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}
@@ -433,20 +469,26 @@
         </div>
         <div class="statusbar">
           <span class="sb-l"
-            >{editor.connected
-              ? editor.saveState === 'saving'
-                ? 'saving…'
-                : editor.saveState === 'error'
-                  ? '⚠ save failed'
-                  : '✓ saved'
-              : 'demo'} · {editor.variantLabel}</span
+            ><span class="sb-state"
+              >{editor.connected
+                ? editor.saveState === 'saving'
+                  ? 'saving…'
+                  : editor.saveState === 'error'
+                    ? '⚠ save failed'
+                    : '✓ saved'
+                : 'demo — not saved'}</span
+            ><span class="sb-variant">{` · ${editor.variantLabel}`}</span></span
           >
           <button
             class="conn"
-            class:cta={demoMode}
-            onclick={() => (demoMode ? editor.signIn() : editor.connect())}
+            class:cta={demoMode && !signedInOffline}
+            onclick={() => (demoMode && !signedInOffline ? editor.signIn() : editor.connect())}
             disabled={editor.connecting || editor.signingIn}
-            title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
+            title={signedInOffline
+              ? "Signed in, but your saved résumés didn't load — try again"
+              : demoMode
+                ? 'Sign in with Google to keep your edits'
+                : 'Connection status'}
           >
             <span
               class="dot"
@@ -460,7 +502,9 @@
                   ? 'connecting…'
                   : editor.connected
                     ? 'connected'
-                    : 'Sign in with Google to save changes'}</span
+                    : signedInOffline
+                      ? "Couldn't load your résumés — retry"
+                      : 'Sign in with Google to keep your edits'}</span
             >
           </button>
           {#if editor.identity}
@@ -1221,7 +1265,8 @@
       z-index: var(--z-sticky);
     }
 
-    .sb-l {
+    /* Keep "demo — not saved" on phones (M10); only the variant label goes. */
+    .sb-variant {
       display: none;
     }
 

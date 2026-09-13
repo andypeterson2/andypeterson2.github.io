@@ -23,7 +23,8 @@ import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta, type ApiResult } from './api';
 import { resolveAccent } from './accent';
-import { buildExport } from './export';
+import { buildExport, type ExportDoc } from './export';
+import { stashDemoDraft, peekDemoDraft, clearDemoDraft, forNewOwner } from './draft';
 import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
@@ -92,6 +93,10 @@ class EditorState {
   signingIn = $state(false);
   /** The signed-in Google account (self-hosted session), or null when logged out. */
   identity = $state<{ email: string | null; name: string | null } | null>(null);
+  /** Demo edits carried across sign-in, waiting for the visitor to import or discard
+   *  them (audit C1). Set by connect() when a fresh stash exists. */
+  pendingDraft = $state<ExportDoc | null>(null);
+  importingDraft = $state(false);
   /** Profiles available to the signed-in identity (empty in demo). */
   persons = $state<PersonMeta[]>([]);
   activePersonId = $state<number | null>(null);
@@ -205,12 +210,15 @@ class EditorState {
   #shadow = new FieldShadow();
   #cache = new ProfileCache();
 
+  /** A demo visitor's own edited document, held while the guided tour drives a
+   *  pristine sample, and put back when it ends (audit M26). */
+  #demoResume: { doc: Person; dirty: boolean } | null = null;
+
   /**
    * The signed-in owner's real document, view and save status, captured when they
    * start the guided tour so it can drive their live CV and then put everything
-   * back untouched. Null unless a connected tour is staged — demo never captures;
-   * it resets to the pristine sample and keeps whatever the tour leaves behind
-   * (see stageTour / unstageTour / addEphemeralBullet).
+   * back untouched. Null unless a connected tour is staged (the demo uses
+   * #demoResume; see stageTour / unstageTour / addEphemeralBullet).
    */
   #tourResume: {
     doc: Person;
@@ -786,13 +794,18 @@ class EditorState {
       }
       data = res.data;
     } else {
-      data = buildExport(
-        this.person,
-        (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
-        (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
-      );
+      data = this.localExport();
     }
     downloadJson(data, `${label}.json`);
+  }
+
+  /** The working document as an import-compatible tree, serialized client-side. */
+  private localExport(): ExportDoc {
+    return buildExport(
+      this.person,
+      (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
+      (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
+    );
   }
 
   /**
@@ -914,6 +927,43 @@ class EditorState {
    */
   resetDemo() {
     if (this.connected) return;
+    const before = this.dirty ? $state.snapshot(this.person) : null;
+    const beforeDirty = this.dirty;
+    this.#demoResume = null; // an explicit reset is the visitor's fresh start
+    this.applyPristineDemo();
+    this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
+    // The reset itself is undoable, so "Reset demo" is never a one-way door (M26).
+    if (before) {
+      this.undo.record({
+        label: 'Reset demo',
+        undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
+        redo: () => {
+          this.applyPristineDemo();
+          this.#shadow.reseat(this.person, this.style);
+        },
+      });
+    }
+    this.say('Demo reset — the sample résumé is back to its original state.');
+  }
+
+  /**
+   * Reset from the UI (File ▸ Reset demo, the tour's closing panel): asks first when
+   * the visitor has edits, since those edits are the only copy (audit M26).
+   */
+  requestResetDemo() {
+    if (this.connected) return;
+    if (
+      this.dirty &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Discard your changes and restore the sample résumé? You can undo this.')
+    ) {
+      return;
+    }
+    this.resetDemo();
+  }
+
+  /** The pristine sample in place of the working document (no undo bookkeeping). */
+  private applyPristineDemo() {
     this.person = createDemoPerson(this.demoIdentity ?? undefined);
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
@@ -925,19 +975,35 @@ class EditorState {
     this.scrollTarget = null;
     this.dirty = false;
     this.saveState = 'demo';
-    this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
-    this.say('Demo reset — the sample résumé is back to its original state.');
+  }
+
+  /** Put a demo document back (undoing a reset, or ending the tour). */
+  private adoptDemoDocument(doc: Person, dirty: boolean) {
+    this.person = doc;
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.preview.reset();
+    this.scrollTarget = null;
+    this.dirty = dirty;
+    this.saveState = 'demo';
+    this.#shadow.reseat(this.person, this.style);
   }
 
   /**
-   * Stage the guided tour. Demo → reset to the pristine sample (determinism beats
-   * continuity). A signed-in owner → snapshot their live document, view and save
+   * Stage the guided tour. Demo → hold the visitor's edits (if any) and drive the
+   * pristine sample (determinism beats continuity). A signed-in owner → snapshot their live document, view and save
    * status so the tour can drive the real CV and restore it afterwards; nothing the
    * tour does will persist or outlive it (see unstageTour / addEphemeralBullet).
    */
   stageTour() {
     if (!this.connected) {
-      this.resetDemo();
+      // The tour needs the pristine sample to drive, but a visitor's own edits are
+      // held and put back when it ends, not thrown away (audit M26).
+      const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
+      this.applyPristineDemo();
+      this.rebase('demo');
+      this.#demoResume = keep;
       return;
     }
     this.#tourResume = {
@@ -952,17 +1018,27 @@ class EditorState {
   }
 
   /**
-   * Tear down the guided tour. Demo → leave the document exactly as the tour left
-   * it (the visitor keeps exploring; nothing is saved regardless). A signed-in
-   * owner → restore the captured document, view and save status, wiping every
+   * Tear down the guided tour. Demo → put back the visitor's own edits if they had
+   * any; otherwise leave the sample as the tour left it (the visitor keeps
+   * exploring; nothing is saved regardless). A signed-in owner → restore the captured document, view and save status, wiping every
    * ephemeral edit. Re-activates the snapshot so the cache, shadow and undo scope
    * follow the fresh objects; the old undo stack can't replay against them, so it
    * is dropped (the tour clears undo when it visits a cover letter anyway).
    */
   unstageTour() {
+    if (!this.connected) {
+      const mine = this.#demoResume;
+      this.#demoResume = null;
+      if (mine) {
+        this.adoptDemoDocument(mine.doc, mine.dirty);
+        this.rebase('demo'); // the tour's commands point at the sample; they can't replay here
+        this.say('Tour over — your edits are back.');
+      }
+      return;
+    }
     const resume = this.#tourResume;
     this.#tourResume = null;
-    if (!this.connected || !resume) return;
+    if (!resume) return;
     const pid = this.activePersonId;
     if (pid != null) {
       this.#cache.drop(pid);
@@ -1022,6 +1098,7 @@ class EditorState {
       this.persons = res.data.persons;
       this.activePersonId = res.data.person.id;
       this.loadPerson(res.data.person);
+      this.pendingDraft = peekDemoDraft();
       return;
     }
     // Signed in but the account has no profiles yet → connected empty state,
@@ -1029,6 +1106,7 @@ class EditorState {
     if (res.error?.code === 'no_persons') {
       this.connecting = false;
       this.enterEmpty();
+      this.pendingDraft = peekDemoDraft();
       return;
     }
     // Not loaded. A not-signed-in request 302s to the Access login on another
@@ -1108,9 +1186,47 @@ class EditorState {
    */
   signIn() {
     if (typeof window === 'undefined') return;
+    // Sign-in is a same-tab redirect: keep the visitor's demo edits so they can
+    // bring them into their account afterwards (audit C1). If this browser won't
+    // let us keep them, say so before they're lost.
+    if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
+      const go = window.confirm(
+        "This browser won't let the editor keep your demo edits through sign-in. " +
+          'Sign in anyway? (File ▸ Export as JSON saves a copy first.)',
+      );
+      if (!go) return;
+    }
     this.signingIn = true;
     this.connectError = null;
     window.location.href = api.loginUrl(window.location.href);
+  }
+
+  /** Import the carried-over demo edits as a new profile of the signed-in visitor. */
+  async importDraft() {
+    const doc = this.pendingDraft;
+    if (!doc || !this.connected || !this.identity || this.importingDraft) return;
+    this.importingDraft = true;
+    try {
+      const tree = forNewOwner(doc, this.identity);
+      const created = await this.persist(() => api.createPerson(tree.name));
+      if (!created.ok || !created.data) return; // the save toast reports it; the offer stays
+      const id = created.data.id;
+      const imported = await this.persist(() => api.importPerson(id, tree));
+      if (!imported.ok) return;
+      clearDemoDraft();
+      this.pendingDraft = null;
+      this.persons = [...this.persons, { id, name: tree.name }];
+      await this.selectPerson(id);
+      this.say('Your demo edits are now a profile in your account.');
+    } finally {
+      this.importingDraft = false;
+    }
+  }
+
+  /** Drop the carried-over demo edits. */
+  discardDraft() {
+    clearDemoDraft();
+    this.pendingDraft = null;
   }
 
   /** Sign out: drop the server session, forget the identity, return to the demo. */

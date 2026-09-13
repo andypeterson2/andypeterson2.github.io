@@ -5,12 +5,12 @@
 
 import {
   state,
-  $,
   must,
   elHistSvg,
   elQuPlaceholder,
   elClPlaceholder,
   elQuList,
+  elQuSolPlaceholder,
   elThresholdInput,
   type HistData,
 } from './state';
@@ -66,12 +66,9 @@ export function clearSolverResults(): void {
   elClPlaceholder.style.display = '';
   elClPlaceholder.textContent = 'Running…';
 
-  const quSolPh = $('qu-sol-placeholder');
   elQuList.innerHTML = '';
-  if (quSolPh) {
-    elQuList.appendChild(quSolPh);
-    quSolPh.textContent = 'Running…';
-  }
+  elQuList.appendChild(elQuSolPlaceholder);
+  elQuSolPlaceholder.textContent = 'Running…';
 
   elHistSvg.innerHTML = '';
   state.histData = null;
@@ -281,13 +278,9 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
 // ── Quantum solutions list renderer ───────────────────────────
 export function renderQuantumList(): void {
   elQuList.innerHTML = '';
-  const quSolPh = $('qu-sol-placeholder');
-
   if (!state.histData) {
-    if (quSolPh) {
-      elQuList.appendChild(quSolPh);
-      quSolPh.textContent = 'Solve the puzzle to see solutions.';
-    }
+    elQuList.appendChild(elQuSolPlaceholder);
+    elQuSolPlaceholder.textContent = 'Solve the puzzle to see solutions.';
     return;
   }
 
@@ -296,10 +289,8 @@ export function renderQuantumList(): void {
   const sz = getBestSolSize(rows, cols);
 
   if (above.length === 0) {
-    if (quSolPh) {
-      elQuList.appendChild(quSolPh);
-      quSolPh.textContent = 'No solutions above threshold.';
-    }
+    elQuList.appendChild(elQuSolPlaceholder);
+    elQuSolPlaceholder.textContent = 'No solutions above threshold.';
     return;
   }
 

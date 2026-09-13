@@ -26,14 +26,39 @@
     cursor: pointer;
   }
 
+  /* Unset is a hollow ring (the System-6 idiom the editor uses), not a faint grey. */
   .sn-dot {
-    width: 0.45em;
-    height: 0.45em;
+    width: 0.55em;
+    height: 0.55em;
     border-radius: var(--radius-round);
-    background-color: var(--ink-4) !important;
-    opacity: 0.5;
+    border: 1.5px solid var(--ink);
+    background-color: var(--paper) !important;
     flex-shrink: 0;
     pointer-events: none;
+  }
+
+  /* The state as a word, visible (H6). */
+  .sn-state {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .sn-retry {
+    font: inherit;
+    font-size: 0.85em;
+    padding: 0 0.4em;
+    border: 1px solid currentcolor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .server-nav-item--mobile {
+    padding: 8px 12px;
+    font-size: var(--text-3xs);
+    gap: 0.5em;
   }
 
   .sn-dot.sn-green {
