@@ -106,6 +106,13 @@ a:hover {
   padding-bottom: clamp(5px, 0.7vw, 9px);
 }
 
+/* system.css draws title-bar buttons at 40px and scales them by half, which halves
+   the focus ring too: double it so it lands at the 2px everything else uses. */
+.title-bar button:focus-visible {
+  outline-width: 4px;
+  outline-offset: 4px;
+}
+
 .title-bar .title {
   font-size: var(--text-base);
   /* Pad the white title block itself (system.css leaves it zero vertical), so

@@ -4,6 +4,7 @@ import SidebarWindow from '../components/home/SidebarWindow.astro';
 import SidebarEntry from '../components/home/SidebarEntry.astro';
 import SkillGroup from '../components/home/SkillGroup.astro';
 import TimelineEntry from '../components/home/TimelineEntry.astro';
+import WriteupModal from '../components/WriteupModal.astro';
 import { siteConfig } from '../config/site';
 import { projects } from '../data/projects';
 import { experience } from '../data/experience';
@@ -52,6 +53,11 @@ const timeline: TimelineItem[] = [
           <span>Southern California</span>
         </div>
         <a class="bio-contact-link" href="#contact">Contact ↓</a>
+        <!-- The long About, behind a "?" like every other depth on the site (L7) — it
+             shipped hidden for months (H5). /about lands here with the dialog open. -->
+        <div class="bio-more">
+          <WriteupModal slug="about" label="The longer version" hash="about" />
+        </div>
       </div>
     </div>
 
@@ -180,98 +186,6 @@ const timeline: TimelineItem[] = [
       </SidebarWindow>
     </div>
   </div>
-
-  <!-- ── Long-form about ── -->
-  <div class="window about-window" id="about">
-    <div class="title-bar"><h2 class="title">About</h2></div>
-    <div class="window-sub">
-      <span>The longer version</span>
-    </div>
-    <div class="about-body">
-      <section class="about-section">
-        <h3>How I got here</h3>
-        <p>
-          I got into computing through security clubs rather than coursework. I was running{' '}
-          <strong>ACM Cyber at UCSD</strong> when campus closed in 2020 — a 500-member org that existed
-          almost entirely through in-person meetings. Keeping it alive meant rebuilding how it ran: documentation
-          people could actually find, and role-based access so officers could do their jobs without waiting
-          on me. Around the same time a few of us started{' '}
-          <strong>San Diego CTF</strong>, which grew into a competition with hundreds of players
-          from more than twenty countries. I wrote the Discord bot everyone submitted through, on
-          the theory that the fastest way to get people competing is to meet them where they already
-          are.
-        </p>
-      </section>
-
-      <section class="about-section">
-        <h3>The research years</h3>
-        <p>
-          From 2022 to 2024 I was a research intern at the{' '}
-          <strong>Qualcomm Institute (CALIT2)</strong>, working on quantum-secured communication.
-          The centerpiece was a browser-native encrypted video system whose symmetric keys come from
-          a <strong>BB84 quantum key-distribution</strong> exchange rather than classical Diffie–Hellman.
-          The whole protocol runs in the browser over a WebRTC DataChannel: basis reconciliation and sifting,
-          QBER estimation from a public sample, Cascade error correction, then Toeplitz privacy amplification
-          down to a 128-bit key. That key drives{' '}
-          <strong>AES-128-GCM</strong> encryption of the media frames through WebRTC Insertable Streams
-          (<code>RTCRtpScriptTransform</code>, in a Web Worker), so frames are re-keyed with no SDP
-          renegotiation and the latency cost stays low enough that a call still feels like a call.
-        </p>
-        <p>
-          Claiming a channel is secure is easy; showing it is not. So I built a simulated quantum
-          optical channel with the parameters that actually matter — Poissonian photon statistics,
-          ~0.2 dB/km fiber attenuation, single-photon detector efficiency — and an intercept-resend
-          eavesdropper. Eve can't measure a qubit without disturbing the ones she forwards, which
-          pushes the quantum bit error rate past the ~11% threshold where a secure key can no longer
-          be distilled; the protocol sees the spike, throws the key away, and re-exchanges.
-          Alongside that I worked on Grover-based quantum search for constraint problems — validated
-          on real IBM hardware, where a 2×2 nonogram reached 32.3% correct-state probability against
-          6.25% by chance — and PyTorch classification pipelines. I presented the algorithmic work
-          to IBM's VP of Quantum during a campus visit, and co-founded{' '}
-          <strong>Quantum Computing at UC San Diego</strong> to give undergraduates somewhere to start.
-        </p>
-      </section>
-
-      <section class="about-section">
-        <h3>Why everything here runs in your browser</h3>
-        <p>
-          Every demo embedded on this page works with nothing running on my side. The nonogram
-          solver's classical path is a real solver ported to JavaScript. The digit classifier runs a
-          trained network's forward pass locally, on weights exported from the same model the
-          backend serves. The quantum results are real measurements, computed once and committed.
-          That was a deliberate constraint: a portfolio that only works while a server happens to be
-          awake isn't a portfolio, it's a recurring bill. The live backends still exist for the
-          parts that genuinely need them — they sit behind one gateway, scale to zero, and wake only
-          for someone I've handed a link to.
-        </p>
-      </section>
-
-      <section class="about-section">
-        <h3>How I work</h3>
-        <p>
-          A few habits, most of them learned the hard way. Do the structural fix rather than patch
-          around it — the shortcut is nearly always more expensive by the second time you touch it.
-          Write the test at the seam where two components meet: one of the worst bugs I've chased
-          was a handoff where one module called a method the other side never defined — each module
-          was individually correct and individually tested, and nothing caught it because no test
-          put them together. Treat security as a default rather than a feature — credentials stay
-          server-side, every input that reaches a solver or a trainer is bounded, and a static site
-          under a strict <code>Content-Security-Policy</code> beats one that trusts a CDN.
-        </p>
-      </section>
-
-      <section class="about-section">
-        <h3>What I'm after</h3>
-        <p>
-          Work where correctness is checkable and the result has to survive contact with real users.
-          I'm most useful somewhere between research and production — taking something that
-          currently only works in a paper, a notebook, or one person's head, and turning it into a
-          system other people can rely on. Each project above has a <em>?</em> button with the full writeup,
-          and the source is on GitHub if you'd rather just read the code.
-        </p>
-      </section>
-    </div>
-  </div>
 </BaseLayout>
 
 <style>
@@ -333,6 +247,12 @@ const timeline: TimelineItem[] = [
     font-size: var(--text-2xs);
   }
 
+  .bio-more {
+    display: flex;
+    justify-content: center;
+    padding: 0 clamp(6px, 0.9vw, 10px) clamp(8px, 1vw, 12px);
+  }
+
   @media (width <= 600px) {
     .main-cols {
       grid-template-columns: minmax(0, 1fr);
@@ -351,7 +271,7 @@ const timeline: TimelineItem[] = [
     }
 
     .bio-headshot {
-      grid-row: 2 / 5;
+      grid-row: 2 / 6;
       max-height: 30vh;
       object-fit: contain;
     }
@@ -500,55 +420,6 @@ const timeline: TimelineItem[] = [
     bottom: 8px;
     width: 1px;
     background: var(--ink);
-  }
-
-  /* ── Long-form about ── */
-  .about-window,
-  .about-window .title-bar,
-  .about-section h3,
-  .about-section p {
-    margin: 0;
-  }
-
-  .about-window {
-    display: none; /* long-form About hidden for now — remove to restore */
-    margin-top: clamp(10px, 1.4vw, 18px);
-    min-width: 0;
-    scroll-margin-top: 80px;
-  }
-
-  .about-body {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(10px, 1.4vw, 16px);
-    padding: clamp(8px, 1vw, 14px);
-    font-size: var(--text-sm);
-    line-height: 1.7;
-  }
-
-  .about-section {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(3px, 0.5vw, 6px);
-  }
-
-  .about-section h3 {
-    font-family: var(--font-ui);
-    font-size: var(--text-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text);
-  }
-
-  /* Keep prose readable on wide screens without boxing in the window chrome. */
-  .about-section p {
-    max-width: 68ch;
-  }
-
-  .about-section code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-    color: var(--color-text);
   }
 
   /* ── Responsive ── the timeline spine hides on phones (entries collapse their
