@@ -277,8 +277,14 @@ pre code {
 /* ── Focus — one treatment everywhere (P10) ──
    A 2px ink ring, which the dark-mode page inversion turns white on black, so no
    control falls back to the browser's blue. Text fields keep system.css's own
-   inversion (its input:focus rule outranks this one). */
-:focus-visible {
+   inversion (inputs aren't in this list, and its input:focus rule stays).
+   Element names, not a bare :focus-visible or :where() — PurgeCSS drops both
+   (scripts/purge-css.mjs fails the build if this rule goes missing). */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
