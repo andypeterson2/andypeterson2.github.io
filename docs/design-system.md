@@ -81,7 +81,7 @@ gate enforces `font-size` everywhere, site chrome and all three apps alike.
 **Color — always a token, and CI enforces it too.** Never write a raw `#hex` / `rgb()` on
 `color`, `background`, `border`, `outline`, `fill`, or `stroke` — reach for a token: the warm ink
 ramp (`--ink`, `--ink-2…5`, `--color-text-muted`), the paper tints (`--paper`, `--paper-2…4`), the
-status light, `--accent`, `--link`, or a `--scrim`. Colours are *defined* in exactly two places —
+status light, `--accent`, `--link`, or `--scrim-soft` (a dialog backdrop is `--dither-scrim`, a 1-bit checker). Colours are *defined* in exactly two places —
 `tokens.css` and the editor's `lib/styles.css` — and used through `var()` everywhere else. The gate
 is `.stylelintrc.tokens.json` (wired into `npm run lint` as `lint:tokens`); like the font-size gate
 it covers css + astro + svelte + `packages/` with **no exemptions**, so a raw colour anywhere

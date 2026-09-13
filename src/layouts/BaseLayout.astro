@@ -173,9 +173,8 @@ const windowTitle = title || siteConfig.title;
         <header class="title-bar">
           <h1 class="title">{windowTitle}</h1>
         </header>
-        <!-- The page's one <main> landmark. Back to top lives inside it so it
-             isn't stray content outside every landmark; it's position: fixed, so
-             where it sits in the DOM doesn't move it. -->
+        <!-- The page's one <main> landmark. Back to top is its last child, pinned to the
+             pane's bottom-right corner, so it stays on the window's paper. -->
         <main class="window-pane site-pane" id="main-content">
           <slot />
           <Button
@@ -620,9 +619,10 @@ const windowTitle = title || siteConfig.title;
      Hidden means out of the tab order too (visibility), not just transparent — an
      invisible tab stop would send focus nowhere at the end of every page. */
   .back-to-top {
-    position: fixed;
-    bottom: var(--space-6);
-    right: var(--space-6);
+    position: sticky;
+    bottom: var(--space-4);
+    display: flex;
+    margin: var(--space-4) 0 0 auto;
     z-index: var(--z-sticky);
     opacity: 0;
     visibility: hidden;

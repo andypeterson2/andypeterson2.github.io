@@ -130,7 +130,7 @@ detail URL 301s to its anchored timeline entry (see Redirects below).
 | Desktop nav (>768px) | Sticky menubar: heart-icon **theme toggle** (light/dark, persisted to `localStorage.sm-theme`), then Home and Projects (`/#projects`, the timeline anchor) links. No About link, no breadcrumbs bar. |
 | Mobile nav (≤768px) | One floating hamburger button (top-left) opening a small menu: Theme toggle, Home, Projects. Deliberately *not* hidden on `bare` pages — it is the way back out of a full-bleed app. |
 | Window structure | One System-6 window: title bar with `<h1>` (page title), window pane with `<slot>` |
-| Back-to-top | Fixed `Button`, visible after 400px of pane scroll |
+| Back-to-top | Sticky `Button` in the pane's bottom-right corner, visible after 400px of pane scroll |
 | Responsive | Switches nav mode at 768px; drops the body border/frame on mobile |
 | Global | `<ServerConnectModal />` mounted on every page |
 
