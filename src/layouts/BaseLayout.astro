@@ -484,8 +484,11 @@ const windowTitle = title || siteConfig.title;
   }
 
   /* ── Inner window ── */
+  /* system.css gives every .window min-width: 320px; with the canvas padding that
+     overflowed a 320px viewport (400% zoom) and the page scrolled sideways (M31). */
   .site-window {
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

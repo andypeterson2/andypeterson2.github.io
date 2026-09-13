@@ -33,3 +33,35 @@ test.describe('Responsive layout', () => {
     }
   });
 });
+
+// Audit M31: at 320 CSS px (a 1280px screen at 400% zoom) nothing scrolls sideways
+// (WCAG 1.4.10 Reflow).
+test.describe('Reflow at 320px', () => {
+  for (const path of [
+    '/',
+    '/projects/ai-ml/app/',
+    '/projects/quantum-nonogram-solver/app/',
+    '/projects/latex-resume-editor/app/',
+    '/nope',
+  ]) {
+    test(`no horizontal scroll on ${path}`, async ({ page }) => {
+      await page.setViewportSize({ width: 320, height: 640 });
+      await page.route('**/api/**', (r) => r.abort());
+      await page.goto(path);
+      await page.waitForTimeout(500);
+      const overflow = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        return [...document.querySelectorAll('body *')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            // SVG internals are clipped by their own viewport; they can't scroll the page.
+            if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
+          })
+          .slice(0, 3)
+          .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`);
+      });
+      expect(overflow).toEqual([]);
+    });
+  }
+});
