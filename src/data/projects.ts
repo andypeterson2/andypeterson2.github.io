@@ -22,7 +22,7 @@ export const projects: Project[] = [
     title: 'LaTeX Resume Editor',
     slug: 'latex-resume-editor',
     description:
-      'Full-stack document editor with a REST API, SQLite persistence, and server-side LaTeX compilation.',
+      'One master resume, many targeted versions: a structured-data editor where each variant is a tag-rule lens over the same content, with checkpoint history and undo, compiled to PDF through XeLaTeX.',
     status: 'active',
     featured: true,
     appUrl: '/projects/latex-resume-editor/app/',
@@ -30,9 +30,9 @@ export const projects: Project[] = [
     icon: 'code.svg',
     repoUrl: 'https://github.com/andypeterson2/cv',
     metrics: [
-      { value: '20+', label: 'REST endpoints, JSON-Schema validated' },
-      { value: 'zero-backend', label: 'live demo runs the real editor, no server' },
-      { value: 'e2e + unit', label: 'deterministic, backend-mocked test suite' },
+      { value: '1 → many', label: 'variants are tag-rule lenses over one master document' },
+      { value: 'no server', label: 'the demo is the real editor; sign in only to save or compile' },
+      { value: '390+', label: 'tests: deterministic e2e against a mocked backend, plus unit' },
     ],
     tech: ['Svelte 5', 'Express', 'SQLite', 'Cloudflare Access', 'XeLaTeX'],
   },
@@ -66,9 +66,13 @@ export const projects: Project[] = [
     icon: 'grid_light.svg',
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     metrics: [
-      { value: '32.3%', label: 'correct state on real IBM hardware (6.25% by chance)' },
+      {
+        value: '5×',
+        label:
+          'chance on real IBM hardware: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless)',
+      },
       { value: 'in-browser', label: 'classical solver runs client-side, zero backend' },
-      { value: '1,778', label: 'backend tests' },
+      { value: '1,800+', label: 'backend tests' },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
   },
@@ -84,11 +88,17 @@ export const projects: Project[] = [
     icon: 'microscope.svg',
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
-      { value: '92.1%', label: 'MNIST — predicted in your browser' },
-      { value: '90.0%', label: 'Iris — predicted in your browser' },
-      { value: '97%', label: 'Iris, QSVM paper recreation — the paper’s simulated result' },
-      { value: '91%', label: 'MNIST 6-vs-9 on the paper’s pixel-ratio features' },
-      { value: '6+', label: 'model architectures per dataset' },
+      {
+        value: '10×',
+        label:
+          'closer to ideal than the 2019 paper: its QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130',
+      },
+      {
+        value: '97% / 91.5%',
+        label:
+          'Iris setosa vs versicolor (the paper’s pair) / MNIST 6 vs 9, with the paper’s QSVM rule in your browser',
+      },
+      { value: '92.1%', label: 'MNIST, a linear baseline predicted in your browser' },
     ],
     tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask', 'Jupyter'],
   },
