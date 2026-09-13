@@ -14,4 +14,14 @@ const writeups = defineCollection({
   }),
 });
 
-export const collections = { writeups };
+// Long-form pieces too deep for a writeup modal (e.g. the QSVM paper recreation),
+// rendered as their own pages at /writeups/<id>/ and linked from the modal.
+const articles = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/articles' }),
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+  }),
+});
+
+export const collections = { writeups, articles };
