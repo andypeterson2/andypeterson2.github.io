@@ -1,12 +1,6 @@
-/* system-six — the whole look as one @import closure.
- *
- * This is the single stylesheet a consumer needs (BaseLayout imports it once).
- * The System 6 chrome (`system.css`) is loaded by the host page as a vendored
- * build dependency; this closure layers the site's tokens, base rules, dither
- * textures, and element styles on top. (The package's former Web-Components
- * tier and its build tooling were removed — CSS is the whole product now.)
- */
+/* system-six — the whole look as one @import closure, layered on the System 6 chrome
+ * (system.css), which the host page loads as a vendored build dependency. */
 @import './tokens.css'; /* the ink + status-light + type/space scales */
 @import './base.css'; /* resets, the invert idiom, dark mode, section-rule, finder grid */
 @import './dither.css'; /* the 1-bit ordered fills */
-@import './elements.css'; /* host layout for the custom elements */
+@import './elements.css'; /* the theme toggle and the apps' shared button */

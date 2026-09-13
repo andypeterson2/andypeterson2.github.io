@@ -8,9 +8,8 @@ import { setStatus, updateGridSizeLabel } from './ui';
 const MAX_GRID = 10;
 const MIN_GRID = 2;
 
-// Any change to the puzzle makes the results on screen describe a different grid.
-// app.ts registers what "edited" means (clear results, reset the gallery) so this
-// module doesn't import solver/app code (audit M22).
+// Any change to the puzzle makes the on-screen results stale. The app registers what
+// "edited" means (clear results, reset the gallery) so this module stays independent.
 let onEdit: () => void = () => undefined;
 export function setOnGridEdit(fn: () => void): void {
   onEdit = fn;
@@ -83,10 +82,7 @@ function makeClueContent(clue: number[], maxLen: number, className: string): HTM
 }
 
 // ── Grid build (Draw mode) ─────────────────────────────────────
-// The grid is a keyboard widget as well as a drawing surface (audit M24): each cell
-// holds a toggle button named "Row r, column c", one of which is in the tab order
-// (roving tabindex); arrows, Home and End move, Space or Enter fills. The clues are
-// the table's row and column headers, so a screen reader hears them as it moves.
+// Also a keyboard widget: roving-tabindex cell buttons; arrows/Home/End move, Space/Enter fill.
 let focusR = 0;
 let focusC = 0;
 
@@ -332,7 +328,7 @@ export function addCol(): void {
   resized();
 }
 
-/** The grid can shrink as well as grow (audit M12). */
+/** The grid can shrink as well as grow. */
 export function removeRow(): void {
   if (state.rows <= MIN_GRID) return;
   state.rows--;
@@ -370,7 +366,7 @@ export function getCurrentPuzzle(): Puzzle {
   };
 }
 
-/** Clear starts over: an empty 3×3, the size the app opens at (audit M12). */
+/** Clear starts over: an empty 3×3, the size the app opens at. */
 export function doClear(): void {
   state.rows = 3;
   state.cols = 3;

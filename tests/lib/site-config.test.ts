@@ -1,5 +1,5 @@
 /**
- * Unit tests for pure site config resolver extracted from src/config/site.ts.
+ * Unit tests for the pure site config resolver.
  */
 import { describe, test, expect } from 'vitest';
 import { resolveSiteConfig } from '../../src/lib/site-config';

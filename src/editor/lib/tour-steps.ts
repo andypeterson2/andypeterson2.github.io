@@ -1,11 +1,9 @@
-// The tour's script. Every step drives the REAL editor through the same store
-// calls a visitor's clicks make — there is no parallel "demo mode" rendering
-// path to drift out of sync with the app. That is the whole point: the thing
-// being demonstrated is the thing.
-//
-// Steps are looked up by shape (an `experience` section, the variant that has
-// include-rules, the cover-letter variant) rather than by hard-coded id, so
-// editing demo.ts can't silently break the narration.
+// The tour's script. Every step drives the REAL editor through the same store calls
+// a visitor's clicks make; there is no parallel demo rendering path to drift out of
+// sync. Steps find their targets by shape (an `experience` section, the variant with
+// include-rules, the cover-letter variant) rather than by hard-coded id, so editing
+// the demo seed can't silently break the narration.
+
 import { editor } from './store.svelte';
 import { typeText, type TourStep } from './tour';
 import {
@@ -26,7 +24,7 @@ export function tourSteps(): TourStep[] {
   // appended a bullet each time would grow the demo instead of restaging it.
   let bulletId: number | null = null;
 
-  // The shapes the steps drive, guarded by tests/editor-tour-shape.test.ts.
+  // The shapes the steps drive, guarded by a unit test over the demo seed.
   const experience = () => findExperience(editor.person);
   const firstEntry = () => findFirstEntry(editor.person);
   const lensVariant = () => findLensVariant(editor.person);
@@ -51,9 +49,8 @@ export function tourSteps(): TourStep[] {
       async enter(signal) {
         const entry = firstEntry();
         if (!entry) return;
-        // Idempotent across re-entries (Resume replays the step): reuse the bullet a
-        // previous run added, else make one. It never persists — in demo nothing is
-        // saved, and a signed-in owner's tour is sandboxed (store.stageTour).
+        // Resume replays the step, so reuse a previous run's bullet. It never
+        // persists: the demo saves nothing and an owner's tour is sandboxed.
         let bullet = bulletId == null ? null : (entry.items.find((i) => i.id === bulletId) ?? null);
         if (!bullet) {
           bullet = editor.addEphemeralBullet(entry);
@@ -91,7 +88,7 @@ export function tourSteps(): TourStep[] {
       id: 'rules',
       caption:
         'Its rules are ordinary tag chips. Edit them and the document re-filters as you type.',
-      spot: '.drawer', // Drawer.svelte's panel is a div; 'aside.drawer' never matched
+      spot: '.drawer', // the drawer panel is a div, not an <aside>
       enter() {
         editor.openDrawer = 'variant';
       },

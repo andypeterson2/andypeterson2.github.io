@@ -37,9 +37,9 @@ jobs:
             exit 0
           fi
           exit 1
-      # astro sync generates .astro/types.d.ts, which the type-aware lint
-      # (unsafe-* over src TS) needs — without it env/content types resolve
-      # as error-typed and the rules fire spuriously.
+      # astro sync generates the env/content types the type-aware lint (unsafe-*
+      # over src TS) needs; without them those types are error-typed and the rules
+      # fire spuriously.
       - run: npx astro sync
       - run: npm run lint
       - name: Lint the Python helper scripts
@@ -56,8 +56,8 @@ jobs:
           retention-days: 7
       - run: npm run build
         env:
-          # Public site identity — kept in sync with deploy.yml so the tested build
-          # matches production. Set as repository variables; unset → "Portfolio".
+          # Public site identity: the same repository variables the production deploy
+          # uses, so the tested build matches production. Unset → "Portfolio".
           SITE_DISPLAY_NAME: ${{ vars.SITE_DISPLAY_NAME }}
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           SITE_URL: ${{ vars.SITE_URL }}

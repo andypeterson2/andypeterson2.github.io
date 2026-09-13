@@ -3,11 +3,11 @@ import Button from '../Button.astro';
 ---
 
 <!-- Draw card (image input) --><!-- Visible from the first paint: MNIST (the canvas) is the default dataset, so the
-     card no longer pops in when the script runs and shoves everything down (P12). -->
+     card must not pop in when the script runs and shove everything down. -->
 <section class="card" id="canvas-col">
   <h2 class="card-title">Draw</h2>
   <!-- Drawing is pointer-only by nature (a path, exempt from 2.1.1), so the label
-       points keyboard users to the datasets that take typed values (M21). -->
+       points keyboard users to the datasets that take typed values. -->
   <canvas
     id="draw-canvas"
     width="280"
@@ -54,7 +54,7 @@ import Button from '../Button.astro';
     <span id="eval-status"></span>
   </div>
   <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
-       make scrollers focusable on its own) (M21). -->
+       make scrollers focusable on its own). -->
   <div class="metrics-wrap" tabindex="0" role="region" aria-label="Evaluation table">
     <table class="app-table metrics-table">
       <thead id="metrics-head"></thead>
@@ -86,7 +86,7 @@ import Button from '../Button.astro';
   }
 
   /* Reserve the table's full height up front (it's capped there anyway), so it
-     doesn't grow under the reader when the in-browser models load (P12). */
+     doesn't grow under the reader when the in-browser models load. */
   .metrics-wrap {
     overflow: auto;
     min-height: 300px;
@@ -163,7 +163,7 @@ import Button from '../Button.astro';
     color: var(--color-text-muted);
   }
 
-  /* A binary model's scope, and an answer outside it, read as caveats (M20). */
+  /* A binary model's scope, and an answer outside it, read as caveats. */
   :global(.pred-scope),
   :global(.pred-out-note) {
     color: var(--ink-3);
@@ -174,8 +174,8 @@ import Button from '../Button.astro';
     text-decoration: line-through;
   }
 
-  /* Results are judgements, not machine state: they stay in ink (L3) — confidence
-     and accuracy bands are told apart by weight, never by the status colours (P6). */
+  /* Results are judgements, not machine state: they stay in ink — confidence
+     and accuracy bands are told apart by weight, never by the status colours. */
   :global(.conf-high) {
     color: var(--ink);
     font-weight: 700;

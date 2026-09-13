@@ -13,7 +13,7 @@
 
 import { ICONS } from './icons';
 
-/** Shared theme storage key — must match theme-bootstrap.js. */
+/** Shared theme storage key — must match the layout's pre-paint theme bootstrap. */
 const THEME_KEY = 'sm-theme';
 
 export interface ThemeToggleOpts {
@@ -209,9 +209,8 @@ function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHand
     onOpenKeydown(e);
   }
 
-  // No ARIA roles: this is a disclosure of plain buttons. listbox/option (and menu
-  // before it) promised a widget the markup isn't — the trigger's aria-expanded and
-  // aria-controls say all there is to say (M21).
+  // No ARIA roles: this is a disclosure of plain buttons, not a listbox or menu widget.
+  // The trigger's aria-expanded and aria-controls say all there is to say.
 
   triggerEl.addEventListener('click', onTrigger);
   triggerEl.addEventListener('keydown', onKeydown);

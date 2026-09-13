@@ -2,8 +2,7 @@ import { vi, describe, test, expect, beforeEach } from 'vitest';
 
 // The controller talks to the backend only through `api`; mock it so the demo
 // path (no calls) and the connected path (calls + id reconciliation) are both
-// checkable without a network. Runes in history.svelte.ts compile via the
-// vite-plugin-svelte wired into vitest.config.ts (tech-debt round-two item 17).
+// checkable without a network.
 vi.mock('../src/editor/lib/api', () => ({
   api: {
     listVersions: vi.fn(async () => ({ ok: true, status: 200, data: { versions: [] } })),

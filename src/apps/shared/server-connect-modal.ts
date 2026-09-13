@@ -2,16 +2,16 @@
  * Server status navbar UI — one nav item + status dot per backend declared
  * by a <meta name="site-backend" content="svc" data-label="…">.
  *
- * STATUS-ONLY by design: there is no manual host/port connect form anymore.
+ * STATUS-ONLY by design: there is no manual host/port connect form.
  * The site's backends are deploy-based — the only ways an app connects are
- * the recruiter-pass / owner activation in pass.ts (health-gated, through the
- * gateway) and the allowlisted ?backend= override in ServiceConfig (which, on
- * the deployed site, admits only the gateway origin; localhost is possible
- * only when the page itself is served from localhost, i.e. local dev).
+ * the recruiter-pass / owner activation (health-gated, through the gateway)
+ * and the allowlisted ?backend= override in ServiceConfig (which, on the
+ * deployed site, admits only the gateway origin; localhost is possible only
+ * when the page itself is served from localhost, i.e. local dev).
  *
  * Talks to the apps only through the navbar:* CustomEvents (connect-ready /
  * connect-pending / connect-failed / connect), so it has no per-app knowledge.
- * The dot is driven by pass.ts's waking lifecycle and by the apps' own
+ * The dot is driven by the pass activation's waking lifecycle and the apps' own
  * widget.setStatus reports.
  *
  * Side-effect module: builds the UI on import (or DOMContentLoaded).
@@ -41,9 +41,8 @@ document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
 });
 
 // ── Create one nav status item per backend ───────────────────────
-// The state is a visible word, not only a dot (audit H6): the site's thesis is honest
-// state, and a 9px half-transparent dot said nothing — on phones it wasn't shown at all.
-// Words name the tier the visitor is on, not the socket.
+// The state is a visible word, not only a dot: the site's thesis is honest state, and a
+// 9px half-transparent dot says little. Words name the tier the visitor is on, not the socket.
 const STATE_WORDS: Partial<Record<string, string>> = {
   idle: 'in your browser',
   waking: 'waking the live backend… (up to 30s)',
@@ -76,7 +75,7 @@ function createBackendUI(cfg: BackendDef): void {
     const word = document.createElement('span');
     word.className = 'sn-state';
     // Plain text that announces its changes — not a menu item, since clicking it
-    // does nothing (M9).
+    // does nothing.
     word.setAttribute('role', 'status');
     const retry = document.createElement('button');
     retry.type = 'button';
@@ -128,7 +127,7 @@ function createBackendUI(cfg: BackendDef): void {
     if (serverLi) serverLi.title = `${navLabel}: ${STATE_WORDS[s] ?? ''}`;
   }
 
-  // Pass-activated live tier (pass.ts): the backend may be waking from sleep —
+  // Pass-activated live tier: the backend may be waking from sleep —
   // show that honestly until the health-gated activation either connects or
   // gives up. On give-up, say so and offer a retry; the browser tier stands.
   document.addEventListener('navbar:connect-pending', (e) => {
@@ -141,7 +140,7 @@ function createBackendUI(cfg: BackendDef): void {
     const detail = (e as CustomEvent<{ service?: string; reason?: string }>).detail;
     if (detail.service !== service) return;
     // Retry shows only for 'failed' (a backend that may still wake), never for a
-    // refused pass (Fable A1-05).
+    // refused pass.
     connState.status = detail.reason === 'unauthorized' ? 'unauthorized' : 'failed';
     connState.connected = false;
     updateNav();

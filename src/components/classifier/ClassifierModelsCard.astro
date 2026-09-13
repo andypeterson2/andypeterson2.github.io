@@ -31,18 +31,18 @@ import Button from '../Button.astro';
 
 <style>
   /* The refresh glyph a size up; .s6-btn--icon gives it the 32px (44px touch)
-     target (M11). */
+     target. */
   :global(#classifier-app .icon-btn) {
     font-size: var(--text-2xs);
   }
 
-  /* Room for the two in-browser models before they load (P12). */
+  /* Room for the two in-browser models before they load. */
   #session-models {
     min-height: 4.5em;
   }
 
-  /* Styles the classes app.ts buildSessionModelRow() actually emits (M1): the row
-     used to run together as "LogisticRegression(in-browser)Linear7,850params". */
+  /* The classes buildSessionModelRow() emits; without these the row runs together as
+     "LogisticRegression(in-browser)Linear7,850params". */
   :global(.ui-list-row) {
     display: flex;
     align-items: center;

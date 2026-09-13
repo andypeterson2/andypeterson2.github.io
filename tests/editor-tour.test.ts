@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { sleep, tourIntent, typeText, DWELL_MS, TYPE_MS } from '../src/editor/lib/tour';
 
 /**
- * The guided tour's pure core. The reactive shell (tour.svelte.ts) is exercised
+ * The guided tour's pure core. The reactive shell is exercised
  * by the e2e suite; what's pinned here is the part with actual decisions in it —
  * above all the interrupt rule, which is the tour's signature interaction.
  */

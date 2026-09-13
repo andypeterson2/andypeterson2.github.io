@@ -60,12 +60,8 @@ document.addEventListener('navbar:connect', (e) => {
   }
   if (_navWidget) _navWidget.setStatus('connecting');
   if (socket) socket.disconnect();
-  // Socket.IO reads a URL's path as a NAMESPACE, not a prefix — connecting to
-  // https://gateway/nonogram would hit /socket.io at the gateway root (404).
-  // Split origin from prefix and hand the prefix to the engine.io `path`.
-  // The transport is XHR, which bypasses the pass fetch-wrapper, so the
-  // recruiter pass rides as ?pass= — the gateway authorizes on it and strips
-  // it before proxying upstream.
+  // Socket.IO reads a URL path as a NAMESPACE, so the gateway prefix goes in engine.io's
+  // `path`. XHR bypasses the pass fetch-wrapper, so the pass rides as ?pass= instead.
   const target = new URL(detail.url);
   const prefix = target.pathname.replace(/\/$/, '');
   const opts: NonogramSocketOptions = { path: `${prefix}/socket.io` };
@@ -266,7 +262,7 @@ async function initGallery(): Promise<void> {
   }
   if (!Array.isArray(index) || !index.length) return;
   galleryNotes = new Map(index.map((e) => [e.slug, e.note ?? '']));
-  // Name the list by what's in it (H7): simulator runs unless a hardware run is cached.
+  // Name the list by what's in it: simulator runs unless a hardware run is cached.
   // Kept short so it fits the select at every width.
   const placeholder = sel.options.item(0);
   if (placeholder) {
@@ -372,7 +368,7 @@ function init(): void {
   must('btn-remove-col').addEventListener('click', removeCol);
 
   // Any edit makes the results describe a different puzzle: clear them, drop the
-  // gallery selection and its note, and say so (audit M22).
+  // gallery selection and its note, and say so.
   setOnGridEdit(() => {
     clearSolverResults();
     elClPlaceholder.textContent = 'Solve the puzzle to see solutions.';
@@ -386,7 +382,6 @@ function init(): void {
 
   void initGallery();
 
-  // Update grid size label
   updateGridSizeLabel();
 
   requestAnimationFrame(() => {

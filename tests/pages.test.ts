@@ -24,7 +24,7 @@ describe('Nav (inline in BaseLayout)', () => {
   });
 
   test('is a plain list of links, not an ARIA menubar (it has no menus)', () => {
-    // The menubar pattern promises arrow-key menus that don't exist here (M9).
+    // The menubar pattern promises arrow-key menus that don't exist here.
     expect(layoutSrc).not.toMatch(/role="menu(bar|item|-bar|-item)/);
   });
 
@@ -116,15 +116,15 @@ describe('Home Page', () => {
     expect(timelineEntrySrc).toContain('timeline-entry--project');
   });
 
-  // The About ships as a writeup behind "? The longer version" on the Me card; it
-  // used to sit in the page under display:none, where no one could read it (H5).
-  // The portrait reserves its box before the file arrives (Fable A1-03).
+  // The portrait reserves its box before the file arrives.
   test('the headshot declares its intrinsic size', () => {
     expect(indexSrc).toMatch(
       /src="\/headshot\.png"[\s\S]{0,120}width="178"[\s\S]{0,40}height="220"/,
     );
   });
 
+  // The About ships as a writeup behind "? The longer version" on the Me card, not in
+  // the page under display:none.
   test('the long-form about is reachable, not hidden', () => {
     expect(indexSrc).toContain('<WriteupModal slug="about"');
     expect(indexSrc).not.toContain('about-window');
@@ -218,12 +218,10 @@ describe('SEO and Meta Tags', () => {
 
 // ---- Security header policy ----
 //
-// This is a static GitHub Pages origin (behind Cloudflare). GH Pages ignores
-// public/_headers, so those headers are a SPEC mirrored by hand into Cloudflare
-// edge rules — see docs/security-headers.md. What the repo enforces on its own
-// is the in-page CSP + referrer <meta>; those are the controls worth asserting
-// here. (That the CSP actually ships in the built HTML is gated separately by
-// scripts/check-security-headers.sh, which runs after `npm run build`.)
+// The site is a static GitHub Pages origin behind Cloudflare. GH Pages ignores
+// _headers, so those headers are a SPEC mirrored by hand into Cloudflare edge rules.
+// What the repo enforces on its own is the in-page CSP + referrer <meta>, so those
+// are the controls asserted here.
 
 describe('Security header policy', () => {
   const headersSpec = readFileSync(resolve(ROOT, 'public/_headers'), 'utf-8');
@@ -256,7 +254,7 @@ describe('Security header policy', () => {
   });
 
   // Content-hashed build output never changes under a name, so it's cached for a
-  // year without revalidation (Fable A1-07).
+  // year without revalidation.
   test('_headers caches the hashed build assets as immutable', () => {
     expect(headersSpec).toMatch(
       /\/_astro\/\*\s*\n\s*Cache-Control: public, max-age=31536000, immutable/,

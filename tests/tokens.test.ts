@@ -134,7 +134,7 @@ describe('Site Configuration', () => {
   });
 
   test('defines SiteConfig interface', () => {
-    // Interface moved to src/lib/site-config.ts; site.ts re-exports it.
+    // The interface lives in the pure resolver module; the site config re-exports it.
     expect(libSrc).toContain('interface SiteConfig');
   });
 

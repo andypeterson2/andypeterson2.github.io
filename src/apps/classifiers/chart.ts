@@ -4,10 +4,8 @@
  * Renders loss (left Y-axis) and accuracy (right Y-axis) on a single canvas.
  * No external dependencies — uses the Canvas 2D API directly.
  *
- * Drawn in the design system (audit M29): ink on paper from the tokens, Geneva at
- * 12px and up, and series told apart by dash pattern, never by colour (L3: colour
- * is only a status light). It used to read six tokens that don't exist and fall
- * back to a brown ground and Tailwind blues and pinks.
+ * Drawn in the design system: ink on paper from the tokens, Geneva at 12px and up,
+ * and series told apart by dash pattern, never by colour (colour is only a status light).
  */
 
 export interface MiniChartOpts {

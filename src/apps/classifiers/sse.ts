@@ -169,9 +169,8 @@ export async function consumeSSE(url: string, body: unknown, handlers: SseHandle
     handlers.onError(msg);
     return;
   }
-  // Track whether 'done' arrived so a stream that dies AFTER completing does
-  // not re-run the operation through the sync fallback (a double onDone).
-  // Boxed so the assignment inside onDone survives TS's control-flow narrowing.
+  // A stream that dies AFTER 'done' must not re-run through the sync fallback (a
+  // double onDone). Boxed so the write inside onDone survives TS's narrowing.
   const done = { seen: false };
   const tracked: SseHandlers = {
     ...handlers,

@@ -1,5 +1,5 @@
 /**
- * Project data integrity tests — validate the projects.ts data source.
+ * Project data integrity tests for the project data source.
  */
 import { describe, test, expect } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'fs';
@@ -74,7 +74,7 @@ describe('projects.ts data integrity', () => {
 
 // Every writeup belongs to a project (the "?" button reads it by slug), and every
 // long-form article names the project its "Back to the project" link returns to
-// (Fable A1-13). A missing writeup now fails the build; this names the culprit.
+// A missing writeup fails the build; this names the culprit.
 describe('Content ↔ project contract', () => {
   const slugs = new Set(projects.map((p) => p.slug));
   const dir = (d: string) => readdirSync(resolve(ROOT, d)).filter((f) => f.endsWith('.md'));

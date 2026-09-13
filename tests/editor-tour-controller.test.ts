@@ -1,8 +1,7 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 
-// tour.svelte.ts imports the editor singleton (for its exported `tour` instance);
-// stub it so importing the module doesn't drag in the whole store. We test the
-// TourController class directly with a mock host, never the singleton.
+// Stub the editor singleton the tour module imports so the whole store stays out;
+// TourController is tested directly with a mock host, never the singleton.
 vi.mock('../src/editor/lib/store.svelte', () => ({ editor: {} }));
 
 import { TourController, type TourHost } from '../src/editor/lib/tour.svelte';

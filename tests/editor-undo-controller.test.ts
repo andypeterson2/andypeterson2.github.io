@@ -2,11 +2,8 @@ import { describe, test, expect } from 'vitest';
 import { UndoController } from '../src/editor/lib/undo.svelte';
 
 /**
- * The first unit test of a `.svelte.ts` runes module (round-two item 17): the
- * svelte vitest plugin now compiles $state/$derived, so the reactive "shell" tier
- * is testable instead of e2e-only. UndoController is the ideal proof — its scope
- * stash/restore and the `applying` re-entrancy guard are load-bearing for
- * per-profile undo, and were unverifiable at the unit level when they were built.
+ * UndoController, a Svelte runes module: its scope stash/restore and the `applying`
+ * re-entrancy guard are load-bearing for per-profile undo.
  */
 function make() {
   const announced: string[] = [];

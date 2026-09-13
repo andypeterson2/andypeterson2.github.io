@@ -1,25 +1,13 @@
 ---
+// Keep this frontmatter ASCII-only: the astro-eslint parser miscounts offsets on
+// non-ASCII characters here and throws a spurious parse error.
 import { siteConfig } from '../config/site';
-// The design system's CSS is owned by the system-six package (single source of
-// truth); the site consumes its one @import closure. tokens + base idiom + dark
-// mode + dither + element layout, in order.
-// Vendored same-origin (previously a render-blocking CDN <link> to unpkg/jsdelivr):
-// the System-6 UI framework. Importing it into the build bundles it same-origin,
-// minifies it, and fingerprints its font/SVG assets locally — which also resolves
-// the CSP block on system.css's button.svg. (Bootstrap Icons is gone: the five
-// contact glyphs it shipped a 127KB icon font for are now inline SVGs in index.astro.)
-// Must precede the design-system closure below so our tokens/base overrides win.
+// The System-6 framework, bundled same-origin (fingerprinted fonts/SVGs, CSP-safe). It must
+// precede the system-six closure (tokens, base, dither, elements) so our overrides win.
 import '@sakun/system.css/dist/system.css';
 import '../../packages/system-six/styles/styles.css';
-// Preload the above-the-fold pixel faces so the real font is cached before the text
-// first lays out: Chicago_12 (--font-ui — window titles + the name plate, the mobile
-// LCP element), Monaco (--font-mono — window body copy incl. the intro, the desktop LCP
-// element), and Geneva_9 (--font-sans — headings/section labels). Imported with ?url so
-// Vite emits + fingerprints them and hands back the hashed path for a <link rel=preload>.
-// All three are tiny same-origin woff2 (~4/~2.4/~3KB, ~9KB total); kicking the download
-// off at HTML parse — in parallel with the stylesheet, not after it — is what lets
-// font-display paint the pixel font on the first frame instead of the system fallback
-// the LCP text was rendering in.
+// Above-the-fold pixel faces (Chicago_12 titles, Monaco intro, Geneva_9 headings; the LCP
+// text), preloaded so the first frame paints in them. ?url yields fingerprinted paths.
 import chicago12Url from '@sakun/system.css/dist/ChiKareGo2.woff2?url';
 import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
 import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
@@ -40,7 +28,7 @@ interface Props {
 }
 
 const { title, docTitle, description, ogImage = '/og-card.png', noindex, bare } = Astro.props;
-// Every title names the person (M5): "Nonogram Solver - Name"; home is "Name - Job title".
+// Every title names the person: "Nonogram Solver - Name"; home is "Name - Job title".
 const pageTitle =
   docTitle ??
   (title
@@ -49,17 +37,14 @@ const pageTitle =
 const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL(ogImage, Astro.site).href;
-// JSON-LD sameAs must be profile URLs, not bare handles (M30).
+// JSON-LD sameAs must be profile URLs, not bare handles.
 const sameAs = [
   siteConfig.github && `https://github.com/${siteConfig.github}`,
   siteConfig.linkedin && `https://linkedin.com/in/${siteConfig.linkedin}`,
 ].filter(Boolean);
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
-// Cloudflare Web Analytics beacon token (public - ships in the client HTML). Set the
-// CF_BEACON_TOKEN repo variable to enable; unset means no analytics script. The beacon is
-// injected manually via components/CfBeacon.astro (not Cloudflare's automatic setup), so
-// the strict hashed CSP stays intact. (ASCII-only comment: the astro-eslint parser
-// miscounts offsets on non-ASCII frontmatter chars and throws a spurious parse error.)
+// Public Cloudflare Web Analytics token (CF_BEACON_TOKEN repo variable; unset = no analytics),
+// injected manually rather than by Cloudflare's auto setup so the strict hashed CSP holds.
 const cfBeaconToken = import.meta.env.CF_BEACON_TOKEN;
 const windowTitle = title || siteConfig.title;
 ---
@@ -75,10 +60,10 @@ const windowTitle = title || siteConfig.title;
     <title>{pageTitle}</title>
     {!noindex && <link rel="canonical" href={canonicalUrl.href} />}
 
-    <!-- Preload the above-the-fold pixel fonts (see frontmatter) so they win the race
-         against first paint — the fix for the LCP text painting in a fallback face.
-         crossorigin is required even same-origin: @font-face fetches are CORS-anonymous,
-         so the preload must match or it double-downloads. -->
+    <!-- Preload the above-the-fold pixel fonts so they win the race against first paint
+         and the LCP text never paints in a fallback face. crossorigin is required even
+         same-origin: @font-face fetches are CORS-anonymous, so the preload must match or
+         it double-downloads. -->
     <link rel="preload" href={chicago12Url} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={monacoUrl} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={geneva9Url} as="font" type="font/woff2" crossorigin />
@@ -93,8 +78,8 @@ const windowTitle = title || siteConfig.title;
       }
     </script>
 
-    <!-- system.css (System 6 framework) + Bootstrap Icons are bundled same-origin
-         via the frontmatter imports above — no render-blocking CDN <link>s. -->
+    <!-- system.css (System 6 framework) is bundled same-origin — no render-blocking
+         CDN <link>s. -->
     <slot name="head" />
 
     <!-- Open Graph -->
@@ -131,13 +116,13 @@ const windowTitle = title || siteConfig.title;
 
     {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}
 
-    <!-- Error boundary removed — app pages handle errors via their own UI -->
+    <!-- No global error boundary: each app page handles its own errors in its UI. -->
   </head>
   <body class={bare ? 'is-bare' : undefined}>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     <!-- Desktop menubar (>768px). A plain list of links: it looks like a System-6
-         menubar, but it has no menus, so it carries no menu ARIA (M9). -->
+         menubar, but it has no menus, so it carries no menu ARIA. -->
     <nav class="site-menubar" aria-label="Main navigation">
       <ul>
         <li class="heart-item">
@@ -173,7 +158,7 @@ const windowTitle = title || siteConfig.title;
       <ul id="mobile-nav-menu" class="mobile-nav-menu" hidden>
         <li>
           <!-- Named by its visible text, which says what it is; the box shows whether
-               it's on (M16). -->
+               it's on. -->
           <button type="button" class="theme-toggle mnav-toggle" aria-pressed="false">
             <span class="mnav-box" aria-hidden="true"></span>Dark mode
           </button>
@@ -188,7 +173,7 @@ const windowTitle = title || siteConfig.title;
         <header class="title-bar">
           <h1 class="title">{windowTitle}</h1>
         </header>
-        <!-- The page's one <main> landmark (M13). Back to top lives inside it so it
+        <!-- The page's one <main> landmark. Back to top lives inside it so it
              isn't stray content outside every landmark; it's position: fixed, so
              where it sits in the DOM doesn't move it. -->
         <main class="window-pane site-pane" id="main-content">
@@ -232,7 +217,7 @@ const windowTitle = title || siteConfig.title;
         });
       }
 
-      // Theme toggle — dark mode is the page-scale inversion (see base.css, L4).
+      // Theme toggle — dark mode is the page-scale inversion.
       const themeBtns = Array.from(document.querySelectorAll('.theme-toggle'));
       if (themeBtns.length) {
         const applyTheme = (t: 'light' | 'dark') => {
@@ -243,7 +228,7 @@ const windowTitle = title || siteConfig.title;
             /* private mode */
           }
           // Both are toggle buttons named "Dark mode": the name stays put and the
-          // pressed state says whether it's on (M16).
+          // pressed state says whether it's on.
           for (const b of themeBtns) b.setAttribute('aria-pressed', String(t === 'dark'));
         };
         applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
@@ -254,12 +239,8 @@ const windowTitle = title || siteConfig.title;
         }
       }
 
-      // Keyboard scrolling before the first click. The page scrolls inside .site-pane,
-      // not the document, so on a fresh load PageDown / Space / arrows / Home / End
-      // had nothing to move until the visitor clicked into the pane (Fable A1-01).
-      // Until the first pointer press, and only while nothing has focus, those keys
-      // scroll the pane. Tab order is untouched (the skip link stays first), and after
-      // any click the browser's own scrolling takes over, inner scrollers included.
+      // The page scrolls inside .site-pane, not the document, so until the first pointer
+      // press (and only while nothing has focus) PageDown / Space / arrows / Home / End scroll it.
       const scroller = document.querySelector<HTMLElement>('.site-pane');
       if (scroller && !document.body.classList.contains('is-bare')) {
         let pointed = false;
@@ -348,7 +329,7 @@ const windowTitle = title || siteConfig.title;
 
   /* Mobile: no patterned System-6 scrollbar chrome (heavy on a phone) — except a
      thin ink bar on the page's own scroll pane, so a seven-screen page still shows
-     where you are and that there's more (P7). */
+     where you are and that there's more. */
   @media (width <= 768px) {
     * {
       scrollbar-width: none;
@@ -417,8 +398,8 @@ const windowTitle = title || siteConfig.title;
        hover highlight runs flush top-to-bottom. */
     padding: 0;
 
-    /* The system face, said here: it used to arrive via system.css's ul[role] rule,
-       and the list lost its (menu) role in M9. */
+    /* The system face, set here: the list has no menu role, so system.css's ul[role]
+       rule doesn't supply it. */
     font-family: var(--font-ui);
     font-size: var(--text-xs);
     border-bottom: 3px solid var(--ink);
@@ -513,7 +494,7 @@ const windowTitle = title || siteConfig.title;
   }
 
   /* The same row as the menu's links — padding, size, face — so it's a 44px target
-     lined up with them, not a 24px sliver flush left (M16). */
+     lined up with them, not a 24px sliver flush left. */
   .mnav-toggle {
     width: 100%;
     min-height: 44px;
@@ -546,8 +527,8 @@ const windowTitle = title || siteConfig.title;
 
   /* ── Inner window ── */
 
-  /* system.css gives every .window min-width: 320px; with the canvas padding that
-     overflowed a 320px viewport (400% zoom) and the page scrolled sideways (M31). */
+  /* system.css gives every .window min-width: 320px, which with the canvas padding
+     would overflow a 320px viewport (400% zoom) and scroll the page sideways. */
   .site-window {
     width: 100%;
     min-width: 0;
@@ -637,7 +618,7 @@ const windowTitle = title || siteConfig.title;
 
   /* ── Back to top ──
      Hidden means out of the tab order too (visibility), not just transparent — an
-     invisible tab stop sent focus nowhere at the end of every page (M15). */
+     invisible tab stop would send focus nowhere at the end of every page. */
   .back-to-top {
     position: fixed;
     bottom: var(--space-6);

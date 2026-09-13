@@ -42,7 +42,7 @@
     margin: 0 0 16px;
   }
 
-  /* .link comes from the lib/styles.css button families. */
+  /* .link comes from the shared button families. */
 
   .empty {
     font-size: var(--text-3xs);

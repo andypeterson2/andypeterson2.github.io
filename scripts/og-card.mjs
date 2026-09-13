@@ -1,9 +1,9 @@
-// Renders public/og-card.png — the 1200×630 link-preview image used as the default
-// og:image / twitter:image. A System-6 window with the dithered headshot and the three
-// things the site shows, set in the site's own faces. Deliberately carries no name:
+// Renders public/og-card.png, the 1200×630 default og:image / twitter:image: a System-6
+// window with the dithered headshot, set in the site's own faces. It carries no name;
 // identity comes from env at build time (og:title), never from committed assets.
 //
 //   node scripts/og-card.mjs
+
 import { chromium } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

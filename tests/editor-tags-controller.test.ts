@@ -1,9 +1,8 @@
 import { vi, describe, test, expect, beforeEach } from 'vitest';
 
 // The tag mutations reach the backend only through `api`, always inside a
-// host.persist() closure — so a mock host whose persist runs the op lets us
-// check both the local mutation and the call, no network. Runes in tags.svelte.ts
-// compile via the vite-plugin-svelte wired into vitest.config.ts.
+// host.persist() closure, so a mock host whose persist runs the op lets us
+// check both the local mutation and the call, no network.
 vi.mock('../src/editor/lib/api', () => ({
   api: {
     addEntryTags: vi.fn(async () => ({ ok: true, status: 200 })),

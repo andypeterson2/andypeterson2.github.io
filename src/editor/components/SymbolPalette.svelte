@@ -1,9 +1,6 @@
 <script lang="ts">
-  // The "what you can use" surface: the permitted-symbol allowlist (symbols.ts)
-  // rendered as clickable glyph chips, grouped by category. Presentational only —
-  // it emits the chosen glyph and lets the host insert it at the field's caret.
-  // The same table drives the escape transform, so the palette can never disagree
-  // with what actually renders.
+  // The permitted-symbol allowlist as clickable glyph chips, grouped by category.
+  // Presentational: it emits the glyph for the host to insert at the field's caret.
   import { SYMBOL_CATEGORIES } from '../lib/symbols';
 
   let { onpick }: { onpick: (glyph: string) => void } = $props();

@@ -161,12 +161,8 @@ export function renderQuantum(
   renderQuantumList();
 }
 
-// The histogram is drawn in the design system, not beside it (audit M29): every mark
-// carries a class that CSS colours from the tokens (app.astro, .hist-*), labels are
-// Geneva at --text-3xs (12px and up), and there's no colour to lint here at all.
-// Bars at or above the threshold are ink; below it, a 50% dither with an ink edge.
-// Layout maths assumes the label size: --text-3xs renders 12-14px, and Geneva's
-// advance at that size is about 8px a character.
+// Marks carry .hist-* classes that CSS colours from the tokens. Layout maths assumes the
+// labels' --text-3xs (12-14px) and Geneva's ~8px advance per character at that size.
 const LABEL_PX = 13;
 const CHAR_PX = 8;
 
@@ -193,7 +189,7 @@ function axes(cW: number, cH: number): string {
 }
 
 export function drawEmptyHistogram(): void {
-  // An empty, labelled frame — never placeholder bars that look like data (H7).
+  // An empty, labelled frame — never placeholder bars that look like data.
   const { W, H } = histBox();
   const P = { t: 20, r: 12, b: 44, l: 56 };
   const cW = W - P.l - P.r,
