@@ -181,6 +181,12 @@ test.describe('Site chrome', () => {
     await page.goto('/');
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.locator('[role="menubar"], [role="menuitem"]')).toHaveCount(0);
+    // It still looks like a System-6 menubar: the face came from system.css's
+    // ul[role] rule until the roles went, so it's pinned explicitly now.
+    await expect(page.locator('.site-menubar a[href="/"]')).toHaveCSS(
+      'font-family',
+      /^"?Chicago_12/,
+    );
     await page.goto(CLASSIFIER);
     await expect(page.getByRole('main')).toHaveCount(1);
   });
