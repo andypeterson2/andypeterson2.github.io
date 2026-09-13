@@ -2,8 +2,9 @@
 
 The resume / CV / cover-letter editor: a **Svelte 5 island** mounted by Astro at
 [`/projects/latex-resume-editor/app/`](../pages/projects/latex-resume-editor/app.astro),
-built to static HTML on GitHub Pages and backed by the **Access-gated cv REST
-API** at `api.andypeterson.dev/cv`. The portal owns this frontend; the backend
+built to static HTML on Cloudflare Pages and backed by the **cv REST API** at
+`api.andypeterson.dev/cv`, reached through the gateway after a Google sign-in
+(the gateway's self-hosted OIDC flow; an allowlisted owner sees every profile). The portal owns this frontend; the backend
 ([`andypeterson2/cv`](https://github.com/andypeterson2/cv)) is API-only.
 
 The design rationale is [`docs/editor-redesign.md`](../../docs/editor-redesign.md);

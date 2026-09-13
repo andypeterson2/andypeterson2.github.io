@@ -42,9 +42,9 @@ test.describe('Design token runtime propagation', () => {
     expect(value).toBe('#dc2626');
   });
 
-  test('semantic color classes on classifier page render correct computed colors', async ({
-    page,
-  }) => {
+  // Results are judgements, not machine state (design law L3, audit P6): confidence
+  // and accuracy bands render in ink; only state indicators use the status colours.
+  test('classifier result classes render in ink, not the status colours', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await page.route('**/health', (route) => route.abort());
     await page.goto('/projects/ai-ml/app/');
@@ -70,8 +70,10 @@ test.describe('Design token runtime propagation', () => {
       return result;
     });
 
-    expect(colors?.confHigh).toBe(EXPECTED.success);
-    expect(colors?.accMed).toBe(EXPECTED.warning);
-    expect(colors?.accLow).toBe(EXPECTED.danger);
+    const ink = 'rgb(28, 27, 25)';
+    expect(colors?.confHigh).toBe(ink);
+    expect(colors?.accMed).toBe(ink);
+    expect(colors?.accLow).toBe(ink);
+    expect([EXPECTED.success, EXPECTED.warning, EXPECTED.danger]).not.toContain(colors?.accMed);
   });
 });

@@ -14,11 +14,27 @@ export function setStatus(msg: string, level?: 'err' | 'ok'): void {
     'status-line' + (level === 'err' ? ' status-err' : level === 'ok' ? ' status-ok' : '');
 }
 
+/** What the run button will actually do: offline it solves classically in the
+ *  browser; with a live backend it runs the Grover simulator (H7). */
+export function benchLabel(): string {
+  return window.API_BASE ? '▶ Run on simulator' : '▶ Solve in browser';
+}
+
+/** Controls that only mean something with a live backend say so instead of
+ *  sitting there inert: Trials is disabled offline, with the reason on hover. */
+export function applyTierControls(): void {
+  const btn = must('btn-bench') as HTMLButtonElement;
+  if (!state.busy) btn.textContent = benchLabel();
+  const trials = must('trials-input') as HTMLInputElement;
+  trials.disabled = !window.API_BASE;
+  trials.title = window.API_BASE ? '' : 'Trials repeat a live quantum run — needs the live solver';
+}
+
 export function setBusy(busy: boolean): void {
   state.busy = busy;
   const btn = must('btn-bench') as HTMLButtonElement;
   btn.disabled = busy;
-  btn.textContent = busy ? 'Running…' : '▶ Run on Simulator';
+  btn.textContent = busy ? 'Running…' : benchLabel();
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
   (must('btn-add-row') as HTMLButtonElement).disabled = busy;

@@ -22,12 +22,12 @@ export interface SkillGroupData {
 }
 
 export const skills: SkillGroupData[] = [
-  { label: 'Languages', tags: ['Python', 'TypeScript', 'C/C++', 'Java', 'SQL'] },
+  { label: 'Languages', tags: ['Python', 'TypeScript', 'JavaScript', 'SQL'] },
   { label: 'Quantum', tags: ['Qiskit', 'BB84', 'Grover'] },
   {
     label: 'Infrastructure',
-    tags: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'Azure', 'Linux', 'CI/CD'],
+    tags: ['Docker', 'Cloudflare', 'Linux', 'CI/CD'],
   },
-  { label: 'AI / ML', tags: ['PyTorch', 'Scikit-Learn'] },
+  { label: 'AI / ML', tags: ['PyTorch', 'Quantum SVM'] },
   { label: 'Security', tags: ['Cryptography', 'CTF'] },
 ];

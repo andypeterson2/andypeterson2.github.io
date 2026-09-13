@@ -61,7 +61,7 @@
   .cx {
     background: none;
     border: 0;
-    color: var(--dim);
+    color: var(--dim-text);
     cursor: pointer;
     font-size: var(--text-3xs);
     line-height: 1;

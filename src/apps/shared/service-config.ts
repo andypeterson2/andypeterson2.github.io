@@ -1,7 +1,7 @@
 /**
  * Service Configuration for static-hosted frontends.
  *
- * When frontends are hosted on GitHub Pages (or any static host), they need
+ * When frontends are hosted on a static host (Cloudflare Pages here), they need
  * to know where their backend services are running. This module provides a
  * unified way to read/write backend URLs via URL parameters and localStorage.
  *

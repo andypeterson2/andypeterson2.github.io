@@ -11,6 +11,10 @@ export interface Project {
   metrics?: { value: string; label: string }[];
   /** Stack tags shown on the showcase card. */
   tech?: string[];
+  /** Where the demo runs — shown as one chip on every card so the tier is never implied.
+   *  browser: embedded here and works with nothing running on the owner's side;
+   *  external: a separate app (opens in a new tab, needs its own server / a second person). */
+  tier: 'browser' | 'external';
 }
 
 export const projects: Project[] = [
@@ -22,6 +26,7 @@ export const projects: Project[] = [
     status: 'active',
     featured: true,
     appUrl: '/projects/latex-resume-editor/app/',
+    tier: 'browser',
     icon: 'code.svg',
     repoUrl: 'https://github.com/andypeterson2/cv',
     metrics: [
@@ -35,14 +40,15 @@ export const projects: Project[] = [
     title: 'Quantum Video Chat',
     slug: 'quantum-video-chat',
     description:
-      'End-to-end encrypted video chat secured by quantum key distribution, built at Qualcomm Institute.',
+      'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, built at Qualcomm Institute.',
     status: 'active',
     featured: true,
     appUrl: 'https://quantum-interns-at-qualcomm-institiute.github.io/Quantum-Video-Chat/',
+    tier: 'external',
     icon: 'video_dark.svg',
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
     metrics: [
-      { value: 'BB84', label: 'QKD: sift → QBER → Cascade → Toeplitz' },
+      { value: 'BB84', label: 'simulated QKD: sift → QBER → Cascade → Toeplitz' },
       { value: '> 11%', label: 'QBER trips eavesdropper detection → re-key' },
       { value: '94', label: 'tests (server + client)' },
     ],
@@ -56,6 +62,7 @@ export const projects: Project[] = [
     status: 'active',
     featured: true,
     appUrl: '/projects/quantum-nonogram-solver/app/',
+    tier: 'browser',
     icon: 'grid_light.svg',
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     metrics: [
@@ -73,10 +80,12 @@ export const projects: Project[] = [
     status: 'active',
     featured: true,
     appUrl: '/projects/ai-ml/app/',
+    tier: 'browser',
     icon: 'microscope.svg',
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
-      { value: '92.1% / 90.0%', label: 'MNIST / Iris — predicted in your browser' },
+      { value: '92.1%', label: 'MNIST — predicted in your browser' },
+      { value: '90.0%', label: 'Iris — predicted in your browser' },
       { value: '97%', label: 'Iris, QSVM paper recreation — the paper’s simulated result' },
       { value: '91%', label: 'MNIST 6-vs-9 on the paper’s pixel-ratio features' },
       { value: '6+', label: 'model architectures per dataset' },

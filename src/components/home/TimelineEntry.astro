@@ -37,6 +37,9 @@ const { entry } = Astro.props;
         <div class="tl-eyebrow">
           <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
           Project
+          <span class="tl-tier">
+            · {entry.project.tier === 'browser' ? 'runs in your browser' : 'separate app'}
+          </span>
         </div>
         <div class="timeline-role">{entry.project.title}</div>
         <p class="tl-desc">{entry.project.description}</p>
@@ -124,12 +127,14 @@ const { entry } = Astro.props;
     padding-right: clamp(6px, 1vw, 12px);
   }
 
+  /* Dates may wrap at the dash ("2022 –" / "2024") so a full year range fits the
+     rail at tablet widths instead of running into the spine (P2). */
   .timeline-date {
     font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-size: var(--text-2xs);
     text-align: center;
     line-height: 1.4;
-    white-space: nowrap;
+    text-wrap: balance;
   }
 
   .timeline-content {
@@ -146,6 +151,7 @@ const { entry } = Astro.props;
   }
 
   .timeline-org {
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
   }
 
@@ -158,8 +164,9 @@ const { entry } = Astro.props;
   }
 
   .timeline-bullets li {
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
-    line-height: 1.55;
+    line-height: 1.4;
   }
 
   /* ── Project timeline entries ── */
@@ -188,20 +195,23 @@ const { entry } = Astro.props;
   }
 
   .tl-desc {
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
-    line-height: 1.55;
+    line-height: 1.4;
     margin: 2px 0 0;
     max-width: 60ch;
   }
 
+  /* One grid, so every chip in a card shares an edge and a width (P1). */
   .tl-metrics {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
     gap: 6px;
     margin-top: 4px;
   }
 
   .tl-metric {
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
     line-height: 1.4;
     border: 1px solid var(--ink);
@@ -215,14 +225,14 @@ const { entry } = Astro.props;
 
     /* The mono value has a smaller x-height, so match the surrounding label by
        sizing it up. em keeps it proportional to the chip across breakpoints. */
-    font-size: 1.5em;
+    font-size: 1.2em;
     color: var(--ink);
   }
 
   .tl-tech {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 5px;
     margin-top: 2px;
   }

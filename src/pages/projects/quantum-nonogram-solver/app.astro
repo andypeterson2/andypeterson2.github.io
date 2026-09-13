@@ -2,7 +2,11 @@
 import DemoShell from '../../../layouts/DemoShell.astro';
 ---
 
-<DemoShell title="Nonogram Solver" backend={{ service: 'nonogram', label: 'Nonogram Backend' }}>
+<DemoShell
+  title="Nonogram Solver"
+  description="Draw a nonogram and solve it in your browser, then compare it with captured Grover-search runs — the same encoding reached 32.3% on real IBM hardware against 6.25% by chance."
+  backend={{ service: 'nonogram', label: 'Nonogram Backend' }}
+>
   <!-- App shell -->
   <div id="nonogram-app">
     <div class="nono-columns">
@@ -19,6 +23,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           <span id="grid-size-label">3 &times; 3</span>
         </div>
         <div id="status-line" class="status-line">Ready</div>
+        <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
         <div class="controls-bar">
@@ -26,21 +31,23 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             >Trials
             <input type="number" id="trials-input" min="1" max="20" value="1" />
           </label>
-          <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Run on Simulator</button>
+          <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Solve in browser</button>
           <label class="gallery-label"
             >Gallery
             <select id="gallery-select">
-              <option value="">— real quantum runs —</option>
+              <option value="">— captured runs —</option>
             </select>
           </label>
         </div>
         <div class="section-rule"><span>Classical</span></div>
         <div id="cl-canvas" class="sol-canvas">
-          <div id="cl-placeholder" class="placeholder-msg">Run Benchmark to see solutions.</div>
+          <div id="cl-placeholder" class="placeholder-msg">Solve the puzzle to see solutions.</div>
         </div>
         <div class="section-rule"><span>Quantum</span></div>
         <div id="qu-list" class="sol-canvas">
-          <div id="qu-sol-placeholder" class="placeholder-msg">Run Benchmark to see solutions.</div>
+          <div id="qu-sol-placeholder" class="placeholder-msg">
+            Solve the puzzle to see solutions.
+          </div>
         </div>
         <div class="section-rule"><span>Histogram</span></div>
         <div class="histogram-controls">
@@ -169,9 +176,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     background: transparent;
   }
 
+  /* Clues are the puzzle: ink on plain paper, never on dither (M23). */
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
-    background: var(--dither-light);
+    background: var(--paper);
     text-align: center;
     font-size: var(--text-3xs);
     font-weight: 600;
@@ -195,10 +203,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.clue-slot) {
-    font-size: var(--text-4xs);
-    font-weight: 700;
-    color: var(--ink-2);
-    min-width: 12px;
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    color: var(--ink);
+    min-width: 1ch;
     text-align: center;
   }
 
@@ -232,6 +240,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     color: var(--color-text-muted);
     padding: 4px 0;
     text-align: center;
+  }
+
+  /* The gallery entry's own note (e.g. how the same shape did on real hardware). */
+  .gallery-note {
+    margin: 0;
+    padding: 0 4px 4px;
+    font-size: var(--text-3xs);
+    text-align: center;
+    color: var(--color-text);
   }
 
   :global(.status-line.status-err) {
@@ -294,7 +311,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.placeholder-msg) {
-    color: var(--ink-4);
+    color: var(--ink-3);
     font-size: var(--text-3xs);
     font-style: italic;
     padding: 8px 0;
@@ -372,6 +389,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     padding: 4px 6px;
     font-size: var(--text-3xs);
     text-align: center;
+  }
+
+  /* Keep system.css's focus inversion: the local paper ground above would otherwise
+     leave a focused field white on white (H12). */
+  .trials-label input:focus-visible,
+  .threshold-label input:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+    outline: none;
   }
 
   .histogram-area {

@@ -56,7 +56,10 @@
   --color-danger: #dc2626;
 
   /* ── font — Geneva for body, Chicago for window chrome only ── */
-  --font-sans: 'Geneva_9', 'Geneva', system-ui, sans-serif;
+  /* Geneva_9 lacks curly quotes, é and ×; list the other pixel faces next so a missing
+     glyph falls back to pixels (Monaco has the quotes, Chicago_12 has é and ×) rather
+     than to a vector system font. */
+  --font-sans: 'Geneva_9', 'Monaco', 'Chicago_12', 'Geneva', system-ui, sans-serif;
   --font-ui: 'Chicago_12', 'Chicago', system-ui, sans-serif;
   --font-mono: 'Monaco', ui-monospace, monospace;
 
