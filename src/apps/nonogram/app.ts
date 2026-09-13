@@ -264,11 +264,12 @@ async function initGallery(): Promise<void> {
   if (!Array.isArray(index) || !index.length) return;
   galleryNotes = new Map(index.map((e) => [e.slug, e.note ?? '']));
   // Name the list by what's in it (H7): simulator runs unless a hardware run is cached.
+  // Kept short so it fits the select at every width.
   const placeholder = sel.options.item(0);
   if (placeholder) {
     placeholder.textContent = index.some((e) => e.source === 'ibm-hardware')
-      ? '— captured quantum runs —'
-      : '— captured simulator runs —';
+      ? '— quantum runs —'
+      : '— simulator runs —';
   }
   for (const e of index) {
     const opt = document.createElement('option');
