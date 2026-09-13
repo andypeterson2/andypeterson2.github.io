@@ -34,12 +34,11 @@ const timeline: TimelineItem[] = [
   docTitle={`${siteConfig.displayName} — ${siteConfig.jobTitle}`}
   description={`${siteConfig.jobTitle} working between research and production: browser video encrypted with simulated BB84 keys, Grover search validated on real IBM hardware, and demos that run in your browser.`}
 >
-  <!-- ── Main two-column split ── left column stacks Me · Contact · Education ·
-       Certifications · Skills; the right column is Intro (bio) then Experience &
-       Projects. Placed by CSS grid (.main-cols): main-left spans both rows, the two
-       right cards fill column two, and it collapses to one column when narrow. ── -->
+  <!-- ── Main grid ── row 1: Me | Intro · row 2: Experience & Projects, full width ·
+       row 3: Contact · Education · Certs · Skills side by side. One column on phones,
+       in the same (DOM) order. ── -->
   <div class="main-cols">
-    <!-- Left column -->
+    <!-- Row 1, left: Me -->
     <div class="main-left">
       <!-- Me — the portrait card -->
       <div class="bio-card window">
@@ -52,8 +51,56 @@ const timeline: TimelineItem[] = [
           <span>{siteConfig.jobTitle}</span>
           <span>Southern California</span>
         </div>
+        <a class="bio-contact-link" href="#contact">Contact ↓</a>
       </div>
+    </div>
 
+    <!-- Row 1, right: Intro (bio) -->
+    <div class="window bio-window" id="intro">
+      <div class="title-bar">
+        <h2 class="title">Intro</h2>
+      </div>
+      <div class="bio-body">
+        <div class="bio-text">
+          <p>
+            I build systems that have to prove they work. As a{' '}
+            <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong> from 2022 to 2024, I built
+            browser-native video encrypted with keys from a simulated BB84 quantum key exchange, Grover
+            search that found the right answer 32.3% of the time on real IBM hardware against 6.25% by
+            chance, and machine-learning classification pipelines. I graduated in Computer Science from{
+              ' '
+            }
+            <strong>UC San Diego</strong> in December 2024.
+          </p>
+          <p>
+            Outside the lab, I co-founded <strong>San Diego CTF</strong> and{' '}
+            <strong>Quantum Computing at UC San Diego</strong>, served as{' '}
+            <strong>President of ACM Cyber</strong> through COVID lockdown, and built a MERN-stack platform
+            serving 2,400 monthly active users for <strong>RIT Esports</strong>.
+          </p>
+          <p>
+            What I'm after: work where <strong>correctness is checkable</strong> and the result has to
+            survive contact with real users — taking something that only works in a paper, a notebook,
+            or one person's head, and turning it into a system other people can rely on. Three of the
+            projects below run right here in your browser; each one has a <em>?</em> writeup and a link
+            to its source.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: the work, full width -->
+    <div class="window timeline-window" id="projects">
+      <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
+      <div class="timeline">
+        {timeline.map((entry) => <TimelineEntry entry={entry} />)}
+      </div>
+    </div>
+
+    <!-- Row 3: Contact · Education · Certs · Skills, side by side (a column on phones).
+         Last in DOM order too, so the page reads Me → Intro → work → the rest at every
+         width (H3, P3, M4). -->
+    <div class="more-cols">
       <!-- Contact — single-column, uniform-width buttons -->
       <div class="window contact-window" id="contact">
         <div class="title-bar">
@@ -131,48 +178,6 @@ const timeline: TimelineItem[] = [
       <SidebarWindow title="Skills">
         {skills.map((g) => <SkillGroup label={g.label} tags={g.tags} />)}
       </SidebarWindow>
-    </div>
-
-    <!-- Right column · row 1: Intro (bio) -->
-    <div class="window bio-window" id="intro">
-      <div class="title-bar">
-        <h2 class="title">Intro</h2>
-      </div>
-      <div class="bio-body">
-        <div class="bio-text">
-          <p>
-            I build systems that have to prove they work. As a{' '}
-            <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong> from 2022 to 2024, I built
-            browser-native video encrypted with keys from a simulated BB84 quantum key exchange, Grover
-            search that found the right answer 32.3% of the time on real IBM hardware against 6.25% by
-            chance, and machine-learning classification pipelines. I graduated in Computer Science from{
-              ' '
-            }
-            <strong>UC San Diego</strong> in December 2024.
-          </p>
-          <p>
-            Outside the lab, I co-founded <strong>San Diego CTF</strong> and{' '}
-            <strong>Quantum Computing at UC San Diego</strong>, served as{' '}
-            <strong>President of ACM Cyber</strong> through COVID lockdown, and built a MERN-stack platform
-            serving 2,400 monthly active users for <strong>RIT Esports</strong>.
-          </p>
-          <p>
-            What I'm after: work where <strong>correctness is checkable</strong> and the result has to
-            survive contact with real users — taking something that only works in a paper, a notebook,
-            or one person's head, and turning it into a system other people can rely on. Three of the
-            projects below run right here in your browser; each one has a <em>?</em> writeup and a link
-            to its source.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right column · row 2: unified timeline (experience + projects) -->
-    <div class="window timeline-window" id="projects">
-      <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
-      <div class="timeline">
-        {timeline.map((entry) => <TimelineEntry entry={entry} />)}
-      </div>
     </div>
   </div>
 
@@ -287,11 +292,10 @@ const timeline: TimelineItem[] = [
     min-width: 0;
   }
 
-  /* ── Main columns ── a two-column grid. The left column (.main-left — a flex column
-     of Me · Contact · Education · Certifications · Skills) spans both rows; Intro fills
-     column-two row 1 and the timeline fills row 2. Because .main-left is always shorter
-     than Intro + the long timeline, spanning it never stretches the rows, so the left
-     stack stays tight. Collapses to one column (DOM order) on narrow screens. */
+  /* ── Main grid ── Me | Intro on row 1 (similar heights, so no blank column), the
+     timeline across the full width on row 2, and Contact · Education · Certs · Skills
+     as a row of windows on row 3. DOM order is the reading order at every width, so
+     the phone column needs no reordering (H3, P3, M4). */
   .main-cols {
     --col-gap: var(--window-gap);
 
@@ -302,56 +306,54 @@ const timeline: TimelineItem[] = [
   }
 
   .main-left {
-    grid-column: 1;
-    grid-row: 1 / 3;
     display: flex;
     flex-direction: column;
     gap: var(--col-gap);
     min-width: 0;
   }
 
-  .main-cols > #intro {
-    grid-column: 2;
-    grid-row: 1;
+  .main-cols > .timeline-window,
+  .main-cols > .more-cols {
+    grid-column: 1 / -1;
   }
 
-  .main-cols > .timeline-window {
-    grid-column: 2;
-    grid-row: 2;
+  .more-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    gap: var(--col-gap);
+    align-items: start;
+  }
+
+  /* A quick way to the contact buttons, which now sit after the work. */
+  .bio-contact-link {
+    display: block;
+    text-align: center;
+    padding: 0 0 clamp(6px, 0.9vw, 10px);
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
   }
 
   @media (width <= 600px) {
-    /* One column, with Intro pulled up between Contact and the Education/Certs/
-       Skills stack. .main-left is flattened (display:contents) so its five windows
-       join Intro + the timeline as grid siblings; negative orders then lift
-       Me · Contact · Intro ahead of the default-order remainder (Education · Certs ·
-       Skills · Experience & Projects, which stay in document order). Final order:
-       Me · Contact · Intro · Education · Certs · Skills · Experience & Projects. */
     .main-cols {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .main-left {
-      display: contents;
+    /* Phone: the portrait card is a compact row (face beside the name), not a
+       full-screen face before any work (H3). */
+    .bio-card.window {
+      display: grid;
+      grid-template-columns: minmax(96px, 36%) 1fr;
+      align-content: center;
     }
 
-    .main-cols > .timeline-window {
-      grid-column: 1;
-      grid-row: auto;
+    .bio-card .title-bar {
+      grid-column: 1 / -1;
     }
 
-    .bio-card {
-      order: -3;
-    }
-
-    .contact-window {
-      order: -2;
-    }
-
-    .main-cols > #intro {
-      grid-column: 1;
-      grid-row: auto;
-      order: -1;
+    .bio-headshot {
+      grid-row: 2 / 5;
+      max-height: 30vh;
+      object-fit: contain;
     }
   }
 
