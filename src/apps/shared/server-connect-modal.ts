@@ -30,6 +30,7 @@ type ConnState = { connected: boolean; status?: string };
 
 // ── Collect backend service definitions ──────────────────────────
 const backends: BackendDef[] = [];
+
 document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
   const svc = m.getAttribute('content') ?? '';
   if (!svc) return;
@@ -40,63 +41,93 @@ document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
 });
 
 // ── Create one nav status item per backend ───────────────────────
+// The state is a visible word, not only a dot (audit H6): the site's thesis is honest
+// state, and a 9px half-transparent dot said nothing — on phones it wasn't shown at all.
+// Words name the tier the visitor is on, not the socket.
+const STATE_WORDS: Partial<Record<string, string>> = {
+  idle: 'in your browser',
+  waking: 'waking the live backend… (up to 30s)',
+  connecting: 'connecting…',
+  connected: 'live',
+  degraded: 'live · unstable',
+  disconnected: 'offline — in your browser',
+  error: 'error — in your browser',
+  failed: "live backend didn't wake — in your browser",
+};
+
 function createBackendUI(cfg: BackendDef): void {
   const { service, label: navLabel } = cfg;
 
   const connState: ConnState = { connected: false };
   let serverLi: HTMLLIElement | null = null;
+  const words: HTMLElement[] = [];
+  const dots: HTMLElement[] = [];
+  const retries: HTMLButtonElement[] = [];
 
-  function init(): void {
-    const ul = document.querySelector('.site-menubar ul[role="menubar"]');
-    if (!ul) return;
-
-    serverLi = document.createElement('li');
-    serverLi.setAttribute('role', 'menuitem');
-    serverLi.className = 'server-nav-item';
-
+  function statusParts(): { item: DocumentFragment; word: HTMLElement; retry: HTMLButtonElement } {
+    const item = document.createDocumentFragment();
     const label = document.createElement('span');
     label.textContent = navLabel;
     label.style.pointerEvents = 'none';
-    serverLi.appendChild(label);
-
     const dot = document.createElement('span');
     dot.className = 'sn-dot';
-    serverLi.appendChild(dot);
+    dot.setAttribute('aria-hidden', 'true');
+    const word = document.createElement('span');
+    word.className = 'sn-state';
+    word.setAttribute('aria-live', 'polite');
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'sn-retry';
+    retry.textContent = 'Retry';
+    retry.hidden = true;
+    retry.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('navbar:connect-retry', { detail: { service } }));
+    });
+    item.append(label, dot, word, retry);
+    dots.push(dot);
+    words.push(word);
+    retries.push(retry);
+    return { item, word, retry };
+  }
 
-    ul.appendChild(serverLi);
-
+  function init(): void {
+    const ul = document.querySelector('.site-menubar ul[role="menubar"]');
+    if (ul) {
+      serverLi = document.createElement('li');
+      serverLi.setAttribute('role', 'menuitem');
+      serverLi.className = 'server-nav-item';
+      serverLi.appendChild(statusParts().item);
+      ul.appendChild(serverLi);
+    }
+    // Phones: the same status in the site menu.
+    const mobile = document.getElementById('mobile-nav-menu');
+    if (mobile) {
+      const li = document.createElement('li');
+      li.className = 'server-nav-item server-nav-item--mobile';
+      li.appendChild(statusParts().item);
+      mobile.appendChild(li);
+    }
+    updateNav();
     dispatchReady();
   }
 
-  const STATUS_LABELS: Partial<Record<string, string>> = {
-    connected: 'Connected',
-    connecting: 'Connecting',
-    waking: 'Waking live backend…',
-    degraded: 'Degraded',
-    disconnected: 'Disconnected',
-    error: 'Error',
-    idle: 'Idle',
-  };
-
   function updateNav(): void {
-    if (!serverLi) return;
-    const dot = serverLi.querySelector('.sn-dot');
     const s = connState.status ?? 'idle';
-    if (dot) {
+    for (const dot of dots) {
       dot.className = 'sn-dot';
       if (s === 'connected') dot.classList.add('sn-green');
       else if (s === 'connecting' || s === 'waking' || s === 'degraded')
         dot.classList.add('sn-yellow');
-      else if (s === 'disconnected' || s === 'error') dot.classList.add('sn-red');
-      dot.setAttribute('aria-label', (STATUS_LABELS[s] ?? 'Idle') + ' — ' + navLabel);
-      dot.setAttribute('role', 'status');
+      else if (s === 'disconnected' || s === 'error' || s === 'failed') dot.classList.add('sn-red');
     }
-    serverLi.title = STATUS_LABELS[s] ?? 'Idle';
+    for (const w of words) w.textContent = STATE_WORDS[s] ?? STATE_WORDS.idle ?? '';
+    for (const r of retries) r.hidden = s !== 'failed';
+    if (serverLi) serverLi.title = `${navLabel}: ${STATE_WORDS[s] ?? ''}`;
   }
 
   // Pass-activated live tier (pass.ts): the backend may be waking from sleep —
   // show that honestly until the health-gated activation either connects or
-  // gives up (back to idle; the free tier stands).
+  // gives up. On give-up, say so and offer a retry; the browser tier stands.
   document.addEventListener('navbar:connect-pending', (e) => {
     const detail = (e as CustomEvent<{ service?: string }>).detail;
     if (detail.service !== service) return;
@@ -106,7 +137,7 @@ function createBackendUI(cfg: BackendDef): void {
   document.addEventListener('navbar:connect-failed', (e) => {
     const detail = (e as CustomEvent<{ service?: string }>).detail;
     if (detail.service !== service) return;
-    connState.status = 'idle';
+    connState.status = 'failed';
     connState.connected = false;
     updateNav();
   });
