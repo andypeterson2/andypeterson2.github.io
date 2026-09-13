@@ -357,7 +357,7 @@
   }
 
   .doc-head h1.untitled {
-    color: var(--ink-5);
+    color: var(--dim-text);
   }
 
   .contact {
@@ -399,7 +399,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1;
-    color: var(--dim);
+    color: var(--dim-text);
     background: none;
     border: 0;
     padding: 2px 4px;
@@ -438,7 +438,7 @@
     font-family: var(--sans);
     font-size: var(--text-2xs);
     line-height: 1;
-    color: var(--dim);
+    color: var(--dim-text);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -570,7 +570,7 @@
   .tag {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--dim);
+    color: var(--dim-text);
     margin-left: 6px;
   }
 
@@ -615,7 +615,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim);
+    color: var(--dim-text);
     padding: 8px 8px 4px;
   }
 

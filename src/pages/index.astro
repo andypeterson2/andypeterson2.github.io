@@ -356,11 +356,21 @@ const timeline: TimelineItem[] = [
   }
 
   .bio-body {
-    /* Bio text container. (The portrait card that used to sit inline here now lives
-       in the intro row's left column.) */
-    font-size: var(--text-base);
-    line-height: 1.65;
+    /* Bio text container. Prose is Geneva, per the type roles in docs/design-system.md
+       (Monaco is for data and code; its comma all but vanishes at text sizes — H1). */
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: 1.35;
     padding: clamp(10px, 1.3vw, 15px);
+  }
+
+  .bio-text {
+    max-width: 68ch;
+  }
+
+  /* Paragraphs read as paragraphs: a gap between them, not only line spacing (M3). */
+  .bio-body p + p {
+    margin-top: 0.8em;
   }
 
   .bio-card.window {

@@ -299,7 +299,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim);
+    color: var(--dim-text);
     font-weight: 700;
   }
 
@@ -523,7 +523,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1.7;
-    color: var(--dim);
+    color: var(--dim-text);
     background: none;
     border: 0;
     padding: 2px;

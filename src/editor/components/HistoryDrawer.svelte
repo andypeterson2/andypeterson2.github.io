@@ -366,7 +366,7 @@
 
   .time {
     font-size: var(--text-4xs);
-    color: var(--ink-4);
+    color: var(--dim-text);
     font-variant-numeric: tabular-nums;
   }
 
@@ -541,7 +541,7 @@
   .fk {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--ink-4);
+    color: var(--dim-text);
   }
 
   .ins {

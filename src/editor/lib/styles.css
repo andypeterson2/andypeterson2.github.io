@@ -6,7 +6,9 @@
      faces, the two shadows, and the on-dark link. */
   --chrome: var(--paper);
   --chrome-hi: var(--paper);
-  --dim: var(--ink-4);
+  --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text (M25) */
+  --dim-text: var(--ink-3); /* secondary text: passes AA in both themes */
+  --disabled: var(--ink-4); /* disabled controls (exempt from contrast minimums) */
 
   /* Semantic state routes to the shared status light. Demo deliberately has NO
      colour: its dot is hollow (paper on ink), the System-6 idiom for "unset". */

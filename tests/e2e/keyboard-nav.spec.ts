@@ -47,3 +47,27 @@ test.describe('Keyboard navigation', () => {
     await expect(skipLink).toBeAttached();
   });
 });
+
+// A focused field must still show what's typed into it: system.css inverts focused
+// inputs, and local "paper" grounds once left them white on white (audit H12).
+test.describe('Focused inputs keep their text visible', () => {
+  const cases = [
+    { path: '/projects/ai-ml/app/', selector: '#epochs' },
+    { path: '/projects/quantum-nonogram-solver/app/', selector: '#threshold-input' },
+  ];
+  for (const { path, selector } of cases) {
+    test(`${selector} on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      const input = page.locator(selector);
+      await input.evaluate((el) => {
+        (el as HTMLInputElement).disabled = false;
+      });
+      await input.click();
+      const { color, background } = await input.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { color: cs.color, background: cs.backgroundColor };
+      });
+      expect(color).not.toBe(background);
+    });
+  }
+});
