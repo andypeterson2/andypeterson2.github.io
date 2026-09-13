@@ -3,9 +3,18 @@ import { test, expect } from '@playwright/test';
 test.describe('ServerConnectModal + SiteContract', () => {
   test('renders a backend status dot on a page with a site-backend meta', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    const navItem = page.locator('.server-nav-item');
+    const navItem = page.locator('.site-menubar .server-nav-item');
     await expect(navItem).toHaveCount(1);
     await expect(navItem.locator('.sn-dot')).toBeVisible();
+    // The tier is a visible word, not only a dot (audit H6).
+    await expect(navItem.locator('.sn-state')).toHaveText('in your browser');
+  });
+
+  test('phones get the same status in the site menu', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    await page.locator('.mobile-nav-btn').click();
+    await expect(page.locator('#mobile-nav-menu .sn-state')).toHaveText('in your browser');
   });
 
   test('does not render connection UI on pages without backends', async ({ page }) => {
@@ -25,8 +34,8 @@ test.describe('ServerConnectModal + SiteContract', () => {
 
   test('no manual connect UI exists — the dot is status-only', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    await expect(page.locator('.server-nav-item')).toHaveCount(1);
-    await page.locator('.server-nav-item').click();
+    await expect(page.locator('.site-menubar .server-nav-item')).toHaveCount(1);
+    await page.locator('.site-menubar .server-nav-item').click();
     // Clicking must not open any dialog; there is no host/port form to find.
     await expect(page.locator('.sn-modal, .sn-modal-overlay')).toHaveCount(0);
     await expect(page.locator('.sn-connect-form')).toHaveCount(0);

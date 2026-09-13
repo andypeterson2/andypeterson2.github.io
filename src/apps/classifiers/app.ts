@@ -1414,6 +1414,8 @@ function applyTier(): void {
   }
   const note = document.getElementById('backend-note');
   if (note) note.hidden = !off;
+  const tier = document.getElementById('tier-label');
+  if (tier) tier.textContent = off ? 'Runs in your browser' : 'Live backend';
   // Offline, an empty Model select is a required field nobody can fill: hide it.
   // (Online the list still has no source in this embed — noted for the live tier.)
   const typeRow = document.getElementById('model-type-row');
