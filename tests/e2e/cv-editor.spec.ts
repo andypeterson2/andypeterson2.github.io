@@ -1156,14 +1156,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
   });
 
-  test('the preview pane prompts to connect in demo mode', async ({ page }) => {
+  test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('File');
 
     await page.getByRole('button', { name: /Preview/ }).click();
     await expect(page.locator('.preview')).toBeVisible();
-    await expect(page.locator('.preview')).toContainText('connect to compile');
+    await expect(page.locator('.preview')).toContainText('Sign in to compile');
     await expect(page.locator('.preview .pv-btn')).toBeDisabled();
   });
 
@@ -1821,5 +1821,27 @@ test.describe('Demo edits survive sign-in', () => {
     const personal = (importBody as unknown as { personal: Record<string, string> }).personal;
     expect(personal.email).toBe('ada@example.com');
     expect(personal.github).toBeUndefined();
+  });
+});
+
+// Audit M10: signed in but the backend didn't answer is its own state (not "Sign
+// in" again), and a phone still says the demo isn't saved.
+test.describe('Editor state copy', () => {
+  test('signed in with an unreachable backend offers a retry, not another sign-in', async ({
+    page,
+  }) => {
+    await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
+    await page.route('**/health', (r) => r.fulfill({ status: 503 }));
+    await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada' } });
+    await expect(page.locator('.conn')).toContainText("Couldn't load your résumés");
+    await expect(page.locator('.conn')).not.toContainText('Sign in with Google');
+  });
+
+  test('on a phone the status bar still says the demo is not saved', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    await expect(page.locator('.sb-state')).toBeVisible();
+    await expect(page.locator('.sb-state')).toHaveText('demo — not saved');
   });
 });

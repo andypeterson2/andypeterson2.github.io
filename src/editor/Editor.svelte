@@ -74,6 +74,9 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
+  // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
+  // same as signed out: offering "Sign in" again would just loop (audit M10).
+  const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
   // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
@@ -378,7 +381,9 @@
             >
             <UiButton
               variant="toolbar"
-              title="Compile this resume to a PDF"
+              title={editor.preview.compilable
+                ? 'Compile this résumé to a PDF'
+                : 'Compiling to PDF needs an account — sign in to compile'}
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
               >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
@@ -438,7 +443,7 @@
               </div>
               <div class="pv-body">
                 {#if !editor.connected}
-                  <div class="pv-note">Sign in and connect to compile a live PDF.</div>
+                  <div class="pv-note">Sign in to compile this résumé to a PDF.</div>
                 {:else if !editor.preview.compilable}
                   <div class="pv-note">Choose a profile to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}
@@ -464,20 +469,26 @@
         </div>
         <div class="statusbar">
           <span class="sb-l"
-            >{editor.connected
-              ? editor.saveState === 'saving'
-                ? 'saving…'
-                : editor.saveState === 'error'
-                  ? '⚠ save failed'
-                  : '✓ saved'
-              : 'demo'} · {editor.variantLabel}</span
+            ><span class="sb-state"
+              >{editor.connected
+                ? editor.saveState === 'saving'
+                  ? 'saving…'
+                  : editor.saveState === 'error'
+                    ? '⚠ save failed'
+                    : '✓ saved'
+                : 'demo — not saved'}</span
+            ><span class="sb-variant"> · {editor.variantLabel}</span></span
           >
           <button
             class="conn"
-            class:cta={demoMode}
-            onclick={() => (demoMode ? editor.signIn() : editor.connect())}
+            class:cta={demoMode && !signedInOffline}
+            onclick={() => (demoMode && !signedInOffline ? editor.signIn() : editor.connect())}
             disabled={editor.connecting || editor.signingIn}
-            title={demoMode ? 'Sign in with Google to keep your edits' : 'Connection status'}
+            title={signedInOffline
+              ? "Signed in, but your saved résumés didn't load — try again"
+              : demoMode
+                ? 'Sign in with Google to keep your edits'
+                : 'Connection status'}
           >
             <span
               class="dot"
@@ -491,7 +502,9 @@
                   ? 'connecting…'
                   : editor.connected
                     ? 'connected'
-                    : 'Sign in with Google to keep your edits'}</span
+                    : signedInOffline
+                      ? "Couldn't load your résumés — retry"
+                      : 'Sign in with Google to keep your edits'}</span
             >
           </button>
           {#if editor.identity}
@@ -1252,7 +1265,8 @@
       z-index: var(--z-sticky);
     }
 
-    .sb-l {
+    /* Keep "demo — not saved" on phones (M10); only the variant label goes. */
+    .sb-variant {
       display: none;
     }
 
