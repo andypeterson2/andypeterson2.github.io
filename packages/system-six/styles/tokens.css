@@ -36,7 +36,6 @@
 
   /* Scrims — the ink at low alpha behind a modal / drawer. Named so the handful of
      overlays share one dim instead of each picking its own transparency. */
-  --scrim: rgb(28 27 25 / 50%); /* modal backdrop */
   --scrim-soft: rgb(28 27 25 / 30%); /* drawer / invite backdrop */
 
   /* ── status light — the only color, shown only when the machine reports state.

@@ -106,6 +106,13 @@ a:hover {
   outline-offset: 4px;
 }
 
+/* Only the front window has stripes, as in System 6: an inactive window's title bar
+   is plain paper over a rule, with the title in ink (not system.css's flat grey). */
+.window--inactive > .title-bar {
+  background: none;
+  border-bottom: 1px solid var(--ink);
+}
+
 .title-bar .title {
   font-size: var(--text-base);
   /* system.css gives the white title block no vertical padding; pad it so the heading
@@ -271,6 +278,15 @@ pre code {
 .action-btn:focus-visible {
   background: var(--ink);
   color: var(--paper);
+}
+
+/* The default button: System 6's heavy ring, a paper gap then ink, around the one
+   action a visitor is meant to press. */
+.action-btn--primary {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 4px var(--ink);
+  margin: 4px;
 }
 
 /* ── Focus — one treatment everywhere: a 2px ink ring, which the dark-mode inversion turns
