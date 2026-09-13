@@ -164,9 +164,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Draw view / grid ── */
+  /* The grid is built by script; hold its (empty 3×3) height from first paint so a
+     slow device doesn't shift everything below it when it appears (P12). */
   :global(#draw-view) {
     display: flex;
     justify-content: center;
+    min-height: 82px;
     user-select: none;
   }
 
