@@ -7,7 +7,7 @@ A web editor for resumes, CVs, and cover letters, backed by a normalized **SQLit
 
 ## How it works
 
-An **Express REST API** exposes 20+ endpoints with **JSON Schema validation**, reached through a **Cloudflare Worker gateway gated by Cloudflare Access**. The frontend is a **Svelte 5 island**:
+An **Express REST API** exposes 20+ endpoints with **JSON Schema validation**, reached through a **Cloudflare Worker gateway with its own Google sign-in**. The frontend is a **Svelte 5 island**:
 
 - edit the document inline;
 - save a **variant** — a reusable tag-rule *lens* over the same content, so one master yields many targeted CVs;
@@ -18,7 +18,7 @@ Documents compile server-side through **XeLaTeX (Awesome-CV)** into a real PDF.
 
 ## Demo-first by design
 
-A **live in-browser demo runs the real editor with no backend** — it treats "not signed in" as the confident default, degrading gracefully instead of erroring, so any visitor can try the full thing on GitHub Pages. The owner's backend is reached only after a Cloudflare Access sign-in.
+A **live in-browser demo runs the real editor with no backend**: it treats "not signed in" as the confident default and degrades gracefully instead of erroring. Any visitor can edit, reorder, tag and restyle a real document and export it as JSON. Compiling to a PDF and saving need an account, via **Sign in with Google**.
 
 ## What's real
 

@@ -1,13 +1,12 @@
-// cv API client — credentialed fetches through the gateway (behind Cloudflare
-// Access). The Access cookie rides along via credentials:'include'. READS ONLY
-// for now; writes land in a later increment.
+// cv API client — credentialed fetches through the gateway. The gateway's session
+// cookie (set by its self-hosted "Sign in with Google" flow) rides along via
+// credentials:'include'. Reads and writes both go through here.
 //
 // The backend is id-addressable — there is NO active-person/session state.
 // GET /persons lists profiles ({id,name}); GET /persons/:pid returns that
 // profile's full "main" record (person + personal + sections→entries→items→tags,
-// variants, tag vocab) in one shot. The gateway tiers access: an allowlisted
-// (owner) Access identity gets every profile; anyone else gets the public demo
-// profile only. Contract: cv/editor/routes/persons.js (the GET /persons/:pid route).
+// variants, tag vocab) in one shot. The gateway tiers access: the allowlisted
+// owner gets every profile; any other signed-in user gets their own profiles. Contract: cv/editor/routes/persons.js (the GET /persons/:pid route).
 import type {
   Person,
   Item,
