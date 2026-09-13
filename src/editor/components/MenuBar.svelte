@@ -12,6 +12,10 @@
   import { onMount } from 'svelte';
   import { enabledItems, stepIndex, type MenuDef, type MenuItem } from '../lib/menus';
 
+  // Phones, and phones held sideways (short but wider than 768): the touch layout.
+  // Keep in sync with the matching @media in Editor.svelte (audit H14).
+  const COMPACT_QUERY = '(max-width: 768px), (max-height: 500px)';
+
   let { menus }: { menus: MenuDef[] } = $props();
 
   let open = $state<number | null>(null); // desktop: index of the open pull-down
@@ -29,7 +33,7 @@
   // structurally different — four independent dropdowns vs. one grouped panel.
   let mobile = $state(false);
   onMount(() => {
-    const mq = matchMedia('(max-width: 768px)');
+    const mq = matchMedia(COMPACT_QUERY);
     const sync = () => {
       mobile = mq.matches;
       // Leaving a mode closes whatever it had open, so a stale menu can't linger.

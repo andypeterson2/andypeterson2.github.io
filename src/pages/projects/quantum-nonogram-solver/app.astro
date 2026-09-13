@@ -294,6 +294,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* ── Controls bar ── */
   .controls-bar {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     align-items: center;
   }
@@ -473,5 +474,34 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.metrics-table .metric-label) {
     font-weight: 600;
     background: var(--paper-2);
+  }
+
+  /* Phones and tablets: one column, editor above results, and the controls wrap so
+     the Gallery (the only offline quantum output) is always on screen (H8). */
+  @media (width <= 768px) {
+    .nono-columns {
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .nono-left,
+    .nono-right {
+      width: 100%;
+    }
+
+    .nono-left {
+      border-right: none;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .gallery-label {
+      margin-left: 0;
+      flex: 1 1 100%;
+    }
+
+    .gallery-label select {
+      flex: 1;
+      min-width: 0;
+    }
   }
 </style>

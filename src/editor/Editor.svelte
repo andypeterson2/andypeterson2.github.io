@@ -1216,8 +1216,11 @@
 
      768px matches BaseLayout's own breakpoint: the site swaps to its floating nav at
      768, so the editor must enter this touch layout at the same width — otherwise the
-     floating nav (top-left) lands on top of the desktop menubar in the 641–768 band. */
-  @media (width <= 768px) {
+     floating nav (top-left) lands on top of the desktop menubar in the 641–768 band.
+     A phone held sideways is wider than 768 but only ~375 tall; the desktop stack of
+     windows left it 0px of document, so short screens get this layout too (H14). Keep
+     in sync with COMPACT_QUERY in MenuBar.svelte / Tour.svelte. */
+  @media (width <= 768px), (height <= 500px) {
     .stage {
       --top-h: 58px;
       --bot-h: 44px;
@@ -1330,6 +1333,17 @@
       max-height: none;
       border-left: 0;
       border-top: 1px solid var(--ink);
+    }
+  }
+
+  /* Short laptop windows (1366×768 minus browser chrome is ~650px): the decorative
+     "Resume Editor" frame title and the "Toolbar" window title cost ~125px of a small
+     screen; the menubar already names the app, so drop them and give the document the
+     room (H14). */
+  @media (width > 768px) and (height > 500px) and (height <= 760px) {
+    .app-titlebar,
+    .toolbar-window > .titlebar {
+      display: none;
     }
   }
 </style>

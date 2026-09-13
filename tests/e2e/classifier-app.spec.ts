@@ -59,6 +59,8 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
   test('a blank canvas predicts nothing; a drawing gets a scoped QSVM row', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
+    // The in-browser models load after hydration; draw only once they're listed.
+    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
     await page.locator('#predict-btn').click();
     await expect(page.locator('#pred-body')).toContainText('Draw a digit');
     const cv = page.locator('#draw-canvas');
