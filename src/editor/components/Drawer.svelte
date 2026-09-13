@@ -130,6 +130,12 @@
   /* 768px matches the editor shell: inside the full-bleed touch layout a right-edge
      side panel looks wrong, so the drawer becomes a bottom sheet across that range. */
   @media (width <= 768px) {
+    /* The sheet's close box is its only visible close: at least 24px on phones (M28). */
+    .close {
+      width: 24px;
+      height: 24px;
+    }
+
     .drawer {
       inset: auto 0 0;
       width: 100%;
