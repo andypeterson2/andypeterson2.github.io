@@ -385,6 +385,10 @@ const windowTitle = title || siteConfig.title;
     /* No vertical padding: the items themselves fill the full bar height so a
        hover highlight runs flush top-to-bottom. */
     padding: 0;
+
+    /* The system face, said here: it used to arrive via system.css's ul[role] rule,
+       and the list lost its (menu) role in M9. */
+    font-family: var(--font-ui);
     font-size: var(--text-xs);
     border-bottom: 3px solid var(--ink);
     background: var(--paper);
