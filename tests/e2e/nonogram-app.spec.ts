@@ -9,8 +9,8 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
     await expect(page.locator('td.cell').first()).toBeVisible();
   });
 
-  // Audit M22: editing a loaded gallery run used to leave its solutions, histogram,
-  // gallery label and "a real run on the Grover simulator" beside a different grid.
+  // Editing a loaded gallery run clears its solutions, histogram, gallery label and
+  // "a real run on the Grover simulator", which describe a different grid.
   test('editing after a gallery run clears the run', async ({ page }) => {
     await page.locator('#gallery-select').selectOption({ index: 1 });
     await expect(page.locator('#status-line')).toContainText('a real run on');
@@ -23,7 +23,6 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
     await expect(page.locator('#qu-sol-placeholder')).toContainText('Solve the puzzle');
   });
 
-  // Audit M12: the grid only grew, and Clear kept the size.
   test('the grid shrinks, and Clear starts over at 3 × 3', async ({ page }) => {
     const size = page.locator('#grid-size-label');
     await page.getByRole('button', { name: 'Add a row' }).click();

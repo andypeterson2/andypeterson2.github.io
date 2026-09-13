@@ -13,10 +13,10 @@ import '../styles/classifier.css';
   <!-- DOM order is results first: on a narrow screen that's also the visual order
        (draw → predictions → evaluation, then the backend tools), so focus order
        matches what you see. Wide screens put the tools column on the left with
-       flex order (H11). -->
+       flex order. -->
   <div id="split-layout" class="split-layout">
-    <!-- Sections, not <main>/<aside>: the page's one <main> is the site pane
-         (BaseLayout), and a landmark nested inside it would be misplaced (M13). -->
+    <!-- Sections, not <main>/<aside>: the page's one <main> is the site pane,
+         and a landmark nested inside it would be misplaced. -->
     <section class="right-col" aria-label="Draw and results">
       <ClassifierResultsPanel />
     </section>
@@ -86,7 +86,7 @@ import '../styles/classifier.css';
   }
 
   /* Narrow screens: no pane scrollers. The app flows in the page's own scroll, so the
-     draw canvas is never squeezed into a 110px window (H11): results first, then the
+     draw canvas is never squeezed into a 110px window: results first, then the
      tools. */
   @media (width <= 900px) {
     #classifier-app {

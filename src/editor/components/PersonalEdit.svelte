@@ -98,8 +98,7 @@
     gap: 6px;
   }
 
-  /* .mini lives in lib/styles.css as the .ui.mini family (this file's former
-     copy defaulted to the primary look; the markup now says tone="primary"). */
+  /* .mini is styled globally as the .ui.mini family. */
 
   .grid {
     display: grid;

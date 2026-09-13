@@ -84,7 +84,7 @@
     return lens ? entryFieldsFor(e, lens) : e.fields;
   }
   /** A row's accessible name: its heading, not its whole text — a 540-character
-      button name made the document exhausting by screen reader (M27). The full text
+      button name makes the document exhausting by screen reader. The full text
       is in the edit form Enter opens, one field per line. */
   function editName(...parts: (string | undefined)[]): string {
     const heading = parts.filter(Boolean).join(' · ');
@@ -101,11 +101,8 @@
     });
   });
 
-  // Paint the accent as a CSS custom property at runtime via the CSSOM, NOT a
-  // reactive `style:--accent` directive: that directive server-renders to a
-  // style="…" attribute, which the site's strict hashed CSP refuses. A scripted
-  // setProperty is a style mutation CSP allows. Pre-hydration the header colour
-  // falls back to var(--accent, var(--ink-2)); the island hydrates and re-paints it.
+  // Set --accent via CSSOM setProperty, not `style:--accent`: the directive
+  // server-renders a style="…" attribute that the site's strict hashed CSP refuses.
   let docEl = $state<HTMLElement>();
   $effect(() => {
     docEl?.style.setProperty('--accent', editor.accentHex);
@@ -394,7 +391,7 @@
     margin-bottom: 8px;
   }
 
-  /* The résumé's own type: the print faces, not the editor's system faces (M29). */
+  /* The résumé's own type: the print faces, not the editor's system faces. */
   .sec-head h2 {
     font-family: var(--doc-sans);
     font-size: var(--text-4xs);
@@ -490,7 +487,7 @@
     font-weight: 700;
   }
 
-  /* Long skills and tag chips wrap instead of pushing the page sideways at 320px (M31). */
+  /* Long skills and tag chips wrap instead of pushing the page sideways at 320px. */
   .skill-list {
     min-width: 0;
     overflow-wrap: anywhere;
@@ -684,7 +681,7 @@
   }
 
   /* Touch: grips and section tools get a 44px hit area and stop hiding behind
-     hover, which a finger can't do (M28). */
+     hover, which a finger can't do. */
   @media (pointer: coarse) {
     .grip,
     .tool {

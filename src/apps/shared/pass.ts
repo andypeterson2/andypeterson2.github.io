@@ -1,7 +1,7 @@
 /**
  * SitePass — client-side handling of a recruiter pass (?pass=<token>).
  *
- * A pass (minted by the owner — see the gateway's POST /gate/pass) unlocks the
+ * A pass (minted by the owner via the gateway's POST /gate/pass) unlocks the
  * LIVE tier of a demo-first app: it routes the app's backend calls through the
  * gateway (api.andypeterson.dev/<service>) and attaches the pass as a Bearer
  * token. Without a pass the app stays on its free, in-browser tier. On ANY
@@ -51,12 +51,8 @@ try {
   /* private-mode storage / history quirks — degrade to no pass */
 }
 
-// ── Attach the Bearer to GATEWAY calls while a pass is held ──
-// One interception point covers every transport that goes through fetch
-// (SiteContract, the apps' raw fetch, Socket.IO's polling handshake). The
-// header attaches ONLY to requests whose origin is the gateway itself: any
-// broader rule (the original implementation used "any cross-origin URL")
-// hands the recruiter token to whatever third-party host page code fetches.
+// ── Attach the Bearer to GATEWAY-origin fetches only, while a pass is held ──
+// One wrapper covers every fetch transport; a broader rule leaks the token to third parties.
 const originalFetch = window.fetch.bind(window);
 
 function isGatewayRequest(input: RequestInfo | URL): boolean {
@@ -89,12 +85,10 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 };
 
 // ── With a pass, activate the live tier: point the app at the gateway ──
-// The gated backends sleep when idle, so activation is HEALTH-GATED: announce a
-// waking state to the service's nav widget, warm-ping /health (each GET rides
-// free through the pass gate and wakes the box) with backoff for up to ~30s,
-// and only dispatch navbar:connect once the backend actually answers — the
-// recruiter never fires a real request into a cold box. On give-up the widget
-// returns to idle and the free client-side tier stands untouched.
+// The gated backends sleep when idle, so activation is HEALTH-GATED: show a waking state
+// in the service's nav widget, warm-ping /health (GETs ride free through the pass gate and
+// wake the box) with backoff for up to ~30s, and dispatch navbar:connect only once the
+// backend answers. On give-up the widget returns to idle and the client-side tier stands.
 
 const WARM_DEADLINE_MS = 30_000;
 
@@ -134,9 +128,8 @@ async function activateLive(): Promise<void> {
   document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
   const result = await warmUntilHealthy(service);
   if (result !== 'ok') {
-    // A refused pass is said as such, and forgotten: retrying can't help, and a dead
-    // Bearer shouldn't ride on later requests. A backend that never woke keeps the
-    // pass and offers Retry (Fable A1-05).
+    // A refused pass is said as such and forgotten (a dead Bearer shouldn't ride on later
+    // requests); a backend that never woke keeps the pass and offers Retry.
     if (result === 'unauthorized') SitePass.clear();
     document.dispatchEvent(
       new CustomEvent('navbar:connect-failed', { detail: { service, reason: result } }),
@@ -144,7 +137,7 @@ async function activateLive(): Promise<void> {
     return;
   }
   // Dispatches the same navbar:connect the connect modal uses, so the app's
-  // existing connected path runs — now through the gateway, with the Bearer.
+  // existing connected path runs — through the gateway, with the Bearer.
   document.dispatchEvent(
     new CustomEvent('navbar:connect', {
       detail: { service, url: `${GATEWAY}/${service}` },

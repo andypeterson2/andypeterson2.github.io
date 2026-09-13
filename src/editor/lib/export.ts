@@ -1,7 +1,7 @@
-// Client-side JSON export in the cv backend's import-compatible shape
-// (mirrors lib/db/import-export.js#getPersonExport). Used offline / for the demo
-// so unsaved work can be taken away as a file that re-imports losslessly;
-// connected exports fetch the authoritative backend /export instead.
+// Client-side JSON export in the cv backend's import-compatible shape, for the
+// offline demo, so unsaved work re-imports losslessly. Connected exports fetch the
+// authoritative backend /export instead.
+
 import type { Person, Variant, LetterSection } from './types';
 import { tex, texFields } from './api';
 

@@ -1,8 +1,6 @@
 <script lang="ts">
-  // The "what you can't do" half of increment 2: a quiet inline notice when the
-  // given text holds a \command that isn't on the allowlist — it'll print
-  // literally. Reads the same symbols.ts table as the escape transform, so it can
-  // never disagree with what compiles. The host passes its joined editable text.
+  // A quiet notice when the host's joined editable text holds a \command that isn't
+  // on the allowlist (it will print literally), from the escape transform's table.
   import { unknownCommands } from '../lib/symbols';
 
   let { text }: { text: string } = $props();

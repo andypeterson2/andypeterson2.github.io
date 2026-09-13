@@ -1,6 +1,6 @@
 name: Live security headers
 
-# The build gate (ci.yml) checks the headers in dist/_headers; this verifies
+# The CI build gate checks the headers in the built output; this verifies
 # what the EDGE actually serves — a Cloudflare config drift, a Pages
 # misdeploy, or a CDN-side change would pass the build gate and still strip
 # CSP in production. Weekly + on demand; failures show up as a red run.
@@ -22,7 +22,7 @@ jobs:
 
   live-console:
     # A console error on every page is the first thing a reviewer with DevTools
-    # open sees (audit P13: a Cloudflare-injected script the CSP blocks).
+    # open sees (e.g. a Cloudflare-injected script the CSP blocks).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

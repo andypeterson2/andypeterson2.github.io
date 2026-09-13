@@ -1,10 +1,7 @@
-// The guided tour's pure core — the step contract, its motion tokens, the
-// typewriter, and the one rule that decides when a visitor has taken the wheel.
-//
-// Deliberately runes-free: vitest here has no Svelte plugin, so anything living
-// in a `.svelte.ts` module is unreachable from a unit test (which is why the
-// other slice controllers have none). The logic worth pinning therefore lives in
-// this plain module; `tour.svelte.ts` keeps only the reactive shell and the timers.
+// The guided tour's pure core: the step contract, its motion tokens, the
+// typewriter, and the rule that decides when a visitor has taken the wheel. It is
+// runes-free because vitest here has no Svelte plugin, so rune modules are
+// unreachable from unit tests; the reactive shell keeps only state and timers.
 
 /** A step drives the REAL editor — the same store calls a visitor's clicks make. */
 export interface TourStep {

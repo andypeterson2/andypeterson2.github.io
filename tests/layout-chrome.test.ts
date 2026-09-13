@@ -52,7 +52,7 @@ describe('Print stylesheet', () => {
   });
 
   // The page scrolls inside .site-pane under a clipped 100vh body; print must unclip
-  // the chain or the paper gets one screen of a seven-screen page (Fable A1-08).
+  // the chain or the paper gets one screen of a seven-screen page.
   test('unclips the scrolling pane so the whole page prints', () => {
     const printSection = baseCss.split('@media print')[1] || '';
     expect(printSection).toContain('.site-pane');
@@ -87,13 +87,15 @@ describe('Flat layout — no breadcrumb details-bar', () => {
   });
 });
 
-// ---- Error boundary (intentionally removed — app pages handle errors via their own UI) ----
+// ---- No global error boundary: each app page handles its own errors in its UI ----
 
 describe('Error boundary for runtime errors', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
-  test('error boundary deliberately removed with comment', () => {
-    expect(layoutSrc).toContain('Error boundary removed');
+  test('the layout installs no global error handler', () => {
+    expect(layoutSrc).not.toMatch(
+      /window\.onerror|unhandledrejection|addEventListener\(\s*['"]error['"]/,
+    );
   });
 });
 

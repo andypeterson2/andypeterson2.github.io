@@ -1,14 +1,9 @@
-// Dependency-free drag-to-reorder for a list, via a Svelte action.
-//
-// Usage: put `use:sortable={{ onReorder }}` on a CONTAINER whose direct children
-// carry `data-sortable`, and a `[data-drag-handle] draggable="true"` grip inside
-// each child. Only the grip starts a drag, so inputs/clicks are untouched.
-//
-// Nesting-safe: a container only reacts to a drag whose grip belongs to one of
-// ITS direct `[data-sortable]` children (it tracks `from` locally, and every
-// other container sees `from < 0` and no-ops). That lets a section list contain
-// per-section entry lists without cross-talk. Mouse/pointer only for drag;
-// keyboard reordering is `reorderKeydown` below (both call the same onReorder).
+// Dependency-free drag-to-reorder, as a Svelte action: `use:sortable={{ onReorder }}`
+// on a container whose direct children carry `data-sortable` and a
+// `[data-drag-handle] draggable="true"` grip. Only the grip starts a drag. A
+// container reacts only to grips of its own direct children (others see `from < 0`),
+// so nested lists don't cross-talk. Keyboard reordering is `reorderKeydown`, which
+// calls the same onReorder.
 
 export interface SortableParam {
   onReorder: (from: number, to: number) => void;

@@ -2,7 +2,7 @@
  * UI-KIT — Icon Library (Font Awesome 6 Free).
  *
  * All icons use Font Awesome classes wrapped in <span class="icon">.
- * Requires Font Awesome 6 CSS (loaded via CDN in ui-kit.css or HTML).
+ * Requires Font Awesome 6 CSS on the host page.
  *
  * Usage:
  *   element.innerHTML = ICONS.play;

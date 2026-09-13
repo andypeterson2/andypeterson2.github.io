@@ -1,10 +1,8 @@
-// The on-demand PDF preview, extracted from EditorState as a self-contained
-// reactive island (tech-debt #11). It owns only its own state and has no tie to
-// the editor's save machinery (settle/debounce/seq) — it just compiles the
-// active variant and tracks the result. The editor composes it as `editor.preview`
-// and injects the two things it needs (is-connected, the active variant) as
-// thunks, so the controller reads live reactive values without a back-reference
-// to the whole store. This is the pattern for peeling further slices off later.
+// The on-demand PDF preview: compiles the active variant and tracks the result,
+// with no tie to the editor's save machinery. The editor composes it as
+// `editor.preview` and injects is-connected and the active variant as thunks, so
+// it reads live reactive values without a back-reference to the whole store.
+
 import { api } from './api';
 import type { Variant } from './types';
 

@@ -1,15 +1,8 @@
 /* =============================================================
-   Client-side classifier inference — the zero-backend demo tier.
-
-   Loads a compact model (public/classifiers/models/<name>.json, exported and
-   drift-checked by the quantum-machine-learning repo) and runs its forward
-   pass in the browser. Two kinds:
-     - "linear": normalise → matmul → softmax → argmax (the platform models);
-     - "qsvm":   the Yang et al. 2019 paper recreation — a 2-D affine map plus
-                 one dot product; a sign classifier, so no probabilities.
-   Both return the { prediction, confidence, probs } shape the server /predict
-   route does (qsvm with null confidence — no fabricated numbers), so the
-   existing renderers just work. No backend, no WASM.
+   Client-side classifier inference — the zero-backend demo tier. Runs an exported model's
+   forward pass in the browser: "linear" (normalise → matmul → softmax → argmax) or "qsvm"
+   (the Yang et al. 2019 recreation: a 2-D affine map plus one dot product; a sign classifier,
+   so null confidence). Both return the server /predict shape { prediction, confidence, probs }.
    ============================================================= */
 
 export interface NormalizeSpec {
@@ -23,7 +16,7 @@ interface ModelDisplay {
   subset?: string;
 }
 
-/** The linear platform models (mnist.json, iris.json). */
+/** The linear platform models (MNIST, Iris). */
 export interface LinearModel {
   kind?: 'linear';
   normalize: NormalizeSpec;
@@ -36,7 +29,7 @@ export interface LinearModel {
   display?: ModelDisplay;
 }
 
-/** The QSVM paper recreation (qsvm-mnist.json, qsvm-iris.json). */
+/** The QSVM paper recreation (the qsvm-* models). */
 export interface QsvmModel {
   kind: 'qsvm';
   raw_input?: 'pixels' | 'features';
@@ -228,10 +221,10 @@ function centreOfMass(g: Float64Array, w: number): [number, number] {
 }
 
 /**
- * MNIST's own preprocessing for a hand-drawn 28×28 grid (audit M19): crop to the ink,
- * scale the longer side to 20px (keeping the aspect ratio, area-averaged), then place
- * it in a 28×28 frame so its centre of mass sits at the centre. The training digits
- * went through exactly this, so skipping it made a plainly drawn 7 read as a 2 or 3.
+ * MNIST's own preprocessing for a hand-drawn 28×28 grid: crop to the ink, scale the
+ * longer side to 20px (keeping the aspect ratio, area-averaged), then place it in a
+ * 28×28 frame so its centre of mass sits at the centre. The training digits went
+ * through exactly this; without it a plainly drawn 7 reads as a 2 or 3.
  * Returns the grid unchanged if it's blank.
  */
 export function preprocessDigit(raw: readonly number[], size = 28, box = 20): number[] {

@@ -1,9 +1,9 @@
 ---
 /**
  * Server status nav — adds a status-dot nav item for each backend service
- * declared on the page. STATUS-ONLY: the manual host/port connect dialog is
- * retired; backends are deploy-based and connect through the pass-activated
- * gateway lane (see shared/pass.ts).
+ * declared on the page. STATUS-ONLY: there is no manual host/port connect
+ * dialog; backends are deploy-based and connect through the pass-activated
+ * gateway lane.
  *
  * Meta-tag format:
  *   <meta name="site-backend" content="service-key" data-label="Label">
@@ -11,15 +11,15 @@
 ---
 
 <!-- Shared tier (bundled module): SitePass fetch wrapper first, then ServiceConfig,
-     SiteContract, and the connect-modal UI. Module scripts defer like the old
-     classic `defer` tags did, so relative ordering with the apps is unchanged. -->
+     SiteContract, and the connect-modal UI. Module scripts defer, so they run in
+     document order relative to the apps. -->
 <script>
   import '../apps/shared/entry';
 </script>
 
 <style is:global>
   /* ── Server nav item (injected by JS) ──
-     Status text, not a control: no pointer cursor (M9). */
+     Status text, not a control: no pointer cursor. */
   .server-nav-item {
     display: flex;
     align-items: center;
@@ -37,7 +37,7 @@
     pointer-events: none;
   }
 
-  /* The state as a word, visible (H6). */
+  /* The state as a visible word. */
   .sn-state {
     font-family: var(--font-sans);
     font-size: 0.85em;

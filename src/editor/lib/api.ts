@@ -1,12 +1,8 @@
-// cv API client — credentialed fetches through the gateway. The gateway's session
-// cookie (set by its self-hosted "Sign in with Google" flow) rides along via
-// credentials:'include'. Reads and writes both go through here.
-//
-// The backend is id-addressable — there is NO active-person/session state.
-// GET /persons lists profiles ({id,name}); GET /persons/:pid returns that
-// profile's full "main" record (person + personal + sections→entries→items→tags,
-// variants, tag vocab) in one shot. The gateway tiers access: the allowlisted
-// owner gets every profile; any other signed-in user gets their own profiles. Contract: cv/editor/routes/persons.js (the GET /persons/:pid route).
+// cv API client: credentialed fetches through the gateway, whose session cookie
+// rides along via credentials:'include'. The backend is id-addressable with no
+// active-person state: GET /persons lists profiles ({id,name}); GET /persons/:pid
+// returns one profile's full record (person, sections, variants, tag vocab).
+// The allowlisted owner sees every profile; other signed-in users see their own.
 import type {
   Person,
   Item,
@@ -50,7 +46,7 @@ export interface ActiveLoad {
   persons: PersonMeta[];
 }
 
-/** Every LaTeX special → its literal-text escape. Full coverage, not the old subset. */
+/** Every LaTeX special → its literal-text escape. */
 const ESCAPE: Record<string, string> = {
   '\\': '\\textbackslash{}',
   '{': '\\{',
@@ -81,8 +77,8 @@ export function untex(s: string | undefined): string {
 
 /**
  * Display text → LaTeX, for writes. A field is made breakage-proof: a permitted
- * `\command` (see symbols.ts) is substituted to its Unicode glyph FIRST, then EVERY
- * remaining LaTeX special is escaped to literal text, so a token is either a known
+ * `\command` is substituted to its Unicode glyph FIRST, then EVERY remaining
+ * LaTeX special is escaped to literal text, so a token is either a known
  * glyph or literal prose. `\rightarrow` → `→` normalizes on the way in (one-way; the
  * glyph is canonical); an unknown `\foobar` becomes the literal text “\foobar”.
  *
@@ -190,7 +186,7 @@ function parseErrorEnvelope(data: unknown): ApiError | undefined {
 export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
-  // ---- self-hosted Google sign-in (multi-user, phase 2/4) ----
+  // ---- self-hosted Google sign-in ----
   // Auth lives at the gateway ROOT (/auth/*), a sibling of the /cv app — not under
   // /cv/api — so these bypass `req()` and hit `authBase` directly.
   /** The gateway origin (…/cv → …). */
@@ -254,7 +250,7 @@ export class CvApi {
         };
       }
       // The one wire-boundary cast: the response body is trusted to match the
-      // endpoint's declared shape (see ./wire.ts); everything downstream is typed.
+      // endpoint's declared shape; everything downstream is typed.
       return { ok: true, status: res.status, data: data as T };
     } catch (e) {
       return {
@@ -327,9 +323,8 @@ export class CvApi {
     return this.req(`/persons/${id}`, { method: 'DELETE' });
   }
 
-  // ---- version history (ADR-006 increment 1; the /versions endpoints are the
-  // paired backend increment). A version's `doc` is the editor's Person snapshot,
-  // stored as an opaque JSON blob — the backend rebuilds its tables from it on
+  // ---- version history. A version's `doc` is the editor's Person snapshot,
+  // stored as an opaque JSON blob; the backend rebuilds its tables from it on
   // restore. ----
   listVersions(pid: number) {
     return this.req<{
@@ -581,7 +576,7 @@ export class CvApi {
     return this.req(`/variants/${variantId}/letter-sections/${lid}`, { method: 'DELETE' });
   }
   /** POST /persons/:pid/import — load an export tree into a (new, empty) profile. Used to
-   *  carry a visitor's demo edits into their account after sign-in (audit C1). */
+   *  carry a visitor's demo edits into their account after sign-in. */
   importPerson(pid: number, tree: unknown) {
     return this.req(`/persons/${pid}/import`, { method: 'POST', body: JSON.stringify(tree) });
   }

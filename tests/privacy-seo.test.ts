@@ -86,7 +86,7 @@ describe('Social card preview verification', () => {
     expect(layoutSrc).toContain('og:image');
   });
 
-  // A large-image card with no image previews as a blank box (audit M30).
+  // A large-image card with no image previews as a blank box.
   test('every page gets a default preview image that exists', () => {
     expect(layoutSrc).toContain("ogImage = '/og-card.png'");
     expect(layoutSrc).toContain('twitter:image');

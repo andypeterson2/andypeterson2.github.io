@@ -3,15 +3,11 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 
-// Inline PostCSS plugin — add `font-display: optional` to any @font-face missing it. The
-// System-6 text faces paint within a ~100ms block in the fallback stack and are NEVER
-// swapped in mid-page, so there's no FOIT (invisible text, the old ~2.6s LCP wait) AND no
-// reflow: `swap` was measured to spike CLS to ~0.13 here because these pixel fonts have
-// very different metrics from the fallback, and that layout shift cost more than the LCP
-// gain. The small same-origin woff2 files usually load inside the block window, so the real
-// font still renders; on a slow first load the fallback shows and the font is cached for
-// next time. Runs over the vendored system.css via Vite — no node_modules patch, matches
-// on @font-face structure so it survives version bumps.
+// PostCSS plugin: add `font-display: optional` to any @font-face missing it. These pixel
+// fonts' metrics differ so much from the fallback that `swap` spikes CLS to ~0.13; `optional`
+// never swaps mid-page, so there is no reflow and no invisible text. The small same-origin
+// woff2 files usually load inside the ~100ms block window; on a slow first load the fallback
+// shows and the font is cached. Matching on @font-face structure survives system.css bumps.
 const fontDisplayOptional = {
   postcssPlugin: 'font-display-optional',
   AtRule: {
@@ -35,13 +31,10 @@ export default defineConfig({
       scriptDirective: {
         resources: [
           "'self'",
-          // Cloudflare Web Analytics beacon (beacon.min.js) — see BaseLayout.astro.
+          // Cloudflare Web Analytics beacon script.
           'https://static.cloudflareinsights.com',
-          // Hash of the no-FOUC theme bootstrap — an `is:inline` <script> in
-          // BaseLayout.astro that Astro deliberately does NOT auto-hash. If that
-          // script's bytes change, this hash must change with it, or the CSP
-          // blocks it in production (silent FOUC). tests/integration/csp.test.ts
-          // recomputes it from the built HTML and fails if they drift.
+          // Hash of the `is:inline` no-FOUC theme bootstrap, which Astro does not auto-hash.
+          // It must change with that script's bytes; the CSP integration test fails on drift.
           "'sha256-9N93WdvhYx8jyvhhVqe+hD2/gNkNOZi3/WBWVXO3xho='",
         ],
       },
@@ -54,17 +47,14 @@ export default defineConfig({
         // inlines them), so 'self' suffices — no data: or external font origins.
         "font-src 'self'",
         "img-src 'self' data:",
-        // cloudflareinsights.com is where the Web Analytics beacon POSTs its RUM data
-        // (/cdn-cgi/rum). api.andypeterson.dev is the gateway the CV editor fetches
-        // (credentialed, behind Cloudflare Access). Without these the CSP blocks them.
+        // The Web Analytics beacon POSTs RUM data to cloudflareinsights.com; the CV editor
+        // fetches the credentialed api.andypeterson.dev gateway (behind Cloudflare Access).
         `connect-src 'self' https://cloudflareinsights.com https://api.andypeterson.dev${process.env.NODE_ENV !== 'production' ? ' ws://localhost:* wss://localhost:* http://localhost:*' : ''}`,
         "object-src 'none'",
-        // pdf.js renders the compiled PDF onto canvases (see PdfView.svelte); its worker
-        // ships as a same-origin ?url asset, so worker-src needs 'self' (blob: covers pdf.js's
-        // fallback worker path). isEvalSupported:false keeps it off 'unsafe-eval'.
+        // The PDF renderer's worker is a same-origin ?url asset; blob: covers its fallback
+        // worker path. isEvalSupported:false keeps it off 'unsafe-eval'.
         "worker-src 'self' blob:",
-        // blob: is retained here defensively — the PDF no longer uses a blob: <iframe>, but a
-        // downloaded blob: URL (the pv-bar download link) must remain navigable.
+        // A downloaded blob: URL (the pv-bar download link) must remain navigable.
         "frame-src 'self' blob:",
         "base-uri 'self'",
         "form-action 'self' mailto:",
@@ -74,19 +64,16 @@ export default defineConfig({
   },
   site: process.env.SITE_URL || 'https://andypeterson.dev',
   markdown: {
-    // No writeup uses fenced code, and Shiki (Astro's default highlighter) emits inline
-    // styles our hashed-inline CSP blocks — so highlighting is off rather than shipping a
-    // config-time CSP warning + dead Shiki work on every build. If code blocks are ever
-    // added, switch to 'prism' (class-based, CSP-safe) with a Prism theme.
+    // Shiki emits inline styles the hashed-inline CSP blocks, and no writeup uses fenced
+    // code. For code blocks, use 'prism' (class-based, CSP-safe) with a Prism theme.
     syntaxHighlight: false,
   },
   redirects: {
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
-    // The About is the home page's "The longer version" writeup; #about opens it.
-    // One entry only: trailingSlash defaults to 'ignore', so '/about' also covers
-    // '/about/' — defining both collides (a hard error in future Astro versions).
+    // #about opens the home page's About writeup. trailingSlash 'ignore' makes this cover
+    // '/about/' too; defining both collides.
     '/about': '/#about',
     // The legacy project-detail surface is retired — the home timeline is the
     // one showcase surface. Exact paths only (the /app/ demo pages live on).
@@ -95,35 +82,26 @@ export default defineConfig({
     '/projects/quantum-video-chat': '/#quantum-video-chat',
     '/projects/quantum-nonogram-solver': '/#quantum-nonogram-solver',
     '/projects/quantum-ml-classifier': '/#quantum-ml-classifier',
-    // The classifier demo moved under the AI/ML umbrella page.
+    // The classifier demo lives under the AI/ML umbrella page.
     '/projects/quantum-ml-classifier/app': '/projects/ai-ml/app/',
     // /projects/ai-ml without /app/ anchors to the timeline card.
     '/projects/ai-ml': '/#quantum-ml-classifier',
   },
   vite: {
-    // Expose the site's own env prefixes to import.meta.env. Vite only surfaces
-    // VITE_-prefixed vars by default, so without this siteConfig never sees
-    // SITE_* and silently renders "Portfolio" with empty contacts — the identity
-    // is public by design, so exposing these is safe. PLAUSIBLE_/PREVIEW_ are the
-    // other prefixes the app reads (BaseLayout).
-    // CF_ narrowed to the one beacon variable: a bare CF_ prefix would expose
-    // any Cloudflare-ish env var (API tokens included) to client code.
+    // Vite exposes only VITE_* vars by default; without SITE_* siteConfig renders "Portfolio"
+    // with no contacts. CF_BEACON_TOKEN, not CF_, so no Cloudflare API token reaches the client.
     envPrefix: ['PUBLIC_', 'SITE_', 'CF_BEACON_TOKEN', 'PREVIEW_'],
     css: {
       // Run the font-display:optional plugin (defined above) over the bundled CSS.
       postcss: { plugins: [fontDisplayOptional] },
     },
-    // pdf.js is dynamically imported (PdfView) so it prod-chunks lazily; pre-bundle it
-    // in dev so the first preview render doesn't trigger a mid-session Vite re-optimize
-    // (which would reload the page out from under an in-flight compile / e2e).
+    // Pre-bundle the lazily imported PDF library in dev so the first preview render doesn't
+    // force a mid-session Vite re-optimize, which reloads the page under an in-flight compile.
     optimizeDeps: { include: ['pdfjs-dist'] },
     build: {
-      // Never inline fonts. Vite's default inlines assets < 4KB as base64, which
-      // for the small System-6 woff2 faces bloats the render-blocking CSS by ~20KB
-      // (base64 is +33% and lands in the critical bundle) — the main FCP drag on
-      // throttled connections. As files they load in parallel and stay cacheable.
-      // Small SVGs/PNGs still inline (returning undefined = default), which keeps
-      // the ~22 system.css UI SVGs out of the request waterfall.
+      // Never inline fonts: as base64 they add ~20KB to the render-blocking CSS, the main FCP
+      // drag on throttled connections. Other small assets keep the default (undefined), which
+      // keeps system.css's ~22 UI SVGs out of the request waterfall.
       assetsInlineLimit: (filePath) =>
         /\.(woff2?|ttf|otf|eot)$/i.test(filePath) ? false : undefined,
     },

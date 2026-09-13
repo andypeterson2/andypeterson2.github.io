@@ -1,7 +1,7 @@
 /**
- * Shared-tier entry — the single bundled script ServerConnectModal.astro loads.
+ * Shared-tier entry — the single bundled script the server-status nav loads.
  *
- * Import order is load-bearing and mirrors the old classic-script order:
+ * Import order is load-bearing:
  * pass first (its fetch wrapper must be installed before anything calls out),
  * then service-config and contract-client (published for the app tiers), then
  * the connect-modal UI that consumes them.

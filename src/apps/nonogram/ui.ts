@@ -1,7 +1,7 @@
 /* =============================================================
    Status line, busy state, and grid-size label — tiny UI helpers
-   shared by grid.ts / solver.ts / app.ts (kept separate to avoid
-   an import cycle through app.ts).
+   shared by the grid, solver and app modules (kept separate to avoid
+   an import cycle through the app module).
    ============================================================= */
 
 import { state, $, must } from './state';
@@ -15,7 +15,7 @@ export function setStatus(msg: string, level?: 'err' | 'ok'): void {
 }
 
 /** What the run button will actually do: offline it solves classically in the
- *  browser; with a live backend it runs the Grover simulator (H7). */
+ *  browser; with a live backend it runs the Grover simulator. */
 export function benchLabel(): string {
   return window.API_BASE ? '▶ Run on simulator' : '▶ Solve in browser';
 }

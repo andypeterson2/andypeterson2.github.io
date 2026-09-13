@@ -1,12 +1,9 @@
 // The guided tour's reactive shell: step sequencing, the dwell timer, and the
-// interrupt. The testable logic lives in ./tour — this file holds the runes.
-//
-// Composed through an injected host like the other slice controllers (see
-// store.svelte.ts), so the machine never reaches into the store. The tour runs
-// in demo for anyone, and for a signed-in owner too — there `stage()`/`restore()`
-// sandbox it: it drives the real CV through the same public calls, but its one
-// mutation is an ephemeral bullet, and the document is snapshotted on entry and
-// put back untouched on exit, so nothing it does persists (see store.stageTour).
+// interrupt; the testable logic lives in the runes-free core. Composed through an
+// injected host so the machine never reaches into the store. For a signed-in owner,
+// `stage()`/`restore()` sandbox the tour: its one mutation is an ephemeral bullet,
+// and the document is snapshotted on entry and put back untouched on exit.
+
 import { DWELL_MS, prefersReducedMotion, type TourStep } from './tour';
 import { editor } from './store.svelte';
 import { tourSteps } from './tour-steps';
@@ -49,7 +46,7 @@ export class TourController {
   /** reduced motion → no auto-advance; the visitor steps through with Next ▸. */
   manual = $state(false);
   /** connected-ness captured at start(): the tour is staged for this mode. If the
-   *  session flips mid-tour (a sign-in popup lands), Editor.svelte ends it. */
+   *  session flips mid-tour (a sign-in popup lands), the editor ends it. */
   liveAtStart = $state(false);
 
   /** in-flight step (aborted on interrupt), the dwell timer, and a generation counter */

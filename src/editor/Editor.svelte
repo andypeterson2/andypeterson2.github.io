@@ -21,16 +21,10 @@
   import PdfView from './components/PdfView.svelte';
   import { modal } from './lib/modal';
 
-  // The owner's identity (name + public contacts) resolved from siteConfig on the
-  // server and handed down by the Astro page. Overlaid onto the demo person so a
-  // visitor sees the real CV, while committed source stays free of PII (the demo
-  // seed carries none — see demo.ts). Applied synchronously so the first paint is
-  // already the owner, not blank fields.
+  // The owner's identity from siteConfig, overlaid onto the demo person so visitors
+  // see the real CV while committed source carries no PII.
   let { identity }: { identity?: Partial<Personal> } = $props();
-  // identity is a static prop (server-resolved, handed down once at hydration and never
-  // reassigned), so reading it here at init — not in an $effect — is intentional: the
-  // overlay must apply synchronously before first paint. svelte-ignore silences the
-  // state_referenced_locally advisory that assumes props change over time.
+  // A static prop, read at init (not in an $effect) so the overlay beats first paint.
   // svelte-ignore state_referenced_locally
   if (identity) editor.hydrateDemoIdentity(identity);
 
@@ -43,18 +37,14 @@
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
 
-  // The heart in the menubar toggles the site theme — the portfolio's own control.
-  // Its aria is set imperatively (via bind:this), not through a reactive binding:
-  // the island is server-rendered light but hydrated against the real (possibly
-  // dark) theme, and driving aria off reactive state is unreliable across that
-  // hydration boundary. onMount corrects the SSR defaults; toggleTheme keeps them
-  // in sync. BaseLayout's bootstrap already applied the persisted theme on load.
+  // The menubar heart toggles the site theme. Its aria is set imperatively: the island
+  // renders light on the server but hydrates against the real theme.
   let heartEl: HTMLButtonElement | undefined;
   let theme: 'light' | 'dark' = 'light';
   function reflectTheme() {
     const dark = theme === 'dark';
     const btn = heartEl ?? document.querySelector<HTMLButtonElement>('.heart-toggle');
-    btn?.setAttribute('aria-pressed', String(dark)); // the name stays "Dark mode" (M16)
+    btn?.setAttribute('aria-pressed', String(dark)); // the name stays "Dark mode"
   }
   onMount(() => {
     theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -75,13 +65,13 @@
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
   // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
-  // same as signed out: offering "Sign in" again would just loop (audit M10).
+  // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
   // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
   // The invite and the carried-over-edits offer are modal pop-ups over a scrim:
-  // `use:modal` makes the page behind inert and puts focus on the answer (H13).
+  // `use:modal` makes the page behind inert and puts focus on the answer.
   // Escape dismisses the invite (the offer needs a real answer).
   function onInviteKey(e: KeyboardEvent) {
     if (e.key === 'Escape' && demoMode && inviteOpen && !editor.pendingDraft) inviteOpen = false;
@@ -162,9 +152,8 @@
       ],
     },
     {
-      // The demo's invite popup carries the tour, but it's gone once you sign in — so a
-      // signed-in owner reaches it here (it drives their own CV, sandboxed: nothing is
-      // saved). Demo visitors can use either entry point.
+      // Signed-in owners have no invite popup, so the tour lives here too (sandboxed
+      // on their own CV: nothing is saved).
       title: 'Help',
       items: [
         {
@@ -270,7 +259,7 @@
       >
     </div>
   {:else if editor.pendingDraft}
-    <!-- Demo edits carried across sign-in (audit C1): offer them as a profile. -->
+    <!-- Demo edits carried across sign-in: offer them as a profile. -->
     <div class="invite-layer" use:modal={'#draft-primary'}>
       <div class="invite-scrim" aria-hidden="true"></div>
       <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
@@ -607,7 +596,7 @@
     border: 0;
   }
 
-  /* Mirrors the portfolio menubar (BaseLayout .site-menubar): Chicago face, 3px
+  /* Mirrors the portfolio menubar: Chicago face, 3px
      rule, rounded top, flush full-height items that invert on hover. No
      overflow:hidden here (it would clip the pull-down menus) — the corner is
      rounded on the leftmost item (the heart) itself instead. */
@@ -677,8 +666,8 @@
     }
   }
 
-  /* Hollow = unset = nothing is being written. The System-6 idiom, and the reason
-     demo no longer borrows the colour we reserve for real errors. */
+  /* Hollow = unset = nothing is being written: the System-6 idiom, so demo never
+     borrows the colour reserved for real errors. */
   .dot {
     display: inline-block;
     width: 9px;
@@ -728,8 +717,7 @@
   }
 
   /* The demo invitation — a centered System-6 pop-up window carrying the guided
-     tour, over a dismiss scrim. Shown once, on load (see Editor's inviteOpen); the
-     same on every viewport. */
+     tour, over a dismiss scrim. Shown once, on load; the same on every viewport. */
   .invite-scrim {
     position: fixed;
     inset: 0;
@@ -919,7 +907,7 @@
     color: var(--paper);
   }
 
-  /* .btn (the toolbar family) lives in lib/styles.css as .ui.btn. */
+  /* .btn (the toolbar family) is styled globally as .ui.btn. */
 
   .sp {
     flex: 1;
@@ -1191,7 +1179,7 @@
   }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
-     from the shared .floating-panel primitive (lib/styles.css); only the row layout
+     from the shared .floating-panel primitive; only the row layout
      is the toast's own. */
   .save-toast {
     display: flex;
@@ -1212,7 +1200,7 @@
     line-height: 1.35;
   }
 
-  /* .st-btn / .st-x (the toast family) live in lib/styles.css as .ui.st-btn. */
+  /* .st-btn / .st-x (the toast family) are styled globally as .ui.st-btn. */
 
   @media (prefers-reduced-motion: no-preference) {
     .save-toast {
@@ -1232,18 +1220,11 @@
     }
   }
 
-  /* ── Mobile / tablet (≤768px) ── A fixed shell: a persistent top bar (the floating
-     site-nav on the left — from BaseLayout — and the editor ☰ Menu on the right), the
-     resume filling the middle as the ONLY scroll region, and the connection status
-     pinned across the bottom. The three regions cover the viewport edge-to-edge, so no
-     background ever shows between them. No title.
-
-     768px matches BaseLayout's own breakpoint: the site swaps to its floating nav at
-     768, so the editor must enter this touch layout at the same width — otherwise the
-     floating nav (top-left) lands on top of the desktop menubar in the 641–768 band.
-     A phone held sideways is wider than 768 but only ~375 tall; the desktop stack of
-     windows left it 0px of document, so short screens get this layout too (H14). Keep
-     in sync with COMPACT_QUERY in MenuBar.svelte / Tour.svelte. */
+  /* ── Mobile / tablet ── A fixed shell: a top bar (the site's floating nav left, the
+     editor ☰ Menu right), the resume as the ONLY scroll region, and the status pinned
+     at the bottom, edge-to-edge with no title. 768px matches the site's floating-nav
+     breakpoint so the nav never lands on the desktop menubar; short landscape phones
+     get this layout too. The compact JS media query must use the same bounds. */
   @media (width <= 768px), (height <= 500px) {
     .stage {
       --top-h: 58px;
@@ -1292,7 +1273,7 @@
       z-index: var(--z-sticky);
     }
 
-    /* Keep "demo — not saved" on phones (M10); only the variant label goes. */
+    /* Keep "demo — not saved" on phones; only the variant label goes. */
     .sb-variant {
       display: none;
     }
@@ -1363,7 +1344,7 @@
   /* Short laptop windows (1366×768 minus browser chrome is ~650px): the decorative
      "Resume Editor" frame title and the "Toolbar" window title cost ~125px of a small
      screen; the menubar already names the app, so drop them and give the document the
-     room (H14). */
+     room. */
   @media (width > 768px) and (height > 500px) and (height <= 760px) {
     .app-titlebar,
     .toolbar-window > .titlebar {

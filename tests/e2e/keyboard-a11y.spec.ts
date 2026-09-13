@@ -13,8 +13,8 @@ const activeLabel = (page: Page) =>
     return el?.getAttribute('aria-label') ?? el?.textContent?.trim() ?? '';
   });
 
-// H10: focus sat on Close and nothing scrolled the text; the long writeups' last
-// sections were out of reach. On a phone every writeup overflows.
+// A writeup opens with focus on its text, so the keyboard can scroll to its last
+// section. On a phone every writeup overflows.
 test.describe('Writeups scroll from the keyboard', () => {
   test('each writeup opens on its text, and PageDown scrolls it', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
@@ -37,7 +37,7 @@ test.describe('Writeups scroll from the keyboard', () => {
   });
 });
 
-// H13: panels opened behind ~30 Tab stops of covered page, and closing dropped focus.
+// Panels keep Tab out of the covered page, and closing hands focus back.
 test.describe('Editor panels are modal', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -78,7 +78,7 @@ test.describe('Editor panels are modal', () => {
   });
 });
 
-// M27: entries were named by their whole text; the tour was silent.
+// Entries are named by their heading, not their whole text; the tour announces its steps.
 test.describe('The editor to a screen reader', () => {
   test('document entries are named by their heading', async ({ page }) => {
     await page.goto(EDITOR);
@@ -106,7 +106,7 @@ test.describe('The editor to a screen reader', () => {
   });
 });
 
-// M24: the grid couldn't be drawn from the keyboard and exposed no state.
+// The grid can be drawn from the keyboard and exposes each cell's state.
 test.describe('Nonogram grid by keyboard', () => {
   test('Tab reaches the grid, arrows move, Space fills', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -133,7 +133,7 @@ test.describe('Nonogram grid by keyboard', () => {
   });
 });
 
-// M21: the dataset control was an empty ARIA menu that never named the dataset.
+// The dataset control names the loaded dataset and is a disclosure, not an empty ARIA menu.
 test.describe('Classifier dataset control', () => {
   test('names the loaded dataset and works as a disclosure', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -152,7 +152,7 @@ test.describe('Classifier dataset control', () => {
   });
 });
 
-// M15, M16, M9, M13: the shared chrome.
+// The shared chrome.
 test.describe('Site chrome', () => {
   test('Back to top is out of the tab order until it shows', async ({ page }) => {
     await page.goto('/');
@@ -181,8 +181,8 @@ test.describe('Site chrome', () => {
     await page.goto('/');
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.locator('[role="menubar"], [role="menuitem"]')).toHaveCount(0);
-    // It still looks like a System-6 menubar: the face came from system.css's
-    // ul[role] rule until the roles went, so it's pinned explicitly now.
+    // It still looks like a System-6 menubar: system.css sets that face only on
+    // ul[role], so it's pinned explicitly.
     await expect(page.locator('.site-menubar a[href="/"]')).toHaveCSS(
       'font-family',
       /^"?Chicago_12/,
@@ -191,7 +191,6 @@ test.describe('Site chrome', () => {
     await expect(page.getByRole('main')).toHaveCount(1);
   });
 
-  // P10: buttons and links fell back to the browser's blue ring.
   test('focus rings are ink, not browser blue', async ({ page }) => {
     await page.goto('/');
     await page.locator('.action-btn').first().focus();

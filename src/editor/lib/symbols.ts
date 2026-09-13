@@ -1,18 +1,9 @@
-// The permitted-symbol allowlist — the single source of truth for what LaTeX a
-// field may contain. It powers three things: the escape transform (api.ts `tex`
-// substitutes these commands to their glyph and escapes everything else), the
-// "what you can use" palette, and the "unrecognized command" warning (increment 2).
-//
-// The design (see the round-two register, item 18): the compiler is xelatex,
-// which renders Unicode natively — so the escape target is LaTeX *syntax*, not
-// *symbols*. A permitted `\command` is translated to its Unicode glyph before any
-// escaping, so the compiler never sees a raw control word from a field: a token is
-// either a known-safe glyph or escaped to literal text. Injection-proof by
-// construction, and `\rightarrow`-style muscle memory keeps working (it just
-// normalizes to → on the way in).
-//
-// To permit a new symbol, add a row. Keep `cmd` the exact control word a LaTeX
-// user would type; `glyph` must be a character xelatex's font can render.
+// The permitted-symbol allowlist: the single source of truth for what LaTeX a field
+// may contain, powering the escape transform, the symbol palette, and the
+// "unrecognized command" warning. xelatex renders Unicode natively, so a permitted
+// `\command` becomes its glyph before escaping and the compiler never sees a raw
+// control word from a field. To permit a symbol, add a row: `cmd` is the exact
+// control word a LaTeX user types; `glyph` must be renderable by xelatex's font.
 
 export interface SymbolDef {
   /** the control word as typed, with backslash — e.g. '\\rightarrow' */
@@ -25,7 +16,6 @@ export interface SymbolDef {
 }
 
 export const SYMBOLS: SymbolDef[] = [
-  // Arrows
   { cmd: '\\rightarrow', glyph: '→', label: 'right arrow', category: 'Arrows' },
   { cmd: '\\to', glyph: '→', label: 'to', category: 'Arrows' },
   { cmd: '\\leftarrow', glyph: '←', label: 'left arrow', category: 'Arrows' },
@@ -35,7 +25,6 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\downarrow', glyph: '↓', label: 'down arrow', category: 'Arrows' },
   { cmd: '\\mapsto', glyph: '↦', label: 'maps to', category: 'Arrows' },
 
-  // Relations
   { cmd: '\\leq', glyph: '≤', label: 'less-or-equal', category: 'Relations' },
   { cmd: '\\le', glyph: '≤', label: 'less-or-equal', category: 'Relations' },
   { cmd: '\\geq', glyph: '≥', label: 'greater-or-equal', category: 'Relations' },
@@ -48,7 +37,6 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\ll', glyph: '≪', label: 'much less', category: 'Relations' },
   { cmd: '\\gg', glyph: '≫', label: 'much greater', category: 'Relations' },
 
-  // Operators
   { cmd: '\\times', glyph: '×', label: 'times', category: 'Operators' },
   { cmd: '\\div', glyph: '÷', label: 'divide', category: 'Operators' },
   { cmd: '\\pm', glyph: '±', label: 'plus-minus', category: 'Operators' },
@@ -65,7 +53,6 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\nabla', glyph: '∇', label: 'nabla', category: 'Operators' },
   { cmd: '\\infty', glyph: '∞', label: 'infinity', category: 'Operators' },
 
-  // Set & logic
   { cmd: '\\in', glyph: '∈', label: 'element of', category: 'Set & logic' },
   { cmd: '\\notin', glyph: '∉', label: 'not element of', category: 'Set & logic' },
   { cmd: '\\subset', glyph: '⊂', label: 'subset', category: 'Set & logic' },
@@ -79,7 +66,6 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\vee', glyph: '∨', label: 'or', category: 'Set & logic' },
   { cmd: '\\emptyset', glyph: '∅', label: 'empty set', category: 'Set & logic' },
 
-  // Greek (lowercase)
   { cmd: '\\alpha', glyph: 'α', label: 'alpha', category: 'Greek' },
   { cmd: '\\beta', glyph: 'β', label: 'beta', category: 'Greek' },
   { cmd: '\\gamma', glyph: 'γ', label: 'gamma', category: 'Greek' },
@@ -105,7 +91,6 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\Phi', glyph: 'Φ', label: 'capital phi', category: 'Greek' },
   { cmd: '\\Omega', glyph: 'Ω', label: 'capital omega', category: 'Greek' },
 
-  // Misc typographic
   { cmd: '\\ldots', glyph: '…', label: 'ellipsis', category: 'Misc' },
   { cmd: '\\dots', glyph: '…', label: 'ellipsis', category: 'Misc' },
   { cmd: '\\degree', glyph: '°', label: 'degree', category: 'Misc' },

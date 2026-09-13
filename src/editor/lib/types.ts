@@ -1,5 +1,5 @@
 // Data model for the CV editor — mirrors the cv API's normalized person tree
-// returned by GET /api/persons/:id. See docs/editor-redesign.md §3.
+// returned by GET /api/persons/:id.
 
 // A type alias ON PURPOSE (not an interface): all-optional string shapes get an
 // implicit index signature only as aliases, which texMap/diffFields rely on.

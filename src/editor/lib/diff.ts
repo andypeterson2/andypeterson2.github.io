@@ -1,18 +1,16 @@
-// Structural diff of two CV documents (ADR-006 increment 2). Compares two Person
-// snapshots and reports what changed — added / removed / changed sections, entries,
-// bullets, and personal fields — matched by *id*, so a moved or edited row reads as
-// a change, not a delete-plus-re-add. Entity ids are stable across a snapshot's
-// lineage (ADR-006), so this is a pure, id-based function, unit-testable without
-// the store. It does not track identity across an id-renumbering restore — such a
-// comparison reads as wholesale removed + added, which is honest if coarse.
+// Structural diff of two Person snapshots: added / removed / changed sections,
+// entries, bullets, and personal fields, matched by id so an edited or moved row
+// reads as a change. Ids are stable across a snapshot's lineage; a restore that
+// renumbers ids reads as wholesale removed + added.
+
 import type { Person, Section, Entry, Item } from './types';
 
 /**
  * A value AS STORED: version-history `doc` snapshots round-trip through the
  * backend as opaque JSON, so any nested field can be missing in old or
- * imported rows. The domain types in ./types.ts describe a live, fully-mapped
- * document; this wrapper describes what actually comes back — which is why
- * the null-guards throughout this module are load-bearing, not decorative.
+ * imported rows. The domain types describe a live, fully-mapped document; this
+ * wrapper describes what actually comes back, which is why the null-guards
+ * throughout this module are load-bearing.
  */
 export type Stored<T> = T extends (infer U)[]
   ? Stored<U>[] | undefined

@@ -1,23 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   Dither — 1-bit ordered dithering, the honest System 6 gray.
-   Design law L2 ("one ink"): System 6 had NO true grays. It faked them by
-   dithering pure black and white pixels in fixed ordered patterns. These tokens
-   replace the flat #eee/#ddd/#ccc placeholders (see tokens.css --pattern-*),
-   so every "gray" surface is actually 1-bit, not a smoothed lie.
-
-   Ships as inline SVG data-URIs (CSP img-src 'self' data:) — no external
-   request, no dependency, crisp at integer sizes (shape-rendering=crispEdges).
-   Cell sizes are 2px (4px for the lightest), so on a 2× display each dither
-   pixel is 2 device px — chunky-crisp, the way the rest of the pixel UI scales.
+   Dither — 1-bit ordered dithering, the honest System 6 gray. System 6 had no
+   true grays: it dithered black and white pixels in fixed patterns, so every
+   "gray" surface here is 1-bit too. Inline SVG data-URIs (CSP img-src 'self'
+   data:), crisp 2px cells (4px for the lightest): 2 device px each on 2×.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── the ordered ramp: fraction of pixels that are black ──
-     ~12.5%  light stipple   → replaces #eee light surfaces
-     25%     light gray      → replaces #eee / #ddd
-     50%     the classic Mac "gray" checkerboard → replaces #ccc
-     75%     dark gray
-     hatch   45° 1px diagonal (QuickDraw-style line fill) */
+  /* ── the ordered ramp, by fraction of black pixels: light ~12.5% stipple, 25%, 50% (the
+     classic Mac checkerboard), 75%; hatch is a 45° 1px QuickDraw-style line fill ── */
   --dither-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M2 2h1v1H2z' fill='%23000'/%3E%3C/svg%3E");
   --dither-25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23000'/%3E%3C/svg%3E");
   --dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");

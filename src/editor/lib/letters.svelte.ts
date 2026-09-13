@@ -1,10 +1,8 @@
-// The cover-letter concern — the per-variant letter header plus the per-variant
-// body paragraphs, their loading, and their CRUD — lifted out of EditorState
-// (tech-debt #11). Unlike the preview slice, this one is genuinely coupled to the
-// editor's save machinery, so rather than reach into a god-object it declares
-// that coupling as an explicit `LetterHost` the store supplies. The paragraphs
-// (`sections`) live here now; the store coordinates by calling load()/clear()
-// when the active variant changes.
+// The cover-letter concern: the per-variant letter header and body paragraphs,
+// their loading, and their CRUD. It is coupled to the editor's save machinery, so
+// that coupling is declared as an explicit `LetterHost` the store supplies. The
+// store calls load()/clear() when the active variant changes.
+
 import { api } from './api';
 import { DEMO_LETTERS } from './demo';
 import { move } from './util';
@@ -26,7 +24,7 @@ export class LetterController {
   /** header fields of the active cover-letter variant (recipient / opening / closing) */
   header = $state<Record<string, string>>({});
 
-  /** Last-recorded field values, for undo — see undo.ts on why a shadow is needed. */
+  /** Last-recorded field values, for undo: bound inputs overwrite the old value before save. */
   #shadow = new FieldShadow();
 
   constructor(private host: LetterHost) {}

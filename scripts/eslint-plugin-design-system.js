@@ -27,8 +27,7 @@ const preferButton = {
   create(context) {
     const filename = context.filename || context.getFilename();
 
-    // Skip only the Button component itself — other components are fair game
-    // (they get the rule at 'warn' via eslint.config.js).
+    // Skip only the Button component itself; other components get the rule at 'warn'.
     if (filename.endsWith(`${COMPONENT_DIR}Button.astro`)) return {};
 
     return {

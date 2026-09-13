@@ -115,7 +115,7 @@
     gap: 5px;
   }
 
-  /* .opt / .new / .del come from the lib/styles.css button families. */
+  /* .opt / .new / .del come from the shared button families. */
 
   .radio {
     width: 11px;

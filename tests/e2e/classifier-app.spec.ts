@@ -44,8 +44,8 @@ test.describe('Classifier app shell', () => {
   });
 });
 
-// Audit H9 / M20: offline, the backend-only controls say so instead of failing, a
-// blank canvas predicts nothing, and the two-class QSVM says it's two-class.
+// Offline, the backend-only controls say so instead of failing, a blank canvas
+// predicts nothing, and the two-class QSVM says it's two-class.
 test.describe('Classifier: the browser tier is honest about what it can do', () => {
   test('backend-only controls are disabled with the reason shown', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
