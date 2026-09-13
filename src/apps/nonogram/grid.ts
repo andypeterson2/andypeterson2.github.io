@@ -61,8 +61,15 @@ function getMaxColLen(): number {
   return Math.max(1, ...state.colClues.map((c) => c.filter((v) => v > 0).length));
 }
 
+// An empty line's clue is a 0, the puzzle convention; a blank header also told a
+// screen reader nothing (axe empty-table-header).
+function shownRuns(clue: number[]): number[] {
+  const runs = clue.filter((v) => v > 0);
+  return runs.length ? runs : [0];
+}
+
 function makeClueContent(clue: number[], maxLen: number, className: string): HTMLDivElement {
-  const nonzero = clue.filter((v) => v > 0);
+  const nonzero = shownRuns(clue);
   const div = document.createElement('div');
   div.className = className;
   for (let i = 0; i < maxLen; i++) {
@@ -76,14 +83,50 @@ function makeClueContent(clue: number[], maxLen: number, className: string): HTM
 }
 
 // ── Grid build (Draw mode) ─────────────────────────────────────
+// The grid is a keyboard widget as well as a drawing surface (audit M24): each cell
+// holds a toggle button named "Row r, column c", one of which is in the tab order
+// (roving tabindex); arrows, Home and End move, Space or Enter fills. The clues are
+// the table's row and column headers, so a screen reader hears them as it moves.
+let focusR = 0;
+let focusC = 0;
+
+function clueLabel(kind: 'Row' | 'Column', i: number, clue: number[]): string {
+  return `${kind} ${String(i + 1)} clue: ${shownRuns(clue).join(' ')}`;
+}
+
+function clueHeader(
+  scope: 'row' | 'col',
+  id: string,
+  label: string,
+  content: HTMLElement,
+): HTMLTableCellElement {
+  const th = document.createElement('th');
+  th.scope = scope;
+  th.className = scope === 'row' ? 'row-clue' : 'col-clue';
+  th.id = id;
+  th.setAttribute('aria-label', label);
+  th.appendChild(content);
+  return th;
+}
+
+function cellButton(r: number, c: number): HTMLButtonElement | null {
+  return elDrawView.querySelector<HTMLButtonElement>(
+    `td[data-r="${String(r)}"][data-c="${String(c)}"] > button`,
+  );
+}
+
 export function buildGrid(): void {
   const rows = state.rows,
     cols = state.cols;
   const maxRowLen = getMaxRowLen();
   const maxColLen = getMaxColLen();
+  focusR = Math.min(focusR, rows - 1);
+  focusC = Math.min(focusC, cols - 1);
+  const hadFocus = elDrawView.contains(document.activeElement);
 
   const tbl = document.createElement('table');
   tbl.className = 'nonogram-table';
+  tbl.setAttribute('aria-label', `Puzzle grid, ${String(rows)} by ${String(cols)}`);
 
   // ── Header row: corner + col clues ──
   const hdr = tbl.insertRow();
@@ -91,33 +134,51 @@ export function buildGrid(): void {
   const corner = hdr.insertCell();
   corner.className = 'corner-cell';
 
-  // Column clue cells
   for (let c = 0; c < cols; c++) {
-    const td = hdr.insertCell();
-    td.className = 'col-clue';
-    td.id = `cclue-${String(c)}`;
-    td.appendChild(makeClueContent(state.colClues[c] ?? [], maxColLen, 'col-clue-slots'));
+    const clue = state.colClues[c] ?? [];
+    hdr.appendChild(
+      clueHeader(
+        'col',
+        `cclue-${String(c)}`,
+        clueLabel('Column', c, clue),
+        makeClueContent(clue, maxColLen, 'col-clue-slots'),
+      ),
+    );
   }
 
   // ── Data rows ──
   for (let r = 0; r < rows; r++) {
     const tr = tbl.insertRow();
-
-    const rClue = tr.insertCell();
-    rClue.className = 'row-clue';
-    rClue.id = `rclue-${String(r)}`;
-    rClue.appendChild(makeClueContent(state.rowClues[r] ?? [], maxRowLen, 'row-clue-slots'));
+    const clue = state.rowClues[r] ?? [];
+    tr.appendChild(
+      clueHeader(
+        'row',
+        `rclue-${String(r)}`,
+        clueLabel('Row', r, clue),
+        makeClueContent(clue, maxRowLen, 'row-clue-slots'),
+      ),
+    );
 
     for (let c = 0; c < cols; c++) {
+      const filled = state.grid[r]?.[c];
       const td = tr.insertCell();
-      td.className = 'cell' + (state.grid[r]?.[c] ? ' filled' : '');
+      td.className = 'cell' + (filled ? ' filled' : '');
       td.dataset.r = String(r);
       td.dataset.c = String(c);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell-btn';
+      btn.setAttribute('aria-label', `Row ${String(r + 1)}, column ${String(c + 1)}`);
+      btn.setAttribute('aria-pressed', String(filled));
+      btn.tabIndex = r === focusR && c === focusC ? 0 : -1;
+      td.appendChild(btn);
     }
   }
 
   tbl.addEventListener('mousedown', onGridMouseDown);
   tbl.addEventListener('mouseover', onGridMouseOver);
+  tbl.addEventListener('keydown', onGridKey);
+  tbl.addEventListener('click', onGridClick);
   document.addEventListener('mouseup', () => {
     _dragFill = null;
   });
@@ -126,6 +187,8 @@ export function buildGrid(): void {
   elDrawView.dataset.maxColLen = String(maxColLen);
   elDrawView.innerHTML = '';
   elDrawView.appendChild(tbl);
+  // A rebuild (the clues outgrew their slots, or a resize) mustn't drop keyboard focus.
+  if (hadFocus) cellButton(focusR, focusC)?.focus();
 
   updateGridSizeLabel();
 }
@@ -133,7 +196,7 @@ export function buildGrid(): void {
 // ── Cell interaction ────────────────────────────────────────────
 let _dragFill: boolean | null = null;
 
-function cellCoords(e: MouseEvent): { td: HTMLElement; r: number; c: number } | null {
+function cellCoords(e: Event): { td: HTMLElement; r: number; c: number } | null {
   const td = e.target instanceof Element ? e.target.closest<HTMLElement>('td.cell') : null;
   if (!td) return null;
   return { td, r: +(td.dataset.r ?? 0), c: +(td.dataset.c ?? 0) };
@@ -154,18 +217,63 @@ function onGridMouseOver(e: MouseEvent): void {
   if (state.grid[hit.r]?.[hit.c] !== _dragFill) toggleCell(hit.r, hit.c, _dragFill);
 }
 
+// Space and Enter on a cell arrive as a click with detail 0. A pointer's click
+// (detail >= 1) is ignored: its mousedown already toggled the cell.
+function onGridClick(e: MouseEvent): void {
+  if (e.detail !== 0) return;
+  const hit = cellCoords(e);
+  if (hit) toggleCell(hit.r, hit.c, !state.grid[hit.r]?.[hit.c]);
+}
+
+const MOVES: Partial<Record<string, [number, number]>> = {
+  ArrowUp: [-1, 0],
+  ArrowDown: [1, 0],
+  ArrowLeft: [0, -1],
+  ArrowRight: [0, 1],
+};
+
+function onGridKey(e: KeyboardEvent): void {
+  const hit = cellCoords(e);
+  if (!hit) return;
+  const move = MOVES[e.key];
+  let r = hit.r;
+  let c = hit.c;
+  if (move) {
+    r = Math.max(0, Math.min(state.rows - 1, r + move[0]));
+    c = Math.max(0, Math.min(state.cols - 1, c + move[1]));
+  } else if (e.key === 'Home') c = 0;
+  else if (e.key === 'End') c = state.cols - 1;
+  else return;
+  e.preventDefault();
+  moveFocus(r, c, true);
+}
+
+/** The one cell in the tab order follows the last cell used, by key or pointer. */
+function moveFocus(r: number, c: number, focus: boolean): void {
+  cellButton(focusR, focusC)?.setAttribute('tabindex', '-1');
+  focusR = r;
+  focusC = c;
+  const btn = cellButton(r, c);
+  if (!btn) return;
+  btn.tabIndex = 0;
+  if (focus) btn.focus();
+}
+
 function toggleCell(r: number, c: number, fill: boolean): void {
   if (state.grid[r]?.[c] !== fill) onEdit();
   state.grid[r][c] = fill;
   const td = document.querySelector(`td[data-r="${String(r)}"][data-c="${String(c)}"]`);
   if (td) td.className = 'cell' + (fill ? ' filled' : '');
+  cellButton(r, c)?.setAttribute('aria-pressed', String(fill));
+  moveFocus(r, c, false);
   recomputeClues();
   updateClueCells();
 }
 
-function repaintClueSlots(el: HTMLElement, clue: number[], maxLen: number): void {
+function repaintClueSlots(el: HTMLElement, clue: number[], maxLen: number, label: string): void {
+  el.setAttribute('aria-label', label);
   const slots = el.querySelectorAll('.clue-slot');
-  const nonzero = clue.filter((v) => v > 0);
+  const nonzero = shownRuns(clue);
   const pad = maxLen - nonzero.length;
   slots.forEach((slot, i) => {
     if (i < pad) {
@@ -192,11 +300,13 @@ function updateClueCells(): void {
 
   for (let r = 0; r < state.rows; r++) {
     const el = $(`rclue-${String(r)}`);
-    if (el) repaintClueSlots(el, state.rowClues[r] ?? [], newMaxRowLen);
+    const clue = state.rowClues[r] ?? [];
+    if (el) repaintClueSlots(el, clue, newMaxRowLen, clueLabel('Row', r, clue));
   }
   for (let c = 0; c < state.cols; c++) {
     const el = $(`cclue-${String(c)}`);
-    if (el) repaintClueSlots(el, state.colClues[c] ?? [], newMaxColLen);
+    const clue = state.colClues[c] ?? [];
+    if (el) repaintClueSlots(el, clue, newMaxColLen, clueLabel('Column', c, clue));
   }
 }
 
