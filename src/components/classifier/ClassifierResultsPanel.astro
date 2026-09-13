@@ -40,13 +40,17 @@ import Button from '../Button.astro';
 <section class="card" id="tabular-col" class:list={['hidden']}>
   <h2 class="card-title">Predict</h2>
   <div class="feature-inputs"></div>
-  <Button app variant="solid" block id="predict-btn-tab" type="button">Predict</Button>
+  <div class="row">
+    <Button app variant="secondary" id="reset-features-btn" type="button">Reset</Button>
+    <Button app variant="solid" id="predict-btn-tab" type="button">Predict</Button>
+  </div>
 </section>
 
 <!-- Predictions -->
-<section class="card">
+<section class="card" id="predictions-card">
   <h2 class="card-title">Predictions</h2>
-  <table class="app-table">
+  <table class="app-table pred-table">
+    <colgroup><col class="col-name" /><col class="col-answer" /><col class="col-score" /></colgroup>
     <thead>
       <tr>
         <th>Model</th><th>Prediction</th><th
@@ -107,6 +111,33 @@ import Button from '../Button.astro';
     background: var(--paper-2);
   }
 
+  /* Fixed columns, so the table holds still while predictions change under the pen. */
+  .pred-table {
+    table-layout: fixed;
+  }
+
+  .pred-table .col-name {
+    width: 42%;
+  }
+
+  .pred-table .col-answer {
+    width: 22%;
+  }
+
+  .pred-table th:last-child,
+  .pred-table :global(tr:not(.empty-row) > td:last-child) {
+    text-align: right;
+  }
+
+  .metrics-table {
+    table-layout: fixed;
+  }
+
+  /* Data is set in the mono face; the rest of the app is Geneva. */
+  :global(#classifier-app .num) {
+    font-family: var(--font-mono);
+  }
+
   /* Reserve the table's full height up front (it's capped there anyway), so it
      doesn't grow under the reader when the in-browser models load. */
   .metrics-wrap {
@@ -128,6 +159,7 @@ import Button from '../Button.astro';
   }
 
   :global(.corner-cell) {
+    width: 110px;
     min-width: 80px;
     position: sticky;
     left: 0;
@@ -212,6 +244,12 @@ import Button from '../Button.astro';
     font-weight: 700;
   }
 
+  /* Test accuracy is the headline result: the heaviest figure in the table. */
+  :global(.metric-headline td) {
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
   :global(.acc-med),
   :global(.acc-low) {
     color: var(--ink);
@@ -292,29 +330,48 @@ import Button from '../Button.astro';
     transition: width var(--dur);
   }
 
-  /* ── Tabular feature form (built client-side for Iris) ── */
+  /* ── Tabular feature form (built client-side for Iris and BB84) ──
+     Label and range hint, a slider across the middle, the exact value at the right. */
   :global(#tabular-col .feature-inputs) {
     margin-bottom: 12px;
   }
 
   :global(.feature-row) {
-    display: flex;
+    display: grid;
+    grid-template-columns: 9em minmax(0, 1fr) 9ch;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 4px 10px;
     margin-bottom: 8px;
   }
 
   :global(.feature-label) {
-    font-size: var(--text-3xs);
-    text-transform: capitalize;
+    font-size: var(--text-2xs);
   }
 
-  :global(#tabular-col .feature-input) {
-    width: 90px;
+  :global(.feature-hint) {
+    display: block;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: var(--text-4xs);
+    color: var(--color-text-muted);
+  }
+
+  :global(.feature-range) {
+    width: 100%;
+    accent-color: var(--ink);
+  }
+
+  /* The slider beside it steps the value, so the box drops its spinner for the digits. */
+  :global(#classifier-app #tabular-col .feature-input) {
+    width: 9ch;
     border: 2px solid var(--ink);
-    padding: 3px 6px;
+    padding: 3px 4px;
     font-size: var(--text-3xs);
     text-align: right;
+    appearance: textfield;
+  }
+
+  :global(#tabular-col .feature-input::-webkit-inner-spin-button) {
+    appearance: none;
   }
 </style>

@@ -6,13 +6,13 @@ import Button from '../Button.astro';
 <section class="card">
   <h2 class="card-title">Models</h2>
   <div id="session-models"></div>
-  <Button app variant="secondary" block id="ensemble-btn" type="button" class="hidden"
-    >Ensemble</Button
-  >
+  <div class="row models-row">
+    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
+  </div>
 </section>
 
-<!-- Saved models -->
-<section class="card">
+<!-- Saved models: checkpoints on the live backend, so shown only with one. -->
+<section class="card" id="saved-card" hidden>
   <h2 class="card-title">Saved</h2>
   <div class="row">
     <select id="saved-select" aria-label="Saved model file"
@@ -26,7 +26,9 @@ import Button from '../Button.astro';
       aria-label="Refresh saved models">&#8635;</Button
     >
   </div>
-  <Button app variant="secondary" block id="import-btn" type="button" disabled>Import</Button>
+  <div class="row models-row">
+    <Button app variant="secondary" id="import-btn" type="button" disabled>Import</Button>
+  </div>
 </section>
 
 <style>
@@ -41,25 +43,33 @@ import Button from '../Button.astro';
     min-height: 4.5em;
   }
 
-  /* The classes buildSessionModelRow() emits; without these the row runs together as
-     "LogisticRegression(in-browser)Linear7,850params". */
+  .models-row {
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  /* One row per model: its name, then its facts as muted lines. Facts aren't boxed,
+     so they can't be mistaken for buttons. */
   :global(.ui-list-row) {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
-    padding: 3px 0;
+    padding: 4px 0;
     border-bottom: 1px solid var(--paper-3);
-    flex-wrap: wrap;
+  }
+
+  :global(.ui-list-text) {
+    flex: 1;
+    min-width: 0;
   }
 
   :global(.ui-list-name) {
-    font-weight: 600;
+    font-weight: 700;
   }
 
-  :global(.ui-list-tag) {
+  :global(.ui-list-meta) {
     font-size: var(--text-3xs);
-    padding: 1px 5px;
-    border: 1px solid var(--ink-4);
+    line-height: 1.35;
     color: var(--color-text-muted);
   }
 </style>
