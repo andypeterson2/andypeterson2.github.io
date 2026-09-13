@@ -268,7 +268,7 @@
     font-family: var(--mono);
     font-size: var(--text-4xs);
     font-variant-numeric: tabular-nums;
-    color: var(--dim);
+    color: var(--dim-text);
   }
 
   .gap {

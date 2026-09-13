@@ -20,7 +20,7 @@ Validated on **real IBM quantum hardware**: a 2×2 puzzle resolved the correct s
 
 ## Try it with nothing running
 
-The classical solver is ported to run **entirely in your browser** — draw or randomize a puzzle and it solves instantly, reporting real solve time and search-space size, with no backend awake. The quantum and IBM-hardware runs use the live solver and a gallery of captured real-hardware results.
+The classical solver is ported to run **entirely in your browser** — draw or randomize a puzzle and it solves instantly, reporting real solve time and search-space size, with no backend awake. Quantum runs use the live solver; without it, a gallery of captured Grover-simulator runs shows real quantum output. The IBM-hardware result is the 32.3% above.
 
 ## Stack
 

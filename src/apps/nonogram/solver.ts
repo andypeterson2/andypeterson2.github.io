@@ -75,6 +75,7 @@ export function clearSolverResults(): void {
 
   elHistSvg.innerHTML = '';
   state.histData = null;
+  elThresholdInput.disabled = true;
   elQuPlaceholder.style.display = 'block';
 
   clearMetrics();
@@ -152,6 +153,7 @@ export function renderQuantum(
   const threshold = state.userThreshold ?? computeThreshold(rows, cols);
 
   state.histData = { entries, threshold, rows, cols, totalOutcomes };
+  elThresholdInput.disabled = false;
   elQuPlaceholder.style.display = 'none';
 
   const pctVal = threshold * 100;
@@ -163,6 +165,7 @@ export function renderQuantum(
 }
 
 export function drawEmptyHistogram(): void {
+  // An empty, labelled frame — never placeholder bars that look like data (H7).
   const svg = elHistSvg;
   const parent = svg.parentElement;
   const W = parent?.clientWidth ?? 400;
@@ -170,28 +173,16 @@ export function drawEmptyHistogram(): void {
   const P = { t: 20, r: 12, b: 44, l: 50 };
   const cW = W - P.l - P.r,
     cH = H - P.t - P.b;
-  const GHOST = [0.52, 0.79, 0.61, 0.35, 0.9, 0.44, 0.28, 0.67];
-  const n = GHOST.length,
-    slot = cW / n;
-  const bW = Math.max(4, Math.min(36, slot * 0.7));
   let s = `<g transform="translate(${String(P.l)},${String(P.t)})">`;
-  for (const step of [0, 25, 50, 75, 100]) {
-    const y = (cH * (1 - step / 100)).toFixed(1);
-    s += `<line x1="0" y1="${y}" x2="${String(cW)}" y2="${y}" stroke="#999" stroke-width="1"/>`;
-    s += `<text x="-4" y="${y}" text-anchor="end" dominant-baseline="middle"
-      font-family="Helvetica,Arial,sans-serif" font-size="8" fill="#999">${String(step)}%</text>`;
-  }
-  GHOST.forEach((g, i) => {
-    const h = (g * cH).toFixed(1);
-    const bx = (i * slot + (slot - bW) / 2).toFixed(1);
-    s += `<rect x="${bx}" y="${(cH - g * cH).toFixed(1)}"
-      width="${bW.toFixed(1)}" height="${h}" fill="rgba(0,0,0,0.07)" rx="0"/>`;
-  });
   s += `<line x1="0" y1="0" x2="0" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
   s += `<line x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
-  s += `<text x="${(cW / 2).toFixed(1)}" y="${(cH + P.b - 6).toFixed(1)}"
+  s += `<text x="${(cW / 2).toFixed(1)}" y="${(cH / 2).toFixed(1)}"
     text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
-    font-size="9" fill="#666">Draw cells — histogram appears automatically</text>`;
+    font-size="12" fill="#666">${
+      window.API_BASE
+        ? 'Measurement counts appear here after a quantum run'
+        : 'Pick a Gallery run to see real quantum measurement counts'
+    }</text>`;
   s += `</g>`;
   svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
   svg.innerHTML = s;
@@ -295,7 +286,7 @@ export function renderQuantumList(): void {
   if (!state.histData) {
     if (quSolPh) {
       elQuList.appendChild(quSolPh);
-      quSolPh.textContent = 'Run Benchmark to see solutions.';
+      quSolPh.textContent = 'Solve the puzzle to see solutions.';
     }
     return;
   }

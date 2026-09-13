@@ -19,3 +19,18 @@ jobs:
       - uses: actions/checkout@v7
       - name: Verify edge headers on production
         run: bash scripts/check-security-headers.sh --live https://andypeterson.dev
+
+  live-console:
+    # A console error on every page is the first thing a reviewer with DevTools
+    # open sees (audit P13: a Cloudflare-injected script the CSP blocks).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: No console errors on production pages
+        run: node scripts/check-live-console.mjs https://andypeterson.dev
