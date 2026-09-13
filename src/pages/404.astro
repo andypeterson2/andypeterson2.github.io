@@ -7,9 +7,19 @@ import Button from '../components/Button.astro';
   <div class="not-found">
     <div class="window error-window">
       <div class="title-bar">
-        <button class="close" aria-hidden="true" tabindex="-1"><span>Close</span></button>
+        <!-- The close box works — closing the error goes home — and the resize box,
+             which could do nothing, is hidden but keeps its place so the title stays
+             centred (P4). -->
+        <button
+          type="button"
+          class="close"
+          data-error-close
+          aria-label="Close, back to the home page"><span>Close</span></button
+        >
         <h1 class="title">Error</h1>
-        <button class="resize" aria-hidden="true" tabindex="-1"><span>Resize</span></button>
+        <button class="resize hidden" aria-hidden="true" tabindex="-1" disabled
+          ><span>Resize</span></button
+        >
       </div>
       <div class="window-pane error-content">
         <p class="error-code" aria-hidden="true">404</p>
@@ -24,6 +34,12 @@ import Button from '../components/Button.astro';
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  document.querySelector('[data-error-close]')?.addEventListener('click', () => {
+    window.location.assign('/');
+  });
+</script>
 
 <style>
   .not-found {

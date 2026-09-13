@@ -23,10 +23,29 @@ interface Props {
   'aria-label'?: string;
   /** HTML id attribute. */
   id?: string;
+  /**
+   * The apps' square button (system-six .s6-btn, audit P9) instead of the window
+   * push-button: secondary -> plain, solid/primary -> ink fill, danger -> red.
+   */
+  app?: boolean;
 }
 
-const { variant = 'primary', size = 'md', block, href, class: className, ...rest } = Astro.props;
+const {
+  variant = 'primary',
+  size = 'md',
+  block,
+  href,
+  class: className,
+  app,
+  ...rest
+} = Astro.props;
 const Tag = href ? 'a' : 'button';
+const APP_VARIANT: Record<NonNullable<Props['variant']>, string> = {
+  primary: 's6-btn--primary',
+  secondary: '',
+  solid: 's6-btn--primary',
+  danger: 's6-btn--danger',
+};
 const VARIANT_CLASSES: Record<NonNullable<Props['variant']>, string> = {
   primary: 'btn-default',
   secondary: 'btn',
@@ -34,7 +53,17 @@ const VARIANT_CLASSES: Record<NonNullable<Props['variant']>, string> = {
   danger: 'btn btn-danger',
 };
 const sizeClass = size !== 'md' ? `btn-${size}` : '';
-const classes = [VARIANT_CLASSES[variant], sizeClass, block && 'btn-block', className]
+const classes = (
+  app
+    ? [
+        's6-btn',
+        APP_VARIANT[variant],
+        size === 'sm' && 's6-btn--sm',
+        block && 's6-btn--block',
+        className,
+      ]
+    : [VARIANT_CLASSES[variant], sizeClass, block && 'btn-block', className]
+)
   .filter(Boolean)
   .join(' ');
 ---

@@ -1128,7 +1128,7 @@
   .pv-log pre {
     margin: 0;
     padding: 14px;
-    font-family: var(--mono);
+    font-family: var(--doc-mono); /* a compile log stays monospaced */
     font-size: var(--text-4xs);
     line-height: 1.5;
     color: var(--paper-3);

@@ -11,8 +11,10 @@ interface Props {
   /** The project's demo and source, so a convinced reader can act without closing (M2). */
   appUrl?: string;
   repoUrl?: string;
+  /** A URL fragment that opens this writeup on arrival (e.g. /#about, where /about lands). */
+  hash?: string;
 }
-const { slug, label = 'Full writeup', appUrl, repoUrl } = Astro.props;
+const { slug, label = 'Full writeup', appUrl, repoUrl, hash } = Astro.props;
 const external = (url: string) => url.startsWith('http');
 
 const entry = await getEntry('writeups', slug);
@@ -36,25 +38,23 @@ const modalId = `writeup-${slug}`;
         {label}
       </button>
 
-      <div id={modalId} class="writeup-overlay" data-writeup-modal hidden>
+      <div id={modalId} class="writeup-overlay" data-writeup-modal data-writeup-hash={hash} hidden>
         <div
           class="writeup-dialog"
           role="dialog"
           aria-modal="true"
           aria-labelledby={`${modalId}-title`}
         >
-          <div class="writeup-titlebar">
-            <span id={`${modalId}-title`} class="writeup-title">
+          {/* The site's own window chrome (P11): pinstripes, a centred title, the
+              close box at the left. The spacer on the right balances it. */}
+          <div class="title-bar writeup-titlebar">
+            <button type="button" class="close" data-writeup-close aria-label="Close writeup">
+              <span>Close</span>
+            </button>
+            <span id={`${modalId}-title`} class="title writeup-title">
               {entry.data.title}
             </span>
-            <button
-              type="button"
-              class="writeup-close"
-              data-writeup-close
-              aria-label="Close writeup"
-            >
-              ✕
-            </button>
+            <span class="writeup-balance" aria-hidden="true" />
           </div>
           {/* Focusable, so the keyboard can scroll it: PageDown, arrows and Space
               had nothing to move while focus sat on Close (H10). */}
@@ -142,6 +142,16 @@ const modalId = `writeup-${slug}`;
     if (t.matches('[data-writeup-modal]')) closeModal(t); // backdrop click
   });
 
+  // A writeup with a hash opens on arrival at that fragment (/about → /#about).
+  function openFromHash() {
+    const h = window.location.hash.slice(1);
+    if (!h) return;
+    const modal = document.querySelector<HTMLElement>(`[data-writeup-hash="${CSS.escape(h)}"]`);
+    if (modal?.hidden) openModal(modal);
+  }
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+
   document.addEventListener('keydown', (e) => {
     const active = document.querySelector<HTMLElement>('[data-writeup-modal]:not([hidden])');
     if (!active) return;
@@ -174,52 +184,43 @@ const modalId = `writeup-${slug}`;
     display: none;
   }
 
+  /* Framed like the site window: 2px, with the heavier right and bottom edge. */
   .writeup-dialog {
     display: flex;
+    text-align: left;
     flex-direction: column;
     width: min(680px, 100%);
     max-height: 85vh;
-    background: var(--surface, var(--paper));
-    color: var(--ink, var(--ink));
-    border: 3px solid var(--ink);
-  }
-
-  .writeup-titlebar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-shrink: 0;
-    padding: 6px 8px 6px 14px;
-    background: var(--ink);
-    color: var(--paper);
-    border-bottom: 3px solid var(--ink);
-  }
-
-  .writeup-title {
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    font-weight: 700;
-  }
-
-  .writeup-close {
-    flex-shrink: 0;
-    width: 26px;
-    height: 26px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     background: var(--paper);
     color: var(--ink);
     border: 2px solid var(--ink);
-    cursor: pointer;
-    font-size: var(--text-3xs);
-    line-height: 1;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
   }
 
-  .writeup-close:hover {
-    background: var(--ink);
-    color: var(--paper);
+  .writeup-titlebar {
+    flex-shrink: 0;
+    margin: 0;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .writeup-title {
+    font-size: var(--text-xs);
+  }
+
+  /* system.css draws the close box at 40px and scales it by half; the spacer is the
+     same layout width, so the title centres on the dialog. */
+  .writeup-balance {
+    flex: none;
+    width: 40px;
+    margin: 0 0.2rem;
+  }
+
+  /* A bigger close box for fingers: 30px visible instead of 20. */
+  @media (pointer: coarse) {
+    .writeup-titlebar .close {
+      transform: scale(0.75);
+    }
   }
 
   /* One step up from the old --text-2xs, which dropped to 15.4px at 768 while the
@@ -243,9 +244,11 @@ const modalId = `writeup-${slug}`;
     max-width: 60ch;
   }
 
+  /* A Mac dialog's buttons sit at the bottom right. */
   .writeup-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 6px;
     flex-shrink: 0;
     padding: 10px clamp(14px, 2.2vw, 26px);
@@ -316,12 +319,5 @@ const modalId = `writeup-${slug}`;
      dialog, so nothing is lost — keep new equations modest. */
   .writeup-content :global(.math-scroll) {
     margin: 0.75em 0;
-  }
-
-  @media (width <= 600px) {
-    .writeup-close {
-      width: 34px;
-      height: 34px;
-    }
   }
 </style>

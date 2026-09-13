@@ -394,8 +394,9 @@
     margin-bottom: 8px;
   }
 
+  /* The résumé's own type: the print faces, not the editor's system faces (M29). */
   .sec-head h2 {
-    font-family: var(--sans);
+    font-family: var(--doc-sans);
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
@@ -554,7 +555,7 @@
   }
 
   .entry-date {
-    font-family: var(--mono);
+    font-family: var(--doc-mono);
     font-size: var(--text-3xs);
     color: var(--ink-3);
     white-space: nowrap;

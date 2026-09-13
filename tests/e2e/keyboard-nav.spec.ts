@@ -11,8 +11,9 @@ test.describe('Keyboard navigation', () => {
 
   test('Enter activates a focused link', async ({ page }) => {
     await page.goto('/');
-    // Focus the first project action button on the timeline directly
-    await page.locator('.action-btn').first().focus();
+    // Focus the first project link on the timeline directly (the Me card's first
+    // .action-btn is now the "The longer version" writeup button, not a link).
+    await page.locator('.timeline a.action-btn').first().focus();
     await page.keyboard.press('Enter');
     await page.waitForURL(/\/projects\/[\w-]+\//);
     expect(page.url()).toMatch(/\/projects\/[\w-]+\//);
