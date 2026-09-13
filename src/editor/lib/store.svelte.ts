@@ -210,12 +210,15 @@ class EditorState {
   #shadow = new FieldShadow();
   #cache = new ProfileCache();
 
+  /** A demo visitor's own edited document, held while the guided tour drives a
+   *  pristine sample, and put back when it ends (audit M26). */
+  #demoResume: { doc: Person; dirty: boolean } | null = null;
+
   /**
    * The signed-in owner's real document, view and save status, captured when they
    * start the guided tour so it can drive their live CV and then put everything
-   * back untouched. Null unless a connected tour is staged — demo never captures;
-   * it resets to the pristine sample and keeps whatever the tour leaves behind
-   * (see stageTour / unstageTour / addEphemeralBullet).
+   * back untouched. Null unless a connected tour is staged (the demo uses
+   * #demoResume; see stageTour / unstageTour / addEphemeralBullet).
    */
   #tourResume: {
     doc: Person;
@@ -924,6 +927,43 @@ class EditorState {
    */
   resetDemo() {
     if (this.connected) return;
+    const before = this.dirty ? $state.snapshot(this.person) : null;
+    const beforeDirty = this.dirty;
+    this.#demoResume = null; // an explicit reset is the visitor's fresh start
+    this.applyPristineDemo();
+    this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
+    // The reset itself is undoable, so "Reset demo" is never a one-way door (M26).
+    if (before) {
+      this.undo.record({
+        label: 'Reset demo',
+        undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
+        redo: () => {
+          this.applyPristineDemo();
+          this.#shadow.reseat(this.person, this.style);
+        },
+      });
+    }
+    this.say('Demo reset — the sample résumé is back to its original state.');
+  }
+
+  /**
+   * Reset from the UI (File ▸ Reset demo, the tour's closing panel): asks first when
+   * the visitor has edits, since those edits are the only copy (audit M26).
+   */
+  requestResetDemo() {
+    if (this.connected) return;
+    if (
+      this.dirty &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Discard your changes and restore the sample résumé? You can undo this.')
+    ) {
+      return;
+    }
+    this.resetDemo();
+  }
+
+  /** The pristine sample in place of the working document (no undo bookkeeping). */
+  private applyPristineDemo() {
     this.person = createDemoPerson(this.demoIdentity ?? undefined);
     this.selection = { kind: 'none' };
     this.activeVariantId = null;
@@ -935,19 +975,35 @@ class EditorState {
     this.scrollTarget = null;
     this.dirty = false;
     this.saveState = 'demo';
-    this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
-    this.say('Demo reset — the sample résumé is back to its original state.');
+  }
+
+  /** Put a demo document back (undoing a reset, or ending the tour). */
+  private adoptDemoDocument(doc: Person, dirty: boolean) {
+    this.person = doc;
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.preview.reset();
+    this.scrollTarget = null;
+    this.dirty = dirty;
+    this.saveState = 'demo';
+    this.#shadow.reseat(this.person, this.style);
   }
 
   /**
-   * Stage the guided tour. Demo → reset to the pristine sample (determinism beats
-   * continuity). A signed-in owner → snapshot their live document, view and save
+   * Stage the guided tour. Demo → hold the visitor's edits (if any) and drive the
+   * pristine sample (determinism beats continuity). A signed-in owner → snapshot their live document, view and save
    * status so the tour can drive the real CV and restore it afterwards; nothing the
    * tour does will persist or outlive it (see unstageTour / addEphemeralBullet).
    */
   stageTour() {
     if (!this.connected) {
-      this.resetDemo();
+      // The tour needs the pristine sample to drive, but a visitor's own edits are
+      // held and put back when it ends, not thrown away (audit M26).
+      const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
+      this.applyPristineDemo();
+      this.rebase('demo');
+      this.#demoResume = keep;
       return;
     }
     this.#tourResume = {
@@ -962,17 +1018,27 @@ class EditorState {
   }
 
   /**
-   * Tear down the guided tour. Demo → leave the document exactly as the tour left
-   * it (the visitor keeps exploring; nothing is saved regardless). A signed-in
-   * owner → restore the captured document, view and save status, wiping every
+   * Tear down the guided tour. Demo → put back the visitor's own edits if they had
+   * any; otherwise leave the sample as the tour left it (the visitor keeps
+   * exploring; nothing is saved regardless). A signed-in owner → restore the captured document, view and save status, wiping every
    * ephemeral edit. Re-activates the snapshot so the cache, shadow and undo scope
    * follow the fresh objects; the old undo stack can't replay against them, so it
    * is dropped (the tour clears undo when it visits a cover letter anyway).
    */
   unstageTour() {
+    if (!this.connected) {
+      const mine = this.#demoResume;
+      this.#demoResume = null;
+      if (mine) {
+        this.adoptDemoDocument(mine.doc, mine.dirty);
+        this.rebase('demo'); // the tour's commands point at the sample; they can't replay here
+        this.say('Tour over — your edits are back.');
+      }
+      return;
+    }
     const resume = this.#tourResume;
     this.#tourResume = null;
-    if (!this.connected || !resume) return;
+    if (!resume) return;
     const pid = this.activePersonId;
     if (pid != null) {
       this.#cache.drop(pid);

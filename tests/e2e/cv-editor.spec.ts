@@ -202,10 +202,20 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Reset lives in File, where a System-6 user looks for Revert. It restores a
     // pristine clone (the store proxies/mutates whatever object it's handed).
+    // With edits on the page it asks first (audit M26), and the reset is undoable.
+    let asked = '';
+    page.once('dialog', (d) => {
+      asked = d.message();
+      void d.accept();
+    });
     await openMenu(page, 'File');
     await page.getByRole('menuitem', { name: /Reset demo/ }).click();
+    expect(asked).toMatch(/Discard your changes/);
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
+    await openMenu(page, 'Edit');
+    await page.getByRole('menuitem', { name: /Undo Reset demo/ }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
   });
 
   test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
