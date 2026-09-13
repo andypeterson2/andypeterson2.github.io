@@ -477,7 +477,7 @@
                     ? '⚠ save failed'
                     : '✓ saved'
                 : 'demo — not saved'}</span
-            ><span class="sb-variant"> · {editor.variantLabel}</span></span
+            ><span class="sb-variant">{` · ${editor.variantLabel}`}</span></span
           >
           <button
             class="conn"
