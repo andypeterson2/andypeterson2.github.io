@@ -16,9 +16,19 @@
   --state-busy: var(--color-warning);
   --state-error: var(--color-danger);
   --link-on-ink: #9ec7ff;
-  --sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+
+  /* Two type roles (audit M29). The editor's own controls — menus, drawers, pickers,
+     tag chips, the tour — are set in Chicago, the Mac's interface face, like the
+     site's own menus and buttons. (Not Geneva or Monaco: those pixel faces have
+     ~60% of Helvetica's x-height at the same size, so a straight swap shrank the
+     editor's 12px UI to unreadable; Chicago is ~85%.) The print faces belong to the
+     résumé being edited (--serif, --doc-sans) and to raw output like the compile
+     log (--doc-mono). --mono is kept as a name for the UI's "data" spots. */
+  --sans: var(--font-ui);
+  --mono: var(--font-ui);
+  --doc-sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --doc-mono: 'SF Mono', ui-monospace, 'Menlo', 'DejaVu Sans Mono', monospace;
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
-  --mono: 'SF Mono', ui-monospace, 'Menlo', 'DejaVu Sans Mono', monospace;
   --shadow: var(--shadow-focus); /* alias the shared press */
 
   /* Editor-specific shadows: the selected-item ring, the accent press, and the two
