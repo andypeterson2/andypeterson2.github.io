@@ -6,7 +6,9 @@ import Button from '../Button.astro';
 <section class="card">
   <h2 class="card-title">Models</h2>
   <div id="session-models"></div>
-  <Button variant="secondary" block id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
+  <Button app variant="secondary" block id="ensemble-btn" type="button" class="hidden"
+    >Ensemble</Button
+  >
 </section>
 
 <!-- Saved models -->
@@ -17,28 +19,21 @@ import Button from '../Button.astro';
       ><option value="">-- no saved models --</option></select
     >
     <Button
+      app
       variant="secondary"
       id="refresh-saved-btn"
-      class="icon-btn"
+      class="icon-btn s6-btn--icon"
       aria-label="Refresh saved models">&#8635;</Button
     >
   </div>
-  <Button variant="secondary" block id="import-btn" type="button" disabled>Import</Button>
+  <Button app variant="secondary" block id="import-btn" type="button" disabled>Import</Button>
 </section>
 
 <style>
-  /* An icon button with a real target: 32px, 44px on touch screens (M11). */
+  /* The refresh glyph a size up; .s6-btn--icon gives it the 32px (44px touch)
+     target (M11). */
   :global(#classifier-app .icon-btn) {
-    min-width: 32px;
-    min-height: 32px;
     font-size: var(--text-2xs);
-  }
-
-  @media (pointer: coarse) {
-    :global(#classifier-app .icon-btn) {
-      min-width: 44px;
-      min-height: 44px;
-    }
   }
 
   /* Room for the two in-browser models before they load (P12). */

@@ -3,6 +3,11 @@
  *
  * Renders loss (left Y-axis) and accuracy (right Y-axis) on a single canvas.
  * No external dependencies — uses the Canvas 2D API directly.
+ *
+ * Drawn in the design system (audit M29): ink on paper from the tokens, Geneva at
+ * 12px and up, and series told apart by dash pattern, never by colour (L3: colour
+ * is only a status light). It used to read six tokens that don't exist and fall
+ * back to a brown ground and Tailwind blues and pinks.
  */
 
 export interface MiniChartOpts {
@@ -17,9 +22,15 @@ interface Point {
 }
 
 interface Series {
-  color: string;
+  dash: number[];
   yAxis: 'left' | 'right';
   points: Point[];
+}
+
+/** A design token's value, read at draw time (dark mode is a page filter, so the
+    light values are always right). */
+function token(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
 interface Frame {
@@ -27,8 +38,10 @@ interface Frame {
   H: number;
   plotW: number;
   plotH: number;
-  textCol: string;
+  ink: string;
+  muted: string;
   gridCol: string;
+  font: (px: number, bold?: boolean) => string;
   scaleX: (v: number) => number;
   scaleYL: (v: number) => number;
   scaleYR: (v: number) => number;
@@ -55,9 +68,9 @@ export class MiniChart {
     this.y2Label = opts.y2Label ?? 'Accuracy';
   }
 
-  /** Register a named series. */
-  addSeries(name: string, color: string, yAxis: 'left' | 'right' = 'left'): void {
-    this.series[name] = { color, yAxis, points: [] };
+  /** Register a named series, drawn with its own dash pattern ([] is solid). */
+  addSeries(name: string, dash: number[], yAxis: 'left' | 'right' = 'left'): void {
+    this.series[name] = { dash, yAxis, points: [] };
   }
 
   /** Append a data point to a series. */
@@ -85,13 +98,13 @@ export class MiniChart {
     const W = rect.width;
     const H = rect.height;
 
-    // Colours from CSS custom properties
-    const style = getComputedStyle(document.documentElement);
-    const bg = style.getPropertyValue('--surface').trim() || '#3a3830';
-    const textCol = style.getPropertyValue('--text-muted').trim() || '#7c7160';
-    const gridCol = style.getPropertyValue('--border').trim() || '#504d40';
+    const ink = token('--ink', 'black');
+    const muted = token('--ink-3', 'gray');
+    const gridCol = token('--paper-4', 'silver');
+    const face = token('--font-sans', 'sans-serif');
+    const font = (px: number, bold = false) => `${bold ? 'bold ' : ''}${String(px)}px ${face}`;
 
-    ctx.fillStyle = bg;
+    ctx.fillStyle = token('--paper', 'white');
     ctx.fillRect(0, 0, W, H);
 
     // Compute ranges
@@ -99,8 +112,8 @@ export class MiniChart {
     const allPoints = this.allSeries().flatMap((s) => s.points);
 
     if (allPoints.length === 0) {
-      ctx.fillStyle = textCol;
-      ctx.font = '12px Inter, sans-serif';
+      ctx.fillStyle = muted;
+      ctx.font = font(13);
       ctx.textAlign = 'center';
       ctx.fillText('No data yet', W / 2, H / 2);
       return;
@@ -125,8 +138,10 @@ export class MiniChart {
       H,
       plotW,
       plotH,
-      textCol,
+      ink,
+      muted,
       gridCol,
+      font,
       leftMin,
       leftMax,
       scaleX: (v) => p.left + (xMax > xMin ? ((v - xMin) / (xMax - xMin)) * plotW : plotW / 2),
@@ -146,7 +161,7 @@ export class MiniChart {
   private drawGridAndAxes(f: Frame): void {
     const { ctx, padding: p } = this;
     ctx.strokeStyle = f.gridCol;
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = p.top + (f.plotH / 4) * i;
       ctx.beginPath();
@@ -155,8 +170,8 @@ export class MiniChart {
       ctx.stroke();
     }
 
-    ctx.fillStyle = f.textCol;
-    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = f.muted;
+    ctx.font = f.font(12);
     ctx.textAlign = 'right';
     for (let i = 0; i <= 4; i++) {
       const y = p.top + (f.plotH / 4) * i;
@@ -175,16 +190,16 @@ export class MiniChart {
   private drawTitles(f: Frame): void {
     const { ctx, padding: p } = this;
     if (this.title) {
-      ctx.fillStyle = f.textCol;
-      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillStyle = f.ink;
+      ctx.font = f.font(13, true);
       ctx.textAlign = 'center';
-      ctx.fillText(this.title, f.W / 2, 14);
+      ctx.fillText(this.title, f.W / 2, 16);
     }
 
     ctx.save();
-    ctx.font = '9px Inter, sans-serif';
+    ctx.font = f.font(12);
     ctx.textAlign = 'center';
-    ctx.fillStyle = f.textCol;
+    ctx.fillStyle = f.muted;
     ctx.translate(10, p.top + f.plotH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(this.yLabel, 0, 0);
@@ -201,8 +216,9 @@ export class MiniChart {
     for (const s of this.allSeries()) {
       if (s.points.length === 0) continue;
       const scaleFn = s.yAxis === 'left' ? f.scaleYL : f.scaleYR;
-      ctx.strokeStyle = s.color;
+      ctx.strokeStyle = f.ink;
       ctx.lineWidth = 1.5;
+      ctx.setLineDash(s.dash);
       ctx.beginPath();
       s.points.forEach((pt, i) => {
         const px = f.scaleX(pt.x);
@@ -211,13 +227,19 @@ export class MiniChart {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
+      ctx.setLineDash([]);
 
-      // Draw dots
-      ctx.fillStyle = s.color;
+      // Points: filled squares on the loss axis, hollow on the accuracy axis.
       for (const pt of s.points) {
-        ctx.beginPath();
-        ctx.arc(f.scaleX(pt.x), scaleFn(pt.y), 2, 0, Math.PI * 2);
-        ctx.fill();
+        const x = f.scaleX(pt.x) - 2;
+        const y = scaleFn(pt.y) - 2;
+        if (s.yAxis === 'left') {
+          ctx.fillStyle = f.ink;
+          ctx.fillRect(x, y, 4, 4);
+        } else {
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 0.5, y + 0.5, 3, 3);
+        }
       }
     }
   }
@@ -228,17 +250,24 @@ export class MiniChart {
       (entry): entry is [string, Series] => !!entry[1] && entry[1].points.length > 0,
     );
     if (legendItems.length === 0) return;
-    ctx.font = '9px Inter, sans-serif';
+    ctx.font = f.font(12);
     ctx.textAlign = 'left';
     let lx = p.left + 5;
     const ly = f.H - 6;
     for (const [name, s] of legendItems) {
-      ctx.fillStyle = s.color;
-      ctx.fillRect(lx, ly - 5, 10, 3);
-      lx += 14;
-      ctx.fillStyle = f.textCol;
+      // A sample of the series' own dash, not a colour swatch.
+      ctx.strokeStyle = f.ink;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash(s.dash);
+      ctx.beginPath();
+      ctx.moveTo(lx, ly - 4);
+      ctx.lineTo(lx + 22, ly - 4);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      lx += 26;
+      ctx.fillStyle = f.ink;
       ctx.fillText(name, lx, ly);
-      lx += ctx.measureText(name).width + 12;
+      lx += ctx.measureText(name).width + 14;
     }
   }
 }

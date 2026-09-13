@@ -62,8 +62,14 @@ test.describe('Home page about content', () => {
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  // The long-form About section is temporarily hidden (see the .about-window
-  // display:none rule in index.astro). Re-enable when it's restored.
+  // The long About opens from the Me card, and /about lands on it (H5).
+  test('the longer version opens from the Me card', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /The longer version/ }).click();
+    const dialog = page.getByRole('dialog', { name: 'The longer version' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'The research years' })).toBeVisible();
+  });
 
   test('projects appear on the timeline with metrics', async ({ page }) => {
     await page.goto('/');
@@ -72,8 +78,9 @@ test.describe('Home page about content', () => {
     await expect(projectEntries.first().locator('.tl-metric').first()).toBeVisible();
   });
 
-  test('/about redirects to the home page', async ({ page }) => {
+  test('/about opens the longer version on the home page', async ({ page }) => {
     await page.goto('/about');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/#about');
+    await expect(page.getByRole('dialog', { name: 'The longer version' })).toBeVisible();
   });
 });

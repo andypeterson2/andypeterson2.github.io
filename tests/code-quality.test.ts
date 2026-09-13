@@ -43,3 +43,41 @@ describe('No dropped spaces before wrapped inline elements', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+// Colour and type in the apps' scripts go through the design tokens, where the
+// stylelint gates can see them (audit M29): the nonogram histogram used flat greys
+// and a non-status red in Helvetica at 7-9px, and the classifier chart read six
+// tokens that didn't exist and fell back to Tailwind colours.
+describe('App scripts draw with the design tokens', () => {
+  const files = globSync('src/apps/**/*.ts', { cwd: ROOT });
+  const code = (f: string) =>
+    readFileSync(resolve(ROOT, f), 'utf-8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+      .replace(/&#x?[0-9a-f]+;/gi, ''); // HTML entities aren't colours
+
+  test('no hex colours', () => {
+    const offenders = files.flatMap((f) =>
+      (code(f).match(/#[0-9a-f]{3,8}\b/gi) ?? []).map((m) => `${f}: ${m}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  test('no hard-coded font families', () => {
+    const faces = /font-family=|(?:\d+px|bold)\s+(?:Inter|Helvetica|Arial|monospace|sans-serif)/;
+    expect(files.filter((f) => faces.test(code(f)))).toEqual([]);
+  });
+
+  test('every token a script reads is defined in a stylesheet', () => {
+    const css = globSync('{src,packages}/**/*.{css,astro,svelte}', { cwd: ROOT })
+      .map((f) => readFileSync(resolve(ROOT, f), 'utf-8'))
+      .join('\n');
+    const read = files.flatMap((f) =>
+      [...code(f).matchAll(/(?:getPropertyValue|token)\('(--[a-z0-9-]+)'/g)].map((m) => [f, m[1]]),
+    );
+    const undefinedTokens = read
+      .filter(([, t]) => !new RegExp(`${t}\\s*:`).test(css))
+      .map(([f, t]) => `${f}: ${t}`);
+    expect(undefinedTokens).toEqual([]);
+  });
+});

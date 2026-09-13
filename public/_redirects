@@ -6,8 +6,8 @@
 # the meta-refresh HTML fallback so these paths still redirect on the GitHub Pages
 # origin BEFORE the DNS cutover to Cloudflare Pages (GH Pages ignores _redirects).
 # Post-cutover the HTML is shadowed by the 301s below and is harmless.
-/about                   /  301
-/about/                  /  301
+/about                   /#about  301
+/about/                  /#about  301
 /resume                  /  301
 /underconstruction       /  301
 /underconstruction.html  /  301

@@ -46,53 +46,10 @@
   outline: none;
 }
 
-#classifier-app .btn {
-  font-family: var(--font-ui);
-  font-size: var(--text-3xs);
-  padding: 3px 10px;
-  border: 2px solid var(--ink);
-  background: var(--paper);
-  color: var(--ink);
-  cursor: pointer;
-}
-
-#classifier-app .btn:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-#classifier-app .btn-primary {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-#classifier-app .btn-primary:hover {
-  background: var(--ink-2);
-}
-
-#classifier-app .btn-danger {
-  color: var(--color-danger);
-}
-
-#classifier-app .btn-danger:hover {
-  background: var(--color-danger);
-  color: var(--paper);
-}
-
-#classifier-app .btn-block {
-  display: block;
-  width: 100%;
+/* Buttons are the shared .s6-btn (packages/system-six/styles/elements.css, P9);
+   only the classifier's own spacing lives here. */
+#classifier-app .s6-btn--block {
   margin-top: 6px;
-}
-
-#classifier-app .btn-sm {
-  font-size: var(--text-4xs);
-  padding: 2px 6px;
-}
-
-#classifier-app .btn:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 #classifier-app .row {
