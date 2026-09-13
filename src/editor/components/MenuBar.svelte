@@ -156,8 +156,8 @@
       class="hamburger"
       aria-haspopup="menu"
       aria-expanded={allOpen}
-      aria-label="Menu"
-      onclick={toggleAll}><span class="hb-icon" aria-hidden="true">☰</span> Menu</button
+      aria-label="Commands"
+      onclick={toggleAll}>Commands <span class="hb-icon" aria-hidden="true">▾</span></button
     >
     {#if allOpen}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -373,12 +373,13 @@
     position: relative;
   }
 
+  /* "Commands ▾", not a second ☰ next to the site's own (M28), in the system face. */
   .hamburger {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     min-height: 40px;
-    font-family: var(--sans);
+    font-family: var(--font-ui);
     font-size: var(--text-2xs);
     font-weight: 700;
     line-height: 1;
@@ -419,8 +420,9 @@
     padding-bottom: 6px;
   }
 
-  /* Bigger touch rows in the ☰ panel than in the desktop pull-downs. */
+  /* Bigger touch rows in the ☰ panel than in the desktop pull-downs, in the system face. */
   .drop.mega .item {
+    font-family: var(--font-ui);
     font-size: var(--text-2xs);
     padding: 10px 16px 10px 8px;
   }

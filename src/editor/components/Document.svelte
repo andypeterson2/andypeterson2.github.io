@@ -660,4 +660,22 @@
     cursor: pointer;
     box-shadow: var(--shadow-sm);
   }
+
+  /* Touch: grips and section tools get a 44px hit area and stop hiding behind
+     hover, which a finger can't do (M28). */
+  @media (pointer: coarse) {
+    .grip,
+    .tool {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .grip,
+    .sec-tools {
+      opacity: 1;
+    }
+  }
 </style>
