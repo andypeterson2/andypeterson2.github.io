@@ -74,7 +74,9 @@ function createBackendUI(cfg: BackendDef): void {
     dot.setAttribute('aria-hidden', 'true');
     const word = document.createElement('span');
     word.className = 'sn-state';
-    word.setAttribute('aria-live', 'polite');
+    // Plain text that announces its changes — not a menu item, since clicking it
+    // does nothing (M9).
+    word.setAttribute('role', 'status');
     const retry = document.createElement('button');
     retry.type = 'button';
     retry.className = 'sn-retry';
@@ -91,10 +93,9 @@ function createBackendUI(cfg: BackendDef): void {
   }
 
   function init(): void {
-    const ul = document.querySelector('.site-menubar ul[role="menubar"]');
+    const ul = document.querySelector('.site-menubar ul');
     if (ul) {
       serverLi = document.createElement('li');
-      serverLi.setAttribute('role', 'menuitem');
       serverLi.className = 'server-nav-item';
       serverLi.appendChild(statusParts().item);
       ul.appendChild(serverLi);
