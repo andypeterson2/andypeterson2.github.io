@@ -16,6 +16,13 @@ interface ModelDisplay {
   subset?: string;
 }
 
+/** Where a weight file came from: the exporting commit, its date and the seed. */
+export interface ModelProvenance {
+  source_sha?: string;
+  exported_at?: string;
+  seed?: number;
+}
+
 /** The linear platform models (MNIST, Iris). */
 export interface LinearModel {
   kind?: 'linear';
@@ -27,6 +34,7 @@ export interface LinearModel {
   feature_ranges?: [number, number][];
   test_accuracy?: number;
   display?: ModelDisplay;
+  provenance?: ModelProvenance;
 }
 
 /** The QSVM paper recreation (the qsvm-* models). */
@@ -42,6 +50,7 @@ export interface QsvmModel {
   feature_ranges?: [number, number][];
   test_accuracy?: number;
   display?: ModelDisplay;
+  provenance?: ModelProvenance;
 }
 
 export type ClassifierModel = LinearModel | QsvmModel;
@@ -50,6 +59,8 @@ export interface Prediction {
   prediction: string;
   confidence: number | null;
   probs: number[] | null;
+  /** The QSVM's two features and its signed margin s (distance from the boundary). */
+  qsvm?: { f1: number; f2: number; s: number };
 }
 
 export interface ClassifierInferApi {
@@ -154,7 +165,12 @@ function predictQsvm(model: QsvmModel, raw: number[]): Prediction {
     model.raw_input === 'pixels' ? inkRatios(raw, model.ink_threshold) : [raw[0] ?? 0, raw[1] ?? 0];
   const { w, map, classes } = model;
   const s = w[0] * (map.a * f1 + map.b) + w[1] * (map.c * f2 + map.d);
-  return { prediction: s > 0 ? classes[0] : classes[1], confidence: null, probs: null };
+  return {
+    prediction: s > 0 ? classes[0] : classes[1],
+    confidence: null,
+    probs: null,
+    qsvm: { f1, f2, s },
+  };
 }
 
 /** True when a 28×28 grid has no ink at all (nothing drawn yet). */

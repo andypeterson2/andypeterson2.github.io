@@ -17,13 +17,7 @@
   .log-drawer {
     border-top: 2px solid var(--ink);
     background: var(--paper);
-    max-height: 30vh;
-    overflow: hidden;
     flex-shrink: 0;
-  }
-
-  .log-drawer.open {
-    max-height: 50vh;
   }
 
   .log-handle {
@@ -75,15 +69,22 @@
     }
   }
 
+  /* Closed: the newest line. Open: twelve lines, scrolling. */
   .log-terminal {
-    font-family: monospace;
-    font-size: var(--text-4xs);
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+    line-height: 1.4;
     padding: 4px 8px;
-    overflow-y: auto;
-    max-height: calc(30vh - 24px);
+    overflow: hidden;
+    max-height: calc(1.4em + 8px);
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
+  }
+
+  .log-drawer.open .log-terminal {
+    overflow-y: auto;
+    max-height: calc(12 * 1.4em + 8px);
   }
 
   :global(.log-entry) {
