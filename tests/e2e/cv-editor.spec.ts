@@ -1749,3 +1749,67 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect.poll(() => loggedOut).toBe(true);
   });
 });
+
+// Audit C1: "Sign in with Google to keep your edits" must keep them. The login
+// round trip is mocked (the gateway 302s straight back); the new account is empty,
+// so the editor offers the stashed demo edits and imports them as a profile.
+test.describe('Demo edits survive sign-in', () => {
+  test('edit → sign in → offered → imported into a new profile', async ({ page }) => {
+    await gotoEditor(page);
+    // Make an edit the demo tracks (the section-reorder shortcut marks it dirty).
+    await page.locator('[aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"]').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+
+    // From here on the visitor is "signed in" with an empty account.
+    await page.unroute('**/auth/me');
+    await page.route('**/auth/me', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ authenticated: true, email: 'ada@example.com', name: 'Ada' }),
+      }),
+    );
+    await page.route('**/auth/login**', (r) =>
+      r.fulfill({ status: 302, headers: { location: page.url() } }),
+    );
+    let persons: { id: number; name: string }[] = [];
+    let importBody: Record<string, unknown> | null = null;
+    await page.route(/\/cv\/api\/persons$/, (r) => {
+      if (r.request().method() === 'POST') {
+        persons = [{ id: 9, name: 'Ada (from demo)' }];
+        return r.fulfill({ status: 201, contentType: 'application/json', body: '{"id":9}' });
+      }
+      return r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons }),
+      });
+    });
+    await page.route(/\/cv\/api\/persons\/9\/import$/, (r) => {
+      importBody = r.request().postDataJSON() as Record<string, unknown>;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          person: { id: 9, name: 'Ada (from demo)' },
+          personal: { firstName: 'Ada' },
+          sections: [],
+          variants: [],
+        }),
+      }),
+    );
+
+    await page.locator('button.conn').click();
+    const offer = page.getByRole('dialog', { name: 'Your demo edits' });
+    await expect(offer).toBeVisible({ timeout: 15000 });
+    await offer.getByRole('button', { name: 'Bring them in' }).click();
+    await expect(offer).toBeHidden();
+    expect(importBody).not.toBeNull();
+    const personal = (importBody as unknown as { personal: Record<string, string> }).personal;
+    expect(personal.email).toBe('ada@example.com');
+    expect(personal.github).toBeUndefined();
+  });
+});

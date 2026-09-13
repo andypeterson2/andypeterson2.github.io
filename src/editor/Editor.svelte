@@ -77,6 +77,11 @@
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
   // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
+  // The carried-over-edits offer is a real dialog: put focus on its answer.
+  $effect(() => {
+    if (editor.pendingDraft)
+      queueMicrotask(() => document.getElementById('draft-primary')?.focus());
+  });
 
   // Starting the tour dismisses the invitation first: on mobile the invite is a
   // popup window that would otherwise sit over the narrator, and on desktop the
@@ -255,7 +260,32 @@
     <div class="invite busy" role="status">
       <span class="mk" aria-hidden="true">◆</span>
       <span class="txt"
-        >Signing in… finish the Google login in the new tab — the editor connects automatically.</span
+        >Redirecting to Google sign-in… you'll come back here, and your edits come with you.</span
+      >
+    </div>
+  {:else if editor.pendingDraft}
+    <!-- Demo edits carried across sign-in (audit C1): offer them as a profile. -->
+    <div class="invite-scrim" aria-hidden="true"></div>
+    <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
+      <div class="titlebar invite-tbar">
+        <span class="title" id="draft-title">Your demo edits</span>
+        <span class="fill"></span>
+      </div>
+      <span class="txt"
+        >You edited the demo before signing in. Bring those edits into your account as a new
+        profile? Your name and email replace the sample's contact details.</span
+      >
+      <UiButton
+        variant="toolbar"
+        class="tour-start"
+        tone="primary"
+        id="draft-primary"
+        disabled={editor.importingDraft}
+        onclick={() => void editor.importDraft()}
+        >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
+      >
+      <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
+        >Start fresh instead</button
       >
     </div>
   {:else if demoMode && inviteOpen}
@@ -271,8 +301,9 @@
         <span class="fill"></span>
       </div>
       <span class="txt"
-        >This is the real editor, running live in your browser. Edit anything — drag, tag, switch
-        variants, export. <b>Nothing is saved until you sign in.</b></span
+        >This is the real editor, running in your browser. Edit anything — drag, tag, switch
+        variants, export. <b>Nothing is saved until you sign in — then your edits come with you.</b
+        ></span
       >
       <UiButton
         variant="toolbar"
@@ -446,7 +477,7 @@
             class:cta={demoMode}
             onclick={() => (demoMode ? editor.signIn() : editor.connect())}
             disabled={editor.connecting || editor.signingIn}
-            title={demoMode ? 'Sign in with Google to save changes' : 'Connection status'}
+            title={demoMode ? 'Sign in with Google to keep your edits' : 'Connection status'}
           >
             <span
               class="dot"
@@ -460,7 +491,7 @@
                   ? 'connecting…'
                   : editor.connected
                     ? 'connected'
-                    : 'Sign in with Google to save changes'}</span
+                    : 'Sign in with Google to keep your edits'}</span
             >
           </button>
           {#if editor.identity}

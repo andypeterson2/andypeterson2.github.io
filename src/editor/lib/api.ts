@@ -580,6 +580,11 @@ export class CvApi {
   deleteLetterSection(variantId: number, lid: number) {
     return this.req(`/variants/${variantId}/letter-sections/${lid}`, { method: 'DELETE' });
   }
+  /** POST /persons/:pid/import — load an export tree into a (new, empty) profile. Used to
+   *  carry a visitor's demo edits into their account after sign-in (audit C1). */
+  importPerson(pid: number, tree: unknown) {
+    return this.req(`/persons/${pid}/import`, { method: 'POST', body: JSON.stringify(tree) });
+  }
   /** GET /persons/:pid/export → the backend's import-compatible tree (authoritative). */
   exportPerson(pid: number) {
     return this.req<unknown>(`/persons/${pid}/export`);

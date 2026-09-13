@@ -23,7 +23,8 @@ import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta, type ApiResult } from './api';
 import { resolveAccent } from './accent';
-import { buildExport } from './export';
+import { buildExport, type ExportDoc } from './export';
+import { stashDemoDraft, peekDemoDraft, clearDemoDraft, forNewOwner } from './draft';
 import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
@@ -92,6 +93,10 @@ class EditorState {
   signingIn = $state(false);
   /** The signed-in Google account (self-hosted session), or null when logged out. */
   identity = $state<{ email: string | null; name: string | null } | null>(null);
+  /** Demo edits carried across sign-in, waiting for the visitor to import or discard
+   *  them (audit C1). Set by connect() when a fresh stash exists. */
+  pendingDraft = $state<ExportDoc | null>(null);
+  importingDraft = $state(false);
   /** Profiles available to the signed-in identity (empty in demo). */
   persons = $state<PersonMeta[]>([]);
   activePersonId = $state<number | null>(null);
@@ -786,13 +791,18 @@ class EditorState {
       }
       data = res.data;
     } else {
-      data = buildExport(
-        this.person,
-        (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
-        (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
-      );
+      data = this.localExport();
     }
     downloadJson(data, `${label}.json`);
+  }
+
+  /** The working document as an import-compatible tree, serialized client-side. */
+  private localExport(): ExportDoc {
+    return buildExport(
+      this.person,
+      (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
+      (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
+    );
   }
 
   /**
@@ -1022,6 +1032,7 @@ class EditorState {
       this.persons = res.data.persons;
       this.activePersonId = res.data.person.id;
       this.loadPerson(res.data.person);
+      this.pendingDraft = peekDemoDraft();
       return;
     }
     // Signed in but the account has no profiles yet → connected empty state,
@@ -1029,6 +1040,7 @@ class EditorState {
     if (res.error?.code === 'no_persons') {
       this.connecting = false;
       this.enterEmpty();
+      this.pendingDraft = peekDemoDraft();
       return;
     }
     // Not loaded. A not-signed-in request 302s to the Access login on another
@@ -1108,9 +1120,47 @@ class EditorState {
    */
   signIn() {
     if (typeof window === 'undefined') return;
+    // Sign-in is a same-tab redirect: keep the visitor's demo edits so they can
+    // bring them into their account afterwards (audit C1). If this browser won't
+    // let us keep them, say so before they're lost.
+    if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
+      const go = window.confirm(
+        "This browser won't let the editor keep your demo edits through sign-in. " +
+          'Sign in anyway? (File ▸ Export as JSON saves a copy first.)',
+      );
+      if (!go) return;
+    }
     this.signingIn = true;
     this.connectError = null;
     window.location.href = api.loginUrl(window.location.href);
+  }
+
+  /** Import the carried-over demo edits as a new profile of the signed-in visitor. */
+  async importDraft() {
+    const doc = this.pendingDraft;
+    if (!doc || !this.connected || !this.identity || this.importingDraft) return;
+    this.importingDraft = true;
+    try {
+      const tree = forNewOwner(doc, this.identity);
+      const created = await this.persist(() => api.createPerson(tree.name));
+      if (!created.ok || !created.data) return; // the save toast reports it; the offer stays
+      const id = created.data.id;
+      const imported = await this.persist(() => api.importPerson(id, tree));
+      if (!imported.ok) return;
+      clearDemoDraft();
+      this.pendingDraft = null;
+      this.persons = [...this.persons, { id, name: tree.name }];
+      await this.selectPerson(id);
+      this.say('Your demo edits are now a profile in your account.');
+    } finally {
+      this.importingDraft = false;
+    }
+  }
+
+  /** Drop the carried-over demo edits. */
+  discardDraft() {
+    clearDemoDraft();
+    this.pendingDraft = null;
   }
 
   /** Sign out: drop the server session, forget the identity, return to the demo. */

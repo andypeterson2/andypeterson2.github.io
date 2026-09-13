@@ -18,7 +18,7 @@ Documents compile server-side through **XeLaTeX (Awesome-CV)** into a real PDF.
 
 ## Demo-first by design
 
-A **live in-browser demo runs the real editor with no backend**: it treats "not signed in" as the confident default and degrades gracefully instead of erroring. Any visitor can edit, reorder, tag and restyle a real document and export it as JSON. Compiling to a PDF and saving need an account, via **Sign in with Google**.
+A **live in-browser demo runs the real editor with no backend**: it treats "not signed in" as the confident default and degrades gracefully instead of erroring. Any visitor can edit, reorder, tag and restyle a real document and export it as JSON. Compiling to a PDF and saving need an account, via **Sign in with Google** — and the demo edits you made come with you into your own profile.
 
 ## What's real
 
