@@ -322,8 +322,9 @@ const windowTitle = title || siteConfig.title;
     max-width: none;
   }
 
-  /* Mobile: no scrollbar chrome anywhere. Scrolling still works — the bars just
-     don't paint (the System-6 patterned bars are heavy on a phone). */
+  /* Mobile: no patterned System-6 scrollbar chrome (heavy on a phone) — except a
+     thin ink bar on the page's own scroll pane, so a seven-screen page still shows
+     where you are and that there's more (P7). */
   @media (width <= 768px) {
     * {
       scrollbar-width: none;
@@ -333,6 +334,20 @@ const windowTitle = title || siteConfig.title;
       width: 0;
       height: 0;
       display: none;
+    }
+
+    .site-pane {
+      scrollbar-width: thin;
+      scrollbar-color: var(--ink) transparent;
+    }
+
+    .site-pane::-webkit-scrollbar {
+      display: block;
+      width: 3px;
+    }
+
+    .site-pane::-webkit-scrollbar-thumb {
+      background: var(--ink);
     }
   }
 </style>
@@ -484,6 +499,7 @@ const windowTitle = title || siteConfig.title;
   }
 
   /* ── Inner window ── */
+
   /* system.css gives every .window min-width: 320px; with the canvas padding that
      overflowed a 320px viewport (400% zoom) and the page scrolled sideways (M31). */
   .site-window {
