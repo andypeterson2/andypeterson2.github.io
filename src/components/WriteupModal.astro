@@ -56,7 +56,14 @@ const modalId = `writeup-${slug}`;
               ✕
             </button>
           </div>
-          <div class="writeup-content">
+          {/* Focusable, so the keyboard can scroll it: PageDown, arrows and Space
+              had nothing to move while focus sat on Close (H10). */}
+          <div
+            class="writeup-content"
+            tabindex="0"
+            role="region"
+            aria-labelledby={`${modalId}-title`}
+          >
             <Content />
           </div>
           {(appUrl || repoUrl) && (
@@ -90,10 +97,12 @@ const modalId = `writeup-${slug}`;
   // page's .site-pane — the old html overflow lock was dead code, audit M2.)
   let lastFocus: HTMLElement | null = null;
 
+  // Focus starts on the text, not on Close: the keys a reader reaches for first
+  // (PageDown, arrows, Space) scroll it at once, and Close is one Shift+Tab away.
   function openModal(modal: HTMLElement) {
     lastFocus = document.activeElement as HTMLElement;
     modal.hidden = false;
-    modal.querySelector<HTMLElement>('[data-writeup-close]')?.focus();
+    modal.querySelector<HTMLElement>('.writeup-content')?.focus();
   }
 
   function closeModal(modal: HTMLElement | null) {
@@ -222,6 +231,11 @@ const modalId = `writeup-${slug}`;
     padding: clamp(14px, 2.2vw, 26px);
     font-size: var(--text-xs);
     line-height: 1.45;
+  }
+
+  /* The ring sits inside the box: outside, it would run over the title bar. */
+  .writeup-content:focus-visible {
+    outline-offset: -4px;
   }
 
   /* 60ch of Geneva's wide "0" is about 70 characters of running text. */
