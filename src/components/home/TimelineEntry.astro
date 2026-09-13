@@ -73,7 +73,12 @@ const { entry } = Astro.props;
               {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
             </a>
           )}
-          <WriteupModal slug={entry.project.slug} label="Writeup" />
+          <WriteupModal
+            slug={entry.project.slug}
+            label="Writeup"
+            appUrl={entry.project.appUrl}
+            repoUrl={entry.project.repoUrl}
+          />
           <a
             href={entry.project.repoUrl}
             class="action-btn"
