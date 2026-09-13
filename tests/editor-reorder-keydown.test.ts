@@ -1,5 +1,5 @@
 /**
- * Unit tests for keyboard reordering (src/editor/lib/sortable.ts#reorderKeydown).
+ * Unit tests for keyboard reordering (reorderKeydown).
  * Alt+Arrow/Home/End moves a focused item; anything else is left for the caller.
  */
 import { describe, test, expect } from 'vitest';

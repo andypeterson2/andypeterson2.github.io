@@ -1,6 +1,6 @@
 // Section-type registry — the editor's canonical definition, also mirrored by the
 // backend. This is what makes the editor type-aware: 16 section types across 5
-// shapes (by latexType). See docs/editor-redesign.md §3.
+// shapes (by latexType).
 
 export interface FieldDef {
   key: string;

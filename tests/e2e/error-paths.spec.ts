@@ -44,8 +44,8 @@ test.describe('Backend error-envelope surfacing', () => {
     await page.route('**/api/benchmark', (r) => r.fulfill(busy));
     await page.route('**/api/benchmark/sync', (r) => r.fulfill(busy));
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    // The manual connect modal is retired; drive the app the way pass.ts does.
-    // localhost is allowlisted here because the page itself is on localhost.
+    // Connect with the navbar:connect event, as a backend pass does. localhost is
+    // allowlisted here because the page itself is on localhost.
     await page.evaluate(() =>
       document.dispatchEvent(
         new CustomEvent('navbar:connect', {

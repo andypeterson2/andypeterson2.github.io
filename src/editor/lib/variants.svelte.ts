@@ -1,11 +1,9 @@
-// The variants concern — the list of alternate lenses (CV / resume / cover
-// letter) over the main document, and their include/exclude rules — lifted out
-// of EditorState (tech-debt #11). This slice is the most cross-cutting: the
-// active-lens pointer (`activeVariantId`) is read by several store derivations
-// and by the preview + letters controllers, so it STAYS on the store; this
-// controller reaches it through the host (`activeId`/`setActiveId`) and lets the
-// store own the cross-slice coordination via `syncActive` (reset the preview,
-// load or clear the cover letter for the newly-active lens).
+// The variants concern: the alternate lenses (CV / resume / cover letter) over the
+// main document and their include/exclude rules. The active-lens pointer stays on
+// the store because other derivations read it; this controller reaches it through
+// the host (`activeId`/`setActiveId`), and `syncActive` lets the store coordinate
+// the preview and cover letter when the lens changes.
+
 import { api } from './api';
 import type { SaveHost } from './host';
 import type { Variant, Entry, Item, EntryOverride, ItemOverride } from './types';
@@ -128,9 +126,8 @@ export class VariantController {
   }
 
   async remove(variant: Variant) {
-    // Variant add/remove isn't itself undoable, and a delete would strand any rule
-    // command still pointing at this variant's now-dead server row. Forget rather
-    // than offer an "Undo" that would 404.
+    // A delete would strand rule commands pointing at this variant's server row, so
+    // forget history rather than offer an "Undo" that would 404.
     this.host.forgetHistory();
     this.host.setVariants(this.host.variants().filter((v) => v.id !== variant.id));
     if (this.host.activeId() === variant.id) this.host.setActiveId(null);

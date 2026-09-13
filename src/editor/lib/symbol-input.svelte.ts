@@ -1,9 +1,8 @@
-// Shared glue for the symbols palette (increment 2), so every editor wires it the
-// same way: a factory holding the palette's open state and the "last-focused
-// field" it inserts into. Each editor calls `symbolInput()` once, binds `track`
-// to its root's focusin, and renders an Ω toggle, a <SymbolPalette>, and an
-// <UnknownWarning>. The transform + the allowlist stay in symbols.ts; this is
-// only the per-editor UI state.
+// Shared glue for the symbols palette: a factory holding the palette's open state
+// and the last-focused field it inserts into. Each editor calls `symbolInput()`
+// once, binds `track` to its root's focusin, and renders an Ω toggle, a
+// <SymbolPalette>, and an <UnknownWarning>. Only per-editor UI state lives here.
+
 import { insertAtCaret } from './caret';
 
 export function symbolInput() {

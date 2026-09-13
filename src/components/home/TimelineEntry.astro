@@ -106,7 +106,7 @@ const { entry } = Astro.props;
     padding-bottom: 0;
   }
 
-  /* On the spine: --spine-x is set by the home page's .timeline (index.astro). */
+  /* On the spine: --spine-x is set by the home page's .timeline. */
   .timeline-entry::after {
     content: '';
     position: absolute;
@@ -134,7 +134,7 @@ const { entry } = Astro.props;
   }
 
   /* Dates may wrap at the dash ("2022 –" / "2024") so a full year range fits the
-     rail at tablet widths instead of running into the spine (P2). */
+     rail at tablet widths instead of running into the spine. */
   .timeline-date {
     font-family: var(--font-mono);
     font-size: var(--text-2xs);
@@ -147,7 +147,7 @@ const { entry } = Astro.props;
     display: flex;
     flex-direction: column;
     gap: clamp(2px, 0.3vw, 3px);
-    max-width: 80ch; /* the timeline now spans the page width; keep lines readable */
+    max-width: 80ch; /* the timeline spans the page width; keep lines readable */
   }
 
   .timeline-role {
@@ -209,7 +209,7 @@ const { entry } = Astro.props;
     max-width: 60ch;
   }
 
-  /* One grid, so every chip in a card shares an edge and a width (P1). */
+  /* One grid, so every chip in a card shares an edge and a width. */
   .tl-metrics {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));

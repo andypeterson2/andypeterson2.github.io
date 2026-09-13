@@ -1,11 +1,11 @@
 /**
  * Make an in-page panel modal: everything outside it goes inert (no focus, no
  * clicks, hidden from screen readers), focus moves in, and on release the page
- * comes back and focus returns to whatever opened the panel (audit H13).
+ * comes back and focus returns to whatever opened the panel.
  *
  * Why not <dialog>.showModal(): a modal dialog renders in the top layer, outside
- * the root element's filter — and dark mode *is* a filter on <html> (system-six
- * base.css), so a native modal would stay light on a dark page.
+ * the root element's filter — and dark mode *is* a filter on <html>, so a native
+ * modal would stay light on a dark page.
  */
 export function holdModal(panel: HTMLElement, focusTarget?: HTMLElement | null): () => void {
   const active = document.activeElement;

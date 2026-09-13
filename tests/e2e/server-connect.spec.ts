@@ -6,7 +6,7 @@ test.describe('ServerConnectModal + SiteContract', () => {
     const navItem = page.locator('.site-menubar .server-nav-item');
     await expect(navItem).toHaveCount(1);
     await expect(navItem.locator('.sn-dot')).toBeVisible();
-    // The tier is a visible word, not only a dot (audit H6).
+    // The tier is a visible word, not only a dot.
     await expect(navItem.locator('.sn-state')).toHaveText('in your browser');
   });
 
@@ -18,7 +18,7 @@ test.describe('ServerConnectModal + SiteContract', () => {
   });
 
   // A refused pass says so, forgets the pass and offers no Retry; "didn't wake"
-  // + Retry is only for a backend that may still wake (Fable A1-05).
+  // + Retry is only for a backend that may still wake.
   test('an expired pass is named, not reported as a sleeping backend', async ({ page }) => {
     await page.route('**/nonogram/health', (r) => r.fulfill({ status: 401, body: '' }));
     await page.goto('/projects/quantum-nonogram-solver/app/?pass=expired-token');

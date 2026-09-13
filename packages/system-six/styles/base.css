@@ -22,24 +22,18 @@ body {
   color: var(--ink);
 }
 
-/* system.css sets `.window { font-family: Inconsolata, Menlo, Chicago, Geneva }` for
-   window body copy — a monospace intent, but a leaky one: none of Inconsolata/Menlo are
-   loaded here, so it lands on Menlo only on macOS and falls through to the non-mono
-   Chicago pixel face on Windows/Linux. Re-assert our own mono token so the intended
-   monospace look renders as Monaco (a loaded pixel-mono webfont) on EVERY platform, and
-   so the preloaded Monaco lands on the LCP intro paragraph. Title bars keep Chicago_12
-   via their own --font-ui rule. */
+/* system.css gives .window body copy Inconsolata/Menlo/Chicago, none of which are loaded, so
+   it renders Menlo on macOS and non-mono Chicago elsewhere. Re-assert the mono token so it is
+   the loaded Monaco on every platform, which also puts the preloaded Monaco on the LCP intro
+   paragraph. Title bars keep Chicago_12 via --font-ui. */
 .window {
   font-family: var(--font-mono);
 }
 
-/* ── Dark mode — the page-scale inversion (L4) ──
-   The site is 1-bit black/white with only monochrome-SVG images, so a single
-   photographic negative flips everything correctly at once: text, borders, the
-   desktop pattern, the dither fills — and, via hue-rotate, the status colors
-   keep their hue while lightening for contrast on black. No per-element dark
-   rules, no media exceptions: the design's own monochrome purity (L2) is what
-   makes this a one-liner. "State is inversion", here at the scale of the page. */
+/* ── Dark mode — a page-scale inversion. The site is 1-bit with only monochrome-SVG images,
+   so one photographic negative flips text, borders, the desktop pattern and the dither fills
+   at once; hue-rotate keeps the status colors' hue while lightening them for contrast on
+   black. No per-element dark rules, no media exceptions. ── */
 html[data-theme='dark'] {
   filter: invert(1) hue-rotate(180deg);
 }
@@ -115,9 +109,8 @@ a:hover {
 
 .title-bar .title {
   font-size: var(--text-base);
-  /* Pad the white title block itself (system.css leaves it zero vertical), so
-     the heading text has room above and below rather than sitting tight against
-     the striped bar. */
+  /* system.css gives the white title block no vertical padding; pad it so the heading
+     doesn't sit tight against the striped bar. */
   padding-top: clamp(2px, 0.4vw, 5px);
   padding-bottom: clamp(2px, 0.4vw, 5px);
 }
@@ -126,8 +119,8 @@ a:hover {
 code {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  /* white inset, not a fill — dense mono text is unreadable over any dither
-     (the L2 prose rule at its extreme). The 1px border does the work. */
+  /* white inset, not a fill — dense mono text is unreadable over any dither.
+     The 1px border does the work. */
   background: var(--paper);
   padding: 0.15em 0.4em;
   border: 1px solid var(--ink);
@@ -281,12 +274,10 @@ pre code {
   color: var(--paper);
 }
 
-/* ── Focus — one treatment everywhere (P10) ──
-   A 2px ink ring, which the dark-mode page inversion turns white on black, so no
-   control falls back to the browser's blue. Text fields keep system.css's own
-   inversion (inputs aren't in this list, and its input:focus rule stays).
-   Element names, not a bare :focus-visible or :where() — PurgeCSS drops both
-   (scripts/purge-css.mjs fails the build if this rule goes missing). */
+/* ── Focus — one treatment everywhere: a 2px ink ring, which the dark-mode inversion turns
+   white on black, so no control falls back to the browser's blue. Text fields keep
+   system.css's own input:focus inversion (inputs aren't in this list). Element names, not a
+   bare :focus-visible or :where(): PurgeCSS drops both, and the build fails without this. */
 a:focus-visible,
 button:focus-visible,
 select:focus-visible,
@@ -351,10 +342,9 @@ summary:focus-visible,
     display: none !important;
   }
 
-  /* On screen the page scrolls inside .site-pane under a 100vh, overflow-hidden
-     body, so print got the first viewport of a seven-screen page. Unclip the whole
-     chain so the paper gets all of it (Fable A1-08). !important: the layout's own
-     rules are scoped (higher specificity) and must lose here. */
+  /* On screen the page scrolls inside .site-pane under a 100vh, overflow-hidden body, which
+     would clip print to the first viewport. Unclip the whole chain; !important because the
+     layout's own rules are scoped (higher specificity) and must lose here. */
   html,
   body,
   .site-canvas,

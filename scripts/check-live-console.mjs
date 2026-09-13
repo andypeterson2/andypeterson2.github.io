@@ -1,10 +1,9 @@
-// Loads the production pages in headless Chromium and fails on any console error.
-// Engineers reviewing the portfolio open DevTools; a red line on every page (audit
-// P13: a Cloudflare-injected inline script that the CSP blocks) should never ship
-// unnoticed. The one known, documented notice — `frame-ancestors` is ignored in a
-// <meta> CSP (docs/security-headers.md) — is allowed.
+// Loads the production pages in headless Chromium and fails on any console error (such as
+// a Cloudflare-injected inline script the CSP blocks). The one known notice is allowed:
+// `frame-ancestors` is ignored in a <meta> CSP.
 //
 //   node scripts/check-live-console.mjs https://andypeterson.dev
+
 import { chromium } from '@playwright/test';
 
 const base = (process.argv[2] || 'https://andypeterson.dev').replace(/\/$/, '');
@@ -16,7 +15,7 @@ const paths = [
 ];
 const ALLOWED = [/The Content Security Policy directive 'frame-ancestors' is ignored/];
 // The editor asks the gateway "who am I?" on load; a signed-out visitor gets a 401 by
-// design (andypeterson-gateway worker/src/auth.ts), which Chromium logs as a resource error.
+// design, which Chromium logs as a resource error.
 const ALLOWED_URLS = [/\/auth\/me$/];
 
 const browser = await chromium.launch();

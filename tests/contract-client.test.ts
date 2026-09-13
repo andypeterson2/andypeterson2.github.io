@@ -1,5 +1,5 @@
 /**
- * Integration tests for src/apps/shared/contract-client.ts (SiteContract).
+ * Integration tests for the SiteContract browser client.
  *
  * The module publishes window.SiteContract at import, so `window` is shimmed
  * to globalThis before a dynamic import; the client is then exercised against
@@ -11,9 +11,8 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// ── Load the browser client into this (node) context ──────────────────────────
-// The shim must precede the import (module side effect assigns window.SiteContract),
-// so the import is dynamic. fetch/AbortController exist globally in Node ≥18.
+// The shim must precede the import (a side effect assigns window.SiteContract), so the
+// import is dynamic. fetch/AbortController exist globally in Node ≥18.
 (globalThis as { window?: unknown }).window = globalThis;
 const { SiteContract } = await import('../src/apps/shared/contract-client');
 

@@ -1,6 +1,6 @@
 /**
- * Integration tests for project routing — verify that the data in
- * src/data/projects.ts produces the expected set of generated paths.
+ * Integration tests for project routing: the project data produces the expected
+ * set of generated paths.
  */
 import { describe, test, expect } from 'vitest';
 import { existsSync } from 'fs';

@@ -1,7 +1,6 @@
-// The Socket.IO client stays a vendored classic script
-// (/vendor/socket.io-4.7.5.min.js, pinned to the backend's socket.io family
-// and loaded by the nonogram page before this bundle), so `io` is a global.
-// Minimal surface — only what app.ts uses.
+// The Socket.IO client stays a vendored classic script (4.7.5, pinned to the backend's
+// socket.io family) that the page loads before this bundle, so `io` is a global.
+// Minimal surface — only what the app uses.
 
 interface NonogramSocket {
   connected: boolean;

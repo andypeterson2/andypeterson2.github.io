@@ -1,5 +1,5 @@
 // The shared save/persistence infra that every slice-controller needs from the
-// editor core (tech-debt #11). EditorState supplies one `SaveHost` object and
+// editor core. EditorState supplies one `SaveHost` object and
 // each controller's host extends it with the slice-specific reads it needs, so
 // the coupling to the store is named and typed in one place instead of being
 // re-declared per controller.

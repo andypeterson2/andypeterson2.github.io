@@ -1,14 +1,12 @@
 ---
-// A "?" trigger + a System-6 modal holding a project's full writeup, rendered
-// from the `writeups` content collection at build time (no client-side markdown
-// parsing, CSP-safe). Reusable: multiple instances on one page share a single
-// event-delegated open/close handler — the one-page site will stack several.
+// A "?" trigger + System-6 modal holding a project's writeup, rendered at build time from
+// the `writeups` collection (CSP-safe). Instances share one delegated open/close handler.
 import { getEntry, render } from 'astro:content';
 
 interface Props {
   slug: string;
   label?: string;
-  /** The project's demo and source, so a convinced reader can act without closing (M2). */
+  /** The project's demo and source, so a convinced reader can act without closing. */
   appUrl?: string;
   repoUrl?: string;
   /** A URL fragment that opens this writeup on arrival (e.g. /#about, where /about lands). */
@@ -19,7 +17,7 @@ const external = (url: string) => url.startsWith('http');
 
 const entry = await getEntry('writeups', slug);
 // A missing writeup is a broken content contract (the id must match the project
-// slug): fail the build instead of silently dropping the "?" button (Fable A1-13).
+// slug): fail the build instead of silently dropping the "?" button.
 if (!entry) throw new Error(`No writeup for slug "${slug}" in src/content/writeups`);
 const { Content } = await render(entry);
 const modalId = `writeup-${slug}`;
@@ -47,7 +45,7 @@ const modalId = `writeup-${slug}`;
           aria-modal="true"
           aria-labelledby={`${modalId}-title`}
         >
-          {/* The site's own window chrome (P11): pinstripes, a centred title, the
+          {/* The site's own window chrome: pinstripes, a centred title, the
               close box at the left. The spacer on the right balances it. */}
           <div class="title-bar writeup-titlebar">
             <button type="button" class="close" data-writeup-close aria-label="Close writeup">
@@ -58,8 +56,8 @@ const modalId = `writeup-${slug}`;
             </span>
             <span class="writeup-balance" aria-hidden="true" />
           </div>
-          {/* Focusable, so the keyboard can scroll it: PageDown, arrows and Space
-              had nothing to move while focus sat on Close (H10). */}
+          {/* Focusable, so the keyboard can scroll it: otherwise PageDown, arrows and
+              Space have nothing to move while focus sits on Close. */}
           <div
             class="writeup-content"
             tabindex="0"
@@ -94,9 +92,8 @@ const modalId = `writeup-${slug}`;
 }
 
 <script>
-  // One delegated handler for every WriteupModal on the page. (No scroll lock: the
-  // fixed overlay already chains wheel/touch scrolling to the viewport, not to the
-  // page's .site-pane — the old html overflow lock was dead code, audit M2.)
+  // One delegated handler for every WriteupModal on the page. No scroll lock: the fixed
+  // overlay chains wheel/touch scrolling to the viewport, not to the page's .site-pane.
   let lastFocus: HTMLElement | null = null;
 
   // Focus starts on the text, not on Close: the keys a reader reaches for first
@@ -163,9 +160,8 @@ const modalId = `writeup-${slug}`;
 </script>
 
 <style>
-  /* The trigger's button appearance comes from the shared global .action-btn
-     (packages/system-six/styles/base.css) — the single source of truth shared
-     with the timeline actions. Only the "?" badge is local. */
+  /* The trigger's button appearance comes from the shared global .action-btn, which
+     the timeline actions use too. Only the "?" badge is local. */
   .writeup-q {
     font-weight: 700;
     margin-right: 0.15em;
@@ -225,9 +221,8 @@ const modalId = `writeup-${slug}`;
     }
   }
 
-  /* One step up from the old --text-2xs, which dropped to 15.4px at 768 while the
-     dialog stayed 640px wide (146 characters a line). The measure is capped at ~70
-     characters, so line length no longer depends on the viewport (M2). */
+  /* --text-xs, with the measure capped at ~70 characters, so line length doesn't
+     depend on the viewport. */
   .writeup-content {
     overflow-y: auto;
     font-family: var(--font-sans);

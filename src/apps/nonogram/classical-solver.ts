@@ -1,20 +1,8 @@
 /* =============================================================
-   Client-side classical nonogram solver — the offline demo tier.
-
-   A dependency-free port of the Python backend's brute-force classical
-   solver (nonogram/classical.py + the pattern generator in nonogram/data.py).
-   Rather than enumerate all 2^(n·d) grids like the backend, it enumerates the
-   valid bit patterns of each line and backtracks row-by-row, pruning column
-   candidates by the bits placed so far — the same solution SET, far less work.
-
-   Returns every grid that satisfies all row + column clues as a row-major
-   "0"/"1" string ("1" = filled), which is exactly the shape renderClassical
-   consumes. This lets the puzzle you draw be solved in your browser with no
-   backend — the confident, zero-cost default (cf. the CV editor's demo tier).
-
-   Brute force is exponential, so it is bounded to small grids (LOCAL_MAX_CELLS)
-   — the same reason the backend caps grid size. Larger puzzles fall through to
-   the live solver.
+   Client-side classical nonogram solver — the offline demo tier. A port of the backend's
+   brute-force solver that enumerates each line's valid bit patterns and backtracks row by
+   row, pruning columns by the bits placed so far. Returns each solving grid as a row-major
+   "0"/"1" string ("1" = filled). Exponential, so bounded to LOCAL_MAX_CELLS.
    ============================================================= */
 
 /** Upper bound on cells solved in-browser (5×5). Keeps solves instant. */
@@ -22,7 +10,7 @@ export const LOCAL_MAX_CELLS = 25;
 
 /**
  * All valid bit patterns for one line, as integers where bit c (0 = leftmost
- * cell) is set when cell c is filled. Faithful port of data.py
+ * cell) is set when cell c is filled. Faithful port of the backend's
  * `_generate_patterns`: recursively place each block at every legal start.
  * A clue of [0] or [] (an empty line) yields the single all-empty pattern.
  */

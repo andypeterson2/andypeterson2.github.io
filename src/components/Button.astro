@@ -24,7 +24,7 @@ interface Props {
   /** HTML id attribute. */
   id?: string;
   /**
-   * The apps' square button (system-six .s6-btn, audit P9) instead of the window
+   * The apps' square button (system-six .s6-btn) instead of the window
    * push-button: secondary -> plain, solid/primary -> ink fill, danger -> red.
    */
   app?: boolean;
@@ -75,8 +75,8 @@ const classes = (
 <style>
   /* system.css .btn and .btn-default handle the base styling.
      We add inline-flex for icon alignment, the size variants, and the
-     solid/danger/block modifiers (embed stylesheets like classifier.css may
-     re-skin these under their own scope — their ID selectors win). */
+     solid/danger/block modifiers (an embed's own stylesheet may re-skin these
+     under its scope — its ID selectors win). */
   .btn,
   .btn-default {
     display: inline-flex;

@@ -1,23 +1,10 @@
 // Editor state — Svelte 5 runes. A single reactive store the components read.
-//
-// This store was split down incrementally (tech-debt #11). Four concerns are
-// out, each a sub-controller composed below and driven through an injected host
-// of thunks rather than reaching back into this object:
-//   • `editor.preview`  — preview.svelte.ts  (2 deps; fully self-contained)
-//   • `editor.letters`  — letters.svelte.ts  (the cover letter)
-//   • `editor.variants` — variants.svelte.ts (the lenses + rules)
-//   • `editor.tags`     — tags.svelte.ts     (tag CRUD, spotlight, vocabulary)
-// The shared save infra (`nextId`/`markDirty`/`setSaving`/`settle`/`debounce`/
-// `announce`) is named once as `SaveHost` (host.ts) and provided by `saveHost`
-// below; each controller's host extends it with the slice's own reads. The
-// recipe to peel a slice: define its host = SaveHost + its reads, move the
-// methods, and keep genuinely shared reactive state (like `activeVariantId`)
-// HERE — the controllers coordinate with it through the host.
-//
-// What remains under the `// ---- <slice> ----` banners — field autosave,
-// content CRUD, drag reorder, drawers, profile CRUD — is the core the save infra
-// exists FOR; it's deliberately left in place, as pulling it out would relocate
-// coupling rather than reduce it. Navigate by the banners.
+// Preview, letters, variants, tags, and history are sub-controllers composed below,
+// each driven through an injected host of thunks (the shared `SaveHost` save infra
+// plus the slice's own reads) rather than reaching back into this object. Shared
+// reactive state like `activeVariantId` stays here. The core the save infra exists
+// for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
+
 import type { Person, Personal, Selection, Section, Entry, Item } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
@@ -65,7 +52,7 @@ class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(createDemoPerson());
   /** The owner's identity — name + public contacts — overlaid onto the demo person
-   *  from `siteConfig` (via Editor's `identity` prop). Held so resetDemo and the
+   *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo and the
    *  tour re-apply it after re-cloning the pristine sample. Never committed PII. */
   private demoIdentity: Partial<Personal> | null = null;
   selection = $state<Selection>({ kind: 'none' });
@@ -75,13 +62,13 @@ class EditorState {
   saveError = $state<string | null>(null);
   /** Re-run the last failed save, or null when there's nothing safe to retry. */
   retryOp = $state<null | (() => void)>(null);
-  /** the on-demand PDF preview — its own reactive island (see preview.svelte.ts). */
+  /** the on-demand PDF preview — its own reactive island. */
   preview = new PreviewController(
     () => this.connected,
     () => this.activeVariant,
     () => this.activePersonId,
   );
-  /** the undo/redo history behind the Edit menu (undo.svelte.ts). */
+  /** the undo/redo history behind the Edit menu. */
   undo = new UndoController({ announce: (msg) => this.say(msg) });
   /** aria-live text for keyboard-reorder feedback (screen-reader only). */
   announce = $state('');
@@ -94,7 +81,7 @@ class EditorState {
   /** The signed-in Google account (self-hosted session), or null when logged out. */
   identity = $state<{ email: string | null; name: string | null } | null>(null);
   /** Demo edits carried across sign-in, waiting for the visitor to import or discard
-   *  them (audit C1). Set by connect() when a fresh stash exists. */
+   *  them. Set by connect() when a fresh stash exists. */
   pendingDraft = $state<ExportDoc | null>(null);
   importingDraft = $state(false);
   /** Profiles available to the signed-in identity (empty in demo). */
@@ -125,7 +112,7 @@ class EditorState {
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
-  /** the save infra every slice-controller composes (see host.ts). */
+  /** the save infra every slice-controller composes. */
   private saveHost: SaveHost = {
     connected: () => this.connected,
     nextId: () => this.seq++,
@@ -141,14 +128,14 @@ class EditorState {
     record: (cmd) => this.undo.record(cmd),
     forgetHistory: () => this.undo.clear(),
   };
-  /** the cover-letter concern — header fields + per-variant paragraphs (letters.svelte.ts). */
+  /** the cover-letter concern — header fields + per-variant paragraphs. */
   letters = new LetterController({
     ...this.saveHost,
     activeVariant: () => this.activeVariant,
     activeVariantId: () => this.activeVariantId,
     coverletter: () => this.person.coverletter,
   });
-  /** the variants concern — alternate lenses + include/exclude rules (variants.svelte.ts). */
+  /** the variants concern — alternate lenses + include/exclude rules. */
   variants = new VariantController({
     ...this.saveHost,
     activePersonId: () => this.activePersonId,
@@ -172,12 +159,12 @@ class EditorState {
       else this.letters.clear();
     },
   });
-  /** the tags concern — entry/bullet tags, the spotlight, the vocabulary (tags.svelte.ts). */
+  /** the tags concern — entry/bullet tags, the spotlight, the vocabulary. */
   tags = new TagController({
     ...this.saveHost,
     sections: () => this.person.sections,
   });
-  /** the version-history concern — document checkpoints + restore (history.svelte.ts). */
+  /** the version-history concern — document checkpoints + restore. */
   history = new HistoryController({
     ...this.saveHost,
     activePersonId: () => this.activePersonId,
@@ -204,21 +191,21 @@ class EditorState {
   }
 
   // ---- undo plumbing ----
-  // `bind:value` mutates state before the store is called, so the previous value
-  // has to be remembered separately — the field-shadow (undo.ts), keyed by object
-  // identity. #cache keeps visited profiles' trees alive so a switch preserves undo.
+
+  // `bind:value` overwrites state before the store is called, so the shadow keeps
+  // pre-edit values; #cache keeps visited profiles' trees so a switch keeps undo.
   #shadow = new FieldShadow();
   #cache = new ProfileCache();
 
   /** A demo visitor's own edited document, held while the guided tour drives a
-   *  pristine sample, and put back when it ends (audit M26). */
+   *  pristine sample, and put back when it ends. */
   #demoResume: { doc: Person; dirty: boolean } | null = null;
 
   /**
    * The signed-in owner's real document, view and save status, captured when they
    * start the guided tour so it can drive their live CV and then put everything
    * back untouched. Null unless a connected tour is staged (the demo uses
-   * #demoResume; see stageTour / unstageTour / addEphemeralBullet).
+   * #demoResume).
    */
   #tourResume: {
     doc: Person;
@@ -826,10 +813,8 @@ class EditorState {
     this.dirty = false;
     this.undo.setScope(`p${pid}`);
     if (fresh) {
-      // Cache the reactive proxy Svelte now manages (`this.person`), NOT the raw
-      // `p`: edits flow through the proxy, and its nested objects are the very ones
-      // the undo commands and the shadow hold. Re-assigning it later is idempotent
-      // (Svelte returns an already-proxied object unchanged).
+      // Cache the reactive proxy (`this.person`), not the raw `p`: undo commands and
+      // the shadow hold the proxy's nested objects. Re-assigning a proxy is idempotent.
       this.#cache.set(pid, this.person);
       this.#shadow.reseat(this.person, this.style);
     }
@@ -842,7 +827,7 @@ class EditorState {
   /**
    * Replace the working document with a restored checkpoint (History drawer, demo
    * path). Like a demo reset it drops undo — the restored objects are fresh, so the
-   * old stack can't be replayed against them (ADR-003 / ADR-004).
+   * old stack can't be replayed against them.
    */
   restoreDocument(doc: Person) {
     this.person = doc;
@@ -871,10 +856,10 @@ class EditorState {
   }
 
   /**
-   * Cherry-restore (ADR-006 increment 3): copy one entry, by id, from a checkpoint's
-   * document onto the working one — overwrite it if it's still present, re-add it to
-   * its section if it was deleted. A structural change, so it drops undo (the old
-   * stack can't be replayed against the fresh objects — ADR-003 drop-where-unsound).
+   * Cherry-restore: copy one entry, by id, from a checkpoint's document onto the
+   * working one — overwrite it if it's still present, re-add it to its section if it
+   * was deleted. A structural change, so it drops undo (the old stack can't be
+   * replayed against the fresh objects).
    * Demo path; a connected cherry-restore would persist through the entry writes.
    */
   applyEntryFrom(source: Person, entryId: number): boolean {
@@ -910,7 +895,7 @@ class EditorState {
 
   /**
    * Overlay the owner's identity (name + public contacts, resolved from siteConfig
-   * on the server and handed down as Editor's `identity` prop) onto the demo person.
+   * on the server and handed down as the editor's `identity` prop) onto the demo person.
    * Stored so resetDemo and the tour keep it across re-clones. A no-op once connected —
    * the real CV brings its own identity. Runs at mount, so the first paint already
    * shows the owner, not blank contact fields.
@@ -932,7 +917,7 @@ class EditorState {
     this.#demoResume = null; // an explicit reset is the visitor's fresh start
     this.applyPristineDemo();
     this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
-    // The reset itself is undoable, so "Reset demo" is never a one-way door (M26).
+    // The reset itself is undoable, so "Reset demo" is never a one-way door.
     if (before) {
       this.undo.record({
         label: 'Reset demo',
@@ -948,7 +933,7 @@ class EditorState {
 
   /**
    * Reset from the UI (File ▸ Reset demo, the tour's closing panel): asks first when
-   * the visitor has edits, since those edits are the only copy (audit M26).
+   * the visitor has edits, since those edits are the only copy.
    */
   requestResetDemo() {
     if (this.connected) return;
@@ -992,14 +977,14 @@ class EditorState {
 
   /**
    * Stage the guided tour. Demo → hold the visitor's edits (if any) and drive the
-   * pristine sample (determinism beats continuity). A signed-in owner → snapshot their live document, view and save
-   * status so the tour can drive the real CV and restore it afterwards; nothing the
-   * tour does will persist or outlive it (see unstageTour / addEphemeralBullet).
+   * pristine sample (determinism beats continuity). A signed-in owner → snapshot
+   * their live document, view and save status so the tour can drive the real CV and
+   * restore it afterwards; nothing the tour does will persist or outlive it.
    */
   stageTour() {
     if (!this.connected) {
       // The tour needs the pristine sample to drive, but a visitor's own edits are
-      // held and put back when it ends, not thrown away (audit M26).
+      // held and put back when it ends, not thrown away.
       const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
       this.applyPristineDemo();
       this.rebase('demo');
@@ -1078,13 +1063,12 @@ class EditorState {
     if (this.connecting) return;
     this.connecting = true;
     this.connectError = null;
-    // Who is signed in (self-hosted session) — drives the account menu. Independent
-    // of whether they have any résumés yet, so a brand-new account still shows as
-    // signed in over its empty state.
+    // Who is signed in drives the account menu, even for a brand-new account whose
+    // empty state has no résumés yet.
     const who = await api.me();
     this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
-    // Not signed in ⇒ stay in the local demo. Since the Access flip the cv backend
-    // answers anonymous requests with the SHARED public person, so connecting a
+    // Not signed in ⇒ stay in the local demo. The cv backend answers anonymous
+    // requests with the SHARED public person, so connecting a
     // logged-out visitor would both look like a saving session and let their edits
     // land on everyone's demo. The demo is local until there's a real session;
     // signing in re-runs connect() and loads your data.
@@ -1180,14 +1164,14 @@ class EditorState {
   }
 
   /**
-   * Sign in with Google (self-hosted OIDC, multi-tenancy phase 2). A full-page
+   * Sign in with Google (self-hosted OIDC). A full-page
    * redirect to the gateway's /auth/login, which runs the Google flow and returns
    * here with a session cookie; `redirect` carries the browser back to this editor.
    */
   signIn() {
     if (typeof window === 'undefined') return;
     // Sign-in is a same-tab redirect: keep the visitor's demo edits so they can
-    // bring them into their account afterwards (audit C1). If this browser won't
+    // bring them into their account afterwards. If this browser won't
     // let us keep them, say so before they're lost.
     if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
       const go = window.confirm(

@@ -34,7 +34,7 @@ test.describe('Responsive layout', () => {
   });
 });
 
-// Audit M31: at 320 CSS px (a 1280px screen at 400% zoom) nothing scrolls sideways
+// At 320 CSS px (a 1280px screen at 400% zoom) nothing scrolls sideways
 // (WCAG 1.4.10 Reflow).
 test.describe('Reflow at 320px', () => {
   for (const path of [

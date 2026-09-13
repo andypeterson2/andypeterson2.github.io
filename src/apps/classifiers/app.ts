@@ -7,8 +7,7 @@
  * persistence, and canvas drawing.
  *
  * Server responses are typed at the boundary with the Raw* interfaces below,
- * hand-derived from the classifier backend's route handlers (the same
- * convention as the editor's wire.ts).
+ * hand-derived from the classifier backend's route handlers.
  */
 
 import { UIKit } from '../ui-kit/ui-kit';
@@ -29,9 +28,9 @@ const ICONS = UIKit.ICONS;
 import { ServiceConfig } from '../shared/service-config';
 
 // ── Backend config ───────────────────────────────────────────────────────────
-// window.API_BASE / window.UI_CONFIG are seeded by config.ts (imported first);
-// API_BASE is refreshed whenever the user connects a backend, so the per-dataset
-// URL prefix is computed live via base() rather than frozen at module-load time.
+// window.API_BASE / window.UI_CONFIG are seeded before this module runs. API_BASE
+// changes whenever the user connects a backend, so the per-dataset URL prefix is
+// computed live via base() rather than frozen at module-load time.
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'classifiers' || !detail.url) return;
@@ -201,9 +200,8 @@ function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
   return el;
 }
 
-// The portal owns theming globally, so this embed has no #theme-toggle. Guard
-// the init: passing null aborted the entire script here (a silent failure that
-// left the classifier non-interactive since the portal integration).
+// The portal owns theming globally, so this embed has no #theme-toggle; passing
+// null to initThemeToggle would abort the whole script.
 const themeToggleEl = document.getElementById('theme-toggle');
 if (themeToggleEl) UIKit.initThemeToggle(themeToggleEl);
 
@@ -275,7 +273,7 @@ applyInputVisibility();
 
 // ── Model info panel ─────────────────────────────────────────────────────────
 
-// Element/attribute allowlist for rendered MODELS.md sections. Anything not
+// Element/attribute allowlist for the backend's model-info HTML. Anything not
 // listed is unwrapped (text kept) or, for script-bearing containers, removed.
 const INFO_DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META']);
 const INFO_ALLOWED_TAGS = new Set([
@@ -339,10 +337,8 @@ async function fetchModelInfo(modelType: string): Promise<void> {
     const data = (await res.json()) as { html?: string };
     const doc = new DOMParser().parseFromString(data.html ?? '', 'text/html');
     sanitizeInfoTree(doc.body);
-    // Adopt the sanitized NODES directly. Serializing back to a string and
-    // re-parsing (the old innerHTML round-trip) is the classic mXSS lane:
-    // markup that is inert in one parse can mutate into live script in the
-    // second. replaceChildren never re-parses.
+    // Adopt the sanitized nodes directly: an innerHTML re-parse is the classic mXSS lane
+    // (inert markup can mutate into live script). replaceChildren never re-parses.
     panel.replaceChildren(...doc.body.childNodes);
     details.classList.remove('hidden');
   } catch {
@@ -391,7 +387,7 @@ function renderDatasetMenu(): void {
   const current = window.UI_CONFIG?.name;
   datasetList.innerHTML = '';
   // The trigger says which dataset is loaded ("Dataset: Iris ▾"), and so does the
-  // list, to a screen reader as well as by the highlight (M21).
+  // list, to a screen reader as well as by the highlight.
   const loaded = datasets.find((d) => d.name === current);
   if (loaded) datasetCurrent.textContent = loaded.display_name.split(' ')[0] ?? loaded.name;
   for (const ds of datasets) {
@@ -601,7 +597,7 @@ function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCe
   const td = document.createElement('td');
   td.className = 'pred-model-name';
   td.textContent = name;
-  // Say up front that a binary model only knows two classes (audit M20).
+  // Say up front that a binary model only knows two classes.
   if (m?._subset) {
     const scope = document.createElement('span');
     scope.className = 'pred-scope';
@@ -740,7 +736,7 @@ function buildMetricsHead(names: string[]): void {
   const corner = document.createElement('th');
   corner.className = 'corner-cell';
   corner.scope = 'col';
-  // Named for screen readers (an empty header announced nothing); unseen (M21).
+  // An empty header announces nothing: name it for screen readers, visually hidden.
   const cornerLabel = document.createElement('span');
   cornerLabel.className = 'sr-only';
   cornerLabel.textContent = 'Metric';
@@ -874,7 +870,7 @@ async function runEvaluate(): Promise<void> {
 
 // ── Train ─────────────────────────────────────────────────────────────────────
 
-/** Dash patterns for the training-curve series: told apart by line, not colour (M29). */
+/** Dash patterns for the training-curve series: told apart by line, not colour. */
 const SERIES_DASHES: number[][] = [[], [7, 4], [2, 3], [10, 3, 2, 3], [14, 5], [1, 4]];
 let seriesIdx = 0;
 
@@ -1071,13 +1067,13 @@ async function runPredictLocal(): Promise<void> {
   const locals = modelEntries().filter(([, m]) => m._local);
   const image = window.UI_CONFIG?.input_type === 'image';
   // Nothing drawn → nothing to predict. A linear model will happily "answer" an empty
-  // grid (it said "5 · 37%"), which is a number with no basis (audit M20).
+  // grid with a confident digit that has no basis.
   if (image && isBlank(Array.from(grid))) {
     state.predictions = {};
     buildPredictionTable();
     return;
   }
-  // The canvas goes through MNIST's own crop-scale-centre step first (audit M19).
+  // The canvas goes through MNIST's own crop-scale-centre step first.
   const digit = image ? preprocessDigit(Array.from(grid)) : null;
   for (const [name, m] of locals) {
     let model: ClassifierModel;
@@ -1097,9 +1093,8 @@ async function runPredictLocal(): Promise<void> {
     }
     state.predictions[name] = ClassifierInfer.predict(model, raw);
   }
-  // A binary model (the QSVM) answers every input with one of its two classes. When
-  // the full model's answer is outside that pair, mark the binary answer as out of
-  // scope rather than presenting it as a reading of the input (audit M20).
+  // A binary model (the QSVM) answers every input with one of its two classes; when the
+  // full model's answer is outside that pair, mark the binary answer out of scope.
   const reference = locals.find(([, m]) => !m._classes)?.[0];
   const refPred = reference ? state.predictions[reference]?.prediction : undefined;
   for (const [name, m] of locals) {
@@ -1396,10 +1391,9 @@ document.addEventListener('click', (e) => {
   })();
 });
 
-// ── Tier-aware controls (audit H9) ────────────────────────────────────────────
-// Training, ensembles and saved models run on the live backend. Offline they used
-// to stay enabled — a solid "Train" with an empty Model field that could only log
-// "Not connected". Now they're disabled, with the reason shown once in the Train card.
+// ── Tier-aware controls ──────────────────────────────────────────────────────
+// Training, ensembles and saved models run on the live backend, so offline they're
+// disabled, with the reason shown once in the Train card.
 const BACKEND_CONTROLS = [
   'train-btn',
   'ensemble-btn',

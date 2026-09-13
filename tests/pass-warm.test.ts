@@ -6,7 +6,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 async function loadWarm() {
-  // pass.ts runs side effects at import (URL scrub, fetch wrap, activation
+  // The module runs side effects at import (URL scrub, fetch wrap, activation
   // timer); with no ?pass= and no stored token they are all no-ops here.
   const mod = await import('../src/apps/shared/pass');
   return mod.warmUntilHealthy;
@@ -52,7 +52,7 @@ describe('warmUntilHealthy', () => {
   });
 
   // The caller says "pass expired or invalid" and forgets the pass, instead of the
-  // "didn't wake" + Retry a sleeping backend gets (Fable A1-05).
+  // "didn't wake" + Retry a sleeping backend gets.
   test('stops immediately on an auth verdict — waking cannot fix a bad pass', async () => {
     const warm = await loadWarm();
     const fetchMock = vi

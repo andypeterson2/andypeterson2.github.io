@@ -6,9 +6,8 @@ export interface ExperienceEntry {
   bullets: string[];
 }
 
-// Work + leadership history, newest first (formerly the standalone About page).
-// Presentation concerns (where it sits on the unified timeline) live in the page
-// that composes it, not here — see src/lib/timeline.ts.
+// Work + leadership history, newest first. Presentation concerns (where it sits on
+// the unified timeline) live in the page that composes it, not here.
 export const experience: ExperienceEntry[] = [
   {
     date: '2022 – 2024',

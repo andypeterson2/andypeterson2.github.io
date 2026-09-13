@@ -1,9 +1,7 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 
-// Demo paths need no api mock (connected === false skips the network); the save
-// machine is driven through the public `persist(op)`, and export reaches only the
-// pure `tex()`. The connected-path suite below spies on the real `api` singleton
-// (restored after each test) — so nothing here makes a real network call.
+// No real network calls: demo paths skip the network (connected === false), and the
+// connected-path suite spies on the real `api` singleton, restored after each test.
 import { editor } from '../src/editor/lib/store.svelte';
 import { api } from '../src/editor/lib/api';
 import type { Person, Section } from '../src/editor/lib/types';
@@ -223,8 +221,8 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
     expect(editor.dirty).toBe(false);
     expect(editor.saveState).toBe('demo');
     expect(editor.announce).toMatch(/back to its original/i);
-    // The old edit history is gone (fresh objects), but the reset itself is one
-    // undo step, so a mis-click never loses the visitor's work (audit M26).
+    // The reset starts a fresh edit history but is itself one undo step, so a
+    // mis-click never loses the visitor's work.
     expect(editor.undo.canUndo).toBe(true);
     expect(editor.undo.undoLabel).toBe('Reset demo');
     await editor.undo.undo();

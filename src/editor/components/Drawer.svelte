@@ -1,7 +1,6 @@
 <script lang="ts">
   // System-6 slide-in dialog: a side panel on desktop, a bottom sheet on mobile.
-  // Modal while it's open (H13): the page behind goes inert, focus starts on the
-  // close box, and closing puts focus back on whatever opened it.
+  // Modal while open: the page behind goes inert and focus returns to the opener.
   import type { Snippet } from 'svelte';
   import { editor } from '../lib/store.svelte';
   import { tour } from '../lib/tour.svelte';
@@ -73,7 +72,7 @@
     animation: slide var(--dur) ease;
   }
 
-  /* Mirrors the window titlebar in Editor.svelte so a drawer reads as the same kind of
+  /* Mirrors the editor's window titlebar so a drawer reads as the same kind of
      System-6 window as the toolbar / document / invite: the 28px Chicago title, 11px
      close/fill, and min-height so the bar grows with it. */
   .titlebar {
@@ -147,7 +146,7 @@
   /* 768px matches the editor shell: inside the full-bleed touch layout a right-edge
      side panel looks wrong, so the drawer becomes a bottom sheet across that range. */
   @media (width <= 768px) {
-    /* The sheet's close box is its only visible close: at least 24px on phones (M28). */
+    /* The sheet's close box is its only visible close: at least 24px on phones. */
     .close {
       width: 24px;
       height: 24px;

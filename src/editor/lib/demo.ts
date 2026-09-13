@@ -1,27 +1,17 @@
 import type { Person, Personal, LetterSection } from './types';
 
-// The resume rendered when not connected to a backend (see design doc §4). This is
-// the owner's own professional history — the same public narrative the About page
-// carries — so a visitor sees a real CV, not a fictional placeholder.
-//
-// IDENTITY IS NOT HARDCODED HERE. The name, email, and handles are left blank in
-// the seed and overlaid at runtime from `siteConfig` (env-driven), which the Astro
-// page passes to <Editor> as a prop (see createDemoPerson + Editor.svelte). That
-// keeps this committed file free of protected identity strings — no name, no
-// private email, no phone, no home address. Only the public business contacts
-// (email / GitHub / LinkedIn) ever render, and only from env.
-//
-// This is a SEED, not a shared instance: the store wraps whatever it's handed in
-// `$state`, which proxies and therefore *mutates* it. Every caller takes its own
-// deep clone via createDemoPerson(), so "Reset demo" has something pristine to
-// restore — and so demo edits can never poison the module constant.
+// The resume rendered when not connected to a backend: the owner's public
+// professional history, so a visitor sees a real CV. Name, email, and handles are
+// blank here and overlaid at runtime from env-driven `siteConfig`, keeping identity
+// strings out of the committed file. This is a SEED: the store's `$state` proxy
+// mutates whatever it is handed, so callers take a deep clone via createDemoPerson()
+// and "Reset demo" always has a pristine copy to restore.
 const DEMO_PERSON_SEED: Person = {
   id: 0,
   name: 'Sample',
   personal: {
-    // firstName / lastName / email / github / linkedin are filled from siteConfig
-    // at runtime (see createDemoPerson). No address — nothing that dox beyond the
-    // usual business contacts.
+    // Name, email, and handles are filled from siteConfig at runtime; no address
+    // or anything beyond the usual business contacts.
     position: 'Software Developer',
   },
   sections: [
@@ -47,9 +37,8 @@ const DEMO_PERSON_SEED: Person = {
       entries: [
         {
           id: 2,
-          // Entry-level tag is the structural lens tag only; the finer tags
-          // (research / security / video) live on the bullets, so a variant rule can
-          // veto a single bullet inside this still-included entry.
+          // Only the structural lens tag lives here; finer tags sit on the bullets so
+          // a variant rule can veto one bullet inside this still-included entry.
           tags: ['quantum'],
           fields: {
             position: 'Research Intern',

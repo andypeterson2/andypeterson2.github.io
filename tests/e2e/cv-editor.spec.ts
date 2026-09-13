@@ -9,8 +9,8 @@ import { DWELL_MS } from '../../src/editor/lib/tour';
  * that fetch (abort / 403) to stay deterministic and never touch the real gateway.
  */
 
-// A real, minimal 2-page US-Letter PDF (valid xref) so pdf.js actually renders it
-// to canvases in the preview — a bare "%PDF" stub would fail to parse.
+// A real, minimal 2-page US-Letter PDF (valid xref) so the preview actually renders
+// it to canvases; a bare "%PDF" stub would fail to parse.
 const MINIMAL_PDF =
   '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n5 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page One) Tj ET\nendstream\nendobj\n6 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page Two) Tj ET\nendstream\nendobj\n7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000121 00000 n \n0000000247 00000 n \n0000000373 00000 n \n0000000462 00000 n \n0000000551 00000 n \ntrailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n621\n%%EOF\n';
 
@@ -72,9 +72,8 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Island hydrated: the System-6 menubar is present.
     await expect(page.locator('.menubar')).toContainText('File');
-    // The demo now renders the owner's real CV. The identity (name + contacts) comes
-    // from siteConfig at build — blank here without env — so assert on the public,
-    // hardcoded professional content instead.
+    // The demo renders the owner's real CV, but its name and contacts come from build-time
+    // env (blank here), so assert on the hardcoded professional content.
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     // Portal chrome is stripped in bare mode.
     await expect(page.locator('.site-menubar')).toBeHidden();
@@ -172,9 +171,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
     await expect(invite).toContainText('Nothing is saved');
-    // The status bar itself is the sign-in invitation once the gateway is reachable
-    // (a 403 means "sign in", not "down"); tapping it opens the Access popup. The
-    // invite no longer carries its own redundant sign-in link.
+    // With the gateway reachable, a 403 means "sign in", not "down": the status bar itself
+    // is the sign-in invitation, and tapping it opens the Access popup.
     await expect(page.locator('.conn')).toContainText('Sign in with Google');
   });
 
@@ -200,9 +198,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await inline.locator('button', { hasText: 'Done' }).click();
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
 
-    // Reset lives in File, where a System-6 user looks for Revert. It restores a
-    // pristine clone (the store proxies/mutates whatever object it's handed).
-    // With edits on the page it asks first (audit M26), and the reset is undoable.
+    // Reset lives in File, where a System-6 user looks for Revert. With edits on the
+    // page it asks first, and the reset is undoable.
     let asked = '';
     page.once('dialog', (d) => {
       asked = d.message();
@@ -562,9 +559,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Step 1 drives the REAL editor — the same inline editor a click opens.
     await expect(page.locator('.doc .edit')).toBeVisible();
 
-    // Step 2 types a genuinely new bullet into the document, character by character.
-    // Auto-advance waits out step 1's dwell, so the timeout tracks DWELL_MS (not a
-    // magic 5s) — the tour deliberately dwells long enough to read each caption.
+    // Step 2 types a new bullet into the document. Auto-advance waits out step 1's dwell
+    // (long enough to read each caption), so the timeout tracks DWELL_MS.
     await expect(tour.locator('.count')).toHaveText('2 of 7', { timeout: DWELL_MS + 4000 });
     const typed = page.locator('.doc .edit .bl-content').last();
     await expect(typed).toHaveValue(/^Added/);
@@ -616,9 +612,8 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('ending the tour puts away the drawer it opened', async ({ page }) => {
-    // Step 5 opens the variant drawer. A modal scrim the visitor never asked for
-    // must not outlive the tour that raised it. (Reduced motion → deterministic:
-    // step through with Next rather than waiting on dwell timers.)
+    // Step 5 opens the variant drawer, whose modal scrim must not outlive the tour. Reduced
+    // motion makes it deterministic: step through with Next instead of dwell timers.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page, EDITOR_APP, { keepInvite: true });
@@ -648,10 +643,8 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the tour runs for a signed-in owner too — sandboxed, then restores the CV', async ({
     page,
   }) => {
-    // The tour drives the owner's REAL CV through the same public calls, but it is
-    // sandboxed: its one mutation is an ephemeral bullet, and the document is
-    // snapshotted on entry and put back untouched on exit. Reduced motion → a
-    // deterministic manual step-through; the catch-all abort proves no write escapes.
+    // The tour drives the REAL CV but is sandboxed: its one mutation is an ephemeral bullet,
+    // and the document is put back untouched on exit. The catch-all abort proves no write escapes.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/cv/api/**', (r) => r.abort()); // specific persons routes (below) win
     await mockAdaWithVariant(page);
@@ -1182,7 +1175,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 
-    // pdf.js paints one <canvas> per page into the pane (the 2-page fixture → 2).
+    // The PDF renderer paints one <canvas> per page into the pane (the 2-page fixture → 2).
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
     // The pane scrolls internally (pages taller than the viewport-capped column) rather
     // than growing the shell — guards the "doesn't reach the bottom" regression.
@@ -1760,7 +1753,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 });
 
-// Audit C1: "Sign in with Google to keep your edits" must keep them. The login
+// "Sign in with Google to keep your edits" must keep them. The login
 // round trip is mocked (the gateway 302s straight back); the new account is empty,
 // so the editor offers the stashed demo edits and imports them as a profile.
 test.describe('Demo edits survive sign-in', () => {
@@ -1824,8 +1817,8 @@ test.describe('Demo edits survive sign-in', () => {
   });
 });
 
-// Audit M10: signed in but the backend didn't answer is its own state (not "Sign
-// in" again), and a phone still says the demo isn't saved.
+// Signed in but the backend didn't answer is its own state (not "Sign in" again),
+// and a phone still says the demo isn't saved.
 test.describe('Editor state copy', () => {
   test('signed in with an unreachable backend offers a retry, not another sign-in', async ({
     page,
@@ -1846,8 +1839,8 @@ test.describe('Editor state copy', () => {
   });
 });
 
-// Audit M28: on a touch phone the section tools are real targets, the editor's menu
-// isn't a second ☰, and a sheet's close box is big enough to hit.
+// On a touch phone the section tools are real targets, the editor's menu isn't a
+// second ☰, and a sheet's close box is big enough to hit.
 test.describe('Editor on a touch phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 

@@ -1,8 +1,6 @@
-// The cv API's WIRE shapes — what the REST endpoints actually return, before
-// api.ts maps them into the editor's domain model (./types.ts). Hand-derived
-// from the cv backend's route handlers (cv/editor/routes/persons.js et al —
-// there is no OpenAPI); the drift check is the e2e suite driving the real
-// mapping over backend-mocked responses.
+// The cv API's WIRE shapes: what the REST endpoints return before mapping into
+// the editor's domain model. Hand-derived from the backend's route handlers (there
+// is no OpenAPI); the e2e suite drives the real mapping over mocked responses.
 
 // ---- raw shapes as returned by GET /persons/:pid ----
 export interface RawMainItem {

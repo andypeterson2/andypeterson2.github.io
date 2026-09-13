@@ -1,8 +1,7 @@
 /**
  * SiteContract — a tiny, dependency-free client for the shared backend API contract.
  *
- * Every backend (cv, nonogram, classifiers, qvc) implements the same conventions
- * (see docs/api-contract/CONTRACT.md):
+ * Every backend (cv, nonogram, classifiers, qvc) implements the same conventions:
  *   - GET /health            → { status, service, version, uptime_s, ... }
  *   - GET /api               → { service, version, endpoints[], streaming[] }  (discovery)
  *   - error envelope on 4xx/5xx → { error: { code, message, details? } }

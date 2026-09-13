@@ -1,14 +1,9 @@
-// Carry a visitor's demo edits across the Google sign-in redirect (audit C1).
-//
-// The demo is local-only, and sign-in is a same-tab redirect, so without this the
-// editor's one call to action ("Sign in … to save") threw the visitor's work away.
-// Before redirecting we stash the edited demo as the same import-compatible tree the
-// Export button produces; after sign-in the store offers to import it as a profile
-// of the visitor's own (POST /persons/:pid/import).
-//
-// sessionStorage, not localStorage: it survives the round trip in this tab and dies
-// with the tab, so a half-finished demo never haunts a later visit or another person
-// on a shared machine. Stale stashes (older than an hour) are ignored.
+// Carry a visitor's demo edits across the same-tab Google sign-in redirect. Before
+// redirecting, the edited demo is stashed as the Export button's import-compatible
+// tree; after sign-in the store offers to import it as the visitor's own profile.
+// sessionStorage dies with the tab, so a half-finished demo never reaches a later
+// visit or another person on a shared machine. Stashes older than an hour are ignored.
+
 import type { ExportDoc } from './export';
 
 const KEY = 'cv.demoDraft.v1';

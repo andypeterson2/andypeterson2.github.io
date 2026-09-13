@@ -11,11 +11,10 @@ import {
 } from '../src/editor/lib/tour-shape';
 
 /**
- * The guided tour (tour-steps.ts) drives the demo by SHAPE, not by id — it finds
- * an experience section, a lens variant, a cover-letter variant, and spotlights a
- * tag. If demo.ts is reshaped so one of those disappears, the tour still "runs" but
- * narrates over a document where nothing happens — and CI stays green. This pins
- * the contract so that silent failure fails loudly instead.
+ * The guided tour drives the demo by SHAPE, not by id: it finds an experience
+ * section, a lens variant, a cover-letter variant, and spotlights a tag. If the demo
+ * seed loses one of those, the tour still "runs" but narrates over a document where
+ * nothing happens, and CI stays green. This pins the contract so that failure is loud.
  */
 describe('the demo seed carries every shape the guided tour drives', () => {
   const person = createDemoPerson();

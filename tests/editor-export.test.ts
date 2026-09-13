@@ -1,5 +1,5 @@
 /**
- * Unit tests for the client-side JSON exporter (src/editor/lib/export.ts).
+ * Unit tests for the client-side JSON exporter.
  * It must produce the cv backend's import-compatible shape (id-less, positional,
  * LaTeX-escaped) so an offline/demo export re-imports losslessly.
  */

@@ -1,5 +1,5 @@
 /**
- * Demo edits survive sign-in (audit C1). The draft module stashes the demo tree in
+ * Demo edits survive sign-in. The draft module stashes the demo tree in
  * sessionStorage before the same-tab Google redirect; after sign-in the store offers
  * to import it as the visitor's own profile, with the sample's contact header
  * replaced by the signed-in identity.

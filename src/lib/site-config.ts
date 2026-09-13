@@ -1,7 +1,7 @@
 /**
  * Pure site-config resolver. Takes an env object (typically
  * import.meta.env) and produces the fully-resolved SiteConfig with
- * fallback values. Extracted from src/config/site.ts for unit testing.
+ * fallback values. Kept pure (no import.meta access) so it can be unit-tested.
  */
 
 export interface SiteConfig {

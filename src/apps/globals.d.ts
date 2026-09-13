@@ -1,8 +1,5 @@
-// The window-boundary contract for the ported app modules. During the classic-
-// script era this graph existed only as ESLint `globals` comments; the modules
-// now import each other directly, but they still PUBLISH these globals so the
-// contract with anything outside the bundle (and with the unit tests' browser
-// shims) stays visible and typed in one place.
+// The window-boundary contract: the modules import each other, but still PUBLISH these
+// globals, typed here for code outside the bundle and the unit tests' browser shims.
 import type { SitePassApi } from './shared/pass';
 import type { ServiceConfigApi } from './shared/service-config';
 import type { SiteContractApi } from './shared/contract-client';
