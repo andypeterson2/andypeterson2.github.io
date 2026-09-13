@@ -209,9 +209,9 @@ function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHand
     onOpenKeydown(e);
   }
 
-  // Set ARIA roles for accessibility
-  menuEl.setAttribute('role', 'listbox');
-  for (const item of menuItems()) item.setAttribute('role', 'option');
+  // No ARIA roles: this is a disclosure of plain buttons. listbox/option (and menu
+  // before it) promised a widget the markup isn't — the trigger's aria-expanded and
+  // aria-controls say all there is to say (M21).
 
   triggerEl.addEventListener('click', onTrigger);
   triggerEl.addEventListener('keydown', onKeydown);
