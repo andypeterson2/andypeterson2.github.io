@@ -1,3 +1,10 @@
+import { test_accuracy as mnistLinearAcc } from '../../public/classifiers/models/mnist.json';
+import { test_accuracy as qsvmIrisAcc } from '../../public/classifiers/models/qsvm-iris.json';
+import { test_accuracy as qsvmMnistAcc } from '../../public/classifiers/models/qsvm-mnist.json';
+
+/** Test accuracy as a chip value: 0.9206 → "92.1%", 0.97 → "97%". */
+const pct = (accuracy: number) => `${Number((accuracy * 100).toFixed(1))}%`;
+
 export interface Project {
   title: string;
   slug: string;
@@ -32,7 +39,6 @@ export const projects: Project[] = [
     metrics: [
       { value: '1 → many', label: 'variants are tag-rule lenses over one master document' },
       { value: 'no server', label: 'the demo is the real editor; sign in only to save or compile' },
-      { value: '390+', label: 'tests: deterministic e2e against a mocked backend, plus unit' },
     ],
     tech: ['Svelte 5', 'Express', 'SQLite', 'Cloudflare Access', 'XeLaTeX'],
   },
@@ -50,7 +56,6 @@ export const projects: Project[] = [
     metrics: [
       { value: 'BB84', label: 'simulated QKD: sift → QBER → Cascade → Toeplitz' },
       { value: '> 11%', label: 'QBER trips eavesdropper detection → re-key' },
-      { value: '94', label: 'tests (server + client)' },
     ],
     tech: ['WebRTC', 'BB84 QKD', 'AES-128-GCM', 'Python'],
   },
@@ -72,7 +77,6 @@ export const projects: Project[] = [
           'chance on real IBM hardware: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless)',
       },
       { value: 'in-browser', label: 'classical solver runs client-side, zero backend' },
-      { value: '1,800+', label: 'backend tests' },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
   },
@@ -94,11 +98,11 @@ export const projects: Project[] = [
           'closer to ideal than the 2019 paper: its QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130',
       },
       {
-        value: '97% / 91.5%',
+        value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,
         label:
           'Iris setosa vs versicolor (the paper’s pair) / MNIST 6 vs 9, with the paper’s QSVM rule in your browser',
       },
-      { value: '92.1%', label: 'MNIST, a linear baseline predicted in your browser' },
+      { value: pct(mnistLinearAcc), label: 'MNIST, a linear baseline predicted in your browser' },
     ],
     tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask', 'Jupyter'],
   },
