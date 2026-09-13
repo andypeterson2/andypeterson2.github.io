@@ -18,7 +18,7 @@
   const live = $derived(editor.connected);
 
   function resetAndClose() {
-    editor.resetDemo();
+    editor.requestResetDemo();
     tour.end();
   }
 

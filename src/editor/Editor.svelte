@@ -118,7 +118,7 @@
           label: '↺ Reset demo',
           // A no-op when connected: there is real data to protect (store.resetDemo).
           disabled: editor.connected,
-          onSelect: () => editor.resetDemo(),
+          onSelect: () => editor.requestResetDemo(),
         },
       ],
     },

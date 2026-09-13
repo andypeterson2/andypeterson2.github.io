@@ -218,11 +218,50 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
     const sec = experience();
     await editor.addEntry(sec);
     editor.dirty = true;
+    const count = sec.entries.length;
     editor.resetDemo();
     expect(editor.dirty).toBe(false);
     expect(editor.saveState).toBe('demo');
-    expect(editor.undo.canUndo).toBe(false); // fresh objects → cleared history
     expect(editor.announce).toMatch(/back to its original/i);
+    // The old edit history is gone (fresh objects), but the reset itself is one
+    // undo step, so a mis-click never loses the visitor's work (audit M26).
+    expect(editor.undo.canUndo).toBe(true);
+    expect(editor.undo.undoLabel).toBe('Reset demo');
+    await editor.undo.undo();
+    expect(experience().entries.length).toBe(count);
+    expect(editor.dirty).toBe(true);
+    await editor.undo.redo();
+    expect(experience().entries.length).toBe(count - 1);
+  });
+
+  test('resetting an untouched demo leaves nothing to undo', () => {
+    editor.resetDemo();
+    expect(editor.undo.canUndo).toBe(false);
+  });
+
+  test('requestResetDemo asks before discarding edits, and respects "no"', async () => {
+    await editor.addEntry(experience());
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('window', { confirm });
+    const count = experience().entries.length;
+    editor.requestResetDemo();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(experience().entries.length).toBe(count); // kept
+    confirm.mockReturnValue(true);
+    editor.requestResetDemo();
+    expect(editor.dirty).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
+  test("the tour gives a demo visitor's edits back when it ends", async () => {
+    await editor.addEntry(experience());
+    const count = experience().entries.length;
+    editor.stageTour();
+    expect(editor.dirty).toBe(false); // the tour drives the pristine sample
+    expect(experience().entries.length).toBe(count - 1);
+    editor.unstageTour();
+    expect(experience().entries.length).toBe(count);
+    expect(editor.dirty).toBe(true);
   });
 
   test('resetDemo is a no-op when connected (real data to protect)', () => {
