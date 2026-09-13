@@ -268,9 +268,25 @@ pre code {
   cursor: pointer;
 }
 
-.action-btn:hover {
+.action-btn:hover,
+.action-btn:focus-visible {
   background: var(--ink);
   color: var(--paper);
+}
+
+/* ── Focus — one treatment everywhere (P10) ──
+   A 2px ink ring, which the dark-mode page inversion turns white on black, so no
+   control falls back to the browser's blue. Text fields keep system.css's own
+   inversion (inputs aren't in this list, and its input:focus rule stays).
+   Element names, not a bare :focus-visible or :where() — PurgeCSS drops both
+   (scripts/purge-css.mjs fails the build if this rule goes missing). */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @media (width <= 600px) {

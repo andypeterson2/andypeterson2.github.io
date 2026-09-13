@@ -6,7 +6,15 @@ import Button from '../Button.astro';
      card no longer pops in when the script runs and shoves everything down (P12). -->
 <section class="card" id="canvas-col">
   <h2 class="card-title">Draw</h2>
-  <canvas id="draw-canvas" width="280" height="280"></canvas>
+  <!-- Drawing is pointer-only by nature (a path, exempt from 2.1.1), so the label
+       points keyboard users to the datasets that take typed values (M21). -->
+  <canvas
+    id="draw-canvas"
+    width="280"
+    height="280"
+    role="img"
+    aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris or BB84 under Dataset and type the values."
+  ></canvas>
   <div class="row">
     <Button variant="secondary" id="clear-btn" type="button">Clear</Button>
     <Button variant="solid" id="predict-btn" type="button">Predict</Button>
@@ -45,7 +53,9 @@ import Button from '../Button.astro';
     </div>
     <span id="eval-status"></span>
   </div>
-  <div class="metrics-wrap">
+  <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
+       make scrollers focusable on its own) (M21). -->
+  <div class="metrics-wrap" tabindex="0" role="region" aria-label="Evaluation table">
     <table class="app-table metrics-table">
       <thead id="metrics-head"></thead>
       <tbody id="metrics-body">
@@ -81,6 +91,18 @@ import Button from '../Button.astro';
     overflow: auto;
     min-height: 300px;
     max-height: 300px;
+  }
+
+  :global(.sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   :global(.corner-cell) {

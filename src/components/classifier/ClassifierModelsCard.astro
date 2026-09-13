@@ -16,14 +16,31 @@ import Button from '../Button.astro';
     <select id="saved-select" aria-label="Saved model file"
       ><option value="">-- no saved models --</option></select
     >
-    <Button variant="secondary" size="sm" id="refresh-saved-btn" aria-label="Refresh"
-      >&#8635;</Button
+    <Button
+      variant="secondary"
+      id="refresh-saved-btn"
+      class="icon-btn"
+      aria-label="Refresh saved models">&#8635;</Button
     >
   </div>
   <Button variant="secondary" block id="import-btn" type="button" disabled>Import</Button>
 </section>
 
 <style>
+  /* An icon button with a real target: 32px, 44px on touch screens (M11). */
+  :global(#classifier-app .icon-btn) {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: var(--text-2xs);
+  }
+
+  @media (pointer: coarse) {
+    :global(#classifier-app .icon-btn) {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
   /* Room for the two in-browser models before they load (P12). */
   #session-models {
     min-height: 4.5em;

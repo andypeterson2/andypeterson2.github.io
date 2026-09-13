@@ -59,8 +59,9 @@
 </div>
 
 <div class="group">
-  <div class="lbl">Page size</div>
+  <label class="lbl" for="style-page-size">Page size</label>
   <select
+    id="style-page-size"
     class="in"
     bind:value={editor.style.pageSize}
     onchange={() => editor.saveStyle('pageSize')}
@@ -71,8 +72,9 @@
 </div>
 
 <div class="group">
-  <div class="lbl">Base font size</div>
+  <label class="lbl" for="style-font-size">Base font size</label>
   <select
+    id="style-font-size"
     class="in"
     bind:value={editor.style.fontSize}
     onchange={() => editor.saveStyle('fontSize')}
@@ -97,6 +99,7 @@
   }
 
   .lbl {
+    display: block;
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;

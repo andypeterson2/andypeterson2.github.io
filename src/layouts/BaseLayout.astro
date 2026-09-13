@@ -136,22 +136,23 @@ const windowTitle = title || siteConfig.title;
   <body class={bare ? 'is-bare' : undefined}>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
-    <!-- Desktop menubar (>768px) -->
+    <!-- Desktop menubar (>768px). A plain list of links: it looks like a System-6
+         menubar, but it has no menus, so it carries no menu ARIA (M9). -->
     <nav class="site-menubar" aria-label="Main navigation">
-      <ul role="menubar">
-        <li role="none" class="heart-item">
+      <ul>
+        <li class="heart-item">
           <button
             type="button"
             class="theme-toggle heart-toggle"
-            role="menuitemcheckbox"
-            aria-label="Switch to dark mode"
-            aria-checked="false"
+            aria-label="Dark mode"
+            aria-pressed="false"
+            title="Dark mode"
           >
             <img src="/icons/heart.svg" alt="" class="heart-icon" width="36" height="36" />
           </button>
         </li>
-        <li role="menuitem"><a href="/">Home</a></li>
-        <li role="menuitem"><a href="/#projects">Projects</a></li>
+        <li><a href="/">Home</a></li>
+        <li><a href="/#projects">Projects</a></li>
       </ul>
     </nav>
 
@@ -171,13 +172,10 @@ const windowTitle = title || siteConfig.title;
       </button>
       <ul id="mobile-nav-menu" class="mobile-nav-menu" hidden>
         <li>
-          <button
-            type="button"
-            class="theme-toggle mnav-toggle"
-            aria-label="Switch to dark mode"
-            aria-pressed="false"
-          >
-            Theme
+          <!-- Named by its visible text, which says what it is; the box shows whether
+               it's on (M16). -->
+          <button type="button" class="theme-toggle mnav-toggle" aria-pressed="false">
+            <span class="mnav-box" aria-hidden="true"></span>Dark mode
           </button>
         </li>
         <li><a href="/">Home</a></li>
@@ -187,24 +185,26 @@ const windowTitle = title || siteConfig.title;
 
     <div class="site-canvas">
       <div class="window site-window">
-        <div class="title-bar">
+        <header class="title-bar">
           <h1 class="title">{windowTitle}</h1>
-        </div>
-        <div class="window-pane site-pane" id="main-content">
+        </header>
+        <!-- The page's one <main> landmark (M13). Back to top lives inside it so it
+             isn't stray content outside every landmark; it's position: fixed, so
+             where it sits in the DOM doesn't move it. -->
+        <main class="window-pane site-pane" id="main-content">
           <slot />
-        </div>
+          <Button
+            variant="secondary"
+            id="back-to-top"
+            class="back-to-top"
+            aria-label="Back to top"
+            type="button"
+          >
+            &uarr; Top
+          </Button>
+        </main>
       </div>
     </div>
-
-    <Button
-      variant="secondary"
-      id="back-to-top"
-      class="back-to-top"
-      aria-label="Back to top"
-      type="button"
-    >
-      &uarr; Top
-    </Button>
 
     <script>
       // Mobile floating nav — a hamburger that toggles a small menu.
@@ -242,16 +242,9 @@ const windowTitle = title || siteConfig.title;
           } catch {
             /* private mode */
           }
-          const label = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-          for (const b of themeBtns) {
-            b.setAttribute('aria-label', label);
-            // The menubar toggle is a menuitemcheckbox (takes aria-checked); the
-            // mobile toggle is a plain button (takes aria-pressed). Using the
-            // wrong attribute for the role is an aria-allowed-attr violation.
-            const stateAttr =
-              b.getAttribute('role') === 'menuitemcheckbox' ? 'aria-checked' : 'aria-pressed';
-            b.setAttribute(stateAttr, String(t === 'dark'));
-          }
+          // Both are toggle buttons named "Dark mode": the name stays put and the
+          // pressed state says whether it's on (M16).
+          for (const b of themeBtns) b.setAttribute('aria-pressed', String(t === 'dark'));
         };
         applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
         for (const b of themeBtns) {
@@ -392,6 +385,10 @@ const windowTitle = title || siteConfig.title;
     /* No vertical padding: the items themselves fill the full bar height so a
        hover highlight runs flush top-to-bottom. */
     padding: 0;
+
+    /* The system face, said here: it used to arrive via system.css's ul[role] rule,
+       and the list lost its (menu) role in M9. */
+    font-family: var(--font-ui);
     font-size: var(--text-xs);
     border-bottom: 3px solid var(--ink);
     background: var(--paper);
@@ -484,9 +481,27 @@ const windowTitle = title || siteConfig.title;
     color: var(--paper);
   }
 
+  /* The same row as the menu's links — padding, size, face — so it's a 44px target
+     lined up with them, not a 24px sliver flush left (M16). */
   .mnav-toggle {
     width: 100%;
+    min-height: 44px;
     justify-content: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: var(--text-xs);
+  }
+
+  /* A System-6 checkbox: hollow when off, filled when on. */
+  .mnav-box {
+    width: 0.7em;
+    height: 0.7em;
+    border: 1.5px solid currentcolor;
+    flex-shrink: 0;
+  }
+
+  .mnav-toggle[aria-pressed='true'] .mnav-box {
+    background: currentcolor;
   }
 
   /* ── Canvas area behind the window ── */
@@ -589,18 +604,25 @@ const windowTitle = title || siteConfig.title;
     color: var(--paper);
   }
 
-  /* ── Back to top ── */
+  /* ── Back to top ──
+     Hidden means out of the tab order too (visibility), not just transparent — an
+     invisible tab stop sent focus nowhere at the end of every page (M15). */
   .back-to-top {
     position: fixed;
     bottom: var(--space-6);
     right: var(--space-6);
     z-index: var(--z-sticky);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
+    transition:
+      opacity var(--dur-fast),
+      visibility var(--dur-fast);
   }
 
   .back-to-top.visible {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
 

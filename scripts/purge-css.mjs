@@ -63,6 +63,16 @@ const [result] = await new PurgeCSS().purge({
   },
 });
 
+// Rules a purge has silently dropped before, which the dev server (and so e2e)
+// never sees: fail the build if one goes missing.
+const MUST_KEEP = ['a:focus-visible,button:focus-visible,select:focus-visible'];
+const flat = result.css.replace(/\s+/g, '');
+const lost = MUST_KEEP.filter((sel) => !flat.includes(sel));
+if (lost.length) {
+  console.error(`purge-css: dropped required rules: ${lost.join(', ')}`);
+  process.exit(1);
+}
+
 writeFileSync(cssPath, result.css);
 const after = Buffer.byteLength(result.css);
 const pct = (100 * (1 - after / before)).toFixed(1);
@@ -74,10 +84,14 @@ console.log(
 // savings means the scan missed (nothing removed), while a near-empty result
 // means the content globs matched nothing and we stripped live styles.
 if (after > before * 0.98) {
-  console.error('purge-css: <2% removed — content scan likely failed; not shipping an unpurged file silently.');
+  console.error(
+    'purge-css: <2% removed — content scan likely failed; not shipping an unpurged file silently.',
+  );
   process.exit(1);
 }
 if (after < 4096) {
-  console.error('purge-css: result suspiciously small (<4KB) — aborting to avoid shipping stripped styles.');
+  console.error(
+    'purge-css: result suspiciously small (<4KB) — aborting to avoid shipping stripped styles.',
+  );
   process.exit(1);
 }
