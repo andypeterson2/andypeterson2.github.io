@@ -54,10 +54,10 @@ test.describe('Home page about content', () => {
 
   test('has section labels', async ({ page }) => {
     await page.goto('/');
-    // Section labels are the left-column window title-bar headings (Education,
-    // Certs, Skills). They live under .main-left since the home page was
-    // refactored into components (was .about-grid).
-    const sections = page.locator('.main-left .sidebar-window .title-bar .title');
+    // Section labels are the credential windows' title-bar headings (Education,
+    // Certs, Skills). They sit in the row after the timeline (.more-cols) since the
+    // layout pass that put the work ahead of them (audit H3/M4).
+    const sections = page.locator('.more-cols .sidebar-window .title-bar .title');
     const count = await sections.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
