@@ -21,6 +21,8 @@ const articles = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
+    /** The project slug this article belongs to: its "Back to the project" link. */
+    project: z.string(),
   }),
 });
 

@@ -118,6 +118,13 @@ describe('Home Page', () => {
 
   // The About ships as a writeup behind "? The longer version" on the Me card; it
   // used to sit in the page under display:none, where no one could read it (H5).
+  // The portrait reserves its box before the file arrives (Fable A1-03).
+  test('the headshot declares its intrinsic size', () => {
+    expect(indexSrc).toMatch(
+      /src="\/headshot\.png"[\s\S]{0,120}width="178"[\s\S]{0,40}height="220"/,
+    );
+  });
+
   test('the long-form about is reachable, not hidden', () => {
     expect(indexSrc).toContain('<WriteupModal slug="about"');
     expect(indexSrc).not.toContain('about-window');
@@ -246,6 +253,14 @@ describe('Security header policy', () => {
     expect(headersSpec).toContain('X-Frame-Options: DENY');
     expect(headersSpec).toContain('Permissions-Policy');
     expect(headersSpec).toContain('Strict-Transport-Security');
+  });
+
+  // Content-hashed build output never changes under a name, so it's cached for a
+  // year without revalidation (Fable A1-07).
+  test('_headers caches the hashed build assets as immutable', () => {
+    expect(headersSpec).toMatch(
+      /\/_astro\/\*\s*\n\s*Cache-Control: public, max-age=31536000, immutable/,
+    );
   });
 
   test('_headers is labelled spec-only, not a live GH Pages header source', () => {

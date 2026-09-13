@@ -18,13 +18,15 @@ const { slug, label = 'Full writeup', appUrl, repoUrl, hash } = Astro.props;
 const external = (url: string) => url.startsWith('http');
 
 const entry = await getEntry('writeups', slug);
-const rendered = entry ? await render(entry) : null;
-const Content = rendered?.Content;
+// A missing writeup is a broken content contract (the id must match the project
+// slug): fail the build instead of silently dropping the "?" button (Fable A1-13).
+if (!entry) throw new Error(`No writeup for slug "${slug}" in src/content/writeups`);
+const { Content } = await render(entry);
 const modalId = `writeup-${slug}`;
 ---
 
 {
-  entry && Content && (
+  (
     <>
       <button
         type="button"

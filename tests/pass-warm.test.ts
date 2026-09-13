@@ -26,7 +26,7 @@ describe('warmUntilHealthy', () => {
     vi.spyOn(window, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
     const resultP = warm('nonogram', 10_000);
     await vi.runAllTimersAsync();
-    expect(await resultP).toBe(true);
+    expect(await resultP).toBe('ok');
   });
 
   test('retries through cold-box errors until the backend wakes', async () => {
@@ -38,7 +38,7 @@ describe('warmUntilHealthy', () => {
       .mockResolvedValue(new Response('{}', { status: 200 }));
     const resultP = warm('nonogram', 20_000);
     await vi.runAllTimersAsync();
-    expect(await resultP).toBe(true);
+    expect(await resultP).toBe('ok');
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
     expect(String(fetchMock.mock.calls[0][0])).toBe('https://api.andypeterson.dev/nonogram/health');
   });
@@ -48,9 +48,11 @@ describe('warmUntilHealthy', () => {
     vi.spyOn(window, 'fetch').mockRejectedValue(new TypeError('down'));
     const resultP = warm('nonogram', 8_000);
     await vi.runAllTimersAsync();
-    expect(await resultP).toBe(false);
+    expect(await resultP).toBe('unreachable');
   });
 
+  // The caller says "pass expired or invalid" and forgets the pass, instead of the
+  // "didn't wake" + Retry a sleeping backend gets (Fable A1-05).
   test('stops immediately on an auth verdict — waking cannot fix a bad pass', async () => {
     const warm = await loadWarm();
     const fetchMock = vi
@@ -58,7 +60,7 @@ describe('warmUntilHealthy', () => {
       .mockResolvedValue(new Response('', { status: 402 }));
     const resultP = warm('classifiers', 30_000);
     await vi.runAllTimersAsync();
-    expect(await resultP).toBe(false);
+    expect(await resultP).toBe('unauthorized');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

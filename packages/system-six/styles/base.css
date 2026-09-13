@@ -347,8 +347,28 @@ summary:focus-visible,
   nav,
   .back-to-top,
   .skip-link,
-  .mobile-header {
+  .writeup-overlay {
     display: none !important;
+  }
+
+  /* On screen the page scrolls inside .site-pane under a 100vh, overflow-hidden
+     body, so print got the first viewport of a seven-screen page. Unclip the whole
+     chain so the paper gets all of it (Fable A1-08). !important: the layout's own
+     rules are scoped (higher specificity) and must lose here. */
+  html,
+  body,
+  .site-canvas,
+  .site-window,
+  .site-pane {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body {
+    border: 0 !important;
+    border-radius: 0 !important;
   }
 
   main {

@@ -51,6 +51,15 @@ describe('Print stylesheet', () => {
     expect(printSection).toMatch(/(?:page-)?break-after: avoid/);
   });
 
+  // The page scrolls inside .site-pane under a clipped 100vh body; print must unclip
+  // the chain or the paper gets one screen of a seven-screen page (Fable A1-08).
+  test('unclips the scrolling pane so the whole page prints', () => {
+    const printSection = baseCss.split('@media print')[1] || '';
+    expect(printSection).toContain('.site-pane');
+    expect(printSection).toContain('overflow: visible !important');
+    expect(printSection).toContain('height: auto !important');
+  });
+
   test('removes main padding-top', () => {
     const printSection = baseCss.split('@media print')[1] || '';
     expect(printSection).toContain('padding-top: 0');

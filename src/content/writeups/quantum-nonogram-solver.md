@@ -1,6 +1,6 @@
 ---
 title: Quantum Nonogram Solver
-summary: Grover-accelerated constraint solving, validated on real IBM hardware — and now solvable in your browser.
+summary: Grover-based constraint solving, validated on real IBM hardware — and now solvable in your browser.
 ---
 
 Nonograms are picture-logic puzzles: fill a grid so every row and column matches its run-length clues. Underneath, that is a Boolean satisfiability problem — which makes it a clean testbed for the real question: **where does a quantum computer actually help?**
@@ -10,7 +10,7 @@ Nonograms are picture-logic puzzles: fill a grid so every row and column matches
 Each puzzle is encoded as a Boolean formula with one variable per cell, using a precomputed lookup table of the legal fill patterns for every line. Two solvers then race on the *same* encoding:
 
 - a **classical brute-force** search that enumerates candidate grids, and
-- a **Grover-based quantum** search whose oracle marks satisfying assignments — the quadratic speedup Grover's algorithm gives over unstructured search.
+- a **Grover-based quantum** search whose oracle marks satisfying assignments — the quadratic query advantage Grover promises over unstructured search, which at this size is a correctness test of the encoding and the oracle, not a speed win.
 
 The browser UI has a canvas puzzle editor, live probability histograms, and a side-by-side classical-vs-quantum comparison.
 

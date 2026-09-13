@@ -17,6 +17,20 @@ test.describe('ServerConnectModal + SiteContract', () => {
     await expect(page.locator('#mobile-nav-menu .sn-state')).toHaveText('in your browser');
   });
 
+  // A refused pass says so, forgets the pass and offers no Retry; "didn't wake"
+  // + Retry is only for a backend that may still wake (Fable A1-05).
+  test('an expired pass is named, not reported as a sleeping backend', async ({ page }) => {
+    await page.route('**/nonogram/health', (r) => r.fulfill({ status: 401, body: '' }));
+    await page.goto('/projects/quantum-nonogram-solver/app/?pass=expired-token');
+    const navItem = page.locator('.site-menubar .server-nav-item');
+    await expect(navItem.locator('.sn-state')).toHaveText(
+      'pass expired or invalid — in your browser',
+    );
+    await expect(navItem.locator('.sn-retry')).toBeHidden();
+    const stored = await page.evaluate(() => Object.keys(sessionStorage).length);
+    expect(stored).toBe(0);
+  });
+
   test('does not render connection UI on pages without backends', async ({ page }) => {
     await page.goto('/');
     // No site-backend meta tags → no connect nav item and no modal.
