@@ -53,6 +53,7 @@ const STATE_WORDS: Partial<Record<string, string>> = {
   disconnected: 'offline — in your browser',
   error: 'error — in your browser',
   failed: "live backend didn't wake — in your browser",
+  unauthorized: 'pass expired or invalid — in your browser',
 };
 
 function createBackendUI(cfg: BackendDef): void {
@@ -119,7 +120,8 @@ function createBackendUI(cfg: BackendDef): void {
       if (s === 'connected') dot.classList.add('sn-green');
       else if (s === 'connecting' || s === 'waking' || s === 'degraded')
         dot.classList.add('sn-yellow');
-      else if (s === 'disconnected' || s === 'error' || s === 'failed') dot.classList.add('sn-red');
+      else if (s === 'disconnected' || s === 'error' || s === 'failed' || s === 'unauthorized')
+        dot.classList.add('sn-red');
     }
     for (const w of words) w.textContent = STATE_WORDS[s] ?? STATE_WORDS.idle ?? '';
     for (const r of retries) r.hidden = s !== 'failed';
@@ -136,9 +138,11 @@ function createBackendUI(cfg: BackendDef): void {
     updateNav();
   });
   document.addEventListener('navbar:connect-failed', (e) => {
-    const detail = (e as CustomEvent<{ service?: string }>).detail;
+    const detail = (e as CustomEvent<{ service?: string; reason?: string }>).detail;
     if (detail.service !== service) return;
-    connState.status = 'failed';
+    // Retry shows only for 'failed' (a backend that may still wake), never for a
+    // refused pass (Fable A1-05).
+    connState.status = detail.reason === 'unauthorized' ? 'unauthorized' : 'failed';
     connState.connected = false;
     updateNav();
   });

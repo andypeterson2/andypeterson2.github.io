@@ -98,11 +98,14 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 
 const WARM_DEADLINE_MS = 30_000;
 
+/** Why a warm-up ended: the backend answered, the pass was refused, or it never woke. */
+export type WarmResult = 'ok' | 'unauthorized' | 'unreachable';
+
 /** Ping the service's /health through the gateway until it answers (or we give up). */
 export async function warmUntilHealthy(
   service: string,
   deadlineMs: number = WARM_DEADLINE_MS,
-): Promise<boolean> {
+): Promise<WarmResult> {
   const deadline = Date.now() + deadlineMs;
   let delay = 1000;
   while (Date.now() < deadline) {
@@ -112,16 +115,16 @@ export async function warmUntilHealthy(
       const r = await fetch(`${GATEWAY}/${service}/health`, {
         signal: AbortSignal.timeout(5000),
       });
-      if (r.ok) return true;
+      if (r.ok) return 'ok';
       // 402/401: the pass is bad — waking will never help; stop immediately.
-      if (r.status === 401 || r.status === 402) return false;
+      if (r.status === 401 || r.status === 402) return 'unauthorized';
     } catch {
       /* still waking / network blip — retry below */
     }
     await new Promise((resolve) => setTimeout(resolve, delay));
     delay = Math.min(delay * 1.5, 5000);
   }
-  return false;
+  return 'unreachable';
 }
 
 async function activateLive(): Promise<void> {
@@ -129,8 +132,15 @@ async function activateLive(): Promise<void> {
   const service = document.querySelector('meta[name="site-backend"]')?.getAttribute('content');
   if (!service) return;
   document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
-  if (!(await warmUntilHealthy(service))) {
-    document.dispatchEvent(new CustomEvent('navbar:connect-failed', { detail: { service } }));
+  const result = await warmUntilHealthy(service);
+  if (result !== 'ok') {
+    // A refused pass is said as such, and forgotten: retrying can't help, and a dead
+    // Bearer shouldn't ride on later requests. A backend that never woke keeps the
+    // pass and offers Retry (Fable A1-05).
+    if (result === 'unauthorized') SitePass.clear();
+    document.dispatchEvent(
+      new CustomEvent('navbar:connect-failed', { detail: { service, reason: result } }),
+    );
     return;
   }
   // Dispatches the same navbar:connect the connect modal uses, so the app's
