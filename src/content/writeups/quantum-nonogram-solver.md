@@ -16,7 +16,7 @@ The browser UI has a canvas puzzle editor, live probability histograms, and a si
 
 ## What's real, not just simulated
 
-Validated on **real IBM quantum hardware**: a 2×2 puzzle resolved the correct state with **32.3% probability versus 6.25% for random chance** — a measured lift on noisy hardware, not a textbook figure.
+Validated on **real IBM quantum hardware**: a 2×2 puzzle resolved the correct state with **32.3% probability versus 6.25% for random chance** — five times chance, against 47.3% for the same one-iteration Grover circuit run noiselessly (ibm_torino). A measured lift on noisy hardware, not a textbook figure.
 
 ## Try it with nothing running
 
