@@ -1,7 +1,7 @@
 /**
- * MNIST-style preprocessing for the drawn digit (audit M19): crop to the ink, fit the
- * longer side into 20px, centre by mass in 28×28. Without it a plainly drawn 7 read
- * as a 2 or 3, because the model was trained on centred digits.
+ * MNIST-style preprocessing for the drawn digit: crop to the ink, fit the longer side
+ * into 20px, centre by mass in 28×28. Without it a plainly drawn 7 reads as a 2 or 3,
+ * because the model was trained on centred digits.
  */
 import { describe, test, expect } from 'vitest';
 import { preprocessDigit, isBlank } from '../src/apps/classifiers/infer';

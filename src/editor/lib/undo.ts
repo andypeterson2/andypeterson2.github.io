@@ -1,17 +1,10 @@
-// The undo stack's pure core — the command contract, coalescing, depth cap, and
-// the field-shadow that makes an "old value" recoverable at all.
-//
-// Runes-free so vitest can reach it (no Svelte plugin here); the reactive shell
-// is undo.svelte.ts, and the commands themselves are minted by the store.
-//
-// WHY A SHADOW. Components bind straight to state (`bind:value={entry.fields.x}`)
-// and only then call `editor.saveEntry(entry)`. By the time the store hears about
-// an edit, the previous value is gone. So we keep a copy of what we last recorded
-// for each object and diff against it.
-//
-// The shadow is keyed by OBJECT IDENTITY, never by id: undoing a delete re-creates
-// the row and the server hands back a *new* id, while the JS object survives. Ids
-// churn; identities don't.
+// The undo stack's pure, runes-free core: the command contract, coalescing, depth
+// cap, and the field shadow. Components bind straight to state and only then call
+// the store's save, so the previous value is already gone; the shadow keeps a copy
+// of what was last recorded per object and diffs against it. It is keyed by object
+// identity, not id: undoing a delete re-creates the row under a new server id while
+// the JS object survives.
+
 import type { Person } from './types';
 
 export interface UndoCommand {

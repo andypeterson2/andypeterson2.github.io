@@ -235,9 +235,8 @@ describe('Accessibility: meaningful alt text', () => {
 
 describe('Accessibility: color-only indicators', () => {
   test('server connection state is a visible word, not a colour-only dot', () => {
-    // The logic lives in the extracted module, not inline in the Astro component.
-    // The dot is decorative (aria-hidden); the state is spoken as text beside it,
-    // in a status region (polite), so it's never colour-only (audit H6, M9).
+    // The dot is decorative (aria-hidden); the state is spoken as text beside it, in a
+    // polite status region, so it's never colour-only.
     const src = readFileSync(resolve(ROOT, 'src/apps/shared/server-connect-modal.ts'), 'utf-8');
     expect(src).toMatch(/dot\.setAttribute\('aria-hidden', 'true'\)/);
     expect(src).toMatch(/sn-state/);

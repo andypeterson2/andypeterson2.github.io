@@ -1,16 +1,10 @@
-// Version history — the versioned CV store (ADR-006). A checkpoint is a snapshot
-// of the whole document. Increment 1: snapshot / restore / a History drawer.
-// Increment 2: compare a checkpoint against the current document (a structural
-// diff). Increment 3: branches (audience lines you fork and switch between), tags
-// (frozen provenance names), and cherry-restore (lift one entry from a checkpoint).
-//
-// In the demo the list lives for the session only (the demo saves nothing —
-// ADR-001), so history is in-memory. When connected it persists through the
-// backend's /versions endpoints; a whole-document restore is a *server* operation,
-// since a local swap would desync the backend (ADR-003).
-//
-// Restore replaces the working document, so like a demo reset or a profile switch
-// it drops undo — the restored objects are fresh (ADR-003 / ADR-004).
+// Version history: a checkpoint is a snapshot of the whole document. Supports
+// snapshot / restore, comparing a checkpoint with the current document, branches
+// (audience lines you fork and switch between), frozen tags, and cherry-restore
+// of one entry. The demo saves nothing, so its history is in-memory; connected, it
+// persists through /versions, and a whole-document restore runs on the server so
+// the backend stays in sync. Restore replaces the document, so it drops undo.
+
 import { api } from './api';
 import { diffDocuments, type DocDiff } from './diff';
 import type { SaveHost } from './host';
@@ -118,10 +112,8 @@ export class HistoryController {
     if (this.restoring) return;
     const version = this.versions.find((v) => v.id === id);
     if (!version) return;
-    // Recoverability: capture the current (pre-restore) document as a checkpoint before we
-    // replace it and drop the undo stack — the same guard switchTo runs before leaving a
-    // branch. The drift-check skips it when nothing changed (incl. the switchTo path, which
-    // already snapshotted), so it never double-saves.
+    // Checkpoint the pre-restore document before undo is dropped; skipped when
+    // nothing drifted since the branch tip, so it never double-saves.
     const here = this.#tip(this.currentBranch);
     if (!here || !diffDocuments(here.doc, this.host.capture()).empty) {
       await this.snapshot('Auto-saved before restore');

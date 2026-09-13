@@ -1,8 +1,8 @@
-// The shapes the guided tour drives, as pure predicates over a Person — so both
-// tour-steps.ts (which reads editor.person) and a unit test (which reads the demo
-// seed) share ONE definition of "what the tour needs". tour-steps.ts imports the
-// runes store and so can't be unit-tested here; this can, which is how the demo
-// seed gets guarded against a reshape that would make the tour silently no-op.
+// The shapes the guided tour drives, as pure predicates over a Person, so the tour
+// script and a unit test over the demo seed share ONE definition of what the tour
+// needs. This guards the seed against a reshape that would make the tour silently
+// no-op.
+
 import type { Person, Section, Entry, Variant } from './types';
 
 /** The tag the spotlight step lifts out — one demo bullet must carry it. */

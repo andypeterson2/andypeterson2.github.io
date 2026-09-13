@@ -1,5 +1,5 @@
 /**
- * Tests for src/apps/classifiers/sse.ts — the consumeSSE() streaming consumer
+ * Tests for the classifier's consumeSSE() streaming consumer
  * and its synchronous-REST fallback, driven against a local HTTP stub that can
  * stream SSE, return a contract error envelope, or serve a /...sync route.
  */

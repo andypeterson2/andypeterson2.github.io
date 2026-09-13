@@ -1,5 +1,5 @@
 /**
- * Tests for src/apps/shared/service-config.ts (ServiceConfig) — focused on the
+ * Tests for ServiceConfig, focused on the
  * URL-param origin allowlist (the security property): a crafted ?backend=/?service=
  * link must not be able to repoint a frontend at an attacker origin.
  *

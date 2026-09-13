@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * The editor's shared button primitive. Each `variant` maps to one of the
-   * button families defined in lib/styles.css (under `.ui.<family>`); `active`
+   * button families defined in the editor stylesheet (under `.ui.<family>`); `active`
    * renders the family's `.on` selected/pressed state; `tone` is the
    * emphasis/destructive modifier where the family has one. Family-specific
    * modifiers (sym-toggle, add, go, sm, x, …) pass through `class`.
@@ -12,17 +12,9 @@
   import type { Snippet } from 'svelte';
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
+  // One per button family; FAMILY maps each to its `.ui.<family>` class.
   type Variant =
-    | 'toolbar' // .btn — the toolbar-window actions
-    | 'mini' // .mini — compact entry/personal editing actions
-    | 'tour' // .tbtn — the tour bubble's mono controls
-    | 'chip' // .chip — pill chips (history versions)
-    | 'act' // .act — drawer action rows
-    | 'link' // .link — inline text-link button
-    | 'opt' // .opt — full-width option row (profile/variant pickers)
-    | 'new' // .new — dashed "create new" affordance
-    | 'del' // .del — accent-bordered destructive action
-    | 'toast'; // .st-btn — save-toast mono buttons
+    'toolbar' | 'mini' | 'tour' | 'chip' | 'act' | 'link' | 'opt' | 'new' | 'del' | 'toast';
 
   interface Props extends HTMLButtonAttributes {
     variant: Variant;

@@ -66,9 +66,8 @@ function normalise(url: string | undefined): string {
   return out;
 }
 
-// Backend origins an (untrusted) URL param may point at. Mirrors the CSP
-// connect-src allowlist in astro.config.mjs — belt-and-suspenders: in production
-// the CSP already blocks the fetch, this rejects it earlier and more legibly.
+// Backend origins an (untrusted) URL param may point at. Mirrors the CSP connect-src
+// allowlist, which already blocks the fetch in production; this rejects it earlier.
 const ALLOWED_ORIGINS = ['https://api.andypeterson.dev'];
 
 function isLocalHost(h: string): boolean {
@@ -92,10 +91,9 @@ function isAllowed(url: string): boolean {
   } catch {
     return false;
   }
-  if (u.origin === window.location.origin) return true; // same-origin
+  if (u.origin === window.location.origin) return true;
   if (ALLOWED_ORIGINS.includes(u.origin)) return true; // prod gateway
-  // Dev only: localhost/LAN backends, but only when the page itself is served
-  // from a localhost/LAN host (mirrors the non-prod branch of the CSP list).
+  // Dev only: localhost/LAN backends, when the page itself is served from localhost/LAN.
   if (isLocalHost(window.location.hostname) && isLocalHost(u.hostname)) return true;
   return false;
 }
@@ -165,9 +163,8 @@ export const ServiceConfig: ServiceConfigApi = {
       const url = fromParam(unified);
       if (url) return url;
     }
-    // 3. localStorage — allowlist-gated too: a stored localhost URL (from the
-    // retired manual-connect era, or a standalone app) must not resurrect a
-    // local backend on the deployed site.
+    // 3. localStorage — allowlist-gated too, so a stored localhost URL can't
+    // resurrect a local backend on the deployed site.
     const saved = stored[name];
     if (saved && isAllowed(saved)) return saved;
     // 4. default — same gate, so even a localhost default a caller passes is

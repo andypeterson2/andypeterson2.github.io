@@ -1,11 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-// Every page and every state a visitor can open, against WCAG 2.2 AA plus axe's
-// best-practice rules, failing on a violation of ANY impact. The old suite skipped
-// colour contrast on the app pages, failed only on "critical", ran no best-practice
-// rules (so no page needing a <main> was noticed) and never opened a menu, drawer
-// or dialog — CI stayed green over all of it (audit M14).
+// Every page and every state a visitor can open (menus, drawers, dialogs) against WCAG
+// 2.2 AA plus axe's best-practice rules, failing on a violation of ANY impact.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 const EDITOR = '/projects/latex-resume-editor/app/';

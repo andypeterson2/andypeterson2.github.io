@@ -1,6 +1,6 @@
-// The menubar's data model. Kept out of the component so Editor.svelte can
-// declare its menus as plain data and MenuBar.svelte owns only the behaviour
-// (open/close, roving focus, the ARIA menubar pattern).
+// The menubar's data model, kept out of the component so the editor declares its
+// menus as plain data and the menubar owns only the behaviour (open/close, roving
+// focus, the ARIA menubar pattern).
 
 export interface MenuItem {
   label: string;

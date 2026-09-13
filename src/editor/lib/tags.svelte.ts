@@ -1,8 +1,7 @@
-// The tags concern — the entry/bullet tag CRUD, the spotlight, and the derived
-// tag vocabulary — lifted out of EditorState (tech-debt #11). The tag mutations
-// need nothing beyond the shared SaveHost (they operate on the entry/item passed
-// in); only the vocabulary needs to read the document, which it does through the
-// host's `sections()`.
+// The tags concern: entry/bullet tag CRUD, the spotlight, and the derived tag
+// vocabulary. Mutations need only the shared SaveHost; the vocabulary reads the
+// document through the host's `sections()`.
+
 import { api } from './api';
 import type { SaveHost } from './host';
 import type { Entry, Item, Section } from './types';

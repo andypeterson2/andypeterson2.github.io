@@ -1,7 +1,7 @@
 services:
   # ── Astro dev server (only with DEV profile) ───────────────────────
-  # Backends are no longer part of this repo — run each app from its own clone
-  # and point the portal at it with ?backend=… (see DEVELOPMENT.md).
+  # Backends live outside this repo: run each app from its own clone and point
+  # the portal at it with ?backend=….
   website:
     container_name: website
     profiles: ["dev"]

@@ -1,8 +1,7 @@
 /**
- * Unit tests for the variant lens matcher (src/editor/lib/variant-lens.ts).
- * This is a client-side port of the cv backend resolver's inclusion test
- * (cv/editor/lib/db/variants.js#_matchesTags + section scoping); these tests
- * pin the exact semantics so the port can't silently drift.
+ * Unit tests for the variant lens matcher, a client-side port of the cv backend
+ * resolver's inclusion test (tag matching + section scoping); these tests pin the
+ * exact semantics so the port can't silently drift.
  */
 import { describe, test, expect } from 'vitest';
 import {

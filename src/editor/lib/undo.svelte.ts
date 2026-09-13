@@ -1,8 +1,7 @@
-// The undo stack's reactive shell. Sequencing and coalescing live in ./undo;
-// this file holds the runes and the one invariant that makes the whole thing safe:
-// while an inverse is being applied, nothing it does may be recorded.
-//
-// Composed through an injected host, like the other slice controllers.
+// The undo stack's reactive shell, composed through an injected host. It holds the
+// runes and the invariant that makes undo safe: while an inverse is being applied,
+// nothing it does may be recorded.
+
 import { pushCommand, type NewCommand, type UndoCommand } from './undo';
 
 export interface UndoHost {
@@ -25,7 +24,7 @@ export class UndoController {
    * away and restored when you come back, so glancing at another profile doesn't
    * throw away your work. Commands close over that profile's document objects, so
    * this is only sound as long as the store keeps those objects alive across the
-   * switch (it caches the working tree rather than refetching — see store.selectPerson).
+   * switch (it caches the working tree rather than refetching).
    */
   #scope = 'demo';
   #stashed = new Map<string, { past: UndoCommand[]; future: UndoCommand[] }>();
@@ -76,7 +75,7 @@ export class UndoController {
    * Drop the CURRENT scope's history. Called when a change lands that the scope
    * cannot be replayed across: the demo reset, or an operation whose inverse we
    * don't model (variant CRUD). Better to forget than to offer an "Undo" that
-   * would write to a row that no longer exists.
+   * would write to a deleted row.
    */
   clear() {
     this.past = [];

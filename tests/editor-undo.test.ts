@@ -52,9 +52,10 @@ describe('coalescing — typing undoes as a burst, not a character', () => {
   });
 
   test('merging keeps the OLDER undo and the NEWER redo', () => {
-    // Undoing a typed word must restore what preceded the word, not the last keystroke.
-    const firstUndo = () => {}; // restores "was-empty"
-    const latestRedo = () => {}; // reapplies "is-hello"
+    // Undoing a typed word restores what preceded it ("was-empty"), not the last keystroke;
+    // redo reapplies the latest state ("is-hello").
+    const firstUndo = () => {};
+    const latestRedo = () => {};
     const top = cmd({ mergeKey: 'k', at: 1000, undo: firstUndo, redo: () => {} });
     const next = cmd({ mergeKey: 'k', at: 1100, undo: () => {}, redo: latestRedo });
     const merged = merge(top, next);

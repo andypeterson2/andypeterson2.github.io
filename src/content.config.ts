@@ -2,10 +2,8 @@ import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
-// Project deep-dive writeups, surfaced through the "?" WriteupModal on the home
-// timeline's project entries. Markdown lives in src/content/writeups/;
-// the entry id is the filename, which MUST match the project slug in
-// src/data/projects.ts so <WriteupModal slug={...} /> can resolve it.
+// Project writeups behind the "?" on each timeline entry. The entry id is the
+// filename, and it must match the project's slug for the modal to resolve it.
 const writeups = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/writeups' }),
   schema: z.object({

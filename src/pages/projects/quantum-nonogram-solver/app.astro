@@ -79,10 +79,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     </div>
   </div>
 
-  <!-- Vendored same-origin (SRI-verified against the previously pinned CDN
-       hash at vendoring time) — closes the last third-party origin in the
-       CSP. Version must match the nonogram backend's socket.io family. Stays a
-       classic script; it supplies the `io` global the bundled app consumes. -->
+  <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
+       match the nonogram backend's socket.io family. Stays a classic script; it
+       supplies the `io` global the bundled app consumes. -->
   <script is:inline src="/vendor/socket.io-4.7.5.min.js"></script>
   <!-- Nonogram tier (bundled module): state/grid/solver/classical-solver/app. -->
   <script>
@@ -91,7 +90,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 </DemoShell>
 
 <style>
-  /* Buttons are the shared .s6-btn (packages/system-six/styles/elements.css, P9). */
+  /* Buttons are the shared .s6-btn. */
 
   /* ── Two-column layout ── */
   .nono-columns {
@@ -119,7 +118,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* ── Draw view / grid ──
      The grid is built by script; hold its (empty 3×3) height from first paint so a
-     slow device doesn't shift everything below it when it appears (P12). */
+     slow device doesn't shift everything below it when it appears. */
   :global(#draw-view) {
     display: flex;
     justify-content: center;
@@ -143,7 +142,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     background: var(--ink);
   }
 
-  /* The cell's toggle button (M24): invisible, filling the cell, so the cell's own
+  /* The cell's toggle button: invisible, filling the cell, so the cell's own
      paper or ink shows through. */
   :global(.nonogram-table .cell-btn) {
     all: unset;
@@ -168,7 +167,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     background: transparent;
   }
 
-  /* Clues are the puzzle: ink on plain paper, never on dither (M23). */
+  /* Clues are the puzzle: ink on plain paper, never on dither. */
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
     background: var(--paper);
@@ -221,7 +220,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     justify-content: center;
   }
 
-  /* − Rows +  3 × 3  − Cols +: the grid shrinks as well as grows (M12). */
+  /* − Rows +  3 × 3  − Cols +: the grid shrinks as well as grows. */
   .size-stepper {
     display: inline-flex;
     align-items: center;
@@ -247,7 +246,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: center;
   }
 
-  /* No heading over an empty section: the Metrics rule appears with its table (M12). */
+  /* No heading over an empty section: the Metrics rule appears with its table. */
   .section-rule:has(+ #metrics-pane:empty) {
     display: none;
   }
@@ -403,7 +402,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* Keep system.css's focus inversion: the local paper ground above would otherwise
-     leave a focused field white on white (H12). */
+     leave a focused field white on white. */
   .trials-label input:focus-visible,
   .threshold-label input:focus-visible {
     background: var(--ink);
@@ -411,7 +410,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     outline: none;
   }
 
-  /* 260px: room for 12px bitstring labels under the bars (M29). */
+  /* 260px: room for 12px bitstring labels under the bars. */
   .histogram-area {
     height: 260px;
     border: 2px solid var(--ink);
@@ -420,7 +419,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     overflow: hidden;
   }
 
-  /* The histogram's marks, coloured from the tokens (M29; solver.ts draws classes). */
+  /* The histogram's marks (classes on the script-drawn SVG), coloured from the tokens. */
   :global(.hist-axis) {
     stroke: var(--ink);
     stroke-width: 1;
@@ -501,7 +500,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* Phones and tablets: one column, editor above results, and the controls wrap so
-     the Gallery (the only offline quantum output) is always on screen (H8). */
+     the Gallery (the only offline quantum output) is always on screen. */
   @media (width <= 768px) {
     .nono-columns {
       flex-direction: column;

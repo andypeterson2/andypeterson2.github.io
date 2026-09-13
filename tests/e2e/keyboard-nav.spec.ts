@@ -42,8 +42,8 @@ test.describe('Keyboard navigation', () => {
     throw new Error('Could not reach a menubar link via Tab key');
   });
 
-  // The page scrolls inside .site-pane; before any click, PageDown and Space used to
-  // move nothing (Fable A1-01). The first Tab must still land on the skip link.
+  // The page scrolls inside .site-pane, and PageDown and Space must reach it before any
+  // click. The first Tab must still land on the skip link.
   test('PageDown and Space scroll the page before any click', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
@@ -72,7 +72,7 @@ test.describe('Keyboard navigation', () => {
 });
 
 // A focused field must still show what's typed into it: system.css inverts focused
-// inputs, and local "paper" grounds once left them white on white (audit H12).
+// inputs, and a local "paper" ground must not leave them white on white.
 test.describe('Focused inputs keep their text visible', () => {
   const cases = [
     { path: '/projects/ai-ml/app/', selector: '#epochs' },

@@ -1,5 +1,5 @@
 /* Shared styles for the classifier app sub-components.
-   Imported globally from ClassifierApp.astro so they apply across all child components. */
+   Imported globally by the app component so they apply across all its child components. */
 
 #classifier-app .card {
   border: 2px solid var(--ink);
@@ -37,8 +37,8 @@
 }
 
 /* system.css inverts a focused text field (ink ground, paper text). The ID rule above
-   resets the ground to paper, which left focused fields white on white — typed text
-   vanished (H12). Restore the whole inversion at the same specificity. */
+   resets the ground to paper, which would leave focused fields white on white with the
+   typed text invisible. Restore the whole inversion at the same specificity. */
 #classifier-app input[type='number']:focus-visible,
 #classifier-app input[type='text']:focus-visible {
   background: var(--ink);
@@ -46,8 +46,7 @@
   outline: none;
 }
 
-/* Buttons are the shared .s6-btn (packages/system-six/styles/elements.css, P9);
-   only the classifier's own spacing lives here. */
+/* Buttons are the shared .s6-btn; only the classifier's own spacing lives here. */
 #classifier-app .s6-btn--block {
   margin-top: 6px;
 }
@@ -68,7 +67,7 @@
 }
 
 /* On phones --text-3xs lands on 12px, the floor; labels and fields step up one
-   size so the form stays readable (M11). */
+   size so the form stays readable. */
 @media (width <= 600px) {
   #classifier-app label,
   #classifier-app select,

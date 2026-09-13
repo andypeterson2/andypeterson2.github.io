@@ -1,9 +1,6 @@
 <script lang="ts">
-  // Version history (ADR-006). Inc 1: snapshot / restore / list. Inc 2: Compare a
-  // checkpoint against the current document (a structural diff). Inc 3: branches
-  // (fork an audience line, switch between them), tags (frozen provenance names),
-  // and cherry-restore (lift one entry from a checkpoint via the diff). In the demo,
-  // history is for this session only (ADR-001).
+  // Version history: snapshot / restore / list, compare against the current document,
+  // branches, frozen tags, and cherry-restore of one entry. Demo history is per session.
   import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
@@ -238,7 +235,7 @@
     border-bottom: 1px solid var(--faint, var(--paper-3));
   }
 
-  /* .chip (and go/add) live in lib/styles.css as the .ui.chip family. */
+  /* .chip (and go/add) are styled globally as the .ui.chip family. */
 
   .fork-in {
     font-family: var(--mono);
@@ -388,7 +385,7 @@
     gap: 4px;
   }
 
-  /* .act (and sm) live in lib/styles.css as the .ui.act family. */
+  /* .act (and sm) are styled globally as the .ui.act family. */
 
   /* ── compare view ── */
   .back {

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Core pages render without errors', () => {
-  // Titles name the person: "Name — Job title" on home (audit M5).
+  // Titles name the person: "Name — Job title" on home.
   const pages = [{ path: '/', title: / \u2014 / }];
 
   for (const { path, title } of pages) {
@@ -54,15 +54,14 @@ test.describe('Home page about content', () => {
 
   test('has section labels', async ({ page }) => {
     await page.goto('/');
-    // Section labels are the credential windows' title-bar headings (Education,
-    // Certs, Skills). They sit in the row after the timeline (.more-cols) since the
-    // layout pass that put the work ahead of them (audit H3/M4).
+    // Section labels are the credential windows' title-bar headings (Education, Certs,
+    // Skills), in the row after the timeline (.more-cols).
     const sections = page.locator('.more-cols .sidebar-window .title-bar .title');
     const count = await sections.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  // The long About opens from the Me card, and /about lands on it (H5).
+  // The long About opens from the Me card, and /about lands on it.
   test('the longer version opens from the Me card', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /The longer version/ }).click();
@@ -85,8 +84,8 @@ test.describe('Home page about content', () => {
   });
 });
 
-// Every timeline marker sits on the spine: they used to measure the same clamp from
-// different boxes and landed 12px right of the line (Fable A1-04).
+// Every timeline marker sits on the spine: markers measured from a different box than
+// the spine land 12px right of the line.
 test('timeline markers sit on the spine', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');

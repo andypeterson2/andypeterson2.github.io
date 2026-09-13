@@ -47,7 +47,7 @@ const timeline: TimelineItem[] = [
           <h2 class="title">Me</h2>
         </div>
         <!-- Intrinsic size reserves the box before the file arrives: without it the
-             Me card grew by the portrait's height on load (Fable A1-03). -->
+             Me card would grow by the portrait's height on load. -->
         <img
           src="/headshot.png"
           alt={siteConfig.displayName}
@@ -61,13 +61,13 @@ const timeline: TimelineItem[] = [
           <span>Southern California</span>
         </div>
         <!-- The site's strongest evidence is the demos: point at them from the card, not
-             only from the intro's last sentence (Fable A2-08). -->
+             only from the intro's last sentence. -->
         <div class="bio-links">
           <a class="bio-contact-link" href="#projects">Try a demo ↓</a>
           <a class="bio-contact-link" href="#contact">Contact ↓</a>
         </div>
-        <!-- The long About, behind a "?" like every other depth on the site (L7) — it
-             shipped hidden for months (H5). /about lands here with the dialog open. -->
+        <!-- The long About, behind a "?" like every other depth on the site. /about
+             lands here with the dialog open. -->
         <div class="bio-more">
           <WriteupModal slug="about" label="The longer version" hash="about" />
         </div>
@@ -120,7 +120,7 @@ const timeline: TimelineItem[] = [
 
     <!-- Row 3: Contact · Education · Certs · Skills, side by side (a column on phones).
          Last in DOM order too, so the page reads Me → Intro → work → the rest at every
-         width (H3, P3, M4). -->
+         width. -->
     <div class="more-cols">
       <!-- Contact — single-column, uniform-width buttons -->
       <div class="window contact-window" id="contact">
@@ -224,7 +224,7 @@ const timeline: TimelineItem[] = [
   /* ── Main grid ── Me | Intro on row 1 (similar heights, so no blank column), the
      timeline across the full width on row 2, and Contact · Education · Certs · Skills
      as a row of windows on row 3. DOM order is the reading order at every width, so
-     the phone column needs no reordering (H3, P3, M4). */
+     the phone column needs no reordering. */
   .main-cols {
     --col-gap: var(--window-gap);
 
@@ -279,7 +279,7 @@ const timeline: TimelineItem[] = [
     }
 
     /* Phone: the portrait card is a compact row (face beside the name), not a
-       full-screen face before any work (H3). */
+       full-screen face before any work. */
     .bio-card.window {
       display: grid;
       grid-template-columns: minmax(96px, 36%) 1fr;
@@ -298,8 +298,8 @@ const timeline: TimelineItem[] = [
   }
 
   .bio-body {
-    /* Bio text container. Prose is Geneva, per the type roles in docs/design-system.md
-       (Monaco is for data and code; its comma all but vanishes at text sizes — H1). */
+    /* Bio text container. Prose is Geneva: Monaco is for data and code, and its comma
+       all but vanishes at text sizes. */
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     line-height: 1.35;
@@ -310,7 +310,7 @@ const timeline: TimelineItem[] = [
     max-width: 68ch;
   }
 
-  /* Paragraphs read as paragraphs: a gap between them, not only line spacing (M3). */
+  /* Paragraphs read as paragraphs: a gap between them, not only line spacing. */
   .bio-body p + p {
     margin-top: 0.8em;
   }
@@ -356,7 +356,7 @@ const timeline: TimelineItem[] = [
     text-align: center;
   }
 
-  /* Flat window subtitle — replaces the old inset details-bar (flat site). */
+  /* Flat window subtitle — the flat site has no inset details-bar. */
   .window-sub {
     display: flex;
     flex-wrap: wrap;
@@ -389,19 +389,17 @@ const timeline: TimelineItem[] = [
     text-align: left;
   }
 
-  /* Fixed-width, centered icon slot: the buttons were center-aligned as a whole,
-     which staggered both the icons and the labels (Email vs LinkedIn vs CV push
-     the centered line to different x). Left-aligning against a uniform icon slot
-     puts every icon on one vertical line and starts every label at the same x.
-     The square 16×16 viewBox meets the 1.4em×1em slot, so each icon paints at
-     1em, centered — matching the old font glyph without the icon-font dependency. */
+  /* Fixed-width, centered icon slot: centering each button as a whole staggers the
+     icons and labels (Email vs LinkedIn vs CV). Left-aligning against a uniform slot
+     puts every icon on one vertical line and starts every label at the same x. The
+     square 16×16 viewBox meets the 1.4em×1em slot, so each icon paints at 1em, centered. */
   .bio-contact .btn .ico {
     flex: 0 0 1.4em;
     height: 1em;
     fill: currentcolor;
   }
 
-  /* Tells Résumé from CV at a glance (M7). */
+  /* Tells Résumé from CV at a glance. */
   .bio-contact .btn-note {
     margin-left: auto;
     font-family: var(--font-sans);
@@ -409,7 +407,7 @@ const timeline: TimelineItem[] = [
     font-weight: 400;
   }
 
-  /* The address as selectable text, not only a mailto: (M7). */
+  /* The address as selectable text, not only a mailto:. */
   .contact-email {
     margin: 0;
     padding: 0 clamp(10px, 1.3vw, 15px) clamp(10px, 1.3vw, 15px);
@@ -423,11 +421,9 @@ const timeline: TimelineItem[] = [
     min-width: 0;
   }
 
-  /* ── Timeline ── the container owns the vertical spine; each entry (TimelineEntry
-     component) draws its own dot/diamond aligned to it. Both share one x
-     (--spine-x, from each entry's left edge); the spine is drawn on the container,
-     so it adds the container's padding. The markers sat 12px right of the line
-     when both used the bare clamp from different boxes (Fable A1-04). */
+  /* ── Timeline ── the container owns the vertical spine; each entry draws its own
+     dot/diamond aligned to it. Both share one x (--spine-x, from each entry's left
+     edge); the spine is drawn on the container, so it adds the container's padding. */
   .timeline {
     --timeline-pad: clamp(8px, 1vw, 12px);
     --spine-x: clamp(62px, 8vw, 90px);

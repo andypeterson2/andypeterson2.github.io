@@ -1,10 +1,9 @@
 <script lang="ts">
   // The tour's narrator: a miniature System-6 window, not a coach-mark. No scrim,
-  // no spotlight cut-out, never modal — the app underneath stays fully usable,
-  // because the moment you touch it the tour yields (see Editor.svelte's handlers).
-  //
+  // never modal — the app stays usable, and touching it makes the tour yield.
   // `data-tour` marks this subtree as the tour's own chrome: events inside it are
   // controls, not interruptions.
+
   import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { tour } from '../lib/tour.svelte';
@@ -12,7 +11,7 @@
   import { prefersReducedMotion } from '../lib/tour';
 
   // Phones, and phones held sideways (short but wider than 768): the touch layout.
-  // Keep in sync with the matching @media in Editor.svelte (audit H14).
+  // The editor shell's compact @media query must use these same bounds.
   const COMPACT_QUERY = '(max-width: 768px), (max-height: 500px)';
 
   const done = $derived(tour.state === 'done');
@@ -26,20 +25,13 @@
     tour.end();
   }
 
-  // The spotlight: while the tour is active, glide the page to the current step's
-  // target and frame it. A rAF loop tracks the element's viewport rect so the frame
-  // follows it through scrolls, typing, and drawers opening; the box's CSS transition
-  // turns each rect change into a smooth glide (pointer-events:none, so it never
-  // blocks the app — touching the real element still yields the tour). Absent target
-  // or reduced motion is handled gracefully.
+  // The spotlight frame: a rAF loop tracks the current step's target rect and a CSS
+  // transition glides the box; pointer-events:none keeps the real element touchable.
   let box = $state<{ x: number; y: number; w: number; h: number } | null>(null);
   const PAD = 6;
 
-  // On phones a fixed narrator edge can't win: anchored at the bottom it covers the
-  // variant drawer's bottom sheet (step 5); anchored at the top it covers the
-  // toolbar targets it points at (variant, export). So place it opposite the current
-  // spotlight — top when the framed target sits in the lower part of the screen,
-  // bottom otherwise. Desktop keeps the shared bottom anchor.
+  // On phones any fixed narrator edge covers some target (bottom sheet or toolbar),
+  // so it sits opposite the current spotlight; desktop keeps the bottom anchor.
   let mobile = $state(false);
   onMount(() => {
     const mq = matchMedia(COMPACT_QUERY);
@@ -48,9 +40,8 @@
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   });
-  // Keyboard and screen-reader users are told the tour started: focus moves to the
-  // narrator (its End and Pause are the next two Tab stops), and the caption below
-  // is a live region, so each step is read as it arrives (M27).
+  // Focus moves to the narrator when the tour starts (End and Pause are the next Tab
+  // stops); the caption is a live region, so each step is read as it arrives.
   let panel: HTMLElement | undefined = $state();
   $effect(() => {
     panel?.focus({ preventScroll: true });
@@ -101,9 +92,8 @@
       const el = sel ? document.querySelector(sel) : null;
       if (el) {
         const r = el.getBoundingClientRect();
-        // Clamp the padded target rect to the region where it can actually be seen,
-        // so the frame never spills off-screen or over the fixed chrome; a zero-size
-        // (hidden / not-yet-rendered) target draws nothing.
+        // Clamp the padded rect to the visible region so the frame never spills over
+        // the fixed chrome; a zero-size (hidden) target draws nothing.
         const c = clipBoundsFor(el);
         const x1 = Math.max(r.left - PAD, c.left);
         const y1 = Math.max(r.top - PAD, c.top);
@@ -203,7 +193,7 @@
 
 <style>
   /* Position, paper, border, hard shadow and mono chrome all come from the shared
-     .floating-panel primitive (lib/styles.css) — the same one the save toast uses. */
+     .floating-panel primitive — the same one the save toast uses. */
   .tour {
     width: min(92vw, 430px);
   }
@@ -291,7 +281,7 @@
     flex: 1;
   }
 
-  /* .tbtn (the tour family, focus ring included) lives in lib/styles.css as .ui.tbtn. */
+  /* .tbtn (the tour family, focus ring included) is styled globally as .ui.tbtn. */
 
   .tclose:focus-visible {
     outline: 2px solid var(--ink);

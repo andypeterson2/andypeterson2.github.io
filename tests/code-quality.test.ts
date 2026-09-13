@@ -45,9 +45,8 @@ describe('No dropped spaces before wrapped inline elements', () => {
 });
 
 // Colour and type in the apps' scripts go through the design tokens, where the
-// stylelint gates can see them (audit M29): the nonogram histogram used flat greys
-// and a non-status red in Helvetica at 7-9px, and the classifier chart read six
-// tokens that didn't exist and fell back to Tailwind colours.
+// stylelint gates can see them: no hex colours, no hard-coded font faces, and no
+// token that isn't defined (it would silently fall back to another colour).
 describe('App scripts draw with the design tokens', () => {
   const files = globSync('src/apps/**/*.ts', { cwd: ROOT });
   const code = (f: string) =>

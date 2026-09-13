@@ -1,12 +1,10 @@
 /* System-6 tokens + base for the CV editor. Component styles reference these vars. */
 :root {
-  /* Neutrals (--ink / --paper) and the status light now come from the global tokens
-     (packages/system-six/styles/tokens.css) — one warm system shared by the site and
-     the editor. This file keeps only what is genuinely document-specific: the print
-     faces, the two shadows, and the on-dark link. */
+  /* Neutrals and the status light come from the site-wide tokens; only
+     document-specific values (print faces, shadows, the on-dark link) live here. */
   --chrome: var(--paper);
   --chrome-hi: var(--paper);
-  --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text (M25) */
+  --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text */
   --dim-text: var(--ink-3); /* secondary text: passes AA in both themes */
   --disabled: var(--ink-4); /* disabled controls (exempt from contrast minimums) */
 
@@ -17,13 +15,8 @@
   --state-error: var(--color-danger);
   --link-on-ink: #9ec7ff;
 
-  /* Two type roles (audit M29). The editor's own controls — menus, drawers, pickers,
-     tag chips, the tour — are set in Chicago, the Mac's interface face, like the
-     site's own menus and buttons. (Not Geneva or Monaco: those pixel faces have
-     ~60% of Helvetica's x-height at the same size, so a straight swap shrank the
-     editor's 12px UI to unreadable; Chicago is ~85%.) The print faces belong to the
-     résumé being edited (--serif, --doc-sans) and to raw output like the compile
-     log (--doc-mono). --mono is kept as a name for the UI's "data" spots. */
+  /* UI controls use Chicago (Geneva/Monaco's small x-height is unreadable at 12px);
+     --serif, --doc-sans, and --doc-mono belong to the résumé and the compile log. */
   --sans: var(--font-ui);
   --mono: var(--font-ui);
   --doc-sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
@@ -39,8 +32,7 @@
   --shadow-drawer-top: 0 -4px 0 rgb(28 27 25 / 50%);
 
   /* The deeper drop a panel floating over the document casts, as opposed to the
-     flat 2px a button presses off the page. Named because two components share
-     it — see .floating-panel below. */
+     flat 2px a button presses off the page. */
   --shadow-float: 3px 3px 0 rgb(0 0 0 / 35%);
 }
 
@@ -77,14 +69,14 @@ body {
   font-family: var(--sans);
   color: var(--ink);
 
-  /* Match the portfolio desktop (BaseLayout .site-canvas): white + 1-bit dither. */
+  /* Match the portfolio desktop's canvas: white + 1-bit dither. */
   background: #fff url('/bg-pattern.svg') repeat;
   background-size: 2.5vw 2.5vw;
   image-rendering: pixelated;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Button families — rendered by components/ui/Button.svelte ──────────────
+/* ── Button families — rendered by the shared Button component ──────────────
    One definition per family; components add only contextual layout (width,
    margins) via `:global(.ui.<family>)` overrides in their own scope. The `.ui`
    marker keeps these from bleeding onto same-named bespoke classes that remain

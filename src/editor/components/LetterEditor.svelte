@@ -1,7 +1,6 @@
 <script lang="ts">
-  // Cover-letter editor — replaces the CV document when a coverletter variant is
-  // active. Both the header (recipient/salutation/closing, editor.letters.header)
-  // and the body paragraphs (editor.letters.sections) are per-variant.
+  // Cover-letter editor, shown in place of the CV when a coverletter variant is
+  // active. Header fields and body paragraphs are both per-variant.
   import { editor } from '../lib/store.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
   import { symbolInput } from '../lib/symbol-input.svelte';

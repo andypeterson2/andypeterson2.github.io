@@ -1,14 +1,11 @@
 /**
  * Portal bootstrap for the classifier embed.
  *
- * The classifier frontend was originally server-rendered: a Flask template
- * injected `API_BASE` (the backend origin) and `UI_CONFIG` (the active
- * dataset's config) as globals that the app reads at load time. As a static
- * portal embed there is no template, so this module supplies them: the real
- * backend URL is resolved via ServiceConfig and refreshed on `navbar:connect`
- * (the app keeps its `base()` prefix live against `window.API_BASE`).
- *
- * Side-effect module — the entry imports it BEFORE app.ts.
+ * The app reads two globals at load time: `API_BASE` (the backend origin) and
+ * `UI_CONFIG` (the active dataset's config). This side-effect module supplies
+ * them, so the entry imports it BEFORE the app module. The backend URL is
+ * resolved via ServiceConfig and refreshed on `navbar:connect` (the app keeps its
+ * `base()` prefix live against `window.API_BASE`).
  */
 
 import { ServiceConfig } from '../shared/service-config';
@@ -26,8 +23,8 @@ export interface DatasetDef {
 }
 
 // Datasets the in-browser demo can switch between with no backend. Each carries
-// the UI shape app.ts reads through UI_CONFIG; the trained weights (and, for
-// tabular datasets, feature ranges) live in /classifiers/models/<name>.json.
+// the UI shape the app reads through UI_CONFIG; the trained weights (and, for
+// tabular datasets, feature ranges) ship as per-model JSON fetched on demand.
 export const CLASSIFIER_DATASETS: DatasetDef[] = [
   {
     name: 'mnist',
@@ -59,13 +56,11 @@ window.CLASSIFIER_DATASETS = CLASSIFIER_DATASETS;
 // The dataset shown on load (the draw-to-predict MNIST canvas).
 window.UI_CONFIG ??= CLASSIFIER_DATASETS[0];
 
-// Backend origin, resolved the same way the rest of the portal resolves it
-// (?classifiers= / ?backend= / localStorage / default). navbar:connect will
-// overwrite this with the user-chosen URL.
-// Deploy-based default: the gateway is the only production backend. A localhost
-// default here would bake a dead local option into the deployed page; local dev
-// still works via the allowlisted ?backend=/?classifiers= params (which admit
-// localhost only when the page itself is served from localhost).
+// Backend origin, resolved like the rest of the portal (?classifiers= / ?backend= /
+// localStorage / default); navbar:connect overwrites it with the user-chosen URL. The
+// default is the gateway, the only production backend: a localhost default would bake a
+// dead option into the deployed page, and local dev still works via the allowlisted
+// params (which admit localhost only when the page itself is served from localhost).
 window.API_BASE ??= ServiceConfig.resolveBackend(
   'classifiers',
   SitePass.gatewayBase('classifiers'),

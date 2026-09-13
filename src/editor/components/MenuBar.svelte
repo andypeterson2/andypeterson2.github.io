@@ -1,29 +1,23 @@
 <script lang="ts">
-  // The System-6 menubar: real pull-down menus, following the ARIA menubar
-  // pattern (menubar → menuitem[aria-haspopup] → menu → menuitem).
-  //
-  // At/below 768px (the site's own touch breakpoint) the desktop row of titles is the
-  // wrong idiom for a thumb, so it collapses to a single ☰ that opens every command in
-  // one grouped panel — the conventional mobile menu. Same MenuDef data drives both.
-  //
-  // A menu with no items renders *disabled* rather than as inert text styled to
-  // look live. An unimplemented command that looks available is the same class of
-  // bug as a demo dot painted red: the interface lying about what it can do.
+  // The System-6 menubar, following the ARIA menubar pattern (menubar →
+  // menuitem[aria-haspopup] → menu → menuitem). At/below 768px the row of titles
+  // collapses to one ☰ panel grouping every command; the same MenuDef data drives
+  // both. A menu with no items renders *disabled*, never as live-looking inert text.
+
   import { onMount } from 'svelte';
   import { enabledItems, stepIndex, type MenuDef, type MenuItem } from '../lib/menus';
 
   // Phones, and phones held sideways (short but wider than 768): the touch layout.
-  // Keep in sync with the matching @media in Editor.svelte (audit H14).
+  // The editor shell's compact @media query must use these same bounds.
   const COMPACT_QUERY = '(max-width: 768px), (max-height: 500px)';
 
   let { menus }: { menus: MenuDef[] } = $props();
 
   let open = $state<number | null>(null); // desktop: index of the open pull-down
   let allOpen = $state(false); // mobile: the single ☰ panel
-  // bind:this targets — declared with $state so Svelte 5 tracks them without the
-  // non_reactive_update / binding_property_non_reactive dev warnings. All reads are
-  // already guarded (root?., titleEls[i]?.focus(), !root || …), so the `| undefined`
-  // that $state() introduces is a no-op at the call sites.
+
+  // bind:this targets use $state to avoid Svelte's non_reactive_update warnings;
+  // every read is already guarded against the `| undefined` this adds.
   let root = $state<HTMLDivElement>();
   let hamburgerEl = $state<HTMLButtonElement>();
   let titleEls = $state<HTMLButtonElement[]>([]);
@@ -119,7 +113,7 @@
     const cur = itemEls.findIndex((el) => el === document.activeElement);
     if (e.key === 'Escape') {
       // Stop here: the window-level Escape handlers would otherwise end the tour
-      // (Editor.svelte) or close a drawer behind the menu.
+      // or close a drawer behind the menu.
       e.preventDefault();
       e.stopPropagation();
       close(true);
@@ -247,7 +241,7 @@
 
 <style>
   /* Flush, full-height titles that invert on hover/open — the portfolio
-     menubar idiom (BaseLayout .site-menubar). */
+     menubar idiom. */
   .menus {
     display: flex;
     align-items: stretch;
@@ -373,7 +367,7 @@
     position: relative;
   }
 
-  /* "Commands ▾", not a second ☰ next to the site's own (M28), in the system face. */
+  /* "Commands ▾", not a second ☰ next to the site's own, in the system face. */
   .hamburger {
     display: inline-flex;
     align-items: center;

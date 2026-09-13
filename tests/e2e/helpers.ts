@@ -34,10 +34,8 @@ export async function gotoEditor(
   await page.goto(path);
   await expect(page.locator('.stage[data-hydrated]')).toBeAttached({ timeout: 15000 });
 
-  // The demo invite is a modal pop-up: its scrim blocks the editor until dismissed.
-  // Most tests want to drive the editor, so dismiss it once the backend probe has
-  // settled (either the invite appeared, or we connected). Pass keepInvite to the
-  // few tests that exercise the invite / its guided-tour button themselves.
+  // The demo invite's modal scrim blocks the editor; dismiss it once the backend probe
+  // settles. keepInvite is for the few tests that exercise the invite itself.
   if (opts.keepInvite) return;
   const invite = page.locator('.invite');
   await Promise.race([

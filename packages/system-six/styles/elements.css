@@ -1,6 +1,4 @@
-/* Element styles. Once home to the s6-* Web-Components hosts (amputated —
-   zero consumers); what remains is the one living rule set: the menubar/nav
-   theme toggle used by BaseLayout. */
+/* Element styles: the menubar/nav theme toggle and the apps' shared button. */
 
 /* ── .theme-toggle — the dark-mode control. Invert-hover matches the site
  * idiom and composes correctly under the page filter in dark mode. ── */
@@ -23,19 +21,11 @@
   color: var(--color-bg);
 }
 
-/* ── .s6-btn — the apps' one button (audit P9) ──
- * The classifier and the nonogram each drew the same square, 2px-ink, Chicago
- * button their own way (an ID-scoped .btn re-skin and a .nono-btn family), with
- * their own sizes, fills and focus. This is that button, once. Variants:
- *   .s6-btn--primary  ink fill (the one action to take)
- *   .s6-btn--danger   destructive, in the status red
- *   .s6-btn--sm       compact (steppers, row tools)
- *   .s6-btn--icon     a single glyph, square
- *   .s6-btn--block    full width
- * State is inversion (L4): hover and keyboard focus fill with ink; focus also gets
- * the site's ink ring (base.css). Disabled is one treatment everywhere. The
- * window push-button (system.css .btn, used by the site chrome) is a different
- * object and stays as it is. */
+/* ── .s6-btn — the apps' one square, 2px-ink, Chicago button. Variants: --primary (ink
+ * fill, the one action to take), --danger (status red), --sm (steppers, row tools), --icon
+ * (a single glyph, square), --block (full width). Hover and keyboard focus invert to an ink
+ * fill; focus also gets the site's ink ring. Disabled is one treatment everywhere. The site
+ * chrome's window push-button (system.css .btn) is a different object. ── */
 .s6-btn {
   display: inline-flex;
   align-items: center;

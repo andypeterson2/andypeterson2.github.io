@@ -1,18 +1,11 @@
 <script lang="ts">
-  // Renders a compiled PDF onto width-fitted canvases stacked in a scrollable column
-  // — instead of an <iframe> that hands the blob to Chrome's built-in viewer, which
-  // ignores the #view=FitH / #zoom=page-width fragment inside an iframe (the page
-  // rendered small at the top with dead space below).
-  //
-  // Two things make this work under the site's strict CSP:
-  //  1. We take the compiled Blob and read it with `.arrayBuffer()` — we never
-  //     fetch() the blob: URL, which `connect-src` (no blob:) would block.
-  //  2. pdf.js v4 is PURE JS (no .wasm), and isEvalSupported:false makes it use its
-  //     JS PostScript interpreter — so it needs neither 'unsafe-eval' nor
-  //     'wasm-unsafe-eval'. (v5/v6 fall back to a quickjs-eval WASM that the CSP
-  //     blocks; v4 is the CSP-clean line.) pdf.js is dynamically imported so its
-  //     ~300KB stays out of the initial island bundle; its worker ships as a
-  //     same-origin ?url asset (worker-src 'self').
+  // Renders a compiled PDF onto width-fitted canvases, since Chrome's viewer in an
+  // iframe ignores #view=FitH. Under the strict CSP: the Blob is read with
+  // `.arrayBuffer()` (connect-src blocks fetching blob: URLs), and pdfjs-dist v4 with
+  // isEvalSupported:false is pure JS, needing no 'unsafe-eval' or wasm (v5+ are not
+  // CSP-clean). The library is imported lazily to keep ~300KB out of the bundle;
+  // its worker ships as a same-origin ?url asset (worker-src 'self').
+
   import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
   let { blob }: { blob: Blob | null } = $props();

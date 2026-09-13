@@ -1,15 +1,11 @@
 <script lang="ts">
-  // Expand-in-place editor for a single entry. Data-driven from the section
-  // type's field list (see section-types.ts) so it handles all 5 shapes:
-  // paragraph → textarea; everything else → labelled fields (+ bullets when hasItems).
-  //
-  // Two modes, keyed off the active lens:
-  //  • Main (no variant / a cover letter) → edits the base document, as always.
-  //  • A CV/résumé variant is active → this panel edits THAT variant's view: field
-  //    edits become per-variant overrides, and each entry/item gets a force-in/out
-  //    control. Item content, tags, and add/delete/reorder are shared base structure,
-  //    so they're Main-only (shown read-only here) — that keeps the mode banner honest:
-  //    everything this panel presents as editable really is variant-scoped.
+  // Expand-in-place editor for one entry, driven by the section type's field list
+  // (paragraph → textarea; otherwise labelled fields, plus bullets when hasItems).
+  // Under Main it edits the base document. Under a CV/résumé variant, field edits
+  // become per-variant overrides and entries/items get a force-in/out control;
+  // item content, tags, and add/delete/reorder are shared structure, so they are
+  // read-only here and everything shown as editable really is variant-scoped.
+
   import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
@@ -308,8 +304,8 @@
     gap: 6px;
   }
 
-  /* .mini and its modifiers (primary/danger/sym-toggle/x/add) live in
-     lib/styles.css as the .ui.mini family. */
+  /* .mini and its modifiers (primary/danger/sym-toggle/x/add) are styled globally
+     as the .ui.mini family. */
 
   /* Variant-editing mode: the accent left-border makes the mode unmistakable, so a
      field edit is never mistaken for a base edit. */

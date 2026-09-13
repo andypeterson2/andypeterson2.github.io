@@ -17,9 +17,8 @@ const complexityBudgets = {
 const SRC_TS = ['src/**/*.ts', 'src/**/*.tsx'];
 
 export default [
-  // ── src TypeScript: strict-type-checked + stylistic (fleet lint baseline).
-  // The presets are pinned via the typescript-eslint minor (~) because their
-  // contents are not semver-stable — review rule changes on upgrade.
+  // ── src TypeScript: strict-type-checked + stylistic. The presets are pinned to the
+  // typescript-eslint minor (~) because their contents are not semver-stable.
   ...tseslint.configs.strictTypeChecked.map((c) => ({ ...c, files: SRC_TS })),
   ...tseslint.configs.stylisticTypeChecked.map((c) => ({ ...c, files: SRC_TS })),
   {
@@ -48,9 +47,8 @@ export default [
         'error',
         { ignorePrimitives: { string: true } },
       ],
-      // OFF: its auto-fix converts type aliases to interfaces, but Personal and
-      // CoverletterHeader (types.ts) are aliases ON PURPOSE — all-optional
-      // string shapes only get an implicit index signature as aliases.
+      // OFF: its auto-fix turns type aliases into interfaces, but all-optional string shapes
+      // (Personal, CoverletterHeader) get an implicit index signature only as aliases.
       '@typescript-eslint/consistent-type-definitions': 'off',
       ...complexityBudgets,
     },
@@ -86,10 +84,8 @@ export default [
     },
   },
   {
-    // App pages (src/pages/projects/*/app.astro) host full-bleed, self-contained apps
-    // with their own bespoke control styling (e.g. the nonogram's .nono-btn — a
-    // standalone button system, not additive to system.css .btn), not portfolio chrome,
-    // so the portfolio <Button> rule doesn't apply to their controls.
+    // App pages host self-contained apps with their own button systems (the nonogram's
+    // .nono-btn), not portfolio chrome, so the <Button> rule doesn't apply.
     files: ['src/pages/projects/*/app.astro'],
     rules: {
       'design-system/prefer-button': 'off',
@@ -116,14 +112,11 @@ export default [
       // names inside type annotations.
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      // OFF: these svelte-ignore comments suppress COMPILER a11y warnings at
-      // build time; without svelte/valid-compile eslint can't see that use
-      // and flags them as unused. Removing them would resurface the build
-      // warnings.
+      // OFF: svelte-ignore comments suppress compiler a11y warnings, a use eslint can't see
+      // without svelte/valid-compile, so it wrongly flags them as unused.
       'svelte/no-unused-svelte-ignore': 'off',
-      // The type-aware unsafe floor (matches the src TS tier). The full
-      // strict preset is not applied to .svelte; these are the rules that
-      // catch real any-leaks at the markup boundary.
+      // The type-aware unsafe floor of the src TS tier: the strict preset isn't applied to
+      // .svelte, and these rules catch real any-leaks at the markup boundary.
       '@typescript-eslint/no-unsafe-assignment': 'error',
       '@typescript-eslint/no-unsafe-member-access': 'error',
       '@typescript-eslint/no-unsafe-call': 'error',
