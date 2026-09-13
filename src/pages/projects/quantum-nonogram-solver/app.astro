@@ -2,7 +2,11 @@
 import DemoShell from '../../../layouts/DemoShell.astro';
 ---
 
-<DemoShell title="Nonogram Solver" backend={{ service: 'nonogram', label: 'Nonogram Backend' }}>
+<DemoShell
+  title="Nonogram Solver"
+  description="Draw a nonogram and solve it in your browser, then compare it with captured Grover-search runs — the same encoding reached 32.3% on real IBM hardware against 6.25% by chance."
+  backend={{ service: 'nonogram', label: 'Nonogram Backend' }}
+>
   <!-- App shell -->
   <div id="nonogram-app">
     <div class="nono-columns">

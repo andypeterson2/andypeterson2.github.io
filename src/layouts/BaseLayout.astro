@@ -29,17 +29,31 @@ import CfBeacon from '../components/CfBeacon.astro';
 
 interface Props {
   title?: string;
+  /** Overrides the document <title> when the window title isn't the right name for it (home). */
+  docTitle?: string;
   description?: string;
   ogImage?: string;
+  /** Pages that shouldn't be indexed (the 404): noindex and no canonical. */
+  noindex?: boolean;
   /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
 }
 
-const { title, description, ogImage, bare } = Astro.props;
-const pageTitle = title ? `${title} | ${siteConfig.title}` : siteConfig.title;
+const { title, docTitle, description, ogImage = '/og-card.png', noindex, bare } = Astro.props;
+// Every title names the person (M5): "Nonogram Solver - Name"; home is "Name - Job title".
+const pageTitle =
+  docTitle ??
+  (title
+    ? `${title} \u2014 ${siteConfig.displayName}`
+    : `${siteConfig.displayName} \u2014 ${siteConfig.jobTitle}`);
 const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
-const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+// JSON-LD sameAs must be profile URLs, not bare handles (M30).
+const sameAs = [
+  siteConfig.github && `https://github.com/${siteConfig.github}`,
+  siteConfig.linkedin && `https://linkedin.com/in/${siteConfig.linkedin}`,
+].filter(Boolean);
 const isPreviewDeploy = import.meta.env.PREVIEW_DEPLOY === 'true';
 // Cloudflare Web Analytics beacon token (public - ships in the client HTML). Set the
 // CF_BEACON_TOKEN repo variable to enable; unset means no analytics script. The beacon is
@@ -57,9 +71,9 @@ const windowTitle = title || siteConfig.title;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="description" content={pageDescription} />
-    {isPreviewDeploy && <meta name="robots" content="noindex, nofollow" />}
+    {(isPreviewDeploy || noindex) && <meta name="robots" content="noindex, nofollow" />}
     <title>{pageTitle}</title>
-    <link rel="canonical" href={canonicalUrl.href} />
+    {!noindex && <link rel="canonical" href={canonicalUrl.href} />}
 
     <!-- Preload the above-the-fold pixel fonts (see frontmatter) so they win the race
          against first paint — the fix for the LCP text painting in a fallback face.
@@ -88,13 +102,16 @@ const windowTitle = title || siteConfig.title;
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonicalUrl.href} />
-    <meta property="og:site_name" content={siteConfig.title} />
-    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    <meta property="og:site_name" content={siteConfig.displayName} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -107,8 +124,8 @@ const windowTitle = title || siteConfig.title;
         '@type': 'Person',
         name: siteConfig.displayName,
         url: canonicalUrl.href,
-        jobTitle: 'Software Engineer',
-        sameAs: [siteConfig.github, siteConfig.linkedin].filter(Boolean),
+        jobTitle: siteConfig.jobTitle,
+        sameAs,
       })}
     />
 

@@ -15,7 +15,7 @@ const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
 // Projects placed on the timeline, newest first. Periods live here (timeline
 // presentation), not in the core project data.
 const projectTimeline: TimelineItem[] = [
-  { slug: 'quantum-ml-classifier', period: '2024–26' },
+  { slug: 'quantum-ml-classifier', period: '2024 – 2026' },
   { slug: 'latex-resume-editor', period: '2025' },
   { slug: 'quantum-nonogram-solver', period: '2024' },
   { slug: 'quantum-video-chat', period: '2024' },
@@ -29,7 +29,11 @@ const timeline: TimelineItem[] = [
 ];
 ---
 
-<BaseLayout title="Home" description={`${siteConfig.displayName} — software developer`}>
+<BaseLayout
+  title={siteConfig.displayName}
+  docTitle={`${siteConfig.displayName} — ${siteConfig.jobTitle}`}
+  description={`${siteConfig.jobTitle} working between research and production: browser video encrypted with simulated BB84 keys, Grover search validated on real IBM hardware, and demos that run in your browser.`}
+>
   <!-- ── Main two-column split ── left column stacks Me · Contact · Education ·
        Certifications · Skills; the right column is Intro (bio) then Experience &
        Projects. Placed by CSS grid (.main-cols): main-left spans both rows, the two
@@ -45,7 +49,7 @@ const timeline: TimelineItem[] = [
         <img src="/headshot.png" alt={siteConfig.displayName} class="bio-headshot" />
         <div class="bio-name">{siteConfig.displayName}</div>
         <div class="bio-tagline">
-          <span>Software Developer</span>
+          <span>{siteConfig.jobTitle}</span>
           <span>Southern California</span>
         </div>
       </div>
@@ -96,7 +100,7 @@ const timeline: TimelineItem[] = [
               ></path><path
                 d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"
               ></path></svg
-            > Resume</a
+            > Résumé <span class="btn-note">short</span></a
           >
           <a
             href={`https://api.${siteConfig.domain}/cv.pdf`}
@@ -107,9 +111,10 @@ const timeline: TimelineItem[] = [
               ><path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"></path><path
                 d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2v9.255S12 12 8 12s-5 1.755-5 1.755V2a1 1 0 0 1 1-1h5.5z"
               ></path></svg
-            > CV</a
+            > CV <span class="btn-note">full</span></a
           >
         </div>
+        {siteConfig.email && <p class="contact-email">{siteConfig.email}</p>}
       </div>
 
       <!-- Education -->
@@ -136,21 +141,27 @@ const timeline: TimelineItem[] = [
       <div class="bio-body">
         <div class="bio-text">
           <p>
-            Recent <strong>UC San Diego</strong> Computer Science graduate. I spent two and a half years
-            as a <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong>, building
-            quantum-secured video communications, quantum search algorithms, and machine-learning
-            classification pipelines.
+            I build systems that have to prove they work. As a{' '}
+            <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong> from 2022 to 2024, I built
+            browser-native video encrypted with keys from a simulated BB84 quantum key exchange, Grover
+            search that found the right answer 32.3% of the time on real IBM hardware against 6.25% by
+            chance, and machine-learning classification pipelines. I graduated in Computer Science from{
+              ' '
+            }
+            <strong>UC San Diego</strong> in December 2024.
           </p>
           <p>
-            Outside the lab, I co-founded <strong>San Diego CTF</strong> and
-            <strong>Quantum Computing at UC San Diego</strong>, served as
+            Outside the lab, I co-founded <strong>San Diego CTF</strong> and{' '}
+            <strong>Quantum Computing at UC San Diego</strong>, served as{' '}
             <strong>President of ACM Cyber</strong> through COVID lockdown, and built a MERN-stack platform
             serving 2,400 monthly active users for <strong>RIT Esports</strong>.
           </p>
           <p>
-            I care about making <strong>technical ideas usable and understandable</strong> — whether that
-            means translating research-level specifications into working software, or writing documentation
-            that lets people solve problems without asking for help.
+            What I'm after: work where <strong>correctness is checkable</strong> and the result has to
+            survive contact with real users — taking something that only works in a paper, a notebook,
+            or one person's head, and turning it into a system other people can rely on. Three of the
+            projects below run right here in your browser; each one has a <em>?</em> writeup and a link
+            to its source.
           </p>
         </div>
       </div>
@@ -175,11 +186,11 @@ const timeline: TimelineItem[] = [
       <section class="about-section">
         <h3>How I got here</h3>
         <p>
-          I got into computing through security clubs rather than coursework. I was running
+          I got into computing through security clubs rather than coursework. I was running{' '}
           <strong>ACM Cyber at UCSD</strong> when campus closed in 2020 — a 500-member org that existed
           almost entirely through in-person meetings. Keeping it alive meant rebuilding how it ran: documentation
           people could actually find, and role-based access so officers could do their jobs without waiting
-          on me. Around the same time a few of us started
+          on me. Around the same time a few of us started{' '}
           <strong>San Diego CTF</strong>, which grew into a competition with hundreds of players
           from more than twenty countries. I wrote the Discord bot everyone submitted through, on
           the theory that the fastest way to get people competing is to meet them where they already
@@ -190,13 +201,13 @@ const timeline: TimelineItem[] = [
       <section class="about-section">
         <h3>The research years</h3>
         <p>
-          From 2022 to 2024 I was a research intern at the
+          From 2022 to 2024 I was a research intern at the{' '}
           <strong>Qualcomm Institute (CALIT2)</strong>, working on quantum-secured communication.
           The centerpiece was a browser-native encrypted video system whose symmetric keys come from
           a <strong>BB84 quantum key-distribution</strong> exchange rather than classical Diffie–Hellman.
           The whole protocol runs in the browser over a WebRTC DataChannel: basis reconciliation and sifting,
           QBER estimation from a public sample, Cascade error correction, then Toeplitz privacy amplification
-          down to a 128-bit key. That key drives
+          down to a 128-bit key. That key drives{' '}
           <strong>AES-128-GCM</strong> encryption of the media frames through WebRTC Insertable Streams
           (<code>RTCRtpScriptTransform</code>, in a Web Worker), so frames are re-keyed with no SDP
           renegotiation and the latency cost stays low enough that a call still feels like a call.
@@ -211,7 +222,7 @@ const timeline: TimelineItem[] = [
           Alongside that I worked on Grover-based quantum search for constraint problems — validated
           on real IBM hardware, where a 2×2 nonogram reached 32.3% correct-state probability against
           6.25% by chance — and PyTorch classification pipelines. I presented the algorithmic work
-          to IBM's VP of Quantum during a campus visit, and co-founded
+          to IBM's VP of Quantum during a campus visit, and co-founded{' '}
           <strong>Quantum Computing at UC San Diego</strong> to give undergraduates somewhere to start.
         </p>
       </section>
@@ -219,14 +230,14 @@ const timeline: TimelineItem[] = [
       <section class="about-section">
         <h3>Why everything here runs in your browser</h3>
         <p>
-          Every demo on this page works with nothing running on my side. The nonogram solver's
-          classical path is a real solver ported to JavaScript. The digit classifier runs a trained
-          network's forward pass locally, on weights exported from the same model the backend
-          serves. The quantum results are real measurements, computed once and committed. That was a
-          deliberate constraint: a portfolio that only works while a server happens to be awake
-          isn't a portfolio, it's a recurring bill. The live backends still exist for the parts that
-          genuinely need them — they sit behind one gateway, scale to zero, and wake only for
-          someone I've handed a link to.
+          Every demo embedded on this page works with nothing running on my side. The nonogram
+          solver's classical path is a real solver ported to JavaScript. The digit classifier runs a
+          trained network's forward pass locally, on weights exported from the same model the
+          backend serves. The quantum results are real measurements, computed once and committed.
+          That was a deliberate constraint: a portfolio that only works while a server happens to be
+          awake isn't a portfolio, it's a recurring bill. The live backends still exist for the
+          parts that genuinely need them — they sit behind one gateway, scale to zero, and wake only
+          for someone I've handed a link to.
         </p>
       </section>
 
@@ -436,6 +447,24 @@ const timeline: TimelineItem[] = [
     flex: 0 0 1.4em;
     height: 1em;
     fill: currentcolor;
+  }
+
+  /* Tells Résumé from CV at a glance (M7). */
+  .bio-contact .btn-note {
+    margin-left: auto;
+    font-family: var(--font-sans);
+    font-size: var(--text-3xs);
+    font-weight: 400;
+  }
+
+  /* The address as selectable text, not only a mailto: (M7). */
+  .contact-email {
+    margin: 0;
+    padding: 0 clamp(10px, 1.3vw, 15px) clamp(10px, 1.3vw, 15px);
+    font-family: var(--font-sans);
+    font-size: var(--text-2xs);
+    overflow-wrap: anywhere;
+    user-select: all;
   }
 
   .timeline-window {

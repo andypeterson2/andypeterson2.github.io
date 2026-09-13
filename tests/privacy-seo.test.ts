@@ -4,7 +4,7 @@
  * Updated for system.css monochrome architecture.
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { resolve, join } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
@@ -84,6 +84,30 @@ describe('Social card preview verification', () => {
   test('supports OG image prop', () => {
     expect(layoutSrc).toContain('ogImage');
     expect(layoutSrc).toContain('og:image');
+  });
+
+  // A large-image card with no image previews as a blank box (audit M30).
+  test('every page gets a default preview image that exists', () => {
+    expect(layoutSrc).toContain("ogImage = '/og-card.png'");
+    expect(layoutSrc).toContain('twitter:image');
+    expect(existsSync(resolve(ROOT, 'public/og-card.png'))).toBe(true);
+  });
+
+  test('JSON-LD sameAs holds profile URLs, not bare handles', () => {
+    expect(layoutSrc).toContain('`https://github.com/${siteConfig.github}`');
+    expect(layoutSrc).toContain('`https://linkedin.com/in/${siteConfig.linkedin}`');
+  });
+
+  test('titles name the person, and the 404 is noindex without a canonical', () => {
+    expect(layoutSrc).toContain('siteConfig.displayName');
+    expect(layoutSrc).toContain('{!noindex && <link rel="canonical"');
+    const notFound = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');
+    expect(notFound).toMatch(/<BaseLayout[^>]*\bnoindex\b/);
+  });
+
+  test('robots.txt points crawlers at the sitemap', () => {
+    const robots = readFileSync(resolve(ROOT, 'public/robots.txt'), 'utf-8');
+    expect(robots).toMatch(/^Sitemap: https:\/\/.+\/sitemap-index\.xml$/m);
   });
 });
 
