@@ -84,10 +84,10 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
-    // About merged into the home page (bio + skills + timeline with projects).
+    // The About is the home page's "The longer version" writeup; #about opens it.
     // One entry only: trailingSlash defaults to 'ignore', so '/about' also covers
     // '/about/' — defining both collides (a hard error in future Astro versions).
-    '/about': '/',
+    '/about': '/#about',
     // The legacy project-detail surface is retired — the home timeline is the
     // one showcase surface. Exact paths only (the /app/ demo pages live on).
     '/projects': '/#projects',

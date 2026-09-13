@@ -116,9 +116,11 @@ describe('Home Page', () => {
     expect(timelineEntrySrc).toContain('timeline-entry--project');
   });
 
-  test('has the long-form about section', () => {
-    expect(indexSrc).toContain('id="about"');
-    expect(indexSrc).toContain('about-section');
+  // The About ships as a writeup behind "? The longer version" on the Me card; it
+  // used to sit in the page under display:none, where no one could read it (H5).
+  test('the long-form about is reachable, not hidden', () => {
+    expect(indexSrc).toContain('<WriteupModal slug="about"');
+    expect(indexSrc).not.toContain('about-window');
   });
 
   test('links to project apps and repos', () => {
