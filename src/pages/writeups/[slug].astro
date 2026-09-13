@@ -1,0 +1,75 @@
+---
+// Long-form articles (src/content/articles) as their own pages. The writeup modal is
+// the quick look; anything that needs equations and derivations lives here (M17).
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles');
+  return articles.map((a) => ({ params: { slug: a.id }, props: { article: a } }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+---
+
+<BaseLayout title={article.data.title} description={article.data.summary}>
+  <article class="article">
+    <p class="article-back"><a href="/#quantum-ml-classifier">← Back to the project</a></p>
+    <p class="article-summary">{article.data.summary}</p>
+    <Content />
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    max-width: 68ch;
+    margin: 0 auto;
+    padding: clamp(12px, 2vw, 24px) clamp(12px, 3vw, 32px) clamp(24px, 4vw, 48px);
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  .article-back {
+    margin: 0 0 1em;
+    font-size: var(--text-2xs);
+  }
+
+  .article-summary {
+    font-size: var(--text-sm);
+    margin: 0 0 1.2em;
+  }
+
+  .article :global(h2) {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 1.6em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .article :global(p) {
+    margin: 0 0 0.9em;
+  }
+
+  .article :global(a) {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .article :global(strong) {
+    font-weight: 700;
+  }
+
+  .article :global(math) {
+    font-size: 1.05em;
+  }
+
+  .article :global(.math-scroll) {
+    margin: 0.75em 0;
+    overflow-x: auto;
+  }
+</style>

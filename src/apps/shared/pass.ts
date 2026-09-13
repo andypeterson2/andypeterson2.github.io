@@ -141,6 +141,10 @@ async function activateLive(): Promise<void> {
     }),
   );
 }
+// The status item's Retry (after a give-up) re-runs the same health-gated activation.
+document.addEventListener('navbar:connect-retry', () => {
+  void activateLive();
+});
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => void activateLive(), 0); // after the apps have registered their listeners

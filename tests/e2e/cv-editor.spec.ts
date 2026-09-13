@@ -202,10 +202,20 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Reset lives in File, where a System-6 user looks for Revert. It restores a
     // pristine clone (the store proxies/mutates whatever object it's handed).
+    // With edits on the page it asks first (audit M26), and the reset is undoable.
+    let asked = '';
+    page.once('dialog', (d) => {
+      asked = d.message();
+      void d.accept();
+    });
     await openMenu(page, 'File');
     await page.getByRole('menuitem', { name: /Reset demo/ }).click();
+    expect(asked).toMatch(/Discard your changes/);
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
+    await openMenu(page, 'Edit');
+    await page.getByRole('menuitem', { name: /Undo Reset demo/ }).click();
+    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
   });
 
   test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
@@ -1146,14 +1156,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
   });
 
-  test('the preview pane prompts to connect in demo mode', async ({ page }) => {
+  test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
     await expect(page.locator('.menubar')).toContainText('File');
 
     await page.getByRole('button', { name: /Preview/ }).click();
     await expect(page.locator('.preview')).toBeVisible();
-    await expect(page.locator('.preview')).toContainText('connect to compile');
+    await expect(page.locator('.preview')).toContainText('Sign in to compile');
     await expect(page.locator('.preview .pv-btn')).toBeDisabled();
   });
 
@@ -1747,5 +1757,91 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Sign out drops the server session (then the store reloads back to the demo).
     await account.getByRole('button', { name: 'Sign out' }).click();
     await expect.poll(() => loggedOut).toBe(true);
+  });
+});
+
+// Audit C1: "Sign in with Google to keep your edits" must keep them. The login
+// round trip is mocked (the gateway 302s straight back); the new account is empty,
+// so the editor offers the stashed demo edits and imports them as a profile.
+test.describe('Demo edits survive sign-in', () => {
+  test('edit → sign in → offered → imported into a new profile', async ({ page }) => {
+    await gotoEditor(page);
+    // Make an edit the demo tracks (the section-reorder shortcut marks it dirty).
+    await page.locator('[aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"]').first().focus();
+    await page.keyboard.press('Alt+ArrowDown');
+
+    // From here on the visitor is "signed in" with an empty account.
+    await page.unroute('**/auth/me');
+    await page.route('**/auth/me', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ authenticated: true, email: 'ada@example.com', name: 'Ada' }),
+      }),
+    );
+    await page.route('**/auth/login**', (r) =>
+      r.fulfill({ status: 302, headers: { location: page.url() } }),
+    );
+    let persons: { id: number; name: string }[] = [];
+    let importBody: Record<string, unknown> | null = null;
+    await page.route(/\/cv\/api\/persons$/, (r) => {
+      if (r.request().method() === 'POST') {
+        persons = [{ id: 9, name: 'Ada (from demo)' }];
+        return r.fulfill({ status: 201, contentType: 'application/json', body: '{"id":9}' });
+      }
+      return r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons }),
+      });
+    });
+    await page.route(/\/cv\/api\/persons\/9\/import$/, (r) => {
+      importBody = r.request().postDataJSON() as Record<string, unknown>;
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          person: { id: 9, name: 'Ada (from demo)' },
+          personal: { firstName: 'Ada' },
+          sections: [],
+          variants: [],
+        }),
+      }),
+    );
+
+    await page.locator('button.conn').click();
+    const offer = page.getByRole('dialog', { name: 'Your demo edits' });
+    await expect(offer).toBeVisible({ timeout: 15000 });
+    await offer.getByRole('button', { name: 'Bring them in' }).click();
+    await expect(offer).toBeHidden();
+    expect(importBody).not.toBeNull();
+    const personal = (importBody as unknown as { personal: Record<string, string> }).personal;
+    expect(personal.email).toBe('ada@example.com');
+    expect(personal.github).toBeUndefined();
+  });
+});
+
+// Audit M10: signed in but the backend didn't answer is its own state (not "Sign
+// in" again), and a phone still says the demo isn't saved.
+test.describe('Editor state copy', () => {
+  test('signed in with an unreachable backend offers a retry, not another sign-in', async ({
+    page,
+  }) => {
+    await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
+    await page.route('**/health', (r) => r.fulfill({ status: 503 }));
+    await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada' } });
+    await expect(page.locator('.conn')).toContainText("Couldn't load your résumés");
+    await expect(page.locator('.conn')).not.toContainText('Sign in with Google');
+  });
+
+  test('on a phone the status bar still says the demo is not saved', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    await expect(page.locator('.sb-state')).toBeVisible();
+    await expect(page.locator('.sb-state')).toHaveText('demo — not saved');
   });
 });

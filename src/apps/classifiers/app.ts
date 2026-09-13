@@ -15,7 +15,13 @@ import { UIKit } from '../ui-kit/ui-kit';
 import { connectionManager } from './connection';
 import { consumeSSE, type SseStructuredEvent } from './sse';
 import { MiniChart } from './chart';
-import { ClassifierInfer, type ClassifierModel, type Prediction } from './infer';
+import {
+  ClassifierInfer,
+  isBlank,
+  preprocessDigit,
+  type ClassifierModel,
+  type Prediction,
+} from './infer';
 
 // ── Shorthand ────────────────────────────────────────────────────────────────
 const ICONS = UIKit.ICONS;
@@ -156,12 +162,14 @@ interface ModelInfo {
   _file?: string;
   /** Binary-subset caveat (e.g. the QSVM answers only "6 vs 9"). */
   _subset?: string | undefined;
+  /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
+  _classes?: string[] | undefined;
 }
 
 /** Application state — single source of truth for loaded models and predictions. */
 const state: {
   models: Partial<Record<string, ModelInfo>>;
-  predictions: Partial<Record<string, Prediction>>;
+  predictions: Partial<Record<string, Prediction & { outOfScope?: boolean }>>;
 } = {
   models: {},
   predictions: {},
@@ -581,6 +589,58 @@ function buildSessionModelsList(): void {
 
 // ── Prediction table (TRY card) ───────────────────────────────────────────────
 
+function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCellElement {
+  const td = document.createElement('td');
+  td.className = 'pred-model-name';
+  td.textContent = name;
+  // Say up front that a binary model only knows two classes (audit M20).
+  if (m?._subset) {
+    const scope = document.createElement('span');
+    scope.className = 'pred-scope';
+    scope.textContent = ` · ${m._subset} only`;
+    td.appendChild(scope);
+  }
+  return td;
+}
+
+function predictionAnswerCell(
+  p: (Prediction & { outOfScope?: boolean }) | undefined,
+  m: ModelInfo | undefined,
+): HTMLTableCellElement {
+  const td = document.createElement('td');
+  if (!p) {
+    td.textContent = '—';
+    return td;
+  }
+  // Server-supplied strings go through textContent, never innerHTML.
+  const span = document.createElement('span');
+  span.className = p.outOfScope ? 'pred-label pred-out' : 'pred-label';
+  span.textContent = p.prediction;
+  td.appendChild(span);
+  if (p.outOfScope && m?._subset) {
+    const note = document.createElement('span');
+    note.className = 'pred-out-note';
+    note.textContent = ` (only answers ${m._subset})`;
+    td.appendChild(note);
+  }
+  return td;
+}
+
+function predictionConfidenceCell(p: Prediction | undefined): HTMLTableCellElement {
+  const td = document.createElement('td');
+  // A sign classifier (QSVM) has no probability — render an honest dash
+  // rather than a fabricated percentage.
+  if (p?.confidence != null) {
+    const span = document.createElement('span');
+    span.className = confClass(p.confidence);
+    span.textContent = pct(p.confidence);
+    td.appendChild(span);
+  } else {
+    td.textContent = '—';
+  }
+  return td;
+}
+
 function buildPredictionTable(): void {
   const names = Object.keys(state.models);
   if (names.length === 0) {
@@ -588,36 +648,14 @@ function buildPredictionTable(): void {
     return;
   }
   predBody.innerHTML = '';
+  if (window.UI_CONFIG?.input_type === 'image' && Object.keys(state.predictions).length === 0) {
+    predBody.innerHTML = `<tr class="empty-row"><td colspan="3">Draw a digit — predictions appear as you draw.</td></tr>`;
+  }
   for (const name of names) {
     const p = state.predictions[name];
+    const m = state.models[name];
     const tr = document.createElement('tr');
-    const nameTd = document.createElement('td');
-    nameTd.className = 'pred-model-name';
-    nameTd.textContent = name;
-    // Server-supplied strings go through textContent, never innerHTML.
-    const predTd = document.createElement('td');
-    if (p) {
-      const span = document.createElement('span');
-      span.className = 'pred-label';
-      span.textContent = p.prediction;
-      predTd.appendChild(span);
-    } else {
-      predTd.textContent = '—';
-    }
-    const confTd = document.createElement('td');
-    // A sign classifier (QSVM) has no probability — render an honest dash
-    // rather than a fabricated percentage.
-    if (p?.confidence != null) {
-      const span = document.createElement('span');
-      span.className = confClass(p.confidence);
-      span.textContent = pct(p.confidence);
-      confTd.appendChild(span);
-    } else {
-      confTd.textContent = '—';
-    }
-    tr.appendChild(nameTd);
-    tr.appendChild(predTd);
-    tr.appendChild(confTd);
+    tr.append(predictionNameCell(name, m), predictionAnswerCell(p, m), predictionConfidenceCell(p));
     predBody.appendChild(tr);
   }
 }
@@ -1025,6 +1063,16 @@ async function runPredict(): Promise<void> {
 // reads its own feature subset (the QSVM uses 2 of the 4 iris inputs).
 async function runPredictLocal(): Promise<void> {
   const locals = modelEntries().filter(([, m]) => m._local);
+  const image = window.UI_CONFIG?.input_type === 'image';
+  // Nothing drawn → nothing to predict. A linear model will happily "answer" an empty
+  // grid (it said "5 · 37%"), which is a number with no basis (audit M20).
+  if (image && isBlank(Array.from(grid))) {
+    state.predictions = {};
+    buildPredictionTable();
+    return;
+  }
+  // The canvas goes through MNIST's own crop-scale-centre step first (audit M19).
+  const digit = image ? preprocessDigit(Array.from(grid)) : null;
   for (const [name, m] of locals) {
     let model: ClassifierModel;
     try {
@@ -1033,8 +1081,8 @@ async function runPredictLocal(): Promise<void> {
       continue;
     }
     let raw: number[];
-    if (window.UI_CONFIG?.input_type === 'image') {
-      raw = Array.from(grid); // the 28×28 intensity grid (0–255) is the model input
+    if (digit) {
+      raw = digit;
     } else {
       raw = (model.features ?? []).map((f) => {
         const inp = document.querySelector<HTMLInputElement>(`.feature-input[data-feature="${f}"]`);
@@ -1042,6 +1090,15 @@ async function runPredictLocal(): Promise<void> {
       });
     }
     state.predictions[name] = ClassifierInfer.predict(model, raw);
+  }
+  // A binary model (the QSVM) answers every input with one of its two classes. When
+  // the full model's answer is outside that pair, mark the binary answer as out of
+  // scope rather than presenting it as a reading of the input (audit M20).
+  const reference = locals.find(([, m]) => !m._classes)?.[0];
+  const refPred = reference ? state.predictions[reference]?.prediction : undefined;
+  for (const [name, m] of locals) {
+    const p = state.predictions[name];
+    if (p && m._classes && refPred !== undefined) p.outOfScope = !m._classes.includes(refPred);
   }
   buildPredictionTable();
 }
@@ -1333,10 +1390,43 @@ document.addEventListener('click', (e) => {
   })();
 });
 
+// ── Tier-aware controls (audit H9) ────────────────────────────────────────────
+// Training, ensembles and saved models run on the live backend. Offline they used
+// to stay enabled — a solid "Train" with an empty Model field that could only log
+// "Not connected". Now they're disabled, with the reason shown once in the Train card.
+const BACKEND_CONTROLS = [
+  'train-btn',
+  'ensemble-btn',
+  'refresh-saved-btn',
+  'import-btn',
+  'saved-select',
+  'model-type',
+  'teacher-select',
+];
+function applyTier(): void {
+  const off = isOffline();
+  for (const id of BACKEND_CONTROLS) {
+    const el = document.getElementById(id);
+    if (el instanceof HTMLButtonElement || el instanceof HTMLSelectElement) {
+      el.disabled = off;
+      el.title = off ? 'Needs the live backend' : '';
+    }
+  }
+  const note = document.getElementById('backend-note');
+  if (note) note.hidden = !off;
+  const tier = document.getElementById('tier-label');
+  if (tier) tier.textContent = off ? 'Runs in your browser' : 'Live backend';
+  // Offline, an empty Model select is a required field nobody can fill: hide it.
+  // (Online the list still has no source in this embed — noted for the live tier.)
+  const typeRow = document.getElementById('model-type-row');
+  if (typeRow) typeRow.hidden = off && modelTypeSelect.options.length === 0;
+}
+
 // ── Connection state observer ────────────────────────────────────────────────
 
 document.addEventListener('connection:statechange', (e) => {
   const { state: s, previous } = (e as CustomEvent<{ state: string; previous: string }>).detail;
+  applyTier();
   if (s === 'connected') addLog('Connected to server', 'ok');
   if (s === 'degraded') addLog('Connection unstable — retrying…');
   if (s === 'disconnected' && (previous === 'connected' || previous === 'degraded'))
@@ -1382,6 +1472,7 @@ async function initLocalModels(): Promise<void> {
       _local: true,
       _file: file,
       _subset: model.display?.subset,
+      _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
     };
   }
   buildSessionModelsList();
@@ -1393,5 +1484,8 @@ void loadModels();
 void loadSavedModels();
 void initLocalModels();
 renderDatasetMenu();
+applyTier();
+if (isOffline())
+  addLog('Running in your browser: predictions are local; training needs the live backend.');
 modelNameInput.value = defaultName(modelTypeSelect.value);
 void fetchModelInfo(modelTypeSelect.value);

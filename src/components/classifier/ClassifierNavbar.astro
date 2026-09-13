@@ -7,10 +7,18 @@
       <div id="dataset-list"></div>
     </div>
   </div>
-  <div class="navbar-right"></div>
+  <div class="navbar-right">
+    <span id="tier-label" class="tier-label">Runs in your browser</span>
+  </div>
 </header>
 
 <style>
+  /* The tier, said in the app's own chrome (H6). */
+  .tier-label {
+    font-family: var(--font-sans);
+    font-size: var(--text-3xs);
+  }
+
   .app-navbar {
     display: flex;
     align-items: center;

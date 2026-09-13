@@ -164,6 +164,105 @@ function predictQsvm(model: QsvmModel, raw: number[]): Prediction {
   return { prediction: s > 0 ? classes[0] : classes[1], confidence: null, probs: null };
 }
 
+/** True when a 28×28 grid has no ink at all (nothing drawn yet). */
+export function isBlank(raw: readonly number[]): boolean {
+  return raw.every((v) => !v);
+}
+
+interface Box {
+  x0: number;
+  y0: number;
+  w: number;
+  h: number;
+}
+
+/** The bounding box of the ink in a size×size grid, or null when it's blank. */
+function inkBox(raw: readonly number[], size: number): Box | null {
+  let x0 = size,
+    y0 = size,
+    x1 = -1,
+    y1 = -1;
+  raw.forEach((v, i) => {
+    if (!v) return;
+    const x = i % size,
+      y = Math.floor(i / size);
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
+  });
+  return x1 < 0 ? null : { x0, y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+/** Area-weighted mean of the source cells covering the rectangle [sx0,sx1)×[sy0,sy1). */
+function cellAverage(
+  raw: readonly number[],
+  size: number,
+  [sx0, sx1, sy0, sy1]: readonly [number, number, number, number],
+): number {
+  let acc = 0,
+    area = 0;
+  for (let sy = Math.floor(sy0); sy < Math.ceil(sy1); sy++) {
+    const oy = Math.min(sy + 1, sy1) - Math.max(sy, sy0);
+    for (let sx = Math.floor(sx0); sx < Math.ceil(sx1); sx++) {
+      const a = (Math.min(sx + 1, sx1) - Math.max(sx, sx0)) * oy;
+      if (a <= 0) continue;
+      acc += (raw[sy * size + sx] ?? 0) * a;
+      area += a;
+    }
+  }
+  return area ? acc / area : 0;
+}
+
+/** Centre of mass (x, y) of a w×h grid. */
+function centreOfMass(g: Float64Array, w: number): [number, number] {
+  let mass = 0,
+    mx = 0,
+    my = 0;
+  g.forEach((v, i) => {
+    mass += v;
+    mx += v * (i % w);
+    my += v * Math.floor(i / w);
+  });
+  return [mx / mass, my / mass];
+}
+
+/**
+ * MNIST's own preprocessing for a hand-drawn 28×28 grid (audit M19): crop to the ink,
+ * scale the longer side to 20px (keeping the aspect ratio, area-averaged), then place
+ * it in a 28×28 frame so its centre of mass sits at the centre. The training digits
+ * went through exactly this, so skipping it made a plainly drawn 7 read as a 2 or 3.
+ * Returns the grid unchanged if it's blank.
+ */
+export function preprocessDigit(raw: readonly number[], size = 28, box = 20): number[] {
+  const b = inkBox(raw, size);
+  if (!b) return Array.from(raw);
+  const scale = box / Math.max(b.w, b.h);
+  const tw = Math.max(1, Math.round(b.w * scale)),
+    th = Math.max(1, Math.round(b.h * scale));
+  const scaled = new Float64Array(tw * th);
+  for (let i = 0; i < tw * th; i++) {
+    const tx = i % tw,
+      ty = Math.floor(i / tw);
+    scaled[i] = cellAverage(raw, size, [
+      b.x0 + tx / scale,
+      b.x0 + (tx + 1) / scale,
+      b.y0 + ty / scale,
+      b.y0 + (ty + 1) / scale,
+    ]);
+  }
+  const [cx, cy] = centreOfMass(scaled, tw);
+  const ox = Math.round((size - 1) / 2 - cx),
+    oy = Math.round((size - 1) / 2 - cy);
+  const out = new Array<number>(size * size).fill(0);
+  scaled.forEach((v, i) => {
+    const x = (i % tw) + ox,
+      y = Math.floor(i / tw) + oy;
+    if (x >= 0 && y >= 0 && x < size && y < size) out[y * size + x] = Math.round(v);
+  });
+  return out;
+}
+
 /** Dispatch on the model's kind (default: the linear platform models). */
 function predict(model: ClassifierModel, raw: number[]): Prediction {
   return model.kind === 'qsvm' ? predictQsvm(model, raw) : predictLinear(model, raw);
@@ -171,4 +270,4 @@ function predict(model: ClassifierModel, raw: number[]): Prediction {
 
 export const ClassifierInfer: ClassifierInferApi = { loadModel, predict };
 
-window.ClassifierInfer = ClassifierInfer;
+if (typeof window !== 'undefined') window.ClassifierInfer = ClassifierInfer;

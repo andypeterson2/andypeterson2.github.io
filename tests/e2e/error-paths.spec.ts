@@ -17,9 +17,8 @@ test.describe('Error paths and 404 handling', () => {
   test('404 page includes navigation back to home', async ({ page }) => {
     await page.goto('/not-a-page/');
     // A link back to home should be present
-    const homeLinks = page.locator('a[href="/"]');
-    const count = await homeLinks.count();
-    expect(count).toBeGreaterThan(0);
+    // (auto-waiting: a bare count() raced the dev server's first 404 compile)
+    await expect(page.locator('a[href="/"]').first()).toBeAttached();
   });
 });
 
