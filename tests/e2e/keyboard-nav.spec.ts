@@ -42,6 +42,28 @@ test.describe('Keyboard navigation', () => {
     throw new Error('Could not reach a menubar link via Tab key');
   });
 
+  // The page scrolls inside .site-pane; before any click, PageDown and Space used to
+  // move nothing (Fable A1-01). The first Tab must still land on the skip link.
+  test('PageDown and Space scroll the page before any click', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    const top = () => page.evaluate(() => document.querySelector('.site-pane')!.scrollTop);
+    expect(await top()).toBe(0);
+    await page.keyboard.press('PageDown');
+    await expect.poll(top).toBeGreaterThan(300);
+    const after = await top();
+    await page.keyboard.press(' ');
+    await expect.poll(top).toBeGreaterThan(after);
+    await page.keyboard.press('Home');
+    await expect.poll(top).toBe(0);
+  });
+
+  test('the first Tab still reaches the skip link', async ({ page }) => {
+    await page.goto('/');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('a.skip-link')).toBeFocused();
+  });
+
   test('skip link is present for keyboard users', async ({ page }) => {
     await page.goto('/');
     const skipLink = page.locator('a[href="#main-content"]');

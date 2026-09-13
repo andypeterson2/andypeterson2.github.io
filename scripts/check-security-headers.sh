@@ -51,6 +51,13 @@ if [ "${1:-}" = "--live" ]; then
   fi
   printf '%s' "$hdrs" | grep -qiE '^x-content-type-options:\s*nosniff' \
     && echo "✓ nosniff present" || echo "! no X-Content-Type-Options: nosniff (minor)" >&2
+  # Hashed build assets are immutable (public/_headers): check one from the live page.
+  asset=$(curl -fsSL -m 15 "$ORIGIN" | grep -oE '/_astro/[^"]+\.(css|js|woff2)' | head -1 || true)
+  if [ -n "$asset" ] && curl -fsSI -m 15 "$ORIGIN$asset" | grep -qiE '^cache-control:.*immutable'; then
+    echo "✓ hashed assets cached as immutable ($asset)"
+  else
+    echo "! hashed assets not served immutable${asset:+ ($asset)} (performance, not security)" >&2
+  fi
   exit "$live_fail"
 fi
 

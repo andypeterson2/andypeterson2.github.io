@@ -46,13 +46,26 @@ const timeline: TimelineItem[] = [
         <div class="title-bar">
           <h2 class="title">Me</h2>
         </div>
-        <img src="/headshot.png" alt={siteConfig.displayName} class="bio-headshot" />
+        <!-- Intrinsic size reserves the box before the file arrives: without it the
+             Me card grew by the portrait's height on load (Fable A1-03). -->
+        <img
+          src="/headshot.png"
+          alt={siteConfig.displayName}
+          class="bio-headshot"
+          width="178"
+          height="220"
+        />
         <div class="bio-name">{siteConfig.displayName}</div>
         <div class="bio-tagline">
           <span>{siteConfig.jobTitle}</span>
           <span>Southern California</span>
         </div>
-        <a class="bio-contact-link" href="#contact">Contact ↓</a>
+        <!-- The site's strongest evidence is the demos: point at them from the card, not
+             only from the intro's last sentence (Fable A2-08). -->
+        <div class="bio-links">
+          <a class="bio-contact-link" href="#projects">Try a demo ↓</a>
+          <a class="bio-contact-link" href="#contact">Contact ↓</a>
+        </div>
         <!-- The long About, behind a "?" like every other depth on the site (L7) — it
              shipped hidden for months (H5). /about lands here with the dialog open. -->
         <div class="bio-more">
@@ -85,11 +98,13 @@ const timeline: TimelineItem[] = [
             serving 2,400 monthly active users for <strong>RIT Esports</strong>.
           </p>
           <p>
+            Three of the four projects below run right here in your browser — try them. Every
+            project has a <em>?</em> writeup and a link to its source.
+          </p>
+          <p>
             What I'm after: work where <strong>correctness is checkable</strong> and the result has to
             survive contact with real users — taking something that only works in a paper, a notebook,
-            or one person's head, and turning it into a system other people can rely on. Three of the
-            projects below run right here in your browser; each one has a <em>?</em> writeup and a link
-            to its source.
+            or one person's head, and turning it into a system other people can rely on.
           </p>
         </div>
       </div>
@@ -238,11 +253,16 @@ const timeline: TimelineItem[] = [
     align-items: start;
   }
 
-  /* A quick way to the contact buttons, which now sit after the work. */
-  .bio-contact-link {
-    display: block;
-    text-align: center;
+  /* Quick ways to the demos and to the contact buttons, which sit after the work. */
+  .bio-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 clamp(10px, 1.4vw, 18px);
     padding: 0 0 clamp(6px, 0.9vw, 10px);
+  }
+
+  .bio-contact-link {
     font-family: var(--font-ui);
     font-size: var(--text-2xs);
   }
@@ -404,18 +424,24 @@ const timeline: TimelineItem[] = [
   }
 
   /* ── Timeline ── the container owns the vertical spine; each entry (TimelineEntry
-     component) draws its own dot/diamond aligned to it. */
+     component) draws its own dot/diamond aligned to it. Both share one x
+     (--spine-x, from each entry's left edge); the spine is drawn on the container,
+     so it adds the container's padding. The markers sat 12px right of the line
+     when both used the bare clamp from different boxes (Fable A1-04). */
   .timeline {
+    --timeline-pad: clamp(8px, 1vw, 12px);
+    --spine-x: clamp(62px, 8vw, 90px);
+
     display: flex;
     flex-direction: column;
     position: relative;
-    padding: clamp(8px, 1vw, 12px);
+    padding: var(--timeline-pad);
   }
 
   .timeline::before {
     content: '';
     position: absolute;
-    left: clamp(62px, 8vw, 90px);
+    left: calc(var(--timeline-pad) + var(--spine-x));
     top: 8px;
     bottom: 8px;
     width: 1px;

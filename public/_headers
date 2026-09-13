@@ -18,3 +18,14 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+# ── Caching ──────────────────────────────────────────────────────────────────
+# Files under /_astro/ are content-hashed by the build (a new file name on every
+# change), so they can be cached for a year and never revalidated; the pixel fonts
+# live here too, and font-display only paints them if they're ready in time.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Unhashed shared images: a day fresh, then served stale while revalidating.
+/icons/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

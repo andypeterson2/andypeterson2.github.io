@@ -2,7 +2,7 @@
  * Project data integrity tests — validate the projects.ts data source.
  */
 import { describe, test, expect } from 'vitest';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { projects } from '../src/data/projects';
 
@@ -68,6 +68,28 @@ describe('projects.ts data integrity', () => {
           `${p.slug} appUrl must be an internal path (/...) or an external http(s) URL`,
         ).toMatch(/^(\/|https?:\/\/)/);
       }
+    }
+  });
+});
+
+// Every writeup belongs to a project (the "?" button reads it by slug), and every
+// long-form article names the project its "Back to the project" link returns to
+// (Fable A1-13). A missing writeup now fails the build; this names the culprit.
+describe('Content ↔ project contract', () => {
+  const slugs = new Set(projects.map((p) => p.slug));
+  const dir = (d: string) => readdirSync(resolve(ROOT, d)).filter((f) => f.endsWith('.md'));
+
+  test('every project has a writeup', () => {
+    const writeups = new Set(dir('src/content/writeups').map((f) => f.replace(/\.md$/, '')));
+    for (const slug of slugs) expect(writeups, slug).toContain(slug);
+  });
+
+  test("every article's project is a real project slug", () => {
+    for (const f of dir('src/content/articles')) {
+      const front = readFileSync(resolve(ROOT, 'src/content/articles', f), 'utf-8').split('---')[1];
+      const project = /^project:\s*(\S+)/m.exec(front)?.[1];
+      expect(project, f).toBeDefined();
+      expect(slugs, f).toContain(project);
     }
   });
 });
