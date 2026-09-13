@@ -16,8 +16,8 @@ import Button from '../Button.astro';
     aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris or BB84 under Dataset and type the values."
   ></canvas>
   <div class="row">
-    <Button variant="secondary" id="clear-btn" type="button">Clear</Button>
-    <Button variant="solid" id="predict-btn" type="button">Predict</Button>
+    <Button app variant="secondary" id="clear-btn" type="button">Clear</Button>
+    <Button app variant="solid" id="predict-btn" type="button">Predict</Button>
   </div>
 </section>
 
@@ -25,7 +25,7 @@ import Button from '../Button.astro';
 <section class="card" id="tabular-col" class:list={['hidden']}>
   <h2 class="card-title">Predict</h2>
   <div class="feature-inputs"></div>
-  <Button variant="solid" block id="predict-btn-tab" type="button">Predict</Button>
+  <Button app variant="solid" block id="predict-btn-tab" type="button">Predict</Button>
 </section>
 
 <!-- Predictions -->

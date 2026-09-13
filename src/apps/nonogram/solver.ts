@@ -161,33 +161,57 @@ export function renderQuantum(
   renderQuantumList();
 }
 
+// The histogram is drawn in the design system, not beside it (audit M29): every mark
+// carries a class that CSS colours from the tokens (app.astro, .hist-*), labels are
+// Geneva at --text-3xs (12px and up), and there's no colour to lint here at all.
+// Bars at or above the threshold are ink; below it, a 50% dither with an ink edge.
+// Layout maths assumes the label size: --text-3xs renders 12-14px, and Geneva's
+// advance at that size is about 8px a character.
+const LABEL_PX = 13;
+const CHAR_PX = 8;
+
+function histBox(): { W: number; H: number } {
+  const parent = elHistSvg.parentElement;
+  return { W: parent?.clientWidth ?? 400, H: parent?.clientHeight ?? 260 };
+}
+
+function paint(W: number, H: number, body: string, label: string): void {
+  const svg = elHistSvg;
+  svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', label);
+  svg.removeAttribute('aria-hidden');
+  svg.innerHTML = body;
+  elQuPlaceholder.style.display = 'none';
+}
+
+function axes(cW: number, cH: number): string {
+  return (
+    `<line class="hist-axis" x1="0" y1="0" x2="0" y2="${String(cH)}"/>` +
+    `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>`
+  );
+}
+
 export function drawEmptyHistogram(): void {
   // An empty, labelled frame — never placeholder bars that look like data (H7).
-  const svg = elHistSvg;
-  const parent = svg.parentElement;
-  const W = parent?.clientWidth ?? 400;
-  const H = parent?.clientHeight ?? 200;
-  const P = { t: 20, r: 12, b: 44, l: 50 };
+  const { W, H } = histBox();
+  const P = { t: 20, r: 12, b: 44, l: 56 };
   const cW = W - P.l - P.r,
     cH = H - P.t - P.b;
-  let s = `<g transform="translate(${String(P.l)},${String(P.t)})">`;
-  s += `<line x1="0" y1="0" x2="0" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
-  s += `<line x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
-  s += `<text x="${(cW / 2).toFixed(1)}" y="${(cH / 2).toFixed(1)}"
-    text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
-    font-size="12" fill="#666">${
-      window.API_BASE
-        ? cW < 320
-          ? 'Counts appear after a run'
-          : 'Measurement counts appear here after a quantum run'
-        : cW < 320
-          ? 'Pick a Gallery run'
-          : 'Pick a Gallery run to see real quantum measurement counts'
-    }</text>`;
-  s += `</g>`;
-  svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
-  svg.innerHTML = s;
-  elQuPlaceholder.style.display = 'none';
+  const narrow = cW < 320;
+  const msg = window.API_BASE
+    ? narrow
+      ? 'Counts appear after a run'
+      : 'Measurement counts appear here after a quantum run'
+    : narrow
+      ? 'Pick a Gallery run'
+      : 'Pick a Gallery run to see real quantum measurement counts';
+  const s =
+    `<g transform="translate(${String(P.l)},${String(P.t)})">` +
+    axes(cW, cH) +
+    `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH / 2).toFixed(1)}"
+      text-anchor="middle">${msg}</text></g>`;
+  paint(W, H, s, `Measurement histogram: empty. ${msg}.`);
 }
 
 function fp(p: number): string {
@@ -199,84 +223,91 @@ function fp(p: number): string {
   return String(Math.round(v)) + '%';
 }
 
-export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
-  const svg = elHistSvg;
-  const parent = svg.parentElement;
-  const W = parent?.clientWidth ?? 400;
-  const H = parent?.clientHeight ?? 200;
-  const P = { t: 20, r: 12, b: 44, l: 50 };
-  const cW = W - P.l - P.r,
-    cH = H - P.t - P.b;
+// A 2×2 checkerboard: the System-6 50% grey, in ink on paper.
+const DITHER =
+  '<defs><pattern id="hist-dither" width="2" height="2" patternUnits="userSpaceOnUse">' +
+  '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="1" y="1" width="1" height="1"/>' +
+  '</pattern></defs>';
 
+export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
   const n = entries.length;
   if (n === 0) {
     drawEmptyHistogram();
     return;
   }
+  const { W, H } = histBox();
+  const bits = Math.max(...entries.map(([bs]) => bs.length));
+  // Room under the axis for the bitstrings, set at 45°, plus the caption line.
+  const labelDrop = Math.min(96, 8 + bits * CHAR_PX * 0.71);
+  const P = { t: 22, r: 12, b: labelDrop + LABEL_PX + 10, l: 56 };
+  const cW = W - P.l - P.r,
+    cH = H - P.t - P.b;
+
   const maxProb = entries[0][1];
   const slot = cW / n;
   const bW = Math.max(4, Math.min(44, slot * 0.72));
+  // A 12px label needs ~14px of run; past that, label every k-th bar.
+  const every = Math.max(1, Math.ceil((LABEL_PX + 2) / slot));
 
-  const C_ABOVE = '#000';
-  const C_BELOW = '#ccc';
-  const C_THR = '#e00';
-  const FONT = 'Helvetica,Arial,sans-serif';
+  let s = DITHER + `<g transform="translate(${String(P.l)},${String(P.t)})">`;
 
-  let s = `<g transform="translate(${String(P.l)},${String(P.t)})">`;
-
-  for (const step of [0, 25, 50, 75, 100]) {
+  for (const step of [0, 50, 100]) {
     const p = (maxProb * step) / 100;
     const y = (cH - (p / maxProb) * cH).toFixed(1);
-    s += `<line x1="0" y1="${y}" x2="${String(cW)}" y2="${y}" stroke="#ddd" stroke-width="1"/>`;
-    s += `<text x="-4" y="${y}" text-anchor="end" dominant-baseline="middle"
-      font-family="${FONT}" font-size="8" fill="#999">${fp(p)}</text>`;
+    s += `<line class="hist-grid" x1="0" y1="${y}" x2="${String(cW)}" y2="${y}"/>`;
+    s += `<text class="hist-text hist-muted" x="-6" y="${y}" text-anchor="end"
+      dominant-baseline="middle">${fp(p)}</text>`;
   }
 
+  let above = 0;
   entries.forEach(([bs, prob], i) => {
     // The bitstring key is server data landing in SVG markup — accept only
     // literal 0/1 strings (anything else is dropped, not escaped).
     if (!/^[01]+$/.test(bs)) return;
-    const above = prob >= threshold;
+    const on = prob >= threshold;
+    if (on) above++;
     const bH = Math.max(1, (prob / maxProb) * cH);
-    const bx = (i * slot + (slot - bW) / 2).toFixed(1);
-    const by = (cH - bH).toFixed(1);
-    const fill = above ? C_ABOVE : C_BELOW;
-    s += `<rect x="${bx}" y="${by}" width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"
-      fill="${fill}" rx="0"/>`;
-    if (bH > 16)
-      s += `<text x="${(+bx + bW / 2).toFixed(1)}" y="${(+by - 3).toFixed(1)}"
-        text-anchor="middle" font-family="${FONT}" font-size="7" fill="${fill}">${fp(prob)}</text>`;
-    const lx = (+bx + bW / 2).toFixed(1);
-    const fs = Math.max(6, Math.min(9, slot * 0.55)).toFixed(1);
-    s += `<text x="${lx}" y="${(cH + 5).toFixed(1)}"
-      text-anchor="end" font-family="${FONT}" font-size="${fs}" fill="#666"
-      transform="rotate(-45,${lx},${(cH + 5).toFixed(1)})">${bs}</text>`;
+    const bx = i * slot + (slot - bW) / 2;
+    const by = cH - bH;
+    s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
+      width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
+    if (on && bW >= 30)
+      s += `<text class="hist-text" x="${(bx + bW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}"
+        text-anchor="middle">${fp(prob)}</text>`;
+    if (i % every === 0) {
+      const lx = (bx + bW / 2).toFixed(1);
+      const ly = (cH + 6).toFixed(1);
+      s += `<text class="hist-text hist-muted" x="${lx}" y="${ly}" text-anchor="end"
+        dominant-baseline="hanging" transform="rotate(-45,${lx},${ly})">${bs}</text>`;
+    }
   });
 
   if (threshold > 0 && threshold <= maxProb) {
     const ty = (cH - (threshold / maxProb) * cH).toFixed(1);
-    s += `<line x1="0" y1="${ty}" x2="${String(cW)}" y2="${ty}"
-      stroke="${C_THR}" stroke-width="1.5" stroke-dasharray="6,3"/>`;
-    s += `<text x="${(cW - 2).toFixed(1)}" y="${(+ty - 4).toFixed(1)}"
-      text-anchor="end" font-family="${FONT}" font-size="8" font-weight="bold"
-      fill="${C_THR}">threshold</text>`;
+    s += `<line class="hist-threshold" x1="0" y1="${ty}" x2="${String(cW)}" y2="${ty}"/>`;
+    s += `<text class="hist-text hist-strong" x="${(cW - 2).toFixed(1)}" y="${(+ty - 5).toFixed(1)}"
+      text-anchor="end">threshold ${fp(threshold)}</text>`;
   }
 
-  s += `<line x1="0" y1="0" x2="0" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
-  s += `<line x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}" stroke="#999" stroke-width="1"/>`;
+  s += axes(cW, cH);
 
   const lbl =
     totalOutcomes != null && totalOutcomes > n
       ? `top ${String(n)} of ${String(totalOutcomes)}`
       : String(n);
-  s += `<text x="${(cW / 2).toFixed(1)}" y="${(cH + P.b - 5).toFixed(1)}"
-    text-anchor="middle" font-family="${FONT}" font-size="8" fill="#666">
-    ${lbl} outcome${n !== 1 ? 's' : ''}</text>`;
-
+  const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
+  s += `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH + P.b - 6).toFixed(1)}"
+    text-anchor="middle">${caption}</text>`;
   s += `</g>`;
-  svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
-  svg.innerHTML = s;
-  elQuPlaceholder.style.display = 'none';
+
+  const top = entries[0];
+  paint(
+    W,
+    H,
+    s,
+    `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
+      `${String(above)} at or above the ${fp(threshold)} threshold.`,
+  );
 }
 
 // ── Quantum solutions list renderer ───────────────────────────

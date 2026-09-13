@@ -22,3 +22,91 @@
   background: var(--color-text);
   color: var(--color-bg);
 }
+
+/* ── .s6-btn — the apps' one button (audit P9) ──
+ * The classifier and the nonogram each drew the same square, 2px-ink, Chicago
+ * button their own way (an ID-scoped .btn re-skin and a .nono-btn family), with
+ * their own sizes, fills and focus. This is that button, once. Variants:
+ *   .s6-btn--primary  ink fill (the one action to take)
+ *   .s6-btn--danger   destructive, in the status red
+ *   .s6-btn--sm       compact (steppers, row tools)
+ *   .s6-btn--icon     a single glyph, square
+ *   .s6-btn--block    full width
+ * State is inversion (L4): hover and keyboard focus fill with ink; focus also gets
+ * the site's ink ring (base.css). Disabled is one treatment everywhere. The
+ * window push-button (system.css .btn, used by the site chrome) is a different
+ * object and stays as it is. */
+.s6-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-3xs);
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+}
+.s6-btn:hover,
+.s6-btn:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+.s6-btn--primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.s6-btn--primary:hover,
+.s6-btn--primary:focus-visible {
+  background: var(--ink-2);
+}
+.s6-btn--danger {
+  color: var(--color-danger);
+}
+.s6-btn--danger:hover,
+.s6-btn--danger:focus-visible {
+  background: var(--color-danger);
+  color: var(--paper);
+}
+.s6-btn--sm {
+  min-height: 28px;
+  padding: 2px 10px;
+}
+.s6-btn--icon {
+  min-width: 32px;
+  padding: 2px;
+}
+.s6-btn--block {
+  display: flex;
+  width: 100%;
+}
+.s6-btn:disabled,
+.s6-btn:disabled:hover {
+  opacity: 0.4;
+  cursor: default;
+  background: var(--paper);
+  color: var(--ink);
+}
+.s6-btn--primary:disabled,
+.s6-btn--primary:disabled:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+/* Touch: every app button is a 44px target. */
+@media (pointer: coarse) {
+  .s6-btn,
+  .s6-btn--sm {
+    min-height: 44px;
+  }
+  .s6-btn--sm,
+  .s6-btn--icon {
+    min-width: 44px;
+  }
+}
