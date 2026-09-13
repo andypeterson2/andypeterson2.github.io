@@ -1845,3 +1845,25 @@ test.describe('Editor state copy', () => {
     await expect(page.locator('.sb-state')).toHaveText('demo — not saved');
   });
 });
+
+// Audit M28: on a touch phone the section tools are real targets, the editor's menu
+// isn't a second ☰, and a sheet's close box is big enough to hit.
+test.describe('Editor on a touch phone', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+
+  test('touch targets are at least 44px, and the menu button says "Commands"', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page);
+    const grip = page.locator('.grip').first();
+    const box = (await grip.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    const commands = page.getByRole('button', { name: 'Commands' });
+    await expect(commands).toBeVisible();
+    await commands.click();
+    await page.getByRole('menuitem', { name: /Tags/ }).click();
+    const close = page.locator('.drawer .close');
+    const c = (await close.boundingBox())!;
+    expect(c.width).toBeGreaterThanOrEqual(24);
+  });
+});

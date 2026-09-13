@@ -2,8 +2,9 @@
 import Button from '../Button.astro';
 ---
 
-<!-- Draw card (image input) -->
-<section class="card" id="canvas-col" class:list={['hidden']}>
+<!-- Draw card (image input) --><!-- Visible from the first paint: MNIST (the canvas) is the default dataset, so the
+     card no longer pops in when the script runs and shoves everything down (P12). -->
+<section class="card" id="canvas-col">
   <h2 class="card-title">Draw</h2>
   <canvas id="draw-canvas" width="280" height="280"></canvas>
   <div class="row">
@@ -74,8 +75,11 @@ import Button from '../Button.astro';
     background: var(--paper-2);
   }
 
+  /* Reserve the table's full height up front (it's capped there anyway), so it
+     doesn't grow under the reader when the in-browser models load (P12). */
   .metrics-wrap {
     overflow: auto;
+    min-height: 300px;
     max-height: 300px;
   }
 

@@ -73,7 +73,12 @@ const { entry } = Astro.props;
               {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
             </a>
           )}
-          <WriteupModal slug={entry.project.slug} label="Writeup" />
+          <WriteupModal
+            slug={entry.project.slug}
+            label="Writeup"
+            appUrl={entry.project.appUrl}
+            repoUrl={entry.project.repoUrl}
+          />
           <a
             href={entry.project.repoUrl}
             class="action-btn"
@@ -141,6 +146,7 @@ const { entry } = Astro.props;
     display: flex;
     flex-direction: column;
     gap: clamp(2px, 0.3vw, 3px);
+    max-width: 80ch; /* the timeline now spans the page width; keep lines readable */
   }
 
   .timeline-role {

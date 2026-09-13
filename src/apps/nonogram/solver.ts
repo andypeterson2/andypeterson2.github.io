@@ -177,8 +177,12 @@ export function drawEmptyHistogram(): void {
     text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
     font-size="12" fill="#666">${
       window.API_BASE
-        ? 'Measurement counts appear here after a quantum run'
-        : 'Pick a Gallery run to see real quantum measurement counts'
+        ? cW < 320
+          ? 'Counts appear after a run'
+          : 'Measurement counts appear here after a quantum run'
+        : cW < 320
+          ? 'Pick a Gallery run'
+          : 'Pick a Gallery run to see real quantum measurement counts'
     }</text>`;
   s += `</g>`;
   svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
