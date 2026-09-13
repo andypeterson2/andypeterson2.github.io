@@ -2,7 +2,7 @@
    Nonogram Web App — bootstrap / init.
    ============================================================= */
 
-import { state, $, must, elThresholdInput } from './state';
+import { state, $, must, elThresholdInput, elClPlaceholder, elQuSolPlaceholder } from './state';
 import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui';
 import {
   initGrid,
@@ -13,6 +13,9 @@ import {
   doRandomize,
   addRow,
   addCol,
+  removeRow,
+  removeCol,
+  setOnGridEdit,
   type Puzzle,
 } from './grid';
 import {
@@ -175,7 +178,10 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
   const rows = puzzle.row_clues.length,
     cols = puzzle.col_clues.length;
   if (rows * cols > LOCAL_MAX_CELLS) {
-    setStatus(`Too large to solve in your browser (max ${String(LOCAL_MAX_CELLS)} cells).`, 'err');
+    setStatus(
+      `Browser solving stops at ${String(LOCAL_MAX_CELLS)} cells — remove a row or column.`,
+      'err',
+    );
     return;
   }
   clearSolverResults();
@@ -192,13 +198,10 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
 
       // Quantum runs need the live solver; say so and point at the captured runs.
       drawEmptyHistogram();
-      const quPh = $('qu-sol-placeholder');
-      if (quPh) {
-        must('qu-list').appendChild(quPh);
-        quPh.style.display = '';
-        quPh.textContent =
-          'Quantum runs need the live solver. The Gallery has captured Grover-simulator runs.';
-      }
+      must('qu-list').appendChild(elQuSolPlaceholder);
+      elQuSolPlaceholder.style.display = '';
+      elQuSolPlaceholder.textContent =
+        'Quantum runs need the live solver. The Gallery has captured Grover-simulator runs.';
 
       // Real classical metrics — no handwaving.
       renderMetrics(
@@ -365,6 +368,21 @@ function init(): void {
   });
   must('btn-add-row').addEventListener('click', addRow);
   must('btn-add-col').addEventListener('click', addCol);
+  must('btn-remove-row').addEventListener('click', removeRow);
+  must('btn-remove-col').addEventListener('click', removeCol);
+
+  // Any edit makes the results describe a different puzzle: clear them, drop the
+  // gallery selection and its note, and say so (audit M22).
+  setOnGridEdit(() => {
+    clearSolverResults();
+    elClPlaceholder.textContent = 'Solve the puzzle to see solutions.';
+    elQuSolPlaceholder.textContent = 'Solve the puzzle to see solutions.';
+    const sel = document.getElementById('gallery-select');
+    if (sel instanceof HTMLSelectElement) sel.value = '';
+    showGalleryNote('');
+    drawEmptyHistogram();
+    setStatus('Edited — solve again to see results.');
+  });
 
   void initGallery();
 

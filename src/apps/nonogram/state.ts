@@ -51,6 +51,8 @@ export const elDrawView = must('draw-view');
 export const elQuPlaceholder = must('qu-placeholder');
 export const elClPlaceholder = must('cl-placeholder');
 export const elQuList = must('qu-list');
+/** Held by reference: renderQuantumList detaches it, so an id lookup can miss it later. */
+export const elQuSolPlaceholder = must('qu-sol-placeholder');
 
 const histEl = document.getElementById('qu-histogram');
 if (!(histEl instanceof SVGSVGElement))
