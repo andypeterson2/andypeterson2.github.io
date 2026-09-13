@@ -16,7 +16,8 @@ appears only to report machine state.** Every name below is verified present in 
 - **Local layers**, imported by `BaseLayout.astro` in this order — read them before styling:
   1. `packages/system-six/styles/tokens.css` — the entire token vocabulary (short; authoritative).
   2. `packages/system-six/styles/base.css` — resets, the invert idiom, **dark mode**,
-     `.section-rule`, `.finder-icon` / `.icon-grid`, print + reduced-motion.
+     `.section-rule`, `.window--inactive` (the plain title bar of a window not in front),
+     `.action-btn` / `--primary`, print + reduced-motion.
   3. `packages/system-six/styles/dither.css` — the 1-bit ordered fills.
 - **No provider/wrapper framework** — it's CSS classes + tokens. The "wrapper" is a System-6
   window: `.window` › `.title-bar` › `.window-body`.
