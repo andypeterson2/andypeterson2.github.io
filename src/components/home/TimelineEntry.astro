@@ -106,10 +106,11 @@ const { entry } = Astro.props;
     padding-bottom: 0;
   }
 
+  /* On the spine: --spine-x is set by the home page's .timeline (index.astro). */
   .timeline-entry::after {
     content: '';
     position: absolute;
-    left: clamp(62px, 8vw, 90px);
+    left: var(--spine-x, clamp(62px, 8vw, 90px));
     top: 8px;
     width: 7px;
     height: 7px;
