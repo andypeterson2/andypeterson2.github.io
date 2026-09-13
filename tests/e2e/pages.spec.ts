@@ -101,3 +101,66 @@ test('timeline markers sit on the spine', async ({ page }) => {
   expect(markers.length).toBeGreaterThan(3);
   for (const x of markers) expect(Math.abs(x - spine)).toBeLessThan(1);
 });
+
+// System 6 chrome: stripes only on the front window, the default button ringed, and
+// nothing but buttons wearing a border.
+test.describe('Home: the window chrome says what is in front and what to press', () => {
+  const stripes = (page: import('@playwright/test').Page, sel: string) =>
+    page
+      .locator(sel)
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+
+  test('section windows are plain; the page window is striped', async ({ page }) => {
+    await page.goto('/');
+    expect(await stripes(page, '.site-window > .title-bar')).not.toBe('none');
+    for (const bar of await page.locator('.window--inactive > .title-bar').all()) {
+      expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe('none');
+    }
+    await expect(page.locator('.window--inactive')).toHaveCount(7);
+  });
+
+  test('an open writeup is the one striped window, and a click outside closes it', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.locator('[data-writeup-open="writeup-about"]').click();
+    const dialog = page.locator('#writeup-about');
+    await expect(dialog).toBeVisible();
+    expect(await stripes(page, '.site-window > .title-bar')).toBe('none');
+    expect(await stripes(page, '#writeup-about .writeup-titlebar')).not.toBe('none');
+    await page.mouse.click(8, 450);
+    await expect(dialog).toBeHidden();
+    expect(await stripes(page, '.site-window > .title-bar')).not.toBe('none');
+  });
+
+  test('each project card leads with the default button', async ({ page }) => {
+    await page.goto('/');
+    const cards = page.locator('.timeline-entry--project');
+    const n = await cards.count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const first = cards.nth(i).locator('.tl-actions > *').first();
+      await expect(first).toHaveClass(/action-btn--primary/);
+    }
+    await expect(page.locator('.tl-actions > .action-btn--primary')).toHaveCount(n);
+  });
+
+  test('tech and skill names are text, not bordered chips', async ({ page }) => {
+    await page.goto('/');
+    for (const sel of ['.tl-tag', '.skill-tags .tag']) {
+      await expect(page.locator(sel).first()).toHaveCSS('border-top-style', 'none');
+    }
+  });
+
+  test('Top stays inside the page window', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.site-pane').evaluate((el) => (el.scrollTop = el.scrollHeight));
+    const top = page.locator('#back-to-top');
+    await expect(top).toBeVisible();
+    const b = (await top.boundingBox())!;
+    const w = (await page.locator('.site-pane').boundingBox())!;
+    expect(b.x + b.width).toBeLessThanOrEqual(w.x + w.width);
+    expect(b.y + b.height).toBeLessThanOrEqual(w.y + w.height);
+  });
+});

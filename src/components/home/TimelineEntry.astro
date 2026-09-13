@@ -55,18 +55,18 @@ const { entry } = Astro.props;
         )}
 
         {entry.project.tech && (
-          <div class="tl-tech">
+          <ul class="tl-tech" aria-label="Built with">
             {entry.project.tech.map((t) => (
-              <span class="tl-tag">{t}</span>
+              <li class="tl-tag">{t}</li>
             ))}
-          </div>
+          </ul>
         )}
 
         <div class="tl-actions">
           {entry.project.appUrl && (
             <a
               href={entry.project.appUrl}
-              class="action-btn"
+              class="action-btn action-btn--primary"
               target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
               rel={entry.project.appUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
             >
@@ -143,11 +143,11 @@ const { entry } = Astro.props;
     text-wrap: balance;
   }
 
+  /* The body spans the window; only prose keeps a reading measure. */
   .timeline-content {
     display: flex;
     flex-direction: column;
     gap: clamp(2px, 0.3vw, 3px);
-    max-width: 80ch; /* the timeline spans the page width; keep lines readable */
   }
 
   .timeline-role {
@@ -164,6 +164,7 @@ const { entry } = Astro.props;
 
   .timeline-bullets {
     margin: 0;
+    max-width: 72ch;
     padding-left: clamp(14px, 1.8vw, 20px);
     display: flex;
     flex-direction: column;
@@ -206,7 +207,7 @@ const { entry } = Astro.props;
     font-size: var(--text-xs);
     line-height: 1.4;
     margin: 2px 0 0;
-    max-width: 60ch;
+    max-width: 72ch;
   }
 
   /* One grid, so every chip in a card shares an edge and a width. */
@@ -236,20 +237,24 @@ const { entry } = Astro.props;
     color: var(--ink);
   }
 
+  /* The stack as a line of names between middots: a border here would read as a button. */
   .tl-tech {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 5px;
-    margin-top: 2px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
   }
 
   .tl-tag {
-    font-family: var(--font-ui);
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
-    padding: 1px 6px;
-    border: 1px solid var(--ink);
     color: var(--ink);
+  }
+
+  .tl-tag:not(:last-child)::after {
+    content: '·';
+    padding: 0 0.45em;
   }
 
   .tl-actions {
