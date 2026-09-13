@@ -16,6 +16,9 @@ test.describe('Classifier app shell', () => {
 
   test('renders ClassifierTrainCard with train button', async ({ page }) => {
     await page.goto('/projects/ai-ml/app/');
+    // Offline the form is folded under its title; opening it shows the button.
+    await expect(page.locator('#train-btn')).toBeHidden();
+    await page.locator('#train-form > summary').click();
     await expect(page.locator('#train-btn')).toBeVisible();
     await expect(page.locator('#model-type')).toBeAttached();
     await expect(page.locator('#model-name')).toBeAttached();
@@ -47,13 +50,61 @@ test.describe('Classifier app shell', () => {
 // Offline, the backend-only controls say so instead of failing, a blank canvas
 // predicts nothing, and the two-class QSVM says it's two-class.
 test.describe('Classifier: the browser tier is honest about what it can do', () => {
-  test('backend-only controls are disabled with the reason shown', async ({ page }) => {
+  test('backend-only controls are folded and disabled, with the reason shown', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#backend-note')).toBeVisible();
+    await expect(page.locator('#backend-note')).toHaveText('needs the live backend');
+    await expect(page.locator('#train-form')).not.toHaveAttribute('open', '');
+    await page.locator('#train-form > summary').click();
     await expect(page.locator('#train-btn')).toBeDisabled();
+    await expect(page.locator('#epochs')).toBeDisabled();
     await expect(page.locator('#ensemble-btn')).toBeDisabled();
     await expect(page.locator('#model-type-row')).toBeHidden();
+    await expect(page.locator('#saved-card')).toBeHidden();
+  });
+
+  test('Models comes before Train, and the demo models carry no tier suffix', async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/ai-ml/app/');
+    const titles = page.locator('#left-col > section:not([hidden]) .card-title');
+    await expect(titles).toHaveText(['Models', 'Train']);
+    await expect(page.locator('#session-models .ui-list-name')).toHaveText([
+      'Logistic Regression',
+      'QSVM',
+    ]);
+    await expect(page.locator('#session-models')).toContainText('Yang et al. 2019');
+    await expect(page.locator('#tier-label')).toHaveCount(0);
+  });
+
+  test('Evaluation shows only rows with a value', async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/ai-ml/app/');
+    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-body .metric-label')).toHaveText([
+      'Type',
+      'Params',
+      'Test Acc',
+    ]);
+  });
+
+  test('Iris and BB84 take a slider or an exact value, and re-score as they move', async ({
+    page,
+  }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/ai-ml/app/');
+    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await page.locator('#dataset-menu-btn').click();
+    await page.locator('.ui-dropdown-item', { hasText: 'BB84' }).click();
+    await expect(page.locator('.feature-label').first()).toContainText('QBER');
+    await expect(page.locator('.feature-hint').first()).toHaveText('0.00 – 0.32');
+    const answer = page.locator('#pred-body tr').first().locator('.pred-label');
+    await page.locator('#feature-qber').fill('0.01');
+    await expect(answer).toHaveText('clean');
+    await page.locator('.feature-range').first().fill('0.3');
+    await expect(page.locator('#feature-qber')).toHaveValue('0.3');
+    await expect(answer).toHaveText('eavesdropped');
+    await page.locator('#reset-features-btn').click();
+    await expect(page.locator('#feature-qber')).toHaveValue('0.16');
   });
 
   test('a blank canvas predicts nothing; a drawing gets a scoped QSVM row', async ({ page }) => {

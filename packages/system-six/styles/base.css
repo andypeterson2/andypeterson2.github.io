@@ -22,12 +22,11 @@ body {
   color: var(--ink);
 }
 
-/* system.css gives .window body copy Inconsolata/Menlo/Chicago, none of which are loaded, so
-   it renders Menlo on macOS and non-mono Chicago elsewhere. Re-assert the mono token so it is
-   the loaded Monaco on every platform, which also puts the preloaded Monaco on the LCP intro
-   paragraph. Title bars keep Chicago_12 via --font-ui. */
+/* system.css gives .window body copy Inconsolata/Menlo/Chicago, none of which are loaded.
+   Body copy is Geneva (the sans token); dates, data and code opt into --font-mono, and
+   title bars keep Chicago_12 via --font-ui. */
 .window {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 /* ── Dark mode — a page-scale inversion. The site is 1-bit with only monochrome-SVG images,

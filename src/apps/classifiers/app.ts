@@ -217,6 +217,8 @@ interface ModelInfo {
   _virtual?: boolean;
   /** The in-browser weights' source, e.g. "weights · 63fe983 · 2026-09-04". */
   _provenance?: string | undefined;
+  /** The paper a model recreates, e.g. "Yang et al. 2019". */
+  _cite?: string | undefined;
 }
 
 /** Application state — single source of truth for loaded models and predictions. */
@@ -624,37 +626,31 @@ function confClass(v: number): string {
 // ── Session models list (MODELS card) ────────────────────────────────────────
 
 function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
-  const paramsStr = m.num_params ? `${m.num_params.toLocaleString()} params` : '';
   const row = document.createElement('div');
   row.className = 'ui-list-row';
-  const nameSpan = document.createElement('span');
+  const text = document.createElement('div');
+  text.className = 'ui-list-text';
+  const nameSpan = document.createElement('div');
   nameSpan.className = 'ui-list-name';
   nameSpan.textContent = name;
-  row.appendChild(nameSpan);
-  const typeTag = document.createElement('span');
-  typeTag.className = 'ui-list-tag';
-  typeTag.textContent = m.model_type;
-  row.appendChild(typeTag);
-  if (paramsStr) {
-    const paramsTag = document.createElement('span');
-    paramsTag.className = 'ui-list-tag';
-    paramsTag.textContent = paramsStr;
-    row.appendChild(paramsTag);
+  text.appendChild(nameSpan);
+  const tier = m._local ? 'in your browser' : m._virtual ? 'computed here' : 'live';
+  const facts = [
+    m.model_type,
+    m.num_params ? `${m.num_params.toLocaleString()} params` : '',
+    m._subset ? `${m._subset} only` : '',
+    tier,
+  ];
+  const lines = [facts, [m._provenance ?? '', m._cite ?? '']];
+  for (const line of lines) {
+    const meta = line.filter(Boolean).join(' · ');
+    if (!meta) continue;
+    const div = document.createElement('div');
+    div.className = 'ui-list-meta';
+    div.textContent = meta;
+    text.appendChild(div);
   }
-  if (m._subset) {
-    // Binary-subset caveat (e.g. the QSVM answers only "6 vs 9").
-    const subsetTag = document.createElement('span');
-    subsetTag.className = 'ui-list-tag';
-    subsetTag.textContent = m._subset;
-    row.appendChild(subsetTag);
-  }
-  if (m._provenance) {
-    const provTag = document.createElement('span');
-    provTag.className = 'ui-list-tag';
-    provTag.textContent = m._provenance;
-    provTag.title = 'The commit the weights were exported from, and the export date';
-    row.appendChild(provTag);
-  }
+  row.appendChild(text);
   if (m._local) {
     // In-browser models have no backend to ablate/export/remove against.
     return row;
@@ -745,6 +741,7 @@ function margin(s: number): string {
 
 function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
   const td = document.createElement('td');
+  td.className = 'num';
   if (p?.qsvm) {
     // A sign classifier has no probability; its margin is its strength.
     const { f1, f2, s } = p.qsvm;
@@ -792,6 +789,8 @@ interface MetricRow {
   fn: (m: ModelInfo) => string;
   cls?: string;
   html?: boolean;
+  /** The row's class, e.g. the headline Test Acc row. */
+  rowCls?: string;
 }
 
 interface MetricSection {
@@ -805,17 +804,17 @@ function metricSections(labels: string[]): MetricSection[] {
       label: 'Config',
       rows: [
         { key: 'Type', fn: (m) => m.model_type },
-        { key: 'Epochs', fn: (m) => String(m.epochs), cls: 'cfg-cell' },
-        { key: 'Batch', fn: (m) => String(m.batch_size), cls: 'cfg-cell' },
+        { key: 'Epochs', fn: (m) => String(m.epochs), cls: 'cfg-cell num' },
+        { key: 'Batch', fn: (m) => String(m.batch_size), cls: 'cfg-cell num' },
         {
           key: 'LR',
           fn: (m) => (m.lr != null ? parseFloat(m.lr.toPrecision(4)).toString() : '—'),
-          cls: 'cfg-cell',
+          cls: 'cfg-cell num',
         },
         {
           key: 'Params',
           fn: (m) => (m.num_params ? m.num_params.toLocaleString() : '—'),
-          cls: 'cfg-cell',
+          cls: 'cfg-cell num',
         },
         { key: 'Early Stop', fn: (m) => (m.stopped_early ? 'Yes' : '—'), cls: 'cfg-cell' },
       ],
@@ -830,10 +829,13 @@ function metricSections(labels: string[]): MetricSection[] {
               ? `<span class="${accClass(m.eval_result.accuracy)}">${pct(m.eval_result.accuracy)}</span>`
               : '—',
           html: true,
+          cls: 'num',
+          rowCls: 'metric-headline',
         },
         {
           key: 'Test Loss',
           fn: (m) => (m.eval_result?.avg_loss != null ? m.eval_result.avg_loss.toFixed(4) : '—'),
+          cls: 'num',
         },
       ],
     },
@@ -847,6 +849,7 @@ function metricSections(labels: string[]): MetricSection[] {
           return acc != null ? `<span class="${accClass(acc)}">${pct(acc)}</span>` : '—';
         },
         html: true,
+        cls: 'num',
       })),
     },
   ];
@@ -895,7 +898,10 @@ function buildMetricsTable(): void {
   for (const section of metricSections(labels)) renderMetricSection(section, entries);
 }
 
+/** A row only earns its place if some model has a value for it. */
 function renderMetricSection(section: MetricSection, entries: [string, ModelInfo][]): void {
+  const rows = section.rows.filter((row) => entries.some(([, m]) => row.fn(m) !== '—'));
+  if (rows.length === 0) return;
   const sepTr = document.createElement('tr');
   sepTr.className = 'metrics-section-row';
   const sepTd = document.createElement('td');
@@ -904,8 +910,9 @@ function renderMetricSection(section: MetricSection, entries: [string, ModelInfo
   sepTr.appendChild(sepTd);
   metricsBody.appendChild(sepTr);
 
-  for (const row of section.rows) {
+  for (const row of rows) {
     const tr = document.createElement('tr');
+    if (row.rowCls) tr.className = row.rowCls;
     const labelTh = document.createElement('th');
     labelTh.scope = 'row';
     labelTh.className = 'metric-label';
@@ -1223,7 +1230,7 @@ function logPredictions(names: string[]): void {
     const p = state.predictions[name];
     if (!p) return [];
     const score = p.qsvm ? margin(p.qsvm.s) : p.confidence != null ? pct(p.confidence) : '';
-    return [`${name.replace(/ \(in-browser\)$/, '')} ${p.prediction}${score ? ` (${score})` : ''}`];
+    return [`${name} ${p.prediction}${score ? ` (${score})` : ''}`];
   });
   if (parts.length) addLog(`predict: ${parts.join(' · ')}`);
 }
@@ -1281,37 +1288,80 @@ function markOutOfScope(locals: [string, ModelInfo][]): void {
 
 // ── Client-side dataset switching ─────────────────────────────────────────────
 
-// Build the tabular feature form (Iris) from the model's feature list + ranges,
-// re-predicting live as inputs change.
+// Build the tabular feature form (Iris, BB84) from the model's feature list + ranges:
+// a slider to explore with and a box for the exact value, kept in step.
 function buildFeatureInputs(model: ClassifierModel): void {
   const wrap = document.querySelector('#tabular-col .feature-inputs');
   if (!wrap) return;
   wrap.innerHTML = '';
-  const feats = model.features ?? [];
   const ranges = model.feature_ranges ?? [];
-  feats.forEach((f, i) => {
+  (model.features ?? []).forEach((f, i) => {
     const [min, max] = ranges[i] ?? [0, 10];
-    const row = document.createElement('label');
-    row.className = 'feature-row';
-    const span = document.createElement('span');
-    span.className = 'feature-label';
-    span.textContent = f.replace(/_/g, ' ');
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'feature-input';
-    input.dataset.feature = f;
-    input.step = '0.1';
-    input.min = String(min);
-    input.max = String(max);
-    input.value = ((min + max) / 2).toFixed(1);
-    // Typing re-scores the in-browser models; the live ones answer on Predict.
-    input.addEventListener('input', () => {
-      void runPredictLocal();
-    });
-    row.appendChild(span);
-    row.appendChild(input);
-    wrap.appendChild(row);
+    wrap.appendChild(featureRow(f, min, max));
   });
+}
+
+/** Two significant steps across the range: 0.1 for Iris's centimetres, 0.01 for a QBER. */
+function featureStep(min: number, max: number): number {
+  return 10 ** Math.floor(Math.log10((max - min) / 20));
+}
+
+function featureRow(f: string, min: number, max: number): HTMLElement {
+  const ds = window.UI_CONFIG;
+  const step = featureStep(min, max);
+  const digits = Math.max(0, Math.round(-Math.log10(step)));
+  const lo = (Math.floor(min / step) * step).toFixed(digits);
+  const hi = (Math.ceil(max / step) * step).toFixed(digits);
+  const mid = ((min + max) / 2).toFixed(digits);
+  const id = `feature-${f}`;
+
+  const row = document.createElement('div');
+  row.className = 'feature-row';
+  const label = document.createElement('label');
+  label.className = 'feature-label';
+  label.htmlFor = id;
+  label.textContent = ds?.feature_labels?.[f] ?? humanize(f);
+  const hint = document.createElement('span');
+  hint.className = 'feature-hint num';
+  hint.textContent = `${lo} – ${hi}${ds?.unit ? ` ${ds.unit}` : ''}`;
+  label.appendChild(hint);
+
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.className = 'feature-range';
+  range.tabIndex = -1;
+  range.setAttribute('aria-hidden', 'true');
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.id = id;
+  input.className = 'feature-input';
+  input.dataset.feature = f;
+  input.dataset.default = mid;
+  for (const el of [range, input]) {
+    el.min = lo;
+    el.max = hi;
+    el.step = String(step);
+    el.value = mid;
+  }
+  // Moving either re-scores the in-browser models; the live ones answer on Predict.
+  range.addEventListener('input', () => {
+    input.value = range.value;
+    void runPredictLocal();
+  });
+  input.addEventListener('input', () => {
+    range.value = input.value;
+    void runPredictLocal();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void runPredict();
+  });
+  row.append(label, range, input);
+  return row;
+}
+
+function humanize(f: string): string {
+  const words = f.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 // Switch the active dataset entirely in the browser: swap UI_CONFIG, flip the
@@ -1351,6 +1401,15 @@ if (predictBtnTab)
   predictBtnTab.addEventListener('click', () => {
     void runPredict();
   });
+byId('reset-features-btn', HTMLButtonElement).addEventListener('click', () => {
+  document.querySelectorAll<HTMLInputElement>('#tabular-col .feature-row').forEach((row) => {
+    const input = row.querySelector<HTMLInputElement>('.feature-input');
+    const range = row.querySelector<HTMLInputElement>('.feature-range');
+    if (!input || !range) return;
+    input.value = range.value = input.dataset.default ?? input.value;
+  });
+  void runPredictLocal();
+});
 
 clearBtn.addEventListener('click', () => {
   clearCanvas();
@@ -1554,17 +1613,12 @@ document.addEventListener('click', (e) => {
 });
 
 // ── Tier-aware controls ──────────────────────────────────────────────────────
-// Training, ensembles and saved models run on the live backend, so offline they're
-// disabled, with the reason shown once in the Train card.
-const BACKEND_CONTROLS = [
-  'train-btn',
-  'ensemble-btn',
-  'refresh-saved-btn',
-  'import-btn',
-  'saved-select',
-  'model-type',
-  'teacher-select',
-];
+// Offline these say "Needs the live backend"; the Train form folds and Saved hides.
+const BACKEND_CONTROLS = ['ensemble-btn', 'refresh-saved-btn', 'import-btn', 'saved-select'];
+const trainForm = byId('train-form', HTMLDetailsElement);
+const trainFields = byId('train-fields', HTMLFieldSetElement);
+let shownTier: 'offline' | 'live' | null = null;
+
 function applyTier(): void {
   const off = isOffline();
   for (const id of BACKEND_CONTROLS) {
@@ -1574,13 +1628,15 @@ function applyTier(): void {
       el.title = off ? 'Needs the live backend' : '';
     }
   }
-  const note = document.getElementById('backend-note');
-  if (note) note.hidden = !off;
-  const tier = document.getElementById('tier-label');
-  if (tier) tier.textContent = off ? 'Runs in your browser' : 'Live backend';
+  trainFields.disabled = off;
+  byId('backend-note', HTMLElement).hidden = !off;
+  byId('saved-card', HTMLElement).hidden = off;
+  // Fold or unfold only when the tier changes, so a visitor's own toggle stands.
+  const tier = off ? 'offline' : 'live';
+  if (tier !== shownTier) trainForm.open = !off;
+  shownTier = tier;
   // The Model list comes from the live backend; until it arrives the field can't be filled.
-  const typeRow = document.getElementById('model-type-row');
-  if (typeRow) typeRow.hidden = modelTypeSelect.options.length === 0;
+  byId('model-type-row', HTMLElement).hidden = modelTypeSelect.options.length === 0;
 }
 
 // ── Connection state observer ────────────────────────────────────────────────
@@ -1633,6 +1689,7 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     _provenance: prov?.source_sha
       ? `weights · ${prov.source_sha.slice(0, 7)}${prov.exported_at ? ` · ${prov.exported_at}` : ''}`
       : undefined,
+    _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
 }
 
@@ -1649,9 +1706,8 @@ async function initLocalModels(): Promise<void> {
     } catch {
       continue; // model asset missing — degrade to whatever loaded
     }
-    const label = model.display?.label
-      ? `${model.display.label} (in-browser)`
-      : 'Logistic Regression (in-browser)';
+    // "QSVM (Yang et al. 2019)" is listed as "QSVM", with the citation in its Models row.
+    const label = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
     const info = localModelInfo(model, file);
     state.models[label] = info;
     addLog(`weights loaded: ${label} · ${info.num_params?.toLocaleString() ?? '?'} params`);
