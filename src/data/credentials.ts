@@ -23,6 +23,8 @@ export interface SkillGroupData {
 
 export const skills: SkillGroupData[] = [
   { label: 'Languages', tags: ['Python', 'TypeScript', 'JavaScript', 'SQL'] },
+  // Every name here is on a project card (the M8 rule: only what the page evidences).
+  { label: 'Web', tags: ['Svelte', 'Express', 'Flask', 'WebRTC', 'Socket.IO'] },
   { label: 'Quantum', tags: ['Qiskit', 'BB84', 'Grover'] },
   {
     label: 'Infrastructure',

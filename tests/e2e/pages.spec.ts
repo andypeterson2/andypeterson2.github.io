@@ -84,3 +84,21 @@ test.describe('Home page about content', () => {
     await expect(page.getByRole('dialog', { name: 'The longer version' })).toBeVisible();
   });
 });
+
+// Every timeline marker sits on the spine: they used to measure the same clamp from
+// different boxes and landed 12px right of the line (Fable A1-04).
+test('timeline markers sit on the spine', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  const { spine, markers } = await page.evaluate(() => {
+    const tl = document.querySelector('.timeline')!;
+    const spineX =
+      tl.getBoundingClientRect().left + parseFloat(getComputedStyle(tl, '::before').left);
+    const xs = [...document.querySelectorAll('.timeline-entry')].map(
+      (e) => e.getBoundingClientRect().left + parseFloat(getComputedStyle(e, '::after').left),
+    );
+    return { spine: spineX, markers: xs };
+  });
+  expect(markers.length).toBeGreaterThan(3);
+  for (const x of markers) expect(Math.abs(x - spine)).toBeLessThan(1);
+});
