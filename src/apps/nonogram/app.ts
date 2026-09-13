@@ -3,7 +3,7 @@
    ============================================================= */
 
 import { state, $, must, elThresholdInput } from './state';
-import { setStatus, setBusy, updateGridSizeLabel } from './ui';
+import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui';
 import {
   initGrid,
   buildGrid,
@@ -70,6 +70,7 @@ document.addEventListener('navbar:connect', (e) => {
   if (pass) opts.query = { pass };
   socket = io(target.origin, opts);
   window.API_BASE = detail.url;
+  applyTierControls();
   bindSocket(socket);
 });
 
@@ -174,13 +175,11 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
   const rows = puzzle.row_clues.length,
     cols = puzzle.col_clues.length;
   if (rows * cols > LOCAL_MAX_CELLS) {
-    setStatus(
-      `Too large to solve in your browser (max ${String(LOCAL_MAX_CELLS)} cells) — connect a live solver for bigger grids.`,
-      'err',
-    );
+    setStatus(`Too large to solve in your browser (max ${String(LOCAL_MAX_CELLS)} cells).`, 'err');
     return;
   }
   clearSolverResults();
+  showGalleryNote('');
   setBusy(true);
   // Defer one tick so the "Running…" state paints before the synchronous solve.
   setTimeout(() => {
@@ -191,13 +190,14 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
 
       renderClassical({ solutions, rows, cols });
 
-      // Quantum is a live-only feature offline; show the ghost histogram + a note.
+      // Quantum runs need the live solver; say so and point at the captured runs.
       drawEmptyHistogram();
       const quPh = $('qu-sol-placeholder');
       if (quPh) {
         must('qu-list').appendChild(quPh);
         quPh.style.display = '';
-        quPh.textContent = 'Quantum + IBM runs use the live solver — see the Gallery.';
+        quPh.textContent =
+          'Quantum runs need the live solver. The Gallery has captured Grover-simulator runs.';
       }
 
       // Real classical metrics — no handwaving.
@@ -231,6 +231,8 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
 interface GalleryIndexEntry {
   slug: string;
   label: string;
+  note?: string;
+  source?: string;
   rows: number;
   cols: number;
 }
@@ -238,6 +240,15 @@ interface GalleryIndexEntry {
 interface GalleryPayload extends BenchmarkPayload {
   label?: string;
   source?: string;
+}
+
+let galleryNotes = new Map<string, string>();
+
+function showGalleryNote(text: string): void {
+  const el = $('gallery-note');
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = !text;
 }
 
 async function initGallery(): Promise<void> {
@@ -251,6 +262,14 @@ async function initGallery(): Promise<void> {
     /* the gallery is optional */
   }
   if (!Array.isArray(index) || !index.length) return;
+  galleryNotes = new Map(index.map((e) => [e.slug, e.note ?? '']));
+  // Name the list by what's in it (H7): simulator runs unless a hardware run is cached.
+  const placeholder = sel.options.item(0);
+  if (placeholder) {
+    placeholder.textContent = index.some((e) => e.source === 'ibm-hardware')
+      ? '— captured quantum runs —'
+      : '— captured simulator runs —';
+  }
   for (const e of index) {
     const opt = document.createElement('option');
     opt.value = e.slug;
@@ -292,12 +311,15 @@ async function loadGalleryEntry(slug: string): Promise<void> {
   renderBenchmark(payload);
   const src = payload.source === 'ibm-hardware' ? 'real IBM hardware' : 'the Grover simulator';
   setStatus(`${payload.label ?? slug} — a real run on ${src}.`, 'ok');
+  showGalleryNote(galleryNotes.get(slug) ?? '');
 }
 
 // ── Init ───────────────────────────────────────────────────────
 function init(): void {
   initGrid();
   buildGrid();
+  applyTierControls();
+  elThresholdInput.disabled = true;
 
   // ResizeObserver redraws SVG histograms at actual pixel size
   new ResizeObserver(() => {
