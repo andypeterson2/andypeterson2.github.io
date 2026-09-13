@@ -6,6 +6,15 @@ import { state, $, elDrawView } from './state';
 import { setStatus, updateGridSizeLabel } from './ui';
 
 const MAX_GRID = 10;
+const MIN_GRID = 2;
+
+// Any change to the puzzle makes the results on screen describe a different grid.
+// app.ts registers what "edited" means (clear results, reset the gallery) so this
+// module doesn't import solver/app code (audit M22).
+let onEdit: () => void = () => undefined;
+export function setOnGridEdit(fn: () => void): void {
+  onEdit = fn;
+}
 
 // ── Grid helpers ───────────────────────────────────────────────
 export function initGrid(): void {
@@ -146,6 +155,7 @@ function onGridMouseOver(e: MouseEvent): void {
 }
 
 function toggleCell(r: number, c: number, fill: boolean): void {
+  if (state.grid[r]?.[c] !== fill) onEdit();
   state.grid[r][c] = fill;
   const td = document.querySelector(`td[data-r="${String(r)}"][data-c="${String(c)}"]`);
   if (td) td.className = 'cell' + (fill ? ' filled' : '');
@@ -191,22 +201,40 @@ function updateClueCells(): void {
 }
 
 // ── Dynamic grid sizing ────────────────────────────────────────
+function resized(): void {
+  recomputeClues();
+  buildGrid();
+  syncGridToServer();
+  onEdit();
+}
+
 export function addRow(): void {
   if (state.rows >= MAX_GRID) return;
   state.rows++;
   state.grid.push(Array<boolean>(state.cols).fill(false));
-  recomputeClues();
-  buildGrid();
-  syncGridToServer();
+  resized();
 }
 
 export function addCol(): void {
   if (state.cols >= MAX_GRID) return;
   state.cols++;
   for (const row of state.grid) row.push(false);
-  recomputeClues();
-  buildGrid();
-  syncGridToServer();
+  resized();
+}
+
+/** The grid can shrink as well as grow (audit M12). */
+export function removeRow(): void {
+  if (state.rows <= MIN_GRID) return;
+  state.rows--;
+  state.grid.pop();
+  resized();
+}
+
+export function removeCol(): void {
+  if (state.cols <= MIN_GRID) return;
+  state.cols--;
+  for (const row of state.grid) row.pop();
+  resized();
 }
 
 export function syncGridToServer(): void {
@@ -232,11 +260,15 @@ export function getCurrentPuzzle(): Puzzle {
   };
 }
 
+/** Clear starts over: an empty 3×3, the size the app opens at (audit M12). */
 export function doClear(): void {
+  state.rows = 3;
+  state.cols = 3;
   state.grid = Array.from({ length: state.rows }, () => Array<boolean>(state.cols).fill(false));
   recomputeClues();
   buildGrid();
   syncGridToServer();
+  onEdit();
   setStatus('Grid cleared.');
 }
 
@@ -256,6 +288,7 @@ export async function doRandomize(): Promise<void> {
     );
     recomputeClues();
     buildGrid();
+    onEdit();
     const filled = state.grid.flat().filter(Boolean).length;
     setStatus(`Randomized ${String(rows)}×${String(cols)} puzzle (${String(filled)} filled).`);
     return;
@@ -277,6 +310,7 @@ export async function doRandomize(): Promise<void> {
     recomputeClues();
     buildGrid();
     syncGridToServer();
+    onEdit();
     const filled = state.grid.flat().filter(Boolean).length;
     setStatus(`Randomized ${String(rows)}×${String(cols)} puzzle (${String(filled)} filled).`);
   } catch (err) {

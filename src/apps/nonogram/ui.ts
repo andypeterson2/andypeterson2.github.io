@@ -37,8 +37,9 @@ export function setBusy(busy: boolean): void {
   btn.textContent = busy ? 'Running…' : benchLabel();
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
-  (must('btn-add-row') as HTMLButtonElement).disabled = busy;
-  (must('btn-add-col') as HTMLButtonElement).disabled = busy;
+  for (const id of ['btn-add-row', 'btn-add-col', 'btn-remove-row', 'btn-remove-col']) {
+    (must(id) as HTMLButtonElement).disabled = busy;
+  }
 }
 
 export function updateGridSizeLabel(): void {
