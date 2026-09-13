@@ -11,7 +11,7 @@ import '../../packages/system-six/styles/styles.css';
 import chicago12Url from '@sakun/system.css/dist/ChiKareGo2.woff2?url';
 import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
 import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
-import ServerConnectModal from '../components/ServerConnectModal.astro';
+import PassLane from '../components/PassLane.astro';
 import Button from '../components/Button.astro';
 import CfBeacon from '../components/CfBeacon.astro';
 
@@ -114,8 +114,6 @@ const windowTitle = title || siteConfig.title;
       })}
     />
 
-    {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}
-
     <!-- No global error boundary: each app page handles its own errors in its UI. -->
   </head>
   <body class={bare ? 'is-bare' : undefined}>
@@ -216,25 +214,27 @@ const windowTitle = title || siteConfig.title;
         });
       }
 
-      // Theme toggle — dark mode is the page-scale inversion.
+      // Theme toggle — dark mode is the page-scale inversion. The choice is stored only
+      // when the visitor makes it; loading a page never writes storage.
       const themeBtns = Array.from(document.querySelectorAll('.theme-toggle'));
       if (themeBtns.length) {
-        const applyTheme = (t: 'light' | 'dark') => {
+        // Both are toggle buttons named "Dark mode": the name stays put and the
+        // pressed state says whether it's on.
+        const reflect = (t: 'light' | 'dark') => {
           document.documentElement.dataset.theme = t;
-          try {
-            localStorage.setItem('sm-theme', t);
-          } catch {
-            /* private mode */
-          }
-          // Both are toggle buttons named "Dark mode": the name stays put and the
-          // pressed state says whether it's on.
           for (const b of themeBtns) b.setAttribute('aria-pressed', String(t === 'dark'));
         };
-        applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+        reflect(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
         for (const b of themeBtns) {
-          b.addEventListener('click', () =>
-            applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'),
-          );
+          b.addEventListener('click', () => {
+            const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            reflect(t);
+            try {
+              localStorage.setItem('sm-theme', t);
+            } catch {
+              /* private mode: the choice lasts for this page */
+            }
+          });
         }
       }
 
@@ -242,6 +242,32 @@ const windowTitle = title || siteConfig.title;
       // press (and only while nothing has focus) PageDown / Space / arrows / Home / End scroll it.
       const scroller = document.querySelector<HTMLElement>('.site-pane');
       if (scroller && !document.body.classList.contains('is-bare')) {
+        // Browsers restore the document's scroll on Back and reload, not a pane's, so the
+        // pane's position rides in this history entry's state.
+        const saved = (history.state as { paneTop?: unknown } | null)?.paneTop;
+        if (typeof saved === 'number') {
+          scroller.scrollTop = saved;
+          // Late fonts and images can move the page under it; settle once they're in.
+          addEventListener('load', () => (scroller.scrollTop = saved), { once: true });
+        }
+        // Back across an in-page link stays in the document: restore from the entry's state.
+        addEventListener('popstate', (e) => {
+          const top = (e.state as { paneTop?: unknown } | null)?.paneTop;
+          if (typeof top === 'number') scroller.scrollTop = top;
+        });
+        let saveTimer: ReturnType<typeof setTimeout> | undefined;
+        scroller.addEventListener(
+          'scroll',
+          () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+              const state = (history.state as Record<string, unknown> | null) ?? {};
+              history.replaceState({ ...state, paneTop: scroller.scrollTop }, '');
+            }, 150);
+          },
+          { passive: true },
+        );
+
         let pointed = false;
         document.addEventListener('pointerdown', () => (pointed = true), { once: true });
         document.addEventListener('keydown', (e) => {
@@ -279,7 +305,10 @@ const windowTitle = title || siteConfig.title;
       }
     </script>
 
-    <ServerConnectModal />
+    <PassLane />
+    <!-- After the pass lane: deferred scripts run in document order, so a ?pass= token is
+         scrubbed from the URL before the beacon can read it. -->
+    {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}
   </body>
 </html>
 
@@ -543,13 +572,6 @@ const windowTitle = title || siteConfig.title;
 
   .site-window .title-bar .title {
     font-size: var(--text-lg);
-  }
-
-  .site-window .separator {
-    height: 1px;
-    background: var(--ink);
-    flex-shrink: 0;
-    margin-top: 0.25vh;
   }
 
   .site-pane {

@@ -1,25 +1,4 @@
-/* Element styles: the menubar/nav theme toggle and the apps' shared button. */
-
-/* ── .theme-toggle — the dark-mode control. Invert-hover matches the site
- * idiom and composes correctly under the page filter in dark mode. ── */
-.theme-toggle {
-  background: none;
-  border: none;
-  margin: 0;
-  padding: 0.1em 0.3em;
-  color: inherit;
-  font: inherit;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35em;
-}
-.theme-toggle:hover,
-.theme-toggle:focus-visible {
-  background: var(--color-text);
-  color: var(--color-bg);
-}
+/* Element styles: the apps' shared button. */
 
 /* ── .s6-btn — the apps' one square, 2px-ink, Chicago button. Variants: --primary (ink
  * fill, the one action to take), --danger (status red), --sm (steppers, row tools), --icon

@@ -51,3 +51,52 @@ test.describe('Site navigation', () => {
     await expect(btn).toHaveClass(/visible/, { timeout: 3000 });
   });
 });
+
+// The page scrolls inside its window, so the pane's position is kept per history entry.
+test.describe('The window pane keeps its place', () => {
+  const paneTop = (page: import('@playwright/test').Page) =>
+    page.locator('.site-pane').evaluate((el) => el.scrollTop);
+
+  test('a reload lands where the reader was', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.site-pane').evaluate((el) => (el.scrollTop = 1500));
+    await expect.poll(() => page.evaluate(() => history.state?.paneTop)).toBe(1500);
+    await page.reload();
+    await expect.poll(() => paneTop(page)).toBe(1500);
+  });
+
+  test('Back from a demo returns to the same place', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.site-pane').evaluate((el) => (el.scrollTop = 1200));
+    await expect.poll(() => page.evaluate(() => history.state?.paneTop)).toBe(1200);
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    await page.goBack();
+    await expect.poll(() => paneTop(page)).toBe(1200);
+  });
+
+  test('Back across an in-page link returns to the same place', async ({ page }) => {
+    await page.goto('/');
+    await expect.poll(() => page.evaluate(() => history.state?.paneTop ?? 0)).toBe(0);
+    await page.locator('.site-pane').evaluate((el) => (el.scrollTop = 300));
+    await expect.poll(() => page.evaluate(() => history.state?.paneTop)).toBe(300);
+    await page.locator('.bio-links a[href="#projects"]').click();
+    await expect.poll(() => paneTop(page)).toBeGreaterThan(300);
+    await page.goBack();
+    await expect.poll(() => paneTop(page)).toBe(300);
+  });
+
+  test('a fresh visit starts at the top', async ({ page }) => {
+    await page.goto('/');
+    expect(await paneTop(page)).toBe(0);
+  });
+});
+
+test.describe('Theme', () => {
+  test('loading a page stores nothing; switching stores the choice', async ({ page }) => {
+    await page.goto('/');
+    expect(await page.evaluate(() => localStorage.getItem('sm-theme'))).toBeNull();
+    await page.locator('.site-menubar .theme-toggle').click();
+    expect(await page.evaluate(() => localStorage.getItem('sm-theme'))).toBe('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+});
