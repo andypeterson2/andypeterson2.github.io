@@ -1,10 +1,19 @@
 <header class="app-navbar">
   <div class="navbar-left">
-    <button id="dataset-menu-btn" type="button" class="btn" aria-haspopup="true"
-      >Dataset &#9662;</button
+    <!-- A disclosure, not an ARIA menu: role="menu" around plain buttons was an
+         empty, nameless menu to a screen reader. The button names the loaded
+         dataset (MNIST on load; app.ts keeps it current) (M21). -->
+    <button
+      id="dataset-menu-btn"
+      type="button"
+      class="btn"
+      aria-expanded="false"
+      aria-controls="dataset-menu"
+      >Dataset: <span id="dataset-current">MNIST</span>
+      <span aria-hidden="true">&#9662;</span></button
     >
-    <div id="dataset-menu" class="dropdown hidden" role="menu">
-      <div id="dataset-list"></div>
+    <div id="dataset-menu" class="dropdown hidden">
+      <div id="dataset-list" role="group" aria-label="Datasets"></div>
     </div>
   </div>
   <div class="navbar-right">
@@ -56,10 +65,12 @@
     display: none;
   }
 
+  /* 32px rows: the 20px ones were under the 24px target minimum (WCAG 2.5.8). */
   :global(.ui-dropdown-item) {
     display: block;
     width: 100%;
-    padding: 4px 10px;
+    min-height: 32px;
+    padding: 6px 12px;
     border: none;
     background: none;
     text-align: left;

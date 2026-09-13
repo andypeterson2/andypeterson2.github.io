@@ -246,6 +246,7 @@ const importBtn = byId('import-btn', HTMLButtonElement);
 const refreshSavedBtn = byId('refresh-saved-btn', HTMLButtonElement);
 const savedSelect = byId('saved-select', HTMLSelectElement);
 const datasetList = byId('dataset-list', HTMLElement);
+const datasetCurrent = byId('dataset-current', HTMLElement);
 const evalProgress = byId('evaluate-progress', HTMLElement);
 const evalBar = byId('eval-bar', HTMLElement);
 const evalStatus = byId('eval-status', HTMLElement);
@@ -389,9 +390,15 @@ function renderDatasetMenu(): void {
   const datasets = window.CLASSIFIER_DATASETS ?? [];
   const current = window.UI_CONFIG?.name;
   datasetList.innerHTML = '';
+  // The trigger says which dataset is loaded ("Dataset: Iris ▾"), and so does the
+  // list, to a screen reader as well as by the highlight (M21).
+  const loaded = datasets.find((d) => d.name === current);
+  if (loaded) datasetCurrent.textContent = loaded.display_name.split(' ')[0] ?? loaded.name;
   for (const ds of datasets) {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'ui-dropdown-item' + (ds.name === current ? ' active' : '');
+    if (ds.name === current) btn.setAttribute('aria-current', 'true');
     btn.textContent = ds.display_name;
     btn.addEventListener('click', () => {
       dropdown.close();
@@ -731,6 +738,12 @@ function buildMetricsHead(names: string[]): void {
   const htr = document.createElement('tr');
   const corner = document.createElement('th');
   corner.className = 'corner-cell';
+  corner.scope = 'col';
+  // Named for screen readers (an empty header announced nothing); unseen (M21).
+  const cornerLabel = document.createElement('span');
+  cornerLabel.className = 'sr-only';
+  cornerLabel.textContent = 'Metric';
+  corner.appendChild(cornerLabel);
   htr.appendChild(corner);
   for (const name of names) {
     const th = document.createElement('th');
