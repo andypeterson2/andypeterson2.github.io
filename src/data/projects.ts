@@ -58,7 +58,7 @@ export const projects: Project[] = [
     title: 'Quantum Nonogram Solver',
     slug: 'quantum-nonogram-solver',
     description:
-      'Grover-accelerated constraint satisfaction solver with real IBM quantum hardware support, built at Qualcomm Institute.',
+      'Grover-based constraint-satisfaction solver, validated on real IBM quantum hardware, built at Qualcomm Institute.',
     status: 'active',
     featured: true,
     appUrl: '/projects/quantum-nonogram-solver/app/',
