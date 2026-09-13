@@ -11,18 +11,22 @@
  *   - idle         → grey  (no connection attempted)
  *   - connecting   → yellow (actively trying)
  *   - connected    → green
- *   - degraded     → yellow (missed pings / health-check retries)
+ *   - degraded     → yellow (a live channel that missed a ping)
  *   - disconnected → red
  *
  * Emits `connection:statechange` CustomEvent on every transition.
  */
 
 import type { ConnectWidget } from '../shared/server-connect-modal';
+import { ServiceConfig } from '../shared/service-config';
+import { parseSseFrames } from './sse';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'degraded' | 'disconnected';
 
 export interface ConnectionManager {
   readonly state: ConnectionState;
+  /** A welcome has arrived at least once since the page loaded. */
+  readonly everConnected: boolean;
   connect(baseUrl: string): void;
   disconnect(): void;
 }
@@ -42,6 +46,7 @@ interface HeartbeatEvent {
 let _state: ConnectionState = 'idle';
 let _baseUrl = '';
 let _clientId: string | null = null;
+let _everConnected = false;
 
 // SSE reader / abort
 let _abortCtrl: AbortController | null = null;
@@ -58,7 +63,7 @@ let _pingTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Health-check retry tracking
 let _healthFailures = 0;
-const _maxHealthRetries = 2; // go degraded after this many consecutive failures
+const _maxHealthRetries = 2; // red after this many consecutive failures
 
 // ── Observer — single dispatch point ──────────────────────────
 
@@ -144,16 +149,11 @@ function _readSSE(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void
           _handleDisconnect();
           return;
         }
-        buf += decoder.decode(result.value, { stream: true });
-        const parts = buf.split('\n\n');
-        buf = parts.pop() ?? '';
-        for (const part of parts) {
-          const line = part.trim();
-          if (!line.startsWith('data:')) continue;
-          const json = line.slice(5).trim();
-          if (!json) continue;
-          _handleEvent(JSON.parse(json) as HeartbeatEvent);
-        }
+        const { events, rest } = parseSseFrames(
+          buf + decoder.decode(result.value, { stream: true }),
+        );
+        buf = rest;
+        for (const event of events) _handleEvent(event as HeartbeatEvent);
         return pump();
       })
       .catch((err: unknown) => {
@@ -166,6 +166,7 @@ function _readSSE(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void
 
 function _handleEvent(event: HeartbeatEvent): void {
   if (event.type === 'welcome') {
+    _everConnected = true;
     _clientId = event.client_id ?? null;
     _heartbeatInterval = event.heartbeat_interval ?? 25;
     _setState('connected');
@@ -226,30 +227,39 @@ function _doConnect(): void {
     })
     .catch(() => {
       _healthFailures++;
-      // Below the retry cap the backend might still come up — show
-      // degraded/yellow; past it, red. Either way keep retrying while wanted.
-      _setState(_healthFailures <= _maxHealthRetries ? 'degraded' : 'disconnected');
+      // Below the retry cap the backend might still come up, so stay 'connecting';
+      // 'degraded' means a live channel that missed a ping.
+      if (_healthFailures > _maxHealthRetries) _setState('disconnected');
       if (_wantConnected) _scheduleReconnect();
     });
 }
 
 // ── Graceful unload ────────────────────────────────────────────
 
-window.addEventListener('beforeunload', () => {
-  if (_clientId && _baseUrl) {
-    navigator.sendBeacon(
-      _baseUrl + '/disconnect',
-      new Blob([JSON.stringify({ client_id: _clientId })], { type: 'application/json' }),
-    );
-  }
-});
+/** Tell the server this client is leaving. A keepalive fetch outlives the page and,
+ *  unlike sendBeacon, goes through the wrapped fetch that carries the pass. */
+function _sendDisconnect(): void {
+  if (!_clientId || !_baseUrl) return;
+  fetch(_baseUrl + '/disconnect', {
+    method: 'POST',
+    keepalive: true,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: _clientId }),
+  }).catch(() => {
+    /* best effort: the server drops silent clients after 90 s */
+  });
+}
+
+window.addEventListener('pagehide', _sendDisconnect);
 
 // ── Navbar integration (observer of its own events) ────────────
 
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'classifiers' || !detail.url) return;
-  connectionManager.disconnect();
+  // Anything on the page can dispatch this event; only an allowlisted origin gets a channel.
+  if (!ServiceConfig.isAllowedUrl(detail.url)) return;
+  if (_state !== 'idle') connectionManager.disconnect();
   connectionManager.connect(detail.url);
 });
 
@@ -275,6 +285,10 @@ export const connectionManager: ConnectionManager = {
     return _state;
   },
 
+  get everConnected() {
+    return _everConnected;
+  },
+
   connect(baseUrl) {
     _closeChannel();
     _healthFailures = 0;
@@ -286,17 +300,9 @@ export const connectionManager: ConnectionManager = {
   disconnect() {
     _wantConnected = false;
     _closeChannel();
-    if (_clientId && _baseUrl) {
-      fetch(_baseUrl + '/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_id: _clientId }),
-      }).catch(() => {
-        /* best effort */
-      });
-    }
+    _sendDisconnect();
     _clientId = null;
-    _setState('disconnected');
+    if (_state !== 'idle') _setState('disconnected');
   },
 };
 
