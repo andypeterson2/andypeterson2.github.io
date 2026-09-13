@@ -19,7 +19,7 @@ What was removed (recoverable from git history before 2026-09):
 (the claude.ai/design self-contained-closure sync helper), the package's
 `tsconfig.json`, lockfile, and dev dependencies, and the dead 70% of
 `styles/elements.css` (the `s6-*` host rules and the unused `.s6-status`
-family — the live status dots are `ServerConnectModal`'s own `.sn-dot`).
+family — the live status dots are `LiveTier`'s own `.sn-dot`).
 
 What remains is the product that was always in use: the CSS closure,
 documented in [`packages/system-six/README.md`](../packages/system-six/README.md)

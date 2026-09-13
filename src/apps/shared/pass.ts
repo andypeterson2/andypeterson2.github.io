@@ -9,9 +9,9 @@
  * the app falls back to that free tier — a pass only ever ADDS capability, it
  * never breaks the page.
  *
- * On load: read ?pass=, keep it in sessionStorage (so it survives in-app
- * navigation), and strip it from the visible URL so the token is not shown or
- * bookmarked. This module's side effects (URL scrub, fetch wrapper, live-tier
+ * On load: read the pass from #pass= (a fragment never reaches a server or a log) or
+ * ?pass=, keep it in sessionStorage (so it survives in-app navigation), and strip it
+ * from the visible URL so the token is not shown or bookmarked. This module's side effects (URL scrub, fetch wrapper, live-tier
  * activation) run at import — it must be the FIRST import of the shared entry
  * so the wrapped fetch is installed before anything calls out.
  */
@@ -40,12 +40,19 @@ function active(): boolean {
 // ── Read + persist the pass, then scrub it from the URL ──
 try {
   const params = new URLSearchParams(location.search);
-  const fromUrl = params.get('pass');
+  const frag = new URLSearchParams(location.hash.slice(1));
+  const fromUrl = frag.get('pass') ?? params.get('pass');
   if (fromUrl) {
     sessionStorage.setItem(KEY, fromUrl);
     params.delete('pass');
+    frag.delete('pass');
     const qs = params.toString();
-    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    const hash = frag.toString();
+    history.replaceState(
+      null,
+      '',
+      location.pathname + (qs ? '?' + qs : '') + (hash ? '#' + hash : ''),
+    );
   }
 } catch {
   /* private-mode storage / history quirks — degrade to no pass */

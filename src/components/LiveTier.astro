@@ -10,9 +10,9 @@
  */
 ---
 
-<!-- Shared tier (bundled module): SitePass fetch wrapper first, then ServiceConfig,
-     SiteContract, and the connect-modal UI. Module scripts defer, so they run in
-     document order relative to the apps. -->
+<!-- Live tier (bundled module), on demo pages only: SitePass first, then ServiceConfig,
+     SiteContract, and the status-nav UI. Module scripts defer, so they run in document
+     order relative to the apps. -->
 <script>
   import '../apps/shared/entry';
 </script>

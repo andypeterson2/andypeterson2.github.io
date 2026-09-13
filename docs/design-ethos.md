@@ -39,14 +39,16 @@ Five laws are *already* in the CSS, unnamed. Naming them is half the work.
    standing exception is the résumé's crimson `--accent`; past it, the status scale is the only color,
    and it stays genuinely rare — reserved for machine state.
 3. **Every state change is an inversion.** Hover, `::selection`, and focus all flip black↔white
-   (`a:hover{background:#000;color:#fff}`, `.finder-icon:hover .icon-glyph{filter:invert(1)}`).
+   (`a:hover{background:#000;color:#fff}`, `.heart-item:hover .heart-icon{filter:invert(1)}`).
    No glows, no color-shift, no elevation. One motion, everywhere.
 4. **Hard truth, no blur.** 1–2px solid ink, hard `2px 2px 0` shadows, no soft blur. Content and
    windows are hard-edged; controls (buttons, inputs, chips) take the gentle rounding an authentic
    System-6 button has — a small `--radius-*` scale, never ad-hoc px. The pixel is honest about
    being a pixel.
-5. **The OS is the information architecture.** Finder icons, windows, and the menu bar *are* the
-   navigation — not a metaphor layered on top of a nav, the nav itself.
+5. **The OS is the information architecture.** Windows and the menu bar *are* the navigation —
+   not a metaphor layered on top of a nav, the nav itself. The menu bar stays put and each
+   window's content scrolls inside it; the home page is one window holding a timeline, since a
+   recruiter reads a career in order.
 
 Two more are implied by the recent behavioral work, not yet by the stylesheet:
 
