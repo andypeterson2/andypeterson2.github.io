@@ -48,6 +48,14 @@
     mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   });
+  // Keyboard and screen-reader users are told the tour started: focus moves to the
+  // narrator (its End and Pause are the next two Tab stops), and the caption below
+  // is a live region, so each step is read as it arrives (M27).
+  let panel: HTMLElement | undefined = $state();
+  $effect(() => {
+    panel?.focus({ preventScroll: true });
+  });
+
   const narratorTop = $derived(
     mobile && box ? box.y + box.h / 2 > window.innerHeight * 0.55 : false,
   );
@@ -139,6 +147,8 @@
     class:at-top={narratorTop}
     data-tour
     aria-label="Guided tour"
+    tabindex="-1"
+    bind:this={panel}
   >
     <div class="tbar">
       <button class="tclose" aria-label="End tour" onclick={() => tour.end()}></button>
@@ -146,31 +156,33 @@
       <span class="tfill"></span>
     </div>
     <div class="tbody">
-      {#if done}
-        {#if live}
-          <p class="cap">
-            That's the tour. You're back on your own CV — the tour changed nothing, and nothing was
-            saved.
-          </p>
-          <div class="row">
-            <span class="count">{tour.total} of {tour.total}</span>
-            <span class="gap"></span>
-            <UiButton variant="tour" onclick={() => tour.end()}>Close</UiButton>
-          </div>
+      <div class="said" aria-live="polite">
+        {#if done}
+          {#if live}
+            <p class="cap">
+              That's the tour. You're back on your own CV — the tour changed nothing, and nothing
+              was saved.
+            </p>
+          {:else}
+            <p class="cap">That was the tour. The demo is yours now — nothing you do is saved.</p>
+          {/if}
         {:else}
-          <p class="cap">That was the tour. The demo is yours now — nothing you do is saved.</p>
-          <div class="row">
-            <span class="count">{tour.total} of {tour.total}</span>
-            <span class="gap"></span>
+          <p class="cap">{tour.caption}</p>
+          {#if paused}
+            <p class="wheel">Paused — you have the wheel.</p>
+          {/if}
+        {/if}
+      </div>
+      {#if done}
+        <div class="row">
+          <span class="count">{tour.total} of {tour.total}</span>
+          <span class="gap"></span>
+          {#if !live}
             <UiButton variant="tour" onclick={resetAndClose}>↺ Reset demo</UiButton>
-            <UiButton variant="tour" onclick={() => tour.end()}>Close</UiButton>
-          </div>
-        {/if}
+          {/if}
+          <UiButton variant="tour" onclick={() => tour.end()}>Close</UiButton>
+        </div>
       {:else}
-        <p class="cap">{tour.caption}</p>
-        {#if paused}
-          <p class="wheel">Paused — you have the wheel.</p>
-        {/if}
         <div class="row">
           <span class="count">{tour.index + 1} of {tour.total}</span>
           <span class="gap"></span>
