@@ -22,12 +22,10 @@ const projectTimeline: TimelineItem[] = [
   { slug: 'quantum-video-chat', period: '2024' },
 ].map((e) => ({ type: 'project', period: e.period, project: bySlug(e.slug) }));
 
-// Unified timeline: 2024–2025 projects sit above the Qualcomm research period
-// they came out of, then the rest of the experience.
-const timeline: TimelineItem[] = [
-  ...projectTimeline,
-  ...experience.map((e) => ({ type: 'experience' as const, ...e })),
-];
+// Unified timeline, newest first: the independent period, the projects built in
+// it, then the research period they grew out of and the rest of the experience.
+const [current, ...past] = experience.map((e) => ({ type: 'experience' as const, ...e }));
+const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
 ---
 
 <BaseLayout
@@ -58,7 +56,8 @@ const timeline: TimelineItem[] = [
         <div class="bio-name">{siteConfig.displayName}</div>
         <div class="bio-tagline">
           <span>{siteConfig.jobTitle}</span>
-          <span>Southern California</span>
+          <span>research → production</span>
+          <span>San Diego · open to remote</span>
         </div>
         <!-- The site's strongest evidence is the demos: point at them from the card, not
              only from the intro's last sentence. -->
@@ -85,11 +84,10 @@ const timeline: TimelineItem[] = [
             I build systems that have to prove they work. As a{' '}
             <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong> from 2022 to 2024, I built
             browser-native video encrypted with keys from a simulated BB84 quantum key exchange, Grover
-            search that found the right answer 32.3% of the time on real IBM hardware against 6.25% by
-            chance, and machine-learning classification pipelines. I graduated in Computer Science from{
-              ' '
-            }
-            <strong>UC San Diego</strong> in December 2024.
+            search that found the right answer five times as often as chance on real IBM hardware (32.3%
+            against 6.25%), and machine-learning classification pipelines. I graduated in Computer Science
+            from <strong>UC San Diego</strong> in December 2024, and since then I've been building independently:
+            the demos below, a quantum SVM paper recreation run on IBM hardware, and this site.
           </p>
           <p>
             Outside the lab, I co-founded <strong>San Diego CTF</strong> and{' '}
@@ -99,12 +97,17 @@ const timeline: TimelineItem[] = [
           </p>
           <p>
             Three of the four projects below run right here in your browser — try them. Every
-            project has a <em>?</em> writeup and a link to its source.
+            project has a <em>?</em> writeup and a link to its source, and so does{' '}
+            <a href={`https://github.com/${siteConfig.github}/${siteConfig.github}.github.io`}
+              >this page</a
+            >.
           </p>
           <p>
-            What I'm after: work where <strong>correctness is checkable</strong> and the result has to
-            survive contact with real users — taking something that only works in a paper, a notebook,
-            or one person's head, and turning it into a system other people can rely on.
+            What I'm after: a software engineering role where <strong
+              >correctness is checkable</strong
+            > and the result has to survive contact with real users — taking something that only works
+            in a paper, a notebook, or one person's head, and turning it into a system other people can
+            rely on.
           </p>
         </div>
       </div>
