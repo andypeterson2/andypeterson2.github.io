@@ -137,6 +137,17 @@ import Button from '../Button.astro';
     color: var(--color-text-muted);
   }
 
+  /* A binary model's scope, and an answer outside it, read as caveats (M20). */
+  :global(.pred-scope),
+  :global(.pred-out-note) {
+    color: var(--ink-3);
+  }
+
+  :global(.pred-out) {
+    color: var(--ink-3);
+    text-decoration: line-through;
+  }
+
   /* Results are judgements, not machine state: they stay in ink (L3) — confidence
      and accuracy bands are told apart by weight, never by the status colours (P6). */
   :global(.conf-high) {
