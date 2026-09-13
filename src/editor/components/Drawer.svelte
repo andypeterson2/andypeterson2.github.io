@@ -1,9 +1,23 @@
 <script lang="ts">
   // System-6 slide-in dialog: a side panel on desktop, a bottom sheet on mobile.
+  // Modal while it's open (H13): the page behind goes inert, focus starts on the
+  // close box, and closing puts focus back on whatever opened it.
   import type { Snippet } from 'svelte';
   import { editor } from '../lib/store.svelte';
+  import { tour } from '../lib/tour.svelte';
+  import { holdModal } from '../lib/modal';
 
   let { title, children }: { title: string; children: Snippet } = $props();
+
+  let layer: HTMLDivElement | undefined = $state();
+  let closeBtn: HTMLButtonElement | undefined = $state();
+
+  // Not while the tour is showing a drawer: the narrator (Pause, End) must stay
+  // live. If the visitor takes over mid-tour, the drawer becomes modal then.
+  $effect(() => {
+    if (!layer || tour.state !== 'idle') return;
+    return holdModal(layer, closeBtn);
+  });
 
   function close() {
     editor.openDrawer = null;
@@ -15,17 +29,20 @@
 
 <svelte:window onkeydown={onKey} />
 
-<button class="scrim" aria-label="Close" onclick={close}></button>
-<!-- div, not <aside>: a non-interactive landmark element can't carry the interactive
-     role="dialog" (Svelte a11y). A generic div takes the dialog role cleanly. -->
-<div class="drawer" role="dialog" aria-label={title}>
-  <div class="titlebar">
-    <button class="close" aria-label="Close" onclick={close}></button>
-    <span class="title">{title}</span>
-    <span class="fill"></span>
-  </div>
-  <div class="body">
-    {@render children()}
+<div class="drawer-layer" bind:this={layer}>
+  <!-- The scrim is for pointers; keyboards have Escape and the close box. -->
+  <button class="scrim" aria-hidden="true" tabindex="-1" onclick={close}></button>
+  <!-- div, not <aside>: a non-interactive landmark element can't carry the interactive
+       role="dialog" (Svelte a11y). A generic div takes the dialog role cleanly. -->
+  <div class="drawer" role="dialog" aria-modal="true" aria-label={title}>
+    <div class="titlebar">
+      <button class="close" aria-label="Close" onclick={close} bind:this={closeBtn}></button>
+      <span class="title">{title}</span>
+      <span class="fill"></span>
+    </div>
+    <div class="body">
+      {@render children()}
+    </div>
   </div>
 </div>
 

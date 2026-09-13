@@ -15,14 +15,16 @@ import '../styles/classifier.css';
        matches what you see. Wide screens put the tools column on the left with
        flex order (H11). -->
   <div id="split-layout" class="split-layout">
-    <main class="right-col">
+    <!-- Sections, not <main>/<aside>: the page's one <main> is the site pane
+         (BaseLayout), and a landmark nested inside it would be misplaced (M13). -->
+    <section class="right-col" aria-label="Draw and results">
       <ClassifierResultsPanel />
-    </main>
+    </section>
     <div id="resize-h" class="resize-handle"></div>
-    <aside id="left-col" class="left-col">
+    <section id="left-col" class="left-col" aria-label="Training and models">
       <ClassifierTrainCard />
       <ClassifierModelsCard />
-    </aside>
+    </section>
   </div>
 
   <ClassifierLogDrawer />

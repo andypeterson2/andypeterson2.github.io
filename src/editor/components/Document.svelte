@@ -83,6 +83,13 @@
   function fieldsOf(e: Entry): Record<string, string> {
     return lens ? entryFieldsFor(e, lens) : e.fields;
   }
+  /** A row's accessible name: its heading, not its whole text — a 540-character
+      button name made the document exhausting by screen reader (M27). The full text
+      is in the edit form Enter opens, one field per line. */
+  function editName(...parts: (string | undefined)[]): string {
+    const heading = parts.filter(Boolean).join(' · ');
+    return heading ? `Edit entry: ${heading}` : 'Edit entry';
+  }
 
   // Scroll a newly-created section into view once it renders.
   $effect(() => {
@@ -173,6 +180,7 @@
               class:dim={entryDim(section, pe)}
               role="button"
               tabindex="0"
+              aria-label={`Edit ${section.title || 'summary'}`}
               onclick={() => pick(section.id, pe.id)}
               onkeydown={(e) => onKey(e, () => pick(section.id, pe.id))}
             >
@@ -191,6 +199,7 @@
                 class:dim={entryDim(section, e)}
                 role="button"
                 tabindex="0"
+                aria-label={editName(fieldsOf(e).category)}
                 draggable="true"
                 data-drag-handle
                 data-sortable
@@ -218,6 +227,7 @@
                 class:dim={entryDim(section, e)}
                 role="button"
                 tabindex="0"
+                aria-label={editName(fieldsOf(e).award, fieldsOf(e).issuer)}
                 draggable="true"
                 data-drag-handle
                 data-sortable
@@ -244,6 +254,7 @@
                 class:dim={entryDim(section, e)}
                 role="button"
                 tabindex="0"
+                aria-label={editName(fieldsOf(e).name)}
                 draggable="true"
                 data-drag-handle
                 data-sortable
@@ -268,6 +279,10 @@
                 class:dim={entryDim(section, e)}
                 role="button"
                 tabindex="0"
+                aria-label={editName(
+                  entryLead(section.type, fieldsOf(e)),
+                  fieldsOf(e).organization,
+                )}
                 draggable="true"
                 data-drag-handle
                 data-sortable

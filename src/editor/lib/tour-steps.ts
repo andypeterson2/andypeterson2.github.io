@@ -91,7 +91,7 @@ export function tourSteps(): TourStep[] {
       id: 'rules',
       caption:
         'Its rules are ordinary tag chips. Edit them and the document re-filters as you type.',
-      spot: 'aside.drawer',
+      spot: '.drawer', // Drawer.svelte's panel is a div; 'aside.drawer' never matched
       enter() {
         editor.openDrawer = 'variant';
       },

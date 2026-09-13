@@ -23,12 +23,13 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).toContain('href="/#projects"');
   });
 
-  test('uses valid ARIA menubar pattern', () => {
-    expect(layoutSrc).toContain('role="menubar"');
-    expect(layoutSrc).toContain('role="menuitem"');
-    // Make sure the old invalid values are gone
-    expect(layoutSrc).not.toContain('role="menu-bar"');
-    expect(layoutSrc).not.toContain('role="menu-item"');
+  test('is a plain list of links, not an ARIA menubar (it has no menus)', () => {
+    // The menubar pattern promises arrow-key menus that don't exist here (M9).
+    expect(layoutSrc).not.toMatch(/role="menu(bar|item|-bar|-item)/);
+  });
+
+  test('the content pane is the one <main> landmark', () => {
+    expect(layoutSrc).toMatch(/<main class="window-pane site-pane" id="main-content">/);
   });
 
   test('nav has border bottom', () => {

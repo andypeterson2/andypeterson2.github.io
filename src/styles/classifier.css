@@ -109,3 +109,14 @@
 #classifier-app .hidden {
   display: none !important;
 }
+
+/* On phones --text-3xs lands on 12px, the floor; labels and fields step up one
+   size so the form stays readable (M11). */
+@media (width <= 600px) {
+  #classifier-app label,
+  #classifier-app select,
+  #classifier-app input[type='number'],
+  #classifier-app input[type='text'] {
+    font-size: var(--text-2xs);
+  }
+}
