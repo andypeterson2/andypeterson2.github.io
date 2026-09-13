@@ -24,6 +24,11 @@ import Button from '../Button.astro';
 </section>
 
 <style>
+  /* Room for the two in-browser models before they load (P12). */
+  #session-models {
+    min-height: 4.5em;
+  }
+
   /* Styles the classes app.ts buildSessionModelRow() actually emits (M1): the row
      used to run together as "LogisticRegression(in-browser)Linear7,850params". */
   :global(.ui-list-row) {

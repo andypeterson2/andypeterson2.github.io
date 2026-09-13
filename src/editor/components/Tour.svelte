@@ -11,6 +11,10 @@
   import { editor } from '../lib/store.svelte';
   import { prefersReducedMotion } from '../lib/tour';
 
+  // Phones, and phones held sideways (short but wider than 768): the touch layout.
+  // Keep in sync with the matching @media in Editor.svelte (audit H14).
+  const COMPACT_QUERY = '(max-width: 768px), (max-height: 500px)';
+
   const done = $derived(tour.state === 'done');
   const paused = $derived(tour.state === 'paused');
   // Signed-in owner: the tour drove their real CV (sandboxed) and has restored it.
@@ -38,7 +42,7 @@
   // bottom otherwise. Desktop keeps the shared bottom anchor.
   let mobile = $state(false);
   onMount(() => {
-    const mq = matchMedia('(max-width: 768px)');
+    const mq = matchMedia(COMPACT_QUERY);
     const sync = () => (mobile = mq.matches);
     sync();
     mq.addEventListener('change', sync);

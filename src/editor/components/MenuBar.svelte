@@ -12,6 +12,10 @@
   import { onMount } from 'svelte';
   import { enabledItems, stepIndex, type MenuDef, type MenuItem } from '../lib/menus';
 
+  // Phones, and phones held sideways (short but wider than 768): the touch layout.
+  // Keep in sync with the matching @media in Editor.svelte (audit H14).
+  const COMPACT_QUERY = '(max-width: 768px), (max-height: 500px)';
+
   let { menus }: { menus: MenuDef[] } = $props();
 
   let open = $state<number | null>(null); // desktop: index of the open pull-down
@@ -29,7 +33,7 @@
   // structurally different — four independent dropdowns vs. one grouped panel.
   let mobile = $state(false);
   onMount(() => {
-    const mq = matchMedia('(max-width: 768px)');
+    const mq = matchMedia(COMPACT_QUERY);
     const sync = () => {
       mobile = mq.matches;
       // Leaving a mode closes whatever it had open, so a stale menu can't linger.
@@ -152,8 +156,8 @@
       class="hamburger"
       aria-haspopup="menu"
       aria-expanded={allOpen}
-      aria-label="Menu"
-      onclick={toggleAll}><span class="hb-icon" aria-hidden="true">☰</span> Menu</button
+      aria-label="Commands"
+      onclick={toggleAll}>Commands <span class="hb-icon" aria-hidden="true">▾</span></button
     >
     {#if allOpen}
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -369,12 +373,13 @@
     position: relative;
   }
 
+  /* "Commands ▾", not a second ☰ next to the site's own (M28), in the system face. */
   .hamburger {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     min-height: 40px;
-    font-family: var(--sans);
+    font-family: var(--font-ui);
     font-size: var(--text-2xs);
     font-weight: 700;
     line-height: 1;
@@ -415,8 +420,9 @@
     padding-bottom: 6px;
   }
 
-  /* Bigger touch rows in the ☰ panel than in the desktop pull-downs. */
+  /* Bigger touch rows in the ☰ panel than in the desktop pull-downs, in the system face. */
   .drop.mega .item {
+    font-family: var(--font-ui);
     font-size: var(--text-2xs);
     padding: 10px 16px 10px 8px;
   }

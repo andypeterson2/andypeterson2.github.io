@@ -10,15 +10,19 @@ import '../styles/classifier.css';
 <div id="classifier-app">
   <ClassifierNavbar />
 
+  <!-- DOM order is results first: on a narrow screen that's also the visual order
+       (draw → predictions → evaluation, then the backend tools), so focus order
+       matches what you see. Wide screens put the tools column on the left with
+       flex order (H11). -->
   <div id="split-layout" class="split-layout">
+    <main class="right-col">
+      <ClassifierResultsPanel />
+    </main>
+    <div id="resize-h" class="resize-handle"></div>
     <aside id="left-col" class="left-col">
       <ClassifierTrainCard />
       <ClassifierModelsCard />
     </aside>
-    <div id="resize-h" class="resize-handle"></div>
-    <main class="right-col">
-      <ClassifierResultsPanel />
-    </main>
   </div>
 
   <ClassifierLogDrawer />
@@ -47,6 +51,7 @@ import '../styles/classifier.css';
   }
 
   .left-col {
+    order: -2;
     overflow-y: auto;
     padding: 8px;
     flex-shrink: 0;
@@ -67,6 +72,7 @@ import '../styles/classifier.css';
   }
 
   .resize-handle {
+    order: -1;
     width: 5px;
     cursor: col-resize;
     background: var(--dither-50);
@@ -77,14 +83,29 @@ import '../styles/classifier.css';
     background: var(--ink-4);
   }
 
-  @media (width <= 768px) {
+  /* Narrow screens: no pane scrollers. The app flows in the page's own scroll, so the
+     draw canvas is never squeezed into a 110px window (H11): results first, then the
+     tools. */
+  @media (width <= 900px) {
+    #classifier-app {
+      height: auto;
+    }
+
     .split-layout {
       flex-direction: column;
+      flex: none;
+      overflow: visible;
+    }
+
+    .left-col,
+    .right-col {
+      overflow: visible;
     }
 
     .left-col {
+      order: 1;
       border-right: none;
-      border-bottom: 2px solid var(--ink);
+      border-top: 2px solid var(--ink);
       width: 100% !important;
     }
 

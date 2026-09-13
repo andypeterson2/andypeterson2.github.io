@@ -8,8 +8,12 @@ import { getEntry, render } from 'astro:content';
 interface Props {
   slug: string;
   label?: string;
+  /** The project's demo and source, so a convinced reader can act without closing (M2). */
+  appUrl?: string;
+  repoUrl?: string;
 }
-const { slug, label = 'Full writeup' } = Astro.props;
+const { slug, label = 'Full writeup', appUrl, repoUrl } = Astro.props;
+const external = (url: string) => url.startsWith('http');
 
 const entry = await getEntry('writeups', slug);
 const rendered = entry ? await render(entry) : null;
@@ -55,6 +59,25 @@ const modalId = `writeup-${slug}`;
           <div class="writeup-content">
             <Content />
           </div>
+          {(appUrl || repoUrl) && (
+            <div class="writeup-actions">
+              {appUrl && (
+                <a
+                  href={appUrl}
+                  class="action-btn"
+                  target={external(appUrl) ? '_blank' : undefined}
+                  rel={external(appUrl) ? 'noopener noreferrer' : undefined}
+                >
+                  {external(appUrl) ? 'Launch ↗' : 'Try it →'}
+                </a>
+              )}
+              {repoUrl && (
+                <a href={repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
+                  Source
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -62,21 +85,20 @@ const modalId = `writeup-${slug}`;
 }
 
 <script>
-  // One delegated handler for every WriteupModal on the page.
-  const rootStyle = document.documentElement.style;
+  // One delegated handler for every WriteupModal on the page. (No scroll lock: the
+  // fixed overlay already chains wheel/touch scrolling to the viewport, not to the
+  // page's .site-pane — the old html overflow lock was dead code, audit M2.)
   let lastFocus: HTMLElement | null = null;
 
   function openModal(modal: HTMLElement) {
     lastFocus = document.activeElement as HTMLElement;
     modal.hidden = false;
-    rootStyle.overflow = 'hidden';
     modal.querySelector<HTMLElement>('[data-writeup-close]')?.focus();
   }
 
   function closeModal(modal: HTMLElement | null) {
     if (!modal) return;
     modal.hidden = true;
-    rootStyle.overflow = '';
     lastFocus?.focus();
   }
 
@@ -191,12 +213,29 @@ const modalId = `writeup-${slug}`;
     color: var(--paper);
   }
 
+  /* One step up from the old --text-2xs, which dropped to 15.4px at 768 while the
+     dialog stayed 640px wide (146 characters a line). The measure is capped at ~70
+     characters, so line length no longer depends on the viewport (M2). */
   .writeup-content {
     overflow-y: auto;
     font-family: var(--font-sans);
     padding: clamp(14px, 2.2vw, 26px);
-    font-size: var(--text-2xs);
-    line-height: 1.6;
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  /* 60ch of Geneva's wide "0" is about 70 characters of running text. */
+  .writeup-content > :global(*) {
+    max-width: 60ch;
+  }
+
+  .writeup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 10px clamp(14px, 2.2vw, 26px);
+    border-top: 2px solid var(--ink);
   }
 
   /* Markdown content — System-6 flavored. */
