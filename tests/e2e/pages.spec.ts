@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Core pages render without errors', () => {
-  const pages = [{ path: '/', title: /Home/ }];
+  // Titles name the person: "Name — Job title" on home (audit M5).
+  const pages = [{ path: '/', title: / \u2014 / }];
 
   for (const { path, title } of pages) {
     test(`${path} renders with correct title`, async ({ page }) => {

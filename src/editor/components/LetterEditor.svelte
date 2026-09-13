@@ -181,7 +181,7 @@
   }
 
   .lh h1.untitled {
-    color: var(--ink-5);
+    color: var(--dim-text);
   }
 
   .fields {
@@ -246,7 +246,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1.6;
-    color: var(--dim);
+    color: var(--dim-text);
     background: none;
     border: 0;
     padding: 4px 2px;
@@ -285,7 +285,7 @@
     font-family: var(--sans);
     font-size: var(--text-2xs);
     line-height: 1;
-    color: var(--dim);
+    color: var(--dim-text);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -301,7 +301,7 @@
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: var(--ink-4);
+    color: var(--dim-text);
     margin: 0;
   }
 

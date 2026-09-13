@@ -137,24 +137,25 @@ import Button from '../Button.astro';
     color: var(--color-text-muted);
   }
 
+  /* Results are judgements, not machine state: they stay in ink (L3) — confidence
+     and accuracy bands are told apart by weight, never by the status colours (P6). */
   :global(.conf-high) {
-    color: var(--color-success);
+    color: var(--ink);
+    font-weight: 700;
   }
 
   :global(.conf-low) {
-    color: var(--ink-4);
+    color: var(--ink-3);
   }
 
   :global(.acc-high) {
-    color: var(--color-success);
+    color: var(--ink);
+    font-weight: 700;
   }
 
-  :global(.acc-med) {
-    color: var(--color-warning);
-  }
-
+  :global(.acc-med),
   :global(.acc-low) {
-    color: var(--color-danger);
+    color: var(--ink);
   }
 
   /* ── Canvas ── */

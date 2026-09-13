@@ -36,6 +36,16 @@
   background: var(--paper);
 }
 
+/* system.css inverts a focused text field (ink ground, paper text). The ID rule above
+   resets the ground to paper, which left focused fields white on white — typed text
+   vanished (H12). Restore the whole inversion at the same specificity. */
+#classifier-app input[type='number']:focus-visible,
+#classifier-app input[type='text']:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+  outline: none;
+}
+
 #classifier-app .btn {
   font-family: var(--font-ui);
   font-size: var(--text-3xs);

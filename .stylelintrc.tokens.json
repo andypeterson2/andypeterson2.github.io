@@ -2,7 +2,14 @@
   "extends": ["stylelint-config-html/astro"],
   "rules": {
     "declaration-property-value-disallowed-list": {
-      "color": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
+      "color": [
+        "/#[0-9a-fA-F]{3,8}/",
+        "/rgba?\\(/",
+        "/hsla?\\(/",
+        "/var\\(--ink-4\\)/",
+        "/var\\(--ink-5\\)/",
+        "/var\\(--dim\\)/"
+      ],
       "background": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "background-color": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],
       "border": ["/#[0-9a-fA-F]{3,8}/", "/rgba?\\(/", "/hsla?\\(/"],

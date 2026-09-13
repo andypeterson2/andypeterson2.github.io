@@ -75,7 +75,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--dim);
+    color: var(--dim-text);
     padding-top: 5px;
   }
 

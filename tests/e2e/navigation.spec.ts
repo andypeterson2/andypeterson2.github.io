@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Site navigation', () => {
   test('home page renders the bio and the project timeline', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/Home/);
+    await expect(page).toHaveTitle(/ \u2014 /);
     await expect(page.locator('.bio-window')).toBeVisible();
     await expect(page.locator('.timeline-entry--project').first()).toBeVisible();
   });

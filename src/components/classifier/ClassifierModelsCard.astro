@@ -24,7 +24,9 @@ import Button from '../Button.astro';
 </section>
 
 <style>
-  :global(.model-row) {
+  /* Styles the classes app.ts buildSessionModelRow() actually emits (M1): the row
+     used to run together as "LogisticRegression(in-browser)Linear7,850params". */
+  :global(.ui-list-row) {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -33,12 +35,12 @@ import Button from '../Button.astro';
     flex-wrap: wrap;
   }
 
-  :global(.model-name) {
+  :global(.ui-list-name) {
     font-weight: 600;
   }
 
-  :global(.model-tag) {
-    font-size: var(--text-4xs);
+  :global(.ui-list-tag) {
+    font-size: var(--text-3xs);
     padding: 1px 5px;
     border: 1px solid var(--ink-4);
     color: var(--color-text-muted);

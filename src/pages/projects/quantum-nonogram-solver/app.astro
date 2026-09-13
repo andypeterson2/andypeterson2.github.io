@@ -176,9 +176,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     background: transparent;
   }
 
+  /* Clues are the puzzle: ink on plain paper, never on dither (M23). */
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
-    background: var(--dither-light);
+    background: var(--paper);
     text-align: center;
     font-size: var(--text-3xs);
     font-weight: 600;
@@ -202,10 +203,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.clue-slot) {
-    font-size: var(--text-4xs);
-    font-weight: 700;
-    color: var(--ink-2);
-    min-width: 12px;
+    font-family: var(--font-ui);
+    font-size: var(--text-2xs);
+    color: var(--ink);
+    min-width: 1ch;
     text-align: center;
   }
 
@@ -310,7 +311,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.placeholder-msg) {
-    color: var(--ink-4);
+    color: var(--ink-3);
     font-size: var(--text-3xs);
     font-style: italic;
     padding: 8px 0;
@@ -388,6 +389,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     padding: 4px 6px;
     font-size: var(--text-3xs);
     text-align: center;
+  }
+
+  /* Keep system.css's focus inversion: the local paper ground above would otherwise
+     leave a focused field white on white (H12). */
+  .trials-label input:focus-visible,
+  .threshold-label input:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+    outline: none;
   }
 
   .histogram-area {

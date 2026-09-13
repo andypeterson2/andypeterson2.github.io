@@ -272,7 +272,7 @@
   }
 
   .menu:disabled {
-    color: var(--dim);
+    color: var(--disabled);
     cursor: default;
   }
 
@@ -333,7 +333,7 @@
     padding-left: 22px;
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--dim);
+    color: var(--dim-text);
   }
 
   .item:hover:not(:disabled) .accel,
@@ -354,7 +354,7 @@
   }
 
   .item:disabled {
-    color: var(--dim);
+    color: var(--disabled);
     cursor: default;
   }
 
@@ -428,7 +428,7 @@
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    color: var(--dim);
+    color: var(--dim-text);
   }
 
   .group-label:first-child {
