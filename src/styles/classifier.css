@@ -17,7 +17,7 @@
 
 #classifier-app label {
   display: block;
-  font-size: var(--text-3xs);
+  font-size: var(--text-2xs);
   font-weight: 600;
   margin: 4px 0 2px;
   text-transform: uppercase;
@@ -30,7 +30,7 @@
   width: 100%;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: var(--text-3xs);
+  font-size: var(--text-2xs);
   padding: 3px 6px;
   border: 1.5px solid var(--ink);
   background: var(--paper);
@@ -46,9 +46,15 @@
   outline: none;
 }
 
-/* Buttons are the shared .s6-btn; only the classifier's own spacing lives here. */
-#classifier-app .s6-btn--block {
-  margin-top: 6px;
+/* Values typed as numbers are data: the mono face. */
+#classifier-app input[type='number'] {
+  font-family: var(--font-mono);
+}
+
+/* A disabled field reads as disabled, not as one that's waiting to be typed in. */
+#classifier-app fieldset:disabled :is(input, select) {
+  color: var(--color-text-muted);
+  border-style: dotted;
 }
 
 #classifier-app .row {
@@ -64,15 +70,4 @@
 
 #classifier-app .hidden {
   display: none !important;
-}
-
-/* On phones --text-3xs lands on 12px, the floor; labels and fields step up one
-   size so the form stays readable. */
-@media (width <= 600px) {
-  #classifier-app label,
-  #classifier-app select,
-  #classifier-app input[type='number'],
-  #classifier-app input[type='text'] {
-    font-size: var(--text-2xs);
-  }
 }
