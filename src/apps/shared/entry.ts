@@ -1,5 +1,5 @@
 /**
- * Shared-tier entry — the single bundled script the server-status nav loads.
+ * Live-tier entry — the bundled script a demo page's server-status nav loads.
  *
  * Import order is load-bearing:
  * pass first (its fetch wrapper must be installed before anything calls out),

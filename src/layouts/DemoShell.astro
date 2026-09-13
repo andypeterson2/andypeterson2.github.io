@@ -1,11 +1,12 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import LiveTier from '../components/LiveTier.astro';
 
 // The one way a demo page mounts. Every project demo declares two things
 // instead of hand-wiring them: the layout mode (chromed or full-bleed) and an
-// optional live backend (one prop emits the site-backend meta that drives the
-// menubar status dot and connect modal). App code is a bundled module entry
-// each page imports itself.
+// optional live backend (one prop emits the site-backend meta and mounts the live tier
+// that drives the menubar status dot). App code is a bundled module entry each page
+// imports itself.
 interface Props {
   title: string;
   description?: string;
@@ -23,4 +24,5 @@ const { title, description, bare, backend } = Astro.props;
     <slot name="head" />
   </Fragment>
   <slot />
+  {backend && <LiveTier />}
 </BaseLayout>

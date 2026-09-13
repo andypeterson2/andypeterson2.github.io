@@ -178,8 +178,10 @@ const { entry } = Astro.props;
   }
 
   /* ── Project timeline entries ── */
+
+  /* The pane scrolls under nothing, so an anchor lands with only a breath above it. */
   .timeline-entry--project {
-    scroll-margin-top: 80px;
+    scroll-margin-top: var(--space-4);
   }
 
   .tl-project {

@@ -137,8 +137,8 @@
   --dur: 0.16s; /* slides, standard UI motion */
   --dur-slow: 0.3s; /* slower reveals */
 
-  /* ── breakpoints — only 768px (tablet/mobile chrome) and 640px (narrow phone). CSS vars
-     can't be used in @media, so a new query reuses one of these rather than a third. */
+  /* ── breakpoints (written out: @media can't read vars) — shared: 768px mobile nav, 640px
+     narrow phone; a component's own layout may add one (classifier 900, home 600, rail 480). */
 }
 
 /* ── Reduced motion ── */
