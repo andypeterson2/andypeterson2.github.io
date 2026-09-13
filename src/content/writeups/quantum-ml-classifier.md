@@ -12,7 +12,7 @@ Each dataset is a plugin that declares its models, preprocessing, and UI config.
 ## What's real
 
 - **The paper's quantum SVM, on real hardware.** Yang et al.'s 2019 least-squares QSVM is rebuilt end to end; on **ibm_marrakesh** its circuit scored a Jensen–Shannon divergence of **0.0127 against the paper's 0.130** on IBMQX2 — ten times closer to ideal, before any error mitigation. It reaches **97% on Iris** and **91.5% on MNIST 6-vs-9**.
-- **483 test functions** across model architectures, training loops, API routes, and persistence.
+- **500+ test functions** across model architectures, training loops, API routes, and persistence.
 - **It predicts in your browser.** The exact preprocessing and softmax the server runs are ported client-side, on weights exported from the same models; the QSVM ships as six numbers.
 - **BB84 as a dataset.** Simulated key-distribution sessions — the video chat's channel physics — classified as clean or eavesdropped from QBER and sifted-key rate: 95% linear, 90% through the same six-number QSVM rule. The serving tier needed zero changes.
 
