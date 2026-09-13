@@ -254,6 +254,37 @@ const windowTitle = title || siteConfig.title;
         }
       }
 
+      // Keyboard scrolling before the first click. The page scrolls inside .site-pane,
+      // not the document, so on a fresh load PageDown / Space / arrows / Home / End
+      // had nothing to move until the visitor clicked into the pane (Fable A1-01).
+      // Until the first pointer press, and only while nothing has focus, those keys
+      // scroll the pane. Tab order is untouched (the skip link stays first), and after
+      // any click the browser's own scrolling takes over, inner scrollers included.
+      const scroller = document.querySelector<HTMLElement>('.site-pane');
+      if (scroller && !document.body.classList.contains('is-bare')) {
+        let pointed = false;
+        document.addEventListener('pointerdown', () => (pointed = true), { once: true });
+        document.addEventListener('keydown', (e) => {
+          if (pointed || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+          if (document.activeElement && document.activeElement !== document.body) return;
+          if (scroller.scrollHeight <= scroller.clientHeight) return;
+          const page = scroller.clientHeight * 0.9;
+          const steps: Partial<Record<string, number>> = {
+            PageDown: page,
+            PageUp: -page,
+            ' ': e.shiftKey ? -page : page,
+            ArrowDown: 40,
+            ArrowUp: -40,
+            Home: -scroller.scrollHeight,
+            End: scroller.scrollHeight,
+          };
+          const by = steps[e.key];
+          if (by === undefined) return;
+          e.preventDefault();
+          scroller.scrollBy({ top: by });
+        });
+      }
+
       // Back to top
       const btn = document.getElementById('back-to-top');
       if (btn) {
