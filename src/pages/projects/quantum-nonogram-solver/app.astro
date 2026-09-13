@@ -14,26 +14,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div class="section-rule"><span>Puzzle Editor</span></div>
         <div id="draw-view"></div>
         <div class="editor-actions">
-          <button id="btn-clear" class="nono-btn">Clear</button>
-          <button id="btn-random" class="nono-btn">Randomize</button>
+          <button id="btn-clear" class="s6-btn">Clear</button>
+          <button id="btn-random" class="s6-btn">Randomize</button>
         </div>
         <div class="grid-size-controls">
           <span class="size-stepper" role="group" aria-label="Rows">
-            <button id="btn-remove-row" class="nono-btn nono-btn-sm" aria-label="Remove a row"
+            <button id="btn-remove-row" class="s6-btn s6-btn--sm" aria-label="Remove a row"
               >−</button
             >
             <span class="stepper-label">Rows</span>
-            <button id="btn-add-row" class="nono-btn nono-btn-sm" aria-label="Add a row">+</button>
+            <button id="btn-add-row" class="s6-btn s6-btn--sm" aria-label="Add a row">+</button>
           </span>
           <span id="grid-size-label">3 &times; 3</span>
           <span class="size-stepper" role="group" aria-label="Columns">
-            <button id="btn-remove-col" class="nono-btn nono-btn-sm" aria-label="Remove a column"
+            <button id="btn-remove-col" class="s6-btn s6-btn--sm" aria-label="Remove a column"
               >−</button
             >
             <span class="stepper-label">Cols</span>
-            <button id="btn-add-col" class="nono-btn nono-btn-sm" aria-label="Add a column"
-              >+</button
-            >
+            <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
           </span>
         </div>
         <div id="status-line" class="status-line">Ready — puzzles solve in your browser.</div>
@@ -45,7 +43,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             >Trials
             <input type="number" id="trials-input" min="1" max="20" value="1" />
           </label>
-          <button id="btn-bench" class="nono-btn nono-btn-run">&#9654; Solve in browser</button>
+          <button id="btn-bench" class="s6-btn s6-btn--primary">&#9654; Solve in browser</button>
           <label class="gallery-label"
             >Gallery
             <select id="gallery-select">
@@ -93,51 +91,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 </DemoShell>
 
 <style>
-  /* ── Buttons ── */
-  .nono-btn {
-    background: var(--paper);
-    border: 2px solid var(--ink);
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    padding: 6px 14px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .nono-btn:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .nono-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .nono-btn:disabled:hover {
-    background: var(--paper);
-    color: var(--ink);
-  }
-
-  .nono-btn-sm {
-    font-size: var(--text-3xs);
-    padding: 4px 10px;
-  }
-
-  .nono-btn-run {
-    background: var(--ink);
-    color: var(--paper);
-    font-size: var(--text-3xs);
-    padding: 6px 16px;
-  }
-
-  .nono-btn-run:hover {
-    background: var(--ink-2);
-  }
-
-  .nono-btn-run:disabled {
-    opacity: 0.4;
-  }
+  /* Buttons are the shared .s6-btn (packages/system-six/styles/elements.css, P9). */
 
   /* ── Two-column layout ── */
   .nono-columns {
@@ -457,12 +411,58 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     outline: none;
   }
 
+  /* 260px: room for 12px bitstring labels under the bars (M29). */
   .histogram-area {
-    height: 220px;
+    height: 260px;
     border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
     overflow: hidden;
+  }
+
+  /* The histogram's marks, coloured from the tokens (M29; solver.ts draws classes). */
+  :global(.hist-axis) {
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.hist-grid) {
+    stroke: var(--paper-4);
+    stroke-width: 1;
+  }
+
+  :global(.hist-bar) {
+    fill: var(--ink);
+  }
+
+  :global(.hist-bar.hist-below) {
+    fill: url('#hist-dither');
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.hist-dot) {
+    fill: var(--ink);
+  }
+
+  :global(.hist-threshold) {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 3;
+  }
+
+  :global(.hist-text) {
+    font-family: var(--font-sans);
+    font-size: var(--text-3xs);
+    fill: var(--ink);
+  }
+
+  :global(.hist-muted) {
+    fill: var(--ink-3);
+  }
+
+  :global(.hist-strong) {
+    font-weight: 700;
   }
 
   /* ── Metrics ── */

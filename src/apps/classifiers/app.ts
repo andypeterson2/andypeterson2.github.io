@@ -440,9 +440,10 @@ function renderGrid(): void {
   }
   ctx.putImageData(img, 0, 0);
   // Draw grid lines
-  const gridColor = getComputedStyle(document.documentElement)
-    .getPropertyValue('--surface-muted')
-    .trim();
+  // A faint grid showing the 28×28 cells (--surface-muted never existed, so it
+  // drew nothing; --ink-2 is a dark grey on the black pad).
+  const gridColor =
+    getComputedStyle(document.documentElement).getPropertyValue('--ink-2').trim() || 'dimgray';
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   for (let i = 1; i < GRID; i++) {
@@ -562,19 +563,19 @@ function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
     return row;
   }
   const ablationBtn = document.createElement('button');
-  ablationBtn.className = 'btn btn-icon btn-sm';
+  ablationBtn.className = 's6-btn s6-btn--icon s6-btn--sm';
   ablationBtn.dataset.ablation = name;
   ablationBtn.title = 'Ablation study';
   ablationBtn.textContent = '⊘';
   row.appendChild(ablationBtn);
   const exportBtn = document.createElement('button');
-  exportBtn.className = 'btn btn-icon';
+  exportBtn.className = 's6-btn s6-btn--icon';
   exportBtn.dataset.export = name;
   exportBtn.title = 'Save to disk';
   exportBtn.innerHTML = ICONS.save;
   row.appendChild(exportBtn);
   const removeBtn = document.createElement('button');
-  removeBtn.className = 'btn btn-danger';
+  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
   removeBtn.dataset.remove = name;
   removeBtn.setAttribute('aria-label', 'Remove ' + name);
   removeBtn.innerHTML = ICONS.close;
@@ -873,17 +874,9 @@ async function runEvaluate(): Promise<void> {
 
 // ── Train ─────────────────────────────────────────────────────────────────────
 
-/** Colours for training curve series (one per model). */
-const cs = getComputedStyle(document.documentElement);
-const SERIES_COLORS = [
-  cs.getPropertyValue('--danger').trim() || '#ef4444',
-  cs.getPropertyValue('--success').trim() || '#22c55e',
-  cs.getPropertyValue('--accent-teal').trim() || '#3b82f6',
-  cs.getPropertyValue('--accent').trim() || '#f59e0b',
-  cs.getPropertyValue('--syntax-keyword').trim() || '#a855f7',
-  cs.getPropertyValue('--accent-olive').trim() || '#ec4899',
-];
-let seriesColorIdx = 0;
+/** Dash patterns for the training-curve series: told apart by line, not colour (M29). */
+const SERIES_DASHES: number[][] = [[], [7, 4], [2, 3], [10, 3, 2, 3], [14, 5], [1, 4]];
+let seriesIdx = 0;
 
 interface TrainBody {
   model_type: string;
@@ -950,10 +943,10 @@ trainBtn.addEventListener('click', () => {
         yLabel: 'Loss',
         y2Label: 'Val Accuracy',
       });
-      const c = SERIES_COLORS[seriesColorIdx++ % SERIES_COLORS.length] ?? '#ef4444';
-      const c2 = SERIES_COLORS[seriesColorIdx++ % SERIES_COLORS.length] ?? '#22c55e';
-      trainChart.addSeries(`${name} loss`, c, 'left');
-      trainChart.addSeries(`${name} acc`, c2, 'right');
+      const d = SERIES_DASHES[seriesIdx++ % SERIES_DASHES.length] ?? [];
+      const d2 = SERIES_DASHES[seriesIdx++ % SERIES_DASHES.length] ?? [];
+      trainChart.addSeries(`${name} loss`, d, 'left');
+      trainChart.addSeries(`${name} acc`, d2, 'right');
       chartArea.classList.remove('hidden');
     }
 
