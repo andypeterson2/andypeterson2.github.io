@@ -19,6 +19,7 @@
   import ProfilesDrawer from './components/ProfilesDrawer.svelte';
   import HistoryDrawer from './components/HistoryDrawer.svelte';
   import PdfView from './components/PdfView.svelte';
+  import { modal } from './lib/modal';
 
   // The owner's identity (name + public contacts) resolved from siteConfig on the
   // server and handed down by the Astro page. Overlaid onto the demo person so a
@@ -53,8 +54,7 @@
   function reflectTheme() {
     const dark = theme === 'dark';
     const btn = heartEl ?? document.querySelector<HTMLButtonElement>('.heart-toggle');
-    btn?.setAttribute('aria-pressed', String(dark));
-    btn?.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    btn?.setAttribute('aria-pressed', String(dark)); // the name stays "Dark mode" (M16)
   }
   onMount(() => {
     theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -80,11 +80,12 @@
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
   // the status bar is a sign-in button, not a way to bring it back.
   let inviteOpen = $state(true);
-  // The carried-over-edits offer is a real dialog: put focus on its answer.
-  $effect(() => {
-    if (editor.pendingDraft)
-      queueMicrotask(() => document.getElementById('draft-primary')?.focus());
-  });
+  // The invite and the carried-over-edits offer are modal pop-ups over a scrim:
+  // `use:modal` makes the page behind inert and puts focus on the answer (H13).
+  // Escape dismisses the invite (the offer needs a real answer).
+  function onInviteKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && demoMode && inviteOpen && !editor.pendingDraft) inviteOpen = false;
+  }
 
   // Starting the tour dismisses the invitation first: on mobile the invite is a
   // popup window that would otherwise sit over the narrator, and on desktop the
@@ -206,6 +207,7 @@
    * event it fires routes through saveEntry, which records it like any other edit.
    */
   function onGlobalKey(e: KeyboardEvent) {
+    onInviteKey(e);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
       e.preventDefault();
       if (tour.active) tour.takeover(); // a keystroke means the visitor is driving
@@ -247,7 +249,8 @@
         type="button"
         class="navlink heart-toggle"
         bind:this={heartEl}
-        aria-label="Switch to dark mode"
+        aria-label="Dark mode"
+        title="Dark mode"
         aria-pressed="false"
         onclick={toggleTheme}
       >
@@ -268,57 +271,78 @@
     </div>
   {:else if editor.pendingDraft}
     <!-- Demo edits carried across sign-in (audit C1): offer them as a profile. -->
-    <div class="invite-scrim" aria-hidden="true"></div>
-    <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
-      <div class="titlebar invite-tbar">
-        <span class="title" id="draft-title">Your demo edits</span>
-        <span class="fill"></span>
+    <div class="invite-layer" use:modal={'#draft-primary'}>
+      <div class="invite-scrim" aria-hidden="true"></div>
+      <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
+        <div class="titlebar invite-tbar">
+          <span class="title" id="draft-title">Your demo edits</span>
+          <span class="fill"></span>
+        </div>
+        <span class="txt"
+          >You edited the demo before signing in. Bring those edits into your account as a new
+          profile? Your name and email replace the sample's contact details.</span
+        >
+        <UiButton
+          variant="toolbar"
+          class="tour-start"
+          tone="primary"
+          id="draft-primary"
+          disabled={editor.importingDraft}
+          onclick={() => void editor.importDraft()}
+          >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
+        >
+        <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
+          >Start fresh instead</button
+        >
       </div>
-      <span class="txt"
-        >You edited the demo before signing in. Bring those edits into your account as a new
-        profile? Your name and email replace the sample's contact details.</span
-      >
-      <UiButton
-        variant="toolbar"
-        class="tour-start"
-        tone="primary"
-        id="draft-primary"
-        disabled={editor.importingDraft}
-        onclick={() => void editor.importDraft()}
-        >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
-      >
-      <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
-        >Start fresh instead</button
-      >
     </div>
   {:else if demoMode && inviteOpen}
     <!-- On phones this whole block presents as a centered pop-up window: the scrim
          and the System-6 titlebar below are shown only there. On desktop it stays
          the inline invitation strip and both are display:none. -->
-    <button class="invite-scrim" aria-label="Dismiss" onclick={() => (inviteOpen = false)}></button>
-    <div class="invite" id="demo-invite" role="status">
-      <div class="titlebar invite-tbar">
-        <button class="close invite-close" aria-label="Dismiss" onclick={() => (inviteOpen = false)}
-        ></button>
-        <span class="title">Resume Editor</span>
-        <span class="fill"></span>
+    <div class="invite-layer" use:modal={'.tour-start'}>
+      <!-- The scrim is for pointers; keyboards have Escape and the Dismiss buttons. -->
+      <button
+        class="invite-scrim"
+        aria-hidden="true"
+        tabindex="-1"
+        onclick={() => (inviteOpen = false)}
+      ></button>
+      <div
+        class="invite"
+        id="demo-invite"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="invite-title"
+        aria-describedby="invite-text"
+      >
+        <div class="titlebar invite-tbar">
+          <button
+            class="close invite-close"
+            aria-label="Dismiss"
+            onclick={() => (inviteOpen = false)}
+          ></button>
+          <span class="title" id="invite-title">Resume Editor</span>
+          <span class="fill"></span>
+        </div>
+        <span class="txt" id="invite-text"
+          >This is the real editor, running in your browser. Edit anything — drag, tag, switch
+          variants, export. <b
+            >Nothing is saved until you sign in — then your edits come with you.</b
+          ></span
+        >
+        <UiButton
+          variant="toolbar"
+          class="tour-start"
+          disabled={tour.state !== 'idle'}
+          title="Watch the editor drive itself — touch anything to take over"
+          onclick={startTour}>▶ Guided tour</UiButton
+        >
+        {#if editor.connectError === 'offline'}
+          <button class="link" onclick={() => editor.connect()}>Retry</button>
+        {/if}
+        <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
       </div>
-      <span class="txt"
-        >This is the real editor, running in your browser. Edit anything — drag, tag, switch
-        variants, export. <b>Nothing is saved until you sign in — then your edits come with you.</b
-        ></span
-      >
-      <UiButton
-        variant="toolbar"
-        class="tour-start"
-        disabled={tour.state !== 'idle'}
-        title="Watch the editor drive itself — touch anything to take over"
-        onclick={startTour}>▶ Guided tour</UiButton
-      >
-      {#if editor.connectError === 'offline'}
-        <button class="link" onclick={() => editor.connect()}>Retry</button>
-      {/if}
-      <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
     </div>
   {/if}
 
