@@ -474,6 +474,12 @@
     font-weight: 700;
   }
 
+  /* Long skills and tag chips wrap instead of pushing the page sideways at 320px (M31). */
+  .skill-list {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .entry-hit {
     cursor: pointer;
     border: 1px solid transparent;
