@@ -11,6 +11,8 @@ export interface SiteConfig {
   domain: string;
   email: string;
   title: string;
+  /** One job title everywhere it appears (Me card, page titles, JSON-LD). */
+  jobTitle: string;
   description: string;
   github: string;
   linkedin: string;
@@ -21,6 +23,7 @@ export interface SiteEnv {
   SITE_DOMAIN?: string;
   SITE_EMAIL?: string;
   SITE_TITLE?: string;
+  SITE_JOB_TITLE?: string;
   SITE_DESCRIPTION?: string;
   SITE_GITHUB?: string;
   SITE_LINKEDIN?: string;
@@ -41,6 +44,7 @@ export function resolveSiteConfig(env: SiteEnv): SiteConfig {
     domain: env.SITE_DOMAIN || 'localhost',
     email: env.SITE_EMAIL || '',
     title: env.SITE_TITLE || 'Projects',
+    jobTitle: env.SITE_JOB_TITLE || 'Software Developer',
     description: env.SITE_DESCRIPTION || 'Personal portfolio and project showcase',
     github: env.SITE_GITHUB || '',
     linkedin: env.SITE_LINKEDIN || '',

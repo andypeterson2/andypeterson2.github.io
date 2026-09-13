@@ -15,6 +15,10 @@ const identity = {
 };
 ---
 
-<DemoShell title="LaTeX Resume Editor" bare>
+<DemoShell
+  title="LaTeX Resume Editor"
+  description="Edit, reorder and restyle a real résumé in your browser — a Svelte editor over a normalized database, with server-side XeLaTeX compilation for signed-in users."
+  bare
+>
   <Editor client:load identity={identity} />
 </DemoShell>
