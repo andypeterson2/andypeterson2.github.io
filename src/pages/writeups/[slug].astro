@@ -15,7 +15,7 @@ const { Content } = await render(article);
 
 <BaseLayout title={article.data.title} description={article.data.summary}>
   <article class="article">
-    <p class="article-back"><a href="/#quantum-ml-classifier">← Back to the project</a></p>
+    <p class="article-back"><a href={`/#${article.data.project}`}>← Back to the project</a></p>
     <p class="article-summary">{article.data.summary}</p>
     <Content />
   </article>

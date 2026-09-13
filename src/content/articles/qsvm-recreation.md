@@ -1,5 +1,6 @@
 ---
 title: The QSVM paper recreation
+project: quantum-ml-classifier
 summary: Yang, Awan & Vall-Llosera's NISQ-era least-squares quantum SVM, rebuilt end-to-end in modern Qiskit, verified on ibm_marrakesh, and shipped to the browser as six numbers.
 ---
 In 2019, Yang, Awan & Vall-Llosera at Ericsson Research took the least-squares quantum SVM — an algorithm that on paper needs error-corrected hardware — and re-engineered it until it ran on a real 5-qubit IBM device ([arXiv:1909.11988](https://arxiv.org/abs/1909.11988)). The recreation lives as an [executed notebook](https://github.com/andypeterson2/quantum-machine-learning/tree/main/notebooks/qsvm-iris) in the quantum-machine-learning repo, rebuilt end-to-end in modern Qiskit — and its final classifiers run **live on [the classifier demo](/projects/ai-ml/app/)**: the QSVM rows in the Models, Predictions, and Evaluation panels are the paper's actual solved decision rule.
@@ -36,7 +37,7 @@ The **kernel oracle** is a depth-1 circuit whose raw measurement counts reconstr
 
 **97% on Iris** (setosa vs versicolor from sepal width and petal length) — exactly the paper's simulated result. The same quantum solution, with only the map coefficients changed, scores **91.5% on MNIST 6-vs-9** using the paper's pixel-ratio features — the fraction of ink in the left vs right and top vs bottom halves of the image — near the 92.5% ceiling an unconstrained classical SVM reaches on those same features.
 
-The notebook closes with the paper's own noise yardstick — the Jensen–Shannon divergence between ideal and measured output distributions — first under a depolarizing + readout model standing in for the retired IBMQX2, and then **on real hardware**: the same optimized circuit executed on **ibm_marrakesh** (2026, 8192 raw shots) scored **D_JS = 0.0127** against the paper's **0.130** on IBMQX2 in 2019 — *ten times closer to ideal, measured with the paper's own yardstick, before any error mitigation*.
+The notebook closes with the paper's own noise yardstick — the Jensen–Shannon divergence between ideal and measured output distributions — first under a depolarizing + readout model standing in for the retired IBMQX2, and then **on real hardware**: the same optimized circuit executed on **ibm_marrakesh** (2026, 8192 raw shots) scored **D_JS = 0.0127** against the paper's **0.130** on IBMQX2 in 2019 — *ten times closer to ideal, measured with the paper's own yardstick, before any error mitigation* — the same circuit, seven years of hardware later.
 
 (The error-suppressed run scored 0.0211 — honestly recorded as slightly worse than raw at this depth.) The hardware α readout reproduced every deployed accuracy within a point, so **the six numbers in your browser now include an α read out from a real quantum computer**, with the run cached and provenance-stamped in the repo.
 
@@ -44,4 +45,4 @@ What ships to your browser is the whole thing collapsed to six numbers:
 
 <div class="math-scroll"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>s</mi><mo>&#x0003D;</mo><msub><mi>w</mi><mn>1</mn></msub><mspace width="0.167em" /><mo stretchy="false">&#x00028;</mo><mi>a</mi><msub><mi>f</mi><mn>1</mn></msub><mo>&#x0002B;</mo><mi>b</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>w</mi><mn>2</mn></msub><mspace width="0.167em" /><mo stretchy="false">&#x00028;</mo><mi>c</mi><msub><mi>f</mi><mn>2</mn></msub><mo>&#x0002B;</mo><mi>d</mi><mo stretchy="false">&#x00029;</mo></mrow></math></div>
 
-Draw a six, and that one line — the paper's map plus one dot product — decides. The weights are exported closed-form from the quantum-machine-learning repo with provenance stamped, and CI re-derives them on every run.
+Two of the six, *w*₁ and *w*₂, are the quantum solution, and they are the same pair for Iris, MNIST and BB84; the other four are each dataset's map, solved classically. Draw a six, and that one line — the paper's map plus one dot product — decides. The weights are exported closed-form from the quantum-machine-learning repo with provenance stamped, and CI re-derives them on every run.
