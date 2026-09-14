@@ -2,7 +2,7 @@ import { test_accuracy as mnistLinearAcc } from '../../public/classifiers/models
 import { test_accuracy as qsvmIrisAcc } from '../../public/classifiers/models/qsvm-iris.json';
 import { test_accuracy as qsvmMnistAcc } from '../../public/classifiers/models/qsvm-mnist.json';
 
-/** Test accuracy as a chip value: 0.9206 → "92.1%", 0.97 → "97%". */
+/** Test accuracy as a chip value: 0.9206 → "92.1%", 0.9667 → "96.7%". */
 const pct = (accuracy: number) => `${Number((accuracy * 100).toFixed(1))}%`;
 
 export interface Project {
@@ -90,7 +90,7 @@ export const projects: Project[] = [
       {
         value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,
         label:
-          'Iris setosa vs versicolor (the paper’s pair) / MNIST 6 vs 9, with the paper’s QSVM rule in your browser',
+          'held out: Iris setosa vs versicolor / MNIST 6 vs 9, the paper’s QSVM rule in your browser',
       },
       { value: pct(mnistLinearAcc), label: 'MNIST, a linear baseline predicted in your browser' },
     ],
