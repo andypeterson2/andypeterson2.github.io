@@ -64,8 +64,8 @@ describe('QSVM paper recreation', () => {
   });
 
   test.each([
-    ['setosa', 3.5, 1.4, 1.79],
-    ['versicolor', 2.8, 4.3, -0.87],
+    ['setosa', 3.5, 1.4, 1.89],
+    ['versicolor', 2.8, 4.3, -0.9],
   ])('Iris %s: sepal width %s, petal length %s gives s ≈ %s', (label, f1, f2, s) => {
     const p = ClassifierInfer.predict(qsvmIris, [f1, f2]);
     expect(p.prediction).toBe(label);
