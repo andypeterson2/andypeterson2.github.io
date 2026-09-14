@@ -35,7 +35,7 @@ The **kernel oracle** is a depth-1 circuit whose raw measurement counts reconstr
 
 ## Results — and the rule you're clicking
 
-**97% on Iris** (setosa vs versicolor from sepal width and petal length) — exactly the paper's simulated result. The same quantum solution, with only the map coefficients changed, scores **91.5% on MNIST 6-vs-9** using the paper's pixel-ratio features — the fraction of ink in the left vs right and top vs bottom halves of the image — near the 92.5% ceiling an unconstrained classical SVM reaches on those same features.
+On held-out data the rule scores **96.7% on Iris** (setosa vs versicolor from sepal width and petal length; 29 of 30). The same quantum solution, with only the map coefficients changed, scores **89.1% on MNIST 6-vs-9** (1,000 held-out digits) using the paper's pixel-ratio features — the fraction of ink in the left vs right and top vs bottom halves of the image. A classical logistic regression fitted to the same points scores 100% and 91.6%: a two-number quantum solution lands a few points under a classical linear model on the same features, which is what it should do.
 
 The notebook closes with the paper's own noise yardstick — the Jensen–Shannon divergence between ideal and measured output distributions — first under a depolarizing + readout model standing in for the retired IBMQX2, and then **on real hardware**: the same optimized circuit executed on **ibm_marrakesh** (2026, 8192 raw shots) scored **D_JS = 0.0127** against the paper's **0.130** on IBMQX2 in 2019 — *ten times closer to ideal, measured with the paper's own yardstick, before any error mitigation* — the same circuit, seven years of hardware later.
 
