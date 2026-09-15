@@ -13,6 +13,10 @@
   --dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
   --dither-75: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23000'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23fff'/%3E%3C/svg%3E");
   --dither-hatch: repeating-linear-gradient(-45deg, #000 0 1px, #fff 1px 2px);
+
+  /* A dialog backdrop: the 50% checker with its paper pixels left see-through, so the
+     page behind dims in 1-bit instead of washing grey. */
+  --dither-scrim: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
 }
 
 /* ── utility fills ── */

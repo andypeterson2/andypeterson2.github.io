@@ -40,7 +40,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     <!-- Row 1, left: Me -->
     <div class="main-left">
       <!-- Me — the portrait card -->
-      <div class="bio-card window">
+      <div class="bio-card window window--inactive">
         <div class="title-bar">
           <h2 class="title">Me</h2>
         </div>
@@ -74,7 +74,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     </div>
 
     <!-- Row 1, right: Intro (bio) -->
-    <div class="window bio-window" id="intro">
+    <div class="window window--inactive bio-window" id="intro">
       <div class="title-bar">
         <h2 class="title">Intro</h2>
       </div>
@@ -114,7 +114,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     </div>
 
     <!-- Row 2: the work, full width -->
-    <div class="window timeline-window" id="projects">
+    <div class="window window--inactive timeline-window" id="projects">
       <div class="title-bar"><h2 class="title">Experience &amp; Projects</h2></div>
       <div class="timeline">
         {timeline.map((entry) => <TimelineEntry entry={entry} />)}
@@ -126,7 +126,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
          width. -->
     <div class="more-cols">
       <!-- Contact — single-column, uniform-width buttons -->
-      <div class="window contact-window" id="contact">
+      <div class="window window--inactive contact-window" id="contact">
         <div class="title-bar">
           <h2 class="title">Contact</h2>
         </div>
@@ -188,15 +188,15 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
         {siteConfig.email && <p class="contact-email">{siteConfig.email}</p>}
       </div>
 
-      <!-- Education -->
-      <SidebarWindow title="Education">
-        {education.map((e) => <SidebarEntry title={e.title} sub={e.sub} date={e.date} />)}
-      </SidebarWindow>
-
-      <!-- Certifications -->
-      <SidebarWindow title="Certs">
-        {certifications.map((c) => <SidebarEntry title={c.title} sub={c.sub} date={c.date} />)}
-      </SidebarWindow>
+      <!-- Education over Certs: the two short windows share a column. -->
+      <div class="more-stack">
+        <SidebarWindow title="Education">
+          {education.map((e) => <SidebarEntry title={e.title} sub={e.sub} date={e.date} />)}
+        </SidebarWindow>
+        <SidebarWindow title="Certs">
+          {certifications.map((c) => <SidebarEntry title={c.title} sub={c.sub} date={c.date} />)}
+        </SidebarWindow>
+      </div>
 
       <!-- Skills -->
       <SidebarWindow title="Skills">
@@ -254,6 +254,13 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
     gap: var(--col-gap);
     align-items: start;
+  }
+
+  .more-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--col-gap);
+    min-width: 0;
   }
 
   /* Quick ways to the demos and to the contact buttons, which sit after the work. */
@@ -357,18 +364,6 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     font-size: var(--text-2xs);
     line-height: 1.35;
     text-align: center;
-  }
-
-  /* Flat window subtitle — the flat site has no inset details-bar. */
-  .window-sub {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 0.4rem 1rem;
-    padding: clamp(4px, 0.6vw, 8px) clamp(10px, 1.4vw, 16px);
-    border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
   }
 
   /* ── Contact window ── */

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('ServerConnectModal + SiteContract', () => {
+test.describe('Live tier + SiteContract', () => {
   test('renders a backend status dot on a page with a site-backend meta', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
     const navItem = page.locator('.site-menubar .server-nav-item');
@@ -124,5 +124,30 @@ test.describe('ServerConnectModal + SiteContract', () => {
     );
     expect(seen[0]).toBe('connecting');
     expect(seen).toContain('connected');
+  });
+});
+
+// The live tier ships only where a backend is; the pass lane everywhere.
+test.describe('Pass lane and live tier', () => {
+  test('pages without a backend load no live tier', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.server-nav-item')).toHaveCount(0);
+    expect(await page.evaluate(() => 'SiteContract' in window)).toBe(false);
+    expect(await page.evaluate(() => 'SitePass' in window)).toBe(true);
+  });
+
+  test('a demo with a backend loads it', async ({ page }) => {
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    await expect(page.locator('.site-menubar .server-nav-item')).toHaveCount(1);
+    expect(await page.evaluate(() => 'SiteContract' in window)).toBe(true);
+  });
+
+  test('a #pass= link is read and scrubbed from the address bar', async ({ page }) => {
+    await page.route('**/nonogram/health', (r) => r.fulfill({ status: 401, body: '' }));
+    await page.goto('/projects/quantum-nonogram-solver/app/#pass=frag-token');
+    await expect(page.locator('.site-menubar .sn-state')).toHaveText(
+      'pass expired or invalid — in your browser',
+    );
+    expect(new URL(page.url()).hash).toBe('');
   });
 });

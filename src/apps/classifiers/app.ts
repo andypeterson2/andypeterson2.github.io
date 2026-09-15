@@ -22,10 +22,8 @@ import {
   type Prediction,
 } from './infer';
 
-// ── Shorthand ────────────────────────────────────────────────────────────────
-const ICONS = UIKit.ICONS;
-
 import { ServiceConfig } from '../shared/service-config';
+import { SitePass } from '../shared/pass';
 
 // ── Backend config ───────────────────────────────────────────────────────────
 // window.API_BASE / window.UI_CONFIG are seeded before this module runs. API_BASE
@@ -51,13 +49,24 @@ function base(): string {
 
 // ── Connection-aware fetch wrapper ──────────────────────────────────────────
 
+/** A live channel is up; 'degraded' is a live channel that missed one ping. */
+function isLive(): boolean {
+  const s = connectionManager.state;
+  return s === 'connected' || s === 'degraded';
+}
+
+/** True when no live backend is connected — the demo tier runs inference in-browser. */
+function isOffline(): boolean {
+  return !isLive();
+}
+
 /**
  * Thin wrapper around fetch that checks the connection manager state before
- * issuing a request. Throws immediately when disconnected so callers can
+ * issuing a request. Throws immediately when offline so callers can
  * surface a user-visible error instead of hanging silently.
  */
 async function apiFetch(url: string | URL | Request, opts?: RequestInit): Promise<Response> {
-  if (connectionManager.state !== 'connected') {
+  if (isOffline()) {
     throw new Error('Not connected to server');
   }
   return fetch(url, opts);
@@ -143,6 +152,47 @@ function envelopeError(data: RawEnvelope | null | undefined): string | null {
   return data.error;
 }
 
+/** A failed live call, carrying the HTTP status. */
+class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** The page is back on its in-browser models: the gateway refused the pass. */
+function dropToBrowserTier(): void {
+  SitePass.clear();
+  connectionManager.disconnect();
+  document.dispatchEvent(
+    new CustomEvent('navbar:connect-failed', {
+      detail: { service: 'classifiers', reason: 'unauthorized' },
+    }),
+  );
+  addLog('The pass was refused, so predictions are back in your browser.', 'err');
+}
+
+/**
+ * Fetch and parse a live route. A non-2xx status or an error envelope throws an
+ * ApiError; a refused pass (401/402) also drops the page to the browser tier.
+ */
+async function apiJson<T>(url: string, opts?: RequestInit): Promise<T> {
+  const res = await apiFetch(url, opts);
+  const data = (await res.json().catch(() => null)) as (T & RawEnvelope) | null;
+  const err = envelopeError(data);
+  if (!res.ok || err || data === null) {
+    if (res.status === 401 || res.status === 402) dropToBrowserTier();
+    throw new ApiError(res.status, err ?? `HTTP ${String(res.status)}`);
+  }
+  return data;
+}
+
+function errText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 /** A session model as the UI tracks it (server-trained, ensemble, or in-browser). */
@@ -163,6 +213,12 @@ interface ModelInfo {
   _subset?: string | undefined;
   /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
   _classes?: string[] | undefined;
+  /** Computed in this page (the ensemble result); the backend has no model by this name. */
+  _virtual?: boolean;
+  /** The in-browser weights' source, e.g. "weights · 63fe983 · 2026-09-04". */
+  _provenance?: string | undefined;
+  /** The paper a model recreates, e.g. "Yang et al. 2019". */
+  _cite?: string | undefined;
 }
 
 /** Application state — single source of truth for loaded models and predictions. */
@@ -178,6 +234,13 @@ function modelEntries(): [string, ModelInfo][] {
   return Object.entries(state.models).filter(
     (entry): entry is [string, ModelInfo] => entry[1] !== undefined,
   );
+}
+
+/** Models the live backend holds: not the in-browser ones, not the page's ensemble. */
+function serverNames(): string[] {
+  return modelEntries()
+    .filter(([, m]) => !m._local && !m._virtual)
+    .map(([name]) => name);
 }
 
 // ── Smart naming ─────────────────────────────────────────────────────────────
@@ -199,11 +262,6 @@ function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
     throw new Error(`classifier app: #${id} missing from the page (or wrong element kind)`);
   return el;
 }
-
-// The portal owns theming globally, so this embed has no #theme-toggle; passing
-// null to initThemeToggle would abort the whole script.
-const themeToggleEl = document.getElementById('theme-toggle');
-if (themeToggleEl) UIKit.initThemeToggle(themeToggleEl);
 
 const drawer = UIKit.initDrawer(byId('log-drawer', HTMLElement), byId('log-handle', HTMLElement));
 const dropdown = UIKit.initDropdown(
@@ -229,6 +287,10 @@ UIKit.initResize(
 
 const logTerminal = byId('log-terminal', HTMLElement);
 const addLog = UIKit.createLogger(logTerminal, 200);
+// Closed, the log shows its newest line; open or closed, it stays at the bottom.
+byId('log-handle', HTMLElement).addEventListener('click', () => {
+  logTerminal.scrollTop = logTerminal.scrollHeight;
+});
 
 const canvasCol = byId('canvas-col', HTMLElement);
 const tabularCol = byId('tabular-col', HTMLElement);
@@ -237,6 +299,7 @@ const canvas = byId('draw-canvas', HTMLCanvasElement);
 const canvasCtx = canvas.getContext('2d');
 if (!canvasCtx) throw new Error('classifier app: 2d canvas context unavailable');
 const ctx = canvasCtx;
+const seenCtx = byId('seen-canvas', HTMLCanvasElement).getContext('2d');
 const trainBtn = byId('train-btn', HTMLButtonElement);
 const clearBtn = byId('clear-btn', HTMLButtonElement);
 const predictBtn = document.getElementById('predict-btn');
@@ -328,6 +391,10 @@ function sanitizeInfoTree(root: HTMLElement): void {
 async function fetchModelInfo(modelType: string): Promise<void> {
   const details = byId('model-info-details', HTMLElement);
   const panel = byId('model-info-panel', HTMLElement);
+  if (!modelType || isOffline()) {
+    details.classList.add('hidden');
+    return;
+  }
   try {
     const res = await apiFetch(`${base()}/model-info/${encodeURIComponent(modelType)}`);
     if (!res.ok) {
@@ -362,7 +429,7 @@ teacherSelect.addEventListener('change', () => {
 function updateTeacherSelect(): void {
   const current = teacherSelect.value;
   teacherSelect.innerHTML = '<option value="">— none —</option>';
-  for (const name of Object.keys(state.models)) {
+  for (const name of serverNames()) {
     const opt = document.createElement('option');
     opt.value = name;
     opt.textContent = name;
@@ -374,7 +441,7 @@ function updateTeacherSelect(): void {
 
 /** Update ensemble button visibility (needs 2+ models). */
 function updateEnsembleBtn(): void {
-  ensembleBtn.classList.toggle('hidden', Object.keys(state.models).length < 2);
+  ensembleBtn.classList.toggle('hidden', serverNames().length < 2);
 }
 
 // ── Dataset menu (client-side switching, no navigation) ───────────────────────
@@ -413,7 +480,7 @@ let drawing = false;
 /** 28×28 grid of pixel intensities (0–255). */
 const grid = new Uint8Array(GRID * GRID);
 
-/** Render the pixel grid onto the canvas. */
+/** Render the whole pixel grid onto the canvas; the cell lines are a CSS overlay. */
 function renderGrid(): void {
   const img = ctx.createImageData(canvas.width, canvas.height);
   for (let gy = 0; gy < GRID; gy++) {
@@ -435,31 +502,59 @@ function renderGrid(): void {
     }
   }
   ctx.putImageData(img, 0, 0);
-  // Draw grid lines
-  // A faint grid showing the 28×28 cells (--surface-muted never existed, so it
-  // drew nothing; --ink-2 is a dark grey on the black pad).
-  const gridColor =
-    getComputedStyle(document.documentElement).getPropertyValue('--ink-2').trim() || 'dimgray';
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 0.5;
-  for (let i = 1; i < GRID; i++) {
-    const pos = Math.round(i * CELL) + 0.5;
-    ctx.beginPath();
-    ctx.moveTo(pos, 0);
-    ctx.lineTo(pos, canvas.height);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, pos);
-    ctx.lineTo(canvas.width, pos);
-    ctx.stroke();
+}
+
+/** Repaint one cell from the grid. */
+function paintCell(gx: number, gy: number): void {
+  const v = grid[gy * GRID + gx] ?? 0;
+  const x0 = Math.round(gx * CELL);
+  const y0 = Math.round(gy * CELL);
+  ctx.fillStyle = `rgb(${String(v)} ${String(v)} ${String(v)})`;
+  ctx.fillRect(x0, y0, Math.round((gx + 1) * CELL) - x0, Math.round((gy + 1) * CELL) - y0);
+}
+
+/** Paint 784 grayscale values (light ink on black) into a 28×28 context. */
+function putDigit(target: CanvasRenderingContext2D, digit: ArrayLike<number>): void {
+  const img = target.createImageData(GRID, GRID);
+  for (let i = 0; i < digit.length; i++) {
+    const v = digit[i] ?? 0;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v;
+    img.data[i * 4 + 3] = 255;
   }
+  target.putImageData(img, 0, 0);
+}
+
+/** The digit as a 28×28 PNG, base64 without the data: prefix (what /predict takes). */
+function digitPng(digit: ArrayLike<number>): string {
+  const c = document.createElement('canvas');
+  c.width = c.height = GRID;
+  const g = c.getContext('2d');
+  if (!g) return '';
+  putDigit(g, digit);
+  return c.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+}
+
+/** The last digit drawn in the "as the model sees it" thumbnail. */
+let seenDigit: ArrayLike<number> = grid;
+
+function showSeen(digit: ArrayLike<number>): void {
+  seenDigit = digit;
+  if (seenCtx) putDigit(seenCtx, digit);
 }
 
 function clearCanvas(): void {
   grid.fill(0);
   renderGrid();
+  showSeen(grid);
 }
 clearCanvas();
+
+// The browser can drop a canvas's bitmap (GPU reset, memory pressure) and hand it back
+// blank; strokes only repaint the cells they touch, so repaint everything from the grid.
+canvas.addEventListener('contextrestored', renderGrid);
+byId('seen-canvas', HTMLCanvasElement).addEventListener('contextrestored', () => {
+  showSeen(seenDigit);
+});
 
 function getGridPos(e: MouseEvent | TouchEvent): { gx: number; gy: number } {
   const rect = canvas.getBoundingClientRect();
@@ -485,9 +580,9 @@ function paintPixel(e: MouseEvent | TouchEvent): void {
       const idx = ny * GRID + nx;
       const add = dx === 0 && dy === 0 ? 255 : 128;
       grid[idx] = Math.min(255, (grid[idx] ?? 0) + add);
+      paintCell(nx, ny);
     }
   }
-  renderGrid();
 }
 
 function strokeEnd(): void {
@@ -501,8 +596,9 @@ canvas.addEventListener('mousedown', (e) => {
 });
 canvas.addEventListener('mousemove', paintPixel);
 canvas.addEventListener('mouseup', strokeEnd);
+// A stroke that runs off the pad ends there, and still gets scored.
 canvas.addEventListener('mouseleave', () => {
-  drawing = false;
+  if (drawing) strokeEnd();
 });
 canvas.addEventListener(
   'touchstart',
@@ -530,53 +626,61 @@ function confClass(v: number): string {
 // ── Session models list (MODELS card) ────────────────────────────────────────
 
 function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
-  const paramsStr = m.num_params ? `${m.num_params.toLocaleString()} params` : '';
   const row = document.createElement('div');
   row.className = 'ui-list-row';
-  const nameSpan = document.createElement('span');
+  const text = document.createElement('div');
+  text.className = 'ui-list-text';
+  const nameSpan = document.createElement('div');
   nameSpan.className = 'ui-list-name';
   nameSpan.textContent = name;
-  row.appendChild(nameSpan);
-  const typeTag = document.createElement('span');
-  typeTag.className = 'ui-list-tag';
-  typeTag.textContent = m.model_type;
-  row.appendChild(typeTag);
-  if (paramsStr) {
-    const paramsTag = document.createElement('span');
-    paramsTag.className = 'ui-list-tag';
-    paramsTag.textContent = paramsStr;
-    row.appendChild(paramsTag);
+  text.appendChild(nameSpan);
+  const tier = m._local ? 'in your browser' : m._virtual ? 'computed here' : 'live';
+  const facts = [
+    m.model_type,
+    m.num_params ? `${m.num_params.toLocaleString()} params` : '',
+    m._subset ? `${m._subset} only` : '',
+    tier,
+  ];
+  const lines = [facts, [m._provenance ?? '', m._cite ?? '']];
+  for (const line of lines) {
+    const meta = line.filter(Boolean).join(' · ');
+    if (!meta) continue;
+    const div = document.createElement('div');
+    div.className = 'ui-list-meta';
+    div.textContent = meta;
+    text.appendChild(div);
   }
-  if (m._subset) {
-    // Binary-subset caveat (e.g. the QSVM answers only "6 vs 9").
-    const subsetTag = document.createElement('span');
-    subsetTag.className = 'ui-list-tag';
-    subsetTag.textContent = m._subset;
-    row.appendChild(subsetTag);
-  }
+  row.appendChild(text);
   if (m._local) {
     // In-browser models have no backend to ablate/export/remove against.
     return row;
   }
+  if (!m._virtual) {
+    row.append(...serverModelActions(name));
+  }
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
+  removeBtn.dataset.remove = name;
+  removeBtn.setAttribute('aria-label', 'Remove ' + name);
+  removeBtn.textContent = '×';
+  row.appendChild(removeBtn);
+  return row;
+}
+
+/** Ablation and save-to-disk, for a model the backend holds. */
+function serverModelActions(name: string): HTMLButtonElement[] {
   const ablationBtn = document.createElement('button');
   ablationBtn.className = 's6-btn s6-btn--icon s6-btn--sm';
   ablationBtn.dataset.ablation = name;
   ablationBtn.title = 'Ablation study';
   ablationBtn.textContent = '⊘';
-  row.appendChild(ablationBtn);
   const exportBtn = document.createElement('button');
   exportBtn.className = 's6-btn s6-btn--icon';
   exportBtn.dataset.export = name;
   exportBtn.title = 'Save to disk';
-  exportBtn.innerHTML = ICONS.save;
-  row.appendChild(exportBtn);
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
-  removeBtn.dataset.remove = name;
-  removeBtn.setAttribute('aria-label', 'Remove ' + name);
-  removeBtn.innerHTML = ICONS.close;
-  row.appendChild(removeBtn);
-  return row;
+  exportBtn.setAttribute('aria-label', 'Save ' + name + ' to disk');
+  exportBtn.textContent = '⤓';
+  return [ablationBtn, exportBtn];
 }
 
 function buildSessionModelsList(): void {
@@ -630,15 +734,29 @@ function predictionAnswerCell(
   return td;
 }
 
-function predictionConfidenceCell(p: Prediction | undefined): HTMLTableCellElement {
+/** A QSVM margin as shown: "s +0.31". */
+function margin(s: number): string {
+  return `s ${s >= 0 ? '+' : '-'}${Math.abs(s).toFixed(2)}`;
+}
+
+function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
   const td = document.createElement('td');
-  // A sign classifier (QSVM) has no probability — render an honest dash
-  // rather than a fabricated percentage.
-  if (p?.confidence != null) {
+  td.className = 'num';
+  if (p?.qsvm) {
+    // A sign classifier has no probability; its margin is its strength.
+    const { f1, f2, s } = p.qsvm;
+    td.textContent = margin(s);
+    const feats = document.createElement('span');
+    feats.className = 'pred-scope';
+    feats.textContent = ` (f1 ${f1.toFixed(2)}, f2 ${f2.toFixed(2)})`;
+    td.appendChild(feats);
+    td.title = 'Signed margin from the decision boundary, computed from the two features';
+  } else if (p?.confidence != null) {
     const span = document.createElement('span');
     span.className = confClass(p.confidence);
     span.textContent = pct(p.confidence);
     td.appendChild(span);
+    td.title = 'Softmax of the top class: uncalibrated, so high on a scribble too';
   } else {
     td.textContent = '—';
   }
@@ -659,7 +777,7 @@ function buildPredictionTable(): void {
     const p = state.predictions[name];
     const m = state.models[name];
     const tr = document.createElement('tr');
-    tr.append(predictionNameCell(name, m), predictionAnswerCell(p, m), predictionConfidenceCell(p));
+    tr.append(predictionNameCell(name, m), predictionAnswerCell(p, m), predictionScoreCell(p));
     predBody.appendChild(tr);
   }
 }
@@ -671,6 +789,8 @@ interface MetricRow {
   fn: (m: ModelInfo) => string;
   cls?: string;
   html?: boolean;
+  /** The row's class, e.g. the headline Test Acc row. */
+  rowCls?: string;
 }
 
 interface MetricSection {
@@ -684,17 +804,17 @@ function metricSections(labels: string[]): MetricSection[] {
       label: 'Config',
       rows: [
         { key: 'Type', fn: (m) => m.model_type },
-        { key: 'Epochs', fn: (m) => String(m.epochs), cls: 'cfg-cell' },
-        { key: 'Batch', fn: (m) => String(m.batch_size), cls: 'cfg-cell' },
+        { key: 'Epochs', fn: (m) => String(m.epochs), cls: 'cfg-cell num' },
+        { key: 'Batch', fn: (m) => String(m.batch_size), cls: 'cfg-cell num' },
         {
           key: 'LR',
           fn: (m) => (m.lr != null ? parseFloat(m.lr.toPrecision(4)).toString() : '—'),
-          cls: 'cfg-cell',
+          cls: 'cfg-cell num',
         },
         {
           key: 'Params',
           fn: (m) => (m.num_params ? m.num_params.toLocaleString() : '—'),
-          cls: 'cfg-cell',
+          cls: 'cfg-cell num',
         },
         { key: 'Early Stop', fn: (m) => (m.stopped_early ? 'Yes' : '—'), cls: 'cfg-cell' },
       ],
@@ -709,10 +829,13 @@ function metricSections(labels: string[]): MetricSection[] {
               ? `<span class="${accClass(m.eval_result.accuracy)}">${pct(m.eval_result.accuracy)}</span>`
               : '—',
           html: true,
+          cls: 'num',
+          rowCls: 'metric-headline',
         },
         {
           key: 'Test Loss',
           fn: (m) => (m.eval_result?.avg_loss != null ? m.eval_result.avg_loss.toFixed(4) : '—'),
+          cls: 'num',
         },
       ],
     },
@@ -726,6 +849,7 @@ function metricSections(labels: string[]): MetricSection[] {
           return acc != null ? `<span class="${accClass(acc)}">${pct(acc)}</span>` : '—';
         },
         html: true,
+        cls: 'num',
       })),
     },
   ];
@@ -774,7 +898,10 @@ function buildMetricsTable(): void {
   for (const section of metricSections(labels)) renderMetricSection(section, entries);
 }
 
+/** A row only earns its place if some model has a value for it. */
 function renderMetricSection(section: MetricSection, entries: [string, ModelInfo][]): void {
+  const rows = section.rows.filter((row) => entries.some(([, m]) => row.fn(m) !== '—'));
+  if (rows.length === 0) return;
   const sepTr = document.createElement('tr');
   sepTr.className = 'metrics-section-row';
   const sepTd = document.createElement('td');
@@ -783,8 +910,9 @@ function renderMetricSection(section: MetricSection, entries: [string, ModelInfo
   sepTr.appendChild(sepTd);
   metricsBody.appendChild(sepTr);
 
-  for (const row of section.rows) {
+  for (const row of rows) {
     const tr = document.createElement('tr');
+    if (row.rowCls) tr.className = row.rowCls;
     const labelTh = document.createElement('th');
     labelTh.scope = 'row';
     labelTh.className = 'metric-label';
@@ -805,31 +933,68 @@ function renderMetricSection(section: MetricSection, entries: [string, ModelInfo
 // ── Load models from server on page load ──────────────────────────────────────
 
 async function loadModels(): Promise<void> {
+  if (isOffline()) return;
   try {
-    const res = await apiFetch(`${base()}/models`);
-    const data = (await res.json()) as Record<string, RawModelInfo>;
+    const data = await apiJson<Record<string, RawModelInfo | undefined>>(`${base()}/models`);
     for (const [name, info] of Object.entries(data)) {
-      state.models[name] = { eval_result: null, ...info };
+      if (info?.model_type) state.models[name] = { eval_result: null, ...info };
     }
-    buildMetricsTable();
-    buildPredictionTable();
-    buildSessionModelsList();
-    modelNameInput.value = defaultName(modelTypeSelect.value);
-  } catch {
-    /* silent */
+  } catch (err) {
+    addLog(`Couldn't load the live models — ${errText(err)}`, 'err');
+    return;
   }
+  buildMetricsTable();
+  buildPredictionTable();
+  buildSessionModelsList();
+  modelNameInput.value = defaultName(modelTypeSelect.value);
+}
+
+/** Fill the Model select with the live backend's model types for this dataset. */
+async function loadModelTypes(): Promise<void> {
+  if (isOffline()) return;
+  const ds = window.UI_CONFIG?.name ?? 'mnist';
+  try {
+    const data = await apiJson<{ model_types?: unknown }>(
+      `${window.API_BASE ?? ''}/api/datasets/${encodeURIComponent(ds)}/config`,
+    );
+    const types = Array.isArray(data.model_types)
+      ? data.model_types.filter((t): t is string => typeof t === 'string')
+      : [];
+    modelTypeSelect.replaceChildren(...types.map((t) => new Option(t, t)));
+  } catch (err) {
+    addLog(`Couldn't load the model types — ${errText(err)}`, 'err');
+  }
+  modelNameInput.value = defaultName(modelTypeSelect.value);
+  applyTier();
+  void fetchModelInfo(modelTypeSelect.value);
+}
+
+/** Forget what only the live backend had: its models, their answers, its type list. */
+function dropServerModels(): void {
+  for (const name of serverNames()) {
+    state.models = Object.fromEntries(Object.entries(state.models).filter(([k]) => k !== name));
+    state.predictions = Object.fromEntries(
+      Object.entries(state.predictions).filter(([k]) => k !== name),
+    );
+  }
+  modelTypeSelect.replaceChildren();
+  savedSelect.innerHTML = '<option value="">— needs the live backend —</option>';
+  buildMetricsTable();
+  buildPredictionTable();
+  buildSessionModelsList();
+  applyTier();
 }
 
 // ── Evaluate all session models ───────────────────────────────────────────────
 
 async function runEvaluate(): Promise<void> {
-  if (Object.keys(state.models).length === 0) return;
+  if (serverNames().length === 0) return;
   evalProgress.classList.remove('hidden');
   evalBar.style.width = '5%';
   evalBar.setAttribute('aria-valuenow', '5');
   evalStatus.textContent = 'Starting evaluation…';
   let batchesDone = 0;
-  const approxBatches = 10 * Object.keys(state.models).length;
+  const approxBatches = 10 * serverNames().length;
   await consumeSSE(
     `${base()}/evaluate`,
     {},
@@ -898,6 +1063,10 @@ function asHistoryEvent(
 trainBtn.addEventListener('click', () => {
   void (async () => {
     const modelType = modelTypeSelect.value;
+    if (!modelType) {
+      addLog('Choose a model type first: the list comes from the live backend.', 'err');
+      return;
+    }
     const epochs = parseInt(byId('epochs', HTMLInputElement).value, 10);
     const batchSize = parseInt(byId('batch-size', HTMLInputElement).value, 10);
     const lr = parseFloat(byId('lr', HTMLInputElement).value);
@@ -929,7 +1098,7 @@ trainBtn.addEventListener('click', () => {
 
     trainBtn.disabled = true;
     trainBtn.classList.add('btn-loading');
-    trainBtn.innerHTML = `${ICONS.spinner} Training…`;
+    trainBtn.textContent = 'Training…';
 
     // Prepare chart for training curves
     const useChart = patience != null || teacher;
@@ -1006,7 +1175,7 @@ trainBtn.addEventListener('click', () => {
 
     trainBtn.disabled = false;
     trainBtn.classList.remove('btn-loading');
-    trainBtn.innerHTML = `${ICONS.play} Train`;
+    trainBtn.textContent = '▶ Train';
 
     if (trained.name) {
       addLog(`'${trained.name}' trained successfully`, 'ok');
@@ -1026,18 +1195,15 @@ function scheduleAutoPredict(): void {
   }, 250);
 }
 
-// True when no live backend is connected — the demo tier runs inference in-browser.
-function isOffline(): boolean {
-  return connectionManager.state !== 'connected';
-}
-
+/** Every model answers: the in-browser ones here, the live ones through /predict. */
 async function runPredict(): Promise<void> {
-  if (isOffline()) return runPredictLocal();
-  if (Object.keys(state.models).length === 0) return;
+  await runPredictLocal();
+  if (isOffline() || serverNames().length === 0) return;
   let body: { image: string } | { features: Record<string, number> };
   if (window.UI_CONFIG?.input_type === 'image') {
-    const b64 = canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
-    body = { image: b64 };
+    if (isBlank(Array.from(grid))) return;
+    // The same cropped, centred 28×28 digit the in-browser models score.
+    body = { image: digitPng(preprocessDigit(Array.from(grid))) };
   } else {
     const features: Record<string, number> = {};
     document.querySelectorAll<HTMLInputElement>('.feature-input').forEach((inp) => {
@@ -1046,18 +1212,27 @@ async function runPredict(): Promise<void> {
     body = { features };
   }
   try {
-    const res = await apiFetch(`${base()}/predict`, {
+    const data = await apiJson<RawPredictResponse>(`${base()}/predict`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = (await res.json()) as RawPredictResponse;
-    if (data.error) return;
     Object.assign(state.predictions, data.results);
     buildPredictionTable();
-  } catch {
-    /* silent */
+  } catch (err) {
+    addLog(`Live predict failed — ${errText(err)}`, 'err');
   }
+}
+
+/** One log line per prediction: each model's answer and its score. */
+function logPredictions(names: string[]): void {
+  const parts = names.flatMap((name) => {
+    const p = state.predictions[name];
+    if (!p) return [];
+    const score = p.qsvm ? margin(p.qsvm.s) : p.confidence != null ? pct(p.confidence) : '';
+    return [`${name} ${p.prediction}${score ? ` (${score})` : ''}`];
+  });
+  if (parts.length) addLog(`predict: ${parts.join(' · ')}`);
 }
 
 // Demo tier: run every in-browser model over the current canvas / feature
@@ -1075,6 +1250,7 @@ async function runPredictLocal(): Promise<void> {
   }
   // The canvas goes through MNIST's own crop-scale-centre step first.
   const digit = image ? preprocessDigit(Array.from(grid)) : null;
+  if (digit) showSeen(digit);
   for (const [name, m] of locals) {
     let model: ClassifierModel;
     try {
@@ -1082,60 +1258,110 @@ async function runPredictLocal(): Promise<void> {
     } catch {
       continue;
     }
-    let raw: number[];
-    if (digit) {
-      raw = digit;
-    } else {
-      raw = (model.features ?? []).map((f) => {
-        const inp = document.querySelector<HTMLInputElement>(`.feature-input[data-feature="${f}"]`);
-        return inp ? parseFloat(inp.value) || 0 : 0;
-      });
-    }
-    state.predictions[name] = ClassifierInfer.predict(model, raw);
+    state.predictions[name] = ClassifierInfer.predict(model, digit ?? featureValues(model));
   }
-  // A binary model (the QSVM) answers every input with one of its two classes; when the
-  // full model's answer is outside that pair, mark the binary answer out of scope.
+  markOutOfScope(locals);
+  buildPredictionTable();
+  logPredictions(locals.map(([name]) => name));
+}
+
+/** The form's values in the order the model names its features. */
+function featureValues(model: ClassifierModel): number[] {
+  return (model.features ?? []).map((f) => {
+    const inp = document.querySelector<HTMLInputElement>(`.feature-input[data-feature="${f}"]`);
+    return inp ? parseFloat(inp.value) || 0 : 0;
+  });
+}
+
+/**
+ * A binary model (the QSVM) answers every input with one of its two classes; when the
+ * full model's answer is outside that pair, the binary answer is out of scope.
+ */
+function markOutOfScope(locals: [string, ModelInfo][]): void {
   const reference = locals.find(([, m]) => !m._classes)?.[0];
   const refPred = reference ? state.predictions[reference]?.prediction : undefined;
   for (const [name, m] of locals) {
     const p = state.predictions[name];
     if (p && m._classes && refPred !== undefined) p.outOfScope = !m._classes.includes(refPred);
   }
-  buildPredictionTable();
 }
 
 // ── Client-side dataset switching ─────────────────────────────────────────────
 
-// Build the tabular feature form (Iris) from the model's feature list + ranges,
-// re-predicting live as inputs change.
+// Build the tabular feature form (Iris, BB84) from the model's feature list + ranges:
+// a slider to explore with and a box for the exact value, kept in step.
 function buildFeatureInputs(model: ClassifierModel): void {
   const wrap = document.querySelector('#tabular-col .feature-inputs');
   if (!wrap) return;
   wrap.innerHTML = '';
-  const feats = model.features ?? [];
   const ranges = model.feature_ranges ?? [];
-  feats.forEach((f, i) => {
+  (model.features ?? []).forEach((f, i) => {
     const [min, max] = ranges[i] ?? [0, 10];
-    const row = document.createElement('label');
-    row.className = 'feature-row';
-    const span = document.createElement('span');
-    span.className = 'feature-label';
-    span.textContent = f.replace(/_/g, ' ');
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.className = 'feature-input';
-    input.dataset.feature = f;
-    input.step = '0.1';
-    input.min = String(min);
-    input.max = String(max);
-    input.value = ((min + max) / 2).toFixed(1);
-    input.addEventListener('input', () => {
-      if (isOffline()) void runPredict();
-    });
-    row.appendChild(span);
-    row.appendChild(input);
-    wrap.appendChild(row);
+    wrap.appendChild(featureRow(f, min, max));
   });
+}
+
+/** Two significant steps across the range: 0.1 for Iris's centimetres, 0.01 for a QBER. */
+function featureStep(min: number, max: number): number {
+  return 10 ** Math.floor(Math.log10((max - min) / 20));
+}
+
+function featureRow(f: string, min: number, max: number): HTMLElement {
+  const ds = window.UI_CONFIG;
+  const step = featureStep(min, max);
+  const digits = Math.max(0, Math.round(-Math.log10(step)));
+  const lo = (Math.floor(min / step) * step).toFixed(digits);
+  const hi = (Math.ceil(max / step) * step).toFixed(digits);
+  const mid = ((min + max) / 2).toFixed(digits);
+  const id = `feature-${f}`;
+
+  const row = document.createElement('div');
+  row.className = 'feature-row';
+  const label = document.createElement('label');
+  label.className = 'feature-label';
+  label.htmlFor = id;
+  label.textContent = ds?.feature_labels?.[f] ?? humanize(f);
+  const hint = document.createElement('span');
+  hint.className = 'feature-hint num';
+  hint.textContent = `${lo} – ${hi}${ds?.unit ? ` ${ds.unit}` : ''}`;
+  label.appendChild(hint);
+
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.className = 'feature-range';
+  range.tabIndex = -1;
+  range.setAttribute('aria-hidden', 'true');
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.id = id;
+  input.className = 'feature-input';
+  input.dataset.feature = f;
+  input.dataset.default = mid;
+  for (const el of [range, input]) {
+    el.min = lo;
+    el.max = hi;
+    el.step = String(step);
+    el.value = mid;
+  }
+  // Moving either re-scores the in-browser models; the live ones answer on Predict.
+  range.addEventListener('input', () => {
+    input.value = range.value;
+    void runPredictLocal();
+  });
+  input.addEventListener('input', () => {
+    range.value = input.value;
+    void runPredictLocal();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') void runPredict();
+  });
+  row.append(label, range, input);
+  return row;
+}
+
+function humanize(f: string): string {
+  const words = f.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 // Switch the active dataset entirely in the browser: swap UI_CONFIG, flip the
@@ -1146,10 +1372,13 @@ async function switchDataset(name: string): Promise<void> {
   window.UI_CONFIG = ds;
   const image = ds.input_type === 'image';
   applyInputVisibility();
+  addLog(`dataset → ${ds.display_name}`);
   state.models = {};
   state.predictions = {};
+  modelTypeSelect.replaceChildren();
   await initLocalModels(); // demo models for this dataset (rebuilds the tables)
   void loadModels(); // backend models too, when connected (no-op offline)
+  void loadModelTypes();
   if (image) {
     clearCanvas();
   } else {
@@ -1160,7 +1389,7 @@ async function switchDataset(name: string): Promise<void> {
     }
   }
   renderDatasetMenu();
-  if (isOffline()) void runPredict();
+  if (!image) void runPredictLocal();
 }
 
 if (predictBtn)
@@ -1172,19 +1401,30 @@ if (predictBtnTab)
   predictBtnTab.addEventListener('click', () => {
     void runPredict();
   });
+byId('reset-features-btn', HTMLButtonElement).addEventListener('click', () => {
+  document.querySelectorAll<HTMLInputElement>('#tabular-col .feature-row').forEach((row) => {
+    const input = row.querySelector<HTMLInputElement>('.feature-input');
+    const range = row.querySelector<HTMLInputElement>('.feature-range');
+    if (!input || !range) return;
+    input.value = range.value = input.dataset.default ?? input.value;
+  });
+  void runPredictLocal();
+});
 
 clearBtn.addEventListener('click', () => {
   clearCanvas();
   state.predictions = {};
   buildPredictionTable();
+  addLog('canvas cleared');
 });
 
 // ── Saved models on disk ──────────────────────────────────────────────────────
 
 async function loadSavedModels(): Promise<void> {
+  if (isOffline()) return;
   try {
-    const res = await apiFetch(`${base()}/models/disk`);
-    const files = (await res.json()) as RawSavedModel[];
+    const files = await apiJson<RawSavedModel[]>(`${base()}/models/disk`);
+    if (!Array.isArray(files)) throw new Error('unexpected response');
     savedSelect.innerHTML = '';
     if (files.length === 0) {
       savedSelect.innerHTML = '<option value="">— no saved models —</option>';
@@ -1199,8 +1439,8 @@ async function loadSavedModels(): Promise<void> {
       }
       importBtn.disabled = false;
     }
-  } catch {
-    /* silent */
+  } catch (err) {
+    addLog(`Couldn't list the saved models — ${errText(err)}`, 'err');
   }
 }
 savedSelect.addEventListener('change', () => {
@@ -1218,17 +1458,10 @@ importBtn.addEventListener('click', () => {
     if (!filename) return;
     importBtn.disabled = true;
     try {
-      const res = await apiFetch(`${base()}/models/disk/${encodeURIComponent(filename)}/load`, {
-        method: 'POST',
-      });
-      const data = (await res.json()) as RawLoadedModel;
-      const errMsg = !res.ok
-        ? (envelopeError(data) ?? `HTTP ${String(res.status)}`)
-        : envelopeError(data);
-      if (errMsg) {
-        addLog(`Import failed — ${errMsg}`, 'err');
-        return;
-      }
+      const data = await apiJson<RawLoadedModel>(
+        `${base()}/models/disk/${encodeURIComponent(filename)}/load`,
+        { method: 'POST' },
+      );
       state.models[data.name] = {
         model_type: data.model_type,
         epochs: data.epochs,
@@ -1241,8 +1474,8 @@ importBtn.addEventListener('click', () => {
       buildSessionModelsList();
       modelNameInput.value = defaultName(modelTypeSelect.value);
       await runEvaluate();
-    } catch {
-      /* silent */
+    } catch (err) {
+      addLog(`Import failed — ${errText(err)}`, 'err');
     } finally {
       importBtn.disabled = !savedSelect.value;
     }
@@ -1259,20 +1492,12 @@ document.addEventListener('click', (e) => {
   void (async () => {
     btn.disabled = true;
     try {
-      const res = await apiFetch(`${base()}/models/${encodeURIComponent(exportName)}/export`, {
+      await apiJson<RawEnvelope>(`${base()}/models/${encodeURIComponent(exportName)}/export`, {
         method: 'POST',
       });
-      const data = (await res.json()) as RawEnvelope;
-      const errMsg = !res.ok
-        ? (envelopeError(data) ?? `HTTP ${String(res.status)}`)
-        : envelopeError(data);
-      if (errMsg) {
-        addLog(`Export failed — ${errMsg}`, 'err');
-        return;
-      }
       await loadSavedModels();
-    } catch {
-      /* silent */
+    } catch (err) {
+      addLog(`Export failed — ${errText(err)}`, 'err');
     } finally {
       btn.disabled = false;
     }
@@ -1307,21 +1532,16 @@ document.addEventListener('click', (e) => {
 
 ensembleBtn.addEventListener('click', () => {
   void (async () => {
-    const names = Object.keys(state.models);
+    const names = serverNames();
     if (names.length < 2) return;
     ensembleBtn.disabled = true;
     ensembleBtn.textContent = 'Running…';
     try {
-      const res = await apiFetch(`${base()}/ensemble`, {
+      const data = await apiJson<RawEnsembleResponse>(`${base()}/ensemble`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model_names: names }),
       });
-      const data = (await res.json()) as RawEnsembleResponse;
-      if (data.error) {
-        addLog(`Ensemble error — ${envelopeError(data) ?? 'request failed'}`, 'err');
-        return;
-      }
       addLog(`Ensemble accuracy: ${(data.accuracy * 100).toFixed(1)}%`, 'ok');
       // Store as a virtual model for display
       state.models.Ensemble = {
@@ -1331,6 +1551,7 @@ ensembleBtn.addEventListener('click', () => {
         lr: null,
         num_params: null,
         training_history: [],
+        _virtual: true,
         eval_result: {
           accuracy: data.accuracy,
           avg_loss: data.avg_loss,
@@ -1340,7 +1561,7 @@ ensembleBtn.addEventListener('click', () => {
       };
       buildMetricsTable();
     } catch (err) {
-      addLog(`Ensemble error: ${String(err)}`, 'err');
+      addLog(`Ensemble error — ${errText(err)}`, 'err');
     } finally {
       ensembleBtn.disabled = false;
       ensembleBtn.textContent = 'Ensemble';
@@ -1392,17 +1613,12 @@ document.addEventListener('click', (e) => {
 });
 
 // ── Tier-aware controls ──────────────────────────────────────────────────────
-// Training, ensembles and saved models run on the live backend, so offline they're
-// disabled, with the reason shown once in the Train card.
-const BACKEND_CONTROLS = [
-  'train-btn',
-  'ensemble-btn',
-  'refresh-saved-btn',
-  'import-btn',
-  'saved-select',
-  'model-type',
-  'teacher-select',
-];
+// Offline these say "Needs the live backend"; the Train form folds and Saved hides.
+const BACKEND_CONTROLS = ['ensemble-btn', 'refresh-saved-btn', 'import-btn', 'saved-select'];
+const trainForm = byId('train-form', HTMLDetailsElement);
+const trainFields = byId('train-fields', HTMLFieldSetElement);
+let shownTier: 'offline' | 'live' | null = null;
+
 function applyTier(): void {
   const off = isOffline();
   for (const id of BACKEND_CONTROLS) {
@@ -1412,14 +1628,15 @@ function applyTier(): void {
       el.title = off ? 'Needs the live backend' : '';
     }
   }
-  const note = document.getElementById('backend-note');
-  if (note) note.hidden = !off;
-  const tier = document.getElementById('tier-label');
-  if (tier) tier.textContent = off ? 'Runs in your browser' : 'Live backend';
-  // Offline, an empty Model select is a required field nobody can fill: hide it.
-  // (Online the list still has no source in this embed — noted for the live tier.)
-  const typeRow = document.getElementById('model-type-row');
-  if (typeRow) typeRow.hidden = off && modelTypeSelect.options.length === 0;
+  trainFields.disabled = off;
+  byId('backend-note', HTMLElement).hidden = !off;
+  byId('saved-card', HTMLElement).hidden = off;
+  // Fold or unfold only when the tier changes, so a visitor's own toggle stands.
+  const tier = off ? 'offline' : 'live';
+  if (tier !== shownTier) trainForm.open = !off;
+  shownTier = tier;
+  // The Model list comes from the live backend; until it arrives the field can't be filled.
+  byId('model-type-row', HTMLElement).hidden = modelTypeSelect.options.length === 0;
 }
 
 // ── Connection state observer ────────────────────────────────────────────────
@@ -1427,14 +1644,54 @@ function applyTier(): void {
 document.addEventListener('connection:statechange', (e) => {
   const { state: s, previous } = (e as CustomEvent<{ state: string; previous: string }>).detail;
   applyTier();
-  if (s === 'connected') addLog('Connected to server', 'ok');
-  if (s === 'degraded') addLog('Connection unstable — retrying…');
-  if (s === 'disconnected' && (previous === 'connected' || previous === 'degraded'))
-    addLog('Lost server connection', 'err');
-  if (s === 'connecting' && previous === 'disconnected') addLog('Reconnecting…');
+  if (s === 'connecting')
+    addLog(connectionManager.everConnected ? 'Reconnecting…' : 'Connecting to the live backend…');
+  if (s === 'degraded') addLog('Missed a heartbeat: checking the live backend…');
+  if (s === 'connected' && previous === 'degraded') addLog('The live backend answered', 'ok');
+  if (s === 'connected' && previous !== 'degraded') {
+    addLog('Connected to the live backend', 'ok');
+    void loadModels();
+    void loadSavedModels();
+    void loadModelTypes();
+  }
+  if (s === 'disconnected' && (previous === 'connected' || previous === 'degraded')) {
+    addLog('Lost the live backend: predictions are back in your browser', 'err');
+    dropServerModels();
+  }
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+
+/** A shipped weight file as a session model, with its real test accuracy. */
+function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
+  const numParams =
+    model.kind === 'qsvm'
+      ? (model.num_params ?? null)
+      : model.weight.length * (model.weight[0]?.length ?? 0) + model.bias.length;
+  const prov = model.provenance;
+  return {
+    model_type: model.kind === 'qsvm' ? 'QSVM' : 'Linear',
+    epochs: '—',
+    batch_size: '—',
+    lr: null,
+    num_params: numParams,
+    training_history: [],
+    eval_result: {
+      accuracy: model.test_accuracy ?? 0,
+      avg_loss: null,
+      per_class_accuracy: {},
+      num_params: numParams,
+    },
+    _local: true,
+    _file: file,
+    _subset: model.display?.subset,
+    _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
+    _provenance: prov?.source_sha
+      ? `weights · ${prov.source_sha.slice(0, 7)}${prov.exported_at ? ` · ${prov.exported_at}` : ''}`
+      : undefined,
+    _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
+  };
+}
 
 // Demo tier: load the in-browser models (the primary linear model plus the
 // QSVM paper recreation) so the canvas / feature form predicts with no backend
@@ -1449,39 +1706,19 @@ async function initLocalModels(): Promise<void> {
     } catch {
       continue; // model asset missing — degrade to whatever loaded
     }
-    const numParams =
-      model.kind === 'qsvm'
-        ? (model.num_params ?? null)
-        : model.weight.length * (model.weight[0]?.length ?? 0) + model.bias.length;
-    const label = model.display?.label
-      ? `${model.display.label} (in-browser)`
-      : 'Logistic Regression (in-browser)';
-    state.models[label] = {
-      model_type: model.kind === 'qsvm' ? 'QSVM' : 'Linear',
-      epochs: '—',
-      batch_size: '—',
-      lr: null,
-      num_params: numParams,
-      training_history: [],
-      eval_result: {
-        accuracy: model.test_accuracy ?? 0,
-        avg_loss: null,
-        per_class_accuracy: {},
-        num_params: numParams,
-      },
-      _local: true,
-      _file: file,
-      _subset: model.display?.subset,
-      _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
-    };
+    // "QSVM (Yang et al. 2019)" is listed as "QSVM", with the citation in its Models row.
+    const label = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
+    const info = localModelInfo(model, file);
+    state.models[label] = info;
+    addLog(`weights loaded: ${label} · ${info.num_params?.toLocaleString() ?? '?'} params`);
   }
   buildSessionModelsList();
   buildMetricsTable();
   buildPredictionTable();
+  // A digit drawn while the weights were still loading gets its prediction now.
+  if (window.UI_CONFIG?.input_type === 'image' && !isBlank(Array.from(grid))) void runPredict();
 }
 
-void loadModels();
-void loadSavedModels();
 void initLocalModels();
 renderDatasetMenu();
 applyTier();

@@ -2,15 +2,13 @@ import { test_accuracy as mnistLinearAcc } from '../../public/classifiers/models
 import { test_accuracy as qsvmIrisAcc } from '../../public/classifiers/models/qsvm-iris.json';
 import { test_accuracy as qsvmMnistAcc } from '../../public/classifiers/models/qsvm-mnist.json';
 
-/** Test accuracy as a chip value: 0.9206 → "92.1%", 0.97 → "97%". */
+/** Test accuracy as a chip value: 0.9206 → "92.1%", 0.9667 → "96.7%". */
 const pct = (accuracy: number) => `${Number((accuracy * 100).toFixed(1))}%`;
 
 export interface Project {
   title: string;
   slug: string;
   description: string;
-  status: 'active' | 'archived';
-  featured: boolean;
   appUrl?: string;
   icon: string;
   repoUrl: string;
@@ -30,8 +28,6 @@ export const projects: Project[] = [
     slug: 'latex-resume-editor',
     description:
       'One master resume, many targeted versions: a structured-data editor where each variant is a tag-rule lens over the same content, with checkpoint history and undo, compiled to PDF through XeLaTeX.',
-    status: 'active',
-    featured: true,
     appUrl: '/projects/latex-resume-editor/app/',
     tier: 'browser',
     icon: 'code.svg',
@@ -47,8 +43,6 @@ export const projects: Project[] = [
     slug: 'quantum-video-chat',
     description:
       'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, built at Qualcomm Institute.',
-    status: 'active',
-    featured: true,
     appUrl: 'https://quantum-interns-at-qualcomm-institiute.github.io/Quantum-Video-Chat/',
     tier: 'external',
     icon: 'video_dark.svg',
@@ -64,8 +58,6 @@ export const projects: Project[] = [
     slug: 'quantum-nonogram-solver',
     description:
       'Grover-based constraint-satisfaction solver, validated on real IBM quantum hardware, built at Qualcomm Institute.',
-    status: 'active',
-    featured: true,
     appUrl: '/projects/quantum-nonogram-solver/app/',
     tier: 'browser',
     icon: 'grid_light.svg',
@@ -85,8 +77,6 @@ export const projects: Project[] = [
     slug: 'quantum-ml-classifier',
     description:
       'Extensible ML platform benchmarking quantum-enhanced classifiers against classical baselines — plus a NISQ-era quantum SVM paper recreated end-to-end in Qiskit.',
-    status: 'active',
-    featured: true,
     appUrl: '/projects/ai-ml/app/',
     tier: 'browser',
     icon: 'microscope.svg',
@@ -100,7 +90,7 @@ export const projects: Project[] = [
       {
         value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,
         label:
-          'Iris setosa vs versicolor (the paper’s pair) / MNIST 6 vs 9, with the paper’s QSVM rule in your browser',
+          'held out: Iris setosa vs versicolor / MNIST 6 vs 9, the paper’s QSVM rule in your browser',
       },
       { value: pct(mnistLinearAcc), label: 'MNIST, a linear baseline predicted in your browser' },
     ],
