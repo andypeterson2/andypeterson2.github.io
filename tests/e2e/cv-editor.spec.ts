@@ -1756,6 +1756,119 @@ test.describe('CV editor (document-first rewrite)', () => {
 // "Sign in with Google to keep your edits" must keep them. The login
 // round trip is mocked (the gateway 302s straight back); the new account is empty,
 // so the editor offers the stashed demo edits and imports them as a profile.
+test.describe('Tag suggestions', () => {
+  test('a paused bullet shows suggested tags; one click adds one and both choices are reported', async ({
+    page,
+  }) => {
+    const main = {
+      person: { id: 7, name: 'Ada Lovelace' },
+      personal: { firstName: 'Ada', lastName: 'Lovelace' },
+      sections: [
+        {
+          id: 2,
+          type: 'experience',
+          title: 'Experience',
+          entries: [
+            {
+              id: 11,
+              fields: { position: 'Analyst' },
+              tags: [],
+              items: [{ id: 31, content: 'Built a REST API in Python', tags: [] }],
+            },
+          ],
+        },
+      ],
+      variants: [],
+    };
+    await page.route(/\/cv\/api\/persons$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      }),
+    );
+    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
+    );
+    const suggested = ['python', 'backend', 'postgresql'].map((tag, i) => ({
+      tag,
+      score: 0.45 - i / 100,
+    }));
+    await page.route(/\/cv\/api\/persons\/7\/tags\/suggest$/, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ query: '', results: suggested }),
+      }),
+    );
+    const events: unknown[] = [];
+    await page.route(/\/cv\/api\/persons\/7\/tags\/events$/, (r) => {
+      events.push(...r.request().postDataJSON().events);
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
+    });
+    const added: unknown[] = [];
+    await page.route(/\/cv\/api\/items\/31\/tags$/, (r) => {
+      added.push(r.request().postDataJSON().tags);
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
+    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await page.locator('.entry').first().click();
+
+    const bullet = page.locator('.doc .edit .bl').first();
+    await bullet.locator('.bl-content').focus();
+    const add = bullet.getByRole('button', { name: 'Add suggested tag python' });
+    await expect(add).toBeVisible();
+    await expect(bullet.locator('.sug')).toHaveCount(3);
+
+    await add.click();
+    await expect(bullet.locator('.chip', { hasText: '#python' })).toBeVisible();
+    await bullet.getByRole('button', { name: 'Dismiss suggestion backend' }).click();
+    await expect(bullet.locator('.sug')).toHaveCount(1);
+
+    await expect.poll(() => added).toEqual([['python']]);
+    await expect
+      .poll(() => events)
+      .toEqual([
+        expect.objectContaining({
+          target: 'item',
+          id: 31,
+          tag: 'python',
+          action: 'accept',
+          rank: 0,
+        }),
+        expect.objectContaining({
+          target: 'item',
+          id: 31,
+          tag: 'backend',
+          action: 'dismiss',
+          rank: 0,
+        }),
+      ]);
+  });
+
+  test('the demo (no backend) never asks for suggestions', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    // Answer the suggest endpoint anyway, so only the offline check can keep chips away.
+    let asked = 0;
+    await page.route(/\/tags\/suggest$/, (r) => {
+      asked++;
+      return r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ query: '', results: [{ tag: 'python', score: 0.5 }] }),
+      });
+    });
+    await gotoEditor(page);
+    await page.locator('.entry').first().click();
+    await page.locator('.doc .edit .bl-content').first().focus();
+    await page.waitForTimeout(1000);
+    await expect(page.locator('.doc .edit .sug')).toHaveCount(0);
+    expect(asked).toBe(0);
+  });
+});
+
 test.describe('Demo edits survive sign-in', () => {
   test('edit → sign in → offered → imported into a new profile', async ({ page }) => {
     await gotoEditor(page);
