@@ -17,6 +17,10 @@ export interface DatasetDef {
   input_type: 'image' | 'tabular';
   class_labels: string[];
   features?: string[];
+  /** Display names for features that aren't just their key in words, e.g. "QBER". */
+  feature_labels?: Record<string, string>;
+  /** The unit every feature is measured in, shown with its range. */
+  unit?: string;
   /** In-browser model assets for the demo tier; the first is the primary
    *  (full-class) model that also defines the input form. */
   local_models: string[];
@@ -39,6 +43,7 @@ export const CLASSIFIER_DATASETS: DatasetDef[] = [
     input_type: 'tabular',
     class_labels: ['setosa', 'versicolor', 'virginica'],
     features: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'],
+    unit: 'cm',
     local_models: ['iris', 'qsvm-iris'],
   },
   {
@@ -47,6 +52,7 @@ export const CLASSIFIER_DATASETS: DatasetDef[] = [
     input_type: 'tabular',
     class_labels: ['clean', 'eavesdropped'],
     features: ['qber', 'sifted_key_rate'],
+    feature_labels: { qber: 'QBER' },
     local_models: ['bb84', 'qsvm-bb84'],
   },
 ];

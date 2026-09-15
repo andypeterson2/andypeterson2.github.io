@@ -27,7 +27,7 @@ vendored `@sakun/system.css` chrome):
 | `styles/tokens.css` | The ink scale, type/space scales, z-index ladder, status hues |
 | `styles/base.css` | Resets, the invert idiom, dark mode (page-scale filter) |
 | `styles/dither.css` | The Mac-dither background textures |
-| `styles/elements.css` | The theme-toggle control (all that remains of the element tier) |
+| `styles/elements.css` | The apps' shared `.s6-btn` button (all that remains of the element tier) |
 
 ## History
 

@@ -71,7 +71,7 @@ const modalId = `writeup-${slug}`;
               {appUrl && (
                 <a
                   href={appUrl}
-                  class="action-btn"
+                  class="action-btn action-btn--primary"
                   target={external(appUrl) ? '_blank' : undefined}
                   rel={external(appUrl) ? 'noopener noreferrer' : undefined}
                 >
@@ -175,7 +175,13 @@ const modalId = `writeup-${slug}`;
     align-items: center;
     justify-content: center;
     padding: clamp(12px, 3vw, 40px);
-    background: var(--scrim);
+    background: var(--dither-scrim);
+  }
+
+  /* The dialog is the front window, so the page window behind it loses its stripes. */
+  :global(.site-window:has(.writeup-overlay:not([hidden])) > .title-bar) {
+    background: none;
+    border-bottom: 1px solid var(--ink);
   }
 
   .writeup-overlay[hidden] {
@@ -236,9 +242,9 @@ const modalId = `writeup-${slug}`;
     outline-offset: -4px;
   }
 
-  /* 60ch of Geneva's wide "0" is about 70 characters of running text. */
+  /* 72ch of Geneva's wide "0" fills the dialog's width. */
   .writeup-content > :global(*) {
-    max-width: 60ch;
+    max-width: 72ch;
   }
 
   /* A Mac dialog's buttons sit at the bottom right. */
