@@ -214,7 +214,7 @@ describe('Accessibility audit', () => {
       )
         continue;
       if (file.includes('/classifiers/')) continue;
-      if (file.includes('ClassifierApp.astro') || file.includes('ServerConnectModal.astro'))
+      if (file.includes('ClassifierApp.astro') || file.includes('LiveTier.astro'))
         continue;
       const content = readFileSync(file, 'utf-8');
       const buttons = content.match(/<button[^>]*>/g) || [];

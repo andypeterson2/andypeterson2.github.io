@@ -6,6 +6,7 @@
   // item content, tags, and add/delete/reorder are shared structure, so they are
   // read-only here and everything shown as editable really is variant-scoped.
 
+  import { onMount } from 'svelte';
   import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
@@ -46,8 +47,18 @@
     else {
       entry.fields[key] = value;
       editor.saveEntry(entry);
+      editor.suggest.request('entry', entry, entryText());
     }
   }
+  /** The entry's field values as one line: the text its tags are suggested from. */
+  function entryText(): string {
+    return Object.values(entry.fields)
+      .filter((v) => typeof v === 'string' && v.trim())
+      .join(' ');
+  }
+  onMount(() => {
+    if (!overriding) editor.suggest.request('entry', entry, entryText());
+  });
   /** The force-include state (1/0/null) an item carries in the active variant. */
   function itemIncl(id: number): number | null {
     return lens?.itemOverrides?.[id]?.included ?? null;
@@ -209,8 +220,17 @@
         <span class="tags-lbl">Tags</span>
         <TagChips
           tags={entry.tags}
-          onAdd={(t: string) => editor.tags.addToEntry(entry, [t])}
-          onRemove={(t: string) => editor.tags.removeFromEntry(entry, t)}
+          onAdd={(t: string) => {
+            editor.tags.addToEntry(entry, [t]);
+            editor.suggest.manual('entry', entry, t);
+          }}
+          onRemove={(t: string) => {
+            editor.tags.removeFromEntry(entry, t);
+            editor.suggest.removed('entry', entry, t);
+          }}
+          suggestions={editor.suggest.for('entry', entry.id)}
+          onAccept={(t: string) => editor.suggest.accept('entry', entry, t)}
+          onDismiss={(t: string) => editor.suggest.dismiss('entry', entry, t)}
         />
       </div>
 
@@ -245,11 +265,24 @@
                   rows="2"
                   placeholder={`${def.itemLabel ?? 'Bullet'} text…`}
                   bind:value={it.content}
-                  oninput={() => editor.saveItem(it)}></textarea>
+                  onfocus={() => editor.suggest.request('item', it, it.content)}
+                  oninput={() => {
+                    editor.saveItem(it);
+                    editor.suggest.request('item', it, it.content);
+                  }}></textarea>
                 <TagChips
                   tags={it.tags}
-                  onAdd={(t: string) => editor.tags.addToItem(it, [t])}
-                  onRemove={(t: string) => editor.tags.removeFromItem(it, t)}
+                  onAdd={(t: string) => {
+                    editor.tags.addToItem(it, [t]);
+                    editor.suggest.manual('item', it, t);
+                  }}
+                  onRemove={(t: string) => {
+                    editor.tags.removeFromItem(it, t);
+                    editor.suggest.removed('item', it, t);
+                  }}
+                  suggestions={editor.suggest.for('item', it.id)}
+                  onAccept={(t: string) => editor.suggest.accept('item', it, t)}
+                  onDismiss={(t: string) => editor.suggest.dismiss('item', it, t)}
                 />
               </div>
               <UiButton

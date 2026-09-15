@@ -1,11 +1,22 @@
 <script lang="ts">
   // Editable tag chips: #tag ✕ pills + an inline input (Enter/comma adds,
-  // Backspace on an empty input removes the last).
+  // Backspace on an empty input removes the last), then any suggested tags as
+  // ghost chips: click one to add it, or its ✕ to dismiss it.
   let {
     tags,
     onAdd,
     onRemove,
-  }: { tags: string[]; onAdd: (t: string) => void; onRemove: (t: string) => void } = $props();
+    suggestions = [],
+    onAccept,
+    onDismiss,
+  }: {
+    tags: string[];
+    onAdd: (t: string) => void;
+    onRemove: (t: string) => void;
+    suggestions?: { tag: string }[];
+    onAccept?: (t: string) => void;
+    onDismiss?: (t: string) => void;
+  } = $props();
 
   let input = $state('');
 
@@ -35,6 +46,22 @@
     >
   {/each}
   <input class="tag-in" placeholder="+ tag" bind:value={input} onkeydown={onKey} onblur={commit} />
+  {#each suggestions as s (s.tag)}
+    <span class="sug"
+      ><button
+        class="sug-add"
+        type="button"
+        title="Suggested tag: click to add"
+        aria-label={`Add suggested tag ${s.tag}`}
+        onclick={() => onAccept?.(s.tag)}>+#{s.tag}</button
+      ><button
+        class="cx"
+        type="button"
+        aria-label={`Dismiss suggestion ${s.tag}`}
+        onclick={() => onDismiss?.(s.tag)}>×</button
+      ></span
+    >
+  {/each}
 </div>
 
 <style>
@@ -70,6 +97,30 @@
 
   .cx:hover {
     color: var(--accent);
+  }
+
+  .sug {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px dashed var(--paper-4);
+    border-radius: var(--radius-lg);
+    padding: 1px 3px 1px 5px;
+  }
+
+  .sug-add {
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--dim-text);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .sug-add:hover,
+  .sug-add:focus-visible {
+    color: var(--ink);
   }
 
   .tag-in {

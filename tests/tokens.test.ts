@@ -95,7 +95,7 @@ describe('Base CSS', () => {
 });
 
 describe('Component Files Exist', () => {
-  const components = ['Button.astro', 'WriteupModal.astro', 'ServerConnectModal.astro'];
+  const components = ['Button.astro', 'WriteupModal.astro', 'LiveTier.astro', 'PassLane.astro'];
 
   test.each(components)('%s component exists', (filename) => {
     expect(existsSync(resolve(ROOT, 'src/components', filename))).toBe(true);

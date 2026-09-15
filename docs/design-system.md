@@ -16,7 +16,8 @@ appears only to report machine state.** Every name below is verified present in 
 - **Local layers**, imported by `BaseLayout.astro` in this order — read them before styling:
   1. `packages/system-six/styles/tokens.css` — the entire token vocabulary (short; authoritative).
   2. `packages/system-six/styles/base.css` — resets, the invert idiom, **dark mode**,
-     `.section-rule`, `.finder-icon` / `.icon-grid`, print + reduced-motion.
+     `.section-rule`, `.window--inactive` (the plain title bar of a window not in front),
+     `.action-btn` / `--primary`, print + reduced-motion.
   3. `packages/system-six/styles/dither.css` — the 1-bit ordered fills.
 - **No provider/wrapper framework** — it's CSS classes + tokens. The "wrapper" is a System-6
   window: `.window` › `.title-bar` › `.window-body`.
@@ -81,7 +82,7 @@ gate enforces `font-size` everywhere, site chrome and all three apps alike.
 **Color — always a token, and CI enforces it too.** Never write a raw `#hex` / `rgb()` on
 `color`, `background`, `border`, `outline`, `fill`, or `stroke` — reach for a token: the warm ink
 ramp (`--ink`, `--ink-2…5`, `--color-text-muted`), the paper tints (`--paper`, `--paper-2…4`), the
-status light, `--accent`, `--link`, or a `--scrim`. Colours are *defined* in exactly two places —
+status light, `--accent`, `--link`, or `--scrim-soft` (a dialog backdrop is `--dither-scrim`, a 1-bit checker). Colours are *defined* in exactly two places —
 `tokens.css` and the editor's `lib/styles.css` — and used through `var()` everywhere else. The gate
 is `.stylelintrc.tokens.json` (wired into `npm run lint` as `lint:tokens`); like the font-size gate
 it covers css + astro + svelte + `packages/` with **no exemptions**, so a raw colour anywhere

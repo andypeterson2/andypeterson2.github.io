@@ -2,6 +2,8 @@
  * Tests for the classifier's consumeSSE() streaming consumer
  * and its synchronous-REST fallback, driven against a local HTTP stub that can
  * stream SSE, return a contract error envelope, or serve a /...sync route.
+ * The fallback runs only when the streaming route doesn't exist: any other failure
+ * may have started a job, and a second POST would start another.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import http from 'node:http';
@@ -10,7 +12,8 @@ import type { AddressInfo } from 'node:net';
 // The sse module imports contract-client, which publishes window.SiteContract
 // at import — shim window first, so the import is dynamic.
 (globalThis as { window?: unknown }).window = globalThis;
-const { consumeSSE } = await import('../src/apps/classifiers/sse');
+const { consumeSSE, parseSseFrames } = await import('../src/apps/classifiers/sse');
+const syncHits = { n: 0 };
 
 // ── Stub backend ──────────────────────────────────────────────────────────────
 let server: http.Server;
@@ -25,13 +28,19 @@ beforeAll(async () => {
       res.end();
       return;
     }
-    if (req.url === '/train' && req.method === 'POST') {
-      // streaming route is down → triggers the sync fallback
-      res.writeHead(503, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ error: { code: 'unavailable', message: 'streaming down' } }));
+    if (req.url === '/busy' && req.method === 'POST') {
+      res.writeHead(409, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { code: 'busy', message: 'two jobs running' } }));
       return;
     }
-    if (req.url === '/train/sync' && req.method === 'POST') {
+    if (req.url === '/dies' && req.method === 'POST') {
+      // Headers and one event, then the connection drops before 'done'.
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.write('data: {"type":"status","msg":"epoch 1"}\n\n', () => res.destroy());
+      return;
+    }
+    if (req.url?.endsWith('/sync') && req.method === 'POST') {
+      syncHits.n++;
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ name: 'sync-model', model_type: 'Linear', epochs: 3 }));
       return;
@@ -66,7 +75,7 @@ describe('consumeSSE streaming', () => {
 });
 
 describe('consumeSSE sync fallback', () => {
-  test('falls back to the /...sync route when the stream response is not ok', async () => {
+  test('runs the /...sync route when the server has no streaming route', async () => {
     const c = collector();
     await consumeSSE(
       `${base}/train`,
@@ -82,6 +91,40 @@ describe('consumeSSE sync fallback', () => {
     const c = collector();
     await consumeSSE(`${base}/train`, {}, c);
     expect(c.r.done).toBeNull();
-    expect(String(c.r.error)).toMatch(/unavailable/);
+    expect(String(c.r.error)).toMatch(/not_found/);
+  });
+
+  test('a refusal (409 busy) is reported, not retried synchronously', async () => {
+    const c = collector();
+    const before = syncHits.n;
+    await consumeSSE(`${base}/busy`, {}, { ...c, syncUrl: `${base}/busy/sync` });
+    expect(syncHits.n).toBe(before);
+    expect(c.r.done).toBeNull();
+    expect(String(c.r.error)).toMatch(/busy: two jobs running/);
+  });
+
+  test('a stream that dies mid-job is reported, not re-run', async () => {
+    const c = collector();
+    const before = syncHits.n;
+    await consumeSSE(`${base}/dies`, {}, { ...c, syncUrl: `${base}/dies/sync` });
+    expect(syncHits.n).toBe(before);
+    expect(c.r.status).toContain('epoch 1');
+    expect(c.r.done).toBeNull();
+    expect(String(c.r.error)).toMatch(/may still finish/);
+  });
+});
+
+describe('parseSseFrames', () => {
+  test('returns complete frames, skips comments and keeps the unfinished tail', () => {
+    const { events, rest } = parseSseFrames(
+      ': keepalive\n\ndata: {"type":"ping"}\n\ndata: {"type":"sta',
+    );
+    expect(events).toEqual([{ type: 'ping' }]);
+    expect(rest).toBe('data: {"type":"sta');
+  });
+
+  test('joins a multi-line data field', () => {
+    const { events } = parseSseFrames('data: {"a":\ndata: 1}\n\n');
+    expect(events).toEqual([{ a: 1 }]);
   });
 });
