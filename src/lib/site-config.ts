@@ -44,7 +44,7 @@ export function resolveSiteConfig(env: SiteEnv): SiteConfig {
     domain: env.SITE_DOMAIN || 'localhost',
     email: env.SITE_EMAIL || '',
     title: env.SITE_TITLE || 'Projects',
-    jobTitle: env.SITE_JOB_TITLE || 'Software Developer',
+    jobTitle: env.SITE_JOB_TITLE || 'Software Engineer',
     description: env.SITE_DESCRIPTION || 'Personal portfolio and project showcase',
     github: env.SITE_GITHUB || '',
     linkedin: env.SITE_LINKEDIN || '',

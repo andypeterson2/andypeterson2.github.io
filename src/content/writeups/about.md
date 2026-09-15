@@ -23,4 +23,4 @@ A few habits, most of them learned the hard way. Do the structural fix rather th
 
 ## What I'm after
 
-Work where correctness is checkable and the result has to survive contact with real users. I'm most useful somewhere between research and production — taking something that currently only works in a paper, a notebook, or one person's head, and turning it into a system other people can rely on. Each project on this page has a *?* button with the full writeup, and the source is on GitHub if you'd rather just read the code.
+A software engineering role on a small team shipping something with a real correctness or security bar: protocol code, inference that has to match the notebook, infrastructure that has to stay up. I'm most useful between research and production, where "it works on my machine" isn't an accepted answer. I'm in San Diego and open to remote.

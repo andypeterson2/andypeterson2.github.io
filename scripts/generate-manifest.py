@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Scan the built site (dist/) and generate site-manifest.json.
 
-The portal navbar is driven by site-manifest.json. Each built page's index.html
-may carry <meta> tags that describe how it appears in the nav:
+site-manifest.json catalogs the site's pages. Each built page's index.html may
+carry <meta> tags that describe how it appears in the nav:
 
   <meta name="site-nav-label" content="...">              display-name override
   <meta name="site-nav-icon"  content="fa-solid fa-...">  navbar icon
@@ -13,9 +13,7 @@ Run AFTER `astro build` (it reads the built routes, not source):
 
     npm run build && python3 scripts/generate-manifest.py [dist_dir]
 
-Writes site-manifest.json at the repo root. (Before the submodule refactor this
-scanned the repo tree and special-cased submodule directories; the portal is now
-a single Astro app, so deriving the manifest from dist/ yields the real routes.)
+Writes site-manifest.json at the repo root.
 """
 import json
 import re
@@ -31,8 +29,8 @@ EXCLUDED_PARTS = {"_astro", "_image", "_server-islands"}
 def main():
     scan_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "dist"
     if not scan_dir.is_dir():
-        # No build present (e.g. the pre-commit hook running before a build, or a
-        # fresh clone). Skip rather than block — CI regenerates from a fresh build.
+        # No build present (a fresh clone, or a commit before any build): skip
+        # rather than block the commit.
         print(
             f"site-manifest.json: skipped — no {scan_dir}/ "
             f"(run `npm run build` to refresh)",
