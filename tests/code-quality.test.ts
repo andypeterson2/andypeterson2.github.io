@@ -62,6 +62,10 @@ describe('App scripts draw with the design tokens', () => {
     expect(offenders).toEqual([]);
   });
 
+  test('no icon-font markup (the site ships no Font Awesome)', () => {
+    expect(files.filter((f) => /\bfa-(?:solid|regular|brands)\b/.test(code(f)))).toEqual([]);
+  });
+
   test('no hard-coded font families', () => {
     const faces = /font-family=|(?:\d+px|bold)\s+(?:Inter|Helvetica|Arial|monospace|sans-serif)/;
     expect(files.filter((f) => faces.test(code(f)))).toEqual([]);

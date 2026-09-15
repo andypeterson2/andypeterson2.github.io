@@ -16,18 +16,9 @@
       <div id="dataset-list" role="group" aria-label="Datasets"></div>
     </div>
   </div>
-  <div class="navbar-right">
-    <span id="tier-label" class="tier-label">Runs in your browser</span>
-  </div>
 </header>
 
 <style>
-  /* The tier, said in the app's own chrome. */
-  .tier-label {
-    font-family: var(--font-sans);
-    font-size: var(--text-3xs);
-  }
-
   .app-navbar {
     display: flex;
     align-items: center;
@@ -45,12 +36,6 @@
     position: relative;
   }
 
-  .navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
   .dropdown {
     position: absolute;
     top: 100%;
@@ -58,7 +43,8 @@
     background: var(--paper);
     border: 2px solid var(--ink);
     z-index: var(--z-dropdown);
-    min-width: 150px;
+    min-width: max-content;
+    white-space: nowrap;
   }
 
   .dropdown.hidden {
@@ -75,8 +61,8 @@
     background: none;
     text-align: left;
     cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
   }
 
   :global(.ui-dropdown-item:hover),

@@ -584,6 +584,12 @@
     overflow: hidden;
   }
 
+  /* The editor's chrome text, in its own windows too, is set in the mono face. */
+  .stage,
+  .stage :global(.window) {
+    font-family: var(--font-mono);
+  }
+
   .sr-only {
     position: absolute;
     width: 1px;

@@ -75,12 +75,19 @@ test.describe('Keyboard navigation', () => {
 // inputs, and a local "paper" ground must not leave them white on white.
 test.describe('Focused inputs keep their text visible', () => {
   const cases = [
-    { path: '/projects/ai-ml/app/', selector: '#epochs' },
+    // The Train form is folded and disabled offline: open it and enable it to type.
+    { path: '/projects/ai-ml/app/', selector: '#epochs', unfold: '#train-form' },
     { path: '/projects/quantum-nonogram-solver/app/', selector: '#threshold-input' },
   ];
-  for (const { path, selector } of cases) {
+  for (const { path, selector, unfold } of cases) {
     test(`${selector} on ${path}`, async ({ page }) => {
       await page.goto(path);
+      if (unfold) {
+        await page.locator(unfold).evaluate((el) => {
+          (el as HTMLDetailsElement).open = true;
+          el.querySelector('fieldset')?.removeAttribute('disabled');
+        });
+      }
       const input = page.locator(selector);
       await input.evaluate((el) => {
         (el as HTMLInputElement).disabled = false;

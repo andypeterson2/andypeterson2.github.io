@@ -30,6 +30,23 @@ export interface ApiError {
   code: string;
   message: string;
 }
+/** One ranked suggestion from the backend's tag suggester. */
+export interface TagSuggestion {
+  tag: string;
+  score: number;
+}
+
+/** What the author did with a suggestion (or a tag they typed or removed). */
+export interface TagEvent {
+  target: 'entry' | 'item';
+  id: number;
+  tag: string;
+  action: 'accept' | 'dismiss' | 'manual' | 'remove';
+  rank?: number;
+  score?: number;
+  scorer?: 'lexical' | 'embedding';
+}
+
 export interface ApiResult<T> {
   ok: boolean;
   status: number;
@@ -464,6 +481,20 @@ export class CvApi {
   }
   removeItemTag(itemId: number, tag: string) {
     return this.req(`/items/${itemId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+  }
+
+  // ---- tag suggestion ----
+  suggestTags(pid: number, text: string, limit: number) {
+    return this.req<{ query: string; results: TagSuggestion[] }>(`/persons/${pid}/tags/suggest`, {
+      method: 'POST',
+      body: JSON.stringify({ text, limit, scorer: 'embedding' }),
+    });
+  }
+  recordTagEvents(pid: number, events: TagEvent[]) {
+    return this.req(`/persons/${pid}/tags/events`, {
+      method: 'POST',
+      body: JSON.stringify({ events }),
+    });
   }
 
   // ---- variants (the lens) ----

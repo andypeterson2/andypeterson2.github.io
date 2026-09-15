@@ -164,10 +164,11 @@ describe('SEO extras', () => {
 // ---- Mobile responsive ----
 
 describe('Mobile responsive spot-check', () => {
-  test('grid layouts use auto-fill/minmax for responsiveness', () => {
-    const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
-    expect(baseCss).toContain('auto-fill');
-    expect(baseCss).toContain('minmax');
+  test('the home grids reflow with auto-fit/auto-fill and minmax', () => {
+    for (const f of ['src/pages/index.astro', 'src/components/home/TimelineEntry.astro']) {
+      const src = readFileSync(resolve(ROOT, f), 'utf-8');
+      expect(src, f).toMatch(/repeat\(auto-fi(?:t|ll), minmax\(/);
+    }
   });
 });
 

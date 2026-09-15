@@ -36,13 +36,27 @@ describe('ClassifierApp sub-components', () => {
   });
 });
 
-describe('ServerConnectModal code organization', () => {
-  test('inline script block is under 50 lines', () => {
-    const src = readFileSync(resolve(ROOT, 'src/components/ServerConnectModal.astro'), 'utf-8');
-    const scriptMatch = src.match(/<script is:inline>([\s\S]*?)<\/script>/);
-    if (scriptMatch) {
-      const scriptLines = scriptMatch[1].split('\n').length;
-      expect(scriptLines).toBeLessThan(50);
-    }
+// Every page gets the pass lane; only a demo with a backend gets the live tier.
+describe('Live tier is mounted where a backend is', () => {
+  const read = (f: string) => readFileSync(resolve(ROOT, f), 'utf-8');
+
+  test('the base layout mounts the pass lane, not the live tier', () => {
+    const layout = read('src/layouts/BaseLayout.astro');
+    expect(layout).toContain('<PassLane />');
+    expect(layout).not.toContain('LiveTier');
+  });
+
+  test('a demo with a backend mounts the live tier', () => {
+    expect(read('src/layouts/DemoShell.astro')).toMatch(/\{backend && <LiveTier \/>\}/);
+  });
+
+  test('the pass lane is the pass module and nothing else', () => {
+    const lane = read('src/components/PassLane.astro');
+    expect(lane.match(/import '[^']+'/g)).toEqual(["import '../apps/shared/pass'"]);
+  });
+
+  test('the beacon comes after the pass lane', () => {
+    const layout = read('src/layouts/BaseLayout.astro');
+    expect(layout.indexOf('<CfBeacon')).toBeGreaterThan(layout.indexOf('<PassLane />'));
   });
 });

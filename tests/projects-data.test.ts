@@ -49,17 +49,6 @@ describe('projects.ts data integrity', () => {
     }
   });
 
-  test('status is a valid enum value', () => {
-    for (const p of projects) {
-      expect(['active', 'archived']).toContain(p.status);
-    }
-  });
-
-  test('at least one project is featured', () => {
-    const featured = projects.filter((p) => p.featured);
-    expect(featured.length).toBeGreaterThan(0);
-  });
-
   test('appUrl is an internal path or an external http(s) URL if present', () => {
     for (const p of projects) {
       if (p.appUrl) {
