@@ -16,6 +16,7 @@ import { PreviewController } from './preview.svelte';
 import { LetterController } from './letters.svelte';
 import { VariantController } from './variants.svelte';
 import { TagController } from './tags.svelte';
+import { SuggestionController } from './suggest.svelte';
 import { HistoryController } from './history.svelte';
 import { UndoController } from './undo.svelte';
 import { humanize, FieldShadow } from './undo';
@@ -164,6 +165,11 @@ class EditorState {
     ...this.saveHost,
     sections: () => this.person.sections,
   });
+  /** the tag-suggestion concern — ranked suggestions beside the chips, with feedback. */
+  suggest = new SuggestionController(
+    { connected: () => this.connected, activePersonId: () => this.activePersonId },
+    this.tags,
+  );
   /** the version-history concern — document checkpoints + restore. */
   history = new HistoryController({
     ...this.saveHost,

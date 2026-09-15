@@ -3,9 +3,10 @@
  *
  * POSTs to an SSE endpoint and dispatches parsed events to typed callbacks,
  * decoupling the streaming transport from any specific business logic
- * (training, evaluation, ablation). When a `syncUrl` is given, a failed or
- * mid-flight-dead stream falls back to the synchronous REST route, whose
- * response shape matches the SSE "done" payload.
+ * (training, evaluation, ablation). When a `syncUrl` is given and the server has
+ * no streaming route (404/405/501), the synchronous REST route runs instead; its
+ * response shape matches the SSE "done" payload. Any other failure is reported,
+ * never retried: a second POST starts a second training job and spends pass quota.
  *
  * @example
  *   await consumeSSE(`${base()}/train`, body, {
@@ -36,6 +37,28 @@ export interface SseHandlers {
   syncUrl?: string;
   /** Fetch implementation — the app passes its connection-aware apiFetch. */
   fetchImpl?: typeof fetch;
+}
+
+/** Statuses meaning the streaming route doesn't exist, so nothing has started. */
+const NO_STREAM_ROUTE = new Set([404, 405, 501]);
+
+/**
+ * Split buffered SSE text into the JSON payloads of its complete frames, returning
+ * the unfinished tail to keep buffering. Comment lines (`: keepalive`) are skipped.
+ */
+export function parseSseFrames(buffer: string): { events: unknown[]; rest: string } {
+  const frames = buffer.split('\n\n');
+  const rest = frames.pop() ?? '';
+  const events: unknown[] = [];
+  for (const frame of frames) {
+    const data = frame
+      .split('\n')
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trim())
+      .join('\n');
+    if (data) events.push(JSON.parse(data));
+  }
+  return { events, rest };
 }
 
 /** Race a reader.read() against a timeout. */
@@ -108,16 +131,9 @@ async function pumpStream(res: Response, handlers: SseHandlers): Promise<void> {
   for (;;) {
     const { value, done } = await readWithTimeout(reader, SSE_READ_TIMEOUT);
     if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const parts = buf.split('\n\n');
-    buf = parts.pop() ?? '';
-    for (const part of parts) {
-      const line = part.trim();
-      if (!line.startsWith('data:')) continue;
-      const json = line.slice(5).trim();
-      if (!json) continue;
-      dispatchEvent(JSON.parse(json) as SseStructuredEvent, handlers);
-    }
+    const { events, rest } = parseSseFrames(buf + decoder.decode(value, { stream: true }));
+    buf = rest;
+    for (const event of events) if (isRecord(event)) dispatchEvent(event, handlers);
   }
 }
 
@@ -162,31 +178,17 @@ export async function consumeSSE(url: string, body: unknown, handlers: SseHandle
     return;
   }
   if (!res.ok) {
-    // Surface the contract error envelope { error: { code, message } }, or fall
-    // back to the synchronous REST route when one is provided.
     const msg = await errorMessage(res);
-    if (handlers.syncUrl) return consumeSync(handlers.syncUrl, body, handlers, msg);
+    if (handlers.syncUrl && NO_STREAM_ROUTE.has(res.status))
+      return consumeSync(handlers.syncUrl, body, handlers, msg);
     handlers.onError(msg);
     return;
   }
-  // A stream that dies AFTER 'done' must not re-run through the sync fallback (a
-  // double onDone). Boxed so the write inside onDone survives TS's narrowing.
-  const done = { seen: false };
-  const tracked: SseHandlers = {
-    ...handlers,
-    onDone(event) {
-      done.seen = true;
-      handlers.onDone(event);
-    },
-  };
   try {
-    await pumpStream(res, tracked);
+    await pumpStream(res, handlers);
   } catch (e) {
-    // Stream died mid-flight: if no 'done' arrived and a sync route exists,
-    // finish synchronously.
+    // The job may still be running server-side, so say so instead of posting it again.
     const reason = e instanceof Error ? e.message : String(e);
-    if (handlers.syncUrl && !done.seen)
-      return consumeSync(handlers.syncUrl, body, handlers, reason);
-    handlers.onError(reason || 'Stream error');
+    handlers.onError((reason || 'Stream error') + ' (the server may still finish the job)');
   }
 }
