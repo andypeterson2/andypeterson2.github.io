@@ -44,12 +44,13 @@ test.describe('Backend error-envelope surfacing', () => {
     await page.route('**/api/benchmark', (r) => r.fulfill(busy));
     await page.route('**/api/benchmark/sync', (r) => r.fulfill(busy));
     await page.goto('/projects/quantum-nonogram-solver/app/');
-    // Connect with the navbar:connect event, as a backend pass does. localhost is
-    // allowlisted here because the page itself is on localhost.
+    // Connect with the navbar:connect event, as a backend pass does. The origin is
+    // the one the CSP and the service-config allowlist admit; the route mock below
+    // answers it, so no request leaves the machine.
     await page.evaluate(() =>
       document.dispatchEvent(
         new CustomEvent('navbar:connect', {
-          detail: { service: 'nonogram', url: 'http://localhost:5055' },
+          detail: { service: 'nonogram', url: 'https://api.andypeterson.dev' },
         }),
       ),
     );
@@ -98,7 +99,7 @@ test.describe('Sync-REST fallback when streaming is unavailable', () => {
     await page.evaluate(() =>
       document.dispatchEvent(
         new CustomEvent('navbar:connect', {
-          detail: { service: 'nonogram', url: 'http://localhost:5055' },
+          detail: { service: 'nonogram', url: 'https://api.andypeterson.dev' },
         }),
       ),
     );

@@ -67,7 +67,7 @@ test.describe('Live tier + SiteContract', () => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
     const health = await page.evaluate(() =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).SiteContract.health('http://localhost:5055'),
+      (window as any).SiteContract.health('https://api.andypeterson.dev'),
     );
     expect(health.reachable).toBe(true);
     expect(health.service).toBe('nonogram');
@@ -85,7 +85,7 @@ test.describe('Live tier + SiteContract', () => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
     const res = await page.evaluate(() =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).SiteContract.request('http://localhost:5055/boom'),
+      (window as any).SiteContract.request('https://api.andypeterson.dev/boom'),
     );
     expect(res.ok).toBe(false);
     expect(res.error.code).toBe('invalid_clues');
@@ -109,7 +109,7 @@ test.describe('Live tier + SiteContract', () => {
           const states: string[] = [];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const stop = (window as any).SiteContract.pollHealth(
-            'http://localhost:5055',
+            'https://api.andypeterson.dev',
             (s: string) => {
               states.push(s);
               if (s === 'connected') {
