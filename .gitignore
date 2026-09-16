@@ -23,6 +23,10 @@ coverage/
 playwright-report/
 test-results/
 
+# Generated catalog of the built routes. Its entries take each page's <title>,
+# which carries the owner's name, and nothing reads the file.
+/site-manifest.json
+
 # Python
 __pycache__/
 *.pyc

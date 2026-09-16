@@ -70,8 +70,7 @@ def main():
         m_title = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
 
         rel_str = str(rel)
-        # Prefer an explicit nav label; else the first segment of the <title>
-        # (strips the " | Projects" site-name suffix the layout appends).
+        # Prefer an explicit nav label; else the <title>'s first "|" segment.
         label = (
             m_label.group(1).strip()
             if m_label
