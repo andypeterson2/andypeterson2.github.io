@@ -36,7 +36,18 @@ if [ "${1:-}" = "--live" ]; then
   # datacenter IP with a 403, which reads here as "the site is down" and hides whether
   # the headers regressed.
   UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-  hdrs=$(curl -fsSL -m 15 -A "$UA" -D - -o /dev/null "$ORIGIN") || { echo "✗ could not reach $ORIGIN" >&2; exit 1; }
+  if ! hdrs=$(curl -fsSL -m 15 --retry 3 --retry-delay 5 -A "$UA" -D - -o /dev/null "$ORIGIN"); then
+    # The edge's bot protection answers some datacenter IPs with a 403. That is not a
+    # header regression, so it warns instead of failing — but only for a 403; anything
+    # else still means the site is not serving.
+    code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' -A "$UA" "$ORIGIN" || echo 000)
+    if [ "$code" = 403 ]; then
+      echo "! edge bot protection refused this client (403) — header assertions skipped" >&2
+      exit 0
+    fi
+    echo "✗ could not reach $ORIGIN (status $code)" >&2
+    exit 1
+  fi
   live_fail=0
   # Anti-framing: either X-Frame-Options, or a real CSP *header* with frame-ancestors.
   if printf '%s' "$hdrs" | grep -qiE '^x-frame-options:' \
