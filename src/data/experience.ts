@@ -15,7 +15,7 @@ export const experience: ExperienceEntry[] = [
     org: 'San Diego, CA',
     bullets: [
       'Made three demos run entirely in the browser (the nonogram solver, the ML classifier platform and the resume editor), with their live backends behind a pass-gated gateway.',
-      "Recreated a 2019 quantum SVM paper end to end in Qiskit and ran its circuit on ibm_marrakesh: a Jensen-Shannon divergence of 0.0127 against the paper's 0.130.",
+      "Recreated a 2019 quantum SVM paper end to end in Qiskit and ran its circuit on ibm_marrakesh: a Jensen-Shannon divergence of 0.0127 against the paper's 0.130, over the same 16-outcome distribution at 8,192 shots.",
       'Built this site: static Astro under a hashed Content-Security-Policy, a 1-bit design system enforced by lint gates, and deploys gated on CI.',
     ],
   },
