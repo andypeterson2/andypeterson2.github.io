@@ -71,7 +71,7 @@ In CI and deploy these come from GitHub repository *variables* (they are public 
 
 Each entry carries an icon, a description, cited `metrics`, `tech` names and its tier (`browser` or `external`), rendered on the home timeline.
 
-**`site-manifest.json`** is generated on demand by `scripts/generate-manifest.py` from the **built** `dist/` routes and catalogs the site's app entry points with metadata (nav label/icon, backend hint). Nothing in the build or the deployed site reads it: each page reads its own `<meta name="site-backend">` directly.
+**`site-manifest.json`** is generated on demand by `scripts/generate-manifest.py` from the **built** `dist/` routes and catalogs the site's app entry points with metadata (nav label/icon, backend hint). Nothing in the build or the deployed site reads it: each page reads its own `<meta name="site-backend">` directly. It is untracked: each entry's title comes from the page `<title>`, which carries `SITE_DISPLAY_NAME`.
 
 ---
 

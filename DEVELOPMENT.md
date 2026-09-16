@@ -68,8 +68,9 @@ frontends talk to them over the API contract.
    backend (DemoShell emits the `site-backend` meta) and `scripts={[...]}` for its
    `public/<slug>/` scripts.
 3. Add an entry to `src/data/projects.ts` (typed by the `Project` interface).
-4. Run `npm run build && python3 scripts/generate-manifest.py dist` to refresh the manifest
-   (the pre-commit hook also regenerates it from the latest build).
+4. Optional: `npm run build && python3 scripts/generate-manifest.py dist` writes a local
+   `site-manifest.json` catalog of the built routes. Nothing reads it, and it stays
+   untracked because its entries carry the owner's name.
 
 ## Running Tests
 
