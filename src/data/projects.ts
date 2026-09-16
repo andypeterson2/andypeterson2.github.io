@@ -85,7 +85,7 @@ export const projects: Project[] = [
       {
         value: '10×',
         label:
-          'closer to ideal than the 2019 paper: its QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130',
+          'closer to ideal than the 2019 paper: the same QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130 over the same 16 outcomes at 8,192 shots',
       },
       {
         value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,

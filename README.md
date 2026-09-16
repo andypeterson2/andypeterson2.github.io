@@ -26,7 +26,6 @@ The sub-app repositories:
 | Quantum nonogram solver | [quantum-nonogram-solver](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver) | Flask · :5055 |
 | ML classifier platform | [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) | Flask · :5001 |
 | Quantum video chat | [Quantum-Video-Chat](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat) | Flask · :5050 |
-| ui-kit design system | [andypeterson2/ui-kit](https://github.com/andypeterson2/ui-kit) | — |
 
 ## Quick Start
 
