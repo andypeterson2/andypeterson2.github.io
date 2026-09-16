@@ -22,7 +22,7 @@ The protocol carries its own tamper alarm: **eavesdropper detection rejects and 
 
 ## Verification
 
-There are **94 tests**, across the Python signaling server and the JavaScript client.
+Unit tests, integration tests and browser tests examine the signaling server, the bench daemon and the client.
 
 ## Stack
 
