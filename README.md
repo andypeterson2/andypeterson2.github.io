@@ -13,7 +13,7 @@ src/apps/                 App frontends as typed modules (shared portal scripts,
                           ui-kit runtime, classifier + nonogram apps), bundled per page
 public/                   Served as-is: model weights, the nonogram gallery, vendored socket.io
 packages/system-six/      The portal's design-system CSS (tokens + element styles)
-docs/api-contract/        The written API contract (CONTRACT.md + JSON schemas)
+docs/api-contract/        JSON schemas + the vendored cv route list, both checked in CI
 scripts/                  Manifest generator, CI helpers
 tests/                    Vitest (unit + integration) + Playwright (e2e)
 ```

@@ -7,7 +7,6 @@ built to static HTML on Cloudflare Pages and backed by the **cv REST API** at
 (the gateway's self-hosted OIDC flow; an allowlisted owner sees every profile). The portal owns this frontend; the backend
 ([`andypeterson2/cv`](https://github.com/andypeterson2/cv)) is API-only.
 
-The design rationale is [`docs/editor-redesign.md`](../../docs/editor-redesign.md);
 this README is the as-built map.
 
 ## How it mounts

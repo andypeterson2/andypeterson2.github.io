@@ -14,5 +14,5 @@
 ## Design System
 
 This project uses a Mac System 6-inspired design system with strict token-based
-styling rules. See [docs/design-system.md](docs/design-system.md) for the full
+styling rules. See `packages/system-six/README.md` for the full
 specification including color, spacing, typography, border, and component rules.

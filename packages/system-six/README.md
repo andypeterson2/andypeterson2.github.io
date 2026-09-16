@@ -5,8 +5,8 @@ tokens, base idiom, dither textures, and element styles — consumed by the site
 single import. The design lives entirely in the stylesheet; pages write plain
 System-6 markup (`system.css` classes + these tokens).
 
-The *why* behind the design is [`docs/design-ethos.md`](../../docs/design-ethos.md); the
-class/token vocabulary is [`docs/design-system.md`](../../docs/design-system.md).
+The tokens in `styles/tokens.css` are the class and token vocabulary; every hex
+value lives there and everything else refers to it.
 
 ## Usage
 
@@ -34,5 +34,4 @@ vendored `@sakun/system.css` chrome):
 This package once carried a **Web-Components tier** (light-DOM `<s6-*>` elements
 emitting the same classes) plus its own esbuild/tsc toolchain. It was amputated in
 2026-09 after an audit found zero consumers anywhere in the site — the CSS closure
-was always the part doing the work. The components live on in git history and in
-[`docs/system-six-scope.md`](../../docs/system-six-scope.md)'s historical note.
+was always the part doing the work. The components remain in git history.

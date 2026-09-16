@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "type": "module",
   "private": true,
-  "description": "The System 6 design-system CSS closure \u2014 tokens, base, dither, elements \u2014 consumed by BaseLayout as one import. (The former Web-Components tier was amputated 2026-09: zero consumers; see docs/system-six-scope.md.)",
+  "description": "The System 6 design-system CSS closure \u2014 tokens, base, dither, elements \u2014 consumed by BaseLayout as one import. (The former Web-Components tier was removed in 2026-09: it had no consumers.)",
   "exports": {
     "./styles.css": "./styles/styles.css",
     "./styles/*": "./styles/*"

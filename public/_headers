@@ -1,7 +1,7 @@
 # ── Security headers — served natively by Cloudflare Pages ───────────────────
 # Cloudflare Pages serves this _headers file at the edge on every response, so
 # these are LIVE — there are no hand-mirrored Transform Rules to keep in sync
-# anymore. See docs/security-headers.md for the rationale. Verify production with:
+# anymore. Verify production with:
 #   scripts/check-security-headers.sh --live https://andypeterson.dev
 #
 # The content-security-policy and referrer-policy are deliberately NOT set here:
