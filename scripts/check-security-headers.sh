@@ -32,7 +32,11 @@ set -euo pipefail
 # ---- --live: assert the deployed origin sends what a <meta> CSP can't ----
 if [ "${1:-}" = "--live" ]; then
   ORIGIN="${2:?usage: check-security-headers.sh --live https://example.com}"
-  hdrs=$(curl -fsSL -m 15 -D - -o /dev/null "$ORIGIN") || { echo "✗ could not reach $ORIGIN" >&2; exit 1; }
+  # A browser User-Agent: the edge's bot protection answers a default curl UA from a
+  # datacenter IP with a 403, which reads here as "the site is down" and hides whether
+  # the headers regressed.
+  UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+  hdrs=$(curl -fsSL -m 15 -A "$UA" -D - -o /dev/null "$ORIGIN") || { echo "✗ could not reach $ORIGIN" >&2; exit 1; }
   live_fail=0
   # Anti-framing: either X-Frame-Options, or a real CSP *header* with frame-ancestors.
   if printf '%s' "$hdrs" | grep -qiE '^x-frame-options:' \
@@ -52,8 +56,8 @@ if [ "${1:-}" = "--live" ]; then
   printf '%s' "$hdrs" | grep -qiE '^x-content-type-options:\s*nosniff' \
     && echo "✓ nosniff present" || echo "! no X-Content-Type-Options: nosniff (minor)" >&2
   # Hashed build assets are immutable (public/_headers): check one from the live page.
-  asset=$(curl -fsSL -m 15 "$ORIGIN" | grep -oE '/_astro/[^"]+\.(css|js|woff2)' | head -1 || true)
-  if [ -n "$asset" ] && curl -fsSI -m 15 "$ORIGIN$asset" | grep -qiE '^cache-control:.*immutable'; then
+  asset=$(curl -fsSL -m 15 -A "$UA" "$ORIGIN" | grep -oE '/_astro/[^"]+\.(css|js|woff2)' | head -1 || true)
+  if [ -n "$asset" ] && curl -fsSI -m 15 -A "$UA" "$ORIGIN$asset" | grep -qiE '^cache-control:.*immutable'; then
     echo "✓ hashed assets cached as immutable ($asset)"
   else
     echo "! hashed assets not served immutable${asset:+ ($asset)} (performance, not security)" >&2
