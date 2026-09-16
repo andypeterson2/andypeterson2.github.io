@@ -543,12 +543,7 @@ export class CvApi {
     return this.req(`/variants/${id}/overrides`, { method: 'PUT', body: JSON.stringify(body) });
   }
 
-  // ---- cover letter: header (per person) + body paragraphs (per variant) ----
-  updateCoverletter(pid: number, patch: Record<string, string>) {
-    const body: Record<string, string> = {};
-    for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
-    return this.req(`/persons/${pid}/coverletter`, { method: 'PATCH', body: JSON.stringify(body) });
-  }
+  // ---- cover letter: header + body paragraphs, both per variant ----
   /** Per-variant cover-letter header + paragraphs, in one fetch (GET /variants/:id). */
   async getLetterData(
     variantId: number,
