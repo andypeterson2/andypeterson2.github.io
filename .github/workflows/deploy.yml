@@ -93,6 +93,20 @@ jobs:
           # main), so it publishes to the custom domain, not a preview URL.
           command: pages deploy dist --project-name=andypeterson-dev --branch=main
 
+      # A deploy that ships a broken site should surface in minutes, not on the
+      # next weekly live check. Retries cover edge propagation.
+      - name: Smoke-check production
+        run: |
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+          for page in / /projects/ai-ml/app/ /projects/latex-resume-editor/app/ /projects/quantum-nonogram-solver/app/; do
+            code=$(curl -s -o /tmp/page.html -w '%{http_code}' --retry 5 --retry-delay 6 --retry-all-errors -A "$UA" "https://andypeterson.dev$page")
+            [ "$code" = 200 ] || { echo "::error::$page returned $code"; exit 1; }
+            grep -qi 'content-security-policy' /tmp/page.html || { echo "::error::$page shipped without its CSP meta"; exit 1; }
+            echo "ok $page"
+          done
+      - name: Verify the edge still sends its security headers
+        run: bash scripts/check-security-headers.sh --live https://andypeterson.dev
+
       - name: Stamp the commit as deployed
         if: success()
         uses: actions/github-script@v9

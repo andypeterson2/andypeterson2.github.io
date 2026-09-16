@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Performance assertions — complement Lighthouse CI by catching
- * runtime regressions early. Thresholds are generous (dev server is
- * slower than production) and only intended to catch gross regressions.
+ * Performance assertions — complement Lighthouse CI by catching runtime
+ * regressions early. These run against the built output a shared CI runner
+ * serves, so the thresholds stay generous: they catch a gross regression, and
+ * Lighthouse CI owns the real budgets.
  */
 
 interface PerfTimings {
@@ -31,13 +32,13 @@ async function getTimings(page: import('@playwright/test').Page): Promise<PerfTi
 }
 
 test.describe('Performance assertions', () => {
-  test('home page DOMContentLoaded under 3 seconds in dev', async ({ page }) => {
+  test('home page DOMContentLoaded under 3 seconds', async ({ page }) => {
     await page.goto('/');
     const { domContentLoaded } = await getTimings(page);
     expect(domContentLoaded).toBeLessThan(3000);
   });
 
-  test('home page first contentful paint under 2.5 seconds in dev', async ({ page }) => {
+  test('home page first contentful paint under 2.5 seconds', async ({ page }) => {
     await page.goto('/');
     const { firstContentfulPaint } = await getTimings(page);
     // FCP can be 0 if the browser didn't report it; skip the strict check then
@@ -56,7 +57,7 @@ test.describe('Performance assertions', () => {
     expect(longTasks).toBe(0);
   });
 
-  test('nonogram demo page total load under 5 seconds in dev', async ({ page }) => {
+  test('nonogram demo page total load under 5 seconds', async ({ page }) => {
     await page.goto('/projects/quantum-nonogram-solver/app/');
     const { load } = await getTimings(page);
     expect(load).toBeLessThan(5000);
