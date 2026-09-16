@@ -209,7 +209,7 @@ Rationale and the edge/meta split are documented in [`docs/security-headers.md`]
 - **Open Graph & Twitter Card:** meta tags in `BaseLayout`
 - **Structured data:** Person schema (JSON-LD) in `BaseLayout`
 - **Canonical URL:** set per page
-- **Favicon:** `public/favicon.svg`
+- **Favicon:** `public/favicon.svg` (scalable), plus `favicon.ico`, 16/32/48 PNGs, `apple-touch-icon.png`, `android-chrome-192x192.png` / `-512x512.png`, and `site.webmanifest`
 
 ---
 
