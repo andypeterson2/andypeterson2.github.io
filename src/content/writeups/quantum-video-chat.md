@@ -22,8 +22,10 @@ The protocol carries its own tamper alarm: **eavesdropper detection rejects and 
 
 ## What's real
 
-Backed by **94 tests** across the Python signaling server and the JavaScript client.
+Unit, integration and browser suites cover the signaling server, the bench daemon and the client, and CI gates every merge on them. Media encryption is frame-level and SFrame-aligned (RFC 9605); a dropped connection recovers by ICE restart without surrendering the key, and a self-hosted TURN relay carries calls that cannot connect peer to peer.
+
+Beyond the simulator, the same engine drives an optical bench: emulated instruments behind driver interfaces, a daemon per peer, and a fiber link between them — so the classical reconciliation path is exercised by hardware-shaped input, not only by a simulation.
 
 ## Stack
 
-Python signaling server · JavaScript client (BB84 simulation, WebRTC, Insertable Streams, Web Crypto AES-GCM).
+Python signaling server and bench daemon · JavaScript client (BB84 simulation, WebRTC, Insertable Streams, Web Crypto AES-GCM).
