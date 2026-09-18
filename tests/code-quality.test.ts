@@ -24,7 +24,7 @@ describe('Button props typing', () => {
 
 // Astro drops the newline between a word and an inline element that starts the next
 // line, so "and\n<strong>X</strong>" renders as "andX". Such a break must carry an
-// explicit {' '} (the audit found two of these on the home page's first paragraph).
+// explicit {' '}.
 describe('No dropped spaces before wrapped inline elements', () => {
   test('.astro prose lines that wrap before <strong>/<em>/<code>/<a> keep the space', () => {
     const files = globSync('src/**/*.astro', { cwd: ROOT });
