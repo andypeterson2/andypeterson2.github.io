@@ -31,7 +31,6 @@ vendored `@sakun/system.css` chrome):
 
 ## History
 
-This package once carried a **Web-Components tier** (light-DOM `<s6-*>` elements
-emitting the same classes) plus its own esbuild/tsc toolchain. It was amputated in
-2026-09 after an audit found zero consumers anywhere in the site — the CSS closure
-was always the part doing the work. The components remain in git history.
+This package once carried a Web-Components tier (light-DOM `<s6-*>` elements
+emitting the same classes) plus its own esbuild/tsc toolchain. Nothing on the site
+used it, so it was removed; the CSS closure was always the part doing the work.

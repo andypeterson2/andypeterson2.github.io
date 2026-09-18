@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // What axe can't see: whether each widget works from the keyboard and says the right
-// thing. One block per finding from the accessibility pass (audit phase 4).
+// thing.
 
 const EDITOR = '/projects/latex-resume-editor/app/';
 const NONOGRAM = '/projects/quantum-nonogram-solver/app/';
