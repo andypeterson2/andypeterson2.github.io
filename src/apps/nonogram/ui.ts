@@ -1,8 +1,8 @@
-/* =============================================================
-   Status line, busy state, and grid-size label — tiny UI helpers
-   shared by the grid, solver and app modules (kept separate to avoid
-   an import cycle through the app module).
-   ============================================================= */
+/**
+ * Status line, busy state, and grid-size label — tiny UI helpers
+ * shared by the grid, solver and app modules (kept separate to avoid
+ * an import cycle through the app module).
+ */
 
 import { state, $, must } from './state';
 

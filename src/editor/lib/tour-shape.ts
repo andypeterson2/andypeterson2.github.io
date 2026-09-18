@@ -1,5 +1,5 @@
 // The shapes the guided tour drives, as pure predicates over a Person, so the tour
-// script and a unit test over the demo seed share ONE definition of what the tour
+// script and a unit test over the demo seed share one definition of what the tour
 // needs. This guards the seed against a reshape that would make the tour silently
 // no-op.
 

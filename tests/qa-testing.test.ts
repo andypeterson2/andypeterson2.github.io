@@ -20,7 +20,7 @@ function getAllFiles(dir: string, ext: string): string[] {
   return files;
 }
 
-// ---- Page structure validation ----
+// Page structure validation
 
 describe('Page structure validation', () => {
   const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
@@ -76,7 +76,7 @@ describe('Page structure validation', () => {
   });
 });
 
-// ---- Design-token compliance (static source audit — not a screenshot test) ----
+// Design-token compliance, audited over the source
 
 describe('Design-token compliance - component style audit', () => {
   const componentDir = resolve(ROOT, 'src/components');
@@ -99,7 +99,7 @@ describe('Design-token compliance - component style audit', () => {
   });
 });
 
-// ---- Cross-browser compatibility ----
+// Cross-browser compatibility
 
 describe('Cross-browser compatibility', () => {
   const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
@@ -128,7 +128,7 @@ describe('Cross-browser compatibility', () => {
   });
 });
 
-// ---- Performance budget ----
+// Performance budget
 
 describe('Performance budget validation', () => {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
@@ -145,7 +145,7 @@ describe('Performance budget validation', () => {
   });
 });
 
-// ---- SEO extras ----
+// SEO extras
 
 describe('SEO extras', () => {
   const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -161,7 +161,7 @@ describe('SEO extras', () => {
   });
 });
 
-// ---- Mobile responsive ----
+// Mobile responsive
 
 describe('Mobile responsive spot-check', () => {
   test('the home grids reflow with auto-fit/auto-fill and minmax', () => {
@@ -172,7 +172,7 @@ describe('Mobile responsive spot-check', () => {
   });
 });
 
-// ---- Internal link consistency ----
+// Internal link consistency
 
 describe('Internal link consistency', () => {
   const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
@@ -208,7 +208,7 @@ describe('Internal link consistency', () => {
   });
 });
 
-// ---- Accessibility: meaningful alt text ----
+// Accessibility: meaningful alt text
 
 describe('Accessibility: meaningful alt text', () => {
   // On the timeline the project icon sits directly beside the project name, so
@@ -232,7 +232,7 @@ describe('Accessibility: meaningful alt text', () => {
   });
 });
 
-// ---- Accessibility: color-only indicators ----
+// Accessibility: color-only indicators
 
 describe('Accessibility: color-only indicators', () => {
   test('server connection state is a visible word, not a colour-only dot', () => {

@@ -15,7 +15,7 @@ import type { AddressInfo } from 'node:net';
 const { consumeSSE, parseSseFrames } = await import('../src/apps/classifiers/sse');
 const syncHits = { n: 0 };
 
-// ── Stub backend ──────────────────────────────────────────────────────────────
+// Stub backend
 let server: http.Server;
 let base: string;
 

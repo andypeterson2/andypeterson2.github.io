@@ -11,7 +11,7 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- Print stylesheet ----
+// Print stylesheet
 
 describe('Print stylesheet', () => {
   const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
@@ -66,7 +66,7 @@ describe('Print stylesheet', () => {
   });
 });
 
-// ---- Flat layout (breadcrumb details-bar removed) ----
+// Flat layout (breadcrumb details-bar removed)
 
 describe('Flat layout — no breadcrumb details-bar', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -87,7 +87,7 @@ describe('Flat layout — no breadcrumb details-bar', () => {
   });
 });
 
-// ---- No global error boundary: each app page handles its own errors in its UI ----
+// No global error boundary: each app page handles its own errors in its UI
 
 describe('Error boundary for runtime errors', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -99,7 +99,7 @@ describe('Error boundary for runtime errors', () => {
   });
 });
 
-// ---- Back to top button ----
+// Back to top button
 
 describe('Back to top button', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');

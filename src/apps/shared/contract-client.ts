@@ -74,7 +74,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 /**
- * fetch() wrapper that NEVER throws on HTTP status and always resolves to a
+ * fetch() wrapper that never throws on HTTP status and always resolves to a
  * normalised result: { ok, status, data, error }.
  *   - 2xx           → { ok:true,  status, data:<parsed body>, error:null }
  *   - 4xx/5xx       → { ok:false, status, data, error:<envelope or synthesised> }

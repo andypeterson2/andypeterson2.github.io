@@ -196,7 +196,7 @@ class EditorState {
     this.#shadow.reseat(this.person, this.style);
   }
 
-  // ---- undo plumbing ----
+  // undo plumbing
 
   // `bind:value` overwrites state before the store is called, so the shadow keeps
   // pre-edit values; #cache keeps visited profiles' trees so a switch keeps undo.
@@ -326,7 +326,7 @@ class EditorState {
     this.announce = this.annToggle ? msg : `${msg}\u200B`;
   }
 
-  // ---- debounced field autosave (connected only; demo stays local) ----
+  // debounced field autosave (connected only; demo stays local)
   // Each debounced save delegates to a push* helper so the same call can be
   // re-fired verbatim by the error toast — reading the field's *current* value.
   saveEntry(entry: Entry) {
@@ -427,7 +427,7 @@ class EditorState {
     );
   }
 
-  // ---- content mutations (persist immediately when connected) ----
+  // content mutations (persist immediately when connected)
   // Every structural op is undoable, and its inverse re-CREATES the row — so the
   // server issues a new id. That is why each command closes over the live object
   // (reading `.id` at call time) rather than over an id captured up front, and why
@@ -666,7 +666,7 @@ class EditorState {
     );
   }
 
-  // ---- drag reorder (persist the new id order) ----
+  // drag reorder (persist the new id order)
   // move(arr, from, to) splices out `from` and inserts at `to`, so move(arr, to,
   // from) is its exact inverse — the undo is the same call with the pair swapped.
   async reorderEntries(section: Section, from: number, to: number) {
@@ -710,7 +710,7 @@ class EditorState {
     await this.persist(() => api.reorderSections(pid, ids));
   }
 
-  // ---- drawers: global style + layouts ----
+  // drawers: global style + layouts
   async loadStyle() {
     if (!this.connected) return;
     const res = await api.getSettings('style');
@@ -1092,7 +1092,7 @@ class EditorState {
       return;
     }
     // Signed in but the account has no profiles yet → connected empty state,
-    // NOT a sign-in prompt (the request succeeded; the list was just empty).
+    // not a sign-in prompt (the request succeeded; the list was just empty).
     if (res.error?.code === 'no_persons') {
       this.connecting = false;
       this.enterEmpty();
@@ -1125,7 +1125,7 @@ class EditorState {
     if (res.ok && res.data) this.activate(res.data, pid, true);
   }
 
-  // ---- profile (person) CRUD — connected only (profiles live on the server) ----
+  // profile (person) CRUD — connected only (profiles live on the server)
   async addPerson() {
     if (!this.connected) return;
     const existing = new Set(this.persons.map((p) => p.name));

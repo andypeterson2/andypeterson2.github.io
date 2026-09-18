@@ -1,9 +1,9 @@
-/* =============================================================
-   Client-side classifier inference — the zero-backend demo tier. Runs an exported model's
-   forward pass in the browser: "linear" (normalise → matmul → softmax → argmax) or "qsvm"
-   (the Yang et al. 2019 recreation: a 2-D affine map plus one dot product; a sign classifier,
-   so null confidence). Both return the server /predict shape { prediction, confidence, probs }.
-   ============================================================= */
+/**
+ * Client-side classifier inference — the zero-backend demo tier. Runs an exported model's
+ * forward pass in the browser: "linear" (normalise → matmul → softmax → argmax) or "qsvm"
+ * (the Yang et al. 2019 recreation: a 2-D affine map plus one dot product; a sign classifier,
+ * so null confidence). Both return the server /predict shape { prediction, confidence, probs }.
+ */
 
 export interface NormalizeSpec {
   scale: number;

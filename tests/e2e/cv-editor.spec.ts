@@ -164,7 +164,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('a blocked backend reads as an invitation, not a failure', async ({ page }) => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
-    // state EVERY visitor lands in, since the backend is owner-only.
+    // state every visitor lands in, since the backend is owner-only.
     await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
     await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
@@ -267,14 +267,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.doc .edit button', { hasText: 'Done' }).click();
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
 
-    // The label names what will be undone, and typing collapsed into ONE command.
+    // The label names what will be undone, and typing collapsed into one command.
     await openMenu(page, 'Edit');
     await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
     await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
 
-    // One command, not fourteen keystrokes: the stack is now empty.
+    // One command covers the fourteen keystrokes: the stack is now empty.
     await openMenu(page, 'Edit');
     await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
     await page.getByRole('menuitem', { name: '↷ Redo Position' }).click();
@@ -1042,7 +1042,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       overrides.push(r.request().postDataJSON());
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    // A base field write would go here — it must NOT fire while a variant is active.
+    // A base field write would go here — it must not fire while a variant is active.
     let baseWrites = 0;
     await page.route(/\/cv\/api\/entries\/11$/, (r) => {
       baseWrites += 1;
@@ -1433,7 +1433,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.toolbar .profile-btn').click();
     await expect(drawer).toBeVisible();
 
-    // Delete the only profile → the connected empty state (NOT a sign-in prompt).
+    // Delete the only profile → the connected empty state (not a sign-in prompt).
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
     await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
     await expect(page.locator('.doc-head')).toHaveCount(0);

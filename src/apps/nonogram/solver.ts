@@ -1,7 +1,7 @@
-/* =============================================================
-   Solver interaction & result rendering (classical, quantum,
-   histogram).
-   ============================================================= */
+/**
+ * Solver interaction & result rendering (classical, quantum,
+ * histogram).
+ */
 
 import {
   state,
@@ -18,7 +18,7 @@ import { getBestSolSize } from './grid';
 
 const MAX_DISPLAY = 30;
 
-// ── Wire shapes (hand-derived from the nonogram backend's payloads) ──────────
+// Wire shapes (hand-derived from the nonogram backend's payloads)
 
 export interface ClassicalReport {
   solutions_found?: number;
@@ -57,7 +57,7 @@ export interface BenchmarkPayload {
   qu_times?: number[] | null;
 }
 
-// ── Helpers ────────────────────────────────────────────────────
+// Helpers
 export function clearSolverResults(): void {
   const clEl = must('cl-canvas');
   Array.from(clEl.children).forEach((c) => {
@@ -92,7 +92,7 @@ function solutionTable(bs: string, rows: number, cols: number, sz: string): HTML
   return tbl;
 }
 
-// ── Classical result renderer ──────────────────────────────────
+// Classical result renderer
 export function renderClassical({ solutions, rows, cols }: ClassicalResult): void {
   const el = must('cl-canvas');
   Array.from(el.children).forEach((child) => {
@@ -122,7 +122,7 @@ export function renderClassical({ solutions, rows, cols }: ClassicalResult): voi
   });
 }
 
-// ── Quantum histogram & solutions ──────────────────────────────
+// Quantum histogram & solutions
 function computeThreshold(rows: number, cols: number): number {
   const numVars = rows * cols;
   const baseline = 1.0 / Math.pow(2, numVars);
@@ -306,7 +306,7 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
   );
 }
 
-// ── Quantum solutions list renderer ───────────────────────────
+// Quantum solutions list renderer
 export function renderQuantumList(): void {
   elQuList.innerHTML = '';
   if (!state.histData) {
@@ -340,7 +340,7 @@ export function renderQuantumList(): void {
   });
 }
 
-// ── Metrics renderer ────────────────────────────────────────────
+// Metrics renderer
 export function clearMetrics(): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
@@ -424,7 +424,7 @@ export function renderMetrics(
   el.classList.add('visible');
 }
 
-// ── Benchmark result renderer ──────────────────────────────────
+// Benchmark result renderer
 export function renderBenchmark({
   report,
   solutions,

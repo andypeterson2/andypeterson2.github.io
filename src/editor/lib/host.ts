@@ -21,7 +21,7 @@ export interface SaveHost {
    */
   setSaving(): void;
   /**
-   * Run a backend write and resolve the save indicator from its result — the ONE
+   * Run a backend write and resolve the save indicator from its result — the one
    * place "saving…" is paired with a settle, so a mutation can't forget to clear
    * it and hang forever (it even settles if `op` throws). A no-op that reports
    * success when offline: demo edits don't persist. Returns the full result so a

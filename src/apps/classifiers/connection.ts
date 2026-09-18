@@ -65,7 +65,7 @@ let _pingTimer: ReturnType<typeof setTimeout> | null = null;
 let _healthFailures = 0;
 const _maxHealthRetries = 2; // red after this many consecutive failures
 
-// ── Observer — single dispatch point ──────────────────────────
+// Observer — single dispatch point
 
 function _setState(s: ConnectionState): void {
   const prev = _state;
@@ -79,7 +79,7 @@ function _setState(s: ConnectionState): void {
   }
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
+// Helpers
 
 function _clearTimers(): void {
   if (_reconnectTimer) {
@@ -101,7 +101,7 @@ function _jitter(ms: number): number {
   return ms + Math.random() * ms * 0.3;
 }
 
-// ── Ping timeout ────────────────────────────────────────────────
+// Ping timeout
 
 function _startPingTimeout(): void {
   if (_pingTimer) clearTimeout(_pingTimer);
@@ -122,7 +122,7 @@ function _startPingTimeout(): void {
   }, degradedTimeout);
 }
 
-// ── SSE heartbeat channel ──────────────────────────────────────
+// SSE heartbeat channel
 
 function _openHeartbeat(): void {
   _abortCtrl = new AbortController();
@@ -187,7 +187,7 @@ function _handleEvent(event: HeartbeatEvent): void {
   }
 }
 
-// ── Disconnect / reconnect ─────────────────────────────────────
+// Disconnect / reconnect
 
 function _handleDisconnect(): void {
   if (_state === 'disconnected' || _state === 'idle') return;
@@ -214,7 +214,7 @@ function _scheduleReconnect(): void {
   }, delay);
 }
 
-// ── Connect flow ───────────────────────────────────────────────
+// Connect flow
 
 function _doConnect(): void {
   _setState('connecting');
@@ -234,7 +234,7 @@ function _doConnect(): void {
     });
 }
 
-// ── Graceful unload ────────────────────────────────────────────
+// Graceful unload
 
 /** Tell the server this client is leaving. A keepalive fetch outlives the page and,
  *  unlike sendBeacon, goes through the wrapped fetch that carries the pass. */
@@ -252,7 +252,7 @@ function _sendDisconnect(): void {
 
 window.addEventListener('pagehide', _sendDisconnect);
 
-// ── Navbar integration (observer of its own events) ────────────
+// Navbar integration (observer of its own events)
 
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
@@ -278,7 +278,7 @@ document.addEventListener('connection:statechange', (e) => {
     _navWidget.setStatus((e as CustomEvent<ConnectionStateChangeDetail>).detail.state);
 });
 
-// ── Public API ─────────────────────────────────────────────────
+// Public API
 
 export const connectionManager: ConnectionManager = {
   get state() {

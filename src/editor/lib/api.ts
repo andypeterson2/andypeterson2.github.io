@@ -94,12 +94,12 @@ export function untex(s: string | undefined): string {
 
 /**
  * Display text → LaTeX, for writes. A field is made breakage-proof: a permitted
- * `\command` is substituted to its Unicode glyph FIRST, then EVERY remaining
+ * `\command` is substituted to its Unicode glyph FIRST, then every remaining
  * LaTeX special is escaped to literal text, so a token is either a known
  * glyph or literal prose. `\rightarrow` → `→` normalizes on the way in (one-way; the
  * glyph is canonical); an unknown `\foobar` becomes the literal text “\foobar”.
  *
- * This is display-safety and defense-in-depth, NOT the security boundary: it runs in
+ * This is display-safety and defense-in-depth, not the security boundary: it runs in
  * the browser, so a `curl` bypasses it. The server-side compile path (xelatex) is the
  * real boundary — it must re-escape untrusted field content independently and run
  * sandboxed (no `-shell-escape`, `openin_any=p`).
@@ -203,7 +203,7 @@ function parseErrorEnvelope(data: unknown): ApiError | undefined {
 export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
-  // ---- self-hosted Google sign-in ----
+  // self-hosted Google sign-in
   // Auth lives at the gateway ROOT (/auth/*), a sibling of the /cv app — not under
   // /cv/api — so these bypass `req()` and hit `authBase` directly.
   /** The gateway origin (…/cv → …). */
@@ -239,7 +239,7 @@ export class CvApi {
       // redirect:'follow' (the default): an AUTHENTICATED request can pass
       // through an Access redirect before landing on its 200, so we must follow
       // it. (redirect:'manual' stops at that hop and misreads a signed-in user
-      // as signed-out.) A NOT-signed-in request 302s to the IdP on another
+      // as signed-out.) A not-signed-in request 302s to the IdP on another
       // origin and fails CORS on the follow → a network_error the caller
       // classifies via a health probe.
       const res = await fetch(`${this.base}/api${path}`, {
@@ -329,7 +329,7 @@ export class CvApi {
     return { ok: true, status: 200, data: { person: loaded.data, persons } };
   }
 
-  // ---- person (profile) CRUD ----
+  // person (profile) CRUD
   createPerson(name: string) {
     return this.req<{ id: number }>('/persons', { method: 'POST', body: JSON.stringify({ name }) });
   }
@@ -342,7 +342,7 @@ export class CvApi {
 
   // ---- version history. A version's `doc` is the editor's Person snapshot,
   // stored as an opaque JSON blob; the backend rebuilds its tables from it on
-  // restore. ----
+  // restore.
   listVersions(pid: number) {
     return this.req<{
       versions: {
@@ -385,7 +385,7 @@ export class CvApi {
     });
   }
 
-  // ---- writes (display text is LaTeX-escaped on the way out) ----
+  // writes (display text is LaTeX-escaped on the way out)
   updateEntry(id: number, fields: Record<string, string>) {
     return this.req(`/entries/${id}`, {
       method: 'PUT',
@@ -452,7 +452,7 @@ export class CvApi {
     });
   }
 
-  // ---- global settings (style/spacing/fonts) + layouts ----
+  // global settings (style/spacing/fonts) + layouts
   getSettings(prefix: string) {
     return this.req<Record<string, unknown>>(`/settings?prefix=${prefix}`);
   }
@@ -469,7 +469,7 @@ export class CvApi {
     return this.req('/layouts/default', { method: 'PUT', body: JSON.stringify({ layout_id: id }) });
   }
 
-  // ---- tags on entries + items ----
+  // tags on entries + items
   addEntryTags(entryId: number, tags: string[]) {
     return this.req(`/entries/${entryId}/tags`, { method: 'POST', body: JSON.stringify({ tags }) });
   }
@@ -483,7 +483,7 @@ export class CvApi {
     return this.req(`/items/${itemId}/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
   }
 
-  // ---- tag suggestion ----
+  // tag suggestion
   suggestTags(pid: number, text: string, limit: number) {
     return this.req<{ query: string; results: TagSuggestion[] }>(`/persons/${pid}/tags/suggest`, {
       method: 'POST',
@@ -497,7 +497,7 @@ export class CvApi {
     });
   }
 
-  // ---- variants (the lens) ----
+  // variants (the lens)
   createVariant(pid: number, variant: { name: string; kind: Variant['kind'] }) {
     return this.req<{ id: number }>(`/persons/${pid}/variants`, {
       method: 'POST',
@@ -543,7 +543,7 @@ export class CvApi {
     return this.req(`/variants/${id}/overrides`, { method: 'PUT', body: JSON.stringify(body) });
   }
 
-  // ---- cover letter: header + body paragraphs, both per variant ----
+  // cover letter: header + body paragraphs, both per variant
   /** Per-variant cover-letter header + paragraphs, in one fetch (GET /variants/:id). */
   async getLetterData(
     variantId: number,

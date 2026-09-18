@@ -2,7 +2,7 @@
  * Server status navbar UI — one nav item + status dot per backend declared
  * by a <meta name="site-backend" content="svc" data-label="…">.
  *
- * STATUS-ONLY by design: there is no manual host/port connect form.
+ * STATUS-only by design: there is no manual host/port connect form.
  * The site's backends are deploy-based — the only ways an app connects are
  * the recruiter-pass / owner activation (health-gated, through the gateway)
  * and the allowlisted ?backend= override in ServiceConfig (which, on the
@@ -28,7 +28,7 @@ interface BackendDef {
 
 type ConnState = { connected: boolean; status?: string };
 
-// ── Collect backend service definitions ──────────────────────────
+// Collect backend service definitions
 const backends: BackendDef[] = [];
 
 document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
@@ -40,8 +40,8 @@ document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
   });
 });
 
-// ── Create one nav status item per backend ───────────────────────
-// The state is a visible word, not only a dot: the site's thesis is honest state, and a
+// Create one nav status item per backend
+// The state is a visible word beside the dot, so it survives a
 // 9px half-transparent dot says little. Words name the tier the visitor is on, not the socket.
 const STATE_WORDS: Partial<Record<string, string>> = {
   idle: 'in your browser',
@@ -161,7 +161,7 @@ function createBackendUI(cfg: BackendDef): void {
   }
 
   // Wait for DOMContentLoaded unless the document is fully loaded: module
-  // scripts evaluate at readyState 'interactive', BEFORE the app tiers'
+  // scripts evaluate at readyState 'interactive', before the app tiers'
   // modules later in the document have registered their navbar:* listeners.
   // Deferring init past DOMContentLoaded preserves the classic-script era's
   // ordering (apps first, then this module's connect-ready dispatch).

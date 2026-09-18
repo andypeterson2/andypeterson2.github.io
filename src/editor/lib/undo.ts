@@ -69,7 +69,7 @@ export function humanize(key: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
 }
 
-// ---- the field shadow ----
+// the field shadow
 
 export type Shadow = WeakMap<object, Record<string, string>>;
 export type Fields = Record<string, string | undefined>;

@@ -1,6 +1,4 @@
-/* =============================================================
-   State & DOM references — shared across the nonogram modules.
-   ============================================================= */
+/* State & DOM references — shared across the nonogram modules. */
 
 export interface HistData {
   /** [bitstring, probability] sorted desc, capped to MAX_DISPLAY. */
@@ -36,7 +34,7 @@ export const state: NonogramState = {
   userThreshold: null,
 };
 
-// ── Helpers ────────────────────────────────────────────────────
+// Helpers
 export const $ = (id: string): HTMLElement | null => document.getElementById(id);
 
 /** Like $, but for elements the page markup guarantees. */
@@ -46,7 +44,7 @@ export function must(id: string): HTMLElement {
   return el;
 }
 
-// ── DOM references (the markup precedes the module scripts) ────
+// DOM references (the markup precedes the module scripts)
 export const elDrawView = must('draw-view');
 export const elQuPlaceholder = must('qu-placeholder');
 export const elClPlaceholder = must('cl-placeholder');

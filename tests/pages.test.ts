@@ -9,7 +9,7 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- Navigation (inline in BaseLayout) ----
+// Navigation (inline in BaseLayout)
 
 describe('Nav (inline in BaseLayout)', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -37,7 +37,7 @@ describe('Nav (inline in BaseLayout)', () => {
   });
 });
 
-// ---- URL Routing ----
+// URL Routing
 
 describe('URL Routing', () => {
   const pages = ['src/pages/index.astro', 'src/pages/404.astro'];
@@ -53,7 +53,7 @@ describe('URL Routing', () => {
   });
 });
 
-// ---- Skip-to-Content ----
+// Skip-to-Content
 
 describe('Skip-to-Content Link', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -69,7 +69,7 @@ describe('Skip-to-Content Link', () => {
   });
 });
 
-// ---- Layout Structure ----
+// Layout Structure
 
 describe('Layout Structure', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -93,7 +93,7 @@ describe('Layout Structure', () => {
   });
 });
 
-// ---- Home Page ----
+// Home Page
 
 describe('Home Page', () => {
   const indexSrc = readFileSync(resolve(ROOT, 'src/pages/index.astro'), 'utf-8');
@@ -138,7 +138,7 @@ describe('Home Page', () => {
   });
 });
 
-// ---- Projects data (shown on the home timeline; the grid page is retired) ----
+// Projects data (shown on the home timeline; the grid page is retired)
 
 describe('Projects data', () => {
   test('lists multiple projects', () => {
@@ -149,7 +149,7 @@ describe('Projects data', () => {
   });
 });
 
-// ---- Accessibility ----
+// Accessibility
 
 describe('Accessibility Features', () => {
   test('reduced-motion in tokens CSS', () => {
@@ -163,7 +163,7 @@ describe('Accessibility Features', () => {
   });
 });
 
-// ---- SEO ----
+// SEO
 
 describe('SEO and Meta Tags', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -216,7 +216,7 @@ describe('SEO and Meta Tags', () => {
   });
 });
 
-// ---- Security header policy ----
+// Security header policy
 //
 // The site is a static GitHub Pages origin behind Cloudflare. GH Pages ignores
 // _headers, so those headers are a SPEC mirrored by hand into Cloudflare edge rules.

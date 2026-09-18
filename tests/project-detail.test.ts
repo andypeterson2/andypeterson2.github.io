@@ -12,7 +12,7 @@ import { projects } from '../src/data/projects';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- The retired detail surface redirects to the timeline ----
+// The retired detail surface redirects to the timeline
 
 describe('Legacy detail-page redirects', () => {
   const astroConfig = readFileSync(resolve(ROOT, 'astro.config.mjs'), 'utf-8');
@@ -58,7 +58,7 @@ describe('Timeline anchors', () => {
   });
 });
 
-// ---- DemoShell: the one way a demo page mounts ----
+// DemoShell: the one way a demo page mounts
 
 describe('DemoShell', () => {
   const shellSrc = readFileSync(resolve(ROOT, 'src/layouts/DemoShell.astro'), 'utf-8');
@@ -85,7 +85,7 @@ describe('DemoShell', () => {
   });
 });
 
-// ---- Page scaffolding script ----
+// Page scaffolding script
 
 describe('Page scaffolding script', () => {
   test('script exists', () => {

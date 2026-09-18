@@ -25,7 +25,7 @@ export interface TourHost {
    * captured document, wiping every ephemeral edit. Paired with stage().
    */
   restore(): void;
-  /** Narrate through the editor's ONE aria-live region; never add a second. */
+  /** Narrate through the editor's one aria-live region; never add a second. */
   announce(msg: string): void;
   /**
    * Put away chrome the tour opened (the variant drawer, at step 5) so a modal

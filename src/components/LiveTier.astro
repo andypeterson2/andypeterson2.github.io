@@ -1,7 +1,7 @@
 ---
 /**
  * Server status nav — adds a status-dot nav item for each backend service
- * declared on the page. STATUS-ONLY: there is no manual host/port connect
+ * declared on the page. STATUS-only: there is no manual host/port connect
  * dialog; backends are deploy-based and connect through the pass-activated
  * gateway lane.
  *
@@ -19,14 +19,14 @@
 
 <style is:global>
   /* ── Server nav item (injected by JS) ──
-     Status text, not a control: no pointer cursor. */
+     Status text, so no pointer cursor. */
   .server-nav-item {
     display: flex;
     align-items: center;
     gap: 0.4em;
   }
 
-  /* Unset is a hollow ring (the System-6 idiom the editor uses), not a faint grey. */
+  /* Unset is a hollow ring, the System-6 idiom the editor uses. */
   .sn-dot {
     width: 0.55em;
     height: 0.55em;

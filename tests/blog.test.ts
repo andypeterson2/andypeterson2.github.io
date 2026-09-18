@@ -9,7 +9,7 @@ import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- Custom 404 with personality ----
+// Custom 404 with personality
 
 describe('Custom 404 with personality', () => {
   const fourOhFour = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');

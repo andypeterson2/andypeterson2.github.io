@@ -4,7 +4,7 @@
  * A pass (minted by the owner via the gateway's POST /gate/pass) unlocks the
  * LIVE tier of a demo-first app: it routes the app's backend calls through the
  * gateway (api.andypeterson.dev/<service>) and attaches the pass as a Bearer
- * token. Without a pass the app stays on its free, in-browser tier. On ANY
+ * token. Without a pass the app stays on its free, in-browser tier. On any
  * live-call failure (expired / invalid / over-quota / backend asleep-and-down)
  * the app falls back to that free tier — a pass only ever ADDS capability, it
  * never breaks the page.
