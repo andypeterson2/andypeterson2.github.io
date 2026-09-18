@@ -31,7 +31,7 @@ describe('Sitemap generation', () => {
       // demo lives on the /projects/ai-ml/app/ umbrella).
       expect(xml, `missing sitemap entry for ${project.slug}`).toContain(project.appUrl!);
     }
-    // The retired detail pages must NOT resurface.
+    // The retired detail pages must not resurface.
     expect(xml).not.toMatch(/\/projects\/[\w-]+\/<\/loc>/);
   });
 

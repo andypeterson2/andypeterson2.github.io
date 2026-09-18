@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 // Every page and every state a visitor can open (menus, drawers, dialogs) against WCAG
-// 2.2 AA plus axe's best-practice rules, failing on a violation of ANY impact.
+// 2.2 AA plus axe's best-practice rules, failing on a violation of any impact.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
 const EDITOR = '/projects/latex-resume-editor/app/';

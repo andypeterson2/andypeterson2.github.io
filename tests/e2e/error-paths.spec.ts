@@ -106,6 +106,6 @@ test.describe('Sync-REST fallback when streaming is unavailable', () => {
     await page.waitForTimeout(600); // blocked socket settles → socket.connected stays false
     await page.locator('#btn-bench').click();
     await expect.poll(() => syncHit, { timeout: 10000 }).toBe(true);
-    expect(streamHit).toBe(false); // the streaming route is NOT used when the socket is down
+    expect(streamHit).toBe(false); // the streaming route is not used when the socket is down
   });
 });

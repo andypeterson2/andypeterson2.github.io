@@ -8,7 +8,7 @@ export interface TourStep {
   id: string;
   caption: string;
   /**
-   * Apply this step's state. Re-invoked on Resume, so it MUST be idempotent:
+   * Apply this step's state. Re-invoked on Resume, so it must be idempotent:
    * re-entering "type a bullet" has to land on the same bullet, not a second one.
    * Anything slow (the typewriter) must give up promptly once `signal` aborts.
    */

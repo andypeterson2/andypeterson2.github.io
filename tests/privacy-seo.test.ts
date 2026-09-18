@@ -9,7 +9,7 @@ import { resolve, join } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// ---- Cross-identity leakage ----
+// Cross-identity leakage
 
 describe('Cross-identity leakage prevention', () => {
   const srcDir = resolve(ROOT, 'src');
@@ -71,7 +71,7 @@ describe('Cross-identity leakage prevention', () => {
   });
 });
 
-// ---- Social card preview verification ----
+// Social card preview verification
 
 describe('Social card preview verification', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -111,7 +111,7 @@ describe('Social card preview verification', () => {
   });
 });
 
-// ---- Screen reader navigation ----
+// Screen reader navigation
 
 describe('Screen reader navigation', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
@@ -121,7 +121,7 @@ describe('Screen reader navigation', () => {
   });
 });
 
-// ---- Bundle analysis ----
+// Bundle analysis
 
 describe('Bundle analysis and tree-shaking', () => {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
@@ -144,7 +144,7 @@ describe('Bundle analysis and tree-shaking', () => {
   });
 });
 
-// ---- Design system component usage ----
+// Design system component usage
 
 describe('Design system component usage', () => {
   const srcDir = resolve(ROOT, 'src');
@@ -190,7 +190,7 @@ describe('Design system component usage', () => {
   });
 });
 
-// ---- Accessibility audit ----
+// Accessibility audit
 
 describe('Accessibility audit', () => {
   const srcDir = resolve(ROOT, 'src');

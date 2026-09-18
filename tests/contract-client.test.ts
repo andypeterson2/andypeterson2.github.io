@@ -16,7 +16,7 @@ import type { AddressInfo } from 'node:net';
 (globalThis as { window?: unknown }).window = globalThis;
 const { SiteContract } = await import('../src/apps/shared/contract-client');
 
-// ── A stub backend implementing the contract ──────────────────────────────────
+// A stub backend implementing the contract
 let server: http.Server;
 let base: string;
 

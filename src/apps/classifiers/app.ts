@@ -25,7 +25,7 @@ import {
 import { ServiceConfig } from '../shared/service-config';
 import { SitePass } from '../shared/pass';
 
-// ── Backend config ───────────────────────────────────────────────────────────
+// Backend config
 // window.API_BASE / window.UI_CONFIG are seeded before this module runs. API_BASE
 // changes whenever the user connects a backend, so the per-dataset URL prefix is
 // computed live via base() rather than frozen at module-load time.
@@ -47,7 +47,7 @@ function base(): string {
   return (window.API_BASE ?? '') + `/d/${ds}`;
 }
 
-// ── Connection-aware fetch wrapper ──────────────────────────────────────────
+// Connection-aware fetch wrapper
 
 /** A live channel is up; 'degraded' is a live channel that missed one ping. */
 function isLive(): boolean {
@@ -72,7 +72,7 @@ async function apiFetch(url: string | URL | Request, opts?: RequestInit): Promis
   return fetch(url, opts);
 }
 
-// ── Wire shapes (hand-derived from the classifier backend routes) ───────────
+// Wire shapes (hand-derived from the classifier backend routes)
 
 interface RawEnvelope {
   error?: { code?: string; message?: string } | string;
@@ -193,7 +193,7 @@ function errText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-// ── State ────────────────────────────────────────────────────────────────────
+// State
 
 /** A session model as the UI tracks it (server-trained, ensemble, or in-browser). */
 interface ModelInfo {
@@ -243,7 +243,7 @@ function serverNames(): string[] {
     .map(([name]) => name);
 }
 
-// ── Smart naming ─────────────────────────────────────────────────────────────
+// Smart naming
 
 /** Generate the next available default name for a model type. */
 function defaultName(modelType: string): string {
@@ -254,7 +254,7 @@ function defaultName(modelType: string): string {
   return `${modelType} ${String(n)}`;
 }
 
-// ── DOM helpers / refs ───────────────────────────────────────────────────────
+// DOM helpers / refs
 
 function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
   const el = document.getElementById(id);
@@ -325,7 +325,7 @@ const modelTypeSelect = byId('model-type', HTMLSelectElement);
 
 let trainChart: MiniChart | null = null;
 
-// ── Input-type visibility ────────────────────────────────────────────────────
+// Input-type visibility
 
 function applyInputVisibility(): void {
   const image = window.UI_CONFIG?.input_type === 'image';
@@ -334,7 +334,7 @@ function applyInputVisibility(): void {
 }
 applyInputVisibility();
 
-// ── Model info panel ─────────────────────────────────────────────────────────
+// Model info panel
 
 // Element/attribute allowlist for the backend's model-info HTML. Anything not
 // listed is unwrapped (text kept) or, for script-bearing containers, removed.
@@ -413,7 +413,7 @@ async function fetchModelInfo(modelType: string): Promise<void> {
   }
 }
 
-// ── Refresh default name when model type changes ──────────────────────────────
+// Refresh default name when model type changes
 
 modelTypeSelect.addEventListener('change', () => {
   modelNameInput.value = defaultName(modelTypeSelect.value);
@@ -444,7 +444,7 @@ function updateEnsembleBtn(): void {
   ensembleBtn.classList.toggle('hidden', serverNames().length < 2);
 }
 
-// ── Dataset menu (client-side switching, no navigation) ───────────────────────
+// Dataset menu (client-side switching, no navigation)
 
 // Populate the dataset dropdown from the client-side list and switch in place.
 // The portal has no per-dataset routes (/d/<name>/ would 404) and the demo runs
@@ -471,7 +471,7 @@ function renderDatasetMenu(): void {
   }
 }
 
-// ── Canvas drawing (28×28 pixel grid for MNIST) ────────────────────────────────
+// Canvas drawing (28×28 pixel grid for MNIST)
 
 const GRID = 28;
 const CELL = canvas.width / GRID; // 280 / 28 = 10px per cell
@@ -611,7 +611,7 @@ canvas.addEventListener(
 canvas.addEventListener('touchmove', paintPixel, { passive: false });
 canvas.addEventListener('touchend', strokeEnd);
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+// Utilities
 
 function pct(v: number): string {
   return (v * 100).toFixed(1) + '%';
@@ -623,7 +623,7 @@ function confClass(v: number): string {
   return v >= 0.8 ? 'conf-high' : 'conf-low';
 }
 
-// ── Session models list (MODELS card) ────────────────────────────────────────
+// Session models list (MODELS card)
 
 function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
   const row = document.createElement('div');
@@ -695,7 +695,7 @@ function buildSessionModelsList(): void {
   updateEnsembleBtn();
 }
 
-// ── Prediction table (TRY card) ───────────────────────────────────────────────
+// Prediction table (TRY card)
 
 function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCellElement {
   const td = document.createElement('td');
@@ -782,7 +782,7 @@ function buildPredictionTable(): void {
   }
 }
 
-// ── Columnar metrics table (TEST card) ───────────────────────────────────────
+// Columnar metrics table (TEST card)
 
 interface MetricRow {
   key: string;
@@ -930,7 +930,7 @@ function renderMetricSection(section: MetricSection, entries: [string, ModelInfo
   }
 }
 
-// ── Load models from server on page load ──────────────────────────────────────
+// Load models from server on page load
 
 async function loadModels(): Promise<void> {
   if (isOffline()) return;
@@ -985,7 +985,7 @@ function dropServerModels(): void {
   applyTier();
 }
 
-// ── Evaluate all session models ───────────────────────────────────────────────
+// Evaluate all session models
 
 async function runEvaluate(): Promise<void> {
   if (serverNames().length === 0) return;
@@ -1033,7 +1033,7 @@ async function runEvaluate(): Promise<void> {
   );
 }
 
-// ── Train ─────────────────────────────────────────────────────────────────────
+// Train
 
 /** Dash patterns for the training-curve series: told apart by line, not colour. */
 const SERIES_DASHES: number[][] = [[], [7, 4], [2, 3], [10, 3, 2, 3], [14, 5], [1, 4]];
@@ -1184,7 +1184,7 @@ trainBtn.addEventListener('click', () => {
   })();
 });
 
-// ── Predict ───────────────────────────────────────────────────────────────────
+// Predict
 
 let autoPredictTimer: ReturnType<typeof setTimeout> | null = null;
 function scheduleAutoPredict(): void {
@@ -1286,7 +1286,7 @@ function markOutOfScope(locals: [string, ModelInfo][]): void {
   }
 }
 
-// ── Client-side dataset switching ─────────────────────────────────────────────
+// Client-side dataset switching
 
 // Build the tabular feature form (Iris, BB84) from the model's feature list + ranges:
 // a slider to explore with and a box for the exact value, kept in step.
@@ -1418,7 +1418,7 @@ clearBtn.addEventListener('click', () => {
   addLog('canvas cleared');
 });
 
-// ── Saved models on disk ──────────────────────────────────────────────────────
+// Saved models on disk
 
 async function loadSavedModels(): Promise<void> {
   if (isOffline()) return;
@@ -1450,7 +1450,7 @@ refreshSavedBtn.addEventListener('click', () => {
   void loadSavedModels();
 });
 
-// ── Import from disk ──────────────────────────────────────────────────────────
+// Import from disk
 
 importBtn.addEventListener('click', () => {
   void (async () => {
@@ -1482,7 +1482,7 @@ importBtn.addEventListener('click', () => {
   })();
 });
 
-// ── Export (delegated save buttons in session rows) ───────────────────────────
+// Export (delegated save buttons in session rows)
 
 document.addEventListener('click', (e) => {
   const btn =
@@ -1504,7 +1504,7 @@ document.addEventListener('click', (e) => {
   })();
 });
 
-// ── Remove model from session (delegated close buttons) ──────────────────────
+// Remove model from session (delegated close buttons)
 
 document.addEventListener('click', (e) => {
   const btn =
@@ -1528,7 +1528,7 @@ document.addEventListener('click', (e) => {
   })();
 });
 
-// ── Ensemble ──────────────────────────────────────────────────────────────────
+// Ensemble
 
 ensembleBtn.addEventListener('click', () => {
   void (async () => {
@@ -1569,7 +1569,7 @@ ensembleBtn.addEventListener('click', () => {
   })();
 });
 
-// ── Ablation (delegated from session model rows) ──────────────────────────────
+// Ablation (delegated from session model rows)
 
 document.addEventListener('click', (e) => {
   const btn =
@@ -1612,7 +1612,7 @@ document.addEventListener('click', (e) => {
   })();
 });
 
-// ── Tier-aware controls ──────────────────────────────────────────────────────
+// Tier-aware controls
 // Offline these say "Needs the live backend"; the Train form folds and Saved hides.
 const BACKEND_CONTROLS = ['ensemble-btn', 'refresh-saved-btn', 'import-btn', 'saved-select'];
 const trainForm = byId('train-form', HTMLDetailsElement);
@@ -1639,7 +1639,7 @@ function applyTier(): void {
   byId('model-type-row', HTMLElement).hidden = modelTypeSelect.options.length === 0;
 }
 
-// ── Connection state observer ────────────────────────────────────────────────
+// Connection state observer
 
 document.addEventListener('connection:statechange', (e) => {
   const { state: s, previous } = (e as CustomEvent<{ state: string; previous: string }>).detail;
@@ -1660,7 +1660,7 @@ document.addEventListener('connection:statechange', (e) => {
   }
 });
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// Init
 
 /** A shipped weight file as a session model, with its real test accuracy. */
 function localModelInfo(model: ClassifierModel, file: string): ModelInfo {

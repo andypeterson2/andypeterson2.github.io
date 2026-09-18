@@ -468,7 +468,7 @@
                 {:else if editor.preview.state === 'error'}
                   <div class="pv-log"><pre>{editor.preview.log}</pre></div>
                 {:else if editor.preview.url}
-                  <!-- Rendered page-by-page onto width-fitted canvases (PdfView), NOT handed
+                  <!-- Rendered page-by-page onto width-fitted canvases (PdfView), not handed
                      to Chrome's built-in iframe viewer — which ignored the fit fragment and
                      left the page small at the top. PdfView reads the Blob directly (no
                      fetch of the blob: URL, which connect-src blocks). Download link remains. -->
@@ -1227,7 +1227,7 @@
   }
 
   /* ── Mobile / tablet ── A fixed shell: a top bar (the site's floating nav left, the
-     editor ☰ Menu right), the resume as the ONLY scroll region, and the status pinned
+     editor ☰ Menu right), the resume as the only scroll region, and the status pinned
      at the bottom, edge-to-edge with no title. 768px matches the site's floating-nav
      breakpoint so the nav never lands on the desktop menubar; short landscape phones
      get this layout too. The compact JS media query must use the same bounds. */

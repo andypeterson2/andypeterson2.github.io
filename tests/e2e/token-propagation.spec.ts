@@ -42,7 +42,7 @@ test.describe('Design token runtime propagation', () => {
     expect(value).toBe('#dc2626');
   });
 
-  // Results are judgements, not machine state (design law L3): confidence
+  // Results are judgements (design law L3): confidence
   // and accuracy bands render in ink; only state indicators use the status colours.
   test('classifier result classes render in ink, not the status colours', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());

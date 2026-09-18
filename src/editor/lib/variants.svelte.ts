@@ -163,7 +163,7 @@ export class VariantController {
     await this.host.persist(() => api.setVariantRules(variant.id, variant.rules));
   }
 
-  // ---- per-variant overrides (field patch + force include/exclude) ----
+  // per-variant overrides (field patch + force include/exclude)
   // Every override write sends the WHOLE row (the backend upsert is whole-row and
   // deletes when all fields are null), so each method computes the complete next
   // state from the current one. `variant` is a live proxy in `person.variants`, so

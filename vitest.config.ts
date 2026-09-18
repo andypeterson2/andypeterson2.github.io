@@ -12,10 +12,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // json-summary + lcov: machine-readable output so coverage can be diffed
-      // across runs / surfaced in CI, not just eyeballed in the HTML report.
+      // across runs and reported in CI as well as the HTML report.
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
-      // The whole logic surface, not just the well-covered files; the gap is glue only e2e
+      // The whole logic surface, including the thin files; the gap is glue only e2e
       // exercises. .astro/.svelte stay out: v8 can't parse them, and e2e covers them.
       include: ['src/lib/**/*.{ts,js}', 'src/editor/lib/**/*.{ts,js}'],
       exclude: [

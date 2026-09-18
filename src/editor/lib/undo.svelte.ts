@@ -5,7 +5,7 @@
 import { pushCommand, type NewCommand, type UndoCommand } from './undo';
 
 export interface UndoHost {
-  /** narrate through the editor's ONE aria-live region */
+  /** narrate through the editor's one aria-live region */
   announce(msg: string): void;
 }
 

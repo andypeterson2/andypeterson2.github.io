@@ -1,6 +1,4 @@
-/* =============================================================
-   Grid manipulation — drawing, resize.
-   ============================================================= */
+/* Grid manipulation — drawing, resize. */
 
 import { state, $, elDrawView } from './state';
 import { setStatus, updateGridSizeLabel } from './ui';
@@ -15,7 +13,7 @@ export function setOnGridEdit(fn: () => void): void {
   onEdit = fn;
 }
 
-// ── Grid helpers ───────────────────────────────────────────────
+// Grid helpers
 export function initGrid(): void {
   state.grid = Array.from({ length: state.rows }, () => Array<boolean>(state.cols).fill(false));
   recomputeClues();
@@ -50,7 +48,7 @@ function computeColClues(grid: boolean[][], rows: number, cols: number): number[
   );
 }
 
-// ── Clue slot helpers ──────────────────────────────────────────
+// Clue slot helpers
 function getMaxRowLen(): number {
   if (!state.rowClues.length) return 1;
   return Math.max(1, ...state.rowClues.map((c) => c.filter((v) => v > 0).length));
@@ -81,7 +79,7 @@ function makeClueContent(clue: number[], maxLen: number, className: string): HTM
   return div;
 }
 
-// ── Grid build (Draw mode) ─────────────────────────────────────
+// Grid build (Draw mode)
 // Also a keyboard widget: roving-tabindex cell buttons; arrows/Home/End move, Space/Enter fill.
 let focusR = 0;
 let focusC = 0;
@@ -189,7 +187,7 @@ export function buildGrid(): void {
   updateGridSizeLabel();
 }
 
-// ── Cell interaction ────────────────────────────────────────────
+// Cell interaction
 let _dragFill: boolean | null = null;
 
 function cellCoords(e: Event): { td: HTMLElement; r: number; c: number } | null {
@@ -306,7 +304,7 @@ function updateClueCells(): void {
   }
 }
 
-// ── Dynamic grid sizing ────────────────────────────────────────
+// Dynamic grid sizing
 function resized(): void {
   recomputeClues();
   buildGrid();
@@ -352,7 +350,7 @@ export function syncGridToServer(): void {
   });
 }
 
-// ── Puzzle I/O ──────────────────────────────────────────────────
+// Puzzle I/O
 export interface Puzzle {
   row_clues: number[][];
   col_clues: number[][];

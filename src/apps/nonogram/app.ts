@@ -1,6 +1,4 @@
-/* =============================================================
-   Nonogram Web App — bootstrap / init.
-   ============================================================= */
+/* Nonogram Web App — bootstrap / init. */
 
 import { state, $, must, elThresholdInput, elClPlaceholder, elQuSolPlaceholder } from './state';
 import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui';
@@ -35,11 +33,11 @@ import { SiteContract, type ContractResult } from '../shared/contract-client';
 import { ServiceConfig } from '../shared/service-config';
 import type { ConnectWidget } from '../shared/server-connect-modal';
 
-// ── Connection logic ───────────────────────────────────────────
+// Connection logic
 let socket: NonogramSocket | null = null;
 let _navWidget: ConnectWidget | null = null;
 
-// ── Navbar connect widget ───────────────────────────────────────
+// Navbar connect widget
 document.addEventListener('navbar:connect-ready', (e) => {
   const detail = (e as CustomEvent<{ service?: string; widget?: ConnectWidget }>).detail;
   if (detail.service !== 'nonogram' || !detail.widget) return;
@@ -221,7 +219,7 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
   }, 0);
 }
 
-// ── Gallery: real, pre-computed quantum runs (no backend) ────────────────────
+// Gallery: real, pre-computed quantum runs (no backend)
 // Each entry is a real benchmark payload captured from the solver — the Grover
 // simulator today, real IBM hardware once a hardware run is cached ("spend once,
 // show forever"). Rendered through the very same renderBenchmark() a live run uses,
@@ -314,7 +312,7 @@ async function loadGalleryEntry(slug: string): Promise<void> {
   showGalleryNote(galleryNotes.get(slug) ?? '');
 }
 
-// ── Init ───────────────────────────────────────────────────────
+// Init
 function init(): void {
   initGrid();
   buildGrid();
@@ -389,5 +387,5 @@ function init(): void {
   });
 }
 
-// ── Bootstrap ──────────────────────────────────────────────────
+// Bootstrap
 init();

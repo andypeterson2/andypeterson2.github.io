@@ -320,7 +320,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     max-width: 68ch;
   }
 
-  /* Paragraphs read as paragraphs: a gap between them, not only line spacing. */
+  /* Paragraphs read as paragraphs: a gap between them. */
   .bio-body p + p {
     margin-top: 0.8em;
   }
@@ -405,7 +405,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     font-weight: 400;
   }
 
-  /* The address as selectable text, not only a mailto:. */
+  /* The address as selectable text alongside the mailto:. */
   .contact-email {
     margin: 0;
     padding: 0 clamp(10px, 1.3vw, 15px) clamp(10px, 1.3vw, 15px);

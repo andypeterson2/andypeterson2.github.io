@@ -6,7 +6,7 @@ test.describe('Live tier + SiteContract', () => {
     const navItem = page.locator('.site-menubar .server-nav-item');
     await expect(navItem).toHaveCount(1);
     await expect(navItem.locator('.sn-dot')).toBeVisible();
-    // The tier is a visible word, not only a dot.
+    // The tier is a visible word beside the dot.
     await expect(navItem.locator('.sn-state')).toHaveText('in your browser');
   });
 

@@ -147,7 +147,7 @@ describe('Site Configuration', () => {
   });
 });
 
-// ---- Semantic color tokens ----
+// Semantic color tokens
 
 describe('Semantic color tokens', () => {
   const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
@@ -171,7 +171,7 @@ describe('Semantic color tokens', () => {
   });
 });
 
-// ---- Token compliance in components ----
+// Token compliance in components
 
 describe('Design token compliance', () => {
   test('ClassifierApp uses token variables for semantic colors', () => {
@@ -182,7 +182,7 @@ describe('Design token compliance', () => {
   });
 });
 
-// ---- JSDoc documentation ----
+// JSDoc documentation
 
 describe('Component prop documentation', () => {
   test('Button.astro props have JSDoc comments', () => {

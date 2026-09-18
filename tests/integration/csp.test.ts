@@ -2,7 +2,7 @@
  * Guards the no-FOUC theme bootstrap against CSP drift.
  *
  * The bootstrap is an `is:inline` <script> in BaseLayout.astro that Astro does
- * NOT auto-hash (that is what `is:inline` means). Its SHA-256 is therefore
+ * not auto-hash (that is what `is:inline` means). Its SHA-256 is therefore
  * pinned by hand in astro.config.mjs. If the script's bytes change and the
  * pinned hash is not updated, the production CSP silently blocks it — the theme
  * flashes light before JS re-applies dark. This recomputes the hash from the

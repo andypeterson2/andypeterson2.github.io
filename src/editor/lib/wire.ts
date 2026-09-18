@@ -2,7 +2,7 @@
 // the editor's domain model. Hand-derived from the backend's route handlers (there
 // is no OpenAPI); the e2e suite drives the real mapping over mocked responses.
 
-// ---- raw shapes as returned by GET /persons/:pid ----
+// raw shapes as returned by GET /persons/:pid
 export interface RawMainItem {
   id: number;
   title?: string;

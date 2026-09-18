@@ -3,7 +3,7 @@
  *
  * The app reads two globals at load time: `API_BASE` (the backend origin) and
  * `UI_CONFIG` (the active dataset's config). This side-effect module supplies
- * them, so the entry imports it BEFORE the app module. The backend URL is
+ * them, so the entry imports it before the app module. The backend URL is
  * resolved via ServiceConfig and refreshed on `navbar:connect` (the app keeps its
  * `base()` prefix live against `window.API_BASE`).
  */

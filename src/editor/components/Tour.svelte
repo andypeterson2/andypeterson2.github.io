@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The tour's narrator: a miniature System-6 window, not a coach-mark. No scrim,
+  // The tour's narrator: a miniature System-6 window. No scrim,
   // never modal — the app stays usable, and touching it makes the tour yield.
   // `data-tour` marks this subtree as the tour's own chrome: events inside it are
   // controls, not interruptions.

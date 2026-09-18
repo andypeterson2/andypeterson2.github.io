@@ -132,7 +132,7 @@ export const SYMBOL_CATEGORIES: { name: SymbolDef['category']; symbols: SymbolDe
   }));
 
 /**
- * The `\command` tokens in `text` that are NOT permitted — they will print
+ * The `\command` tokens in `text` that are not permitted — they will print
  * literally (see `tex`). Unique, in first-seen order, backslash included. Powers
  * the inline "unrecognized command" warning.
  */

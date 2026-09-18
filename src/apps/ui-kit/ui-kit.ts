@@ -49,9 +49,7 @@ export interface UiKitApi {
   createLogger(terminalEl: HTMLElement, max?: number): Logger;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DRAWER
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Initialise a collapsible drawer (adds/removes `.open` class). */
 function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle {
@@ -80,9 +78,7 @@ function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle 
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DROPDOWN
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Initialise a dropdown (toggle + click-outside-to-close + keyboard a11y). */
 function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHandle {
@@ -148,7 +144,7 @@ function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHand
     onOpenKeydown(e);
   }
 
-  // No ARIA roles: this is a disclosure of plain buttons, not a listbox or menu widget.
+  // No ARIA roles: this is a disclosure of plain buttons.
   // The trigger's aria-expanded and aria-controls say all there is to say.
 
   triggerEl.addEventListener('click', onTrigger);
@@ -168,9 +164,7 @@ function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHand
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ESCAPE KEY
-// ═══════════════════════════════════════════════════════════════════════════
 
 const escapeCallbacks: (() => void)[] = [];
 let escapeListenerAttached = false;
@@ -191,9 +185,7 @@ function onEscape(callback: () => void): () => void {
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // RESIZE HANDLE
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Initialise a drag-to-resize handle for a split layout. */
 function initResize(
@@ -247,9 +239,7 @@ function initResize(
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // LOG TERMINAL
-// ═══════════════════════════════════════════════════════════════════════════
 
 /** Create a log appender for a `.log-terminal` element. */
 function createLogger(terminalEl: HTMLElement, max = 200): Logger {
@@ -272,8 +262,6 @@ function createLogger(terminalEl: HTMLElement, max = 200): Logger {
     terminalEl.scrollTop = terminalEl.scrollHeight;
   };
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
 
 export const UIKit: UiKitApi = {
   initDrawer,

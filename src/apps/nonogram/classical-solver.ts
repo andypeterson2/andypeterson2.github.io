@@ -1,9 +1,9 @@
-/* =============================================================
-   Client-side classical nonogram solver — the offline demo tier. A port of the backend's
-   brute-force solver that enumerates each line's valid bit patterns and backtracks row by
-   row, pruning columns by the bits placed so far. Returns each solving grid as a row-major
-   "0"/"1" string ("1" = filled). Exponential, so bounded to LOCAL_MAX_CELLS.
-   ============================================================= */
+/**
+ * Client-side classical nonogram solver — the offline demo tier. A port of the backend's
+ * brute-force solver that enumerates each line's valid bit patterns and backtracks row by
+ * row, pruning columns by the bits placed so far. Returns each solving grid as a row-major
+ * "0"/"1" string ("1" = filled). Exponential, so bounded to LOCAL_MAX_CELLS.
+ */
 
 /** Upper bound on cells solved in-browser (5×5). Keeps solves instant. */
 export const LOCAL_MAX_CELLS = 25;

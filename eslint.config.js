@@ -5,7 +5,7 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import * as designSystem from './scripts/eslint-plugin-design-system.js';
 
 // Complexity budgets (fleet lint baseline). Cognitive complexity is the
-// primary metric — unlike cyclomatic it punishes nesting, not flat readable
+// primary metric, since it punishes nesting rather than plain length in readable
 // constructs — so the core `complexity` rule stays off (no double-charging).
 const complexityBudgets = {
   'sonarjs/cognitive-complexity': ['error', 15],
@@ -34,7 +34,7 @@ export default [
     plugins: { sonarjs },
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      // Calibration, not weakening: numbers/booleans in template strings are
+      // Calibrated for this codebase: numbers/booleans in template strings are
       // fine; void arrow shorthand (`() => this.save()`) is idiomatic here.
       '@typescript-eslint/restrict-template-expressions': [
         'error',

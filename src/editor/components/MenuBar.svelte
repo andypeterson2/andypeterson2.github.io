@@ -367,7 +367,7 @@
     position: relative;
   }
 
-  /* "Commands ▾", not a second ☰ next to the site's own, in the system face. */
+  /* "Commands ▾" in the system face, so it reads apart from the site's own ☰. */
   .hamburger {
     display: inline-flex;
     align-items: center;
