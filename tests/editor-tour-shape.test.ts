@@ -11,7 +11,7 @@ import {
 } from '../src/editor/lib/tour-shape';
 
 /**
- * The guided tour drives the demo by SHAPE, not by id: it finds an experience
+ * The guided tour drives the demo by shape rather than by id: it finds an experience
  * section, a lens variant, a cover-letter variant, and spotlights a tag. If the demo
  * seed loses one of those, the tour still "runs" but narrates over a document where
  * nothing happens, and CI stays green. This pins the contract so that failure is loud.

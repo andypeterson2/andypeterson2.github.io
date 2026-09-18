@@ -68,7 +68,7 @@
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The invite (with the guided tour) appears once, on load. Dismissing it is final —
-  // the status bar is a sign-in button, not a way to bring it back.
+  // the status bar becomes a sign-in button.
   let inviteOpen = $state(true);
   // The invite and the carried-over-edits offer are modal pop-ups over a scrim:
   // `use:modal` makes the page behind inert and puts focus on the answer.
@@ -468,7 +468,7 @@
                 {:else if editor.preview.state === 'error'}
                   <div class="pv-log"><pre>{editor.preview.log}</pre></div>
                 {:else if editor.preview.url}
-                  <!-- Rendered page-by-page onto width-fitted canvases (PdfView), not handed
+                  <!-- Rendered page-by-page onto width-fitted canvases (PdfView), instead of handed
                      to Chrome's built-in iframe viewer — which ignored the fit fragment and
                      left the page small at the top. PdfView reads the Blob directly (no
                      fetch of the blob: URL, which connect-src blocks). Download link remains. -->
@@ -1279,7 +1279,7 @@
       z-index: var(--z-sticky);
     }
 
-    /* Keep "demo — not saved" on phones; only the variant label goes. */
+    /* Keep the unsaved-demo label on phones; only the variant label goes. */
     .sb-variant {
       display: none;
     }

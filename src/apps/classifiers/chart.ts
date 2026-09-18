@@ -253,7 +253,7 @@ export class MiniChart {
     let lx = p.left + 5;
     const ly = f.H - 6;
     for (const [name, s] of legendItems) {
-      // A sample of the series' own dash, not a colour swatch.
+      // A sample of the series' own dash.
       ctx.strokeStyle = f.ink;
       ctx.lineWidth = 1.5;
       ctx.setLineDash(s.dash);

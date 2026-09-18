@@ -104,7 +104,7 @@ export class LetterController {
     if (!v) return;
     const index = this.sections.length;
     this.sections.push({ id: this.host.nextId(), title: '', body: '' });
-    const section = this.sections[index]; // the proxy, not the literal we pushed
+    const section = this.sections[index]; // the proxy that replaced the literal we pushed
     this.#seedSection(section);
     const tempId = section.id;
     this.host.markDirty();

@@ -31,7 +31,7 @@ describe('Cross-identity leakage prevention', () => {
       const content = readFileSync(file, 'utf-8');
       // CDN / GitHub hosting URLs embed the GitHub handle by necessity (jsDelivr asset
       // URLs, GitHub Pages hosts, repo links) — strip them so only real name leaks in
-      // user-facing copy are caught, not required infrastructure references.
+      // user-facing copy are caught, leaving required infrastructure references alone.
       const stripped = content
         .replace(/https?:\/\/cdn\.jsdelivr\.net\/[^\s"')]+/gi, '')
         .replace(/https?:\/\/github\.com\/[^\s"')]+/gi, '')

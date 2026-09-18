@@ -236,7 +236,7 @@ function modelEntries(): [string, ModelInfo][] {
   );
 }
 
-/** Models the live backend holds: not the in-browser ones, not the page's ensemble. */
+/** Models the live backend holds, excluding the in-browser ones and the page's ensemble. */
 function serverNames(): string[] {
   return modelEntries()
     .filter(([, m]) => !m._local && !m._virtual)
@@ -1035,7 +1035,7 @@ async function runEvaluate(): Promise<void> {
 
 // Train
 
-/** Dash patterns for the training-curve series: told apart by line, not colour. */
+/** Dash patterns for the training-curve series, so line style tells them apart. */
 const SERIES_DASHES: number[][] = [[], [7, 4], [2, 3], [10, 3, 2, 3], [14, 5], [1, 4]];
 let seriesIdx = 0;
 

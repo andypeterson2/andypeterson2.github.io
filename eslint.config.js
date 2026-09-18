@@ -85,7 +85,7 @@ export default [
   },
   {
     // App pages host self-contained apps with their own button systems (the nonogram's
-    // .nono-btn), not portfolio chrome, so the <Button> rule doesn't apply.
+    // .nono-btn) rather than portfolio chrome, so the <Button> rule doesn't apply.
     files: ['src/pages/projects/*/app.astro'],
     rules: {
       'design-system/prefer-button': 'off',

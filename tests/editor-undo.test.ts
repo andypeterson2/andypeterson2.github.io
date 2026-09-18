@@ -52,7 +52,7 @@ describe('coalescing — typing undoes as a burst, not a character', () => {
   });
 
   test('merging keeps the OLDER undo and the NEWER redo', () => {
-    // Undoing a typed word restores what preceded it ("was-empty"), not the last keystroke;
+    // Undoing a typed word restores what preceded it ("was-empty") in one step;
     // redo reapplies the latest state ("is-hello").
     const firstUndo = () => {};
     const latestRedo = () => {};

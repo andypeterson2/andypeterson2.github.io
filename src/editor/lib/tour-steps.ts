@@ -88,7 +88,7 @@ export function tourSteps(): TourStep[] {
       id: 'rules',
       caption:
         'Its rules are ordinary tag chips. Edit them and the document re-filters as you type.',
-      spot: '.drawer', // the drawer panel is a div, not an <aside>
+      spot: '.drawer', // the drawer panel is a div
       enter() {
         editor.openDrawer = 'variant';
       },

@@ -83,7 +83,7 @@
   function fieldsOf(e: Entry): Record<string, string> {
     return lens ? entryFieldsFor(e, lens) : e.fields;
   }
-  /** A row's accessible name: its heading, not its whole text — a 540-character
+  /** A row's accessible name is its heading, since a 540-character
       button name makes the document exhausting by screen reader. The full text
       is in the edit form Enter opens, one field per line. */
   function editName(...parts: (string | undefined)[]): string {
@@ -391,7 +391,7 @@
     margin-bottom: 8px;
   }
 
-  /* The résumé's own type: the print faces, not the editor's system faces. */
+  /* The résumé's own type: the print faces. */
   .sec-head h2 {
     font-family: var(--doc-sans);
     font-size: var(--text-4xs);

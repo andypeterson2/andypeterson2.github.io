@@ -6,7 +6,7 @@ import type { Person } from './types';
  * A refetch would rebuild every object and strand the undo commands (which hold
  * those objects by identity).
  *
- * CACHE THE PROXY, not THE RAW. Store `editor.person` — the Svelte `$state` proxy —
+ * Cache the proxy. Store `editor.person` — the Svelte `$state` proxy —
  * not the raw fetched object: nested edits write through the proxy and the raw
  * stays pristine, so a raw cache would render the profile unedited on return (a
  * real bug this once hid until a route-call counter proved the refetch never fired).

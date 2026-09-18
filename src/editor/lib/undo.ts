@@ -2,7 +2,7 @@
 // cap, and the field shadow. Components bind straight to state and only then call
 // the store's save, so the previous value is already gone; the shadow keeps a copy
 // of what was last recorded per object and diffs against it. It is keyed by object
-// identity, not id: undoing a delete re-creates the row under a new server id while
+// Track identity rather than id: undoing a delete re-creates the row under a new server id while
 // the JS object survives.
 
 import type { Person } from './types';

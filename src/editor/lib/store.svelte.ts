@@ -441,7 +441,7 @@ class EditorState {
       items: [],
       tags: [],
     });
-    const entry = this.live(section.entries, index); // the proxy, not the literal
+    const entry = this.live(section.entries, index); // the proxy that replaced the literal
     this.#shadow.seed(entry, entry.fields);
     const tempId = entry.id;
     this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
@@ -819,7 +819,7 @@ class EditorState {
     this.dirty = false;
     this.undo.setScope(`p${pid}`);
     if (fresh) {
-      // Cache the reactive proxy (`this.person`), not the raw `p`: undo commands and
+      // Cache the reactive proxy (`this.person`) so undo commands and
       // the shadow hold the proxy's nested objects. Re-assigning a proxy is idempotent.
       this.#cache.set(pid, this.person);
       this.#shadow.reseat(this.person, this.style);
@@ -904,7 +904,7 @@ class EditorState {
    * on the server and handed down as the editor's `identity` prop) onto the demo person.
    * Stored so resetDemo and the tour keep it across re-clones. A no-op once connected —
    * the real CV brings its own identity. Runs at mount, so the first paint already
-   * shows the owner, not blank contact fields.
+   * shows the owner's contact fields.
    */
   hydrateDemoIdentity(identity: Partial<Personal>) {
     this.demoIdentity = identity;
@@ -990,7 +990,7 @@ class EditorState {
   stageTour() {
     if (!this.connected) {
       // The tour needs the pristine sample to drive, but a visitor's own edits are
-      // held and put back when it ends, not thrown away.
+      // held and put back when it ends.
       const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
       this.applyPristineDemo();
       this.rebase('demo');
