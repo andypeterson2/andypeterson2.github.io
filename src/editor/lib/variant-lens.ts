@@ -52,6 +52,19 @@ export function entryFieldsFor(entry: Entry, variant: Variant | null): Record<st
   return fo ? { ...entry.fields, ...fo } : entry.fields;
 }
 
+/**
+ * The personal.* fields as this variant would render them: the person's fields
+ * patched by the variant's own overrides (its tagline). An override of '' stays,
+ * because an empty value suppresses that field in the render.
+ */
+export function personalFor(
+  personal: Record<string, string>,
+  variant: Variant | null,
+): Record<string, string> {
+  const po = variant?.personal;
+  return po && Object.keys(po).length ? { ...personal, ...po } : personal;
+}
+
 /** Count entries the variant keeps across the whole document (for "shows X of Y"). */
 export function countIncludedEntries(
   sections: Section[],
