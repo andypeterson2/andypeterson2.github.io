@@ -9,6 +9,7 @@
     itemIncluded,
     sectionScopedOut,
     entryFieldsFor,
+    personalFor,
   } from '../lib/variant-lens';
   import type { Section, Entry, Item } from '../lib/types';
 
@@ -23,7 +24,7 @@
   let picking = $state(false);
 
   function contactLine(): string {
-    const p = person.personal;
+    const p = personalFor(person.personal, editor.activeVariant);
     return [p.position, p.email, p.address, p.github && `github/${p.github}`]
       .filter(Boolean)
       .join(' · ');

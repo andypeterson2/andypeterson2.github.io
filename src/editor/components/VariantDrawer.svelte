@@ -17,6 +17,19 @@
   function confirmDelete(v: Variant) {
     if (window.confirm(`Delete the "${v.name}" ${noun(v)}?`)) void editor.variants.remove(v);
   }
+
+  // A '' override means "print no tagline here", so hidden is its own control.
+  const personTagline = $derived(editor.person.personal.position ?? '');
+  const taglineOverride = $derived(active?.personal?.position ?? null);
+  const taglineHidden = $derived(taglineOverride === '');
+
+  function setTagline(v: Variant, text: string) {
+    const clean = text.trim();
+    void editor.variants.setPersonalOverride(v, 'position', clean === '' ? null : clean);
+  }
+  function setTaglineHidden(v: Variant, hidden: boolean) {
+    void editor.variants.setPersonalOverride(v, 'position', hidden ? '' : null);
+  }
 </script>
 
 <p class="note">
@@ -68,6 +81,29 @@
         onchange={(e) => editor.variants.rename(v, e.currentTarget.value)}
       />
     </label>
+
+    <label class="rename">
+      <span class="rlbl">Tagline</span>
+      <input
+        class="in"
+        value={taglineHidden ? '' : (taglineOverride ?? '')}
+        placeholder={taglineHidden ? 'Hidden in this variant' : personTagline}
+        disabled={taglineHidden}
+        onchange={(e) => setTagline(v, e.currentTarget.value)}
+      />
+    </label>
+    <label class="check">
+      <input
+        type="checkbox"
+        checked={taglineHidden}
+        onchange={(e) => setTaglineHidden(v, e.currentTarget.checked)}
+      />
+      <span>Print no tagline in this {noun(v)}</span>
+    </label>
+    <p class="hint">
+      Empty means this {noun(v)} uses the main tagline. Anything you type here replaces it in this
+      {noun(v)} only.
+    </p>
 
     {#if v.kind === 'coverletter'}
       <p class="hint">
@@ -184,6 +220,14 @@
     border-radius: var(--radius);
     padding: 6px 9px;
     width: 100%;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
   }
 
   .rule {

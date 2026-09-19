@@ -38,6 +38,8 @@ export interface RawMainVariant {
   sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
   entryOverrides?: Record<string, RawOverride>;
   itemOverrides?: Record<string, RawOverride>;
+  /** personal.* overrides, unprefixed; an absent key inherits the person value */
+  personal?: Record<string, string>;
 }
 export interface RawLetterSection {
   id: number;
