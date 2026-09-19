@@ -55,7 +55,7 @@ describe('tex — permitted symbols become glyphs, the rest go literal', () => {
 
   test('an UNKNOWN command becomes literal text, not live LaTeX', () => {
     expect(tex('\\foobar')).toBe('\\textbackslash{}foobar');
-    // …so \textbf and friends are inert prose, not formatting.
+    // …so \textbf and friends stay inert prose.
     expect(tex('\\textbf{x}')).toBe('\\textbackslash{}textbf\\{x\\}');
   });
 

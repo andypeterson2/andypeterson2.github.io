@@ -685,7 +685,7 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     srcEntry.fields[field] = 'FROM_CHECKPOINT';
     const before = sec.entries.length;
     expect(editor.applyEntryFrom(source, target.id)).toBe(true);
-    expect(sec.entries.length).toBe(before); // overwrite in place, not a re-add
+    expect(sec.entries.length).toBe(before); // overwritten in place
     expect(sec.entries[0].fields[field]).toBe('FROM_CHECKPOINT');
   });
 });

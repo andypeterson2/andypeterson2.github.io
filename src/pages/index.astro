@@ -14,7 +14,7 @@ import type { TimelineItem } from '../lib/timeline';
 const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
 
 // Projects placed on the timeline, newest first. Periods live here (timeline
-// presentation), not in the core project data.
+// presentation) rather than in the core project data.
 const projectTimeline: TimelineItem[] = [
   { slug: 'quantum-ml-classifier', period: '2024 – 2026' },
   { slug: 'latex-resume-editor', period: '2025' },
@@ -59,8 +59,8 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
           <span>research → production</span>
           <span>San Diego · open to remote</span>
         </div>
-        <!-- The site's strongest evidence is the demos: point at them from the card, not
-             only from the intro's last sentence. -->
+        <!-- The site's strongest evidence is the demos, so the card points at them
+             as well as the intro's last sentence. -->
         <div class="bio-links">
           <a class="bio-contact-link" href="#projects">Try a demo ↓</a>
           <a class="bio-contact-link" href="#contact">Contact ↓</a>
@@ -288,7 +288,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
       grid-template-columns: minmax(0, 1fr);
     }
 
-    /* Phone: the portrait card is a compact row (face beside the name), not a
+    /* Phone: the portrait card is a compact row (face beside the name) instead of a
        full-screen face before any work. */
     .bio-card.window {
       display: grid;

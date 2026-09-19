@@ -99,7 +99,7 @@ export function untex(s: string | undefined): string {
  * glyph or literal prose. `\rightarrow` → `→` normalizes on the way in (one-way; the
  * glyph is canonical); an unknown `\foobar` becomes the literal text “\foobar”.
  *
- * This is display-safety and defense-in-depth, not the security boundary: it runs in
+ * This is display-safety and defense-in-depth, behind the real boundary: it runs in
  * the browser, so a `curl` bypasses it. The server-side compile path (xelatex) is the
  * real boundary — it must re-escape untrusted field content independently and run
  * sandboxed (no `-shell-escape`, `openin_any=p`).
@@ -204,7 +204,7 @@ export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
   // self-hosted Google sign-in
-  // Auth lives at the gateway ROOT (/auth/*), a sibling of the /cv app — not under
+  // Auth lives at the gateway root (/auth/*), a sibling of the /cv app, outside
   // /cv/api — so these bypass `req()` and hit `authBase` directly.
   /** The gateway origin (…/cv → …). */
   get authBase(): string {
@@ -516,7 +516,7 @@ export class CvApi {
   /**
    * Set (or clear) a per-variant override on an entry or item. The backend upsert is
    * whole-row and deletes the row when every field is null, so callers pass the
-   * COMPLETE desired state, not a sparse patch. `fieldsOverride` (entry only) and
+   * complete desired state. `fieldsOverride` (entry only) and
    * `textOverride` are tex-escaped on the way out; reads `untex` in `mapVariant`.
    */
   setVariantOverride(

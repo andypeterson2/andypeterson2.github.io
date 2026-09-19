@@ -19,7 +19,7 @@ export interface SectionTypeDef {
   titleFallback?: string;
   /** entries have bullet items (only the cventries shape) */
   hasItems?: boolean;
-  /** a single free-text block, not entries (summary) */
+  /** a single free-text block (summary) */
   isParagraph?: boolean;
   combine?: { target: string; from: string[]; join: string };
   fields: FieldDef[];

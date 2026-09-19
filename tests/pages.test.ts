@@ -123,7 +123,7 @@ describe('Home Page', () => {
     );
   });
 
-  // The About ships as a writeup behind "? The longer version" on the Me card, not in
+  // The About ships as a writeup behind "? The longer version" on the Me card, outside
   // the page under display:none.
   test('the long-form about is reachable, not hidden', () => {
     expect(indexSrc).toContain('<WriteupModal slug="about"');

@@ -42,7 +42,7 @@ document.querySelectorAll('meta[name="site-backend"]').forEach((m) => {
 
 // Create one nav status item per backend
 // The state is a visible word beside the dot, so it survives a
-// 9px half-transparent dot says little. Words name the tier the visitor is on, not the socket.
+// 9px half-transparent dot says little. Words name the tier the visitor is on.
 const STATE_WORDS: Partial<Record<string, string>> = {
   idle: 'in your browser',
   waking: 'waking the live backend… (up to 30s)',
@@ -74,7 +74,7 @@ function createBackendUI(cfg: BackendDef): void {
     dot.setAttribute('aria-hidden', 'true');
     const word = document.createElement('span');
     word.className = 'sn-state';
-    // Plain text that announces its changes — not a menu item, since clicking it
+    // Plain text that announces its changes. Clicking it
     // does nothing.
     word.setAttribute('role', 'status');
     const retry = document.createElement('button');

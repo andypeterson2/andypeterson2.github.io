@@ -7,7 +7,7 @@ export interface ExperienceEntry {
 }
 
 // Work + leadership history, newest first. Presentation concerns (where it sits on
-// the unified timeline) live in the page that composes it, not here.
+// the unified timeline) live in the page that composes it.
 export const experience: ExperienceEntry[] = [
   {
     date: '2025 – present',

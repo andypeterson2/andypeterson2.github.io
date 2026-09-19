@@ -4,7 +4,7 @@ import type { AddressInfo } from 'node:net';
 
 // The live tier against a stub classifier backend on localhost (the dev CSP and the
 // URL allowlist admit localhost only when the page is served from localhost). A real
-// server, not page.route, because /connect is an SSE stream that must stay open.
+// server rather than page.route, because /connect is an SSE stream that must stay open.
 
 interface Stub {
   url: string;

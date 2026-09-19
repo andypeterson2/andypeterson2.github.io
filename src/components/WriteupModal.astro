@@ -93,10 +93,10 @@ const modalId = `writeup-${slug}`;
 
 <script>
   // One delegated handler for every WriteupModal on the page. No scroll lock: the fixed
-  // overlay chains wheel/touch scrolling to the viewport, not to the page's .site-pane.
+  // overlay chains wheel/touch scrolling to the viewport.
   let lastFocus: HTMLElement | null = null;
 
-  // Focus starts on the text, not on Close: the keys a reader reaches for first
+  // Focus starts on the text: the keys a reader reaches for first
   // (PageDown, arrows, Space) scroll it at once, and Close is one Shift+Tab away.
   function openModal(modal: HTMLElement) {
     lastFocus = document.activeElement as HTMLElement;

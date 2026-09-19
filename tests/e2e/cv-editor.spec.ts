@@ -183,7 +183,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     // The invite is a modal pop-up on load. Dismissing is final — it only auto-appears
-    // on load, and the status bar is a sign-in button, not a way to bring it back.
+    // on load, and the status bar becomes a sign-in button.
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
     await invite.getByRole('button', { name: 'Dismiss' }).click();
@@ -338,7 +338,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).toContainText('Analyst');
 
     // DELETE, then a real POST to re-create it — and the order PATCH carries the
-    // NEW server id (99), not the dead one (11).
+    // the new server id (99), replacing the dead one (11).
     await expect
       .poll(() => calls)
       .toEqual(['DELETE /entries/11', 'POST /sections/2/entries', 'PATCH order [99]']);
@@ -1057,7 +1057,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     const edit = page.locator('.doc .edit');
     await expect(edit.locator('.vmode')).toContainText('Full CV');
 
-    // Editing Position writes a per-variant fields_override, not the base entry.
+    // Editing Position writes a per-variant fields_override and leaves the base entry alone.
     await edit.locator('.fld').first().locator('input').fill('Senior Analyst');
     await expect
       .poll(() => overrides.at(-1))
@@ -1523,7 +1523,7 @@ test.describe('CV editor (document-first rewrite)', () => {
           sections: [],
         },
       ],
-      // legacy person-level header — the new frontend reads the variant's, not this
+      // legacy person-level header — the new frontend reads the variant's instead of this
       coverletter: { recipientName: 'Legacy Person Header' },
     };
     await page.route(/\/cv\/api\/persons$/, (r) =>
@@ -1576,7 +1576,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await selectVariant(page, 'Cover Letter');
     const letter = page.locator('.letter');
     await expect(letter.locator('.para .body')).toHaveValue('Existing paragraph.');
-    // the header comes from the VARIANT (GET /variants/60), not the person
+    // the header comes from the variant (GET /variants/60) rather than the person
     await expect(letter.locator('.fields .in').first()).toHaveValue('Globex');
 
     // Edit the recipient → debounced PATCH /variants/60/header, LaTeX-escaped.

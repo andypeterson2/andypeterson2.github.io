@@ -10,7 +10,7 @@
  * URL-param origins are allowlisted (same-origin, api.andypeterson.dev, or a
  * localhost/LAN host when the page itself is dev) — mirroring the CSP connect-src
  * list — so a crafted ?backend= link cannot silently repoint a frontend at an
- * attacker origin. Defaults and user-entered URLs (set()) are trusted, not gated.
+ * attacker origin. Defaults and user-entered URLs (set()) are trusted.
  *
  * State (URL params + stored map) is initialised lazily on first use rather
  * than at load time, so tests can reset it (`_resetForTests`) and import order

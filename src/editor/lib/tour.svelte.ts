@@ -11,7 +11,7 @@ import { tourSteps } from './tour-steps';
 export interface TourHost {
   /** Demo runs for anyone; a signed-in owner tours their own CV (needs a profile). */
   canRun(): boolean;
-  /** True when a signed-in session is driving — the tour is sandboxed, not on demo data. */
+  /** True when a signed-in session is driving, so the tour runs sandboxed. */
   isLive(): boolean;
   /**
    * Prepare the stage before playing. Demo → restore the pristine sample

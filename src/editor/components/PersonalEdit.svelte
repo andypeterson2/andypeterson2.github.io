@@ -135,7 +135,7 @@
     outline-offset: 1px;
   }
 
-  /* Narrow column (the resume's own width, not the chrome breakpoint): stack the
+  /* Narrow column, measured against the resume's own width: stack the
      two-up identity fields so each input gets the full width. */
   @media (width <= 640px) {
     .grid {

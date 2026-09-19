@@ -97,7 +97,7 @@ describe('ServiceConfig backend-origin allowlist', () => {
   });
 
   test('defaults and stored URLs are allowlist-gated too — deploy-based everywhere', () => {
-    // A localhost default on a prod page resolves to NOTHING, not a dead local URL.
+    // A localhost default on a prod page resolves to nothing at all.
     const sc = load('', PROD);
     expect(sc.resolveBackend('nonogram', 'http://localhost:5055')).toBe('');
     // A gateway default resolves normally.

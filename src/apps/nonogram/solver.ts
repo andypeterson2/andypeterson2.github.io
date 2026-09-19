@@ -258,7 +258,7 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
   let above = 0;
   entries.forEach(([bs, prob], i) => {
     // The bitstring key is server data landing in SVG markup — accept only
-    // literal 0/1 strings (anything else is dropped, not escaped).
+    // literal 0/1 strings (anything else is dropped).
     if (!/^[01]+$/.test(bs)) return;
     const on = prob >= threshold;
     if (on) above++;

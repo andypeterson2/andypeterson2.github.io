@@ -37,7 +37,7 @@ const pageTitle =
 const pageDescription = description || siteConfig.description;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL(ogImage, Astro.site).href;
-// JSON-LD sameAs must be profile URLs, not bare handles.
+// JSON-LD sameAs must be profile URLs.
 const sameAs = [
   siteConfig.github && `https://github.com/${siteConfig.github}`,
   siteConfig.linkedin && `https://linkedin.com/in/${siteConfig.linkedin}`,
@@ -243,11 +243,11 @@ const windowTitle = title || siteConfig.title;
         }
       }
 
-      // The page scrolls inside .site-pane, not the document, so until the first pointer
+      // The page scrolls inside .site-pane rather than the document, so until the first pointer
       // press (and only while nothing has focus) PageDown / Space / arrows / Home / End scroll it.
       const scroller = document.querySelector<HTMLElement>('.site-pane');
       if (scroller && !document.body.classList.contains('is-bare')) {
-        // Browsers restore the document's scroll on Back and reload, not a pane's, so the
+        // Browsers restore the document's scroll on Back and reload, leaving a pane's alone, so the
         // pane's position rides in this history entry's state.
         const saved = (history.state as { paneTop?: unknown } | null)?.paneTop;
         if (typeof saved === 'number') {
@@ -527,7 +527,7 @@ const windowTitle = title || siteConfig.title;
   }
 
   /* The same row as the menu's links — padding, size, face — so it's a 44px target
-     lined up with them, not a 24px sliver flush left. */
+     lined up with them. */
   .mnav-toggle {
     width: 100%;
     min-height: 44px;
@@ -643,7 +643,7 @@ const windowTitle = title || siteConfig.title;
   }
 
   /* ── Back to top ──
-     Hidden means out of the tab order too (visibility), not just transparent — an
+     Hidden means out of the tab order too (visibility) as well as transparent — an
      invisible tab stop would send focus nowhere at the end of every page. */
   .back-to-top {
     position: sticky;

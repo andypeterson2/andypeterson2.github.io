@@ -89,7 +89,7 @@ export default defineConfig({
   },
   vite: {
     // Vite exposes only VITE_* vars by default; without SITE_* siteConfig renders "Portfolio"
-    // with no contacts. CF_BEACON_TOKEN, not CF_, so no Cloudflare API token reaches the client.
+    // with no contacts. CF_BEACON_TOKEN is listed exactly, so no Cloudflare API token reaches the client.
     envPrefix: ['PUBLIC_', 'SITE_', 'CF_BEACON_TOKEN', 'PREVIEW_'],
     css: {
       // Run the font-display:optional plugin (defined above) over the bundled CSS.

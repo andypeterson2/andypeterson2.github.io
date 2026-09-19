@@ -43,7 +43,7 @@ test.describe('Editor panels are modal', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(EDITOR);
     await expect(page.locator('[data-hydrated]')).toBeAttached();
-    // The invite opens once the backend check settles (demo mode), not at hydration.
+    // The invite opens once the backend check settles (demo mode).
     await expect(page.locator('#demo-invite')).toBeVisible();
   });
 
@@ -78,7 +78,7 @@ test.describe('Editor panels are modal', () => {
   });
 });
 
-// Entries are named by their heading, not their whole text; the tour announces its steps.
+// Entries are named by their heading; the tour announces its steps.
 test.describe('The editor to a screen reader', () => {
   test('document entries are named by their heading', async ({ page }) => {
     await page.goto(EDITOR);
@@ -133,7 +133,7 @@ test.describe('Nonogram grid by keyboard', () => {
   });
 });
 
-// The dataset control names the loaded dataset and is a disclosure, not an empty ARIA menu.
+// The dataset control names the loaded dataset and is a disclosure.
 test.describe('Classifier dataset control', () => {
   test('names the loaded dataset and works as a disclosure', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
