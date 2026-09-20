@@ -216,19 +216,15 @@ describe('SEO and Meta Tags', () => {
   });
 });
 
-// Security header policy
-//
-// The site is a static GitHub Pages origin behind Cloudflare. GH Pages ignores
-// _headers, so those headers are a SPEC mirrored by hand into Cloudflare edge rules.
-// What the repo enforces on its own is the in-page CSP + referrer <meta>, so those
-// are the controls asserted here.
+// Security header policy — two halves: public/_headers at the Cloudflare edge, and
+// the hashed CSP inside each page. The deploy workflow re-checks the edge half live.
 
 describe('Security header policy', () => {
   const headersSpec = readFileSync(resolve(ROOT, 'public/_headers'), 'utf-8');
   const configSrc = readFileSync(resolve(ROOT, 'astro.config.mjs'), 'utf-8');
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
-  // Enforced in-repo — these ship inside the HTML and hold with or without edge rules.
+  // The in-page half: hashed per build, so it holds wherever the site is served from.
   test('CSP is configured with the load-bearing directives', () => {
     expect(configSrc).toContain('csp:');
     expect(configSrc).toContain("default-src 'self'");
@@ -243,10 +239,8 @@ describe('Security header policy', () => {
     expect(layoutSrc).toContain('strict-origin-when-cross-origin');
   });
 
-  // Spec-only — public/_headers is inert on GH Pages and mirrored to Cloudflare.
-  // Assert it still lists the edge-only headers it's the contract for, and that
-  // it's clearly labelled as a spec so no one mistakes it for a live source.
-  test('_headers spec lists the edge-only headers (mirrored to Cloudflare)', () => {
+  // The edge half: the cross-cutting headers a static origin cannot set for itself.
+  test('_headers sets the edge-only headers', () => {
     expect(headersSpec).toContain('X-Content-Type-Options: nosniff');
     expect(headersSpec).toContain('X-Frame-Options: DENY');
     expect(headersSpec).toContain('Permissions-Policy');
@@ -261,7 +255,9 @@ describe('Security header policy', () => {
     );
   });
 
-  test('_headers is labelled spec-only, not a live GH Pages header source', () => {
-    expect(headersSpec).toMatch(/SPEC|inert|Cloudflare/i);
+  // The CSP is the one header that cannot come from here: it is hashed per page, so
+  // a static one would be wrong for every page but the one it was copied from.
+  test('_headers leaves the per-page CSP alone', () => {
+    expect(headersSpec).not.toMatch(/^\s*content-security-policy:/im);
   });
 });

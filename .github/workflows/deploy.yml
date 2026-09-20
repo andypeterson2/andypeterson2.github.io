@@ -72,6 +72,7 @@ jobs:
           # Variables). Unset → the "Portfolio" fallback.
           SITE_DISPLAY_NAME: ${{ vars.SITE_DISPLAY_NAME }}
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_JOB_TITLE: ${{ vars.SITE_JOB_TITLE }}
           SITE_URL: ${{ vars.SITE_URL }}
           SITE_EMAIL: ${{ vars.SITE_EMAIL }}
           SITE_GITHUB: ${{ vars.SITE_GITHUB }}

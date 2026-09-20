@@ -1,4 +1,6 @@
-# Hidden files (covers .env, .venv, .DS_Store, IDE configs, caches, etc.)
+# Hidden files (covers .env, .venv, .DS_Store, IDE configs, caches, etc.). Every
+# tracked dotfile needs a line here, or a new tool's config lands untracked and CI
+# runs without it.
 .*
 !.git*
 !.env.example
@@ -7,6 +9,9 @@
 !.stylelintrc.json
 !.stylelintrc.fontsize.json
 !.stylelintrc.tokens.json
+!.lighthouserc.json
+!.lighthouserc.mobile.json
+!.npmrc
 !.github/
 !.nvmrc
 

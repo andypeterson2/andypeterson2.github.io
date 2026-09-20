@@ -4,12 +4,15 @@
 # anymore. Verify production with:
 #   scripts/check-security-headers.sh --live https://andypeterson.dev
 #
-# The content-security-policy and referrer-policy are deliberately NOT set here:
-# the CSP is per-page hashed (astro.config.mjs `security.csp` emits a hashed
-# policy at build time — a single static header can't reproduce per-page hashes),
-# and both ship in-page via <meta> (BaseLayout.astro). scripts/check-security-
-# headers.sh asserts the CSP actually ships in dist/. The headers below are the
-# cross-cutting edge defenses a static origin can't set for itself.
+# The content-security-policy is the one header this file leaves alone: it is
+# hashed per page at build time, which a single static header cannot express, so it
+# ships in-page via <meta>. The referrer policy ships both ways, here and in that
+# same <meta>. The rest are the cross-cutting edge defenses a static origin cannot
+# set for itself.
+#
+# HSTS is the exception to "this file is the source": the Cloudflare zone setting
+# outranks it, so the value below is what the zone currently sends. Raise both
+# together — check-security-headers.sh --live fails when they disagree.
 # ─────────────────────────────────────────────────────────────────────────────
 /*
   X-Content-Type-Options: nosniff
@@ -17,7 +20,7 @@
   X-XSS-Protection: 0
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
 
 # ── Caching ──────────────────────────────────────────────────────────────────
 # Files under /_astro/ are content-hashed by the build (a new file name on every

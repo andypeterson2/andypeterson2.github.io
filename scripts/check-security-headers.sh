@@ -58,10 +58,21 @@ if [ "${1:-}" = "--live" ]; then
     echo "  frame-ancestors is INERT — add a Cloudflare response-header rule." >&2
     live_fail=1
   fi
-  if printf '%s' "$hdrs" | grep -qiE '^strict-transport-security:'; then
-    echo "✓ HSTS present"
-  else
+  # HSTS comes from the Cloudflare zone setting, which outranks public/_headers, so
+  # compare the served value against what the file declares. Presence alone hid a
+  # two-year policy in the file while the edge sent six months.
+  declared=$(grep -iE '^\s*Strict-Transport-Security:' "$(dirname "$0")/../public/_headers" \
+    | head -1 | cut -d: -f2- | tr -d ' \r')
+  served=$(printf '%s' "$hdrs" | grep -iE '^strict-transport-security:' \
+    | head -1 | cut -d: -f2- | tr -d ' \r')
+  if [ -z "$served" ]; then
     echo "✗ no Strict-Transport-Security (enable HSTS at the Cloudflare edge)." >&2
+    live_fail=1
+  elif [ "$served" = "$declared" ]; then
+    echo "✓ HSTS matches public/_headers ($served)"
+  else
+    echo "✗ HSTS drift — public/_headers declares '$declared', the edge sends '$served'." >&2
+    echo "  Change the Cloudflare zone HSTS setting, or the declaration, so they agree." >&2
     live_fail=1
   fi
   printf '%s' "$hdrs" | grep -qiE '^x-content-type-options:\s*nosniff' \
