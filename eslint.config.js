@@ -69,7 +69,6 @@ export default [
       // Error tier: portfolio chrome must use <Button> (the rule itself exempts
       // buttons whose attributes <Button> cannot express).
       'design-system/prefer-button': 'error',
-      'design-system/prefer-tag': 'warn',
     },
   },
   {

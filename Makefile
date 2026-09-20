@@ -1,5 +1,4 @@
-.PHONY: help setup install test test-e2e lint build \
-        docker-build docker-up docker-down clean
+.PHONY: help setup install test test-e2e lint build clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -22,15 +21,6 @@ lint: ## Lint (eslint + prettier + stylelint + ruff for scripts/*.py)
 
 build: ## Build the Astro site
 	npm run build
-
-docker-build: ## Build the static-preview Docker image (Dockerfile; compose runs a dev container instead)
-	docker build -t portfolio-preview .
-
-docker-up: ## Start the portal dev container (profile: dev)
-	docker compose --profile dev up -d
-
-docker-down: ## Stop containers
-	docker compose down
 
 clean: ## Remove build artifacts
 	rm -rf dist .astro
