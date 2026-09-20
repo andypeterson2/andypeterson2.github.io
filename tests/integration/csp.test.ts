@@ -11,7 +11,7 @@
  * Requires `dist/` — run via `npm run test:integration` (it builds first).
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { createHash } from 'crypto';
 
@@ -20,9 +20,8 @@ const DIST = resolve(ROOT, 'dist');
 
 describe('CSP: no-FOUC theme bootstrap', () => {
   const indexPath = resolve(DIST, 'index.html');
-  const hasDist = existsSync(indexPath);
 
-  test.runIf(hasDist)('the inline bootstrap hash is present in the CSP', () => {
+  test('the inline bootstrap hash is present in the CSP', () => {
     const html = readFileSync(indexPath, 'utf-8');
 
     const inlineScripts = [

@@ -11,13 +11,11 @@ const DIST = resolve(import.meta.dirname!, '..', '..', 'dist');
 const redirects = Object.entries((config.redirects ?? {}) as Record<string, string>);
 
 describe('Built redirects', () => {
-  const hasDist = existsSync(resolve(DIST, 'index.html'));
-
   test('the config declares redirects to check', () => {
     expect(redirects.length).toBeGreaterThan(0);
   });
 
-  test.runIf(hasDist)('each one is built and points at its target', () => {
+  test('each one is built and points at its target', () => {
     const broken: string[] = [];
     for (const [from, to] of redirects) {
       const page = [

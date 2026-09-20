@@ -11,16 +11,14 @@ const ROOT = resolve(import.meta.dirname!, '..', '..');
 const DIST = resolve(ROOT, 'dist');
 
 describe('Project page generation', () => {
-  const hasDist = existsSync(resolve(DIST, 'projects'));
-
-  test.runIf(hasDist)('each project slug produces a built HTML page', () => {
+  test('each project slug produces a built HTML page', () => {
     for (const project of projects) {
       const expected = resolve(DIST, 'projects', project.slug, 'index.html');
       expect(existsSync(expected), `missing built page for ${project.slug}`).toBe(true);
     }
   });
 
-  test.runIf(hasDist)('projects index page exists', () => {
+  test('projects index page exists', () => {
     expect(existsSync(resolve(DIST, 'projects', 'index.html'))).toBe(true);
   });
 

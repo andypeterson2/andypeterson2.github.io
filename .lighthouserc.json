@@ -17,7 +17,8 @@
       "numberOfRuns": 3
     },
     "assert": {
-      "assertions": {
+      "_comment": "Desktop performance stays a warning. With screen emulation disabled and no CPU throttling, the score tracks whatever else the shared runner is doing and swings several points between identical commits — a number too noisy to block a deploy on. The mobile config gates performance instead.",
+    "assertions": {
         "categories:performance": [
           "warn",
           {
