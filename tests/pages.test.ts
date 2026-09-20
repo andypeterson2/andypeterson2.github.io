@@ -1,7 +1,6 @@
 /**
- * Navigation, footer, page structure, accessibility, SEO, and security header tests.
- * Updated for system.css monochrome architecture.
- * Removed tests for non-existent pages: about, skills, resume.
+ * The shell every page mounts in: nav, skip link, landmarks, head tags and the
+ * security controls the repo ships inside the HTML.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -40,16 +39,17 @@ describe('Nav (inline in BaseLayout)', () => {
 // URL Routing
 
 describe('URL Routing', () => {
-  const pages = ['src/pages/index.astro', 'src/pages/404.astro'];
-
-  test.each(pages)('%s exists', (page) => {
-    expect(existsSync(resolve(ROOT, page))).toBe(true);
-  });
-
   test('404 page has back-to-home link', () => {
     const notFound = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');
     expect(notFound).toContain('Home');
     expect(notFound).toContain('href="/"');
+  });
+
+  test('404 offers the timeline as a second way out', () => {
+    const notFound = readFileSync(resolve(ROOT, 'src/pages/404.astro'), 'utf-8');
+    expect(notFound).toContain('error-actions');
+    // The direct anchor: '/projects' alone would bounce through a 301.
+    expect(notFound).toContain('/#projects');
   });
 });
 

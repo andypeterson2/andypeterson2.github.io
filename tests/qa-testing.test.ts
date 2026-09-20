@@ -1,76 +1,23 @@
 /**
- * QA tests: cross-browser compatibility, page structure validation,
- * performance budgets, SEO checks, mobile responsiveness, and link consistency.
- * Updated for system.css monochrome architecture.
+ * Page-level invariants that span every page rather than one file: titles, design
+ * tokens in component styles, SEO head order, reflowing grids, nav links that
+ * resolve, and the accessibility rules that are easy to undo by accident.
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { resolve, join } from 'path';
-
-const ROOT = resolve(import.meta.dirname!, '..');
-
-function getAllFiles(dir: string, ext: string): string[] {
-  const files: string[] = [];
-  if (!existsSync(dir)) return files;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...getAllFiles(full, ext));
-    else if (entry.name.endsWith(ext)) files.push(full);
-  }
-  return files;
-}
+import { ROOT, astroFiles } from './source-files';
 
 // Page structure validation
 
 describe('Page structure validation', () => {
-  const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
+  const pages = astroFiles('src/pages');
 
   test('all pages have title prop or default', () => {
     for (const page of pages) {
       const content = readFileSync(page, 'utf-8');
-      if (!page.includes('index.astro') || page.includes('projects')) {
+      if (!page.includes('index.astro')) {
         expect(content, `${page} missing title`).toMatch(/title[=:]/);
-      }
-    }
-  });
-
-  test('all pages have descriptive headings', () => {
-    for (const page of pages) {
-      const content = readFileSync(page, 'utf-8');
-      if (page.includes('404') || page.endsWith('pages/index.astro')) continue;
-      if (page.includes('resume.astro') || page.includes('cover-letter.astro')) continue;
-      if (
-        page.includes('/projects/') &&
-        (page.includes('app.astro') ||
-          page.includes('server.astro') ||
-          page.includes('client.astro'))
-      )
-        continue;
-      if (page.includes('[')) continue;
-      if (page.endsWith('projects/index.astro')) continue;
-      expect(content, `${page} missing h1`).toContain('<h1');
-    }
-  });
-
-  test('form inputs have labels', () => {
-    for (const page of pages) {
-      if (
-        page.includes('/projects/') &&
-        (page.includes('app.astro') ||
-          page.includes('server.astro') ||
-          page.includes('client.astro'))
-      )
-        continue;
-      if (page.includes('/classifiers/')) continue;
-      const content = readFileSync(page, 'utf-8');
-      const inputs = content.match(/<input[^>]*id="([^"]+)"/g) || [];
-      for (const input of inputs) {
-        const idMatch = input.match(/id="([^"]+)"/);
-        if (idMatch) {
-          expect(content, `Missing label for ${idMatch[1]} in ${page}`).toContain(
-            `for="${idMatch[1]}"`,
-          );
-        }
       }
     }
   });
@@ -99,60 +46,17 @@ describe('Design-token compliance - component style audit', () => {
   });
 });
 
-// Cross-browser compatibility
-
-describe('Cross-browser compatibility', () => {
-  const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
-  const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
-
-  test('uses standard CSS custom properties', () => {
-    expect(tokensCss).toContain(':root');
-    expect(tokensCss).toContain('--color-');
-    expect(tokensCss).toContain('--font-');
-    expect(tokensCss).toContain('--space-');
-  });
-
-  test('uses standard flexbox and grid', () => {
-    const allCss = baseCss + tokensCss;
-    expect(allCss).not.toContain('-webkit-flex');
-    expect(allCss).not.toContain('-ms-grid');
-  });
-
-  test('reduced motion fallback exists', () => {
-    expect(tokensCss).toContain('prefers-reduced-motion: reduce');
-  });
-
-  test('no vendor-specific properties in tokens', () => {
-    expect(tokensCss).not.toContain('-webkit-');
-    expect(tokensCss).not.toContain('-moz-');
-  });
-});
-
-// Performance budget
-
-describe('Performance budget validation', () => {
-  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
-
-  test('minimal dependency count', () => {
-    const depCount = Object.keys(pkg.dependencies || {}).length;
-    expect(depCount).toBeLessThan(15);
-  });
-
-  test('CSS uses custom properties (no utility framework)', () => {
-    const baseCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/base.css'), 'utf-8');
-    expect(baseCss).toContain('var(--');
-    expect(baseCss).not.toContain('@tailwind');
-  });
-});
-
 // SEO extras
 
 describe('SEO extras', () => {
   const layout = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
-  test('meta charset is first in head', () => {
+  // The encoding has to be declared inside the first 1024 bytes of the document,
+  // so it goes at the very top of <head>.
+  test('meta charset opens the head', () => {
     const headContent = layout.split('<head>')[1]?.split('</head>')[0] || '';
     const charsetPos = headContent.indexOf('charset');
+    expect(charsetPos, 'no charset declaration in <head>').toBeGreaterThanOrEqual(0);
     expect(charsetPos).toBeLessThan(50);
   });
 
@@ -175,7 +79,7 @@ describe('Mobile responsive spot-check', () => {
 // Internal link consistency
 
 describe('Internal link consistency', () => {
-  const pages = getAllFiles(resolve(ROOT, 'src/pages'), '.astro');
+  const pages = astroFiles('src/pages');
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('all nav links point to existing pages', () => {

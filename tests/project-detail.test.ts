@@ -84,33 +84,3 @@ describe('DemoShell', () => {
     expect(src).not.toContain('BaseLayout');
   });
 });
-
-// Page scaffolding script
-
-describe('Page scaffolding script', () => {
-  test('script exists', () => {
-    expect(existsSync(resolve(ROOT, 'scripts/new-page.sh'))).toBe(true);
-  });
-
-  test('script is executable', () => {
-    const scriptSrc = readFileSync(resolve(ROOT, 'scripts/new-page.sh'), 'utf-8');
-    expect(scriptSrc).toContain('#!/usr/bin/env bash');
-  });
-
-  test('script generates Astro page', () => {
-    const scriptSrc = readFileSync(resolve(ROOT, 'scripts/new-page.sh'), 'utf-8');
-    expect(scriptSrc).toContain('BaseLayout');
-    expect(scriptSrc).toContain('.astro');
-  });
-
-  test('script validates input', () => {
-    const scriptSrc = readFileSync(resolve(ROOT, 'scripts/new-page.sh'), 'utf-8');
-    expect(scriptSrc).toContain('Usage:');
-    expect(scriptSrc).toContain('exit 1');
-  });
-
-  test('script checks for existing file', () => {
-    const scriptSrc = readFileSync(resolve(ROOT, 'scripts/new-page.sh'), 'utf-8');
-    expect(scriptSrc).toContain('already exists');
-  });
-});

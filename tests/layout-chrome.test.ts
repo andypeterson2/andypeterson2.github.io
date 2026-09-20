@@ -1,9 +1,5 @@
 /**
- * Print stylesheet, error boundary, and back-to-top button tests.
- * Updated for system.css monochrome architecture.
- * Removed: IntersectionObserver animations, view transitions,
- * timeline hover transitions, smooth scroll, theme toggle in print,
- * breadcrumbs, and the pull-quote component (deleted as unused).
+ * Print stylesheet, error boundary, and back-to-top button.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
