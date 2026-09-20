@@ -18,11 +18,8 @@
   --paper-3: #e3e1d9;
   --paper-4: #d4d2ca;
 
-  /* Semantic aliases — existing var(--color-*) usage warms for free through these. */
-  --color-bg: var(--paper);
+  /* Semantic aliases for the two ink roles the stylesheets name by meaning. */
   --color-text: var(--ink);
-  --color-text-inverse: var(--paper); /* ink on ink — selection, hover, dark chrome */
-  --color-border: var(--ink); /* every rule and edge */
   --color-text-muted: #6b6960; /* the one muted gray — de-emphasized text, in the
                                   same warm family as the ink. */
 
@@ -98,7 +95,6 @@
   --radius-round: 50%;
   --radius-menubar: 0.75vw; /* menu-bar top corners (site + editor) */
   --radius-frame: 1.25vw; /* the site's outer window corner */
-  --radius-card: clamp(4px, 0.5vw, 8px);
 
   /* ── shadows — hard 1-bit drops (no blur) in the ink, plus the status glows the
      connect / health widgets use to report machine state. ── */
@@ -120,22 +116,17 @@
 
   /* ── layout ── */
   --max-width: 66.25rem;
-  --content-width: 42.5rem;
 
-  /* ── typography ── */
+  /* ── line height — the two the stylesheets set by name; a rule needing a value
+     off this scale sets it inline rather than growing a rung for one caller. ── */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
-  --leading-relaxed: 1.65;
-  --tracking-tight: -0.02em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.1em;
 
   /* ── motion — a few short UI durations, tokenized so transitions feel consistent.
      Effect-specific timings stay inline (the tour's 1.9s spotlight pulse, its custom
      cubic-bezier glide) — they're hand-tuned to one effect, not a shared UI speed. ── */
   --dur-fast: 0.12s; /* quick fades */
   --dur: 0.16s; /* slides, standard UI motion */
-  --dur-slow: 0.3s; /* slower reveals */
 
   /* ── breakpoints (written out: @media can't read vars) — shared: 768px mobile nav, 640px
      narrow phone; a component's own layout may add one (classifier 900, home 600, rail 480). */

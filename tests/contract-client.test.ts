@@ -1,18 +1,19 @@
 /**
  * Integration tests for the SiteContract browser client.
  *
- * The module publishes window.SiteContract at import, so `window` is shimmed
- * to globalThis before a dynamic import; the client is then exercised against
- * a real local HTTP stub that speaks the backend API contract (health /
- * discovery / error envelope). This mirrors the live-HTTP contract tests each
- * backend runs in its own repo.
+ * Exercised against a real local HTTP stub that speaks the backend API contract
+ * (health / discovery / error envelope). This mirrors the live-HTTP contract tests
+ * each backend runs in its own repo.
+ *
+ * The module publishes window.SiteContract for the e2e suite, so `window` is shimmed
+ * to globalThis before a dynamic import.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// The shim must precede the import (a side effect assigns window.SiteContract), so the
-// import is dynamic. fetch/AbortController exist globally in Node ≥18.
+// The shim must precede the import, which assigns to window. fetch/AbortController
+// exist globally in Node >=18.
 (globalThis as { window?: unknown }).window = globalThis;
 const { SiteContract } = await import('../src/apps/shared/contract-client');
 

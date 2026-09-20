@@ -278,5 +278,3 @@ function predict(model: ClassifierModel, raw: number[]): Prediction {
 }
 
 export const ClassifierInfer: ClassifierInferApi = { loadModel, predict };
-
-if (typeof window !== 'undefined') window.ClassifierInfer = ClassifierInfer;

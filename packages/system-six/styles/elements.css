@@ -52,10 +52,6 @@
   min-width: 32px;
   padding: 2px;
 }
-.s6-btn--block {
-  display: flex;
-  width: 100%;
-}
 .s6-btn:disabled,
 .s6-btn:disabled:hover {
   opacity: 0.4;

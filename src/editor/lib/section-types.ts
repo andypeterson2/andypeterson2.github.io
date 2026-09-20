@@ -25,7 +25,7 @@ export interface SectionTypeDef {
   fields: FieldDef[];
 }
 
-export const DEGREE_PROGRAMS = [
+const DEGREE_PROGRAMS = [
   '',
   'B.S.',
   'B.A.',

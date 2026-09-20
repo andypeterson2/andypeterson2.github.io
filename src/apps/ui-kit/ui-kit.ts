@@ -270,5 +270,3 @@ export const UIKit: UiKitApi = {
   initResize,
   createLogger,
 };
-
-window.UIKit = UIKit;

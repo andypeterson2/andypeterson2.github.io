@@ -341,7 +341,7 @@ export function renderQuantumList(): void {
 }
 
 // Metrics renderer
-export function clearMetrics(): void {
+function clearMetrics(): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
   el.classList.remove('visible');

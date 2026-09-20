@@ -247,4 +247,5 @@ export const SiteContract: SiteContractApi = {
   joinUrl: join,
 };
 
+// The seam page.evaluate reaches through, since it cannot import.
 window.SiteContract = SiteContract;
