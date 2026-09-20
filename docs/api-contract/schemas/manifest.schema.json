@@ -9,7 +9,7 @@
     "service": {
       "description": "Canonical service slug.",
       "type": "string",
-      "enum": ["cv", "nonogram", "classifiers", "qvc"]
+      "enum": ["cv", "nonogram", "classifiers"]
     },
     "version": {
       "description": "Service version (semver or git short SHA).",

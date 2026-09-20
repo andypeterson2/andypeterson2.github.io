@@ -16,6 +16,16 @@ for (const [, prefix, factory] of serverSrc.matchAll(/\[\s*'([^']+)'\s*,\s*creat
 }
 
 const routes = new Set();
+
+// Routes registered straight on the app rather than through a mounted router —
+// /health and /api. They carry no prefix, and the router scan below cannot see
+// them, so the list would miss two of the routes cv's own /api manifest reports.
+for (const [, method, path] of serverSrc.matchAll(
+  /app\.(get|post|put|patch|delete)\(\s*['"](\/[^'"]*)['"]/g,
+)) {
+  routes.add(`${method.toUpperCase()} ${path.replace(/:[A-Za-z_]+/g, ':p')}`);
+}
+
 for (const file of readdirSync(join(cvRoot, 'editor/routes'))) {
   const key = file.replace(/\.js$/, '').toLowerCase();
   const prefix = mounts.get(key) ?? (key === 'auth' ? '/api/auth' : null);
@@ -30,7 +40,7 @@ for (const file of readdirSync(join(cvRoot, 'editor/routes'))) {
 }
 
 const out = {
-  source: 'cv editor/routes/*.js, mounted per editor/server.js',
+  source: 'cv editor/routes/*.js mounted per editor/server.js, plus its app-level routes',
   generatedBy: 'scripts/refresh-cv-routes.mjs',
   routes: [...routes].sort(),
 };
