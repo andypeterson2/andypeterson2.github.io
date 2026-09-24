@@ -17,11 +17,12 @@
       "numberOfRuns": 3
     },
     "assert": {
-      "assertions": {
+      "_comment": "Mobile is the form factor that gates performance: throttled runs are reproducible enough to hold a number to, and it is how most visitors arrive. Local medians over 3 runs per page measure 1.00 / 0.98 / 0.92 / 1.00, so 0.85 leaves room for a slower shared runner while still failing a real regression. Raise it once CI medians are known.",
+    "assertions": {
         "categories:performance": [
-          "warn",
+          "error",
           {
-            "minScore": 0.9
+            "minScore": 0.85
           }
         ],
         "categories:accessibility": [

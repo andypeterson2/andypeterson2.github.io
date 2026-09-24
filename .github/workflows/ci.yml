@@ -163,17 +163,58 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Compare served weights against the classifier repo's canonical exports
+        env:
+          EXPORTS: https://raw.githubusercontent.com/andypeterson2/quantum-machine-learning/main/exports/web
         run: |
-          set -e
-          for f in iris mnist bb84 qsvm-iris qsvm-mnist qsvm-bb84; do
-            curl -sf -o "/tmp/$f.json" \
-              "https://raw.githubusercontent.com/andypeterson2/quantum-machine-learning/main/exports/web/$f.json"
-            if ! diff -q "/tmp/$f.json" "public/classifiers/models/$f.json" >/dev/null; then
-              echo "DRIFT: public/classifiers/models/$f.json differs from the canonical export — run 'make sync-web' in quantum-machine-learning and commit"
-              diff "/tmp/$f.json" "public/classifiers/models/$f.json" || true
-              exit 1
+          set -euo pipefail
+          # The served files decide what to check, so a weights file added here is
+          # covered the day it lands — no list to keep in step with the directory.
+          drift=0
+          unreachable=0
+          for served in public/classifiers/models/*.json; do
+            name=$(basename "$served")
+            # curl exits non-zero on DNS/TLS/connection failure, which never reaches
+            # an HTTP code. Catch that here so the outage branch below can run at all.
+            code=$(curl -s --retry 3 --retry-delay 10 --retry-all-errors \
+              -o "/tmp/$name" -w '%{http_code}' "$EXPORTS/$name") || code=000
+            if [ "$code" = 404 ]; then
+              echo "DRIFT: $served has no canonical export — it was renamed or removed upstream"
+              drift=1
+              continue
             fi
-            echo "in sync: $f.json"
+            if [ "$code" != 200 ]; then
+              echo "could not fetch $name (HTTP $code)"
+              unreachable=1
+              continue
+            fi
+            if ! diff -q "/tmp/$name" "$served" >/dev/null; then
+              echo "DRIFT: $served differs from the canonical export — run 'make sync-web' in quantum-machine-learning and commit"
+              diff "/tmp/$name" "$served" || true
+              drift=1
+              continue
+            fi
+            echo "in sync: $name"
+          done
+          [ "$drift" = 0 ] || exit 1
+          # Drift is a hard failure; raw.githubusercontent being down is not. An
+          # outage must not block a deploy — the same trade the audit step makes.
+          if [ "$unreachable" = 1 ]; then
+            echo "::warning::some weights could not be compared — raw.githubusercontent unreachable"
+          fi
+      - name: Note any canonical export the site does not serve
+        # Informational only: an export the portal has no page for is not a defect,
+        # but it is worth seeing rather than discovering by accident.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          gh api repos/andypeterson2/quantum-machine-learning/contents/exports/web \
+            --jq '.[] | select(.name | endswith(".json")) | .name' > /tmp/upstream.txt
+          for name in $(cat /tmp/upstream.txt); do
+            if [ ! -f "public/classifiers/models/$name" ]; then
+              echo "::notice::$name is exported upstream but not served here"
+            fi
           done
 
   lighthouse-desktop:

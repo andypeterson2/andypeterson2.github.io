@@ -5,28 +5,46 @@ import { test, expect } from '@playwright/test';
  * regressions early. These run against the built output a shared CI runner
  * serves, so the thresholds stay generous: they catch a gross regression, and
  * Lighthouse CI owns the real budgets.
+ *
+ * Paint metrics belong to Lighthouse. Headless Chromium leaves the `paint`
+ * entry type empty, through `getEntriesByType` and through a buffered observer
+ * alike, so FCP and LCP are unmeasurable from here.
  */
 
 interface PerfTimings {
   domContentLoaded: number;
   load: number;
-  firstPaint: number;
-  firstContentfulPaint: number;
+}
+
+/**
+ * Long tasks never land in the performance timeline, so `getEntriesByType('longtask')`
+ * answers an empty array however busy the page was. The only way to see them is an
+ * observer registered before the page runs.
+ */
+async function collectLongTasks(
+  page: import('@playwright/test').Page,
+  url: string,
+): Promise<number[]> {
+  await page.addInitScript(() => {
+    (globalThis as { __longTasks?: number[] }).__longTasks = [];
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        (globalThis as { __longTasks?: number[] }).__longTasks?.push(entry.duration);
+      }
+    }).observe({ type: 'longtask', buffered: true });
+  });
+  await page.goto(url);
+  await page.waitForLoadState('load');
+  return page.evaluate(() => (globalThis as { __longTasks?: number[] }).__longTasks ?? []);
 }
 
 async function getTimings(page: import('@playwright/test').Page): Promise<PerfTimings> {
   await page.waitForLoadState('load');
   return page.evaluate(() => {
     const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    const paints = performance.getEntriesByType('paint');
-    const firstPaint = paints.find((p) => p.name === 'first-paint')?.startTime ?? 0;
-    const firstContentfulPaint =
-      paints.find((p) => p.name === 'first-contentful-paint')?.startTime ?? 0;
     return {
       domContentLoaded: nav?.domContentLoadedEventEnd ?? 0,
       load: nav?.loadEventEnd ?? 0,
-      firstPaint,
-      firstContentfulPaint,
     };
   });
 }
@@ -38,23 +56,12 @@ test.describe('Performance assertions', () => {
     expect(domContentLoaded).toBeLessThan(3000);
   });
 
-  test('home page first contentful paint under 2.5 seconds', async ({ page }) => {
-    await page.goto('/');
-    const { firstContentfulPaint } = await getTimings(page);
-    // FCP can be 0 if the browser didn't report it; skip the strict check then
-    if (firstContentfulPaint > 0) {
-      expect(firstContentfulPaint).toBeLessThan(2500);
-    }
-  });
-
   test('classifier demo page loads without long tasks over 1 second', async ({ page }) => {
-    await page.goto('/projects/ai-ml/app/');
-    await page.waitForLoadState('load');
-    const longTasks = await page.evaluate(() => {
-      const tasks = performance.getEntriesByType('longtask') as PerformanceEntry[];
-      return tasks.filter((t) => t.duration > 1000).length;
-    });
-    expect(longTasks).toBe(0);
+    const tasks = await collectLongTasks(page, '/projects/ai-ml/app/');
+    const longest = Math.max(0, ...tasks);
+    // Printed so the log carries the margin against the threshold.
+    console.log(`long tasks: ${String(tasks.length)}, longest ${String(Math.round(longest))}ms`);
+    expect(longest).toBeLessThan(1000);
   });
 
   test('nonogram demo page total load under 5 seconds', async ({ page }) => {

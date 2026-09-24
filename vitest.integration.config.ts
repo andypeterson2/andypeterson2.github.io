@@ -10,5 +10,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['tests/integration/**/*.test.ts'],
+    // Refuse to run at all without a build, so a missing dist/ is a red run
+    // rather than a green one that asserted nothing.
+    globalSetup: ['tests/integration/require-dist.ts'],
   },
 });
