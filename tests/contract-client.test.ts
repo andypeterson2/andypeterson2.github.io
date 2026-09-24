@@ -55,7 +55,7 @@ beforeAll(async () => {
       case '/degraded':
         return send(res, 200, {
           status: 'degraded',
-          service: 'qvc',
+          service: 'classifiers',
           version: '1.0.0',
           uptime_s: 1,
         });

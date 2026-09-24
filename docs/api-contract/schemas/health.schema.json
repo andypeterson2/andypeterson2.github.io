@@ -11,9 +11,9 @@
       "enum": ["ok", "degraded", "error"]
     },
     "service": {
-      "description": "Canonical service slug. One of the four backends.",
+      "description": "Canonical service slug. One of the backends the gateway routes to.",
       "type": "string",
-      "enum": ["cv", "nonogram", "classifiers", "qvc"]
+      "enum": ["cv", "nonogram", "classifiers"]
     },
     "version": {
       "description": "Service version (semver or git short SHA).",

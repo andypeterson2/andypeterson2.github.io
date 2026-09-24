@@ -1,5 +1,5 @@
 {
-  "source": "cv editor/routes/*.js, mounted per editor/server.js",
+  "source": "cv editor/routes/*.js mounted per editor/server.js, plus its app-level routes",
   "generatedBy": "scripts/refresh-cv-routes.mjs",
   "routes": [
     "DELETE /api/entries/:p",
@@ -13,6 +13,7 @@
     "DELETE /api/sections/:p",
     "DELETE /api/variants/:p",
     "DELETE /api/variants/:p/letter-sections/:p",
+    "GET /api",
     "GET /api/catalog",
     "GET /api/entries/:p",
     "GET /api/health",
@@ -39,8 +40,10 @@
     "GET /api/variants/:p",
     "GET /api/variants/:p/letter-sections",
     "GET /api/variants/:p/pdf",
+    "GET /api/variants/:p/personal",
     "GET /api/variants/:p/resolve",
     "GET /api/variants/main/:p/pdf",
+    "GET /health",
     "PATCH /api/entries/:p/items/order",
     "PATCH /api/persons/:p/personal",
     "PATCH /api/persons/:p/sections/order",
@@ -48,6 +51,7 @@
     "PATCH /api/settings",
     "PATCH /api/variants/:p/header",
     "PATCH /api/variants/:p/letter-sections/order",
+    "PATCH /api/variants/:p/personal",
     "POST /api/auth/upsert-user",
     "POST /api/entries/:p/items",
     "POST /api/entries/:p/tags",

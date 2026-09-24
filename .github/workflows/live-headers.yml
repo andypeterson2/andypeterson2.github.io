@@ -1,9 +1,11 @@
-name: Live security headers
+name: Live production checks
 
-# The CI build gate checks the headers in the built output; this verifies
-# what the EDGE actually serves — a Cloudflare config drift, a Pages
-# misdeploy, or a CDN-side change would pass the build gate and still strip
-# CSP in production. Weekly + on demand; failures show up as a red run.
+# Everything here probes PRODUCTION, so none of it belongs in the PR gate: a
+# pull request must never go red because a backend is asleep or an edge is slow.
+# What these jobs catch is the class of drift the build gate is blind to — a
+# Cloudflare config change that strips CSP, a Pages misdeploy, a backend that
+# grew a route the vendored contract has never seen. Weekly + on demand;
+# failures show up as a red run.
 on:
   schedule:
     - cron: "17 6 * * 1" # Mondays 06:17 UTC
@@ -34,3 +36,110 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: No console errors on production pages
         run: node scripts/check-live-console.mjs https://andypeterson.dev
+
+  cv-routes-drift:
+    # The cv route list is vendored because CI has no cv checkout, and the unit
+    # guard that reads it is only as good as how fresh it is. cv publishes its own
+    # surface at GET /cv/api, so that is what it gets compared against.
+    #
+    # The assertion is one-directional ON PURPOSE: a route the backend serves and
+    # the vendored list has never seen is drift, and leaves the unit guard blind.
+    # The other direction is normal — the list tracks cv's source, so it runs
+    # ahead of production between a cv merge and a cv deploy.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare the vendored cv route list against what cv serves
+        run: |
+          # The edge refuses a bare runner user-agent (bot protection), so send a
+          # browser one — same reason the deploy smoke-check does.
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+          curl -sf --retry 5 --retry-delay 6 --retry-all-errors -A "$UA" \
+            -o /tmp/cv-api.json https://api.andypeterson.dev/cv/api
+          python3 - <<'PY'
+          import json, re, sys
+          live = json.load(open("/tmp/cv-api.json"))
+          vendored = set(json.load(open("docs/api-contract/cv-routes.json"))["routes"])
+          served = {
+              f'{e["method"]} {re.sub(r":[A-Za-z_]+", ":p", e["path"])}'
+              for e in live["endpoints"]
+          }
+          unknown = sorted(served - vendored)
+          if unknown:
+              print("DRIFT: cv serves routes the vendored list does not carry —")
+              for r in unknown:
+                  print(f"  {r}")
+              print("refresh with: node scripts/refresh-cv-routes.mjs ../cv")
+              sys.exit(1)
+          ahead = sorted(vendored - served)
+          print(f"ok: all {len(served)} served routes are in the vendored list")
+          if ahead:
+              print(f"::notice::{len(ahead)} vendored routes are not live yet: {', '.join(ahead)}")
+          PY
+
+  contract-live:
+    # The PR gate proves the schemas in docs/api-contract/schemas are well-formed
+    # JSON Schema. Well-formed is not the same as true: only a real response can
+    # say whether a backend still serves what the contract claims. nonogram and
+    # classifiers answer 402 until a pass is activated, which exercises the error
+    # envelope rather than health — that is the design, so assert it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install jsonschema
+      - name: Validate live gateway responses against the contract
+        run: |
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+          for path in cv/health cv/api nonogram/health classifiers/health no-such-upstream/health; do
+            stem=$(echo "$path" | tr / -)
+            code=$(curl -s --retry 5 --retry-delay 6 --retry-all-errors -A "$UA" \
+              -o "/tmp/$stem.json" -w '%{http_code}' "https://api.andypeterson.dev/$path")
+            echo "$code" > "/tmp/$stem.code"
+          done
+          python3 - <<'PY'
+          import json, sys
+          from jsonschema import Draft202012Validator
+          def schema(name):
+              return Draft202012Validator(
+                  json.load(open(f"docs/api-contract/schemas/{name}.schema.json"))
+              )
+          # Each probe: the path, the status it must answer with, and the schema
+          # whose description claims to cover that response.
+          probes = [
+              ("cv/health", 200, "health"),
+              ("cv/api", 200, "manifest"),
+              # Live runs are pass-gated, so an anonymous probe gets the envelope
+              # rather than health. That is the design — assert the envelope.
+              ("nonogram/health", 402, "error"),
+              ("classifiers/health", 402, "error"),
+              # A name the gateway routes nowhere, so its own 404 envelope is checked
+              # too, not only the ones the backends produce.
+              ("no-such-upstream/health", 404, "error"),
+          ]
+          bad = 0
+          for path, want, name in probes:
+              stem = path.replace("/", "-")
+              code = int(open(f"/tmp/{stem}.code").read().strip())
+              if code != want:
+                  print(f"BAD {path}: expected {want}, got {code}")
+                  bad += 1
+                  continue
+              try:
+                  body = json.load(open(f"/tmp/{stem}.json"))
+              except ValueError as e:
+                  print(f"BAD {path}: {want} but the body is not JSON ({e})")
+                  bad += 1
+                  continue
+              errors = [e.message for e in schema(name).iter_errors(body)]
+              if errors:
+                  print(f"BAD {path}: {want} body does not match {name}.schema.json")
+                  for e in errors:
+                      print(f"     {e}")
+                  bad += 1
+              else:
+                  print(f"ok  {path} -> {want} matches {name}.schema.json")
+          sys.exit(1 if bad else 0)
+          PY
