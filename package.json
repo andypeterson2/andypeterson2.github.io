@@ -24,9 +24,9 @@
     "@astrojs/sitemap": "^3.7.4",
     "@astrojs/svelte": "^9.0.1",
     "@sakun/system.css": "0.1.11",
-    "astro": "^7.1.6",
+    "astro": "^7.3.3",
     "pdfjs-dist": "^4.10.38",
-    "svelte": "^5.57.0"
+    "svelte": "^5.57.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
@@ -36,13 +36,13 @@
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",
     "@vitest/coverage-v8": "^4.1.11",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "eslint-plugin-astro": "^1.7.0",
-    "eslint-plugin-sonarjs": "^4.2.0",
+    "eslint-plugin-sonarjs": "^4.2.1",
     "eslint-plugin-svelte": "^3.23.0",
     "jsdom": "^29.1.1",
     "postcss-html": "^2.0.0",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.8",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^4.1.1",
     "purgecss": "^8.0.0",
