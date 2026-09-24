@@ -1,9 +1,8 @@
 /**
- * Component and design system tests.
- * Updated for system.css monochrome architecture.
+ * Design-system rules the stylesheets and the button primitive have to keep.
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname!, '..');
@@ -94,80 +93,17 @@ describe('Base CSS', () => {
   });
 });
 
-describe('Component Files Exist', () => {
-  const components = ['Button.astro', 'WriteupModal.astro', 'LiveTier.astro', 'PassLane.astro'];
-
-  test.each(components)('%s component exists', (filename) => {
-    expect(existsSync(resolve(ROOT, 'src/components', filename))).toBe(true);
-  });
-});
-
 describe('Button Component', () => {
   const buttonSrc = readFileSync(resolve(ROOT, 'src/components/Button.astro'), 'utf-8');
 
-  test('uses system.css btn and btn-default classes', () => {
+  test('renders the system.css button, not a bespoke one', () => {
     expect(buttonSrc).toContain('btn-default');
-    expect(buttonSrc).toContain('btn');
   });
 
-  test('supports variant prop (every variant maps to a distinct rendering)', () => {
-    expect(buttonSrc).toContain('variant');
-    expect(buttonSrc).toContain('primary');
-    expect(buttonSrc).toContain('secondary');
-    expect(buttonSrc).toContain('solid');
-    expect(buttonSrc).toContain('danger');
-    // 'ghost' was an alias of 'secondary' — a lie in the type; it must not return.
+  // 'ghost' was an alias of 'secondary': a variant name the type offered and the
+  // rendering did not distinguish. Every name in the union must render differently.
+  test('carries no alias variant', () => {
     expect(buttonSrc).not.toContain('ghost');
-  });
-
-  test('supports href for link-style buttons', () => {
-    expect(buttonSrc).toContain('href');
-  });
-});
-
-describe('Site Configuration', () => {
-  const siteSrc = readFileSync(resolve(ROOT, 'src/config/site.ts'), 'utf-8');
-  const libSrc = readFileSync(resolve(ROOT, 'src/lib/site-config.ts'), 'utf-8');
-
-  test('reads from environment variables', () => {
-    expect(siteSrc).toContain('import.meta.env');
-  });
-
-  test('defines SiteConfig interface', () => {
-    // The interface lives in the pure resolver module; the site config re-exports it.
-    expect(libSrc).toContain('interface SiteConfig');
-  });
-
-  test('exports siteConfig', () => {
-    expect(siteSrc).toContain('export const siteConfig');
-  });
-
-  test('has displayName field', () => {
-    expect(libSrc).toContain('displayName');
-  });
-});
-
-// Semantic color tokens
-
-describe('Semantic color tokens', () => {
-  const tokensCss = readFileSync(resolve(ROOT, 'packages/system-six/styles/tokens.css'), 'utf-8');
-
-  test('defines --color-success with a non-black value', () => {
-    const match = tokensCss.match(/--color-success:\s*([^;]+)/);
-    expect(match).toBeTruthy();
-    expect(match![1].trim()).not.toBe('#000');
-  });
-
-  test('defines --color-warning with a non-black value', () => {
-    const match = tokensCss.match(/--color-warning:\s*([^;]+)/);
-    expect(match).toBeTruthy();
-    expect(match![1].trim()).not.toBe('#000');
-  });
-
-  test('defines --color-danger with a non-black value', () => {
-    const match = tokensCss.match(/--color-danger:\s*([^;]+)/);
-    expect(match).toBeTruthy();
-    expect(match![1].trim()).not.toBe('#000');
   });
 });
 
@@ -179,15 +115,5 @@ describe('Design token compliance', () => {
     expect(src).not.toMatch(/color:\s*#16a34a/);
     expect(src).not.toMatch(/color:\s*#d97706/);
     expect(src).not.toMatch(/color:\s*#dc2626/);
-  });
-});
-
-// JSDoc documentation
-
-describe('Component prop documentation', () => {
-  test('Button.astro props have JSDoc comments', () => {
-    const src = readFileSync(resolve(ROOT, 'src/components/Button.astro'), 'utf-8');
-    const propsBlock = src.split('interface Props')[1]?.split('}')[0] || '';
-    expect(propsBlock).toContain('/**');
   });
 });

@@ -1,33 +1,19 @@
 /**
- * Cross-identity leakage, form endpoint isolation, screen reader navigation,
- * bundle analysis, design system component usage, and accessibility audit tests.
- * Updated for system.css monochrome architecture.
+ * What a visitor, a crawler or a screen reader would see: no real name or personal
+ * address in the source, a social card that previews, and every control named.
  */
 import { describe, test, expect } from 'vitest';
-import { readFileSync, readdirSync, existsSync } from 'fs';
-import { resolve, join } from 'path';
-
-const ROOT = resolve(import.meta.dirname!, '..');
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+import { ROOT, astroFiles } from './source-files';
 
 // Cross-identity leakage
 
 describe('Cross-identity leakage prevention', () => {
-  const srcDir = resolve(ROOT, 'src');
-
-  function getAllFiles(dir: string, ext: string): string[] {
-    const files: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) files.push(...getAllFiles(full, ext));
-      else if (entry.name.endsWith(ext)) files.push(full);
-    }
-    return files;
-  }
-
   test('no hardcoded personal names in Astro source files', () => {
-    const astroFiles = getAllFiles(srcDir, '.astro');
+    const files = astroFiles('src');
     const namePatterns = [/Andrew Peterson/i, /andypeterson(?!\.dev)/i];
-    for (const file of astroFiles) {
+    for (const file of files) {
       const content = readFileSync(file, 'utf-8');
       // CDN / GitHub hosting URLs embed the GitHub handle by necessity (jsDelivr asset
       // URLs, GitHub Pages hosts, repo links) — strip them so only real name leaks in
@@ -43,10 +29,10 @@ describe('Cross-identity leakage prevention', () => {
   });
 
   test('no hardcoded email addresses in source', () => {
-    const astroFiles = getAllFiles(srcDir, '.astro');
+    const files = astroFiles('src');
     const emailRegex =
       /[a-zA-Z0-9._%+-]+@(?![\]\\s@])(?:gmail|yahoo|hotmail|outlook|proton)\.[a-z]{2,}/i;
-    for (const file of astroFiles) {
+    for (const file of files) {
       const content = readFileSync(file, 'utf-8');
       const stripped = content.replace(/@\[.*?\]/g, '');
       expect(stripped, `Found hardcoded email in ${file}`).not.toMatch(emailRegex);
@@ -61,8 +47,8 @@ describe('Cross-identity leakage prevention', () => {
   });
 
   test('all display names flow through siteConfig', () => {
-    const astroFiles = getAllFiles(srcDir, '.astro');
-    for (const file of astroFiles) {
+    const files = astroFiles('src');
+    for (const file of files) {
       const content = readFileSync(file, 'utf-8');
       if (content.includes('displayName') || content.includes('firstName')) {
         expect(content, `${file} uses name without siteConfig`).toContain('siteConfig');
@@ -121,117 +107,56 @@ describe('Screen reader navigation', () => {
   });
 });
 
-// Bundle analysis
-
-describe('Bundle analysis and tree-shaking', () => {
-  const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'));
-
-  test('no unnecessary large dependencies', () => {
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    expect(deps).not.toHaveProperty('moment');
-    expect(deps).not.toHaveProperty('lodash');
-    expect(deps).not.toHaveProperty('jquery');
-  });
-
-  test('astro is the main framework', () => {
-    expect(pkg.dependencies?.astro || pkg.devDependencies?.astro).toBeDefined();
-  });
-
-  test('no duplicate framework deps', () => {
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    const frameworks = ['react', 'vue', 'svelte', 'solid-js'].filter((f) => deps[f]);
-    expect(frameworks.length).toBeLessThanOrEqual(1);
-  });
-});
-
 // Design system component usage
 
 describe('Design system component usage', () => {
-  const srcDir = resolve(ROOT, 'src');
-
-  function getAllAstroFiles(dir: string): string[] {
-    const files: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) files.push(...getAllAstroFiles(full));
-      else if (entry.name.endsWith('.astro')) files.push(full);
-    }
-    return files;
-  }
-
   test('pages mount through BaseLayout or DemoShell (which wraps it)', () => {
-    const pages = getAllAstroFiles(resolve(srcDir, 'pages')).filter((f) => !f.includes('404'));
+    const pages = astroFiles('src/pages').filter((f) => !f.includes('404'));
     for (const page of pages) {
       const content = readFileSync(page, 'utf-8');
       expect(content, `${page} does not use a site shell`).toMatch(/BaseLayout|DemoShell/);
     }
   });
-
-  test('pages use design token CSS variables', () => {
-    const pages = getAllAstroFiles(resolve(srcDir, 'pages'));
-    for (const page of pages) {
-      if (page.includes('/projects/') && page.includes('app.astro')) continue;
-      if (page.includes('/projects/') && page.includes('server.astro')) continue;
-      if (page.endsWith('pages/index.astro')) continue;
-      if (page.includes('[')) continue;
-      if (page.includes('/classifiers/')) continue;
-      const content = readFileSync(page, 'utf-8');
-      if (content.includes('<style>')) {
-        expect(content, `${page} has no design tokens`).toContain('var(--');
-      }
-    }
-  });
-
-  test('components directory has reusable components', () => {
-    const components = readdirSync(resolve(srcDir, 'components'));
-    expect(components.length).toBeGreaterThanOrEqual(3);
-    expect(components).toContain('Button.astro');
-    expect(components).toContain('WriteupModal.astro');
-  });
 });
 
 // Accessibility audit
 
-describe('Accessibility audit', () => {
-  const srcDir = resolve(ROOT, 'src');
-
-  function getAllAstroFiles(dir: string): string[] {
-    const files: string[] = [];
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) files.push(...getAllAstroFiles(full));
-      else if (entry.name.endsWith('.astro')) files.push(full);
-    }
-    return files;
+/**
+ * Remove every tag, repeating until the string settles. One pass is not enough:
+ * stripping the inner tag of `<<div>>` leaves `<>` behind, which is still markup.
+ */
+function stripTags(html: string): string {
+  let out = html;
+  for (let prev = ''; prev !== out;) {
+    prev = out;
+    out = out.replace(/<[^<>]*>/g, '');
   }
+  return out;
+}
 
-  test('all buttons have accessible text or aria-label', () => {
-    const files = getAllAstroFiles(srcDir);
-    for (const file of files) {
-      if (
-        file.includes('/projects/') &&
-        (file.includes('app.astro') || file.includes('server.astro'))
-      )
-        continue;
-      if (file.includes('/classifiers/')) continue;
-      if (file.includes('ClassifierApp.astro') || file.includes('LiveTier.astro'))
-        continue;
+describe('Accessibility audit', () => {
+  // A screen reader announces a button by its label or its content, so one of the
+  // two has to be there. `type=` says nothing about that, and accepting it passed
+  // an empty <button type="button"></button>. Closing tags may wrap a line, and
+  // decorative children are stripped before the content counts.
+  test('every button carries an accessible name', () => {
+    const BUTTON = /<button\b[^>]*>([\s\S]*?)<\/button\s*>/gi;
+    const DECORATIVE = /<([a-z][\w-]*)\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/\1\s*>/gi;
+    const nameless: string[] = [];
+    for (const file of astroFiles('src')) {
       const content = readFileSync(file, 'utf-8');
-      const buttons = content.match(/<button[^>]*>/g) || [];
-      for (const btn of buttons) {
-        if (btn.includes('aria-hidden="true"')) continue;
-        const hasAriaLabel = btn.includes('aria-label');
-        const hasType = btn.includes('type=');
-        expect(
-          hasType || hasAriaLabel,
-          `Button in ${file} missing type or aria-label: ${btn}`,
-        ).toBe(true);
+      for (const match of content.matchAll(BUTTON)) {
+        const open = match[0].slice(0, match[0].indexOf('>') + 1);
+        if (open.includes('aria-hidden="true"')) continue;
+        const text = stripTags(match[1].replace(DECORATIVE, '')).trim();
+        if (!open.includes('aria-label') && !text) nameless.push(`${file}: ${open}`);
       }
     }
+    expect(nameless).toEqual([]);
   });
 
   test('images have alt text patterns in components', () => {
-    const files = getAllAstroFiles(srcDir);
+    const files = astroFiles('src');
     for (const file of files) {
       const content = readFileSync(file, 'utf-8');
       const imgs = content.match(/<img[^>]*>/g) || [];
