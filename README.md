@@ -1,9 +1,9 @@
 # andypeterson.dev
 
 Standalone [Astro](https://astro.build) portal for andypeterson.dev. Each sub-project
-lives in its own repository; the portal owns their built frontends under `public/<app>/`
-and `src/apps/<app>/`, and talks to their optional backends over a shared HTTP API
-contract. There are no submodules.
+lives in its own repository; the portal owns their frontends, written as typed modules
+under `src/apps/<app>/` and bundled per page, and talks to their optional backends over
+a shared HTTP API contract. There are no submodules.
 
 | App | Repo | Backend |
 |-----|------|---------|
@@ -19,10 +19,12 @@ src/                      Astro 7 portal (pages, layouts, components)
 src/editor/               The CV editor — a Svelte 5 island (components + runes stores)
 src/apps/                 App frontends as typed modules (shared portal scripts,
                           ui-kit runtime, classifier + nonogram apps), bundled per page
-public/                   Served as-is: model weights, the nonogram gallery, vendored socket.io
+public/                   Served as-is: model weights, the nonogram gallery, icons,
+                          vendored socket.io
 packages/system-six/      The portal's design-system CSS (tokens + element styles)
-docs/api-contract/        JSON schemas + the vendored cv route list, both checked in CI
-scripts/                  Manifest generator, CI helpers
+docs/api-contract/        JSON schemas, checked in CI, plus the vendored cv route list,
+                          compared against what cv serves by the weekly live checks
+scripts/                  Build and CI helpers (CSS purge, header checks, route refresh)
 tests/                    Vitest (unit + integration) + Playwright (e2e)
 ```
 

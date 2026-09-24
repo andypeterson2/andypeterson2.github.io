@@ -143,8 +143,8 @@ async function activateLive(): Promise<void> {
     );
     return;
   }
-  // Dispatches the same navbar:connect the connect modal uses, so the app's
-  // existing connected path runs — through the gateway, with the Bearer.
+  // navbar:connect is the app's own connected path: it takes the gateway URL from
+  // here and runs everything it would for any other backend, with the Bearer.
   document.dispatchEvent(
     new CustomEvent('navbar:connect', {
       detail: { service, url: `${GATEWAY}/${service}` },

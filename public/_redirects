@@ -2,10 +2,10 @@
 # assets, so they take precedence over the built meta-refresh redirect pages —
 # turning those client-side stubs into real 301s, better for SEO and speed).
 #
-# The astro `redirects` config in astro.config.mjs is deliberately KEPT: it emits
-# the meta-refresh HTML fallback so these paths still redirect on the GitHub Pages
-# origin BEFORE the DNS cutover to Cloudflare Pages (GH Pages ignores _redirects).
-# Post-cutover the HTML is shadowed by the 301s below and is harmless.
+# The astro `redirects` config in astro.config.mjs is deliberately KEPT, even though
+# the 301s below shadow it in production: `astro dev`, `astro preview` and
+# scripts/serve-dist.mjs honour none of this file, so its meta-refresh stubs are the
+# only redirects that work locally — and the e2e suite runs against those.
 /about                   /#about  301
 /about/                  /#about  301
 /resume                  /  301
