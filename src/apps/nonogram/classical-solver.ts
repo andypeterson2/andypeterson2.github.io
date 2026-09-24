@@ -14,7 +14,7 @@ export const LOCAL_MAX_CELLS = 25;
  * `_generate_patterns`: recursively place each block at every legal start.
  * A clue of [0] or [] (an empty line) yields the single all-empty pattern.
  */
-export function linePatterns(len: number, clue: number[] | undefined): number[] {
+function linePatterns(len: number, clue: number[] | undefined): number[] {
   const blocks = !clue || clue.length === 0 || (clue.length === 1 && clue[0] === 0) ? [] : clue;
   if (blocks.length === 0) return [0];
 

@@ -18,7 +18,7 @@ body {
   background: var(--paper);
   font-family: var(--font-sans);
   font-size: var(--text-root);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
   color: var(--ink);
 }
 
@@ -44,7 +44,7 @@ h3,
 h4,
 h5,
 h6 {
-  line-height: 1.25;
+  line-height: var(--leading-tight);
   font-weight: 700;
   font-family: var(--font-sans);
 }

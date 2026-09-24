@@ -17,7 +17,7 @@ export function matchesTags(tags: string[], rules: VariantRules): boolean {
 }
 
 /** Does this variant enumerate an explicit section scope (vs. "all sections")? */
-export function hasSectionScope(variant: Variant): boolean {
+function hasSectionScope(variant: Variant): boolean {
   return variant.sections.length > 0;
 }
 

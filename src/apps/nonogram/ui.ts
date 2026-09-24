@@ -16,7 +16,7 @@ export function setStatus(msg: string, level?: 'err' | 'ok'): void {
 
 /** What the run button will actually do: offline it solves classically in the
  *  browser; with a live backend it runs the Grover simulator. */
-export function benchLabel(): string {
+function benchLabel(): string {
   return window.API_BASE ? '▶ Run on simulator' : '▶ Solve in browser';
 }
 

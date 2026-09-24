@@ -12,10 +12,9 @@ describe('Token CSS Output', () => {
 
   test('defines :root with the honest ink primitives + status scale', () => {
     expect(tokensCss).toMatch(/:root\s*\{/);
-    // the true monochrome primitives
-    expect(tokensCss).toContain('--color-bg:');
+    // the ink the stylesheets name by meaning
     expect(tokensCss).toContain('--color-text:');
-    expect(tokensCss).toContain('--color-border:');
+    expect(tokensCss).toContain('--color-text-muted:');
     // the status-light scale (L3) — the only color the design has
     expect(tokensCss).toContain('--color-success:');
     expect(tokensCss).toContain('--color-danger:');

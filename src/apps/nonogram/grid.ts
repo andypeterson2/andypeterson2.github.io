@@ -341,7 +341,7 @@ export function removeCol(): void {
   resized();
 }
 
-export function syncGridToServer(): void {
+function syncGridToServer(): void {
   if (!window.API_BASE) return;
   void fetch(window.API_BASE + '/api/grid', {
     method: 'POST',

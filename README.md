@@ -43,8 +43,9 @@ The portal is static and deploys without any backend. To exercise a sub-app's li
 backend, clone its repo and run it (see that repo's README), then point the portal at
 it with a query param — e.g.
 `http://localhost:4321/projects/ai-ml/app/?backend=http://localhost:5001`.
-`src/apps/shared/service-config.ts` resolves backend URLs (`?backend=`, `?<svc>=`,
-localStorage, or the page's default port).
+`src/apps/shared/service-config.ts` resolves backend URLs (`?<svc>=`, then `?backend=`,
+then the page's default), and allows a localhost target only while the page itself is
+served from localhost.
 
 ## Testing
 

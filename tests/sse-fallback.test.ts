@@ -9,8 +9,8 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// The sse module imports contract-client, which publishes window.SiteContract
-// at import — shim window first, so the import is dynamic.
+// The sse module imports contract-client, which assigns to window at import —
+// shim window first, so the import is dynamic.
 (globalThis as { window?: unknown }).window = globalThis;
 const { consumeSSE, parseSseFrames } = await import('../src/apps/classifiers/sse');
 const syncHits = { n: 0 };

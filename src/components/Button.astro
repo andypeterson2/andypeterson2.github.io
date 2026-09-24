@@ -2,15 +2,10 @@
 interface Props {
   /**
    * Visual style. 'primary' = bold beveled border (system.css btn-default);
-   * 'secondary' = standard bevel (btn); 'solid' = solid ink fill (btn-primary);
-   * 'danger' = destructive accent (btn-danger). Every name maps to a distinct
-   * rendering — no alias variants.
+   * 'secondary' = standard bevel (btn); 'solid' = solid ink fill (btn-primary).
+   * Every name maps to a distinct rendering — no alias variants.
    */
-  variant?: 'primary' | 'secondary' | 'solid' | 'danger';
-  /** Button size. Defaults to 'md'. */
-  size?: 'sm' | 'md' | 'lg';
-  /** Full-width block button (btn-block). */
-  block?: boolean;
+  variant?: 'primary' | 'secondary' | 'solid';
   /** If provided, renders as an anchor tag instead of button. */
   href?: string;
   /** Additional CSS classes. */
@@ -25,44 +20,25 @@ interface Props {
   id?: string;
   /**
    * The apps' square button (system-six .s6-btn) instead of the window
-   * push-button: secondary -> plain, solid/primary -> ink fill, danger -> red.
+   * push-button: secondary -> plain, solid/primary -> ink fill.
    */
   app?: boolean;
 }
 
-const {
-  variant = 'primary',
-  size = 'md',
-  block,
-  href,
-  class: className,
-  app,
-  ...rest
-} = Astro.props;
+const { variant = 'primary', href, class: className, app, ...rest } = Astro.props;
 const Tag = href ? 'a' : 'button';
 const APP_VARIANT: Record<NonNullable<Props['variant']>, string> = {
   primary: 's6-btn--primary',
   secondary: '',
   solid: 's6-btn--primary',
-  danger: 's6-btn--danger',
 };
 const VARIANT_CLASSES: Record<NonNullable<Props['variant']>, string> = {
   primary: 'btn-default',
   secondary: 'btn',
   solid: 'btn btn-primary',
-  danger: 'btn btn-danger',
 };
-const sizeClass = size !== 'md' ? `btn-${size}` : '';
 const classes = (
-  app
-    ? [
-        's6-btn',
-        APP_VARIANT[variant],
-        size === 'sm' && 's6-btn--sm',
-        block && 's6-btn--block',
-        className,
-      ]
-    : [VARIANT_CLASSES[variant], sizeClass, block && 'btn-block', className]
+  app ? ['s6-btn', APP_VARIANT[variant], className] : [VARIANT_CLASSES[variant], className]
 )
   .filter(Boolean)
   .join(' ');
@@ -73,30 +49,15 @@ const classes = (
 </Tag>
 
 <style>
-  /* system.css .btn and .btn-default handle the base styling.
-     We add inline-flex for icon alignment, the size variants, and the
-     solid/danger/block modifiers (an embed's own stylesheet may re-skin these
-     under its scope — its ID selectors win). */
+  /* system.css .btn and .btn-default handle the base styling. We add inline-flex
+     for icon alignment and the solid fill (an embed's own stylesheet may re-skin
+     these under its scope — its ID selectors win). */
   .btn,
   .btn-default {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     text-decoration: none;
-  }
-
-  .btn-sm,
-  :global(.btn-default).btn-sm {
-    font-size: var(--text-3xs);
-    padding: 2px 8px;
-    gap: 4px;
-  }
-
-  .btn-lg,
-  :global(.btn-default).btn-lg {
-    font-size: var(--text-sm);
-    padding: 8px 20px;
-    gap: 8px;
   }
 
   .btn-primary {
@@ -106,19 +67,5 @@ const classes = (
 
   .btn-primary:hover {
     background: var(--ink-2);
-  }
-
-  .btn-danger {
-    color: var(--color-danger);
-  }
-
-  .btn-danger:hover {
-    background: var(--color-danger);
-    color: var(--paper);
-  }
-
-  .btn-block {
-    display: flex;
-    width: 100%;
   }
 </style>

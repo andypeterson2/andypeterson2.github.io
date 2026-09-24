@@ -305,5 +305,3 @@ export const connectionManager: ConnectionManager = {
     if (_state !== 'idle') _setState('disconnected');
   },
 };
-
-window.connectionManager = connectionManager;

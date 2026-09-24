@@ -6,46 +6,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── the ordered ramp, by fraction of black pixels: light ~12.5% stipple, 25%, 50% (the
-     classic Mac checkerboard), 75%; hatch is a 45° 1px QuickDraw-style line fill ── */
+  /* ── the ordered ramp, by fraction of black pixels: light is a ~12.5% stipple,
+     50% the classic Mac checkerboard ── */
   --dither-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M2 2h1v1H2z' fill='%23000'/%3E%3C/svg%3E");
-  --dither-25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23000'/%3E%3C/svg%3E");
   --dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
-  --dither-75: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23000'/%3E%3Cpath d='M0 0h1v1H0z' fill='%23fff'/%3E%3C/svg%3E");
-  --dither-hatch: repeating-linear-gradient(-45deg, #000 0 1px, #fff 1px 2px);
 
   /* A dialog backdrop: the 50% checker with its paper pixels left see-through, so the
      page behind dims in 1-bit instead of washing grey. */
   --dither-scrim: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
-}
-
-/* ── utility fills ── */
-.dither-light,
-.dither-25,
-.dither-50,
-.dither-75,
-.dither-hatch {
-  background-repeat: repeat;
-  image-rendering: pixelated;
-}
-.dither-light {
-  background-image: var(--dither-light);
-  background-size: 4px 4px;
-}
-.dither-25 {
-  background-image: var(--dither-25);
-  background-size: 2px 2px;
-}
-.dither-50 {
-  background-image: var(--dither-50);
-  background-size: 2px 2px;
-}
-.dither-75 {
-  background-image: var(--dither-75);
-  background-size: 2px 2px;
-}
-.dither-hatch {
-  background-image: var(--dither-hatch);
 }
 
 /* Reduced motion / print: dither is static texture, safe as-is. In print it
