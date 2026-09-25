@@ -7,6 +7,7 @@ vi.mock('../src/editor/lib/api', () => ({
     deleteVariant: vi.fn(async () => ({ ok: true, status: 200 })),
     setVariantRules: vi.fn(async () => ({ ok: true, status: 200 })),
     setVariantOverride: vi.fn(async () => ({ ok: true, status: 200 })),
+    updateVariantPersonal: vi.fn(async () => ({ ok: true, status: 200 })),
   },
 }));
 
@@ -288,5 +289,44 @@ describe('VariantController — per-variant overrides (field patch + force inclu
     expect(v.entryOverrides?.[11]).toBeUndefined();
     await rec.redo();
     expect(v.entryOverrides?.[11]?.fieldsOverride).toEqual({ position: 'Senior' });
+  });
+});
+
+describe('VariantController — personal overrides', () => {
+  test('sets an override, persists it, and records an undo back to inherit', async () => {
+    const h = makeHost();
+    const v = variant();
+    await new VariantController(h.host).setPersonalOverride(v, 'position', 'ML Engineer');
+    expect(v.personal).toEqual({ position: 'ML Engineer' });
+    expect(api.updateVariantPersonal).toHaveBeenCalledWith(1, { position: 'ML Engineer' });
+    expect(h.calls.markDirty).toBe(1);
+
+    await h.records.at(-1)!.undo();
+    expect(v.personal).toEqual({});
+    expect(api.updateVariantPersonal).toHaveBeenLastCalledWith(1, { position: null });
+  });
+
+  test("an empty string is kept as an override — it's the suppress value", async () => {
+    const h = makeHost();
+    const v = variant();
+    await new VariantController(h.host).setPersonalOverride(v, 'position', '');
+    expect(v.personal).toEqual({ position: '' });
+    expect(api.updateVariantPersonal).toHaveBeenCalledWith(1, { position: '' });
+  });
+
+  test('null drops the override so the person value is inherited again', async () => {
+    const h = makeHost();
+    const v = variant({ personal: { position: 'Old' } });
+    await new VariantController(h.host).setPersonalOverride(v, 'position', null);
+    expect(v.personal).toEqual({});
+    expect(api.updateVariantPersonal).toHaveBeenCalledWith(1, { position: null });
+  });
+
+  test('setting the value it already has does nothing', async () => {
+    const h = makeHost();
+    const v = variant({ personal: { position: 'Same' } });
+    await new VariantController(h.host).setPersonalOverride(v, 'position', 'Same');
+    expect(api.updateVariantPersonal).not.toHaveBeenCalled();
+    expect(h.records).toHaveLength(0);
   });
 });

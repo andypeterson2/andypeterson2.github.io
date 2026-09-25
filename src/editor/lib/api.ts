@@ -149,6 +149,12 @@ function mapItemOverrides(raw?: Record<string, RawOverride>): Record<string, Ite
   }
   return out;
 }
+/** A variant's personal.* overrides, unescaped for display. */
+function mapVariantPersonal(p?: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(p ?? {})) out[k] = untex(v);
+  return out;
+}
 function mapVariant(v: RawMainVariant): Variant {
   return {
     id: v.id,
@@ -159,6 +165,7 @@ function mapVariant(v: RawMainVariant): Variant {
     sections: (v.sections ?? []).map((r) => ({ sectionId: r.section_id, enabled: !!r.enabled })),
     entryOverrides: mapEntryOverrides(v.entryOverrides),
     itemOverrides: mapItemOverrides(v.itemOverrides),
+    personal: mapVariantPersonal(v.personal),
   };
 }
 /** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */
@@ -565,6 +572,18 @@ export class CvApi {
         })),
       },
     };
+  }
+  /**
+   * Per-variant personal.* overrides. A null value clears the override, so the
+   * field inherits the person value again; '' suppresses it for this variant.
+   */
+  updateVariantPersonal(variantId: number, patch: Record<string, string | null>) {
+    const body: Record<string, string | null> = {};
+    for (const [k, v] of Object.entries(patch)) body[k] = v === null ? null : tex(v);
+    return this.req(`/variants/${variantId}/personal`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
   }
   updateVariantHeader(variantId: number, patch: Record<string, string>) {
     const body: Record<string, string> = {};

@@ -10,6 +10,7 @@ import {
   entryIncluded,
   itemIncluded,
   entryFieldsFor,
+  personalFor,
   countIncludedEntries,
 } from '../src/editor/lib/variant-lens';
 import type { Variant, Section, Entry } from '../src/editor/lib/types';
@@ -155,5 +156,27 @@ describe('countIncludedEntries', () => {
     const { shown, total } = countIncludedEntries(sections, v);
     expect(total).toBe(3);
     expect(shown).toBe(2); // only the Experience section's two entries
+  });
+});
+
+describe('personalFor — the per-variant tagline', () => {
+  const personal = { firstName: 'A', position: 'Person Tagline' };
+
+  test('no variant keeps the person fields', () => {
+    expect(personalFor(personal, null)).toEqual(personal);
+  });
+  test('a variant with no overrides keeps the person fields', () => {
+    expect(personalFor(personal, variant())).toEqual(personal);
+  });
+  test('an override wins, other fields stay', () => {
+    const v = variant({ personal: { position: 'Variant Tagline' } });
+    expect(personalFor(personal, v)).toEqual({
+      firstName: 'A',
+      position: 'Variant Tagline',
+    });
+  });
+  test('an empty override survives the merge, because it suppresses the field', () => {
+    const v = variant({ personal: { position: '' } });
+    expect(personalFor(personal, v).position).toBe('');
   });
 });
