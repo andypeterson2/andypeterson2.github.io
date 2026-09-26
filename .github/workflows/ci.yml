@@ -61,6 +61,10 @@ jobs:
           SITE_DISPLAY_NAME: ${{ vars.SITE_DISPLAY_NAME }}
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           SITE_JOB_TITLE: ${{ vars.SITE_JOB_TITLE }}
+          SITE_LOCATION: ${{ vars.SITE_LOCATION }}
+          SITE_OPEN_TO_WORK: ${{ vars.SITE_OPEN_TO_WORK }}
+          SITE_OPEN_TO_RELOCATION: ${{ vars.SITE_OPEN_TO_RELOCATION }}
+          SITE_OPEN_TO_REMOTE: ${{ vars.SITE_OPEN_TO_REMOTE }}
           SITE_URL: ${{ vars.SITE_URL }}
           SITE_EMAIL: ${{ vars.SITE_EMAIL }}
           SITE_GITHUB: ${{ vars.SITE_GITHUB }}
