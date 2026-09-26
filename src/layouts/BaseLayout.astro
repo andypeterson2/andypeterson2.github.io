@@ -564,6 +564,11 @@ const windowTitle = title || siteConfig.title;
      would overflow a 320px viewport (400% zoom) and scroll the page sideways. */
   .site-window {
     width: 100%;
+
+    /* Caps the window so it still reads as a window on a wide monitor; the desktop
+       pattern fills the sides. */
+    max-width: var(--site-window-max, 66.25rem);
+    margin-inline: auto;
     min-width: 0;
     box-sizing: border-box;
     display: flex;

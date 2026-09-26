@@ -82,7 +82,7 @@
   --canvas-pad-y: 0.5vw;
   --canvas-pad-x: 2vw; /* canvas-pad: around the outer window, below the menu bar */
   --pane-pad-y: 1vw; /* pane-pad: inside a window, around its content / nested windows */
-  --pane-pad-x: 4vw;
+  --pane-pad-x: clamp(16px, 4vw, 40px); /* clamped: past the window's cap a vw inset eats content */
   --window-gap: clamp(8px, 1vw, 14px); /* gap between stacked windows */
 
   /* ── radius — controls are gently rounded; content and windows stay hard-edged.
