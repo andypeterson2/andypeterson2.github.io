@@ -33,7 +33,7 @@ export const projects: Project[] = [
     icon: 'code.svg',
     repoUrl: 'https://github.com/andypeterson2/cv',
     metrics: [
-      { value: '1 → many', label: 'variants are tag-rule lenses over one master document' },
+      { value: '1 -> many', label: 'variants are tag-rule lenses over one master document' },
       { value: 'no server', label: 'the demo is the real editor; sign in only to save or compile' },
     ],
     tech: ['Svelte 5', 'Express', 'SQLite', 'Cloudflare Access', 'XeLaTeX'],
@@ -48,8 +48,8 @@ export const projects: Project[] = [
     icon: 'video_dark.svg',
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
     metrics: [
-      { value: 'BB84', label: 'simulated QKD: sift → QBER → Cascade → Toeplitz' },
-      { value: '> 11%', label: 'QBER trips eavesdropper detection → re-key' },
+      { value: 'BB84', label: 'simulated QKD: sift -> QBER -> Cascade -> Toeplitz' },
+      { value: '> 11%', label: 'QBER trips eavesdropper detection -> re-key' },
     ],
     tech: ['WebRTC', 'BB84 QKD', 'AES-128-GCM', 'Python'],
   },
@@ -64,7 +64,7 @@ export const projects: Project[] = [
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     metrics: [
       {
-        value: '5×',
+        value: '5x',
         label:
           'chance on real IBM hardware: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless)',
       },
@@ -83,7 +83,7 @@ export const projects: Project[] = [
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
       {
-        value: '10×',
+        value: '10x',
         label:
           'closer to ideal than the 2019 paper: the same QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130 over the same 16 outcomes at 8,192 shots',
       },
