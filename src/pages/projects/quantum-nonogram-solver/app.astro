@@ -235,12 +235,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     visibility: hidden;
   }
 
+  :global(.nonogram-table .clue-typed) {
+    border-color: transparent;
+  }
+
   /* A clue box that takes typing keeps the slot's exact square, so switching modes
      does not move the grid. */
   :global(.clue-slot--input) {
     box-sizing: border-box;
     padding: 0;
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
     background: var(--paper);
     text-align: center;
     font-weight: 600;
