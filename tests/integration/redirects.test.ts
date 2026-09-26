@@ -18,10 +18,9 @@ describe('Built redirects', () => {
   test('each one is built and points at its target', () => {
     const broken: string[] = [];
     for (const [from, to] of redirects) {
-      const page = [
-        resolve(DIST, from.slice(1), 'index.html'),
-        resolve(DIST, from.slice(1)),
-      ].find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
+      const page = [resolve(DIST, from.slice(1), 'index.html'), resolve(DIST, from.slice(1))].find(
+        (candidate) => existsSync(candidate) && statSync(candidate).isFile(),
+      );
       if (!page) {
         broken.push(`${from} produced no page`);
         continue;

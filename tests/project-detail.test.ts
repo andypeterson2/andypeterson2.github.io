@@ -1,8 +1,6 @@
 /**
- * The one showcase surface: the legacy project-detail pages are retired in
- * favor of the home timeline (anchored per slug), with the demo pages mounted
- * through DemoShell. These tests pin the retirement (redirects in both the
- * astro config and the Cloudflare _redirects) and the shell contract.
+ * The project pages: a Finder-style icon grid at /projects and a page per slug
+ * under it, with the demo pages mounted through DemoShell beneath those.
  */
 import { describe, test, expect } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
@@ -12,30 +10,29 @@ import { projects } from '../src/data/projects';
 
 const ROOT = resolve(import.meta.dirname!, '..');
 
-// The retired detail surface redirects to the timeline
+// The project pages
 
-describe('Legacy detail-page redirects', () => {
-  const astroConfig = readFileSync(resolve(ROOT, 'astro.config.mjs'), 'utf-8');
+describe('Project pages', () => {
   const cfRedirects = readFileSync(resolve(ROOT, 'public/_redirects'), 'utf-8');
 
-  test('the detail pages are gone', () => {
-    expect(existsSync(resolve(ROOT, 'src/pages/projects/[slug].astro'))).toBe(false);
-    expect(existsSync(resolve(ROOT, 'src/pages/projects/index.astro'))).toBe(false);
+  test('the grid and the per-slug page both exist', () => {
+    expect(existsSync(resolve(ROOT, 'src/pages/projects/index.astro'))).toBe(true);
+    expect(existsSync(resolve(ROOT, 'src/pages/projects/[slug].astro'))).toBe(true);
   });
 
-  test.each(projects.map((p) => p.slug))('%s redirects to its timeline anchor', (slug) => {
-    expect(astroConfig).toContain(`'/projects/${slug}': '/#${slug}'`);
-    expect(cfRedirects).toContain(`/projects/${slug} `);
-    expect(cfRedirects).toContain(`/#${slug}  301`);
+  test('the grid links each project to its own page', () => {
+    const grid = readFileSync(resolve(ROOT, 'src/pages/projects/index.astro'), 'utf-8');
+    expect(grid).toContain('icon-grid');
+    expect(grid).toContain('/projects/${project.slug}/');
   });
 
-  test('/projects redirects to the timeline section', () => {
-    expect(astroConfig).toContain(`'/projects': '/#projects'`);
-    expect(cfRedirects).toMatch(/^\/projects\s+\/#projects\s+301$/m);
-  });
-
-  test('no /projects/* splat that would clobber the /app/ demo pages', () => {
+  test('no /projects/* splat that would clobber the pages below it', () => {
     expect(cfRedirects).not.toMatch(/^\/projects\/\*/m);
+  });
+
+  test.each(projects.map((p) => p.slug))('%s keeps its /app/ redirect untouched', (slug) => {
+    // The per-slug page is real now, so only the demo deep links still redirect.
+    expect(cfRedirects).not.toMatch(new RegExp(`^/projects/${slug}\\s+/#`, 'm'));
   });
 });
 
@@ -51,10 +48,9 @@ describe('Timeline anchors', () => {
     expect(entrySrc).toContain('id={entry.project.slug}');
   });
 
-  test('the menubar points at the timeline section', () => {
+  test('the menubar points at the projects page', () => {
     const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
-    expect(layoutSrc).toContain('href="/#projects"');
-    expect(layoutSrc).not.toContain('href="/projects/"');
+    expect(layoutSrc).toContain('href="/projects/"');
   });
 });
 

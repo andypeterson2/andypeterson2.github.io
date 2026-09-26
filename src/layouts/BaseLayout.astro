@@ -25,9 +25,20 @@ interface Props {
   noindex?: boolean;
   /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
+  /** Short pages that want their last block at the foot of the window rather than
+   *  floating under the content. The slotted root becomes the growing flex child. */
+  fillPane?: boolean;
 }
 
-const { title, docTitle, description, ogImage = '/og-card.png', noindex, bare } = Astro.props;
+const {
+  title,
+  docTitle,
+  description,
+  ogImage = '/og-card.png',
+  noindex,
+  bare,
+  fillPane,
+} = Astro.props;
 // Every title names the person: "Nonogram Solver - Name"; home is "Name - Job title".
 const pageTitle =
   docTitle ??
@@ -140,7 +151,7 @@ const windowTitle = title || siteConfig.title;
           </button>
         </li>
         <li><a href="/">Home</a></li>
-        <li><a href="/#projects">Projects</a></li>
+        <li><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
 
@@ -167,7 +178,7 @@ const windowTitle = title || siteConfig.title;
           </button>
         </li>
         <li><a href="/">Home</a></li>
-        <li><a href="/#projects">Projects</a></li>
+        <li><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
 
@@ -178,7 +189,10 @@ const windowTitle = title || siteConfig.title;
         </header>
         <!-- The page's one <main> landmark. Back to top is its last child, pinned to the
              pane's bottom-right corner, so it stays on the window's paper. -->
-        <main class="window-pane site-pane" id="main-content">
+        <main
+          class:list={['window-pane', 'site-pane', { 'site-pane--fill': fillPane }]}
+          id="main-content"
+        >
           <slot />
           <Button
             variant="secondary"
@@ -588,6 +602,22 @@ const windowTitle = title || siteConfig.title;
     flex: 1;
     overflow-y: auto;
     padding: var(--pane-pad-y) var(--pane-pad-x);
+  }
+
+  /* Opt-in: the slotted root grows to take the height the content does not, so a
+     page can put its last block at the foot. Sizing it here rather than with a
+     percentage keeps the sticky back-to-top's own space out of the sum — a
+     min-height:100% child overflows the pane by exactly that button. */
+  .site-pane--fill {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* :global on the child — the slotted root carries the page's own scope id, so a
+     scoped selector here matches nothing. */
+  .site-pane--fill > :global(:first-child) {
+    flex: 1 0 auto;
+    min-height: 0;
   }
 
   /* ── Mobile floating nav: hidden on desktop (the .site-menubar serves there) ── */

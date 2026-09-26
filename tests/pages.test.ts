@@ -17,9 +17,9 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 
-  test('renders nav links (home + the timeline anchor)', () => {
+  test('renders nav links (home + the projects page)', () => {
     expect(layoutSrc).toContain('href="/"');
-    expect(layoutSrc).toContain('href="/#projects"');
+    expect(layoutSrc).toContain('href="/projects/"');
   });
 
   test('is a plain list of links, not an ARIA menubar (it has no menus)', () => {
@@ -27,8 +27,14 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).not.toMatch(/role="menu(bar|item|-bar|-item)/);
   });
 
+  // One <main>, and its classes come from class:list now that a page can opt into
+  // filling the pane, so match the element rather than a literal class string.
   test('the content pane is the one <main> landmark', () => {
-    expect(layoutSrc).toMatch(/<main class="window-pane site-pane" id="main-content">/);
+    // The prose above the element mentions <main> too, so count opening tags.
+    const markup = layoutSrc.replace(/<!--[\s\S]*?-->/g, '');
+    expect(markup.match(/<main\b/g)).toHaveLength(1);
+    expect(markup).toMatch(/<main[\s\S]{0,160}id="main-content"/);
+    expect(markup).toMatch(/'window-pane', 'site-pane'/);
   });
 
   test('nav has border bottom', () => {
