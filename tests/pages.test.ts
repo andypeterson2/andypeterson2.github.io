@@ -123,11 +123,15 @@ describe('Home Page', () => {
     );
   });
 
-  // The About ships as a writeup behind "? The longer version" on the Me card, outside
-  // the page under display:none.
-  test('the long-form about is reachable, not hidden', () => {
-    expect(indexSrc).toContain('<WriteupModal slug="about"');
-    expect(indexSrc).not.toContain('about-window');
+  // Contact spans both columns under Me and Intro rather than sitting in the row of
+  // short windows after the work, so the first screen carries a way to make contact.
+  test('contact spans the grid, above the timeline', () => {
+    const contactAt = indexSrc.indexOf('contact-window');
+    const introAt = indexSrc.indexOf('bio-window');
+    const timelineAt = indexSrc.indexOf('timeline-window');
+    expect(contactAt).toBeGreaterThan(introAt);
+    expect(contactAt).toBeLessThan(timelineAt);
+    expect(indexSrc).toContain('.main-cols > .contact-window');
   });
 
   test('links to project apps and repos', () => {

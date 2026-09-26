@@ -82,6 +82,16 @@ test.describe('Home page about content', () => {
     await expect(page).toHaveURL('/#about');
     await expect(page.getByRole('dialog', { name: 'The longer version' })).toBeVisible();
   });
+
+  // Contact moved under the Me card, so it is on the first screen without scrolling.
+  test('contact sits beside the intro, not below the work', async ({ page }) => {
+    await page.goto('/');
+    const contact = page.locator('#contact');
+    await expect(contact).toBeVisible();
+    const timeline = await page.locator('#projects').boundingBox();
+    const box = await contact.boundingBox();
+    expect(box!.y).toBeLessThan(timeline!.y);
+  });
 });
 
 // Every timeline marker sits on the spine: markers measured from a different box than
