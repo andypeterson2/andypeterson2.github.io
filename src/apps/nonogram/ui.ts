@@ -37,7 +37,14 @@ export function setBusy(busy: boolean): void {
   btn.textContent = busy ? 'Running…' : benchLabel();
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
-  for (const id of ['btn-add-row', 'btn-add-col', 'btn-remove-row', 'btn-remove-col']) {
+  for (const id of [
+    'btn-add-row',
+    'btn-add-col',
+    'btn-remove-row',
+    'btn-remove-col',
+    'btn-mode-draw',
+    'btn-mode-clues',
+  ]) {
     (must(id) as HTMLButtonElement).disabled = busy;
   }
 }

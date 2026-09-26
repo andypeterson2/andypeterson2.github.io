@@ -5,6 +5,7 @@ import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui
 import {
   initGrid,
   buildGrid,
+  setMode,
   recomputeClues,
   getCurrentPuzzle,
   doClear,
@@ -345,6 +346,19 @@ function init(): void {
   must('btn-random').addEventListener('click', () => {
     void doRandomize();
   });
+  const modeButtons: [string, 'draw' | 'clues'][] = [
+    ['btn-mode-draw', 'draw'],
+    ['btn-mode-clues', 'clues'],
+  ];
+  for (const [id, mode] of modeButtons) {
+    must(id).addEventListener('click', () => {
+      setMode(mode);
+      for (const [otherId, otherMode] of modeButtons) {
+        must(otherId).setAttribute('aria-pressed', String(otherMode === mode));
+      }
+    });
+  }
+
   must('btn-add-row').addEventListener('click', addRow);
   must('btn-add-col').addEventListener('click', addCol);
   must('btn-remove-row').addEventListener('click', removeRow);

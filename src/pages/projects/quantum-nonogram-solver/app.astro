@@ -12,6 +12,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     <div class="nono-columns">
       <div class="nono-left">
         <div class="section-rule"><span>Puzzle Editor</span></div>
+        <!-- Above the grid: picking the mode comes before editing, and it keeps the grid
+             next to Clear in the tab order. -->
+        <span class="mode-toggle" role="group" aria-label="Editor mode">
+          <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
+          <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false">Clues</button>
+        </span>
         <div id="draw-view"></div>
         <div class="editor-actions">
           <button id="btn-clear" class="s6-btn">Clear</button>
@@ -147,6 +153,20 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     cursor: crosshair;
   }
 
+  /* Clues mode: the grid is the unknown the clues describe, so the cells are inert. */
+  :global(.nonogram-table td.cell-unknown) {
+    width: var(--cell);
+    height: var(--cell);
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    text-align: center;
+    font-family: var(--font-ui);
+    font-size: calc(var(--cell) * 0.55);
+    line-height: 1;
+    color: var(--paper-4);
+    user-select: none;
+  }
+
   :global(.nonogram-table td.cell.filled) {
     background: var(--ink);
   }
@@ -216,6 +236,37 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.clue-slot.empty) {
     visibility: hidden;
+  }
+
+  /* A clue box that takes typing keeps the slot's exact square, so switching modes
+     does not move the grid. */
+  :global(.clue-slot--input) {
+    box-sizing: border-box;
+    padding: 0;
+    border: 1px solid var(--paper-4);
+    background: var(--paper);
+    text-align: center;
+    font-weight: 600;
+  }
+
+  :global(.clue-slot--input:focus) {
+    outline: 2px solid var(--ink);
+    outline-offset: -2px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* The pressed half of the Draw / Clues pair, in the System-6 selected idiom. */
+  .mode-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: clamp(6px, 1vw, 10px);
+  }
+
+  .mode-toggle button[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--paper);
   }
 
   /* ── Editor actions ── */

@@ -1,6 +1,6 @@
 /* Grid manipulation — drawing, resize. */
 
-import { state, $, elDrawView } from './state';
+import { state, $, elDrawView, type EditorMode } from './state';
 import { setStatus, updateGridSizeLabel } from './ui';
 
 const MAX_GRID = 10;
@@ -16,12 +16,30 @@ export function setOnGridEdit(fn: () => void): void {
 // Grid helpers
 export function initGrid(): void {
   state.grid = Array.from({ length: state.rows }, () => Array<boolean>(state.cols).fill(false));
-  recomputeClues();
+  cluesFromGrid();
 }
 
-export function recomputeClues(): void {
+/** Read the clues off the drawing. */
+function cluesFromGrid(): void {
   state.rowClues = computeRowClues(state.grid, state.rows);
   state.colClues = computeColClues(state.grid, state.rows, state.cols);
+}
+
+/** Typed clues are the puzzle, so only a drawing overwrites them. */
+export function recomputeClues(): void {
+  if (state.mode !== 'draw') return;
+  cluesFromGrid();
+}
+
+/** A clue of [0] is an empty line — the state a typed line starts from. */
+function blankClues(): void {
+  state.rowClues = Array.from({ length: state.rows }, () => [0]);
+  state.colClues = Array.from({ length: state.cols }, () => [0]);
+}
+
+/** A line of n cells holds at most ceil(n / 2) runs, one gap between each. */
+function maxRuns(len: number): number {
+  return Math.ceil(len / 2);
 }
 
 function rle(bits: boolean[]): number[] {
@@ -49,13 +67,22 @@ function computeColClues(grid: boolean[][], rows: number, cols: number): number[
 }
 
 // Clue slot helpers
+/** Clues mode keeps one blank slot past the longest clue, so there is always somewhere
+ *  to type the next run — up to what the line can physically hold. */
+function slotCount(depth: number, lineLen: number): number {
+  if (state.mode !== 'clues') return Math.max(1, depth);
+  return Math.min(depth + 1, maxRuns(lineLen));
+}
+
 function getMaxRowLen(): number {
   if (!state.rowClues.length) return 1;
-  return Math.max(1, ...state.rowClues.map((c) => c.filter((v) => v > 0).length));
+  const depth = Math.max(0, ...state.rowClues.map((c) => c.filter((v) => v > 0).length));
+  return slotCount(depth, state.cols);
 }
 function getMaxColLen(): number {
   if (!state.colClues.length) return 1;
-  return Math.max(1, ...state.colClues.map((c) => c.filter((v) => v > 0).length));
+  const depth = Math.max(0, ...state.colClues.map((c) => c.filter((v) => v > 0).length));
+  return slotCount(depth, state.rows);
 }
 
 // An empty line's clue is a 0, the puzzle convention; a blank header also told a
@@ -77,6 +104,82 @@ function makeClueContent(clue: number[], maxLen: number, className: string): HTM
     div.appendChild(slot);
   }
   return div;
+}
+
+/** The typed version of a clue cell: one number box per slot, blanks trailing. */
+function makeClueInputs(
+  kind: 'row' | 'col',
+  index: number,
+  clue: number[],
+  maxLen: number,
+  className: string,
+): HTMLDivElement {
+  const runs = clue.filter((v) => v > 0);
+  const lineLen = kind === 'row' ? state.cols : state.rows;
+  const div = document.createElement('div');
+  div.className = className;
+  for (let i = 0; i < maxLen; i++) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.className = 'clue-slot clue-slot--input';
+    input.maxLength = String(lineLen).length;
+    input.value = i < runs.length ? String(runs[i]) : '';
+    input.dataset.clueKind = kind;
+    input.dataset.clueIndex = String(index);
+    input.dataset.clueSlot = String(i);
+    input.setAttribute(
+      'aria-label',
+      `${kind === 'row' ? 'Row' : 'Column'} ${String(index + 1)} clue, run ${String(i + 1)}`,
+    );
+    input.addEventListener('input', onClueInput);
+    div.appendChild(input);
+  }
+  return div;
+}
+
+/** Read a clue cell's boxes back into a run list, dropping blanks and zeroes. */
+function readClueInputs(container: Element, lineLen: number): number[] {
+  const runs = Array.from(container.querySelectorAll<HTMLInputElement>('.clue-slot--input'))
+    .map((i) => Math.min(parseInt(i.value, 10) || 0, lineLen))
+    .filter((v) => v > 0);
+  return runs.length ? runs : [0];
+}
+
+function onClueInput(e: Event): void {
+  const input = e.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  // Digits only, and never longer than the line it describes.
+  const lineLen = input.dataset.clueKind === 'row' ? state.cols : state.rows;
+  const digits = input.value.replace(/\D/g, '');
+  const clamped = digits ? String(Math.min(parseInt(digits, 10), lineLen)) : '';
+  if (clamped !== input.value) input.value = clamped;
+
+  const cell = input.closest('th');
+  if (!cell) return;
+  const index = Number(input.dataset.clueIndex ?? 0);
+  if (input.dataset.clueKind === 'row') state.rowClues[index] = readClueInputs(cell, state.cols);
+  else state.colClues[index] = readClueInputs(cell, state.rows);
+  onEdit();
+  rebuildIfSlotsChanged(input);
+}
+
+/** A clue that outgrew (or freed) a slot needs the whole table rebuilt; keep the caret
+ *  where it was so typing across a rebuild is unbroken. */
+function rebuildIfSlotsChanged(active: HTMLInputElement): void {
+  const prevRow = parseInt(elDrawView.dataset.maxRowLen ?? '0');
+  const prevCol = parseInt(elDrawView.dataset.maxColLen ?? '0');
+  if (getMaxRowLen() === prevRow && getMaxColLen() === prevCol) return;
+  const { clueKind, clueIndex, clueSlot } = active.dataset;
+  buildGrid();
+  const again = elDrawView.querySelector<HTMLInputElement>(
+    `input[data-clue-kind="${String(clueKind)}"][data-clue-index="${String(clueIndex)}"]` +
+      `[data-clue-slot="${String(clueSlot)}"]`,
+  );
+  if (again) {
+    again.focus();
+    again.setSelectionRange(again.value.length, again.value.length);
+  }
 }
 
 // Grid build (Draw mode)
@@ -109,6 +212,40 @@ function cellButton(r: number, c: number): HTMLButtonElement | null {
   );
 }
 
+/** A clue cell's contents: read-only runs while drawing, number boxes while typing. */
+function clueBody(
+  kind: 'row' | 'col',
+  index: number,
+  clue: number[],
+  maxLen: number,
+  className: string,
+): HTMLDivElement {
+  return state.mode === 'clues'
+    ? makeClueInputs(kind, index, clue, maxLen, className)
+    : makeClueContent(clue, maxLen, className);
+}
+
+/** One data cell: a drawing surface, or the inert unknown a typed clue describes. */
+function makeDataCell(tr: HTMLTableRowElement, r: number, c: number): void {
+  const td = tr.insertCell();
+  if (state.mode === 'clues') {
+    td.className = 'cell-unknown';
+    td.textContent = '?';
+    return;
+  }
+  const filled = state.grid[r]?.[c];
+  td.className = 'cell' + (filled ? ' filled' : '');
+  td.dataset.r = String(r);
+  td.dataset.c = String(c);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'cell-btn';
+  btn.setAttribute('aria-label', `Row ${String(r + 1)}, column ${String(c + 1)}`);
+  btn.setAttribute('aria-pressed', String(filled));
+  btn.tabIndex = r === focusR && c === focusC ? 0 : -1;
+  td.appendChild(btn);
+}
+
 export function buildGrid(): void {
   const rows = state.rows,
     cols = state.cols;
@@ -135,7 +272,7 @@ export function buildGrid(): void {
         'col',
         `cclue-${String(c)}`,
         clueLabel('Column', c, clue),
-        makeClueContent(clue, maxColLen, 'col-clue-slots'),
+        clueBody('col', c, clue, maxColLen, 'col-clue-slots'),
       ),
     );
   }
@@ -149,24 +286,11 @@ export function buildGrid(): void {
         'row',
         `rclue-${String(r)}`,
         clueLabel('Row', r, clue),
-        makeClueContent(clue, maxRowLen, 'row-clue-slots'),
+        clueBody('row', r, clue, maxRowLen, 'row-clue-slots'),
       ),
     );
 
-    for (let c = 0; c < cols; c++) {
-      const filled = state.grid[r]?.[c];
-      const td = tr.insertCell();
-      td.className = 'cell' + (filled ? ' filled' : '');
-      td.dataset.r = String(r);
-      td.dataset.c = String(c);
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cell-btn';
-      btn.setAttribute('aria-label', `Row ${String(r + 1)}, column ${String(c + 1)}`);
-      btn.setAttribute('aria-pressed', String(filled));
-      btn.tabIndex = r === focusR && c === focusC ? 0 : -1;
-      td.appendChild(btn);
-    }
+    for (let c = 0; c < cols; c++) makeDataCell(tr, r, c);
   }
 
   tbl.addEventListener('mousedown', onGridMouseDown);
@@ -307,6 +431,13 @@ function updateClueCells(): void {
 // Dynamic grid sizing
 function resized(): void {
   recomputeClues();
+  if (state.mode === 'clues') {
+    // The typed clues survive a resize; the lists just follow the new shape.
+    state.rowClues.length = state.rows;
+    state.colClues.length = state.cols;
+    for (let r = 0; r < state.rows; r++) state.rowClues[r] ??= [0];
+    for (let c = 0; c < state.cols; c++) state.colClues[c] ??= [0];
+  }
   buildGrid();
   syncGridToServer();
   onEdit();
@@ -369,11 +500,32 @@ export function doClear(): void {
   state.rows = 3;
   state.cols = 3;
   state.grid = Array.from({ length: state.rows }, () => Array<boolean>(state.cols).fill(false));
-  recomputeClues();
+  if (state.mode === 'clues') blankClues();
+  else cluesFromGrid();
   buildGrid();
   syncGridToServer();
   onEdit();
-  setStatus('Grid cleared.');
+  setStatus(state.mode === 'clues' ? 'Clues cleared.' : 'Grid cleared.');
+}
+
+/**
+ * Switch between drawing a grid and typing its clues.
+ *
+ * Drawing reads the clues off the picture, so every puzzle it makes has a solution.
+ * Typed clues are the puzzle itself and may have none — which is a legitimate answer,
+ * and what the solver reports. Leaving clues mode hands the clues back to the drawing.
+ */
+export function setMode(mode: EditorMode): void {
+  if (state.mode === mode) return;
+  state.mode = mode;
+  if (mode === 'draw') cluesFromGrid();
+  buildGrid();
+  onEdit();
+  setStatus(
+    mode === 'clues'
+      ? 'Clues mode — type the runs; a puzzle with no solution is a valid answer.'
+      : 'Draw mode — the clues follow the grid again.',
+  );
 }
 
 interface RawRandomize {
@@ -390,7 +542,8 @@ export async function doRandomize(): Promise<void> {
     state.grid = Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () => Math.random() < 0.5),
     );
-    recomputeClues();
+    // Also in clues mode: a random drawing is the quickest way to a clue set worth editing.
+    cluesFromGrid();
     buildGrid();
     onEdit();
     const filled = state.grid.flat().filter(Boolean).length;
@@ -411,7 +564,7 @@ export async function doRandomize(): Promise<void> {
     state.rows = data.rows;
     state.cols = data.cols;
     state.grid = data.grid;
-    recomputeClues();
+    cluesFromGrid();
     buildGrid();
     syncGridToServer();
     onEdit();

@@ -9,12 +9,16 @@ export interface HistData {
   totalOutcomes?: number;
 }
 
+/** Draw a grid and read its clues off it, or type the clues and let the solver answer. */
+export type EditorMode = 'draw' | 'clues';
+
 export interface NonogramState {
+  mode: EditorMode;
   rows: number;
   cols: number;
-  /** 2-D bool array [row][col]. */
+  /** 2-D bool array [row][col]. In clues mode it holds whatever was drawn last. */
   grid: boolean[][];
-  /** One run-length clue per row (derived from grid). */
+  /** One run-length clue per row: read off the grid while drawing, typed in clues mode. */
   rowClues: number[][];
   colClues: number[][];
   busy: boolean;
@@ -24,6 +28,7 @@ export interface NonogramState {
 }
 
 export const state: NonogramState = {
+  mode: 'draw',
   rows: 3,
   cols: 3,
   grid: [],

@@ -43,3 +43,56 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
     await expect(page.locator('#status-line')).toContainText('remove a row or column');
   });
 });
+
+// Clues mode: the clues are the puzzle, typed rather than read off a drawing, so a
+// clue set with no solution is something the editor can express and the solver answers.
+test.describe('Nonogram: typing the clues', () => {
+  const clue = (kind: 'row' | 'col', index: number, slot: number) =>
+    `input[data-clue-kind="${kind}"][data-clue-index="${String(index)}"]` +
+    `[data-clue-slot="${String(slot)}"]`;
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto(APP);
+    await expect(page.locator('td.cell').first()).toBeVisible();
+    await page.locator('#btn-mode-clues').click();
+  });
+
+  test('the cells become the unknown and the clues become inputs', async ({ page }) => {
+    await expect(page.locator('td.cell')).toHaveCount(0);
+    await expect(page.locator('td.cell-unknown')).toHaveCount(9);
+    await expect(page.locator('.clue-slot--input')).toHaveCount(6);
+    await expect(page.locator('#btn-mode-clues')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('a clue set with no solution is reported as such', async ({ page }) => {
+    // Every row full but every column holding one cell: the counts cannot agree.
+    for (let r = 0; r < 3; r++) await page.locator(clue('row', r, 0)).fill('3');
+    for (let c = 0; c < 3; c++) await page.locator(clue('col', c, 0)).fill('1');
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('#status-line')).toContainText('0 solutions');
+    await expect(page.locator('#cl-placeholder')).toContainText('No solutions found');
+  });
+
+  test('typing a run opens the next slot, and a solvable set solves', async ({ page }) => {
+    // One slot each until a clue needs two.
+    await expect(page.locator(clue('row', 0, 1))).toHaveCount(0);
+    for (let r = 0; r < 3; r++) {
+      await page.locator(clue('row', r, 0)).fill('1');
+      await page.locator(clue('row', r, 1)).fill('1');
+    }
+    await page.locator(clue('col', 0, 0)).fill('3');
+    await page.locator(clue('col', 2, 0)).fill('3');
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('#status-line')).toContainText('1 solution');
+    await expect(page.locator('#cl-canvas .sol-grid-label')).toHaveText('Solution');
+  });
+
+  test('going back to Draw hands the clues to the grid again', async ({ page }) => {
+    await page.locator(clue('row', 0, 0)).fill('3');
+    await page.locator('#btn-mode-draw').click();
+    await expect(page.locator('.clue-slot--input')).toHaveCount(0);
+    await expect(page.locator('td.cell')).toHaveCount(9);
+    await expect(page.locator('#status-line')).toContainText('clues follow the grid');
+  });
+});
