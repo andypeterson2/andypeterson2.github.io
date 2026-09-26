@@ -252,14 +252,18 @@ pre code {
   }
 }
 
-/* ── Action button — the rounded pill shared by the timeline actions and the
-   writeup trigger. Single source of truth so the two never drift out of sync;
-   border-radius (not a border-image) keeps the invert-hover rounded. ── */
+/* ── Action button — shared by the timeline actions and the writeup trigger, and
+   framed with the same sliced pixel SVG system.css gives .btn, so every pressable
+   thing on the site has one corner treatment. A border-radius cannot imitate that
+   frame: it draws a smooth curve where this one steps. The radius below only keeps
+   the invert-hover fill from squaring off inside the frame. ── */
 .action-btn {
   font-family: var(--font-ui);
   font-size: var(--text-xs);
-  padding: clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 14px);
-  border: 2px solid var(--ink);
+  padding: clamp(2px, 0.35vw, 4px) clamp(8px, 1vw, 12px);
+  border-style: solid;
+  border-width: 5.5px;
+  border-image: url('@sakun/system.css/dist/button.svg') 30 stretch;
   border-radius: var(--radius);
   background: var(--paper);
   color: var(--ink);
