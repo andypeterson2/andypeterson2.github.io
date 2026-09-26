@@ -6,8 +6,6 @@
 # the 301s below shadow it in production: `astro dev`, `astro preview` and
 # scripts/serve-dist.mjs honour none of this file, so its meta-refresh stubs are the
 # only redirects that work locally — and the e2e suite runs against those.
-/about                   /#about  301
-/about/                  /#about  301
 /resume                  /  301
 /underconstruction       /  301
 /underconstruction.html  /  301

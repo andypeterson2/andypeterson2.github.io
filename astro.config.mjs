@@ -72,9 +72,6 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
-    // #about opens the home page's About writeup. trailingSlash 'ignore' makes this cover
-    // '/about/' too; defining both collides.
-    '/about': '/#about',
     // The legacy project-detail surface is retired — the home timeline is the
     // one showcase surface. Exact paths only (the /app/ demo pages live on).
     '/projects': '/#projects',
