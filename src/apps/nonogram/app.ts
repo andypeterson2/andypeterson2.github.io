@@ -31,21 +31,9 @@ import {
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { SiteContract, type ContractResult } from '../shared/contract-client';
 import { ServiceConfig } from '../shared/service-config';
-import type { ConnectWidget } from '../shared/server-connect-modal';
 
 // Connection logic
 let socket: NonogramSocket | null = null;
-let _navWidget: ConnectWidget | null = null;
-
-// Navbar connect widget
-document.addEventListener('navbar:connect-ready', (e) => {
-  const detail = (e as CustomEvent<{ service?: string; widget?: ConnectWidget }>).detail;
-  if (detail.service !== 'nonogram' || !detail.widget) return;
-  _navWidget = detail.widget;
-  if (socket?.connected) {
-    _navWidget.setStatus('connected');
-  }
-});
 
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
@@ -56,7 +44,6 @@ document.addEventListener('navbar:connect', (e) => {
     console.warn('[nonogram] Ignoring navbar:connect URL outside the allowlist:', detail.url);
     return;
   }
-  if (_navWidget) _navWidget.setStatus('connecting');
   if (socket) socket.disconnect();
   // Socket.IO reads a URL path as a NAMESPACE, so the gateway prefix goes in engine.io's
   // `path`. XHR bypasses the pass fetch-wrapper, so the pass rides as ?pass= instead.
@@ -72,8 +59,6 @@ document.addEventListener('navbar:connect', (e) => {
 });
 
 function bindSocket(s: NonogramSocket): void {
-  s.on('connect', () => _navWidget?.setStatus('connected'));
-  s.on('disconnect', () => _navWidget?.setStatus('disconnected'));
   s.on('status', (p) => {
     const { msg, level } = p as { msg: string; level?: 'err' | 'ok' };
     setStatus(msg, level);

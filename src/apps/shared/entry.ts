@@ -1,12 +1,10 @@
 /**
- * Live-tier entry — the bundled script a demo page's server-status nav loads.
+ * Live-tier entry — the bundled script a demo page loads to reach its backend.
  *
- * Import order is load-bearing:
- * pass first (its fetch wrapper must be installed before anything calls out),
- * then service-config and contract-client (published for the app tiers), then
- * the connect-modal UI that consumes them.
+ * Import order is load-bearing: pass first (its fetch wrapper must be installed
+ * before anything calls out), then service-config and contract-client, which the
+ * app tiers read.
  */
 import './pass';
 import './service-config';
 import './contract-client';
-import './server-connect-modal';
