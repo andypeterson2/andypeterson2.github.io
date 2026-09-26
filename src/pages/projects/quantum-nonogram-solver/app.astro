@@ -131,13 +131,17 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     user-select: none;
   }
 
+  /* One square unit sizes every box in the table — grid cells and clue slots alike —
+     so a clue never sets a row's height and the cells stay square at any puzzle size. */
   :global(.nonogram-table) {
+    --cell: 24px;
+
     border-collapse: collapse;
   }
 
   :global(.nonogram-table td.cell) {
-    width: 24px;
-    height: 24px;
+    width: var(--cell);
+    height: var(--cell);
     border: 1px solid var(--ink);
     background: var(--paper);
     cursor: crosshair;
@@ -152,8 +156,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.nonogram-table .cell-btn) {
     all: unset;
     display: block;
-    width: 24px;
-    height: 24px;
+    width: var(--cell);
+    height: var(--cell);
     box-sizing: border-box;
     cursor: crosshair;
   }
@@ -170,9 +174,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.nonogram-table .corner-cell) {
     background: transparent;
+    padding: 0;
   }
 
-  /* Clues are the puzzle: ink on plain paper, never on dither. */
+  /* Clues are the puzzle: ink on plain paper, never on dither. Padding stays at zero so
+     the cell measures exactly as many square slots as the longest clue on its axis. */
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
     background: var(--paper);
@@ -180,30 +186,32 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     font-size: var(--text-3xs);
     font-weight: 600;
     border: 1px solid var(--paper-4);
-    padding: 2px;
+    padding: 0;
   }
 
   :global(.row-clue-slots) {
     display: flex;
-    gap: 2px;
     justify-content: flex-end;
-    padding: 0 4px;
   }
 
   :global(.col-clue-slots) {
     display: flex;
     flex-direction: column;
-    gap: 1px;
     align-items: center;
-    padding: 2px 4px;
   }
 
+  /* Square, and capped to the unit in both axes: a taller slot would push the row past
+     the cells beside it and render them as rectangles. */
   :global(.clue-slot) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--cell);
+    height: var(--cell);
     font-family: var(--font-ui);
-    font-size: var(--text-2xs);
+    font-size: min(var(--text-2xs), calc(var(--cell) * 0.7));
+    line-height: 1;
     color: var(--ink);
-    min-width: 1ch;
-    text-align: center;
   }
 
   :global(.clue-slot.empty) {
