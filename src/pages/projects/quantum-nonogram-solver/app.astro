@@ -153,17 +153,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     cursor: crosshair;
   }
 
-  /* Clues mode: the grid is the unknown the clues describe, so the cells are inert. */
+  /* Clues mode: the grid is the unknown the clues describe, so the cells are inert and
+     carry the stipple — a third state between the empty paper and the filled ink a
+     solution uses, in the same 1-bit vocabulary. */
   :global(.nonogram-table td.cell-unknown) {
     width: var(--cell);
     height: var(--cell);
     border: 1px solid var(--ink);
-    background: var(--paper);
-    text-align: center;
-    font-family: var(--font-ui);
-    font-size: calc(var(--cell) * 0.55);
-    line-height: 1;
-    color: var(--paper-4);
+    background: var(--dither-50);
     user-select: none;
   }
 

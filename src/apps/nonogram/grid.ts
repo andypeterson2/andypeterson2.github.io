@@ -229,8 +229,8 @@ function clueBody(
 function makeDataCell(tr: HTMLTableRowElement, r: number, c: number): void {
   const td = tr.insertCell();
   if (state.mode === 'clues') {
+    // The stipple says "unknown"; the row and column headers already name the cell.
     td.className = 'cell-unknown';
-    td.textContent = '?';
     return;
   }
   const filled = state.grid[r]?.[c];
