@@ -5,6 +5,7 @@
  */
 
 import { state, $, must } from './state';
+import { MAX_HW_CELLS } from './hardware';
 
 export function setStatus(msg: string, level?: 'err' | 'ok'): void {
   const el = $('status-line');
@@ -28,6 +29,24 @@ export function applyTierControls(): void {
   const trials = must('trials-input') as HTMLInputElement;
   trials.disabled = !window.API_BASE;
   trials.title = window.API_BASE ? '' : 'Trials repeat a live quantum run — needs the live solver';
+  applyHardwareControl();
+}
+
+/**
+ * The IBM button appears only with a live backend, and only for a grid a real device
+ * can say something about. It is shown disabled rather than hidden at the wrong size,
+ * so the ceiling is visible instead of mysterious.
+ */
+export function applyHardwareControl(): void {
+  const btn = must('btn-hw') as HTMLButtonElement;
+  btn.hidden = !window.API_BASE;
+  if (btn.hidden) return;
+  const cells = state.rows * state.cols;
+  const tooBig = cells > MAX_HW_CELLS;
+  btn.disabled = state.busy || tooBig;
+  btn.title = tooBig
+    ? `Hardware runs stop at ${String(MAX_HW_CELLS)} cells — past that the circuit is deeper than the device holds, and the result is noise.`
+    : 'Submit this puzzle to a real IBM quantum computer. Needs a signed-in account.';
 }
 
 export function setBusy(busy: boolean): void {
@@ -47,8 +66,12 @@ export function setBusy(busy: boolean): void {
   ]) {
     (must(id) as HTMLButtonElement).disabled = busy;
   }
+  applyHardwareControl();
 }
 
 export function updateGridSizeLabel(): void {
   must('grid-size-label').textContent = `${String(state.rows)} × ${String(state.cols)}`;
+  // Whether a real device can say anything about this puzzle changes with its size,
+  // and this runs on every rebuild.
+  applyHardwareControl();
 }

@@ -1,6 +1,14 @@
 /* Nonogram Web App — bootstrap / init. */
 
-import { state, $, must, elThresholdInput, elClPlaceholder, elQuSolPlaceholder } from './state';
+import {
+  state,
+  $,
+  must,
+  clientId,
+  elThresholdInput,
+  elClPlaceholder,
+  elQuSolPlaceholder,
+} from './state';
 import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui';
 import {
   initGrid,
@@ -30,33 +38,20 @@ import {
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { groverOutcome, sampleCounts } from './grover-sim';
+import {
+  pendingJob,
+  submitJob,
+  waitForJob,
+  withinHardwareLimit,
+  type CollectedJob,
+  type HardwareJob,
+} from './hardware';
 import { track } from '../../telemetry';
 import { SiteContract, type ContractResult } from '../shared/contract-client';
 import { ServiceConfig } from '../shared/service-config';
 
 // Connection logic
 let socket: NonogramSocket | null = null;
-
-/**
- * This tab's name for its own results. The solver addresses every emit to a room
- * named by this, so one visitor's run never lands in another's window. It is kept in
- * sessionStorage because the socket's own id is reissued on every reconnect, and a
- * reload would otherwise leave a run with nowhere to be delivered.
- */
-const CLIENT_KEY = 'nonogram.client';
-
-function clientId(): string {
-  let id = '';
-  try {
-    id = sessionStorage.getItem(CLIENT_KEY) ?? '';
-    if (!id) sessionStorage.setItem(CLIENT_KEY, (id = crypto.randomUUID()));
-  } catch {
-    // Private windows and blocked site data both throw here. A per-load id still
-    // addresses this tab's results correctly; it just does not survive a reload.
-    id ||= crypto.randomUUID();
-  }
-  return id;
-}
 
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
@@ -264,6 +259,99 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
   }, 0);
 }
 
+// IBM hardware tier
+// The run is two calls with a wait between them, so the page owns the waiting: the
+// solver is free the moment IBM has the job, and a reload rejoins the same run.
+
+/** Shots for a hardware run. Halved past 4 cells: the circuit is ~6x deeper there and
+ *  every shot on it costs more of a 10-minute monthly allowance. */
+function hardwareShots(rows: number, cols: number): number {
+  return rows * cols > 4 ? 512 : 1024;
+}
+
+let stopWaiting: (() => void) | null = null;
+
+function renderHardware(job: HardwareJob, collected: CollectedJob): void {
+  const { rows, cols } = job;
+  const counts = collected.counts ?? {};
+  renderQuantum(counts, rows, cols);
+
+  const shots = Object.values(counts).reduce((a, b) => a + b, 0);
+  const top = Object.values(counts).sort((a, b) => b - a)[0] ?? 0;
+  const chance = 1 / 2 ** (rows * cols);
+  const measured = shots > 0 ? top / shots : 0;
+
+  // Said plainly either way. A deep circuit on a NISQ device usually returns the
+  // uniform distribution, which is a result about the device and worth reporting.
+  const verdict =
+    measured > chance * 2
+      ? `top state ${(measured * 100).toFixed(1)}% against ${(chance * 100).toFixed(2)}% by chance`
+      : `flat — ${(measured * 100).toFixed(1)}% on the top state against ${(chance * 100).toFixed(2)}% by chance, which is what decoherence at this depth looks like`;
+
+  setStatus(
+    `${collected.backend ?? job.backend ?? 'IBM'} returned ${String(shots)} shots: ${verdict}.`,
+    'ok',
+  );
+  track({
+    app: 'nonogram',
+    event: 'run.done',
+    tier: 'hardware',
+    outcome: shots > 0 ? 'ok' : 'empty',
+    detail: collected.backend ?? undefined,
+    value: measured,
+    a: rows,
+    b: cols,
+    n: job.transpiled_depth,
+  });
+}
+
+function watch(job: HardwareJob): void {
+  stopWaiting?.();
+  setBusy(true);
+  stopWaiting = waitForJob(job, {
+    onWaiting: (status, elapsed) => {
+      const mins = Math.floor(elapsed / 60000);
+      const depth = job.transpiled_depth ? `, depth ${String(job.transpiled_depth)}` : '';
+      setStatus(
+        `${job.backend ?? 'IBM'}: ${status.toLowerCase()}${depth} — ${String(mins)} min waiting. The queue is IBM's, not ours.`,
+      );
+    },
+    onDone: (collected) => {
+      setBusy(false);
+      if (collected.status === 'DONE') renderHardware(job, collected);
+      else setStatus(`The job ended ${collected.status.toLowerCase()} at IBM.`, 'err');
+    },
+    onGaveUp: (reason) => {
+      setBusy(false);
+      setStatus(reason, 'err');
+    },
+  });
+}
+
+async function runOnHardware(): Promise<void> {
+  const puzzle = getCurrentPuzzle();
+  const rows = puzzle.row_clues.length,
+    cols = puzzle.col_clues.length;
+  if (!withinHardwareLimit(rows, cols)) return;
+
+  clearSolverResults();
+  showGalleryNote('');
+  setBusy(true);
+  setStatus('Submitting to IBM…');
+  const job = await submitJob(
+    puzzle.row_clues,
+    puzzle.col_clues,
+    rows,
+    cols,
+    hardwareShots(rows, cols),
+  );
+  if (!job) {
+    setBusy(false);
+    return;
+  }
+  watch({ ...job, rows, cols });
+}
+
 // Gallery: real, pre-computed quantum runs (no backend)
 // Each entry is a real benchmark payload captured from the solver — the Grover
 // simulator today, real IBM hardware once a hardware run is cached ("spend once,
@@ -417,6 +505,14 @@ function init(): void {
       }
     });
   }
+
+  must('btn-hw').addEventListener('click', () => {
+    if (!state.busy) void runOnHardware();
+  });
+
+  // A reload during an IBM queue rejoins the same job rather than losing it.
+  const waiting = pendingJob();
+  if (waiting) watch(waiting);
 
   must('btn-add-row').addEventListener('click', addRow);
   must('btn-add-col').addEventListener('click', addCol);

@@ -5,6 +5,11 @@
  * (a single glyph, square), --block (full width). Hover and keyboard focus invert to an ink
  * fill; focus also gets the site's ink ring. Disabled is one treatment everywhere. The site
  * chrome's window push-button (system.css .btn) is a different object. ── */
+/* Outranks the browser's own [hidden] rule, which the class below would otherwise beat. */
+.s6-btn[hidden] {
+  display: none;
+}
+
 .s6-btn {
   display: inline-flex;
   align-items: center;
