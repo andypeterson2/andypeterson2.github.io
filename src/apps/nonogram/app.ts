@@ -36,6 +36,27 @@ import { ServiceConfig } from '../shared/service-config';
 // Connection logic
 let socket: NonogramSocket | null = null;
 
+/**
+ * This tab's name for its own results. The solver addresses every emit to a room
+ * named by this, so one visitor's run never lands in another's window. It is kept in
+ * sessionStorage because the socket's own id is reissued on every reconnect, and a
+ * reload would otherwise leave a run with nowhere to be delivered.
+ */
+const CLIENT_KEY = 'nonogram.client';
+
+function clientId(): string {
+  let id = '';
+  try {
+    id = sessionStorage.getItem(CLIENT_KEY) ?? '';
+    if (!id) sessionStorage.setItem(CLIENT_KEY, (id = crypto.randomUUID()));
+  } catch {
+    // Private windows and blocked site data both throw here. A per-load id still
+    // addresses this tab's results correctly; it just does not survive a reload.
+    id ||= crypto.randomUUID();
+  }
+  return id;
+}
+
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'nonogram' || !detail.url) return;
@@ -60,6 +81,12 @@ document.addEventListener('navbar:connect', (e) => {
 });
 
 function bindSocket(s: NonogramSocket): void {
+  // Re-announced on every connect: a reconnect issues a new socket id, and the room
+  // is what carries this tab's identity across it.
+  s.on('connect', () => {
+    s.emit('join', { client_id: clientId() });
+  });
+  if (s.connected) s.emit('join', { client_id: clientId() });
   s.on('status', (p) => {
     const { msg, level } = p as { msg: string; level?: 'err' | 'ok' };
     setStatus(msg, level);
@@ -112,6 +139,7 @@ function handleBenchmarkFailure(r: ContractResult): void {
 
 interface BenchmarkBody extends Puzzle {
   trials: number;
+  client_id: string;
 }
 
 // Launch the streaming benchmark; results arrive via Socket.IO (bench_done). We only
@@ -336,7 +364,7 @@ function init(): void {
     clearSolverResults();
     const trialsInput = must('trials-input') as HTMLInputElement;
     const trials = Math.max(1, parseInt(trialsInput.value, 10) || 1);
-    const body: BenchmarkBody = { ...puzzle, trials };
+    const body: BenchmarkBody = { ...puzzle, trials, client_id: clientId() };
     if (socket?.connected) streamBenchmark(body);
     else void runBenchmarkSync(body);
   });
