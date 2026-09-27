@@ -145,9 +145,7 @@ async function shrinkToTwoByTwo(page: Page): Promise<void> {
 }
 
 test.describe('Nonogram: the IBM tier', () => {
-  test('a visitor who is not signed in is offered the sign-in, not a dead button', async ({
-    page,
-  }) => {
+  test('a signed-out visitor is told why, and offered the sign-in', async ({ page }) => {
     const stub = await startStub();
     stub.setEntitlement({
       configured: true,
@@ -160,14 +158,25 @@ test.describe('Nonogram: the IBM tier', () => {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
       const btn = page.locator('#btn-hw');
-      await expect(btn).toHaveText('Sign in to run on IBM');
-      await expect(btn).toBeEnabled();
-      await expect(btn).toHaveAttribute('title', /Sign in/);
+      await expect(btn).toBeDisabled();
+      await expect(btn).toHaveAttribute('title', 'Please log in to use this feature.');
 
-      // Pressing it goes to the sign-in rather than the QPU.
-      await btn.click();
-      await expect(page).toHaveURL(/\/auth\/login\?redirect=/);
+      // Reachable rather than inert: a natively disabled button leaves the tab order
+      // and answers no hover, so the reason would be unreadable by keyboard.
+      await expect(btn).toHaveAttribute('aria-disabled', 'true');
+      await expect(btn).not.toHaveAttribute('disabled', /.*/);
+      await btn.focus();
+      await expect(btn).toBeFocused();
+      expect(await btn.evaluate((el) => getComputedStyle(el).cursor)).toBe('help');
+
+      // Pressing it does nothing; the sign-in bar is what does something.
+      await btn.click({ force: true });
       expect(stub.submits).toHaveLength(0);
+
+      const signIn = page.locator('#btn-signin');
+      await expect(signIn).toBeVisible();
+      await signIn.click();
+      await expect(page).toHaveURL(/\/auth\/login\?redirect=/);
     } finally {
       await stub.close();
     }
@@ -221,6 +230,8 @@ test.describe('Nonogram: the IBM tier', () => {
       await shrinkToTwoByTwo(page);
       await expect(page.locator('#btn-hw')).toBeEnabled();
       await expect(page.locator('#btn-hw')).toHaveAttribute('title', /3 hardware runs left/);
+      // Nothing left to sign in for.
+      await expect(page.locator('#signin-bar')).toBeHidden();
     } finally {
       await stub.close();
     }

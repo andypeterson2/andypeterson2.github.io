@@ -50,7 +50,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             <input type="number" id="trials-input" min="1" max="20" value="1" />
           </label>
           <button id="btn-bench" class="s6-btn s6-btn--primary">&#9654; Solve in browser</button>
-          <button id="btn-hw" class="s6-btn" disabled>&#9654; Run on IBM</button>
+          <button id="btn-hw" class="s6-btn" aria-disabled="true">&#9654; Run on IBM</button>
           <label class="gallery-label"
             >Gallery
             <select id="gallery-select">
@@ -58,6 +58,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
+        <p id="signin-bar" class="signin-bar" hidden>
+          <span>Running on a real quantum computer needs an account.</span>
+          <button id="btn-signin" class="s6-btn s6-btn--primary s6-btn--sm"
+            >Sign in with Google</button
+          >
+        </p>
         <div class="section-rule"><span>Classical</span></div>
         <div id="cl-canvas" class="sol-canvas">
           <div id="cl-placeholder" class="placeholder-msg">Solve the puzzle to see solutions.</div>
@@ -274,6 +280,25 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .mode-toggle button[aria-pressed='true'] {
     background: var(--ink);
     color: var(--paper);
+  }
+
+  /* Offered where the control it unlocks is, and only while it is needed. */
+  .signin-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(6px, 1vw, 12px);
+    margin: clamp(6px, 1vw, 10px) 0 0;
+    padding: clamp(6px, 1vw, 10px);
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  .signin-bar[hidden] {
+    display: none;
   }
 
   /* ── Editor actions ── */

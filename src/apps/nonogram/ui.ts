@@ -40,40 +40,64 @@ export function applyTierControls(): void {
  * The size ceiling shows as a disabled button rather than a hidden one, so the limit
  * is visible instead of mysterious.
  */
+/**
+ * Mark a control unavailable while leaving it reachable.
+ *
+ * `aria-disabled` rather than `disabled`: the reason lives in the title, and a
+ * natively disabled button is skipped by the tab order and answers no hover, so the
+ * reason would be unreadable for exactly the people most likely to need it.
+ */
+function setUnavailable(btn: HTMLButtonElement, reason: string): void {
+  btn.setAttribute('aria-disabled', 'true');
+  btn.title = reason;
+}
+
+function setAvailable(btn: HTMLButtonElement, hint: string): void {
+  btn.removeAttribute('aria-disabled');
+  btn.title = hint;
+}
+
+/** Whether a click on this control should do nothing. */
+export function isUnavailable(btn: HTMLButtonElement): boolean {
+  return btn.getAttribute('aria-disabled') === 'true';
+}
+
 export function applyHardwareControl(): void {
   const btn = must('btn-hw') as HTMLButtonElement;
   const status = currentStatus();
   btn.hidden = false;
+  // Offered only while it would change anything.
+  must('signin-bar').hidden = !(status?.configured && !status.signedIn);
 
   // Nothing to ask: on the browser tier there is no gateway to answer, and a probe
   // that failed leaves the same nothing.
+  btn.textContent = '▶ Run on IBM';
   if (!window.API_BASE || !status) {
-    btn.textContent = '▶ Run on IBM';
-    btn.disabled = true;
-    btn.title = 'Real hardware runs through the live backend, which is not connected.';
+    setUnavailable(btn, 'Real hardware runs through the live backend, which is not connected.');
     return;
   }
   if (!status.configured) {
-    btn.textContent = '▶ Run on IBM';
-    btn.disabled = true;
-    btn.title = status.reason;
+    setUnavailable(btn, status.reason);
     return;
   }
 
-  // No account yet: the button becomes the way to get one.
+  // No account yet: the run button says why it cannot be pressed, and the sign-in
+  // bar below the controls is what does something about it.
   if (!status.signedIn) {
-    btn.textContent = 'Sign in to run on IBM';
-    btn.disabled = state.busy;
-    btn.title = status.reason;
+    setUnavailable(btn, 'Please log in to use this feature.');
     return;
   }
 
-  btn.textContent = '▶ Run on IBM';
   const tooBig = state.rows * state.cols > MAX_HW_CELLS;
-  btn.disabled = state.busy || tooBig || !status.allowed;
-  btn.title = tooBig
-    ? `Hardware runs stop at ${String(MAX_HW_CELLS)} cells — past that the circuit is deeper than the device holds, and the result is noise.`
-    : status.reason;
+  if (tooBig) {
+    setUnavailable(
+      btn,
+      `Hardware runs stop at ${String(MAX_HW_CELLS)} cells — past that the circuit is deeper than the device holds, and the result is noise.`,
+    );
+    return;
+  }
+  if (state.busy || !status.allowed) setUnavailable(btn, status.reason);
+  else setAvailable(btn, status.reason);
 }
 
 export function setBusy(busy: boolean): void {

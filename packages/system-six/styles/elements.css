@@ -63,12 +63,23 @@
 .s6-btn:disabled,
 .s6-btn:disabled:hover,
 .s6-btn--primary:disabled,
-.s6-btn--primary:disabled:hover {
+.s6-btn--primary:disabled:hover,
+.s6-btn[aria-disabled='true'],
+.s6-btn[aria-disabled='true']:hover {
   cursor: default;
   background: var(--dither-light);
   color: var(--color-text-muted);
   border-color: var(--ink-4);
 }
+/* An unavailable button carrying a title has something to say about why, and the help
+   cursor is the invitation to hover and read it. aria-disabled rather than the disabled
+   attribute is what keeps that reachable: a disabled button leaves the tab order, so a
+   keyboard user could never find out why it will not work. */
+.s6-btn:disabled[title],
+.s6-btn[aria-disabled='true'][title] {
+  cursor: help;
+}
+
 /* Touch: every app button is a 44px target. */
 @media (pointer: coarse) {
   .s6-btn,

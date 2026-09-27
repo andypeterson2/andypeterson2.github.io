@@ -15,6 +15,7 @@ import {
   updateGridSizeLabel,
   applyTierControls,
   applyHardwareControl,
+  isUnavailable,
 } from './ui';
 import {
   initGrid,
@@ -45,7 +46,6 @@ import {
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { groverOutcome, sampleCounts } from './grover-sim';
 import {
-  currentStatus,
   pendingJob,
   refreshStatus,
   signInUrl,
@@ -519,15 +519,14 @@ function init(): void {
     });
   }
 
-  must('btn-hw').addEventListener('click', () => {
-    if (state.busy) return;
-    // Signed out, the button is the sign-in: a dead-ended control would only teach
-    // someone that the feature is broken.
-    if (!currentStatus()?.signedIn) {
-      location.href = signInUrl();
-      return;
-    }
-    void runOnHardware();
+  const hwButton = must('btn-hw') as HTMLButtonElement;
+  hwButton.addEventListener('click', () => {
+    // Unavailable rather than disabled, so the click still arrives and is ignored.
+    if (!state.busy && !isUnavailable(hwButton)) void runOnHardware();
+  });
+
+  must('btn-signin').addEventListener('click', () => {
+    location.href = signInUrl();
   });
 
   // A reload during an IBM queue rejoins the same job rather than losing it.
