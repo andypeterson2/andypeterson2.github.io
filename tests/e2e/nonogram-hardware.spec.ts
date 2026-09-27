@@ -62,7 +62,9 @@ async function startStub(): Promise<Stub> {
       res.writeHead(status, { ...cors(req), 'content-type': 'application/json' });
       res.end(JSON.stringify(body));
     };
-    const path = (req.url ?? '').split('?')[0]!;
+    // The gateway mounts each app under a prefix and keeps /gate and /auth at the
+    // root, so the stub strips the prefix the same way.
+    const path = (req.url ?? '').split('?')[0]!.replace(/^\/nonogram/, '');
     if (req.method === 'OPTIONS') {
       res.writeHead(204, cors(req));
       res.end();
@@ -128,8 +130,11 @@ async function connect(page: Page, stub: Stub): Promise<void> {
   await page.goto(APP);
   await expect(page.locator('td.cell').first()).toBeVisible();
   await page.evaluate((url) => {
+    // The shape the pass lane dispatches: the app's own base under the gateway.
     document.dispatchEvent(
-      new CustomEvent('navbar:connect', { detail: { service: 'nonogram', url } }),
+      new CustomEvent('navbar:connect', {
+        detail: { service: 'nonogram', url: `${url}/nonogram` },
+      }),
     );
   }, stub.url);
   await expect(page.locator('#btn-hw')).toBeVisible();
@@ -237,10 +242,27 @@ test.describe('Nonogram: the IBM tier', () => {
     }
   });
 
+  // The sign-in is on the page from the start. Whether somebody is signed in is the
+  // gateway's to answer and holds whether or not an app is awake; gating it behind a
+  // connection made it unreachable for every visitor who has no pass.
+  test('the sign-in is offered on a plain page load', async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.route('**/gate/hardware', (r) => r.abort());
+    await page.goto(APP);
+    await expect(page.locator('td.cell').first()).toBeVisible();
+
+    // Even with the probe failing: a sign-in nobody needs is harmless, where a run
+    // button that opened up on a failed check would not be.
+    await expect(page.locator('#signin-bar')).toBeVisible();
+    await expect(page.locator('#btn-signin')).toBeVisible();
+    await expect(page.locator('#btn-hw')).toBeDisabled();
+  });
+
   // Shown rather than hidden: a capability the site has is worth seeing, and the
   // stipple says it is out of reach without pretending it does not exist.
   test('with no live backend the button is visible and plainly inert', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
+    await page.route('**/gate/hardware', (r) => r.abort());
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
 
@@ -276,6 +298,26 @@ test.describe('Nonogram: the IBM tier', () => {
       await page.getByRole('button', { name: 'Add a column' }).click();
       await expect(page.locator('#btn-hw')).toBeDisabled();
       expect(stub.submits).toHaveLength(0);
+    } finally {
+      await stub.close();
+    }
+  });
+
+  test('entitlement is asked at the gateway root, not under the app prefix', async ({ page }) => {
+    const stub = await startStub();
+    try {
+      await connect(page, stub);
+      // The stub strips /nonogram the way the gateway does, so a probe sent to the
+      // app prefix would arrive as /gate/hardware anyway — assert the path the page
+      // actually requested instead.
+      const asked = await page.evaluate(() =>
+        performance
+          .getEntriesByType('resource')
+          .map((e) => e.name)
+          .filter((n) => n.includes('gate/hardware')),
+      );
+      expect(asked.length).toBeGreaterThan(0);
+      for (const url of asked) expect(new URL(url).pathname).toBe('/gate/hardware');
     } finally {
       await stub.close();
     }
@@ -354,7 +396,9 @@ test.describe('Nonogram: the IBM tier', () => {
       await page.reload();
       await page.evaluate((url) => {
         document.dispatchEvent(
-          new CustomEvent('navbar:connect', { detail: { service: 'nonogram', url } }),
+          new CustomEvent('navbar:connect', {
+            detail: { service: 'nonogram', url: `${url}/nonogram` },
+          }),
         );
       }, stub.url);
 

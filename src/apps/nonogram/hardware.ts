@@ -75,6 +75,24 @@ function base(): string {
   return window.API_BASE ?? '';
 }
 
+/** The single API front door, which is also what pass.ts connects through. */
+const GATEWAY = 'https://api.andypeterson.dev';
+
+/**
+ * The gateway's own origin, which is not the app's base.
+ *
+ * `window.API_BASE` points at one app under the gateway (`…/nonogram`), while
+ * entitlement and sign-in live at the root. Asking the app prefix for them would
+ * reach an upstream path that does not exist.
+ */
+function gatewayOrigin(): string {
+  try {
+    return new URL(base() || GATEWAY).origin;
+  } catch {
+    return GATEWAY;
+  }
+}
+
 /** The gateway's answer about this visitor, cached for the page's lifetime. */
 export interface HardwareStatus {
   configured: boolean;
@@ -85,10 +103,22 @@ export interface HardwareStatus {
 }
 
 let status: HardwareStatus | null = null;
+/** Which probe is the current one: a page asks on load and again once connected. */
+let probe = 0;
 
-/** What the gateway says this visitor may do. Asking spends no quota. */
+/**
+ * What the gateway says this visitor may do. Asking spends no quota.
+ *
+ * Only the most recently started probe may write the answer. The page asks once on
+ * load and again when a backend connects, and without this the first can land second
+ * and overwrite a good answer with its own failure.
+ */
 export async function refreshStatus(): Promise<HardwareStatus | null> {
-  const result = await SiteContract.request(base() + '/gate/hardware', { timeoutMs: 8000 });
+  const mine = ++probe;
+  const result = await SiteContract.request(gatewayOrigin() + '/gate/hardware', {
+    timeoutMs: 8000,
+  });
+  if (mine !== probe) return status;
   status = result.ok ? (result.data as HardwareStatus) : null;
   return status;
 }
@@ -99,7 +129,7 @@ export function currentStatus(): HardwareStatus | null {
 
 /** Where to send someone who needs an account before they can spend credits. */
 export function signInUrl(): string {
-  return `${base()}/auth/login?redirect=${encodeURIComponent(location.href)}`;
+  return `${gatewayOrigin()}/auth/login?redirect=${encodeURIComponent(location.href)}`;
 }
 
 /** Whether this grid is one a hardware run can say anything about. */

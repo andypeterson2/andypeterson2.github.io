@@ -529,6 +529,12 @@ function init(): void {
     location.href = signInUrl();
   });
 
+  // Asked on load as well as on connect: whether someone is signed in is the
+  // gateway's to answer, and holds whether or not an app is awake.
+  void refreshStatus().then(() => {
+    applyHardwareControl();
+  });
+
   // A reload during an IBM queue rejoins the same job rather than losing it.
   const waiting = pendingJob();
   if (waiting) watch(waiting);

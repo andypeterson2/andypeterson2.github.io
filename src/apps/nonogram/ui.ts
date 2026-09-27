@@ -66,8 +66,9 @@ export function applyHardwareControl(): void {
   const btn = must('btn-hw') as HTMLButtonElement;
   const status = currentStatus();
   btn.hidden = false;
-  // Offered only while it would change anything.
-  must('signin-bar').hidden = !(status?.configured && !status.signedIn);
+  // Shown until we know the visitor is signed in. A probe that failed leaves that
+  // unknown, and offering a sign-in then is harmless where offering a run is not.
+  must('signin-bar').hidden = status?.signedIn === true;
 
   // Nothing to ask: on the browser tier there is no gateway to answer, and a probe
   // that failed leaves the same nothing.
