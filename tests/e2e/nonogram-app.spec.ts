@@ -96,3 +96,65 @@ test.describe('Nonogram: typing the clues', () => {
     await expect(page.locator('#status-line')).toContainText('clues follow the grid');
   });
 });
+
+// The browser tier runs Grover's amplitudes as well as the classical search, so the
+// Quantum panel answers without a backend — and says only what a simulation can.
+test.describe('Nonogram: the quantum half runs in the browser', () => {
+  const metric = (page: import('@playwright/test').Page, name: string) =>
+    page.locator('#metrics-pane tr', { hasText: name }).locator('td').nth(2);
+
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto(APP);
+    await expect(page.locator('td.cell').first()).toBeVisible();
+  });
+
+  test('a solved puzzle fills the histogram and the Grover metrics', async ({ page }) => {
+    for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('#status-line')).toContainText('Grover simulated exactly');
+
+    await expect(page.locator('#qu-histogram rect.hist-bar').first()).toBeVisible();
+    await expect(metric(page, 'Qubits')).toHaveText('9');
+    await expect(metric(page, 'Grover iterations')).not.toHaveText('—');
+    await expect(metric(page, 'Top probability')).toContainText('%');
+    // There is no circuit, so there is no depth and no quantum solve time to give.
+    await expect(metric(page, 'Circuit depth')).toHaveText('—');
+    await expect(metric(page, 'Solve time')).toHaveText('—');
+  });
+
+  test('the quantum solution matches the classical one', async ({ page }) => {
+    // An asymmetric grid: a mirrored reading would show a different picture.
+    for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('#qu-list .sol-table')).toHaveCount(1);
+
+    const cells = (root: string) =>
+      page
+        .locator(`${root} .sol-table td`)
+        .evaluateAll((tds) => tds.map((td) => td.className).join(''));
+    expect(await cells('#qu-list')).toBe(await cells('#cl-canvas'));
+  });
+
+  test('clues with no solution amplify nothing, and say so', async ({ page }) => {
+    await page.locator('#btn-mode-clues').click();
+    for (let r = 0; r < 3; r++) {
+      await page
+        .locator(`input[data-clue-kind="row"][data-clue-index="${String(r)}"]`)
+        .first()
+        .fill('3');
+    }
+    for (let c = 0; c < 3; c++) {
+      await page
+        .locator(`input[data-clue-kind="col"][data-clue-index="${String(c)}"]`)
+        .first()
+        .fill('1');
+    }
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('#cl-placeholder')).toContainText('No solutions found');
+    // A sampled draw would put a few states over the line by luck; a flat
+    // distribution puts none, which is what no solution means.
+    await expect(page.locator('#qu-sol-placeholder')).toContainText('No solutions above threshold');
+    await expect(metric(page, 'Grover iterations')).toHaveText('0');
+  });
+});

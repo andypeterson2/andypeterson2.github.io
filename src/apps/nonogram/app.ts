@@ -22,7 +22,6 @@ import {
   renderClassical,
   renderQuantum,
   renderBenchmark,
-  renderMetrics,
   drawEmptyHistogram,
   drawHistogram,
   renderQuantumList,
@@ -30,6 +29,7 @@ import {
   type ClassicalResult,
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
+import { groverOutcome, sampleCounts } from './grover-sim';
 import { SiteContract, type ContractResult } from '../shared/contract-client';
 import { ServiceConfig } from '../shared/service-config';
 
@@ -180,8 +180,11 @@ async function runBenchmarkSync(body: BenchmarkBody): Promise<void> {
   }
 }
 
-// Offline demo tier — solve the drawn puzzle in the browser (classical brute
-// force, no backend). Quantum + IBM runs stay on the live solver / gallery.
+/** What a hardware run asks for, so a simulated histogram is shaped like a real one. */
+const LOCAL_SHOTS = 1024;
+
+// Offline demo tier — solve the drawn puzzle in the browser: brute force for the
+// classical half, and Grover's amplitudes for the quantum half. IBM runs stay live.
 function runBenchmarkLocal(puzzle: Puzzle): void {
   const rows = puzzle.row_clues.length,
     cols = puzzle.col_clues.length;
@@ -202,29 +205,37 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
       const { solutions } = solveLocal(puzzle.row_clues, puzzle.col_clues);
       const dt = performance.now() - t0;
 
-      renderClassical({ solutions, rows, cols });
+      // The classical search supplies the oracle, so the amplitudes follow in closed
+      // form. With no circuit built, depth and gate counts stay unknown below.
+      const qubits = rows * cols;
+      const outcome = groverOutcome(solutions.length, qubits);
+      const quCounts = sampleCounts(solutions, qubits, LOCAL_SHOTS, outcome);
 
-      // Quantum runs need the live solver; say so and point at the captured runs.
-      drawEmptyHistogram();
-      must('qu-list').appendChild(elQuSolPlaceholder);
-      elQuSolPlaceholder.style.display = '';
-      elQuSolPlaceholder.textContent =
-        'Quantum runs need the live solver. The Gallery has captured Grover-simulator runs.';
-
-      // Real classical metrics — no handwaving.
-      renderMetrics(
-        {
-          num_variables: rows * cols,
+      renderBenchmark({
+        report: {
+          num_variables: qubits,
           classical: { solutions_found: solutions.length },
-          quantum: null,
+          quantum: {
+            solutions_found: solutions.length,
+            num_qubits: qubits,
+            grover_iterations: outcome.iterations,
+            top_result_probability: solutions.length ? outcome.perMarked : null,
+          },
         },
-        [dt / 1000],
-        null,
-      );
+        solutions,
+        qu_counts: quCounts,
+        rows,
+        cols,
+        cl_times: [dt / 1000],
+        // No quantum solve time: timing a formula against a search would compare
+        // nothing, and the site does not put a number next to that claim.
+        qu_times: null,
+      });
 
       const n = solutions.length;
       setStatus(
-        `Solved in your browser — ${String(n)} solution${n !== 1 ? 's' : ''} in ${dt.toFixed(1)} ms.`,
+        `Solved in your browser — ${String(n)} solution${n !== 1 ? 's' : ''} in ${dt.toFixed(1)} ms. ` +
+          `Grover simulated exactly; histogram sampled over ${String(LOCAL_SHOTS)} shots.`,
         'ok',
       );
     } finally {
