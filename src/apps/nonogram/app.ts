@@ -30,6 +30,7 @@ import {
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { groverOutcome, sampleCounts } from './grover-sim';
+import { track } from '../../telemetry';
 import { SiteContract, type ContractResult } from '../shared/contract-client';
 import { ServiceConfig } from '../shared/service-config';
 
@@ -193,6 +194,14 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
       `Browser solving stops at ${String(LOCAL_MAX_CELLS)} cells — remove a row or column.`,
       'err',
     );
+    track({
+      app: 'nonogram',
+      event: 'run.done',
+      tier: 'browser',
+      outcome: 'capped',
+      a: rows,
+      b: cols,
+    });
     return;
   }
   clearSolverResults();
@@ -233,6 +242,17 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
       });
 
       const n = solutions.length;
+      track({
+        app: 'nonogram',
+        event: 'run.done',
+        tier: 'browser',
+        outcome: n > 0 ? 'ok' : 'empty',
+        variant: state.mode,
+        value: dt,
+        a: rows,
+        b: cols,
+        n,
+      });
       setStatus(
         `Solved in your browser — ${String(n)} solution${n !== 1 ? 's' : ''} in ${dt.toFixed(1)} ms. ` +
           `Grover simulated exactly; histogram sampled over ${String(LOCAL_SHOTS)} shots.`,
