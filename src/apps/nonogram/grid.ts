@@ -200,8 +200,6 @@ function clueHeader(
   const th = document.createElement('th');
   th.scope = scope;
   th.className = scope === 'row' ? 'row-clue' : 'col-clue';
-  // Typed clues draw their own box per slot, so the cell around them draws none.
-  if (state.mode === 'clues') th.classList.add('clue-typed');
   th.id = id;
   th.setAttribute('aria-label', label);
   th.appendChild(content);

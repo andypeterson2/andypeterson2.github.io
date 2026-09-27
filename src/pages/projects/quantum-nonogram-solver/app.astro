@@ -202,7 +202,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: center;
     font-size: var(--text-3xs);
     font-weight: 600;
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
     padding: 0;
   }
 
@@ -235,19 +235,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     visibility: hidden;
   }
 
-  :global(.nonogram-table .clue-typed) {
-    border-color: transparent;
-  }
-
-  /* A clue box that takes typing keeps the slot's exact square, so switching modes
-     does not move the grid. */
+  /* A clue box that takes typing keeps the slot's exact square, so switching modes does
+     not move the grid. The table cell around it draws the box — border-collapse shares
+     that line with the neighbouring cells — and these draw only the slot divisions. */
   :global(.clue-slot--input) {
     box-sizing: border-box;
     padding: 0;
-    border: 1px solid var(--ink);
+    border: 0;
     background: var(--paper);
     text-align: center;
     font-weight: 600;
+  }
+
+  :global(.row-clue-slots .clue-slot--input + .clue-slot--input) {
+    border-left: 1px solid var(--ink);
+  }
+
+  :global(.col-clue-slots .clue-slot--input + .clue-slot--input) {
+    border-top: 1px solid var(--ink);
   }
 
   :global(.clue-slot--input:focus) {
