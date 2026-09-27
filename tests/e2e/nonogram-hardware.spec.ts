@@ -226,11 +226,26 @@ test.describe('Nonogram: the IBM tier', () => {
     }
   });
 
-  test('the button is hidden until a live backend is there', async ({ page }) => {
+  // Shown rather than hidden: a capability the site has is worth seeing, and the
+  // stipple says it is out of reach without pretending it does not exist.
+  test('with no live backend the button is visible and plainly inert', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
-    await expect(page.locator('#btn-hw')).toBeHidden();
+
+    const btn = page.locator('#btn-hw');
+    await expect(btn).toBeVisible();
+    await expect(btn).toBeDisabled();
+    await expect(btn).toHaveAttribute('title', /not connected/);
+
+    // The disabled treatment is a dither fill at full opacity, so the border keeps
+    // its strength and the control still reads as one.
+    const look = await btn.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { fill: cs.backgroundImage, opacity: cs.opacity };
+    });
+    expect(look.fill).toContain('data:image/svg+xml');
+    expect(look.opacity).toBe('1');
   });
 
   test('a grid too deep for a device is refused in the UI, with the reason', async ({ page }) => {

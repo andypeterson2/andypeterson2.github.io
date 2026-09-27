@@ -43,8 +43,22 @@ export function applyTierControls(): void {
 export function applyHardwareControl(): void {
   const btn = must('btn-hw') as HTMLButtonElement;
   const status = currentStatus();
-  btn.hidden = !window.API_BASE || !status?.configured;
-  if (btn.hidden || !status) return;
+  btn.hidden = false;
+
+  // Nothing to ask: on the browser tier there is no gateway to answer, and a probe
+  // that failed leaves the same nothing.
+  if (!window.API_BASE || !status) {
+    btn.textContent = '▶ Run on IBM';
+    btn.disabled = true;
+    btn.title = 'Real hardware runs through the live backend, which is not connected.';
+    return;
+  }
+  if (!status.configured) {
+    btn.textContent = '▶ Run on IBM';
+    btn.disabled = true;
+    btn.title = status.reason;
+    return;
+  }
 
   // No account yet: the button becomes the way to get one.
   if (!status.signedIn) {

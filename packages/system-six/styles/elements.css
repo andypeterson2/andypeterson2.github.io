@@ -57,17 +57,17 @@
   min-width: 32px;
   padding: 2px;
 }
+/* Unavailable, and still legible: the stipple is the 1-bit way to say a control is out
+   of reach, where fading the whole button would take its border with it. One treatment
+   for both variants, so a disabled primary reads as disabled first. */
 .s6-btn:disabled,
-.s6-btn:disabled:hover {
-  opacity: 0.4;
-  cursor: default;
-  background: var(--paper);
-  color: var(--ink);
-}
+.s6-btn:disabled:hover,
 .s6-btn--primary:disabled,
 .s6-btn--primary:disabled:hover {
-  background: var(--ink);
-  color: var(--paper);
+  cursor: default;
+  background: var(--dither-light);
+  color: var(--color-text-muted);
+  border-color: var(--ink-4);
 }
 /* Touch: every app button is a 44px target. */
 @media (pointer: coarse) {
