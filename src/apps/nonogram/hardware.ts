@@ -75,6 +75,33 @@ function base(): string {
   return window.API_BASE ?? '';
 }
 
+/** The gateway's answer about this visitor, cached for the page's lifetime. */
+export interface HardwareStatus {
+  configured: boolean;
+  signedIn: boolean;
+  allowed: boolean;
+  remaining: number | null;
+  reason: string;
+}
+
+let status: HardwareStatus | null = null;
+
+/** What the gateway says this visitor may do. Asking spends no quota. */
+export async function refreshStatus(): Promise<HardwareStatus | null> {
+  const result = await SiteContract.request(base() + '/gate/hardware', { timeoutMs: 8000 });
+  status = result.ok ? (result.data as HardwareStatus) : null;
+  return status;
+}
+
+export function currentStatus(): HardwareStatus | null {
+  return status;
+}
+
+/** Where to send someone who needs an account before they can spend credits. */
+export function signInUrl(): string {
+  return `${base()}/auth/login?redirect=${encodeURIComponent(location.href)}`;
+}
+
 /** Whether this grid is one a hardware run can say anything about. */
 export function withinHardwareLimit(rows: number, cols: number): boolean {
   return rows * cols <= MAX_HW_CELLS;

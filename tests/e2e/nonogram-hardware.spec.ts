@@ -36,6 +36,8 @@ interface Stub {
   setDone(counts: Record<string, number>): void;
   /** Refuse the next submit with this status and envelope code. */
   refuse(status: number, code: string, message: string): void;
+  /** What /gate/hardware reports: signed out, refused, spent, or allowed. */
+  setEntitlement(next: Record<string, unknown>): void;
   close(): Promise<void>;
 }
 
@@ -46,6 +48,13 @@ async function startStub(): Promise<Stub> {
     polls: 0,
     done: null as Record<string, number> | null,
     refusal: null as { status: number; code: string; message: string } | null,
+    entitlement: {
+      configured: true,
+      signedIn: true,
+      allowed: true,
+      remaining: 3,
+      reason: '3 hardware runs left this window.',
+    } as Record<string, unknown>,
   };
 
   const server = http.createServer((req, res) => {
@@ -57,6 +66,10 @@ async function startStub(): Promise<Stub> {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, cors(req));
       res.end();
+      return;
+    }
+    if (req.method === 'GET' && path === '/gate/hardware') {
+      json(200, stub.entitlement);
       return;
     }
     if (req.method === 'POST' && path === '/api/hw/jobs') {
@@ -99,6 +112,7 @@ async function startStub(): Promise<Stub> {
       return stub.polls;
     },
     setDone: (counts) => (stub.done = counts),
+    setEntitlement: (next) => (stub.entitlement = next),
     refuse: (status, code, message) => (stub.refusal = { status, code, message }),
     close: () =>
       new Promise<void>((resolve) => {
@@ -119,6 +133,8 @@ async function connect(page: Page, stub: Stub): Promise<void> {
     );
   }, stub.url);
   await expect(page.locator('#btn-hw')).toBeVisible();
+  // The button is drawn from the gateway's answer, so wait for it to have arrived.
+  await expect(page.locator('#btn-hw')).toHaveText(/Run on IBM|Sign in/);
 }
 
 /** The app opens at 3x3, which is past the hardware ceiling. Shrink to 2x2. */
@@ -129,6 +145,87 @@ async function shrinkToTwoByTwo(page: Page): Promise<void> {
 }
 
 test.describe('Nonogram: the IBM tier', () => {
+  test('a visitor who is not signed in is offered the sign-in, not a dead button', async ({
+    page,
+  }) => {
+    const stub = await startStub();
+    stub.setEntitlement({
+      configured: true,
+      signedIn: false,
+      allowed: false,
+      remaining: null,
+      reason: 'Sign in to run on real hardware.',
+    });
+    try {
+      await connect(page, stub);
+      await shrinkToTwoByTwo(page);
+      const btn = page.locator('#btn-hw');
+      await expect(btn).toHaveText('Sign in to run on IBM');
+      await expect(btn).toBeEnabled();
+      await expect(btn).toHaveAttribute('title', /Sign in/);
+
+      // Pressing it goes to the sign-in rather than the QPU.
+      await btn.click();
+      await expect(page).toHaveURL(/\/auth\/login\?redirect=/);
+      expect(stub.submits).toHaveLength(0);
+    } finally {
+      await stub.close();
+    }
+  });
+
+  test('a signed-in account that may not spend credits cannot press it', async ({ page }) => {
+    const stub = await startStub();
+    stub.setEntitlement({
+      configured: true,
+      signedIn: true,
+      allowed: false,
+      remaining: null,
+      reason: 'This account may not spend quantum credits.',
+    });
+    try {
+      await connect(page, stub);
+      await shrinkToTwoByTwo(page);
+      await expect(page.locator('#btn-hw')).toBeDisabled();
+      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /may not spend/);
+      expect(stub.submits).toHaveLength(0);
+    } finally {
+      await stub.close();
+    }
+  });
+
+  test('a spent budget disables the button and says so', async ({ page }) => {
+    const stub = await startStub();
+    stub.setEntitlement({
+      configured: true,
+      signedIn: true,
+      allowed: false,
+      remaining: 0,
+      reason: 'The quantum budget for this 28-day window is spent.',
+    });
+    try {
+      await connect(page, stub);
+      await shrinkToTwoByTwo(page);
+      await expect(page.locator('#btn-hw')).toBeDisabled();
+      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /budget/);
+    } finally {
+      await stub.close();
+    }
+  });
+
+  test('the remaining budget is on the button an allowlisted account can press', async ({
+    page,
+  }) => {
+    const stub = await startStub();
+    try {
+      await connect(page, stub);
+      await shrinkToTwoByTwo(page);
+      await expect(page.locator('#btn-hw')).toBeEnabled();
+      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /3 hardware runs left/);
+    } finally {
+      await stub.close();
+    }
+  });
+
   test('the button is hidden until a live backend is there', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(APP);

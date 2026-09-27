@@ -9,7 +9,13 @@ import {
   elClPlaceholder,
   elQuSolPlaceholder,
 } from './state';
-import { setStatus, setBusy, updateGridSizeLabel, applyTierControls } from './ui';
+import {
+  setStatus,
+  setBusy,
+  updateGridSizeLabel,
+  applyTierControls,
+  applyHardwareControl,
+} from './ui';
 import {
   initGrid,
   buildGrid,
@@ -39,7 +45,10 @@ import {
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { groverOutcome, sampleCounts } from './grover-sim';
 import {
+  currentStatus,
   pendingJob,
+  refreshStatus,
+  signInUrl,
   submitJob,
   waitForJob,
   withinHardwareLimit,
@@ -74,6 +83,10 @@ document.addEventListener('navbar:connect', (e) => {
   window.API_BASE = detail.url;
   applyTierControls();
   bindSocket(socket);
+  // What this visitor may spend is the gateway's to say, and it changes the button.
+  void refreshStatus().then(() => {
+    applyHardwareControl();
+  });
 });
 
 function bindSocket(s: NonogramSocket): void {
@@ -507,7 +520,14 @@ function init(): void {
   }
 
   must('btn-hw').addEventListener('click', () => {
-    if (!state.busy) void runOnHardware();
+    if (state.busy) return;
+    // Signed out, the button is the sign-in: a dead-ended control would only teach
+    // someone that the feature is broken.
+    if (!currentStatus()?.signedIn) {
+      location.href = signInUrl();
+      return;
+    }
+    void runOnHardware();
   });
 
   // A reload during an IBM queue rejoins the same job rather than losing it.
