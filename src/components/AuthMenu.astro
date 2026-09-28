@@ -99,9 +99,17 @@
     color: var(--paper);
   }
 
+  /* Matches the links beside it in the same menu. */
   .auth-item--mobile .auth-btn {
-    display: block;
-    padding: 8px 12px;
-    font-size: var(--text-3xs);
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 12px;
+  }
+
+  .auth-item--mobile .auth-btn:hover,
+  .auth-item--mobile .auth-btn:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
   }
 </style>
