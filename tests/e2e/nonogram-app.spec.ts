@@ -70,7 +70,6 @@ test.describe('Nonogram: typing the clues', () => {
     for (let r = 0; r < 3; r++) await page.locator(clue('row', r, 0)).fill('3');
     for (let c = 0; c < 3; c++) await page.locator(clue('col', c, 0)).fill('1');
     await page.locator('#btn-bench').click();
-    await expect(page.locator('#status-line')).toContainText('0 solutions');
     await expect(page.locator('#cl-placeholder')).toContainText('No solutions found');
   });
 
@@ -84,7 +83,10 @@ test.describe('Nonogram: typing the clues', () => {
     await page.locator(clue('col', 0, 0)).fill('3');
     await page.locator(clue('col', 2, 0)).fill('3');
     await page.locator('#btn-bench').click();
-    await expect(page.locator('#status-line')).toContainText('1 solution');
+    // Counted in the metrics table; the sections carry their own timings.
+    await expect(
+      page.locator('#metrics-pane tr', { hasText: 'Solutions found' }).locator('td').nth(1),
+    ).toHaveText('1');
     await expect(page.locator('#cl-canvas .sol-grid-label')).toHaveText('Solution');
   });
 
@@ -112,7 +114,14 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
   test('a solved puzzle fills the histogram and the Grover metrics', async ({ page }) => {
     for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
     await page.locator('#btn-bench').click();
-    await expect(page.locator('#status-line')).toContainText('Grover simulated exactly');
+
+    // Each figure annotates the section it measures rather than piling into one line.
+    await expect(page.locator('#cl-meta')).toHaveText(/ms$/);
+    await expect(page.locator('#qu-meta')).toContainText('noiseless');
+    await expect(page.locator('#hist-meta')).toHaveText('1024 shots');
+    await expect(page.locator('#hist-meta')).toHaveAttribute('title', /1024 shots/);
+    // Nothing restated underneath.
+    await expect(page.locator('#status-line')).toBeHidden();
 
     await expect(page.locator('#qu-histogram rect.hist-bar').first()).toBeVisible();
     await expect(metric(page, 'Qubits')).toHaveText('9');

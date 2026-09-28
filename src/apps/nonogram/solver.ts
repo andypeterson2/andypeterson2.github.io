@@ -5,6 +5,7 @@
 
 import {
   state,
+  $,
   must,
   elHistSvg,
   elQuPlaceholder,
@@ -75,6 +76,8 @@ export function clearSolverResults(): void {
   elThresholdInput.disabled = true;
   elQuPlaceholder.style.display = 'block';
 
+  // The rules carried the last run's figures; they describe nothing now.
+  setRunMeta({});
   clearMetrics();
 }
 
@@ -425,6 +428,28 @@ export function renderMetrics(
 }
 
 // Benchmark result renderer
+
+/** Annotate a section's rule with what its own run cost. */
+function setRuleMeta(id: string, text: string, hover = ''): void {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  if (hover) el.title = hover;
+  else el.removeAttribute('title');
+}
+
+/** Everything a run's rules should say, cleared and re-set together. */
+export function setRunMeta(meta: {
+  classical?: string;
+  quantum?: string;
+  histogram?: string;
+  histogramHover?: string;
+}): void {
+  setRuleMeta('cl-meta', meta.classical ?? '');
+  setRuleMeta('qu-meta', meta.quantum ?? '');
+  setRuleMeta('hist-meta', meta.histogram ?? '', meta.histogramHover);
+}
+
 export function renderBenchmark({
   report,
   solutions,

@@ -58,17 +58,23 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
-        <div class="section-rule"><span>Classical</span></div>
+        <div class="section-rule">
+          <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
+        </div>
         <div id="cl-canvas" class="sol-canvas">
           <div id="cl-placeholder" class="placeholder-msg">Solve the puzzle to see solutions.</div>
         </div>
-        <div class="section-rule"><span>Quantum</span></div>
+        <div class="section-rule">
+          <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
+        </div>
         <div id="qu-list" class="sol-canvas">
           <div id="qu-sol-placeholder" class="placeholder-msg">
             Solve the puzzle to see solutions.
           </div>
         </div>
-        <div class="section-rule"><span>Histogram</span></div>
+        <div class="section-rule">
+          <span>Histogram</span><span id="hist-meta" class="rule-meta"></span>
+        </div>
         <div class="histogram-controls">
           <label class="threshold-label"
             >Thr
@@ -307,6 +313,26 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
     color: var(--ink-2);
+  }
+
+  /* A run's own measure of itself, sitting on the rule that names the section: a
+     lowercase aside against the uppercase label, so it reads as annotation. Leading
+     middot is escaped — a stylesheet served without a charset decodes it as latin-1
+     and splits the byte pair into two visible characters. */
+  :global(.rule-meta) {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  :global(.rule-meta:empty) {
+    display: none;
+  }
+
+  :global(.rule-meta::before) {
+    content: '\00b7';
+    padding: 0 0.5em;
   }
 
   /* ── Status line — takes no room until a run has something to report; the buttons

@@ -37,6 +37,7 @@ import {
   renderClassical,
   renderQuantum,
   renderBenchmark,
+  setRunMeta,
   drawEmptyHistogram,
   drawHistogram,
   renderQuantumList,
@@ -249,6 +250,15 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
         qu_times: null,
       });
 
+      // Each figure sits on the section it describes, so nothing needs restating in
+      // a status line underneath.
+      setRunMeta({
+        classical: `${dt.toFixed(1)} ms`,
+        quantum: `noiseless, ${String(outcome.iterations)} iteration${outcome.iterations === 1 ? '' : 's'}`,
+        histogram: `${String(LOCAL_SHOTS)} shots`,
+        histogramHover: `Sampled from the exact distribution over ${String(LOCAL_SHOTS)} shots, the count a hardware run asks for.`,
+      });
+
       const n = solutions.length;
       track({
         app: 'nonogram',
@@ -261,11 +271,9 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
         b: cols,
         n,
       });
-      setStatus(
-        `Solved in your browser — ${String(n)} solution${n !== 1 ? 's' : ''} in ${dt.toFixed(1)} ms. ` +
-          `Grover simulated exactly; histogram sampled over ${String(LOCAL_SHOTS)} shots.`,
-        'ok',
-      );
+      // The rules above carry the numbers and the panels carry the answers, so a
+      // line here would only repeat them. Failures still speak for themselves.
+      setStatus('');
     } finally {
       setBusy(false);
     }
@@ -275,6 +283,26 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
 // IBM hardware tier
 // The run is two calls with a wait between them, so the page owns the waiting: the
 // solver is free the moment IBM has the job, and a reload rejoins the same run.
+
+/**
+ * Shots behind a histogram, when that is what the counts are.
+ *
+ * A live or hardware run reports integer counts; a captured gallery run stores the
+ * distribution those counts became, summing to 1. Calling that "1 shots" would be a
+ * measurement nobody took, so it goes unsaid.
+ */
+function shotsLabel(counts: Record<string, number> | null | undefined): string {
+  const values = Object.values(counts ?? {});
+  if (!values.length || !values.every((v) => Number.isInteger(v))) return '';
+  const total = values.reduce((a, b) => a + b, 0);
+  return total > 1 ? `${String(total)} shots` : '';
+}
+
+/** A captured run's classical time, in the milliseconds the rules show. */
+function firstMs(times: number[] | null | undefined): string {
+  const first = times?.[0];
+  return typeof first === 'number' ? `${(first * 1000).toFixed(1)} ms` : '';
+}
 
 /** Shots for a hardware run. Halved past 4 cells: the circuit is ~6x deeper there and
  *  every shot on it costs more of a 10-minute monthly allowance. */
@@ -301,10 +329,15 @@ function renderHardware(job: HardwareJob, collected: CollectedJob): void {
       ? `top state ${(measured * 100).toFixed(1)}% against ${(chance * 100).toFixed(2)}% by chance`
       : `flat — ${(measured * 100).toFixed(1)}% on the top state against ${(chance * 100).toFixed(2)}% by chance, which is what decoherence at this depth looks like`;
 
-  setStatus(
-    `${collected.backend ?? job.backend ?? 'IBM'} returned ${String(shots)} shots: ${verdict}.`,
-    'ok',
-  );
+  const device = collected.backend ?? job.backend ?? 'IBM';
+  setRunMeta({
+    quantum: device,
+    histogram: `${String(shots)} shots`,
+    histogramHover: job.transpiled_depth
+      ? `${device}, ${String(shots)} shots, transpiled depth ${String(job.transpiled_depth)}.`
+      : `${device}, ${String(shots)} shots.`,
+  });
+  setStatus(`${device}: ${verdict}.`, 'ok');
   track({
     app: 'nonogram',
     event: 'run.done',
@@ -383,6 +416,8 @@ interface GalleryIndexEntry {
 interface GalleryPayload extends BenchmarkPayload {
   label?: string;
   source?: string;
+  /** The device a captured hardware run was measured on. */
+  hardware?: string | null;
 }
 
 let galleryNotes = new Map<string, string>();
@@ -454,6 +489,13 @@ async function loadGalleryEntry(slug: string): Promise<void> {
   clearSolverResults();
   renderBenchmark(payload);
   const src = payload.source === 'ibm-hardware' ? 'real IBM hardware' : 'the Grover simulator';
+  const shots = shotsLabel(payload.qu_counts);
+  setRunMeta({
+    classical: firstMs(payload.cl_times),
+    quantum: payload.source === 'ibm-hardware' ? (payload.hardware ?? 'IBM hardware') : 'simulated',
+    histogram: shots,
+    histogramHover: `A captured run on ${src}${shots ? `, over ${shots}` : ''}.`,
+  });
   setStatus(`${payload.label ?? slug} — a real run on ${src}.`, 'ok');
   showGalleryNote(galleryNotes.get(slug) ?? '');
 }
