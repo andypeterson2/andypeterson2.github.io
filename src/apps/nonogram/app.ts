@@ -48,7 +48,7 @@ import { groverOutcome, sampleCounts } from './grover-sim';
 import {
   pendingJob,
   refreshStatus,
-  signInUrl,
+  watchSession,
   submitJob,
   waitForJob,
   withinHardwareLimit,
@@ -525,8 +525,8 @@ function init(): void {
     if (!state.busy && !isUnavailable(hwButton)) void runOnHardware();
   });
 
-  must('btn-signin').addEventListener('click', () => {
-    location.href = signInUrl();
+  watchSession(() => {
+    applyHardwareControl();
   });
 
   // Asked on load as well as on connect: whether someone is signed in is the

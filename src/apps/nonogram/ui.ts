@@ -5,7 +5,7 @@
  */
 
 import { state, $, must } from './state';
-import { MAX_HW_CELLS, currentStatus } from './hardware';
+import { MAX_HW_CELLS, currentStatus, isSignedIn } from './hardware';
 
 export function setStatus(msg: string, level?: 'err' | 'ok'): void {
   const el = $('status-line');
@@ -40,6 +40,10 @@ export function applyTierControls(): void {
  * The size ceiling shows as a disabled button rather than a hidden one, so the limit
  * is visible instead of mysterious.
  */
+/** Said the same way wherever hardware is out of reach for want of an account. */
+const NEEDS_ACCOUNT =
+  'Running on a real quantum computer needs an authenticated account — sign in from the menu bar.';
+
 /**
  * Mark a control unavailable while leaving it reachable.
  *
@@ -66,13 +70,16 @@ export function applyHardwareControl(): void {
   const btn = must('btn-hw') as HTMLButtonElement;
   const status = currentStatus();
   btn.hidden = false;
-  // Shown until we know the visitor is signed in. A probe that failed leaves that
-  // unknown, and offering a sign-in then is harmless where offering a run is not.
-  must('signin-bar').hidden = status?.signedIn === true;
 
   // Nothing to ask: on the browser tier there is no gateway to answer, and a probe
   // that failed leaves the same nothing.
   btn.textContent = '▶ Run on IBM';
+  // Asked first because it is what stops most visitors, and because the menu bar
+  // knows the answer on every page, with or without a backend awake.
+  if (isSignedIn() === false) {
+    setUnavailable(btn, NEEDS_ACCOUNT);
+    return;
+  }
   if (!window.API_BASE || !status) {
     setUnavailable(btn, 'Real hardware runs through the live backend, which is not connected.');
     return;
@@ -85,7 +92,7 @@ export function applyHardwareControl(): void {
   // No account yet: the run button says why it cannot be pressed, and the sign-in
   // bar below the controls is what does something about it.
   if (!status.signedIn) {
-    setUnavailable(btn, 'Please log in to use this feature.');
+    setUnavailable(btn, NEEDS_ACCOUNT);
     return;
   }
 

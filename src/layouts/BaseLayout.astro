@@ -12,6 +12,7 @@ import chicago12Url from '@sakun/system.css/dist/ChiKareGo2.woff2?url';
 import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
 import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
 import PassLane from '../components/PassLane.astro';
+import AuthMenu from '../components/AuthMenu.astro';
 import Button from '../components/Button.astro';
 import CfBeacon from '../components/CfBeacon.astro';
 
@@ -325,6 +326,7 @@ const windowTitle = title || siteConfig.title;
     </script>
 
     <PassLane />
+    <AuthMenu />
     <!-- After the pass lane: deferred scripts run in document order, so a ?pass= token is
          scrubbed from the URL before the beacon can read it. -->
     {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}

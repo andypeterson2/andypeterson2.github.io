@@ -127,9 +127,22 @@ export function currentStatus(): HardwareStatus | null {
   return status;
 }
 
-/** Where to send someone who needs an account before they can spend credits. */
-export function signInUrl(): string {
-  return `${gatewayOrigin()}/auth/login?redirect=${encodeURIComponent(location.href)}`;
+/** Whether the visitor has a session, once the menu bar has asked. */
+let signedIn: boolean | null = null;
+
+export function isSignedIn(): boolean | null {
+  return signedIn;
+}
+
+/**
+ * The menu bar asks `/auth/me` on every page, so this is known without a backend —
+ * which matters, because needing an account is what blocks most visitors first.
+ */
+export function watchSession(onChange: () => void): void {
+  document.addEventListener('site:session', (e) => {
+    signedIn = (e as CustomEvent<{ authenticated?: boolean }>).detail.authenticated === true;
+    onChange();
+  });
 }
 
 /** Whether this grid is one a hardware run can say anything about. */

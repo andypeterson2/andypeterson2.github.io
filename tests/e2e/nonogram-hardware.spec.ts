@@ -32,6 +32,8 @@ interface Stub {
   /** Headers of every POST /api/hw/jobs, so the ask can be asserted. */
   submits: http.IncomingHttpHeaders[];
   polls: number;
+  /** Whether the menu bar should see a session. Tracks the entitlement. */
+  readonly signedIn: boolean;
   /** Flip to DONE and the next poll returns counts. */
   setDone(counts: Record<string, number>): void;
   /** Refuse the next submit with this status and envelope code. */
@@ -68,6 +70,13 @@ async function startStub(): Promise<Stub> {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, cors(req));
       res.end();
+      return;
+    }
+    if (req.method === 'GET' && path === '/auth/me') {
+      json(stub.entitlement.signedIn ? 200 : 401, {
+        authenticated: stub.entitlement.signedIn === true,
+        email: 'quantum@test.dev',
+      });
       return;
     }
     if (req.method === 'GET' && path === '/gate/hardware') {
@@ -113,6 +122,9 @@ async function startStub(): Promise<Stub> {
     get polls() {
       return stub.polls;
     },
+    get signedIn() {
+      return stub.entitlement.signedIn === true;
+    },
     setDone: (counts) => (stub.done = counts),
     setEntitlement: (next) => (stub.entitlement = next),
     refuse: (status, code, message) => (stub.refusal = { status, code, message }),
@@ -127,6 +139,15 @@ async function startStub(): Promise<Stub> {
 
 /** Load the app, then bring the live tier up against the stub. */
 async function connect(page: Page, stub: Stub): Promise<void> {
+  // The menu bar asks the real gateway for the session, so it is answered here rather
+  // than by the stub origin. Read at request time, so a test may set it either side.
+  await page.route('**/auth/me', (route) =>
+    route.fulfill({
+      status: stub.signedIn ? 200 : 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ authenticated: stub.signedIn, email: 'quantum@test.dev' }),
+    }),
+  );
   await page.goto(APP);
   await expect(page.locator('td.cell').first()).toBeVisible();
   await page.evaluate((url) => {
@@ -164,7 +185,7 @@ test.describe('Nonogram: the IBM tier', () => {
       await shrinkToTwoByTwo(page);
       const btn = page.locator('#btn-hw');
       await expect(btn).toBeDisabled();
-      await expect(btn).toHaveAttribute('title', 'Please log in to use this feature.');
+      await expect(btn).toHaveAttribute('title', /authenticated account/);
 
       // Reachable rather than inert: a natively disabled button leaves the tab order
       // and answers no hover, so the reason would be unreadable by keyboard.
@@ -174,14 +195,10 @@ test.describe('Nonogram: the IBM tier', () => {
       await expect(btn).toBeFocused();
       expect(await btn.evaluate((el) => getComputedStyle(el).cursor)).toBe('help');
 
-      // Pressing it does nothing; the sign-in bar is what does something.
+      // Pressing it does nothing; the menu bar is what does something.
       await btn.click({ force: true });
       expect(stub.submits).toHaveLength(0);
-
-      const signIn = page.locator('#btn-signin');
-      await expect(signIn).toBeVisible();
-      await signIn.click();
-      await expect(page).toHaveURL(/\/auth\/login\?redirect=/);
+      await expect(page.locator('.site-menubar .auth-item .auth-btn')).toHaveText('Sign in');
     } finally {
       await stub.close();
     }
@@ -235,8 +252,8 @@ test.describe('Nonogram: the IBM tier', () => {
       await shrinkToTwoByTwo(page);
       await expect(page.locator('#btn-hw')).toBeEnabled();
       await expect(page.locator('#btn-hw')).toHaveAttribute('title', /3 hardware runs left/);
-      // Nothing left to sign in for.
-      await expect(page.locator('#signin-bar')).toBeHidden();
+      // Signed in, so the menu bar offers the way back out.
+      await expect(page.locator('.site-menubar .auth-item .auth-btn')).toHaveText('Sign out');
     } finally {
       await stub.close();
     }
@@ -245,17 +262,29 @@ test.describe('Nonogram: the IBM tier', () => {
   // The sign-in is on the page from the start. Whether somebody is signed in is the
   // gateway's to answer and holds whether or not an app is awake; gating it behind a
   // connection made it unreachable for every visitor who has no pass.
-  test('the sign-in is offered on a plain page load', async ({ page }) => {
+  // Sign-in lives in the menu bar now, on every page, so it is reachable whether or
+  // not this app has a backend awake.
+  test('the menu bar offers the sign-in on a plain page load', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.route('**/gate/hardware', (r) => r.abort());
+    await page.route('**/auth/me', (r) => r.fulfill({ status: 401, body: '{}' }));
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
 
-    // Even with the probe failing: a sign-in nobody needs is harmless, where a run
-    // button that opened up on a failed check would not be.
-    await expect(page.locator('#signin-bar')).toBeVisible();
-    await expect(page.locator('#btn-signin')).toBeVisible();
+    const auth = page.locator('.site-menubar .auth-item .auth-btn');
+    await expect(auth).toBeVisible();
+    await expect(auth).toHaveText('Sign in');
+
+    // Flush with the right edge of the bar.
+    const [item, bar] = await Promise.all([
+      auth.boundingBox(),
+      page.locator('.site-menubar ul').boundingBox(),
+    ]);
+    expect(Math.round(item!.x + item!.width)).toBeCloseTo(Math.round(bar!.x + bar!.width), -1);
+
+    // And the run button says which account it wants.
     await expect(page.locator('#btn-hw')).toBeDisabled();
+    await expect(page.locator('#btn-hw')).toHaveAttribute('title', /authenticated account/);
   });
 
   // Shown rather than hidden: a capability the site has is worth seeing, and the
@@ -263,6 +292,15 @@ test.describe('Nonogram: the IBM tier', () => {
   test('with no live backend the button is visible and plainly inert', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.route('**/gate/hardware', (r) => r.abort());
+    // Signed in, so the missing backend is the only thing left to report. Without
+    // this the session probe races the assertion and either reason can win.
+    await page.route('**/auth/me', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ authenticated: true, email: 'quantum@test.dev' }),
+      }),
+    );
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
 
