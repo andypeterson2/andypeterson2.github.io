@@ -40,7 +40,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
           </span>
         </div>
-        <div id="status-line" class="status-line">Ready — puzzles solve in your browser.</div>
+        <div id="status-line" class="status-line" role="status"></div>
         <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
@@ -309,7 +309,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     color: var(--ink-2);
   }
 
-  /* ── Status line ── */
+  /* ── Status line — takes no room until a run has something to report; the buttons
+     already say what pressing them will do. ── */
+  .status-line:empty {
+    display: none;
+  }
+
   .status-line {
     font-size: var(--text-3xs);
     color: var(--color-text-muted);
