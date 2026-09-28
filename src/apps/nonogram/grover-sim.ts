@@ -15,8 +15,8 @@
  *
  * Working in that plane rather than over a 2^n vector is what makes this viable in a
  * browser: nothing here is sized by N, so a 25-cell puzzle costs the same as a 4-cell
- * one. It also means there is no circuit, so no depth and no gate counts to report —
- * the metrics table shows those as unknown, which is the honest answer.
+ * one. It also means there is no circuit, so there is no depth and no gate count to
+ * report, and the metrics table shows both as unknown.
  */
 
 /** What a measurement of the post-Grover state would give. */
@@ -140,8 +140,8 @@ export function sampleCounts(
 ): Record<string, number> {
   const counts: Record<string, number> = {};
   if (shots <= 0) return counts;
-  // No marked state means no interference, so report the flat truth. Past
-  // EXACT_LIMIT a draw is already flat enough that no state clears the threshold.
+  // No marked state means no interference, so report the flat distribution itself.
+  // Past EXACT_LIMIT a draw is already flat enough that no state clears the threshold.
   if (outcome.markedProbability === 0 && qubits <= EXACT_LIMIT) return uniformCounts(qubits);
 
   const marked = solutions.map(stateIndex).sort((a, b) => a - b);

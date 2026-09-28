@@ -10,6 +10,7 @@
  * quantum credits and, if so, sets its own header for the backend to read.
  */
 import { SiteContract, type ContractResult } from '../shared/contract-client';
+import { gatewayOriginOf } from '../../lib/gateway';
 import { clientId } from './state';
 import { setStatus } from './ui';
 import { track } from '../../telemetry';
@@ -75,22 +76,9 @@ function base(): string {
   return window.API_BASE ?? '';
 }
 
-/** The single API front door, which is also what pass.ts connects through. */
-const GATEWAY = 'https://api.andypeterson.dev';
-
-/**
- * The gateway's own origin, which is not the app's base.
- *
- * `window.API_BASE` points at one app under the gateway (`…/nonogram`), while
- * entitlement and sign-in live at the root. Asking the app prefix for them would
- * reach an upstream path that does not exist.
- */
+/** Entitlement answers at the gateway root; `window.API_BASE` carries an app prefix. */
 function gatewayOrigin(): string {
-  try {
-    return new URL(base() || GATEWAY).origin;
-  } catch {
-    return GATEWAY;
-  }
+  return gatewayOriginOf(base());
 }
 
 /** The gateway's answer about this visitor, cached for the page's lifetime. */
@@ -182,7 +170,7 @@ export async function submitJob(
 }
 
 /** Ask once what became of a job. */
-export async function collectJob(jobId: string): Promise<CollectedJob | null> {
+async function collectJob(jobId: string): Promise<CollectedJob | null> {
   const result = await SiteContract.request(`${base()}/api/hw/jobs/${encodeURIComponent(jobId)}`, {
     timeoutMs: 15000,
   });

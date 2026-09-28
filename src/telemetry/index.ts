@@ -17,6 +17,8 @@
  * and exists so a visitor's events can be counted as one visit rather than four.
  */
 
+import { GATEWAY_ORIGIN } from '../lib/gateway';
+
 /** Blob column order. Append only; never move or repurpose an entry. */
 export const BLOB_COLUMNS = [
   'v',
@@ -33,7 +35,7 @@ export const BLOB_COLUMNS = [
 export const DOUBLE_COLUMNS = ['value', 'a', 'b', 'n'] as const;
 
 /** Bumped when a column's meaning changes, which is the only time one may. */
-export const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 1;
 
 export type TelemetryApp = 'nonogram' | 'classifiers' | 'cv' | 'portal';
 export type TelemetryName = 'run.start' | 'run.done' | 'tier.change';
@@ -57,7 +59,7 @@ export interface TelemetryEvent {
   n?: number;
 }
 
-const ENDPOINT = 'https://api.andypeterson.dev/t';
+const ENDPOINT = `${GATEWAY_ORIGIN}/t`;
 
 /** Set at build time when the deploy knows its own commit; absent otherwise. */
 const RELEASE: string | undefined =
@@ -78,8 +80,8 @@ function newVisit(): string {
 /**
  * Record one event, or do nothing at all.
  *
- * Deliberately unawaitable and deliberately silent: a page must not wait on telemetry,
- * and a failed send must not become an error the visitor sees.
+ * Unawaitable and silent by design: a page must not wait on telemetry, and a failed
+ * send must not become an error the visitor sees.
  */
 export function track(event: TelemetryEvent): void {
   if (typeof navigator === 'undefined' || typeof navigator.sendBeacon !== 'function') return;

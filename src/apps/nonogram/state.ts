@@ -45,7 +45,7 @@ export const state: NonogramState = {
  * sessionStorage because the socket's own id is reissued on every reconnect, and a
  * reload would otherwise leave a run with nowhere to be delivered.
  */
-export const CLIENT_KEY = 'nonogram.client';
+const CLIENT_KEY = 'nonogram.client';
 
 export function clientId(): string {
   let id = '';
