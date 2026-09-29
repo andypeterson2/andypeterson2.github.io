@@ -689,12 +689,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: left;
   }
 
-  /* Rows are separated, columns are not: the figures line up on their own, and a box
-     around each one fences off numbers that are there to be compared. */
+  /* Ruled both ways: the rows separate the metrics, the columns separate the methods. */
   :global(.metrics-table td),
   :global(.metrics-table th[scope='row']) {
-    border: 0;
-    border-bottom: 1px solid var(--ink);
+    border: 1px solid var(--ink);
     padding: 4px 8px;
   }
 
@@ -710,8 +708,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* The last row of a group runs into the rule the next group opens with. */
-  :global(.metrics-table .metric:last-child td),
-  :global(.metrics-table .metric:last-child th[scope='row']) {
+  :global(.metrics-table tbody:not(:last-of-type) .metric:last-child td),
+  :global(.metrics-table tbody:not(:last-of-type) .metric:last-child th[scope='row']) {
     border-bottom: 0;
   }
 
@@ -744,22 +742,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border-top: 2px solid var(--ink);
   }
 
-  /* The qualifiers each name could not carry, under the table they qualify. */
-  :global(.metrics-legend) {
-    margin-top: var(--space-2);
-    font-size: var(--text-4xs);
-    line-height: var(--leading-normal);
-  }
-
-  :global(.metrics-legend p) {
-    margin: 0;
-  }
-
-  :global(.legend-name) {
-    font-family: var(--font-ui);
-    text-transform: uppercase;
-  }
-
   /* There is no device on the classical side. A hatched region says that; a column of
      dashes would read as data that went missing. */
   :global(.metrics-table .na) {
@@ -769,30 +751,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     background-clip: padding-box;
   }
 
-  /* A label with something to add is pressable — a title attribute reaches neither
-     touch nor the keyboard. */
-  :global(.metric-toggle) {
-    all: unset;
-    font: inherit;
+  /* A label with more to say marks itself, and says it on hover. */
+  :global(.metrics-table th.has-note) {
     cursor: help;
     text-decoration: underline dotted;
   }
 
-  :global(.metric-toggle:focus-visible) {
-    outline: 2px solid var(--ink);
-    outline-offset: 1px;
-  }
-
-  :global(.metric-note:not(.open)) {
-    display: none;
-  }
-
-  :global(.metric-note td) {
-    border-top: 0;
-    padding: 0 8px 6px 20px;
-    font-size: var(--text-4xs);
-    text-align: left;
-    line-height: var(--leading-normal);
+  /* Rotated, that mark would run down beside the name as a second rule, so the spine
+     keeps the cursor alone. */
+  :global(.metrics-table th.spine[title]) {
+    cursor: help;
   }
 
   :global(.metrics-unmeasured td) {
@@ -824,7 +792,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     }
 
     :global(.metrics-table th[scope='row']),
-    :global(.metrics-table .metric-note td),
     :global(.metrics-table .metrics-unmeasured td) {
       grid-column: 1 / -1;
     }

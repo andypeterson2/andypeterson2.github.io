@@ -410,31 +410,19 @@ function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElem
  * a band spanning the columns cut the figures in half to say so. The circuit diagram
  * names its boxes the same way.
  */
-function addSpine(body: HTMLTableSectionElement, label: string): void {
+function addSpine(body: HTMLTableSectionElement, label: string, meta: string): void {
   const first = body.rows.item(0);
   if (!first) return;
   const th = document.createElement('th');
   th.scope = 'rowgroup';
   th.className = 'spine';
+  // The qualifiers the rotated name has no room for.
+  if (meta) th.title = `${label} — ${meta}`;
   const name = document.createElement('span');
   name.textContent = label;
   th.append(name);
+  th.rowSpan = body.rows.length;
   first.insertBefore(th, first.firstChild);
-  syncSpine(body);
-}
-
-/**
- * Hold the spine to the rows it covers.
- *
- * A note row is display:none until it is opened, and a row that is not laid out is not
- * spanned, so the count has to be taken again every time one opens.
- */
-function syncSpine(body: HTMLTableSectionElement): void {
-  const th = body.querySelector<HTMLTableCellElement>('th.spine');
-  if (!th) return;
-  th.rowSpan = [...body.rows].filter(
-    (r) => !r.classList.contains('metric-note') || r.classList.contains('open'),
-  ).length;
 }
 
 /**
@@ -453,40 +441,12 @@ function metricRow(
   tr.className = 'metric';
   const th = document.createElement('th');
   th.scope = 'row';
-  const note = NOTES[label];
-
-  if (note) {
-    const id = `note-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'metric-toggle';
-    button.textContent = label;
-    // The same words a press opens, for a pointer that only hovers.
-    button.title = note;
-    button.setAttribute('aria-expanded', 'false');
-    button.setAttribute('aria-controls', id);
-    th.append(button);
-    tr.append(th);
-
-    if (naSpan) naCell(tr);
-    for (const v of values) cell(tr, v);
-
-    const noteRow = body.insertRow();
-    noteRow.className = 'metric-note';
-    noteRow.id = id;
-    const td = noteRow.insertCell();
-    td.colSpan = 4;
-    td.textContent = note;
-
-    button.addEventListener('click', () => {
-      const open = noteRow.classList.toggle('open');
-      button.setAttribute('aria-expanded', String(open));
-      syncSpine(body);
-    });
-    return;
-  }
-
   th.textContent = label;
+  const note = NOTES[label];
+  if (note) {
+    th.title = note;
+    th.className = 'has-note';
+  }
   tr.append(th);
   if (naSpan) naCell(tr);
   for (const v of values) cell(tr, v);
@@ -546,7 +506,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
     local.capped ? '—' : `\u2264 ${String(cost.predicateGates)} gates`,
     hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
   ]);
-  metricRow(search, 'Per extra cell', ['2\u00d7', '—', '1.41\u00d7']);
+  metricRow(search, 'Per extra cell', ['2x', '—', '1.41x']);
   metricRow(search, 'P(solution), ideal', [
     '100%',
     found > 0 ? '100%' : '—',
@@ -565,7 +525,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
     metricRow(
       device,
       'Device budget (layers)',
-      [`${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}\u00d7 over)`],
+      [`${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)`],
       true,
     );
     metricRow(
@@ -576,7 +536,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
       ],
       true,
     );
-    metricRow(device, 'P(solution), at chance', [`~${(100 / 2 ** cells).toFixed(1)}%`], true);
+    metricRow(device, 'P(solution), at chance', [`${(100 / 2 ** cells).toFixed(1)}%`], true);
   } else {
     const tr = device.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -587,34 +547,13 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
       'the circuit below carries the counts as written, before any device sees them.';
   }
 
-  addSpine(search, 'Search');
-  addSpine(device, 'On the device');
+  addSpine(search, 'Search', `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`);
+  addSpine(device, 'On the device', hw ? DEVICE_META : '');
 
   el.append(tbl);
-  el.append(
-    legend([
-      ['Search', `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`],
-      ['On the device', hw ? DEVICE_META : ''],
-    ]),
-  );
   el.classList.add('visible');
 }
 
-/** What each section's name would not fit: the qualifiers its figures are figures of. */
-function legend(sections: [string, string][]): HTMLElement {
-  const box = document.createElement('div');
-  box.className = 'metrics-legend';
-  for (const [label, meta] of sections) {
-    if (!meta) continue;
-    const line = document.createElement('p');
-    const name = document.createElement('span');
-    name.className = 'legend-name';
-    name.textContent = label;
-    line.append(name, document.createTextNode(` \u00b7 ${meta}`));
-    box.append(line);
-  }
-  return box;
-}
 
 // Benchmark result renderer
 

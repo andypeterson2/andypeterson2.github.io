@@ -75,7 +75,7 @@ export function measuredGrowth(rows: number, cols: number, solutions: number): s
   if (!smaller) return null;
   const step = cells - smaller.rows * smaller.cols;
   const perCell = (here.two_qubit / smaller.two_qubit) ** (1 / step);
-  return `${perCell.toFixed(2)}\u00d7`;
+  return `${perCell.toFixed(2)}x`;
 }
 
 /** How far past a device's reach this circuit is. */

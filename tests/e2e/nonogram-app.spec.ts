@@ -147,9 +147,10 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     expect(await checks(backtracking)).toBeLessThan(await checks(grover));
 
     // The scaling, stated as arithmetic, against what the built circuit actually does.
-    await expect(exhaustive(page, 'Per extra cell')).toHaveText('2×');
-    await expect(grover(page, 'Per extra cell')).toHaveText('1.41×');
-    await expect(grover(page, 'Per extra cell, measured')).toHaveText('2.17×');
+    // A letter x: the body face has no multiplication sign of its own.
+    await expect(exhaustive(page, 'Per extra cell')).toHaveText('2x');
+    await expect(grover(page, 'Per extra cell')).toHaveText('1.41x');
+    await expect(grover(page, 'Per extra cell, measured')).toHaveText('2.17x');
 
     // Measured, and hopeless: the circuit asks for far more than the device holds.
     await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');
@@ -298,10 +299,10 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(spines).toHaveText(['Search', 'On the device']);
     // Each spine covers every row of its own section.
     await expect(spines.first()).toHaveAttribute('rowspan', '5');
-    // The qualifiers the names could not carry sit under the table. The measured
-    // column's oracle already holds the answer, so its cost is a floor.
-    await expect(page.locator('.metrics-legend')).toContainText('lower bound');
-    await expect(page.locator('.metrics-legend')).toContainText('9 cells');
+    // The qualifiers the rotated names could not carry are their hover text. The
+    // measured column's oracle already holds the answer, so its cost is a floor.
+    await expect(spines.first()).toHaveAttribute('title', /9 cells/);
+    await expect(spines.last()).toHaveAttribute('title', /lower bound/);
   });
 
   test('bold belongs to the headers, not the body', async ({ page }) => {
@@ -319,20 +320,12 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(na.first().locator('.sr-only')).toHaveText('not applicable');
   });
 
-  test('a note opens from the keyboard as well as the pointer', async ({ page }) => {
-    const toggle = page.locator('.metric-toggle').first();
-    const note = page.locator('.metric-note').first();
-    await expect(note).toBeHidden();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-
-    await toggle.click();
-    await expect(note).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-
-    await toggle.focus();
-    await page.keyboard.press('Enter');
-    await expect(note).toBeHidden();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  test('a label with more to say carries it as hover text', async ({ page }) => {
+    // Every row in the table is a figure, so nothing in it is pressable.
+    await expect(page.locator('.metrics-table button')).toHaveCount(0);
+    const labelled = page.locator('.metrics-table th.has-note');
+    await expect(labelled.first()).toHaveAttribute('title', /asks the clues a question/);
+    await expect(labelled).toHaveCount(6);
   });
 
   test('every method survives a narrow screen, on its own line', async ({ page }) => {

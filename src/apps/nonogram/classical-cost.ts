@@ -78,11 +78,18 @@ export function classicalCost(rowClues: number[][], colClues: number[][]): Class
 }
 
 /** A count too large to write out, given as the power of two it is closest to. */
-function approxPowerOfTwo(log2: number): string {
-  return `~2^${String(Math.round(log2))}`;
+/**
+ * A count too large to write out, as a power of two.
+ *
+ * The exponent is exact for the counts this page shows; when one rounds, it says so in
+ * words, because the body face carries no approximation sign.
+ */
+function powerOfTwo(log2: number): string {
+  const n = Math.round(log2);
+  return Math.abs(log2 - n) < 1e-9 ? `2^${String(n)}` : `about 2^${String(n)}`;
 }
 
 /** A gate or layer count, falling back to a power of two once it stops fitting. */
 export function formatCount(value: number, log2: number): string {
-  return Number.isSafeInteger(value) ? value.toLocaleString() : approxPowerOfTwo(log2);
+  return Number.isSafeInteger(value) ? value.toLocaleString() : powerOfTwo(log2);
 }
