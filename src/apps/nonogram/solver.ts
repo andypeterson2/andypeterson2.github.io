@@ -265,10 +265,10 @@ function fp(p: number): string {
   return String(Math.round(v)) + '%';
 }
 
-// A 2×2 checkerboard: the System-6 50% grey, in ink on paper.
+// The 4×4 stipple the rest of the page fills a disabled or inapplicable surface with.
 const DITHER =
-  '<defs><pattern id="hist-dither" width="2" height="2" patternUnits="userSpaceOnUse">' +
-  '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="1" y="1" width="1" height="1"/>' +
+  '<defs><pattern id="hist-dither" width="4" height="4" patternUnits="userSpaceOnUse">' +
+  '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="2" y="2" width="1" height="1"/>' +
   '</pattern></defs>';
 
 export function drawHistogram({ entries, verified, totalOutcomes }: HistData): void {
@@ -288,8 +288,14 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
   const bits = Math.max(...entries.map(([bs]) => bs.length));
   // Room under the axis for the bitstrings, set at 45°, plus the caption line.
   const labelDrop = Math.min(96, 8 + bits * CHAR_PX * 0.71);
-  // The top holds the bracket over the solutions and the count above it.
-  const P = { t: 30, r: 12, b: labelDrop + LABEL_PX + 10, l: BAR_INSET };
+  // The top holds the bracket over the solutions and the count above it. The left holds
+  // what the first bitstring reaches back past its own bar.
+  const P = {
+    t: 30,
+    r: 12,
+    b: labelDrop + LABEL_PX + 10,
+    l: BAR_INSET + Math.max(0, labelDrop - 8 - MIN_BAR_SLOT / 2),
+  };
   const cW = W - P.l - P.r;
 
   const maxProb = entries[0][1];
