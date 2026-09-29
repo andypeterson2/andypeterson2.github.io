@@ -2,9 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { buildCircuit } from '../src/apps/nonogram/circuit';
 import {
   drawCircuit,
-  drawExpanded,
-  expandedColumns,
-  MAX_EXPANDED_COLUMNS,
+  ghostBlock,
 } from '../src/apps/nonogram/diagram';
 
 const SMALL = buildCircuit([[1], [1]], [[1], [1]]);
@@ -87,45 +85,65 @@ describe('Folded boxes are controls', () => {
     expect(body).toContain('aria-pressed="false"');
   });
 
-  test('the pinned box reports itself pressed', () => {
-    const { body } = drawCircuit(SMALL, 'oracle');
+  test('an opened block reports itself pressed', () => {
+    const { body } = drawCircuit(SMALL, new Set(['oracle']));
     expect(body).toContain('aria-pressed="true"');
-    expect(body).toContain('circ-pinned');
-    // Only one at a time.
-    expect(body.match(/circ-pinned/g)).toHaveLength(1);
+    // One open, one still folded.
+    expect(body.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(body.match(/aria-pressed="false"/g)).toHaveLength(1);
+  });
+
+  test('every block says what it is made of, folded or open', () => {
+    const folded = drawCircuit(SMALL).body;
+    const open = drawCircuit(SMALL, new Set(['oracle', 'diffuser'])).body;
+    for (const body of [folded, open]) {
+      expect(body).toContain('<title>Oracle \u2014 the X pattern spells the grid being marked');
+      expect(body).toContain('<title>Diffuser \u2014 the same for every puzzle');
+    }
   });
 });
 
-describe('The circuit written out', () => {
-  test('marks where the oracle ends', () => {
-    const { body } = drawExpanded(SMALL);
-    expect(body).toContain('circ-guard');
-    expect(body).toContain('>oracle<');
-    expect(body).toContain('>diffuser<');
-  });
+describe('A block written out in place', () => {
+  const open = (blocks: ('oracle' | 'diffuser')[]) => drawCircuit(SMALL, new Set(blocks));
 
-  test('a multi-controlled gate is dots joined to its target', () => {
-    const { body } = drawExpanded(SMALL);
+  test('replaces the folded box with a dashed frame around its gates', () => {
+    const { body } = open(['oracle']);
+    expect(body).toContain('circ-frame');
+    // A multi-controlled gate is dots joined to a Z on the target.
     expect(body).toContain('circ-ctrl');
-    // Z on the target rather than a plain box, so the gate reads as controlled.
     expect(body).toContain('>Z<');
   });
 
-  test('gates that share no qubits share a column', () => {
-    // The opening layer of a round packs into a single column.
-    const circuit = buildCircuit([[1], [1]], [[1], [1]]);
-    expect(expandedColumns(circuit)).toBeLessThan(circuit.round.length);
+  test('leaves the other block folded', () => {
+    const { body } = open(['oracle']);
+    expect(body.match(/circ-frame/g)).toHaveLength(1);
   });
 
-  test('a board with no legible expansion is over the cap', () => {
-    // The constraint oracle writes one multi-controlled gate per allowed pattern.
-    const clues = Array.from({ length: 6 }, () => [1]);
-    expect(expandedColumns(buildCircuit(clues, clues))).toBeGreaterThan(MAX_EXPANDED_COLUMNS);
-    expect(expandedColumns(SMALL)).toBeLessThanOrEqual(MAX_EXPANDED_COLUMNS);
+  test('takes the room its gates need', () => {
+    const folded = drawCircuit(SMALL);
+    const wide = open(['oracle']);
+    expect(wide.blocks.oracle.width).toBeGreaterThan(folded.blocks.oracle.width);
+    expect(wide.width).toBeGreaterThan(folded.width);
+    // Opening one block moves the next one along, and nothing above it.
+    expect(wide.blocks.diffuser.x).toBeGreaterThan(folded.blocks.diffuser.x);
+    expect(wide.blocks.oracle.x).toBe(folded.blocks.oracle.x);
+  });
+
+  test('gates that share no qubits share a column', () => {
+    // The opening flips of a round pack into a single column.
+    const wide = open(['oracle']);
+    const columns = (wide.blocks.oracle.width - 30) / 32;
+    expect(columns).toBeLessThan(SMALL.oracle.length);
+  });
+
+  test('a copy for the animation draws either form on its own', () => {
+    expect(ghostBlock(SMALL, 'oracle', 100, false)).toContain('circ-box');
+    expect(ghostBlock(SMALL, 'oracle', 100, true)).toContain('circ-frame');
+    expect(ghostBlock(SMALL, 'oracle', 100, true)).toContain('circ-ghost-block');
   });
 
   test('carries no colour or font of its own', () => {
-    const { body } = drawExpanded(SMALL);
+    const { body } = open(['oracle', 'diffuser']);
     expect(body).not.toMatch(/#[0-9a-f]{3,6}/i);
     expect(body).not.toContain('font-family');
   });

@@ -409,81 +409,87 @@ test.describe('Nonogram: the circuit opens up', () => {
     await expect(page.locator('#circuit-svg [data-block]')).toHaveCount(2);
   });
 
-  test('pressing a box opens what it is made of, and pressing it again closes it', async ({
+  test('pressing a box writes it out in place, and pressing it again folds it', async ({
     page,
   }) => {
-    const panel = page.locator('#circuit-decomp');
-    await expect(panel).toBeHidden();
+    const frame = page.locator('#circuit-svg .circ-frame');
+    await expect(frame).toHaveCount(0);
 
     await box(page, 'oracle').click();
-    await expect(panel).toBeVisible();
+    await expect(frame).toHaveCount(1);
     await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel).toContainText('controls q0-q7');
-    // The answer-key oracle, said out loud rather than left to be noticed.
-    await expect(panel).toContainText('built from the answers');
+    // A multi-controlled Z draws as dots joined to its target.
+    await expect(page.locator('#circuit-svg .circ-ctrl').first()).toBeVisible();
 
     await box(page, 'oracle').click();
-    await expect(panel).toBeHidden();
+    await expect(frame).toHaveCount(0);
     await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('the other box takes over rather than stacking', async ({ page }) => {
+  test('the two open independently, and together write out a whole iteration', async ({
+    page,
+  }) => {
     await box(page, 'oracle').click();
     await box(page, 'diffuser').click();
-    await expect(page.locator('#circuit-decomp')).toContainText('reflection about the mean');
-    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(2);
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
     await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#circuit-caption')).toContainText('Written out for one iteration');
+  });
+
+  test('a button opens the same block as its box', async ({ page }) => {
+    await page.locator('#btn-block-diffuser').click();
+    await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#btn-block-diffuser')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#btn-block-oracle')).toHaveAttribute('aria-pressed', 'false');
+
+    await box(page, 'diffuser').click();
+    await expect(page.locator('#btn-block-diffuser')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('the drawing takes the room the gates need', async ({ page }) => {
+    const width = async () =>
+      (await page.locator('#circuit-svg').boundingBox())?.width ?? 0;
+    const folded = await width();
+    await box(page, 'oracle').click();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(1);
+    expect(await width()).toBeGreaterThan(folded);
+    // Wider than its box, so the figure scrolls rather than the page.
+    await expect(page.locator('#circuit-figure')).toBeVisible();
+  });
+
+  test('a block says what it is made of on hover', async ({ page }) => {
+    await expect(box(page, 'oracle').locator('title')).toContainText(
+      'built from the answers',
+    );
+    await expect(box(page, 'diffuser').locator('title')).toContainText('about the average');
   });
 
   test('a box opens from the keyboard', async ({ page }) => {
     await box(page, 'diffuser').focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(1);
     await page.keyboard.press(' ');
-    await expect(page.locator('#circuit-decomp')).toBeHidden();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(0);
   });
 
-  test('an open box survives an edit, though the drawing is rebuilt', async ({ page }) => {
+  test('an open block survives an edit, though the drawing is rebuilt', async ({ page }) => {
     await box(page, 'oracle').click();
-    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(1);
     await page.locator('.cell-btn').first().click();
-    // The drawing is replaced wholesale, so both the pin and the listener have to
+    // The drawing is replaced wholesale, so both the state and the listener have to
     // live outside it.
-    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(1);
     await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
     await box(page, 'oracle').click();
-    await expect(page.locator('#circuit-decomp')).toBeHidden();
+    await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(0);
   });
 
-  test('the full circuit writes one iteration out, with a guard between the stages', async ({
-    page,
-  }) => {
-    await page.locator('#btn-view-full').click();
-    await expect(page.locator('#circuit-svg .circ-guard')).toHaveCount(1);
-    await expect(page.locator('#circuit-svg .circ-stage')).toHaveText(['oracle', 'diffuser']);
-    // A multi-controlled Z draws as dots joined to its target.
-    await expect(page.locator('#circuit-svg .circ-ctrl').first()).toBeVisible();
-    await expect(page.locator('#circuit-caption')).toContainText('One iteration of');
-    await expect(page.locator('#btn-view-full')).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  test('a board whose oracle has no legible expansion is not offered one', async ({ page }) => {
-    // 6x6 uses the constraint oracle: hundreds of columns, and nothing to read.
-    for (let i = 0; i < 3; i++) {
-      await page.getByRole('button', { name: 'Add a row' }).click();
-      await page.getByRole('button', { name: 'Add a column' }).click();
-    }
-    await expect(page.locator('#grid-size-label')).toHaveText('6 × 6');
-    await expect(page.locator('#circuit-view')).toBeHidden();
-  });
-
-  test('a phone gets the folded drawing only', async ({ page }) => {
+  test('a phone gets the same two boxes', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(APP);
     await page.locator('#circuit-band > summary').click();
     await expect(page.locator('#circuit-svg [data-block]').first()).toBeVisible();
-    // Expanding needs width the screen does not have; the listing carries the detail.
-    await expect(page.locator('#btn-view-full')).toBeHidden();
-    await expect(page.locator('#btn-view-folded')).toBeVisible();
+    await expect(page.locator('#btn-block-oracle')).toBeVisible();
   });
 });

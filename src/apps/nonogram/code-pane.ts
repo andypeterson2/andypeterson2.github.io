@@ -8,14 +8,8 @@
  */
 import { buildCircuit, circuitDepth, entanglingCount, totalGates } from './circuit';
 import { groverOutcome } from './grover-sim';
-import {
-  drawCircuit,
-  drawExpanded,
-  expandedColumns,
-  MAX_EXPANDED_COLUMNS,
-  type Block,
-} from './diagram';
-import { type Circuit, type Gate } from './circuit';
+import { BLOCKS, drawCircuit, ghostBlock, type Block, type Rect } from './diagram';
+import { type Circuit } from './circuit';
 import {
   COST_OPTIMIZATION,
   COST_SEEDS,
@@ -24,7 +18,7 @@ import {
   hardwareCost,
   overBudget,
 } from './hardware-cost';
-import { exportCircuit, extendsRun, type ExportFormat, type GateRun } from './export';
+import { exportCircuit, type ExportFormat } from './export';
 import { $ } from './state';
 import { setStatus } from './ui';
 
@@ -33,98 +27,36 @@ const FORMAT_BUTTONS: Record<ExportFormat, string> = {
   qasm3: 'btn-fmt-qasm',
 };
 
-const VIEW_BUTTONS: Record<'folded' | 'full', string> = {
-  folded: 'btn-view-folded',
-  full: 'btn-view-full',
+const BLOCK_BUTTONS: Record<Block, string> = {
+  oracle: 'btn-block-oracle',
+  diffuser: 'btn-block-diffuser',
 };
+
+/**
+ * How long the opening runs, matching the chain of transitions in the stylesheet.
+ * The overlay it needs is cleared when the last of them has finished.
+ */
+const MORPH_MS = 460;
 
 let format: ExportFormat = 'qiskit';
 /** The text currently on screen, so Copy never re-derives it. */
 let listing = '';
-/** Folded boxes, or one iteration written out. */
-let view: 'folded' | 'full' = 'folded';
 /**
- * The block whose decomposition is open.
+ * The blocks written out in place.
  *
  * Kept here rather than read back off the drawing: the SVG is rebuilt from scratch on
  * every grid edit, so anything living in the markup is gone by the next paint.
  */
-let pinned: Block | null = null;
-/** The circuit on screen, so the pinned panel can describe it without rebuilding. */
+const expanded = new Set<Block>();
+/** Where each block sat at the last paint, so the next one can grow out of it. */
+let placed: Record<Block, Rect> | null = null;
+/** The running overlay's timer, so a grid edit mid-animation cannot outlive its SVG. */
+let morphTimer: ReturnType<typeof setTimeout> | null = null;
+/** The circuit on screen, so a press can redraw it without rebuilding. */
 let shown: Circuit | null = null;
 
 function pane(): HTMLElement | null {
   return $('code-pane');
-}
-
-/** Qubit numbers as a list, collapsing a full run into its ends. */
-function qubitList(qubits: number[]): string {
-  const sorted = [...qubits].sort((a, b) => a - b);
-  const contiguous = sorted.every((q, i) => i === 0 || q === sorted[i - 1] + 1);
-  if (contiguous && sorted.length > 2) {
-    return `q${String(sorted[0])}-q${String(sorted[sorted.length - 1])}`;
-  }
-  return sorted.map((q) => `q${String(q)}`).join(' ');
-}
-
-/** One line per gate, with runs of the same single-qubit gate on one line. */
-function gateLines(gates: Gate[]): string {
-  const lines: string[] = [];
-  let run: GateRun | null = null;
-
-  const flush = (): void => {
-    if (run) lines.push(`${run.name.toUpperCase().padEnd(4)}${qubitList(run.qubits)}`);
-    run = null;
-  };
-
-  for (const gate of gates) {
-    if (gate.controls.length) {
-      flush();
-      const base = gate.name === 'mcz' ? 'Z' : 'X';
-      lines.push(
-        `${base.padEnd(4)}controls ${qubitList(gate.controls)}, target q${String(gate.target)}`,
-      );
-      continue;
-    }
-    if (extendsRun(run, gate)) {
-      run.qubits.push(gate.target);
-      continue;
-    }
-    flush();
-    run = { name: gate.name, qubits: [gate.target] };
-  }
-  flush();
-  return lines.join('\n');
-}
-
-/** What a folded box is made of, and why it looks the way it does. */
-function describe(circuit: Circuit, block: Block): { title: string; body: string } {
-  if (block === 'diffuser') {
-    return {
-      title: 'Diffuser \u2014 reflection about the mean',
-      body:
-        gateLines(circuit.diffuser) +
-        '\n\nThe same for every puzzle. It flips each amplitude about the average, ' +
-        "which is what turns the oracle's phase into a difference a measurement can see.",
-    };
-  }
-  const built =
-    circuit.oracleKind === 'solutions'
-      ? 'The X pattern spells the grid being marked: every cell that should be empty is ' +
-        'flipped, so the controlled Z fires on that one state. Which means the oracle was ' +
-        'built from the answers the classical pass already found.'
-      : 'Each line writes its allowed patterns onto an ancilla, the ancillas are gathered ' +
-        'into one phase flip, and the writing is undone. It never sees a solution.';
-  return {
-    title: `Oracle \u2014 ${oracleSummary(circuit)}`,
-    body: `${gateLines(circuit.oracle)}\n\n${built}`,
-  };
-}
-
-function oracleSummary(circuit: Circuit): string {
-  return circuit.oracleKind === 'solutions'
-    ? `${String(circuit.solutionCount ?? 0)} marked`
-    : `${String(circuit.rows + circuit.cols)} lines`;
 }
 
 /** A short description of the circuit for the section rule. */
@@ -194,76 +126,111 @@ function paint(): void {
   }
 }
 
+/** Whether the reader asked for no animation. */
+function stillness(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 /**
- * Draw the circuit and whatever is open beside it.
+ * Grow one block into its replacement, over the drawing that already holds the result.
+ *
+ * The copy left behind carries the shape being replaced — the folded box on the way
+ * open, the gates on the way back — so both halves of the change are on screen at once.
+ * A dashed frame runs between the two widths while they cross over. The stylesheet owns
+ * the order and the timing; this owns the two widths it cannot know.
+ */
+function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rect): void {
+  const open = expanded.has(block);
+  const live = svg.querySelector(`[data-block="${block}"]`);
+  if (!live) return;
+
+  svg.insertAdjacentHTML(
+    'beforeend',
+    `<g class="circ-morph" data-dir="${open ? 'open' : 'close'}">` +
+      ghostBlock(circuit, block, from.x, !open) +
+      `<rect class="circ-morph-frame" y="${String(to.y)}" height="${String(to.height)}"/>` +
+      '</g>',
+  );
+  const layer = svg.lastElementChild;
+  const frame = layer?.querySelector('.circ-morph-frame');
+  if (!(layer instanceof SVGElement) || !(frame instanceof SVGElement)) return;
+
+  // Geometry the stylesheet cannot hold: it differs with every board.
+  frame.style.setProperty('--morph-x', `${String(to.x)}px`);
+  frame.style.setProperty('--morph-w', `${String(from.width)}px`);
+  live.classList.add('circ-arriving');
+
+  // What this block displaces starts where it stood and travels with the frame.
+  const after = svg.querySelector(`[data-after="${block}"]`);
+  const tail = after instanceof SVGElement ? after : null;
+  if (tail) {
+    tail.style.setProperty('--slide', `${String(from.width - to.width)}px`);
+    tail.classList.add('circ-slide');
+  }
+
+  requestAnimationFrame(() => {
+    layer.classList.add('circ-morph--run');
+    frame.style.setProperty('--morph-w', `${String(to.width)}px`);
+    tail?.style.setProperty('--slide', '0px');
+    live.classList.add('circ-arrived');
+  });
+
+  if (morphTimer) clearTimeout(morphTimer);
+  morphTimer = setTimeout(() => {
+    layer.remove();
+    live.classList.remove('circ-arriving', 'circ-arrived');
+    tail?.classList.remove('circ-slide');
+    morphTimer = null;
+  }, MORPH_MS);
+}
+
+/**
+ * Draw the circuit, with whichever blocks are open written out in place.
  *
  * `role="img"` would make every mark inside presentational, and with it the two boxes
  * a reader can press, so the drawing is a group that names itself instead.
  */
-function paintCircuit(): void {
+function paintCircuit(opening?: Block): void {
   const svg = $('circuit-svg');
   const circuit = shown;
   if (!svg || !circuit) return;
 
-  const wide = expandedColumns(circuit) <= MAX_EXPANDED_COLUMNS;
-  const full = view === 'full' && wide;
-  const { body, width, height } = full ? drawExpanded(circuit) : drawCircuit(circuit, pinned);
+  const before = placed;
+  const { body, width, height, blocks } = drawCircuit(circuit, expanded);
 
   svg.setAttribute('viewBox', `0 0 ${String(width)} ${String(height)}`);
   svg.setAttribute('width', String(width));
   svg.setAttribute('height', String(height));
   svg.setAttribute('role', 'group');
   svg.removeAttribute('aria-hidden');
+  const opened = BLOCKS.filter((b) => expanded.has(b));
   svg.setAttribute(
     'aria-label',
-    full
-      ? `One Grover iteration of ${String(circuit.iterations)}, written out gate by gate.`
-      : `Grover circuit: ${String(circuit.qubits)} qubits, an oracle and a diffuser repeated ${String(circuit.iterations)} times.`,
+    `Grover circuit: ${String(circuit.qubits)} qubits, an oracle and a diffuser repeated ` +
+      `${String(circuit.iterations)} times` +
+      (opened.length ? `, with the ${opened.join(' and the ')} written out.` : '.'),
   );
+  if (morphTimer) {
+    clearTimeout(morphTimer);
+    morphTimer = null;
+  }
   svg.innerHTML = body;
+  placed = blocks;
 
-  const toggle = $('circuit-view');
-  if (toggle) {
-    toggle.hidden = !wide;
-    for (const [name, id] of Object.entries(VIEW_BUTTONS)) {
-      $(id)?.setAttribute('aria-pressed', String(full ? name === 'full' : name === 'folded'));
-    }
+  if (opening && before && !stillness()) {
+    morph(svg, circuit, opening, before[opening], blocks[opening]);
+  }
+
+  for (const block of BLOCKS) {
+    $(BLOCK_BUTTONS[block])?.setAttribute('aria-pressed', String(expanded.has(block)));
   }
 
   const caption = $('circuit-caption');
   if (caption) {
-    caption.textContent = full
-      ? `One iteration of ${circuit.iterations.toLocaleString()}. The dashed guard marks where the oracle ends.`
-      : 'Press a box to see what it is made of.';
+    caption.textContent = opened.length
+      ? `Written out for one iteration of ${circuit.iterations.toLocaleString()}. Press a frame to fold it back.`
+      : 'Press a box to write out what it is made of.';
   }
-
-  const panel = $('circuit-decomp');
-  if (!panel) return;
-  if (full || !pinned) {
-    panel.hidden = true;
-    panel.innerHTML = '';
-    return;
-  }
-  const { title, body: text } = describe(circuit, pinned);
-  panel.hidden = false;
-  panel.innerHTML = '';
-  const head = document.createElement('div');
-  head.className = 'decomp-head';
-  const name = document.createElement('span');
-  name.textContent = title;
-  const close = document.createElement('button');
-  close.type = 'button';
-  close.className = 's6-btn s6-btn--sm';
-  close.textContent = '\u00d7';
-  close.setAttribute('aria-label', 'Close');
-  close.addEventListener('click', () => {
-    pinned = null;
-    paintCircuit();
-  });
-  head.append(name, close);
-  const pre = document.createElement('pre');
-  pre.textContent = text;
-  panel.append(head, pre);
 }
 
 /** Build the circuit for these clues and show its code. */
@@ -337,11 +304,15 @@ export function initCodePane(onFormatChange: () => void): void {
       onFormatChange();
     });
   }
-  for (const [name, id] of Object.entries(VIEW_BUTTONS)) {
-    $(id)?.addEventListener('click', () => {
-      view = name as 'folded' | 'full';
-      pinned = null;
-      paintCircuit();
+  const toggle = (block: Block): void => {
+    if (expanded.has(block)) expanded.delete(block);
+    else expanded.add(block);
+    paintCircuit(block);
+  };
+
+  for (const block of BLOCKS) {
+    $(BLOCK_BUTTONS[block])?.addEventListener('click', () => {
+      toggle(block);
     });
   }
 
@@ -352,12 +323,10 @@ export function initCodePane(onFormatChange: () => void): void {
     const hit = (target as Element | null)?.closest('[data-block]');
     const block = hit?.getAttribute('data-block');
     if (block !== 'oracle' && block !== 'diffuser') return;
-    pinned = pinned === block ? null : block;
-    paintCircuit();
-    // Repainting replaces the box that was just pressed, and with it the focus, so a
+    toggle(block);
+    // Repainting replaces the shape that was just pressed, and with it the focus, so a
     // second key press would land on nothing.
-    const again = svg?.querySelector<SVGElement>(`[data-block="${block}"]`);
-    again?.focus();
+    svg?.querySelector<SVGElement>(`[data-block="${block}"]`)?.focus();
   };
   svg?.addEventListener('click', (e) => {
     press(e.target);

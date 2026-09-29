@@ -1,14 +1,12 @@
 /**
  * The circuit drawn as wires and boxes.
  *
- * Composite steps stay folded into named boxes spanning the wires they act on, the way
- * every circuit drawer does it. Expanding them is what makes a Grover circuit
- * unreadable: one 3x3 iteration is already 40 gates, and the board runs to 17
- * iterations. The code pane beside this one carries what is inside each box.
- *
- * The iteration count is drawn as a repeat bracket rather than repeated boxes. A large
- * board asks for hundreds of thousands of iterations, so the bracket is the only form
- * that fits, and it says the count exactly.
+ * Composite steps start folded into named boxes spanning the wires they act on, the way
+ * every circuit drawer does it, and a reader opens one at a time in place. Opening both
+ * at once is a whole iteration written out: 40 gates on a 3x3, and the board runs to 17
+ * iterations, so the count stays a repeat bracket rather than repeated boxes. A large
+ * board asks for hundreds of thousands of iterations, and the bracket says the count
+ * exactly where drawing them could not.
  *
  * Built as a string and assigned once, matching the histogram, and styled only through
  * classes so the 1-bit palette stays in the stylesheet.
@@ -18,12 +16,20 @@ import { gateQubits, type Circuit, type Gate } from './circuit';
 /** The two folded steps a reader can open. */
 export type Block = 'oracle' | 'diffuser';
 
+/** In the order they run. */
+export const BLOCKS: readonly Block[] = ['oracle', 'diffuser'];
+
 const PITCH = 32;
 const BOX = 24;
 const TOP = 18;
 const GUTTER = 54;
 const COL = 46;
 const GAP = 14;
+const EXP_BOX = 22;
+const EXP_COL = 32;
+/** Room inside an opened frame: the left edge, and the right edge that holds its name. */
+const FRAME_PAD = 10;
+const FRAME_NAME = 20;
 /** Wires drawn before the rest collapse into a count. */
 const MAX_WIRES = 11;
 
@@ -31,6 +37,22 @@ interface Wire {
   /** Qubit index, or null for the row standing in for the hidden ones. */
   qubit: number | null;
   y: number;
+}
+
+/** Where a block sits in the drawing, so a caller can animate between two of them. */
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** The whole circuit as an SVG body, plus the size it needs. */
+export interface Drawing {
+  body: string;
+  width: number;
+  height: number;
+  blocks: Record<Block, Rect>;
 }
 
 /**
@@ -62,43 +84,6 @@ function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** A box spanning every wire between `from` and `to`, named down its right edge. */
-function span(box: {
-  x: number;
-  from: number;
-  to: number;
-  label: string;
-  sub: string;
-  block?: 'oracle' | 'diffuser';
-  pinned?: boolean;
-}): string {
-  const { x, from, to, label, sub, block, pinned } = box;
-  const top = from - BOX / 2;
-  const height = to - from + BOX;
-  const cx = x + COL / 2;
-  // Rotated rather than set in a vertical writing mode: a transform needs no layout
-  // and renders the same everywhere.
-  const nameX = x + COL - 7;
-  const mid = top + height / 2;
-  const state = pinned ? ' circ-pinned' : '';
-  const shell = block
-    ? `<g class="circ-hit${state}" role="button" tabindex="0" data-block="${block}" ` +
-      `aria-pressed="${String(Boolean(pinned))}" ` +
-      `aria-label="${esc(label)}, open what it is made of">`
-    : '<g>';
-  return (
-    shell +
-    `<rect class="circ-box" x="${String(x)}" y="${String(top)}" width="${String(COL)}" height="${String(height)}"/>` +
-    `<text class="circ-box-name" x="${String(nameX)}" y="${String(mid)}" ` +
-    `transform="rotate(90 ${String(nameX)} ${String(mid)})">${esc(label)}</text>` +
-    (sub
-      ? `<text class="circ-box-sub" x="${String(cx - 5)}" y="${String(mid)}" ` +
-        `transform="rotate(90 ${String(cx - 5)} ${String(mid)})">${esc(sub)}</text>`
-      : '') +
-    '</g>'
-  );
-}
-
 /** What the oracle box says about itself, so two puzzles do not draw the same. */
 function oracleSub(circuit: Circuit): string {
   if (circuit.oracleKind === 'solutions') {
@@ -108,116 +93,51 @@ function oracleSub(circuit: Circuit): string {
   return `${String(circuit.rows + circuit.cols)} lines`;
 }
 
-/** The whole circuit as an SVG body, plus the size it needs. */
-export interface Drawing {
-  body: string;
-  width: number;
-  height: number;
-}
-
-export function drawCircuit(circuit: Circuit, pinned: Block | null = null): Drawing {
-  const rows = wires(circuit);
-  const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
-  const firstCell = cellRows[0].y;
-  const lastCell = cellRows[cellRows.length - 1].y;
-  const lastRow = rows[rows.length - 1].y;
-  const height = lastRow + TOP + 22;
-
-  let x = GUTTER;
-  const parts: string[] = [];
-
-  // Preparation: one H per cell, in a single column.
-  const hx = x;
-  for (const w of cellRows) {
-    parts.push(
-      `<rect class="circ-box" x="${String(hx)}" y="${String(w.y - BOX / 2)}" width="${String(BOX)}" height="${String(BOX)}"/>`,
-      `<text class="circ-gate" x="${String(hx + BOX / 2)}" y="${String(w.y)}">H</text>`,
+/** Why an opened block looks the way it does, shown where the gates are. */
+function blockTitle(circuit: Circuit, block: Block): string {
+  if (block === 'diffuser') {
+    return (
+      'Diffuser — the same for every puzzle. It flips each amplitude about the average, ' +
+      "which is what turns the oracle's phase into a difference a measurement can see."
     );
   }
-  x += BOX + GAP;
-
-  const repeatStart = x;
-  parts.push(
-    span({
-      x,
-      from: firstCell,
-      to: circuit.ancillas ? lastRow : lastCell,
-      label: 'Oracle',
-      sub: oracleSub(circuit),
-      block: 'oracle',
-      pinned: pinned === 'oracle',
-    }),
-  );
-  x += COL + GAP;
-  parts.push(
-    span({
-      x,
-      from: firstCell,
-      to: lastCell,
-      label: 'Diffuser',
-      sub: '',
-      block: 'diffuser',
-      pinned: pinned === 'diffuser',
-    }),
-  );
-  x += COL;
-  const repeatEnd = x;
-  x += GAP * 2;
-
-  // Measurement, on the cells only: the ancillas end where they started.
-  const mx = x;
-  for (const w of cellRows) {
-    parts.push(
-      `<rect class="circ-box" x="${String(mx)}" y="${String(w.y - BOX / 2)}" width="${String(BOX)}" height="${String(BOX)}"/>`,
-      `<path class="circ-meter" d="M${String(mx + 4)} ${String(w.y + 5)} a ${String(BOX / 2 - 4)} ${String(BOX / 2 - 4)} 0 0 1 ${String(BOX - 8)} 0"/>`,
-      `<line class="circ-meter" x1="${String(mx + BOX / 2)}" y1="${String(w.y + 5)}" x2="${String(mx + BOX - 5)}" y2="${String(w.y - 4)}"/>`,
-    );
-  }
-  const width = mx + BOX + 12;
-
-  // Wires first, so every box sits on top of its line.
-  const lines = rows
-    .map((w) =>
-      w.qubit === null
-        ? `<text class="circ-more" x="${String(GUTTER - 8)}" y="${String(w.y)}">⋮</text>`
-        : `<line class="circ-wire" x1="${String(GUTTER)}" y1="${String(w.y)}" x2="${String(width - 12)}" y2="${String(w.y)}"/>` +
-          `<text class="circ-label" x="${String(GUTTER - 8)}" y="${String(w.y)}">q[${String(w.qubit)}]</text>`,
-    )
-    .join('');
-
-  // The repeat bracket, under the two boxes it encloses.
-  const by = lastRow + 14;
-  const bracket =
-    `<path class="circ-bracket" d="M${String(repeatStart)} ${String(by)} v5 H${String(repeatEnd)} v-5"/>` +
-    `<text class="circ-repeat" x="${String((repeatStart + repeatEnd) / 2)}" y="${String(by + 17)}">` +
-    `× ${circuit.iterations.toLocaleString()}</text>`;
-
-  return { body: lines + parts.join('') + bracket, width, height };
+  return circuit.oracleKind === 'solutions'
+    ? 'Oracle — the X pattern spells the grid being marked: every cell that should be ' +
+        'empty is flipped, so the controlled Z fires on that one state. Which means the ' +
+        'oracle was built from the answers the classical pass already found.'
+    : 'Oracle — each line writes its allowed patterns onto an ancilla, the ancillas are ' +
+        'gathered into one phase flip, and the writing is undone. It never sees a solution.';
 }
 
-/* ── One iteration, written out ── */
+/** The name down a box's right edge, rotated: a transform needs no layout. */
+function edgeName(right: number, mid: number, label: string, sub: string): string {
+  const nameX = right - 7;
+  return (
+    `<text class="circ-box-name" x="${String(nameX)}" y="${String(mid)}" ` +
+    `transform="rotate(90 ${String(nameX)} ${String(mid)})">${esc(label)}</text>` +
+    (sub
+      ? `<text class="circ-box-sub" x="${String(right - COL / 2 - 5)}" y="${String(mid)}" ` +
+        `transform="rotate(90 ${String(right - COL / 2 - 5)} ${String(mid)})">${esc(sub)}</text>`
+      : '')
+  );
+}
 
-const EXP_BOX = 22;
-const EXP_COL = 32;
-/** Past this the drawing stops being readable and the listing serves better. */
-export const MAX_EXPANDED_COLUMNS = 26;
+/** The pressable shell every block wears, folded or open. */
+function shell(block: Block, open: boolean, label: string, sub: string, title: string): string {
+  const said = open ? `${label}, open. Press to fold it back.` : `${label}, ${sub}. Press to open it.`;
+  return (
+    `<g class="circ-hit${open ? ' circ-open-block' : ''}" role="button" tabindex="0" ` +
+    `data-block="${block}" aria-pressed="${String(open)}" aria-label="${esc(said)}">` +
+    `<title>${esc(title)}</title>`
+  );
+}
 
-/**
- * Pack gates into columns, each as early as the qubits it touches allow.
- *
- * A column holds one stage only. Packed by qubit alone, the oracle's closing flips
- * share a column with the diffuser's first gates, and the guard drawn at that column
- * puts part of the oracle on the diffuser's side of it.
- */
+/** Pack gates into columns, each as early as the qubits it touches allow. */
 function columns(gates: Gate[]): Gate[][] {
   const packed: Gate[][] = [];
   const freeAt = new Map<number, number>();
-  let stage: Gate['stage'] | null = null;
-  let floor = 0;
   for (const gate of gates) {
-    if (stage !== null && gate.stage !== stage) floor = packed.length;
-    stage = gate.stage;
-    const col = place(gate, freeAt, floor);
+    const col = place(gate, freeAt);
     (packed[col] ??= []).push(gate);
   }
   return packed;
@@ -232,18 +152,13 @@ function occupied(gate: Gate): number[] {
   return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
 }
 
-/** The earliest column at or after `floor` where a gate fits, reserving its wires. */
-function place(gate: Gate, freeAt: Map<number, number>, floor: number): number {
+/** The earliest column where a gate fits, reserving its wires. */
+function place(gate: Gate, freeAt: Map<number, number>): number {
   const wires = occupied(gate);
-  let col = floor;
+  let col = 0;
   for (const q of wires) col = Math.max(col, freeAt.get(q) ?? 0);
   for (const q of wires) freeAt.set(q, col + 1);
   return col;
-}
-
-/** How wide the written-out circuit would be, so a caller can decline to draw it. */
-export function expandedColumns(circuit: Circuit): number {
-  return columns(circuit.round).length;
 }
 
 function gateMarks(gate: Gate, x: number, y: (q: number) => number): string {
@@ -275,59 +190,174 @@ function gateMarks(gate: Gate, x: number, y: (q: number) => number): string {
   );
 }
 
+/** How wide an opened block is: its gates, plus the frame around them. */
+function openWidth(gates: Gate[]): number {
+  return columns(gates).length * EXP_COL + FRAME_PAD + FRAME_NAME;
+}
+
+interface Placement {
+  x: number;
+  top: number;
+  height: number;
+  label: string;
+  sub: string;
+  gates: Gate[];
+  y: (q: number) => number;
+}
+
 /**
- * One Grover iteration drawn gate by gate, with a dashed guard between the oracle and
- * the diffuser — the mark a barrier makes in every other drawer.
+ * Where a block sits and what it holds, for one circuit.
  *
- * One iteration, never all of them: the count runs to seventeen on a 3x3 and past two
- * hundred thousand on a large board.
+ * The animation redraws a single block on its own, so this has to answer the same way
+ * for a whole drawing and for one piece of it.
  */
-export function drawExpanded(circuit: Circuit): Drawing {
+function placement(circuit: Circuit, block: Block, x: number): Placement {
   const rows = wires(circuit);
-  const y = (q: number): number => {
-    const found = rows.find((w) => w.qubit === q);
-    return found ? found.y : rows[rows.length - 1].y;
-  };
-  const drawn = new Set(rows.map((w) => w.qubit));
-  const packed = columns(circuit.round.filter((g) => gateQubits(g).every((q) => drawn.has(q))));
-
+  const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
+  const firstCell = cellRows[0].y;
+  const lastCell = cellRows[cellRows.length - 1].y;
   const lastRow = rows[rows.length - 1].y;
-  const height = lastRow + TOP + 30;
-  const left = GUTTER - 8;
+  const drawn = new Set(rows.map((w) => w.qubit));
+  const to = block === 'oracle' && circuit.ancillas ? lastRow : lastCell;
+  const gates = (block === 'oracle' ? circuit.oracle : circuit.diffuser).filter((g) =>
+    gateQubits(g).every((q) => drawn.has(q)),
+  );
+  return {
+    x,
+    top: firstCell - BOX / 2,
+    height: to - firstCell + BOX,
+    label: block === 'oracle' ? 'Oracle' : 'Diffuser',
+    sub: block === 'oracle' ? oracleSub(circuit) : '',
+    gates,
+    y: (q) => rows.find((w) => w.qubit === q)?.y ?? lastRow,
+  };
+}
 
+/** What a block draws at `x`, without the shell that makes it pressable. */
+function blockMarks(circuit: Circuit, block: Block, x: number, open: boolean): [string, Rect] {
+  const at = placement(circuit, block, x);
+  const width = open ? openWidth(at.gates) : COL;
+  return [open ? opened(at) : folded(at), { x, y: at.top, width, height: at.height }];
+}
+
+/** A block as a control: the same marks, wrapped in what a reader can press. */
+function blockAt(circuit: Circuit, block: Block, x: number, open: boolean): [string, Rect] {
+  const [marks, rect] = blockMarks(circuit, block, x, open);
+  const at = placement(circuit, block, x);
+  return [
+    shell(block, open, at.label, at.sub, blockTitle(circuit, block)) + marks + '</g>',
+    rect,
+  ];
+}
+
+/** A folded block: one named box spanning the wires it acts on. */
+function folded(at: Placement): string {
+  return (
+    `<rect class="circ-box" x="${String(at.x)}" y="${String(at.top)}" ` +
+    `width="${String(COL)}" height="${String(at.height)}"/>` +
+    edgeName(at.x + COL, at.top + at.height / 2, at.label, at.sub)
+  );
+}
+
+/** An opened block: a dashed frame with the gates it stands for inside it. */
+function opened(at: Placement): string {
+  const width = openWidth(at.gates);
+  let x = at.x + FRAME_PAD;
   const marks: string[] = [];
-  const guards: string[] = [];
-  let x = GUTTER;
-  let guardX = 0;
-
-  for (const col of packed) {
-    if (!guardX && col.some((g) => g.stage === 'diffuser')) {
-      guardX = x - 6;
-      guards.push(
-        `<line class="circ-guard" x1="${String(guardX)}" y1="${String(TOP - 16)}" x2="${String(guardX)}" y2="${String(lastRow + 16)}"/>`,
-      );
-    }
-    for (const gate of col) marks.push(gateMarks(gate, x, y));
+  for (const col of columns(at.gates)) {
+    for (const gate of col) marks.push(gateMarks(gate, x, at.y));
     x += EXP_COL;
   }
+  return (
+    // An opened block is a frame and some gates, so most of it is paper a press would
+    // fall straight through, onto the wire underneath.
+    `<rect class="circ-hit-area" x="${String(at.x)}" y="${String(at.top)}" ` +
+    `width="${String(width)}" height="${String(at.height)}"/>` +
+    `<rect class="circ-frame" x="${String(at.x)}" y="${String(at.top)}" ` +
+    `width="${String(width)}" height="${String(at.height)}"/>` +
+    `<g class="circ-inner">${marks.join('')}</g>` +
+    edgeName(at.x + width, at.top + at.height / 2, at.label, '')
+  );
+}
 
-  const width = x + 12;
+/**
+ * The circuit, with whichever blocks the reader has opened written out in place.
+ *
+ * Gates on wires the drawing collapsed are left out: their qubits have no row to sit on.
+ */
+export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new Set()): Drawing {
+  const rows = wires(circuit);
+  const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
+  const lastRow = rows[rows.length - 1].y;
+  const height = lastRow + TOP + 22;
+
+  let x = GUTTER;
+  const parts: string[] = [];
+
+  // Preparation: one H per cell, in a single column.
+  const hx = x;
+  for (const w of cellRows) {
+    parts.push(
+      `<rect class="circ-box" x="${String(hx)}" y="${String(w.y - BOX / 2)}" width="${String(BOX)}" height="${String(BOX)}"/>`,
+      `<text class="circ-gate" x="${String(hx + BOX / 2)}" y="${String(w.y)}">H</text>`,
+    );
+  }
+  x += BOX + GAP;
+
+  const repeatStart = x;
+  const blocks = {} as Record<Block, Rect>;
+  // Everything downstream of a block is nested in a group named for it, so opening that
+  // block can slide what it displaces instead of teleporting it.
+  for (const block of BLOCKS) {
+    const [body, rect] = blockAt(circuit, block, x, expanded.has(block));
+    parts.push(body, `<g data-after="${block}">`);
+    blocks[block] = rect;
+    x += rect.width + GAP;
+  }
+  const repeatEnd = x - GAP;
+  x += GAP;
+
+  // Measurement, on the cells only: the ancillas end where they started.
+  const mx = x;
+  for (const w of cellRows) {
+    parts.push(
+      `<rect class="circ-box" x="${String(mx)}" y="${String(w.y - BOX / 2)}" width="${String(BOX)}" height="${String(BOX)}"/>`,
+      `<path class="circ-meter" d="M${String(mx + 4)} ${String(w.y + 5)} a ${String(BOX / 2 - 4)} ${String(BOX / 2 - 4)} 0 0 1 ${String(BOX - 8)} 0"/>`,
+      `<line class="circ-meter" x1="${String(mx + BOX / 2)}" y1="${String(w.y + 5)}" x2="${String(mx + BOX - 5)}" y2="${String(w.y - 4)}"/>`,
+    );
+  }
+  const width = mx + BOX + 12;
+
+  // Wires first, so every box sits on top of its line.
   const lines = rows
     .map((w) =>
       w.qubit === null
-        ? `<text class="circ-more" x="${String(left)}" y="${String(w.y)}">⋮</text>`
+        ? `<text class="circ-more" x="${String(GUTTER - 8)}" y="${String(w.y)}">\u22ee</text>`
         : `<line class="circ-wire" x1="${String(GUTTER)}" y1="${String(w.y)}" x2="${String(width - 12)}" y2="${String(w.y)}"/>` +
-          `<text class="circ-label" x="${String(left)}" y="${String(w.y)}">q[${String(w.qubit)}]</text>`,
+          `<text class="circ-label" x="${String(GUTTER - 8)}" y="${String(w.y)}">q[${String(w.qubit)}]</text>`,
     )
     .join('');
 
-  // Each stage names itself under the columns it owns.
-  const end = guardX || x;
-  const labels =
-    `<text class="circ-stage" x="${String((GUTTER + end) / 2)}" y="${String(lastRow + 30)}">oracle</text>` +
-    (guardX
-      ? `<text class="circ-stage" x="${String((guardX + x) / 2)}" y="${String(lastRow + 30)}">diffuser</text>`
-      : '');
+  // The repeat bracket, under the two blocks it encloses.
+  const by = lastRow + 14;
+  const bracket =
+    `<path class="circ-bracket" d="M${String(repeatStart)} ${String(by)} v5 H${String(repeatEnd)} v-5"/>` +
+    `<text class="circ-repeat" x="${String((repeatStart + repeatEnd) / 2)}" y="${String(by + 17)}">` +
+    `\u00d7 ${circuit.iterations.toLocaleString()}</text>`;
 
-  return { body: lines + guards.join('') + marks.join('') + labels, width, height };
+  const close = BLOCKS.map(() => '</g>').join('');
+  return { body: lines + parts.join('') + close + bracket, width, height, blocks };
+}
+
+/**
+ * One block drawn on its own, for the copy an animation leaves behind.
+ *
+ * The frame grows out of the box it replaces, so the box has to outlive the repaint
+ * that dropped it — and closing needs the same of the gates.
+ */
+export function ghostBlock(circuit: Circuit, block: Block, x: number, open: boolean): string {
+  const [marks] = blockMarks(circuit, block, x, open);
+  // Marks only: a second thing answering to this block's name would take the next press
+  // and the next tab stop while the two forms are both on screen.
+  return `<g class="circ-ghost-block" aria-hidden="true">${marks}</g>`;
 }

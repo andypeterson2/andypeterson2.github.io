@@ -102,15 +102,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         </span>
       </summary>
       <div id="code-pane">
-        <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit detail">
-          <button type="button" id="btn-view-folded" class="s6-btn s6-btn--sm">Folded</button>
-          <button type="button" id="btn-view-full" class="s6-btn s6-btn--sm">Full circuit</button>
+        <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
+          <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
+          <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
           <span id="circuit-caption" class="circuit-caption"></span>
         </div>
         <div id="circuit-figure">
           <svg id="circuit-svg" aria-hidden="true"></svg>
         </div>
-        <div id="circuit-decomp" class="circuit-decomp" hidden></div>
         <p id="hardware-note" class="code-note"></p>
         <div class="code-controls">
           <div class="code-formats" role="group" aria-label="Code format">
@@ -813,47 +812,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: none;
   }
 
-  /* A board whose oracle runs to hundreds of columns has nothing legible to expand,
-     and a phone has nowhere to put it. */
-  @media (width <= 640px) {
-    :global(#btn-view-full) {
-      display: none;
-    }
-  }
-
   .circuit-caption {
     font-size: var(--text-4xs);
-  }
-
-  .circuit-decomp {
-    border: 1px solid var(--ink);
-    padding: 8px 10px;
-    margin-bottom: var(--space-3);
-    font-size: var(--text-4xs);
-  }
-
-  .circuit-decomp[hidden] {
-    display: none;
-  }
-
-  :global(.decomp-head) {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-family: var(--font-ui);
-    margin-bottom: 4px;
-  }
-
-  :global(.decomp-head > span) {
-    flex: 1;
-  }
-
-  :global(.circuit-decomp pre) {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: var(--text-4xs);
-    line-height: var(--leading-normal);
-    white-space: pre-wrap;
   }
 
   /* ── Circuit diagram ── */
@@ -925,13 +885,70 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     outline-offset: 2px;
   }
 
-  :global(.circ-pinned .circ-box) {
-    fill: var(--ink);
+  /* The frame a written-out step keeps around its gates, and the one that grows into
+     place ahead of them. Dashed, so it reads as the boundary a barrier draws. */
+  :global(.circ-frame),
+  :global(.circ-morph-frame) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
   }
 
-  :global(.circ-pinned .circ-box-name),
-  :global(.circ-pinned .circ-box-sub) {
+  /* x and width are CSS properties on an SVG rect, so the frame can be transitioned
+     between two widths the stylesheet never sees. */
+  :global(.circ-morph-frame) {
+    x: var(--morph-x);
+    width: var(--morph-w);
+    transition: width 200ms ease 140ms;
+  }
+
+  /* The copy of the shape being replaced. On the way open it inverts first, the way a
+     pressed box does, then leaves while the frame is still growing. */
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box) {
+    fill: var(--ink);
+    transition: fill var(--dur-fast) linear;
+  }
+
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box-name),
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box-sub) {
     fill: var(--paper);
+    transition: fill var(--dur-fast) linear;
+  }
+
+  :global(.circ-hit-area) {
+    fill: transparent;
+  }
+
+  /* What an opening block pushes along, travelling with the frame that displaces it. */
+  :global(.circ-slide) {
+    transform: translateX(var(--slide));
+    transition: transform 200ms ease 140ms;
+  }
+
+  :global(.circ-ghost-block) {
+    pointer-events: none;
+  }
+
+  :global(.circ-morph--run .circ-ghost-block) {
+    opacity: 0;
+    transition: opacity 100ms linear 140ms;
+  }
+
+  /* Folding back, the gates go before the frame starts closing over the space they
+     held; opening, the box waits until the frame has somewhere to put it. */
+  :global(.circ-morph[data-dir='close'].circ-morph--run .circ-ghost-block) {
+    transition-delay: 0s;
+  }
+
+  /* What the press produced, held back until the frame has finished opening. */
+  :global(.circ-hit.circ-arriving) {
+    opacity: 0;
+  }
+
+  :global(.circ-hit.circ-arrived) {
+    opacity: 1;
+    transition: opacity 120ms linear 340ms;
   }
 
   :global(.circ-ctrl) {
@@ -942,19 +959,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     fill: var(--paper);
     stroke: var(--ink);
     stroke-width: 1;
-  }
-
-  :global(.circ-guard) {
-    stroke: var(--ink);
-    stroke-width: 1;
-    stroke-dasharray: 2 3;
-  }
-
-  :global(.circ-stage) {
-    font-family: var(--font-ui);
-    font-size: var(--text-4xs);
-    fill: var(--ink);
-    text-anchor: middle;
   }
 
   :global(.circ-box-sub) {
