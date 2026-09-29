@@ -14,14 +14,13 @@ import { exportCircuit, type ExportFormat } from './export';
 import { $ } from './state';
 import { setStatus } from './ui';
 
-const FORMAT_BUTTONS: Record<ExportFormat, string> = {
+/** The drawing, or the source in one of the two formats. One at a time. */
+type View = 'circuit' | ExportFormat;
+
+const VIEW_BUTTONS: Record<View, string> = {
+  circuit: 'btn-view-circuit',
   qiskit: 'btn-fmt-qiskit',
   qasm3: 'btn-fmt-qasm',
-};
-
-const BLOCK_BUTTONS: Record<Block, string> = {
-  oracle: 'btn-block-oracle',
-  diffuser: 'btn-block-diffuser',
 };
 
 /**
@@ -30,6 +29,7 @@ const BLOCK_BUTTONS: Record<Block, string> = {
  */
 const MORPH_MS = 460;
 
+let view: View = 'circuit';
 let format: ExportFormat = 'qiskit';
 /** The text currently on screen, so Copy never re-derives it. */
 let listing = '';
@@ -88,9 +88,13 @@ function explain(circuit: ReturnType<typeof buildCircuit>): string {
 function paint(): void {
   const listingEl = $('code-listing');
   if (listingEl) listingEl.textContent = listing;
-  for (const [name, id] of Object.entries(FORMAT_BUTTONS)) {
-    $(id)?.setAttribute('aria-pressed', String(name === format));
+  for (const [name, id] of Object.entries(VIEW_BUTTONS)) {
+    $(id)?.setAttribute('aria-pressed', String(name === view));
   }
+  const figure = $('circuit-figure');
+  const box = document.querySelector('.code-box');
+  if (figure) figure.hidden = view !== 'circuit';
+  if (box instanceof HTMLElement) box.hidden = view === 'circuit';
 }
 
 /** Whether the reader asked for no animation. */
@@ -192,9 +196,6 @@ function paintCircuit(opening?: Block): void {
     morph(svg, circuit, opening, before[opening], blocks[opening]);
   }
 
-  for (const block of BLOCKS) {
-    $(BLOCK_BUTTONS[block])?.setAttribute('aria-pressed', String(expanded.has(block)));
-  }
 }
 
 /** Build the circuit for these clues and show its code. */
@@ -258,23 +259,16 @@ function followWidth(band: HTMLDetailsElement): void {
   });
 }
 
-/** Wire the format buttons and Copy. Call once. */
+/** Wire the view buttons and Copy. Call once. */
 export function initCodePane(onFormatChange: () => void): void {
-  for (const [name, id] of Object.entries(FORMAT_BUTTONS)) {
+  for (const [name, id] of Object.entries(VIEW_BUTTONS)) {
     $(id)?.addEventListener('click', () => {
-      format = name as ExportFormat;
-      onFormatChange();
-    });
-  }
-  const toggle = (block: Block): void => {
-    if (expanded.has(block)) expanded.delete(block);
-    else expanded.add(block);
-    paintCircuit(block);
-  };
-
-  for (const block of BLOCKS) {
-    $(BLOCK_BUTTONS[block])?.addEventListener('click', () => {
-      toggle(block);
+      view = name as View;
+      if (view === 'circuit') paint();
+      else {
+        format = view;
+        onFormatChange();
+      }
     });
   }
 
@@ -285,7 +279,9 @@ export function initCodePane(onFormatChange: () => void): void {
     const hit = (target as Element | null)?.closest('[data-block]');
     const block = hit?.getAttribute('data-block');
     if (block !== 'oracle' && block !== 'diffuser') return;
-    toggle(block);
+    if (expanded.has(block)) expanded.delete(block);
+    else expanded.add(block);
+    paintCircuit(block);
     // Repainting replaces the shape that was just pressed, and with it the focus, so a
     // second key press would land on nothing.
     svg?.querySelector<SVGElement>(`[data-block="${block}"]`)?.focus();

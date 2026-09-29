@@ -50,6 +50,27 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
+        <details id="circuit-band" class="nono-band">
+          <summary>
+            <span class="section-rule">
+              <span>Circuit</span><span id="code-meta" class="rule-meta"></span>
+            </span>
+          </summary>
+          <div id="code-pane">
+            <div id="circuit-figure">
+              <svg id="circuit-svg" aria-hidden="true"></svg>
+            </div>
+            <div class="code-box">
+              <pre id="code-listing" tabindex="0"></pre>
+              <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+            </div>
+            <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
+              <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
+              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+            </div>
+          </div>
+        </details>
       </div>
       <div class="nono-right">
         <div id="status-line" class="status-line" role="status"></div>
@@ -94,36 +115,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       </div>
     </div>
 
-    <details id="circuit-band" class="nono-below">
-      <summary>
-        <span class="section-rule">
-          <span>Circuit</span><span id="code-meta" class="rule-meta"></span>
-        </span>
-      </summary>
-      <div id="code-pane">
-        <div class="circuit-pair">
-          <div class="circuit-column">
-            <div id="circuit-figure">
-              <svg id="circuit-svg" aria-hidden="true"></svg>
-            </div>
-            <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
-              <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
-              <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
-            </div>
-          </div>
-          <div class="code-column">
-            <div class="code-box">
-              <pre id="code-listing" tabindex="0"></pre>
-              <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
-            </div>
-            <div class="code-formats" role="group" aria-label="Code format">
-              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </details>
   </div>
 
   <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
@@ -154,7 +145,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The inputs — editor and the run buttons — in a column of their own, at a width the
      3x3 grid and the widest button both fit. It scrolls with the page. */
   .nono-left {
-    flex: 0 0 clamp(240px, 30%, 300px);
+    flex: 0 0 clamp(320px, 46%, 560px);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -185,14 +176,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     min-width: 0;
   }
 
-  /* The circuit describes the puzzle rather than a run, and it is the tallest thing on
-     the page, so it gets the full width and folds away. */
-  .nono-below {
+  /* The circuit describes the puzzle rather than a run, so it sits under the editor
+     that builds it, and folds away. */
+  .nono-band {
     border-top: 2px solid var(--ink);
-    padding: 16px;
+    padding-top: 12px;
   }
 
-  .nono-below > summary {
+  .nono-band > summary {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -200,30 +191,30 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     list-style: none;
   }
 
-  .nono-below > summary::-webkit-details-marker {
+  .nono-band > summary::-webkit-details-marker {
     display: none;
   }
 
-  .nono-below > summary::before {
+  .nono-band > summary::before {
     content: '';
     flex: none;
     border-block: 4px solid transparent;
     border-left: 5px solid currentcolor;
   }
 
-  .nono-below[open] > summary::before {
+  .nono-band[open] > summary::before {
     border-inline: 4px solid transparent;
     border-block: 5px solid currentcolor;
     border-bottom: 0;
   }
 
-  .nono-below > summary .section-rule {
+  .nono-band > summary .section-rule {
     flex: 1;
     margin-bottom: 0;
     min-width: 0;
   }
 
-  .nono-below[open] > summary {
+  .nono-band[open] > summary {
     margin-bottom: 12px;
   }
 
@@ -840,28 +831,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The drawing and the source it stands for, read together. Each column takes half and
      may shrink: a written-out block is wider than any half, and scrolls inside its own
      frame rather than widening the page. */
-  /* Stretched, so the two frames are the same height and the buttons under them sit on
-     one line whichever side is taller. */
-  .circuit-pair {
-    display: flex;
-    align-items: stretch;
-    gap: var(--window-gap);
+  /* One pane at a time, at a height that does not jump as the views swap. */
+  :global(#circuit-figure),
+  .code-box {
+    min-height: 340px;
+    max-height: 340px;
   }
 
-  .circuit-column,
-  .code-column {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  /* Framed like the other panes rather than floating on the page. The frame takes the
-     height the column was given; the drawing sits in the middle of it. */
+  /* Framed like the other panes rather than floating on the page. The drawing sits in
+     the middle of the frame, and scrolls inside it when a block is written out. */
   :global(#circuit-figure) {
-    flex: 1 1 auto;
-    min-height: 320px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -870,9 +849,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     padding: 10px;
   }
 
-  .code-formats {
-    display: flex;
-    gap: 6px;
+  :global(#circuit-figure[hidden]),
+  .code-box[hidden] {
+    display: none;
   }
 
   /* Copy sits on the listing it copies. The pre scrolls; the button is anchored to the
@@ -880,8 +859,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      the scrollbar's gutter rather than sitting on it. */
   .code-box {
     position: relative;
-    flex: 1 1 auto;
-    min-height: 320px;
     display: flex;
   }
 
@@ -1081,13 +1058,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .nono-columns {
       flex-direction: column;
       min-height: 0;
-    }
-
-    /* Half a phone is no width for either of them. Stacked, the cross axis is the
-       width, so the columns take all of it rather than shrinking to their content. */
-    .circuit-pair {
-      flex-direction: column;
-      align-items: stretch;
     }
 
     .nono-left,

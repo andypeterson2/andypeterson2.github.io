@@ -235,10 +235,18 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     await expect(page.locator('#code-listing')).toContainText('for _ in range(ITERATIONS)');
   });
 
-  test('the format switch swaps the listing and shows which is active', async ({ page }) => {
+  test('the view switch swaps the pane and shows which is active', async ({ page }) => {
     const qasm = page.locator('#btn-fmt-qasm');
     const qiskit = page.locator('#btn-fmt-qiskit');
-    await expect(qiskit).toHaveAttribute('aria-pressed', 'true');
+    const circuit = page.locator('#btn-view-circuit');
+    // The drawing is what the pane opens on; the listing waits behind it.
+    await expect(circuit).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#circuit-figure')).toBeVisible();
+    await expect(page.locator('.code-box')).toBeHidden();
+
+    await qiskit.click();
+    await expect(page.locator('.code-box')).toBeVisible();
+    await expect(page.locator('#circuit-figure')).toBeHidden();
 
     await qasm.click();
     await expect(qasm).toHaveAttribute('aria-pressed', 'true');
@@ -248,10 +256,15 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
 
     await qiskit.click();
     await expect(page.locator('#code-listing')).toContainText('from qiskit import');
+
+    await circuit.click();
+    await expect(page.locator('#circuit-figure')).toBeVisible();
+    await expect(page.locator('.code-box')).toBeHidden();
   });
 
   test('Copy puts the listing on the clipboard', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.locator('#btn-fmt-qiskit').click();
     await page.locator('#btn-copy-code').click();
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(copied).toContain('def oracle(qc):');
@@ -360,7 +373,7 @@ test.describe('Nonogram: the circuit band follows the width', () => {
     // Folded, but one press away, and its summary still says what is inside.
     await expect(page.locator('#code-meta')).toContainText('qubits');
     await page.locator('#circuit-band > summary').click();
-    await expect(page.locator('#code-listing')).toBeVisible();
+    await expect(page.locator('#circuit-figure')).toBeVisible();
   });
 
   test('a choice made by hand outlasts a resize', async ({ page }) => {
@@ -418,14 +431,13 @@ test.describe('Nonogram: the circuit opens up', () => {
     await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('a button opens the same block as its box', async ({ page }) => {
-    await page.locator('#btn-block-diffuser').click();
-    await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#btn-block-diffuser')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#btn-block-oracle')).toHaveAttribute('aria-pressed', 'false');
+  test('the drawing is the only thing that opens a block', async ({ page }) => {
+    await expect(page.locator('#btn-block-oracle')).toHaveCount(0);
+    await expect(page.locator('#btn-block-diffuser')).toHaveCount(0);
 
     await box(page, 'diffuser').click();
-    await expect(page.locator('#btn-block-diffuser')).toHaveAttribute('aria-pressed', 'false');
+    await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('the drawing takes the room the gates need', async ({ page }) => {
@@ -471,6 +483,6 @@ test.describe('Nonogram: the circuit opens up', () => {
     await page.goto(APP);
     await page.locator('#circuit-band > summary').click();
     await expect(page.locator('#circuit-svg [data-block]').first()).toBeVisible();
-    await expect(page.locator('#btn-block-oracle')).toBeVisible();
+    await expect(page.locator('#btn-view-circuit')).toBeVisible();
   });
 });

@@ -75,19 +75,26 @@ test.describe('Reflow at 320px', () => {
     await page.locator('#btn-bench').click();
     await expect(page.locator('.metrics-table')).toBeVisible();
     await page.locator('#circuit-band > summary').click();
-    await expect(page.locator('#code-listing')).toBeVisible();
+    await expect(page.locator('#circuit-figure')).toBeVisible();
 
-    const overflow = await page.evaluate(() => {
-      const vw = document.documentElement.clientWidth;
-      return [...document.querySelectorAll('body *')]
-        .filter((e) => {
-          const r = e.getBoundingClientRect();
-          if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
-          return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
-        })
-        .slice(0, 3)
-        .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`);
-    });
-    expect(overflow).toEqual([]);
+    const overflow = () =>
+      page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        return [...document.querySelectorAll('body *')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
+          })
+          .slice(0, 3)
+          .map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}`);
+      });
+
+    expect(await overflow()).toEqual([]);
+
+    // Each view holds the width on its own; the listing is the widest of them.
+    await page.locator('#btn-fmt-qiskit').click();
+    await expect(page.locator('#code-listing')).toBeVisible();
+    expect(await overflow()).toEqual([]);
   });
 });
