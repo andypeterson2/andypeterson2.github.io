@@ -24,20 +24,33 @@ import { type Circuit, type Gate } from './circuit';
  */
 const QASM_UNROLL_LIMIT = 1000;
 
+/** Consecutive gates of one name on distinct qubits, written as a single call. */
+export interface GateRun {
+  name: Gate['name'];
+  qubits: number[];
+}
+
+/** True when this gate belongs to the run still open. */
+export function extendsRun(run: GateRun | null, gate: Gate): run is GateRun {
+  return run?.name === gate.name && !run.qubits.includes(gate.target);
+}
+
 /** Runs of the same single-qubit gate collapse into one call. */
-function groupSingles(gates: Gate[]): { name: string; qubits: number[] }[] {
-  const out: { name: string; qubits: number[] }[] = [];
+function groupSingles(gates: Gate[]): GateRun[] {
+  const out: GateRun[] = [];
+  let run: GateRun | null = null;
   for (const gate of gates) {
     if (gate.controls.length) {
       out.push({ name: gate.name, qubits: [...gate.controls, gate.target] });
+      run = null;
       continue;
     }
-    const last = out[out.length - 1];
-    if (last && last.name === gate.name && !last.qubits.some((q) => q === gate.target)) {
-      last.qubits.push(gate.target);
-    } else {
-      out.push({ name: gate.name, qubits: [gate.target] });
+    if (extendsRun(run, gate)) {
+      run.qubits.push(gate.target);
+      continue;
     }
+    run = { name: gate.name, qubits: [gate.target] };
+    out.push(run);
   }
   return out;
 }
@@ -47,12 +60,12 @@ function qiskitBody(gates: Gate[], indent: string): string[] {
     const qubits = g.qubits;
     if (g.name === 'mcz') {
       const controls = qubits.slice(0, -1);
-      const target = qubits[qubits.length - 1]!;
+      const target = qubits[qubits.length - 1];
       return `${indent}qc.append(ZGate().control(${String(controls.length)}), [${controls.join(', ')}, ${String(target)}])`;
     }
     if (g.name === 'mcx') {
       const controls = qubits.slice(0, -1);
-      const target = qubits[qubits.length - 1]!;
+      const target = qubits[qubits.length - 1];
       return `${indent}qc.mcx([${controls.join(', ')}], ${String(target)})`;
     }
     return `${indent}qc.${g.name}([${qubits.join(', ')}])`;
@@ -113,24 +126,28 @@ export function toQasm3(circuit: Circuit): string {
   const body =
     circuit.iterations <= QASM_UNROLL_LIMIT
       ? Array.from({ length: circuit.iterations }, () => calls).flat()
-      : [`for int i in [0:${String(circuit.iterations - 1)}] {`, ...calls.map((c) => `  ${c}`), '}'];
+      : [
+          `for int i in [0:${String(circuit.iterations - 1)}] {`,
+          ...calls.map((c) => `  ${c}`),
+          '}',
+        ];
 
   return [
     'OPENQASM 3.0;',
     'include "stdgates.inc";',
     '',
     `gate oracle ${params.join(', ')} {`,
-    ...circuit.oracle.map((g) => qasmGate(g, (i) => params[i]!)),
+    ...circuit.oracle.map((g) => qasmGate(g, (i) => params[i])),
     '}',
     '',
     `gate diffuser ${params.join(', ')} {`,
-    ...circuit.diffuser.map((g) => qasmGate(g, (i) => params[i]!)),
+    ...circuit.diffuser.map((g) => qasmGate(g, (i) => params[i])),
     '}',
     '',
     `qubit[${String(circuit.qubits)}] q;`,
     `bit[${String(circuit.problemQubits)}] c;`,
     '',
-    ...circuit.prepare.map((g) => qasmGate(g, (i) => args[i]!).trimStart()),
+    ...circuit.prepare.map((g) => qasmGate(g, (i) => args[i]).trimStart()),
     '',
     ...body,
     '',

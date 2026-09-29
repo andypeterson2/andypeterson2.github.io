@@ -15,7 +15,7 @@ import {
   MAX_EXPANDED_COLUMNS,
   type Block,
 } from './diagram';
-import { gateQubits, type Circuit, type Gate } from './circuit';
+import { type Circuit, type Gate } from './circuit';
 import {
   COST_OPTIMIZATION,
   COST_SEEDS,
@@ -24,7 +24,7 @@ import {
   hardwareCost,
   overBudget,
 } from './hardware-cost';
-import { exportCircuit, type ExportFormat } from './export';
+import { exportCircuit, extendsRun, type ExportFormat, type GateRun } from './export';
 import { $ } from './state';
 import { setStatus } from './ui';
 
@@ -60,7 +60,7 @@ function pane(): HTMLElement | null {
 /** Qubit numbers as a list, collapsing a full run into its ends. */
 function qubitList(qubits: number[]): string {
   const sorted = [...qubits].sort((a, b) => a - b);
-  const contiguous = sorted.every((q, i) => i === 0 || q === sorted[i - 1]! + 1);
+  const contiguous = sorted.every((q, i) => i === 0 || q === sorted[i - 1] + 1);
   if (contiguous && sorted.length > 2) {
     return `q${String(sorted[0])}-q${String(sorted[sorted.length - 1])}`;
   }
@@ -70,7 +70,7 @@ function qubitList(qubits: number[]): string {
 /** One line per gate, with runs of the same single-qubit gate on one line. */
 function gateLines(gates: Gate[]): string {
   const lines: string[] = [];
-  let run: { name: string; qubits: number[] } | null = null;
+  let run: GateRun | null = null;
 
   const flush = (): void => {
     if (run) lines.push(`${run.name.toUpperCase().padEnd(4)}${qubitList(run.qubits)}`);
@@ -86,7 +86,7 @@ function gateLines(gates: Gate[]): string {
       );
       continue;
     }
-    if (run && run.name === gate.name && !run.qubits.includes(gate.target)) {
+    if (extendsRun(run, gate)) {
       run.qubits.push(gate.target);
       continue;
     }
@@ -297,32 +297,6 @@ export function renderCodePane(rowClues: number[][], colClues: number[][]): void
   host.classList.add('visible');
 }
 
-export function clearCodePane(): void {
-  listing = '';
-  const listingEl = $('code-listing');
-  if (listingEl) listingEl.textContent = '';
-  shown = null;
-  pinned = null;
-  const svg = $('circuit-svg');
-  if (svg) svg.innerHTML = '';
-  const panel = $('circuit-decomp');
-  if (panel) {
-    panel.hidden = true;
-    panel.innerHTML = '';
-  }
-  const hw = $('hardware-note');
-  if (hw) hw.textContent = '';
-  const note = $('code-note');
-  if (note) note.textContent = '';
-
-  const meta = $('code-meta');
-  if (meta) {
-    meta.textContent = '';
-    meta.removeAttribute('title');
-  }
-  pane()?.classList.remove('visible');
-}
-
 async function copy(): Promise<void> {
   if (!listing) return;
   try {
@@ -375,7 +349,7 @@ export function initCodePane(onFormatChange: () => void): void {
   // a box would be thrown away with it.
   const svg = $('circuit-svg');
   const press = (target: EventTarget | null): void => {
-    const hit = (target as Element | null)?.closest?.('[data-block]');
+    const hit = (target as Element | null)?.closest('[data-block]');
     const block = hit?.getAttribute('data-block');
     if (block !== 'oracle' && block !== 'diffuser') return;
     pinned = pinned === block ? null : block;

@@ -352,28 +352,11 @@ function clearMetrics(): void {
   el.classList.remove('visible');
 }
 
-function fmtTime(t: number | null | undefined): string {
-  if (t == null) return '—';
-  return t < 1 ? (t * 1000).toFixed(1) + ' ms' : t.toFixed(3) + ' s';
-}
-
-function fmtAvg(times: number[] | null | undefined): string {
-  if (!times?.length) return '—';
-  const avg = times.reduce((a, b) => a + b) / times.length;
-  let s = fmtTime(avg);
-  if (times.length >= 2) {
-    const mean = avg;
-    const sd = Math.sqrt(times.reduce((a, b) => a + (b - mean) ** 2, 0) / (times.length - 1));
-    s += ` ± ${fmtTime(sd)}`;
-  }
-  return s;
-}
-
 /** A row's note, keyed by its label. Absent means the label is not pressable. */
 const NOTES: Record<string, string> = {
   'Clue checks':
     'How many times each method asks the clues a question. Exhaustive counts to the ' +
-    'certainty Grover reaches, not the 256 it would average. Backtracking is this page\'s ' +
+    "certainty Grover reaches, not the 256 it would average. Backtracking is this page's " +
     'own solver, so its count moves with the puzzle where the other two follow only the ' +
     'cell count and the number of solutions.',
   'Per clue check':
@@ -389,7 +372,8 @@ const NOTES: Record<string, string> = {
   'Rounds that fit':
     'How many whole iterations sit inside the depth budget. The backend runs one truncated ' +
     'round rather than none.',
-  'P(solution), at chance': 'One solution among the states — what a device returns once the circuit outruns its coherence.',
+  'P(solution), at chance':
+    'One solution among the states — what a device returns once the circuit outruns its coherence.',
 };
 
 /** The measured group describes a circuit whose oracle already holds the answer. */
@@ -486,7 +470,7 @@ function naCell(tr: HTMLTableRowElement): void {
   td.append(label);
 }
 
-export function renderMetrics(report: BenchmarkReport | null | undefined): void {
+function renderMetrics(report: BenchmarkReport | null | undefined): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
 
@@ -549,15 +533,21 @@ export function renderMetrics(report: BenchmarkReport | null | undefined): void 
     metricRow(device, 'Two-qubit gates', [hw.two_qubit.toLocaleString()], true);
     metricRow(device, 'Per extra cell, measured', [perCell ?? '—'], true);
     metricRow(device, 'Depth (layers)', [hw.depth.toLocaleString()], true);
-    metricRow(device, 'Device budget (layers)', [
-      `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}\u00d7 over)`,
-    ], true);
-    metricRow(device, 'Rounds that fit', [
-      `${String(Math.floor(DEPTH_BUDGET / (hw.depth / hw.iterations)))} of ${String(hw.iterations)}`,
-    ], true);
-    metricRow(device, 'P(solution), at chance', [
-      `\u2248 ${(100 / 2 ** cells).toFixed(1)}%`,
-    ], true);
+    metricRow(
+      device,
+      'Device budget (layers)',
+      [`${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}\u00d7 over)`],
+      true,
+    );
+    metricRow(
+      device,
+      'Rounds that fit',
+      [
+        `${String(Math.floor(DEPTH_BUDGET / (hw.depth / hw.iterations)))} of ${String(hw.iterations)}`,
+      ],
+      true,
+    );
+    metricRow(device, 'P(solution), at chance', [`\u2248 ${(100 / 2 ** cells).toFixed(1)}%`], true);
   } else {
     const tr = device.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -602,8 +592,6 @@ export function renderBenchmark({
   qu_counts_per_trial,
   rows,
   cols,
-  cl_times,
-  qu_times,
 }: BenchmarkPayload): void {
   // Use last trial counts if multi-trial
   const counts = qu_counts_per_trial

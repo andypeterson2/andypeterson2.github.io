@@ -108,12 +108,13 @@ export function totalGates(circuit: Circuit): number {
 /** Gates acting on more than one qubit — the ones hardware pays for. */
 export function entanglingCount(circuit: Circuit): number {
   const perRound = circuit.round.filter((g) => g.controls.length > 0).length;
-  return circuit.prepare.filter((g) => g.controls.length > 0).length +
-    circuit.iterations * perRound;
+  return (
+    circuit.prepare.filter((g) => g.controls.length > 0).length + circuit.iterations * perRound
+  );
 }
 
 /** How many gates `expandGates` will build before it refuses. */
-export const MAX_EXPANDED_GATES = 200_000;
+const MAX_EXPANDED_GATES = 200_000;
 
 /**
  * The circuit written out gate by gate, for simulating or drawing it.
@@ -132,12 +133,8 @@ export function expandGates(circuit: Circuit, limit = MAX_EXPANDED_GATES): Gate[
 function markState(bits: string, cells: number[], stage: Gate['stage']): Gate[] {
   const zeros = cells.filter((q) => bits[q] === '0');
   const flips: Gate[] = zeros.map((q) => ({ name: 'x', controls: [], target: q, stage }));
-  const last = cells[cells.length - 1]!;
-  return [
-    ...flips,
-    { name: 'mcz', controls: cells.slice(0, -1), target: last, stage },
-    ...flips,
-  ];
+  const last = cells[cells.length - 1];
+  return [...flips, { name: 'mcz', controls: cells.slice(0, -1), target: last, stage }, ...flips];
 }
 
 /** One phase flip per satisfying grid. */
@@ -195,7 +192,7 @@ function constraintOracle(
     }
   });
 
-  const last = ancillas[ancillas.length - 1]!;
+  const last = ancillas[ancillas.length - 1];
   const flip: Gate = {
     name: 'mcz',
     controls: ancillas.slice(0, -1),
@@ -211,7 +208,7 @@ function constraintOracle(
 function diffuser(cells: number[]): Gate[] {
   const h: Gate[] = cells.map((q) => ({ name: 'h', controls: [], target: q, stage: 'diffuser' }));
   const x: Gate[] = cells.map((q) => ({ name: 'x', controls: [], target: q, stage: 'diffuser' }));
-  const last = cells[cells.length - 1]!;
+  const last = cells[cells.length - 1];
   return [
     ...h,
     ...x,
@@ -234,7 +231,7 @@ export interface BuildOptions {
  * The oracle is chosen by what is knowable: with the solutions in hand the direct
  * phase flip is smaller and matches the backend, and without them the constraint
  * build still works. A board with no solutions has nothing to amplify, so the
- * solution oracle would be empty — the constraint oracle describes it honestly.
+ * solution oracle would be empty, so the constraint oracle stands in.
  */
 export function buildCircuit(
   rowClues: number[][],

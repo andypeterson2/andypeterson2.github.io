@@ -63,15 +63,16 @@ function esc(text: string): string {
 }
 
 /** A box spanning every wire between `from` and `to`, named down its right edge. */
-function span(
-  x: number,
-  from: number,
-  to: number,
-  label: string,
-  sub: string,
-  block?: 'oracle' | 'diffuser',
-  pinned?: boolean,
-): string {
+function span(box: {
+  x: number;
+  from: number;
+  to: number;
+  label: string;
+  sub: string;
+  block?: 'oracle' | 'diffuser';
+  pinned?: boolean;
+}): string {
+  const { x, from, to, label, sub, block, pinned } = box;
   const top = from - BOX / 2;
   const height = to - from + BOX;
   const cx = x + COL / 2;
@@ -117,9 +118,9 @@ export interface Drawing {
 export function drawCircuit(circuit: Circuit, pinned: Block | null = null): Drawing {
   const rows = wires(circuit);
   const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
-  const firstCell = cellRows[0]!.y;
-  const lastCell = cellRows[cellRows.length - 1]!.y;
-  const lastRow = rows[rows.length - 1]!.y;
+  const firstCell = cellRows[0].y;
+  const lastCell = cellRows[cellRows.length - 1].y;
+  const lastRow = rows[rows.length - 1].y;
   const height = lastRow + TOP + 22;
 
   let x = GUTTER;
@@ -137,18 +138,28 @@ export function drawCircuit(circuit: Circuit, pinned: Block | null = null): Draw
 
   const repeatStart = x;
   parts.push(
-    span(
+    span({
       x,
-      firstCell,
-      circuit.ancillas ? lastRow : lastCell,
-      'Oracle',
-      oracleSub(circuit),
-      'oracle',
-      pinned === 'oracle',
-    ),
+      from: firstCell,
+      to: circuit.ancillas ? lastRow : lastCell,
+      label: 'Oracle',
+      sub: oracleSub(circuit),
+      block: 'oracle',
+      pinned: pinned === 'oracle',
+    }),
   );
   x += COL + GAP;
-  parts.push(span(x, firstCell, lastCell, 'Diffuser', '', 'diffuser', pinned === 'diffuser'));
+  parts.push(
+    span({
+      x,
+      from: firstCell,
+      to: lastCell,
+      label: 'Diffuser',
+      sub: '',
+      block: 'diffuser',
+      pinned: pinned === 'diffuser',
+    }),
+  );
   x += COL;
   const repeatEnd = x;
   x += GAP * 2;
@@ -186,7 +197,6 @@ export function drawCircuit(circuit: Circuit, pinned: Block | null = null): Draw
 
 /* ── One iteration, written out ── */
 
-const EXP_PITCH = 28;
 const EXP_BOX = 22;
 const EXP_COL = 32;
 /** Past this the drawing stops being readable and the listing serves better. */
@@ -259,12 +269,12 @@ export function drawExpanded(circuit: Circuit): Drawing {
   const rows = wires(circuit);
   const y = (q: number): number => {
     const found = rows.find((w) => w.qubit === q);
-    return found ? found.y : rows[rows.length - 1]!.y;
+    return found ? found.y : rows[rows.length - 1].y;
   };
   const drawn = new Set(rows.map((w) => w.qubit));
   const packed = columns(circuit.round.filter((g) => gateQubits(g).every((q) => drawn.has(q))));
 
-  const lastRow = rows[rows.length - 1]!.y;
+  const lastRow = rows[rows.length - 1].y;
   const height = lastRow + TOP + 30;
   const left = GUTTER - 8;
 

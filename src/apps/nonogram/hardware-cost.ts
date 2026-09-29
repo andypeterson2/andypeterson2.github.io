@@ -43,7 +43,6 @@ export const DEPTH_BUDGET = 200;
 
 export const COST_TARGET = COSTS.target;
 export const COST_SEEDS = COSTS.seeds;
-export const COST_QISKIT = COSTS.qiskit;
 export const COST_OPTIMIZATION = COSTS.optimization_level;
 
 /** The measured cost for this board, or null when it was never measured. */
@@ -54,9 +53,7 @@ export function hardwareCost(
 ): HardwareCost | null {
   if (solutions === null) return null;
   return (
-    COSTS.rows.find(
-      (r) => r.rows === rows && r.cols === cols && r.solutions === solutions,
-    ) ?? null
+    COSTS.rows.find((r) => r.rows === rows && r.cols === cols && r.solutions === solutions) ?? null
   );
 }
 
@@ -73,7 +70,8 @@ export function measuredGrowth(rows: number, cols: number, solutions: number): s
   const cells = rows * cols;
   const smaller = COSTS.rows
     .filter((r) => r.solutions === solutions && r.rows * r.cols < cells && r.two_qubit > 0)
-    .sort((a, b) => b.rows * b.cols - a.rows * a.cols)[0];
+    .sort((a, b) => b.rows * b.cols - a.rows * a.cols)
+    .at(0);
   if (!smaller) return null;
   const step = cells - smaller.rows * smaller.cols;
   const perCell = (here.two_qubit / smaller.two_qubit) ** (1 / step);
