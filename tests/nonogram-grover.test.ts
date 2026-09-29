@@ -1,5 +1,11 @@
 import { describe, test, expect } from 'vitest';
-import { groverOutcome, optimalIterations, sampleCounts } from '../src/apps/nonogram/grover-sim';
+import {
+  chanceThreshold,
+  groverOutcome,
+  optimalIterations,
+  sampleCounts,
+  shotCount,
+} from '../src/apps/nonogram/grover-sim';
 import { solveLocal } from '../src/apps/nonogram/classical-solver';
 
 /** The published closed form, written out independently of the implementation. */
@@ -158,5 +164,56 @@ describe('Sampled measurements', () => {
     const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]!;
     expect(top[0]).toBe('1111');
     expect(top[1] / 4000).toBeGreaterThan(0.5);
+  });
+});
+
+describe('The threshold a bar has to clear', () => {
+  const pct = (qubits: number, shots: number) => +(chanceThreshold(qubits, shots) * 100).toFixed(3);
+
+  test('tightens as the shots buy certainty', () => {
+    // Four times the shots halves the spread the cut has to clear.
+    expect(pct(9, 512)).toBeCloseTo(0.885, 2);
+    expect(pct(9, 1024)).toBeCloseTo(0.683, 2);
+    expect(pct(9, 4096)).toBeCloseTo(0.439, 2);
+  });
+
+  test('scales with the space rather than flattening out', () => {
+    // The rule it replaces sat at a fixed 0.5% for every board past eleven cells.
+    expect(pct(4, 1024)).toBeCloseTo(8.031, 2);
+    expect(pct(12, 1024)).toBeCloseTo(0.224, 2);
+    // Past about fourteen cells at this shot count the floor is what answers.
+    expect(pct(16, 1024)).toBeCloseTo(100 / 1024, 2);
+  });
+
+  test('never falls below the one count a bar needs to exist', () => {
+    // At 25 qubits chance is far under a single shot, so the floor is what answers.
+    expect(chanceThreshold(25, 1024)).toBe(1 / 1024);
+    expect(chanceThreshold(40, 512)).toBe(1 / 512);
+  });
+
+  test('stays above pure chance, and under certainty', () => {
+    for (const qubits of [1, 4, 9, 16, 25]) {
+      for (const shots of [128, 1024, 8192]) {
+        const cut = chanceThreshold(qubits, shots);
+        expect(cut).toBeGreaterThan(2 ** -qubits);
+        expect(cut).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  test('an exact distribution is cut at chance, having never been sampled', () => {
+    // A captured run stored as probabilities carries no sampling noise to clear.
+    expect(chanceThreshold(4, null)).toBe(1 / 16);
+    expect(chanceThreshold(9, null)).toBe(1 / 512);
+    expect(chanceThreshold(9, 0)).toBe(1 / 512);
+  });
+
+  test('whole counts are a sample; probabilities are not', () => {
+    expect(shotCount({ '00': 512, '11': 512 })).toBe(1024);
+    // The gallery stores some runs as the distribution itself.
+    expect(shotCount({ '00': 0.0117, '11': 0.3867 })).toBeNull();
+    expect(shotCount({})).toBeNull();
+    // One shot says nothing a histogram can use.
+    expect(shotCount({ '00': 1 })).toBeNull();
   });
 });

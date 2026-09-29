@@ -125,6 +125,44 @@ function uniformCounts(qubits: number): Record<string, number> {
 const EXACT_LIMIT = 12;
 
 /**
+ * How many shots a set of counts came from, or null when it is not a sample.
+ *
+ * A captured run may be stored either way: whole counts from a device or a simulator,
+ * or the probabilities themselves. The two ask different questions of a histogram, so
+ * they have to be told apart before either is read.
+ */
+export function shotCount(counts: Record<string, number>): number | null {
+  const values = Object.values(counts);
+  if (!values.length || !values.every((v) => Number.isInteger(v))) return null;
+  const total = values.reduce((a, b) => a + b, 0);
+  return total > 1 ? total : null;
+}
+
+/**
+ * The frequency a bar has to clear to be more than sampling noise.
+ *
+ * Every outcome of a run that found nothing is a draw from Binomial(shots, 1/N), so the
+ * spread on a frequency narrows as 1/sqrt(shots): a cut that ignores the shot count is
+ * the same cut for ten shots and for ten thousand. The constant is what the largest of
+ * N draws reaches, near sqrt(2 ln N), which holds the expected number of bars cleared
+ * by chance under one across the whole histogram rather than one per bar.
+ *
+ * The floor is one count. Nothing below that can be drawn at all, so a cut under it
+ * would call every bar on the chart signal. A set of counts that is not a sample has
+ * no floor to hold: see `shotCount`.
+ */
+export function chanceThreshold(qubits: number, shots: number | null): number {
+  const chance = 2 ** -qubits;
+  // An exact distribution was never sampled, so it carries no noise to clear: every
+  // amplitude above uniform is amplification, however slight.
+  if (shots === null || shots <= 0) return chance;
+  // qubits * ln2 keeps its footing past a thousand qubits, where the power overflows.
+  const spread = Math.sqrt(2 * qubits * Math.LN2);
+  const cut = chance + spread * Math.sqrt((chance * (1 - chance)) / shots);
+  return Math.max(cut, 1 / shots);
+}
+
+/**
  * Draw `shots` measurements from the exact distribution, keyed the way a real run is.
  *
  * Qiskit reports little-endian bitstrings and the renderer reverses them to read a

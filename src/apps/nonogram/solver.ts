@@ -27,7 +27,7 @@ import {
   overBudget,
 } from './hardware-cost';
 import { solveLocal } from './classical-solver';
-import { groverOutcome, optimalIterations } from './grover-sim';
+import { chanceThreshold, groverOutcome, optimalIterations, shotCount } from './grover-sim';
 
 const MAX_DISPLAY = 30;
 
@@ -136,12 +136,6 @@ export function renderClassical({ solutions, rows, cols }: ClassicalResult): voi
 }
 
 // Quantum histogram & solutions
-function computeThreshold(rows: number, cols: number): number {
-  const numVars = rows * cols;
-  const baseline = 1.0 / Math.pow(2, numVars);
-  return Math.max(3.0 * baseline, 0.005);
-}
-
 export function renderQuantum(
   counts: Record<string, number> | null | undefined,
   rows: number,
@@ -160,7 +154,7 @@ export function renderQuantum(
   const totalOutcomes = entries.length;
   entries = entries.slice(0, MAX_DISPLAY);
 
-  const threshold = state.userThreshold ?? computeThreshold(rows, cols);
+  const threshold = state.userThreshold ?? chanceThreshold(rows * cols, shotCount(counts));
 
   state.histData = { entries, threshold, rows, cols, totalOutcomes };
   elThresholdInput.disabled = false;

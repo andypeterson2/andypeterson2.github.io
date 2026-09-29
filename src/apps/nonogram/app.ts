@@ -45,7 +45,7 @@ import {
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
 import { initCodePane, renderCodePane } from './code-pane';
-import { groverOutcome, sampleCounts } from './grover-sim';
+import { groverOutcome, sampleCounts, shotCount } from './grover-sim';
 import {
   pendingJob,
   refreshStatus,
@@ -290,10 +290,8 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
  * measurement nobody took, so it goes unsaid.
  */
 function shotsLabel(counts: Record<string, number> | null | undefined): string {
-  const values = Object.values(counts ?? {});
-  if (!values.length || !values.every((v) => Number.isInteger(v))) return '';
-  const total = values.reduce((a, b) => a + b, 0);
-  return total > 1 ? `${String(total)} shots` : '';
+  const shots = shotCount(counts ?? {});
+  return shots === null ? '' : `${String(shots)} shots`;
 }
 
 /** A captured run's classical time, in the milliseconds the rules show. */
