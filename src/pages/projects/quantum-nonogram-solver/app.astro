@@ -102,22 +102,27 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         </span>
       </summary>
       <div id="code-pane">
-        <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
-          <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
-          <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
-        </div>
-        <div id="circuit-figure">
-          <svg id="circuit-svg" aria-hidden="true"></svg>
-        </div>
-        <div class="code-controls">
-          <div class="code-formats" role="group" aria-label="Code format">
-            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+        <div class="circuit-pair">
+          <div class="circuit-column">
+            <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
+              <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
+              <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
+            </div>
+            <div id="circuit-figure">
+              <svg id="circuit-svg" aria-hidden="true"></svg>
+            </div>
           </div>
-          <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+          <div class="code-column">
+            <div class="code-formats" role="group" aria-label="Code format">
+              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+            </div>
+            <div class="code-box">
+              <pre id="code-listing" tabindex="0"></pre>
+              <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+            </div>
+          </div>
         </div>
-        <pre id="code-listing" tabindex="0"></pre>
-        <p id="code-note" class="code-note"></p>
       </div>
     </details>
   </div>
@@ -821,6 +826,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* ── Circuit diagram ── */
 
+  /* The drawing and the source it stands for, read together. Each column takes half and
+     may shrink: a written-out block is wider than any half, and scrolls inside its own
+     frame rather than widening the page. */
+  .circuit-pair {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--window-gap);
+  }
+
+  .circuit-column,
+  .code-column {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
   /* Framed like the other panes rather than floating on the page. */
   :global(#circuit-figure) {
     display: flex;
@@ -828,7 +851,23 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     overflow-x: auto;
     border: 1px solid var(--ink);
     padding: 10px;
-    margin-bottom: var(--space-3);
+  }
+
+  .code-formats {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* Copy sits on the listing it copies. The pre scrolls; the button is anchored to the
+     frame around it, so it stays in the corner whatever the code does. */
+  .code-box {
+    position: relative;
+  }
+
+  :global(.code-box #btn-copy-code) {
+    position: absolute;
+    top: 8px;
+    right: 8px;
   }
 
   :global(#circuit-svg) {
@@ -1002,18 +1041,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     dominant-baseline: central;
   }
 
-  /* What the code means, kept beside the listing rather than inside it, so the
-     copied text is circuit and nothing else. */
-  :global(.code-note) {
-    margin: var(--space-2) 0 0;
-    font-size: var(--text-4xs);
-    line-height: var(--leading-normal);
-  }
-
-  :global(.code-note:empty) {
-    display: none;
-  }
-
   :global(#code-listing) {
     max-height: 340px;
     overflow: auto;
@@ -1030,6 +1057,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .nono-columns {
       flex-direction: column;
       min-height: 0;
+    }
+
+    /* Half a phone is no width for either of them. Stacked, the cross axis is the
+       width, so the columns take all of it rather than shrinking to their content. */
+    .circuit-pair {
+      flex-direction: column;
+      align-items: stretch;
     }
 
     .nono-left,

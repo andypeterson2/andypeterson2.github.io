@@ -221,7 +221,7 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
       expect(line.trimStart().startsWith('#')).toBe(false);
     }
     // What it means sits beside the listing instead, where it is readable.
-    await expect(page.locator('#code-note')).toContainText('little-endian');
+    await expect(page.locator('#code-listing')).toHaveAttribute('title', /little-endian/);
   });
 
   test('editing the grid rewrites the code', async ({ page }) => {
@@ -270,7 +270,10 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     }
     await expect(page.locator('#grid-size-label')).toHaveText('6 \u00d7 6');
     await expect(page.locator('#code-meta')).toContainText('48 qubits');
-    await expect(page.locator('#code-note')).toContainText('past what the page solves');
+    await expect(page.locator('#code-listing')).toHaveAttribute(
+      'title',
+      /past what the page solves/,
+    );
     // Too many wires to draw, so the middle collapses and both ends stay.
     await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
     // Seven cells from the top, the last cell, and both ends of the ancillas.

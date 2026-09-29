@@ -58,7 +58,8 @@ function summary(qubits: number, depth: number, gates: number): string {
 }
 
 /**
- * What the listing does not say, because the listing carries no prose.
+ * What the listing does not say, because the listing carries no prose. It is the
+ * listing's own hover text.
  *
  * Qubit order and endianness are the two things that make a correct circuit look
  * broken to someone reading its output for the first time, so they lead.
@@ -205,11 +206,13 @@ export function renderCodePane(rowClues: number[][], colClues: number[][]): void
   listing = exportCircuit(circuit, format);
   paint();
 
+  // What the listing does not say, on the listing rather than under it: the copied text
+  // stays circuit and nothing else.
+  const listingEl = $('code-listing');
+  if (listingEl) listingEl.title = explain(circuit);
+
   shown = circuit;
   paintCircuit();
-
-  const note = $('code-note');
-  if (note) note.textContent = explain(circuit);
 
   const meta = $('code-meta');
   if (meta) {
