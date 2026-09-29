@@ -893,9 +893,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     stroke-width: 1;
   }
 
+  /* The code face. H and X have to stay apart at this size, which needs the open
+     diagonals of a monospace, and it matches the listing below the diagram. */
   :global(.circ-gate) {
-    font-family: var(--font-ui);
-    font-size: var(--text-4xs);
+    font-family: var(--font-mono);
+
+    /* A step above the chrome around it. The X's diagonals cover fewer pixels than the
+       H's uprights, so they need the size and the weight to hold the same density. */
+    font-size: var(--text-3xs);
+    font-weight: 600;
     fill: var(--ink);
     text-anchor: middle;
     dominant-baseline: central;
