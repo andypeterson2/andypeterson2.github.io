@@ -215,15 +215,6 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     await expect(svg.locator('.circ-repeat')).toContainText('\u00d7');
   });
 
-  test('says what the circuit would cost on a real device', async ({ page }) => {
-    const note = page.locator('#hardware-note');
-    await expect(note).toContainText('ibm_torino');
-    await expect(note).toContainText('two-qubit gates');
-    // The figure is useless without the qualifiers that produced it.
-    await expect(note).toContainText('optimization');
-    await expect(note).toContainText('seeds');
-  });
-
   test('the listing is circuit and nothing else', async ({ page }) => {
     const text = (await page.locator('#code-listing').textContent()) ?? '';
     for (const line of text.split('\n')) {
@@ -284,8 +275,6 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
     // Seven cells from the top, the last cell, and both ends of the ancillas.
     await expect(page.locator('#circuit-svg .circ-wire')).toHaveCount(10);
-    // Nothing this size was ever transpiled, and the page says so rather than guessing.
-    await expect(page.locator('#hardware-note')).toContainText('No measurement');
   });
 });
 
@@ -434,7 +423,6 @@ test.describe('Nonogram: the circuit opens up', () => {
     await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(2);
     await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
     await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#circuit-caption')).toContainText('Written out for one iteration');
   });
 
   test('a button opens the same block as its box', async ({ page }) => {

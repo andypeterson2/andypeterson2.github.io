@@ -10,14 +10,6 @@ import { buildCircuit, circuitDepth, entanglingCount, totalGates } from './circu
 import { groverOutcome } from './grover-sim';
 import { BLOCKS, drawCircuit, ghostBlock, type Block, type Rect } from './diagram';
 import { type Circuit } from './circuit';
-import {
-  COST_OPTIMIZATION,
-  COST_SEEDS,
-  COST_TARGET,
-  DEPTH_BUDGET,
-  hardwareCost,
-  overBudget,
-} from './hardware-cost';
 import { exportCircuit, type ExportFormat } from './export';
 import { $ } from './state';
 import { setStatus } from './ui';
@@ -89,32 +81,6 @@ function explain(circuit: ReturnType<typeof buildCircuit>): string {
     `Qubit i is cell i, read left to right and top to bottom. Measurements come back ` +
     `little-endian, so reverse a bitstring to read it as a grid. ${counted} ${built} ` +
     `Equivalent to what this page runs; a hardware run is transpiled to a device besides.`
-  );
-}
-
-/**
- * What a real device would make of this circuit, when it was measured.
- *
- * Every qualifier a transpiled depth needs to mean anything is named: the device, the
- * optimization level, how many seeds were tried, and the iteration count it was
- * measured at.
- */
-function hardwareLine(circuit: ReturnType<typeof buildCircuit>): string {
-  const cost = hardwareCost(circuit.rows, circuit.cols, circuit.solutionCount);
-  if (!cost) {
-    return (
-      `No measurement for a board this size: transpiling one costs more than it says. ` +
-      `The figures above are the circuit as written, before any device sees it.`
-    );
-  }
-  const over = Math.round(overBudget(cost));
-  return (
-    `Transpiled for ibm_torino (Qiskit's ${COST_TARGET} snapshot) at optimization ` +
-    `level ${String(COST_OPTIMIZATION)}, ` +
-    `best of ${String(COST_SEEDS)} seeds: ${cost.depth.toLocaleString()} layers and ` +
-    `${cost.two_qubit.toLocaleString()} two-qubit gates at ${String(cost.iterations)} iterations. ` +
-    `A device of that generation holds about ${String(DEPTH_BUDGET)} layers before noise takes over, ` +
-    `so this asks for roughly ${over.toLocaleString()} times what it has.`
   );
 }
 
@@ -228,13 +194,6 @@ function paintCircuit(opening?: Block): void {
   for (const block of BLOCKS) {
     $(BLOCK_BUTTONS[block])?.setAttribute('aria-pressed', String(expanded.has(block)));
   }
-
-  const caption = $('circuit-caption');
-  if (caption) {
-    caption.textContent = opened.length
-      ? `Written out for one iteration of ${circuit.iterations.toLocaleString()}. Press a frame to fold it back.`
-      : 'Press a box to write out what it is made of.';
-  }
 }
 
 /** Build the circuit for these clues and show its code. */
@@ -248,9 +207,6 @@ export function renderCodePane(rowClues: number[][], colClues: number[][]): void
 
   shown = circuit;
   paintCircuit();
-
-  const hw = $('hardware-note');
-  if (hw) hw.textContent = hardwareLine(circuit);
 
   const note = $('code-note');
   if (note) note.textContent = explain(circuit);

@@ -105,12 +105,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
           <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
           <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
-          <span id="circuit-caption" class="circuit-caption"></span>
         </div>
         <div id="circuit-figure">
           <svg id="circuit-svg" aria-hidden="true"></svg>
         </div>
-        <p id="hardware-note" class="code-note"></p>
         <div class="code-controls">
           <div class="code-formats" role="group" aria-label="Code format">
             <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
@@ -810,10 +808,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   .circuit-view[hidden] {
     display: none;
-  }
-
-  .circuit-caption {
-    font-size: var(--text-4xs);
   }
 
   /* ── Circuit diagram ── */
