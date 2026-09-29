@@ -11,7 +11,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   <div id="nonogram-app">
     <div class="nono-columns">
       <div class="nono-left">
-        <div class="section-rule"><span>Puzzle Editor</span></div>
         <!-- Above the grid: picking the mode comes before editing, and it keeps the grid
              next to Clear in the tab order. -->
         <span class="mode-toggle" role="group" aria-label="Editor mode">
@@ -40,15 +39,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
           </span>
         </div>
+        <label class="gallery-label"
+          >Gallery
+          <select id="gallery-select">
+            <option value="">— captured runs —</option>
+          </select>
+        </label>
         <div class="controls-bar">
           <button id="btn-bench" class="s6-btn s6-btn--primary">&#9654; Solve in browser</button>
           <button id="btn-hw" class="s6-btn" aria-disabled="true">&#9654; Run on IBM</button>
-          <label class="gallery-label"
-            >Gallery
-            <select id="gallery-select">
-              <option value="">— captured runs —</option>
-            </select>
-          </label>
         </div>
         <details id="circuit-band" class="nono-band">
           <summary>
@@ -57,17 +56,17 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </span>
           </summary>
           <div id="code-pane">
+            <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
+              <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
+              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+            </div>
             <div id="circuit-figure">
               <svg id="circuit-svg" aria-hidden="true"></svg>
             </div>
             <div class="code-box">
               <pre id="code-listing" tabindex="0"></pre>
               <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
-            </div>
-            <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
-              <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
-              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
             </div>
           </div>
         </details>
@@ -96,21 +95,25 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </div>
           </div>
         </div>
-        <div class="section-rule">
-          <span>Histogram</span><span id="hist-meta" class="rule-meta"></span>
-        </div>
-        <div class="histogram-controls">
-          <label class="threshold-label"
-            >Thr
-            <input type="number" id="threshold-input" min="0" max="100" step="0.01" value="0.50" />
-            <span>%</span>
-          </label>
-        </div>
         <div id="qu-area" class="histogram-area">
           <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
           <div id="qu-placeholder" class="placeholder-msg"></div>
+          <div class="histogram-controls">
+            <label class="threshold-label"
+              >Thr
+              <input
+                type="number"
+                id="threshold-input"
+                min="0"
+                max="100"
+                step="0.01"
+                value="0.50"
+              />
+              <span>%</span>
+            </label>
+            <span id="hist-meta" class="rule-meta"></span>
+          </div>
         </div>
-        <div class="section-rule"><span>Metrics</span></div>
         <div id="metrics-pane"></div>
       </div>
     </div>
@@ -146,6 +149,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      3x3 grid and the widest button both fit. It scrolls with the page. */
   .nono-left {
     flex: 0 0 clamp(320px, 46%, 560px);
+    min-width: 0;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -453,15 +457,17 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* Beside the editor now, in a column too narrow to sit them in a row: each control
      takes the full width, with the primary action first. */
+  /* The two ways to run it, abreast: one choice, two answers. */
   .controls-bar {
     display: flex;
-    flex-direction: column;
     gap: 8px;
     border-top: 1px solid var(--ink);
     padding-top: 12px;
   }
 
   .controls-bar .s6-btn {
+    flex: 1 1 0;
+    min-width: 0;
     text-align: center;
   }
 
@@ -480,7 +486,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border: 2px solid var(--ink);
     background: var(--paper);
     padding: 3px 6px;
-    max-width: 190px;
+    flex: 1;
+    min-width: 0;
   }
 
   /* ── Solution canvases ── */
@@ -549,7 +556,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Histogram ── */
+  /* On the chart it cuts, out of the way of the bars, which rise from the left. */
   .histogram-controls {
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    z-index: 1;
+    align-items: baseline;
+    background: var(--paper);
     display: flex;
     gap: 8px;
   }
@@ -646,6 +660,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.metrics-table) {
     width: 100%;
+    border: 1px solid var(--ink);
     border-collapse: collapse;
     font-size: var(--text-3xs);
   }
@@ -815,11 +830,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     }
   }
 
+  /* One switch across the pane, a third each, so no view reads as the main one. */
   .circuit-view {
     display: flex;
-    align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+  }
+
+  :global(.circuit-view .s6-btn) {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .circuit-view[hidden] {
