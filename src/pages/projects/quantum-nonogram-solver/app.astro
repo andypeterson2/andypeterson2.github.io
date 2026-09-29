@@ -684,7 +684,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border-bottom: 1px solid var(--ink);
   }
 
-  :global(.metrics-table thead th:first-child) {
+  /* The spine's corner is a td and comes first, so this matches by type. */
+  :global(.metrics-table thead th:first-of-type) {
     text-align: left;
   }
 
@@ -714,28 +715,49 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border-bottom: 0;
   }
 
-  /* The group's own rule, set inside the table so both halves share the columns. */
-  :global(.metrics-table .group-row th) {
-    padding: 7px 8px 2px;
+  /* The section's name, read bottom to top down the left of the rows it covers. */
+  :global(.metrics-table th.spine) {
+    width: 1.75rem;
+    padding: 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    vertical-align: middle;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  :global(.metrics-table .spine-corner) {
+    border: 0;
+    border-right: 1px solid var(--ink);
+    padding: 0;
+  }
+
+  /* Where one section ends and the next begins — the one rule on the table with any
+     weight to it. */
+  :global(.metrics-table tbody + tbody tr:first-child > *) {
     border-top: 2px solid var(--ink);
-    border-bottom: 1px solid var(--ink);
   }
 
-  :global(.metrics-table tbody:first-of-type .group-row th) {
-    border-top: 0;
+  /* The qualifiers each name could not carry, under the table they qualify. */
+  :global(.metrics-legend) {
+    margin-top: var(--space-2);
+    font-size: var(--text-4xs);
+    line-height: var(--leading-normal);
   }
 
-  :global(.section-rule--in-table) {
-    margin-bottom: 0;
+  :global(.metrics-legend p) {
+    margin: 0;
   }
 
-  /* The qualifiers this rule carries are the point of the figures under it, so a narrow
-     screen wraps them onto their own lines rather than clipping them to an ellipsis. */
-  @media (width <= 640px) {
-    :global(.section-rule--in-table .rule-meta) {
-      white-space: normal;
-      overflow: visible;
-    }
+  :global(.legend-name) {
+    font-family: var(--font-ui);
+    text-transform: uppercase;
   }
 
   /* There is no device on the classical side. A hatched region says that; a column of
@@ -797,15 +819,40 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
     /* The label is its own full-width line, so the header's first cell has nothing
        left to name. */
-    :global(.metrics-table thead th:first-child) {
+    :global(.metrics-table thead th:first-of-type) {
       display: none;
     }
 
     :global(.metrics-table th[scope='row']),
-    :global(.metrics-table .group-row th),
     :global(.metrics-table .metric-note td),
     :global(.metrics-table .metrics-unmeasured td) {
       grid-column: 1 / -1;
+    }
+
+    /* Rotated down the side of a 320px column there is nothing to read, so the name
+       bands across the top of the section it covers. Rowspan means nothing in a grid. */
+    :global(.metrics-table th.spine) {
+      grid-column: 1 / -1;
+      order: -1;
+      width: auto;
+      padding: 6px 0 2px;
+      border-right: 0;
+      text-align: left;
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+
+    :global(.metrics-table .spine-corner) {
+      display: none;
+    }
+
+    /* The name is first in the grid, so the divider that opens a section rides on it. */
+    :global(.metrics-table tbody + tbody tr:first-child > *) {
+      border-top: 0;
+    }
+
+    :global(.metrics-table tbody + tbody tr:first-child th.spine) {
+      border-top: 2px solid var(--ink);
     }
 
     /* colspan does not survive the switch to grid. */

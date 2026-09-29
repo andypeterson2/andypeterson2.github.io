@@ -403,26 +403,38 @@ function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElem
   return td;
 }
 
-/** A group heading that spans the table, drawn as the page's own section rule. */
-function groupRow(body: HTMLTableSectionElement, label: string, meta: string): void {
-  const tr = body.insertRow();
-  tr.className = 'group-row';
+/**
+ * The section's name, down a spine to the left of the rows it covers.
+ *
+ * Rotated rather than set across the table: the name belongs to every row under it, and
+ * a band spanning the columns cut the figures in half to say so. The circuit diagram
+ * names its boxes the same way.
+ */
+function addSpine(body: HTMLTableSectionElement, label: string): void {
+  const first = body.rows.item(0);
+  if (!first) return;
   const th = document.createElement('th');
-  th.colSpan = 4;
   th.scope = 'rowgroup';
-  const rule = document.createElement('div');
-  rule.className = 'section-rule section-rule--in-table';
+  th.className = 'spine';
   const name = document.createElement('span');
   name.textContent = label;
-  rule.append(name);
-  if (meta) {
-    const fig = document.createElement('span');
-    fig.className = 'rule-meta';
-    fig.textContent = meta;
-    rule.append(fig);
-  }
-  th.append(rule);
-  tr.append(th);
+  th.append(name);
+  first.insertBefore(th, first.firstChild);
+  syncSpine(body);
+}
+
+/**
+ * Hold the spine to the rows it covers.
+ *
+ * A note row is display:none until it is opened, and a row that is not laid out is not
+ * spanned, so the count has to be taken again every time one opens.
+ */
+function syncSpine(body: HTMLTableSectionElement): void {
+  const th = body.querySelector<HTMLTableCellElement>('th.spine');
+  if (!th) return;
+  th.rowSpan = [...body.rows].filter(
+    (r) => !r.classList.contains('metric-note') || r.classList.contains('open'),
+  ).length;
 }
 
 /**
@@ -469,6 +481,7 @@ function metricRow(
     button.addEventListener('click', () => {
       const open = noteRow.classList.toggle('open');
       button.setAttribute('aria-expanded', String(open));
+      syncSpine(body);
     });
     return;
   }
@@ -511,6 +524,8 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
   tbl.className = 'metrics-table';
 
   const head = tbl.createTHead().insertRow();
+  // The corner over the spine names nothing, the way a table's top left never does.
+  head.insertCell().className = 'spine-corner';
   for (const h of ['Metric', 'Exhaustive', 'Backtracking', 'Grover']) {
     const th = document.createElement('th');
     th.scope = 'col';
@@ -520,11 +535,6 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
 
   const search = tbl.createTBody();
   search.className = 'metrics-group';
-  groupRow(
-    search,
-    'Search',
-    `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`,
-  );
   metricRow(search, 'Solutions', [found, found, found]);
   metricRow(search, 'Clue checks', [
     formatCount(2 ** cells, cells),
@@ -545,7 +555,6 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
 
   const device = tbl.createTBody();
   device.className = 'metrics-group metrics-group--device';
-  groupRow(device, 'On the device', hw ? DEVICE_META : '');
 
   if (hw) {
     const perCell = measuredGrowth(rows, cols, found);
@@ -578,8 +587,33 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
       'the circuit below carries the counts as written, before any device sees them.';
   }
 
+  addSpine(search, 'Search');
+  addSpine(device, 'On the device');
+
   el.append(tbl);
+  el.append(
+    legend([
+      ['Search', `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`],
+      ['On the device', hw ? DEVICE_META : ''],
+    ]),
+  );
   el.classList.add('visible');
+}
+
+/** What each section's name would not fit: the qualifiers its figures are figures of. */
+function legend(sections: [string, string][]): HTMLElement {
+  const box = document.createElement('div');
+  box.className = 'metrics-legend';
+  for (const [label, meta] of sections) {
+    if (!meta) continue;
+    const line = document.createElement('p');
+    const name = document.createElement('span');
+    name.className = 'legend-name';
+    name.textContent = label;
+    line.append(name, document.createTextNode(` \u00b7 ${meta}`));
+    box.append(line);
+  }
+  return box;
 }
 
 // Benchmark result renderer

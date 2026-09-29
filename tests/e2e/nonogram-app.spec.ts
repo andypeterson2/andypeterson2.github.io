@@ -291,15 +291,17 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(page.locator('.metrics-table')).toBeVisible();
   });
 
-  test('names all three methods, in two ruled groups', async ({ page }) => {
+  test('names all three methods, in two sections named down the side', async ({ page }) => {
     const heads = page.locator('.metrics-table thead th');
     await expect(heads).toHaveText(['Metric', 'Exhaustive', 'Backtracking', 'Grover']);
-    const groups = page.locator('.metrics-table .group-row th');
-    await expect(groups).toHaveCount(2);
-    await expect(groups.first()).toContainText('Search');
-    await expect(groups.last()).toContainText('On the device');
-    // The measured column's oracle already holds the answer, so its cost is a floor.
-    await expect(groups.last()).toContainText('lower bound');
+    const spines = page.locator('.metrics-table th.spine');
+    await expect(spines).toHaveText(['Search', 'On the device']);
+    // Each spine covers every row of its own section.
+    await expect(spines.first()).toHaveAttribute('rowspan', '5');
+    // The qualifiers the names could not carry sit under the table. The measured
+    // column's oracle already holds the answer, so its cost is a floor.
+    await expect(page.locator('.metrics-legend')).toContainText('lower bound');
+    await expect(page.locator('.metrics-legend')).toContainText('9 cells');
   });
 
   test('bold belongs to the headers, not the body', async ({ page }) => {
