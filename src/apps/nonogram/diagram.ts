@@ -31,12 +31,8 @@ const EXP_COL = 32;
 /** Room inside an opened frame: the left edge, and the right edge that holds its name. */
 const FRAME_PAD = 10;
 const FRAME_NAME = 20;
-/** Wires drawn before the rest collapse into a count. */
-const MAX_WIRES = 11;
-
 interface Wire {
-  /** Qubit index, or null for the row standing in for the hidden ones. */
-  qubit: number | null;
+  qubit: number;
   y: number;
 }
 
@@ -56,29 +52,9 @@ export interface Drawing {
   blocks: Record<Block, Rect>;
 }
 
-/**
- * Which wires to draw.
- *
- * A board may ask for more than a hundred qubits. Showing the first few cells, the
- * last cell and the ancillas keeps both ends of the register legible, and the gap
- * says how many it stands for.
- */
+/** One wire per qubit, in order. The frame scrolls rather than the drawing eliding. */
 function wires(circuit: Circuit): Wire[] {
-  const { qubits, problemQubits } = circuit;
-  if (qubits <= MAX_WIRES) {
-    return Array.from({ length: qubits }, (_, i) => ({ qubit: i, y: TOP + i * PITCH }));
-  }
-  const head = MAX_WIRES - 4;
-  const shown: (number | null)[] = [
-    ...Array.from({ length: head }, (_, i) => i),
-    null,
-    problemQubits - 1,
-  ];
-  // Keep two ancillas visible when there are any: they are the part of the register a
-  // reader will not expect.
-  if (circuit.ancillas > 0) shown.push(problemQubits, qubits - 1);
-  else shown.push(qubits - 2, qubits - 1);
-  return shown.map((qubit, i) => ({ qubit, y: TOP + i * PITCH }));
+  return Array.from({ length: circuit.qubits }, (_, i) => ({ qubit: i, y: TOP + i * PITCH }));
 }
 
 /** A curly brace down the right of the wires, gathering them into one count. */
@@ -149,7 +125,9 @@ function edgeSub(right: number, mid: number, sub: string): string {
 
 /** The pressable shell every block wears, folded or open. */
 function shell(block: Block, open: boolean, label: string, sub: string, title: string): string {
-  const said = open ? `${label}, open. Press to fold it back.` : `${label}, ${sub}. Press to open it.`;
+  const said = open
+    ? `${label}, open. Press to fold it back.`
+    : `${label}, ${sub}. Press to open it.`;
   return (
     `<g class="circ-hit${open ? ' circ-open-block' : ''}" role="button" tabindex="0" ` +
     `data-block="${block}" aria-pressed="${String(open)}" aria-label="${esc(said)}">` +
@@ -238,7 +216,7 @@ interface Placement {
  */
 function placement(circuit: Circuit, block: Block, x: number): Placement {
   const rows = wires(circuit);
-  const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
+  const cellRows = rows.filter((w) => w.qubit < circuit.problemQubits);
   const firstCell = cellRows[0].y;
   const lastCell = cellRows[cellRows.length - 1].y;
   const lastRow = rows[rows.length - 1].y;
@@ -326,7 +304,7 @@ function opened(at: Placement): [body: string, name: string] {
  */
 export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new Set()): Drawing {
   const rows = wires(circuit);
-  const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
+  const cellRows = rows.filter((w) => w.qubit < circuit.problemQubits);
   const lastRow = rows[rows.length - 1].y;
   // Room under the last wire for the repeat bracket and what it says.
   const height = lastRow + 46;
@@ -370,42 +348,43 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
 
   // Wires first, so every box sits on top of its line.
   const lines = rows
-    .map((w) =>
-      w.qubit === null
-        ? `<text class="circ-more" x="${String(GUTTER - 8)}" y="${String(w.y)}">\u22ee</text>`
-        : `<line class="circ-wire" x1="${String(GUTTER)}" y1="${String(w.y)}" x2="${String(width - 12)}" y2="${String(w.y)}"/>` +
-          `<text class="circ-label" x="${String(GUTTER - 8)}" y="${String(w.y)}">q[${String(w.qubit)}]</text>`,
+    .map(
+      (w) =>
+        `<line class="circ-wire" x1="${String(GUTTER)}" y1="${String(w.y)}" x2="${String(width - 12)}" y2="${String(w.y)}"/>` +
+        `<text class="circ-label" x="${String(GUTTER - 8)}" y="${String(w.y)}">q[${String(w.qubit)}]</text>`,
     )
     .join('');
 
   // The repeat bracket, under the two blocks it encloses.
   const by = lastRow + 14;
   const bracket =
+    `<g class="circ-measure">` +
     `<path class="circ-bracket" d="M${String(repeatStart)} ${String(by)} v5 H${String(repeatEnd)} v-5"/>` +
     `<text class="circ-repeat" x="${String((repeatStart + repeatEnd) / 2)}" y="${String(by + 17)}">` +
-    `\u00d7 ${circuit.iterations.toLocaleString()}</text>`;
+    `\u00d7 ${circuit.iterations.toLocaleString()}</text></g>`;
 
   // Depth is a span along the circuit, so it is bracketed like one, over the wires it
   // runs the length of.
   const dy = TOP - 22;
   const depth =
-    `<path class="circ-bracket" d="M${String(GUTTER)} ${String(dy + 5)} v-5 H${String(width - 12)} v5"/>` +
+    `<g class="circ-measure"><path class="circ-bracket" d="M${String(GUTTER)} ${String(dy + 5)} v-5 H${String(width - 12)} v5"/>` +
     `<text class="circ-span" x="${String((GUTTER + width - 12) / 2)}" y="${String(dy - 8)}">` +
-    `depth ${circuitDepth(circuit).toLocaleString()}</text>`;
+    `depth ${circuitDepth(circuit).toLocaleString()}</text></g>`;
 
   // The gate count is of the whole register, so its brace takes in every wire.
   const gx = width - 4;
   const count = `${totalGates(circuit).toLocaleString()} gates`;
   const gates =
+    `<g class="circ-measure">` +
     brace(gx, TOP - BOX / 2, lastRow + BOX / 2) +
-    `<text class="circ-span circ-gates" x="${String(gx + 38)}" y="${String((TOP + lastRow) / 2)}">` +
-    `${count}</text>`;
+    `<text class="circ-span circ-gates" x="${String(gx + 44)}" y="${String((TOP + lastRow) / 2)}">` +
+    `${count}</text></g>`;
 
   const close = BLOCKS.map(() => '</g>').join('');
   return {
     body: lines + parts.join('') + close + bracket + depth + gates,
-    // Room for the brace and the count beside it, at the body face's ~6px advance.
-    width: width + 46 + count.length * 6,
+    // Room for the brace and the count beside it, at the UI face's ~7px advance.
+    width: width + 52 + count.length * 7,
     height,
     blocks,
   };

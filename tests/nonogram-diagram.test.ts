@@ -1,9 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { buildCircuit } from '../src/apps/nonogram/circuit';
-import {
-  drawCircuit,
-  ghostBlock,
-} from '../src/apps/nonogram/diagram';
+import { drawCircuit, ghostBlock } from '../src/apps/nonogram/diagram';
 
 const SMALL = buildCircuit([[1], [1]], [[1], [1]]);
 
@@ -38,13 +35,13 @@ describe('Circuit diagram', () => {
     expect(lines).toContain('12 lines');
   });
 
-  test('a register too tall to draw collapses the middle and keeps both ends', () => {
+  test('a tall register draws every qubit rather than eliding the middle', () => {
     const clues = Array.from({ length: 6 }, () => [1]);
     const circuit = buildCircuit(clues, clues);
     const { body } = drawCircuit(circuit);
-    expect(body).toContain('⋮');
+    expect(body.match(/class="circ-wire"/g)).toHaveLength(circuit.qubits);
     expect(body).toContain('q[0]');
-    // The last cell and the last ancilla both stay visible.
+    // The last cell and the last ancilla are drawn like any other.
     expect(body).toContain(`q[${String(circuit.problemQubits - 1)}]`);
     expect(body).toContain(`q[${String(circuit.qubits - 1)}]`);
   });

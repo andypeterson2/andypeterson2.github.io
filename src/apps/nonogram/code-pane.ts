@@ -51,7 +51,6 @@ function pane(): HTMLElement | null {
   return $('code-pane');
 }
 
-
 /**
  * What the listing does not say, because the listing carries no prose. It is the
  * listing's own hover text.
@@ -126,12 +125,19 @@ function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rec
   frame.style.setProperty('--morph-w', `${String(from.width)}px`);
   live.classList.add('circ-arriving');
 
-  // What this block displaces, and the name it keeps, both start where they stood and
-  // travel with the frame.
+  // What this block displaces, the name it keeps, and the brackets that measure the
+  // whole drawing all start where they stood and travel with the frame.
   const slide = `${String(from.width - to.width)}px`;
+  // The brackets measure the whole drawing, so they end up a different length rather
+  // than in a different place: they cross over at the frame's own rate instead.
+  const measures = [...svg.querySelectorAll('.circ-measure')];
+  for (const m of measures) m.classList.add('circ-remeasure');
   const travelling: SVGElement[] = [];
-  for (const sel of [`[data-after="${block}"]`, '.circ-name']) {
-    const found = sel.startsWith('.') ? live.querySelector(sel) : svg.querySelector(sel);
+  const movers: Element[] = [
+    ...svg.querySelectorAll(`[data-after="${block}"]`),
+    ...live.querySelectorAll('.circ-name'),
+  ];
+  for (const found of movers) {
     if (!(found instanceof SVGElement)) continue;
     found.style.setProperty('--slide', slide);
     found.classList.add('circ-slide');
@@ -142,6 +148,7 @@ function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rec
     layer.classList.add('circ-morph--run');
     frame.style.setProperty('--morph-w', `${String(to.width)}px`);
     for (const el of travelling) el.style.setProperty('--slide', '0px');
+    for (const m of measures) m.classList.add('circ-remeasured');
     live.classList.add('circ-arrived');
   });
 
@@ -150,6 +157,7 @@ function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rec
     layer.remove();
     live.classList.remove('circ-arriving', 'circ-arrived');
     for (const el of travelling) el.classList.remove('circ-slide');
+    for (const m of measures) m.classList.remove('circ-remeasure', 'circ-remeasured');
     morphTimer = null;
   }, MORPH_MS);
 }
@@ -190,7 +198,6 @@ function paintCircuit(opening?: Block): void {
   if (opening && before && !stillness()) {
     morph(svg, circuit, opening, before[opening], blocks[opening]);
   }
-
 }
 
 /** Build the circuit for these clues and show its code. */
