@@ -172,13 +172,10 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(grover(page, 'Rounds that fit')).toContainText('of');
   });
 
-  test('the chart names the break between the solutions and the rest', async ({ page }) => {
-    // A stored run keeps every outcome it measured, so both sides of the break are drawn.
-    // A board solved here can amplify so hard that nothing else is measured at all.
+  test('the chart brackets the bars the clues accept and counts them', async ({ page }) => {
     await page.locator('#gallery-select').selectOption({ index: 1 });
-    const labels = page.locator('#qu-histogram .hist-divide-label');
-    await expect(labels.first()).toHaveText('solutions');
-    await expect(labels.nth(1)).toHaveText('the rest');
+    await expect(page.locator('#qu-histogram .hist-bracket')).toHaveCount(1);
+    await expect(page.locator('#qu-histogram .hist-count')).toHaveText(/^\d+ solutions?$/);
   });
 
   test('the scale holds its place while the bars scroll past it', async ({ page }) => {
@@ -191,8 +188,16 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
       .locator('#qu-scroll')
       .evaluate((el) => [el.scrollWidth, el.clientWidth]);
     expect(room[0]).toBeGreaterThan(room[1]);
-    await expect(page.locator('#qu-scroll #qu-axis')).toHaveCount(0);
-    await expect(page.locator('#qu-axis .hist-text').first()).toBeVisible();
+
+    // Pinned: the figures sit where they sat once the bars have run past them.
+    const axis = page.locator('#qu-axis');
+    await expect(axis.locator('.hist-text').first()).toBeVisible();
+    const before = await axis.boundingBox();
+    await page.locator('#qu-scroll').evaluate((el) => {
+      el.scrollLeft = 900;
+    });
+    const after = await axis.boundingBox();
+    expect(after?.x).toBeCloseTo(before?.x ?? -1, 0);
 
     // The rule over it names the run and carries the sampling as hover text.
     await expect(page.locator('#hist-meta')).toHaveText(/shots/);
@@ -372,12 +377,21 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(na.first().locator('.sr-only')).toHaveText('not applicable');
   });
 
-  test('a label with more to say carries it as hover text', async ({ page }) => {
+  test('every label says what it means as hover text', async ({ page }) => {
     // Every row in the table is a figure, so nothing in it is pressable.
     await expect(page.locator('.metrics-table button')).toHaveCount(0);
-    const labelled = page.locator('.metrics-table th.has-note');
-    await expect(labelled.first()).toHaveAttribute('title', /asks the clues a question/);
-    await expect(labelled).toHaveCount(6);
+
+    const titles = await page
+      .locator('.metrics-table th')
+      .evaluateAll((els) =>
+        els.filter((el) => !el.classList.contains('spine-corner')).map((el) => el.title),
+      );
+    expect(titles.length).toBeGreaterThan(14);
+    expect(titles.filter((t) => t.length < 40)).toEqual([]);
+
+    // The two section names carry what the rotated text has no room for.
+    const spines = page.locator('.metrics-table th.spine');
+    await expect(spines.nth(1)).toHaveAttribute('title', /lower bound/);
   });
 
   test('every method survives a narrow screen, on its own line', async ({ page }) => {

@@ -91,12 +91,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
         </div>
         <div id="qu-area" class="histogram-area">
-          <!-- The scale stays put while the bars run past the frame, so it is drawn
-               beside them rather than among them. -->
-          <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
           <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
                and a region that scrolls has to be reachable from the keyboard. -->
           <div id="qu-scroll" class="hist-scroll" data-reflow-exempt tabindex="0">
+            <!-- Inside the frame that scrolls, pinned to its left edge: the scale holds
+                 while the bars run past it, and the scrollbar spans the whole frame. -->
+            <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
             <svg id="qu-histogram" height="100%" aria-hidden="true"></svg>
           </div>
           <div id="qu-placeholder" class="placeholder-msg"></div>
@@ -627,21 +627,30 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
-    display: flex;
   }
 
-  /* Its own drawn height, never the frame's: stretched, the scale would be scaled to
-     fit and its figures would sit off the lines they name. */
+  /* Pinned to the left edge of the scroll, over the bars that pass behind it. Its own
+     drawn height, never the frame's: stretched, the scale would be scaled to fit and
+     its figures would sit off the lines they name. */
   .hist-axis-pane {
+    position: sticky;
+    left: 0;
+    z-index: 1;
     flex: 0 0 auto;
     align-self: flex-start;
     background: var(--paper);
   }
 
   .hist-scroll {
-    flex: 1 1 auto;
-    min-width: 0;
+    display: flex;
+    height: 100%;
     overflow: auto hidden;
+  }
+
+  /* The chart keeps the width it drew itself at; a flex item that may shrink would be
+     squeezed back into the frame and never scroll. */
+  :global(#qu-histogram) {
+    flex: 0 0 auto;
   }
 
   /* The histogram's marks (classes on the script-drawn SVG), coloured from the tokens. */
@@ -677,15 +686,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: none;
   }
 
-  :global(.hist-divide-label) {
+  :global(.hist-count) {
     font-family: var(--font-ui);
-    dominant-baseline: hanging;
+    text-anchor: middle;
   }
 
-  :global(.hist-divide) {
+  :global(.hist-bracket) {
+    fill: none;
     stroke: var(--ink);
-    stroke-width: 1.5;
-    stroke-dasharray: 6 3;
+    stroke-width: 1;
   }
 
   :global(.hist-text) {
