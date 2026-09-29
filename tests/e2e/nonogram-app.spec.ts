@@ -147,9 +147,9 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     expect(await checks(backtracking)).toBeLessThan(await checks(grover));
 
     // The scaling, stated as arithmetic, against what the built circuit actually does.
-    await expect(exhaustive(page, 'Per extra cell')).toHaveText('×2');
-    await expect(grover(page, 'Per extra cell')).toHaveText('×1.41');
-    await expect(grover(page, 'Per extra cell, measured')).toHaveText('×2.17');
+    await expect(exhaustive(page, 'Per extra cell')).toHaveText('2×');
+    await expect(grover(page, 'Per extra cell')).toHaveText('1.41×');
+    await expect(grover(page, 'Per extra cell, measured')).toHaveText('2.17×');
 
     // Measured, and hopeless: the circuit asks for far more than the device holds.
     await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');

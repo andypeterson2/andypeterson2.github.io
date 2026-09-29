@@ -104,22 +104,22 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       <div id="code-pane">
         <div class="circuit-pair">
           <div class="circuit-column">
+            <div id="circuit-figure">
+              <svg id="circuit-svg" aria-hidden="true"></svg>
+            </div>
             <div id="circuit-view" class="circuit-view" role="group" aria-label="Write out a step">
               <button type="button" id="btn-block-oracle" class="s6-btn s6-btn--sm">Oracle</button>
               <button type="button" id="btn-block-diffuser" class="s6-btn s6-btn--sm">Diffuser</button>
             </div>
-            <div id="circuit-figure">
-              <svg id="circuit-svg" aria-hidden="true"></svg>
-            </div>
           </div>
           <div class="code-column">
-            <div class="code-formats" role="group" aria-label="Code format">
-              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
-            </div>
             <div class="code-box">
               <pre id="code-listing" tabindex="0"></pre>
               <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+            </div>
+            <div class="code-formats" role="group" aria-label="Code format">
+              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
             </div>
           </div>
         </div>
@@ -688,18 +688,30 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: left;
   }
 
-  :global(.metrics-table td) {
-    border: 1px solid var(--ink);
-    padding: 3px 8px;
-    text-align: right;
+  /* Rows are separated, columns are not: the figures line up on their own, and a box
+     around each one fences off numbers that are there to be compared. */
+  :global(.metrics-table td),
+  :global(.metrics-table th[scope='row']) {
+    border: 0;
+    border-bottom: 1px solid var(--ink);
+    padding: 4px 8px;
   }
 
   /* Monaco is monospaced, so right alignment lines the digits up on its own. */
+  :global(.metrics-table td) {
+    text-align: right;
+  }
+
   :global(.metrics-table th[scope='row']) {
-    border: 1px solid var(--ink);
-    padding: 3px 8px;
     text-align: left;
     font-weight: 400;
+    width: 34%;
+  }
+
+  /* The last row of a group runs into the rule the next group opens with. */
+  :global(.metrics-table .metric:last-child td),
+  :global(.metrics-table .metric:last-child th[scope='row']) {
+    border-bottom: 0;
   }
 
   /* The group's own rule, set inside the table so both halves share the columns. */
@@ -817,7 +829,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: var(--space-2);
   }
 
   .circuit-view[hidden] {
@@ -829,9 +840,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The drawing and the source it stands for, read together. Each column takes half and
      may shrink: a written-out block is wider than any half, and scrolls inside its own
      frame rather than widening the page. */
+  /* Stretched, so the two frames are the same height and the buttons under them sit on
+     one line whichever side is taller. */
   .circuit-pair {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     gap: var(--window-gap);
   }
 
@@ -844,11 +857,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     gap: var(--space-2);
   }
 
-  /* Framed like the other panes rather than floating on the page. */
+  /* Framed like the other panes rather than floating on the page. The frame takes the
+     height the column was given; the drawing sits in the middle of it. */
   :global(#circuit-figure) {
+    flex: 1 1 auto;
+    min-height: 320px;
     display: flex;
     justify-content: center;
-    overflow-x: auto;
+    align-items: center;
+    overflow: auto;
     border: 1px solid var(--ink);
     padding: 10px;
   }
@@ -859,15 +876,19 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* Copy sits on the listing it copies. The pre scrolls; the button is anchored to the
-     frame around it, so it stays in the corner whatever the code does. */
+     frame around it, so it stays in the corner whatever the code does, and it clears
+     the scrollbar's gutter rather than sitting on it. */
   .code-box {
     position: relative;
+    flex: 1 1 auto;
+    min-height: 320px;
+    display: flex;
   }
 
   :global(.code-box #btn-copy-code) {
     position: absolute;
     top: 8px;
-    right: 8px;
+    right: 30px;
   }
 
   :global(#circuit-svg) {
@@ -1042,8 +1063,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(#code-listing) {
-    max-height: 340px;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
     overflow: auto;
+    scrollbar-gutter: stable;
     margin: 0;
     font-size: var(--text-4xs);
     line-height: var(--leading-normal);

@@ -449,6 +449,8 @@ function metricRow(
     button.type = 'button';
     button.className = 'metric-toggle';
     button.textContent = label;
+    // The same words a press opens, for a pointer that only hovers.
+    button.title = note;
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('aria-controls', id);
     th.append(button);
@@ -534,7 +536,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
     local.capped ? '—' : `\u2264 ${String(cost.predicateGates)} gates`,
     hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
   ]);
-  metricRow(search, 'Per extra cell', ['\u00d72', '—', '\u00d71.41']);
+  metricRow(search, 'Per extra cell', ['2\u00d7', '—', '1.41\u00d7']);
   metricRow(search, 'P(solution), ideal', [
     '100%',
     found > 0 ? '100%' : '—',
@@ -565,7 +567,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
       ],
       true,
     );
-    metricRow(device, 'P(solution), at chance', [`\u2248 ${(100 / 2 ** cells).toFixed(1)}%`], true);
+    metricRow(device, 'P(solution), at chance', [`~${(100 / 2 ** cells).toFixed(1)}%`], true);
   } else {
     const tr = device.insertRow();
     tr.className = 'metrics-unmeasured';

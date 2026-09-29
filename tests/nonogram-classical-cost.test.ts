@@ -64,7 +64,7 @@ describe('Classical cost in circuit terms', () => {
   test('a count past exact integers is given as a power of two', () => {
     const [rc, cc] = alternating(8, 8);
     const cost = classicalCost(rc, cc);
-    expect(formatCount(cost.work, cost.workLog2)).toMatch(/^≈2\^\d+$/);
+    expect(formatCount(cost.work, cost.workLog2)).toMatch(/^~2\^\d+$/);
     expect(formatCount(1234, 10)).toBe('1,234');
   });
 

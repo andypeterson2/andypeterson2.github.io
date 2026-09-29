@@ -79,7 +79,7 @@ export function classicalCost(rowClues: number[][], colClues: number[][]): Class
 
 /** A count too large to write out, given as the power of two it is closest to. */
 function approxPowerOfTwo(log2: number): string {
-  return `≈2^${String(Math.round(log2))}`;
+  return `~2^${String(Math.round(log2))}`;
 }
 
 /** A gate or layer count, falling back to a power of two once it stops fitting. */
