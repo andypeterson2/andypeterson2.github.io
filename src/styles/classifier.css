@@ -53,7 +53,6 @@
 
 /* A disabled field reads as disabled, not as one that's waiting to be typed in. */
 #classifier-app fieldset:disabled :is(input, select) {
-  color: var(--color-text-muted);
   border-style: dotted;
 }
 

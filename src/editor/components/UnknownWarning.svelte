@@ -31,7 +31,6 @@
     font-family: var(--sans);
     font-size: var(--text-4xs);
     line-height: 1.45;
-    color: var(--color-text-muted);
   }
 
   .warn .wg {

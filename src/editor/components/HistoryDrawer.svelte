@@ -293,7 +293,6 @@
   .empty {
     font-size: var(--text-3xs);
     line-height: 1.6;
-    color: var(--color-text-muted);
     text-align: center;
     margin: 26px 0;
   }
@@ -350,7 +349,6 @@
 
   .name.untitled {
     font-weight: 400;
-    color: var(--color-text-muted);
   }
 
   .tagb {
@@ -501,7 +499,6 @@
 
   .ent-label.strike {
     text-decoration: line-through;
-    color: var(--color-text-muted);
   }
 
   .mk {

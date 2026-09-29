@@ -18,10 +18,8 @@
   --paper-3: #e3e1d9;
   --paper-4: #d4d2ca;
 
-  /* Semantic aliases for the two ink roles the stylesheets name by meaning. */
+  /* The ink role the stylesheets name by meaning; de-emphasis is size, weight or space. */
   --color-text: var(--ink);
-  --color-text-muted: #6b6960; /* the one muted gray — de-emphasized text, in the
-                                  same warm family as the ink. */
 
   /* One accent hue — the résumé document's section labels and the editor's active
      state. Distinct from the status light below; site chrome stays inkless. */
