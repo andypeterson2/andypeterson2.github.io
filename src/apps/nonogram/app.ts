@@ -627,9 +627,13 @@ function init(): void {
   updateGridSizeLabel();
 
   requestAnimationFrame(() => {
-    drawEmptyHistogram();
-    // The comparison's own frame, before there is anything to compare.
-    clearMetrics();
+    // The opening run can land first, from cache, in which case the page already holds
+    // what this would paint over.
+    if (!state.histData) {
+      drawEmptyHistogram();
+      // The comparison's own frame, before there is anything to compare.
+      clearMetrics();
+    }
     refreshCode();
   });
 }
