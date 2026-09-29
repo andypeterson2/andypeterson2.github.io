@@ -62,22 +62,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           </span>
           <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
         </div>
-        <div id="circuit-band" class="nono-band">
-          <div id="code-pane">
-            <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
-              <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
-              <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-              <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
-            </div>
-            <div id="circuit-figure" data-reflow-exempt>
-              <svg id="circuit-svg" aria-hidden="true"></svg>
-            </div>
-            <div class="code-box">
-              <pre id="code-listing" tabindex="0"></pre>
-              <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="nono-right">
         <div id="status-line" class="status-line" role="status"></div>
@@ -103,14 +87,31 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </div>
           </div>
         </div>
-        <div id="qu-area" class="histogram-area">
+        <!-- tabindex: the chart scrolls sideways past a handful of outcomes, and a
+             region that scrolls has to be reachable from the keyboard. -->
+        <div id="qu-area" class="histogram-area" data-reflow-exempt tabindex="0">
           <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
           <div id="qu-placeholder" class="placeholder-msg"></div>
         </div>
         <div id="metrics-pane"></div>
       </div>
+      <div id="circuit-band" class="nono-band">
+        <div id="code-pane">
+          <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
+            <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
+            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+          </div>
+          <div id="circuit-figure" data-reflow-exempt>
+            <svg id="circuit-svg" aria-hidden="true"></svg>
+          </div>
+          <div class="code-box">
+            <pre id="code-listing" tabindex="0"></pre>
+            <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+          </div>
+        </div>
+      </div>
     </div>
-
   </div>
 
   <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
@@ -131,20 +132,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* Buttons are the shared .s6-btn. */
 
-  /* ── Two-column layout ── */
+  /* ── Two-column layout ──
+     Editor above circuit on the left, results the full height on the right. Areas rather
+     than nested columns: stacked, the circuit has to fall behind the results it does not
+     describe, and only the grid can move it there. */
   .nono-columns {
-    display: flex;
-    gap: 0;
+    display: grid;
+    grid-template:
+      'editor results' auto
+      'circuit results' 1fr
+      / clamp(320px, 46%, 560px) minmax(0, 1fr);
     min-height: 600px;
   }
 
   /* The inputs — editor and the run buttons — in a column of their own, at a width the
      3x3 grid and the widest button both fit. It scrolls with the page. */
   .nono-left {
-    flex: 0 0 clamp(320px, 46%, 560px);
+    grid-area: editor;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -152,7 +157,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   .nono-right {
-    flex: 1 1 auto;
+    grid-area: results;
     min-width: 0;
     border-left: 2px solid var(--ink);
     padding: 16px;
@@ -178,8 +183,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The circuit describes the puzzle rather than a run, so it sits under the editor
      that builds it, at the foot of the column. */
   .nono-band {
-    margin-top: auto;
-    padding-top: 12px;
+    grid-area: circuit;
+    align-self: end;
+    min-width: 0;
+    padding: 12px 16px 16px;
   }
 
   /* ── Draw view / grid ──
@@ -215,7 +222,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     width: var(--cell);
     height: var(--cell);
     border: 1px solid var(--ink);
-    background: var(--dither-50);
+    background: var(--dither-light);
 
     /* Collapsed borders put the border box on a half pixel, which snaps a 1px-feature
        tile to solid ink. The padding box is whole-pixel, so the checker survives. */
@@ -251,12 +258,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.nonogram-table .corner-cell) {
     background: transparent;
     padding: 0;
-    min-width: 54px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    white-space: nowrap;
   }
 
   /* Clues are the puzzle: ink on plain paper, never on dither. Padding stays at zero so
@@ -346,7 +347,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .editor-row {
     display: flex;
     align-items: flex-start;
-    justify-content: center;
     gap: 14px;
     padding-top: 12px;
   }
@@ -371,7 +371,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* Rows and columns in one box, split into three: the two figures with their sign
      between them, the way the size is written everywhere else on the page. */
   .size-box {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     align-items: stretch;
     border: 2px solid var(--ink);
     background: var(--paper);
@@ -381,7 +382,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     /* A typed field is a touch target like any other (WCAG 2.2 asks for 24px). */
     min-width: 24px;
     min-height: 24px;
-    flex: 1 1 0;
     width: 100%;
     border: 0;
     background: none;
@@ -395,7 +395,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .size-times {
     display: flex;
     align-items: center;
-    padding: 0 3px;
+    justify-content: center;
     border-inline: 2px solid var(--ink);
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
@@ -405,7 +405,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .run-controls {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     padding-top: 10px;
   }
@@ -435,7 +435,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     /* A flex item will not shrink below its text, which pushes a narrow page sideways.
        Clipping the figure keeps the rule inside the viewport. */
     min-width: 0;
-    overflow: hidden;
+    overflow: auto hidden;
     text-overflow: ellipsis;
   }
 
@@ -493,6 +493,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+
+    /* A board with many solutions would run the column off the page, so the answers
+       live in a frame of their own and scroll inside it. */
+    max-height: 220px;
+    overflow-y: auto;
+    border: 2px solid var(--ink);
+    padding: 8px;
     min-height: 40px;
   }
 
@@ -554,74 +561,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Histogram ── */
-  /* On the line it sets, at the right where the bars have run out. --at is the line's
-     height as a fraction of the chart, which only the drawing knows. */
-  /* ── Solution canvases ── */
-  .sol-canvas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    min-height: 40px;
-  }
 
-  :global(.placeholder-msg) {
-    color: var(--ink-3);
-    font-size: var(--text-3xs);
-    font-style: italic;
-    padding: 8px 0;
-  }
-
-  /* #qu-placeholder starts hidden and the solver reveals it with an explicit
-     display:block. A CSS rule rather than a style="display:none" attribute — the strict
-     hashed CSP blocks inline style attributes. */
-  :global(#qu-placeholder) {
-    display: none;
-  }
-
-  :global(.sol-grid-wrap) {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  :global(.sol-grid-label) {
-    font-size: var(--text-4xs);
-    font-weight: 600;
-  }
-
-  :global(.sol-table) {
-    border-collapse: collapse;
-  }
-
-  :global(.sol-table.sz-sm td) {
-    width: 10px;
-    height: 10px;
-  }
-
-  :global(.sol-table.sz-md td) {
-    width: 16px;
-    height: 16px;
-  }
-
-  :global(.sol-table.sz-lg td) {
-    width: 22px;
-    height: 22px;
-  }
-
-  :global(.sol-table td) {
-    border: 1px solid var(--ink);
-  }
-
-  :global(.sol-table td.f) {
-    background: var(--ink);
-  }
-
-  :global(.sol-table td.e) {
-    background: var(--paper);
-  }
-
-  /* ── Histogram ── */
   /* On the line it sets, at the right where the bars have run out. --at is the line's
      height as a fraction of the chart, which only the drawing knows. */
   .histogram-controls[hidden] {
@@ -671,13 +611,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     outline: none;
   }
 
-  /* 260px: room for 12px bitstring labels under the bars. */
+  /* 260px: room for 12px bitstring labels under the bars. A run with many outcomes
+     needs a bar each, so the chart keeps its own width and scrolls sideways in here. */
   .histogram-area {
     height: 260px;
     border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
-    overflow: hidden;
+    overflow: auto hidden;
   }
 
   /* The histogram's marks (classes on the script-drawn SVG), coloured from the tokens. */
@@ -708,6 +649,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* Where the grids the clues accept give way to the rest. */
+  :global(.histogram-area::-webkit-scrollbar-button),
+  :global(.sol-canvas::-webkit-scrollbar-button) {
+    display: none;
+  }
+
+  :global(.hist-divide-label) {
+    font-family: var(--font-ui);
+    dominant-baseline: hanging;
+  }
+
   :global(.hist-divide) {
     stroke: var(--ink);
     stroke-width: 1.5;
@@ -901,7 +852,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       border-left: 0;
     }
 
+    /* The label's own line: the column width it holds in a table would leave the name
+       in a box a third as wide as the line it now sits on. */
     :global(.metrics-table th[scope='row']) {
+      width: auto;
       border-bottom: 0;
     }
   }
@@ -932,15 +886,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* ── Circuit diagram ── */
 
-  /* The drawing and the source it stands for, read together. Each column takes half and
-     may shrink: a written-out block is wider than any half, and scrolls inside its own
-     frame rather than widening the page. */
   /* One pane at a time, at a height that does not jump as the views swap. The drawing
      may ask for more and gets it: a frame that scrolled in both directions would put a
-     second set of arrows on a figure that only ever runs wide. */
+     second set of arrows on a figure that only ever runs wide. Copy sits on the listing
+     it copies, so the frame is what anchors it. */
   .code-box {
     min-height: 340px;
     max-height: 340px;
+    position: relative;
+    display: flex;
   }
 
   /* The track and thumb carry the scroll; system.css styles an increment and a
@@ -958,8 +912,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     justify-content: safe center;
     align-items: safe center;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto hidden;
     border: 2px solid var(--ink);
     padding: 10px;
   }
@@ -969,14 +922,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: none;
   }
 
-  /* Copy sits on the listing it copies. The pre scrolls; the button is anchored to the
-     frame around it, so it stays in the corner whatever the code does, and it clears
-     the scrollbar's gutter rather than sitting on it. */
-  .code-box {
-    position: relative;
-    display: flex;
-  }
-
+  /* The pre scrolls; Copy is anchored to the frame around it, so it stays in the corner
+     whatever the code does, and it clears the scrollbar's gutter rather than sitting
+     on it. */
   :global(.code-box #btn-copy-code) {
     position: absolute;
     top: 8px;
@@ -1074,6 +1022,17 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.circ-hit-area) {
     fill: transparent;
+  }
+
+  /* The brackets that measure the whole drawing end up a different length, so they
+     cross over rather than travel, at the frame's own rate. */
+  :global(.circ-remeasure) {
+    opacity: 0;
+  }
+
+  :global(.circ-remeasured) {
+    opacity: 1;
+    transition: opacity 200ms ease 140ms;
   }
 
   /* What an opening block pushes along, travelling with the frame that displaces it. */
@@ -1191,7 +1150,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      the Gallery (the only offline quantum output) is always on screen. */
   @media (width <= 768px) {
     .nono-columns {
-      flex-direction: column;
+      grid-template:
+        'editor'
+        'results'
+        'circuit'
+        / minmax(0, 1fr);
       min-height: 0;
     }
 
@@ -1203,11 +1166,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
     .editor-actions,
     .run-controls {
-      flex-direction: row;
-      flex-wrap: wrap;
+      flex-flow: row wrap;
       justify-content: center;
       width: 100%;
       order: 1;
+    }
+
+    /* Stacked, each control holds the column's width; in a row that is the whole line,
+       so they take the room they need instead. */
+    :global(.editor-actions .s6-btn) {
+      width: auto;
     }
 
     .run-controls {
@@ -1221,19 +1189,18 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       justify-content: center;
     }
 
-    .nono-left,
-    .nono-right {
-      width: 100%;
-      flex: 0 0 auto;
-    }
-
-    /* Stacked, the divider runs between them rather than beside. */
+    /* Stacked, a divider runs between the sections rather than beside them. */
     .nono-right {
       border-left: 0;
     }
 
     .nono-left {
       border-bottom: 2px solid var(--ink);
+    }
+
+    .nono-band {
+      align-self: auto;
+      border-top: 2px solid var(--ink);
     }
 
     .gallery-label {

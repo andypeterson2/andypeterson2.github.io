@@ -607,18 +607,10 @@ const windowTitle = title || siteConfig.title;
     max-height: 100%;
   }
 
-  /* Sticky, the back-to-top holds a row of its own at the foot of the pane. A window
-     sized to its content would end below that row rather than below the content, so
-     here the button floats over the corner instead of taking space in the column. */
+  /* A window sized to its content holds an app the reader works in: there is nothing to
+     come back up from, and the button would sit over the work. */
   .site-window--fit .back-to-top {
-    position: absolute;
-    right: var(--pane-pad-x);
-    bottom: var(--space-4);
-    margin: 0;
-  }
-
-  .site-window--fit .site-pane {
-    position: relative;
+    display: none;
   }
 
   .site-window .title-bar .title {
