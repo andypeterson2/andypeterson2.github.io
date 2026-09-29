@@ -1,0 +1,176 @@
+{
+ "target": "fake_torino",
+ "qiskit": "2.4.1",
+ "optimization_level": 3,
+ "seeds": 8,
+ "note": "Best of the seeds tried, per grid size and solution count.",
+ "worst_spread": 0.01481,
+ "rows": [
+  {
+   "rows": 1,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 0,
+   "boards": 2,
+   "depth": 4,
+   "depth_max": 4,
+   "gates": 4,
+   "two_qubit": 0
+  },
+  {
+   "rows": 1,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 1,
+   "boards": 4,
+   "depth": 9,
+   "depth_max": 10,
+   "gates": 15,
+   "two_qubit": 2
+  },
+  {
+   "rows": 1,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 2,
+   "boards": 8,
+   "depth": 135,
+   "depth_max": 137,
+   "gates": 191,
+   "two_qubit": 37
+  },
+  {
+   "rows": 2,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 1,
+   "boards": 4,
+   "depth": 9,
+   "depth_max": 10,
+   "gates": 15,
+   "two_qubit": 2
+  },
+  {
+   "rows": 2,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 3,
+   "boards": 14,
+   "depth": 430,
+   "depth_max": 433,
+   "gates": 574,
+   "two_qubit": 111
+  },
+  {
+   "rows": 2,
+   "cols": 2,
+   "solutions": 2,
+   "iterations": 2,
+   "boards": 1,
+   "depth": 435,
+   "depth_max": 435,
+   "gates": 576,
+   "two_qubit": 111
+  },
+  {
+   "rows": 2,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 6,
+   "boards": 52,
+   "depth": 5478,
+   "depth_max": 5488,
+   "gates": 8749,
+   "two_qubit": 1900
+  },
+  {
+   "rows": 2,
+   "cols": 3,
+   "solutions": 2,
+   "iterations": 4,
+   "boards": 6,
+   "depth": 5470,
+   "depth_max": 5474,
+   "gates": 8754,
+   "two_qubit": 1900
+  },
+  {
+   "rows": 3,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 2,
+   "boards": 8,
+   "depth": 135,
+   "depth_max": 137,
+   "gates": 191,
+   "two_qubit": 37
+  },
+  {
+   "rows": 3,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 6,
+   "boards": 52,
+   "depth": 5478,
+   "depth_max": 5488,
+   "gates": 8749,
+   "two_qubit": 1900
+  },
+  {
+   "rows": 3,
+   "cols": 2,
+   "solutions": 2,
+   "iterations": 4,
+   "boards": 6,
+   "depth": 5479,
+   "depth_max": 5481,
+   "gates": 8760,
+   "two_qubit": 1900
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 17,
+   "boards": 384,
+   "depth": 49585,
+   "depth_max": 49602,
+   "gates": 88490,
+   "two_qubit": 19357
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 2,
+   "iterations": 12,
+   "boards": 59,
+   "depth": 52471,
+   "depth_max": 52487,
+   "gates": 93021,
+   "two_qubit": 20380
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 4,
+   "iterations": 8,
+   "boards": 1,
+   "depth": 58430,
+   "depth_max": 58430,
+   "gates": 103429,
+   "two_qubit": 22691
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 6,
+   "iterations": 7,
+   "boards": 1,
+   "depth": 71259,
+   "depth_max": 71259,
+   "gates": 127235,
+   "two_qubit": 27864
+  }
+ ],
+ "spread_floor": 100
+}
