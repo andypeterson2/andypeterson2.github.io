@@ -87,10 +87,18 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </div>
           </div>
         </div>
-        <!-- tabindex: the chart scrolls sideways past a handful of outcomes, and a
-             region that scrolls has to be reachable from the keyboard. -->
-        <div id="qu-area" class="histogram-area" data-reflow-exempt tabindex="0">
-          <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
+        <div class="section-rule">
+          <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
+        </div>
+        <div id="qu-area" class="histogram-area">
+          <!-- The scale stays put while the bars run past the frame, so it is drawn
+               beside them rather than among them. -->
+          <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
+          <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
+               and a region that scrolls has to be reachable from the keyboard. -->
+          <div id="qu-scroll" class="hist-scroll" data-reflow-exempt tabindex="0">
+            <svg id="qu-histogram" height="100%" aria-hidden="true"></svg>
+          </div>
           <div id="qu-placeholder" class="placeholder-msg"></div>
         </div>
         <div id="metrics-pane"></div>
@@ -612,12 +620,27 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* 260px: room for 12px bitstring labels under the bars. A run with many outcomes
-     needs a bar each, so the chart keeps its own width and scrolls sideways in here. */
+     needs a bar each, so the bars keep their own width and scroll inside the frame,
+     with the scale held beside them at a width of its own. */
   .histogram-area {
     height: 260px;
     border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
+    display: flex;
+  }
+
+  /* Its own drawn height, never the frame's: stretched, the scale would be scaled to
+     fit and its figures would sit off the lines they name. */
+  .hist-axis-pane {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    background: var(--paper);
+  }
+
+  .hist-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: auto hidden;
   }
 
@@ -649,7 +672,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* Where the grids the clues accept give way to the rest. */
-  :global(.histogram-area::-webkit-scrollbar-button),
+  :global(.hist-scroll::-webkit-scrollbar-button),
   :global(.sol-canvas::-webkit-scrollbar-button) {
     display: none;
   }
@@ -731,9 +754,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border-bottom: 0;
   }
 
-  /* The section's name, read bottom to top down the left of the rows it covers. */
+  /* The section's name, read bottom to top down the left of the rows it covers. A
+     rotated cell contributes no height of its own, so the name asks for the room it
+     needs: a section of one row is shorter than the words beside it. */
   :global(.metrics-table th.spine) {
     width: 1.75rem;
+    height: 9.5rem;
     padding: 0;
     border-bottom: 0;
     border-right: 1px solid var(--ink);
@@ -821,6 +847,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       grid-column: 1 / -1;
       order: -1;
       width: auto;
+      height: auto;
       padding: 6px 0 2px;
       border-right: 0;
       text-align: left;

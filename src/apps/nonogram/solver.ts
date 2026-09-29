@@ -8,6 +8,7 @@ import {
   $,
   must,
   elHistSvg,
+  elHistAxis,
   elQuPlaceholder,
   elClPlaceholder,
   elQuList,
@@ -183,9 +184,14 @@ export function renderQuantum(
 const LABEL_PX = 13;
 const CHAR_PX = 8;
 
+/** The scale's own pane, wide enough for a percentage and the line it labels. */
+const AXIS_W = 56;
+/** The bars start clear of the scale's rule rather than under it. */
+const BAR_INSET = 3;
+
 function histBox(): { W: number; H: number } {
   const parent = elHistSvg.parentElement;
-  return { W: parent?.clientWidth ?? 400, H: parent?.clientHeight ?? 260 };
+  return { W: parent?.clientWidth ?? 400, H: parent?.clientHeight ?? 256 };
 }
 
 function paint(W: number, H: number, body: string, label: string): void {
@@ -197,46 +203,40 @@ function paint(W: number, H: number, body: string, label: string): void {
   svg.setAttribute('aria-label', label);
   svg.removeAttribute('aria-hidden');
   svg.innerHTML = body;
-  centreOnContent(svg);
   elQuPlaceholder.style.display = 'none';
 }
 
 /**
- * Sit the drawing in the middle of its frame.
+ * Draw the scale beside the bars, at the heights they are drawn against.
  *
- * The chart reserves room for labels that turn out not to need all of it — the axis
- * figures on one side, the rotated bitstrings under the bars — which leaves it low and
- * to one side of its box. Measuring what was actually drawn and framing that instead
- * centres it whatever the labels came to.
+ * It sits outside the frame that scrolls, so the reader keeps the figures whatever part
+ * of the distribution is on screen. `top` and `cH` come from the bars, which is what
+ * lines the two drawings up.
  */
-function centreOnContent(svg: SVGSVGElement): void {
-  let box: DOMRect;
-  try {
-    box = svg.getBBox();
-  } catch {
-    // No layout yet (a hidden pane); the declared viewBox still stands.
-    return;
+function paintAxis(H: number, top: number, cH: number, maxProb: number | null): void {
+  const svg = elHistAxis;
+  let body = '';
+  if (maxProb != null) {
+    for (const step of [0, 50, 100]) {
+      const p = (maxProb * step) / 100;
+      const y = (top + cH - (p / maxProb) * cH).toFixed(1);
+      body += `<text class="hist-text hist-muted" x="${String(AXIS_W - 8)}" y="${y}"
+        text-anchor="end" dominant-baseline="middle">${fp(p)}</text>`;
+    }
   }
-  if (box.width <= 0 || box.height <= 0) return;
-  const pad = 6;
-  svg.setAttribute(
-    'viewBox',
-    `${(box.x - pad).toFixed(1)} ${(box.y - pad).toFixed(1)} ` +
-      `${(box.width + pad * 2).toFixed(1)} ${(box.height + pad * 2).toFixed(1)}`,
-  );
-}
-
-function axes(cW: number, cH: number): string {
-  return (
-    `<line class="hist-axis" x1="0" y1="0" x2="0" y2="${String(cH)}"/>` +
-    `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>`
-  );
+  body +=
+    `<line class="hist-axis" x1="${String(AXIS_W - 1)}" y1="${String(top)}" ` +
+    `x2="${String(AXIS_W - 1)}" y2="${(top + cH).toFixed(1)}"/>`;
+  svg.setAttribute('viewBox', `0 0 ${String(AXIS_W)} ${String(H)}`);
+  svg.setAttribute('width', String(AXIS_W));
+  svg.setAttribute('height', String(H));
+  svg.innerHTML = body;
 }
 
 export function drawEmptyHistogram(): void {
   // An empty, labelled frame — never placeholder bars that look like data.
   const { W, H } = histBox();
-  const P = { t: 20, r: 12, b: 44, l: 56 };
+  const P = { t: 20, r: 12, b: 44, l: BAR_INSET };
   const cW = W - P.l - P.r,
     cH = H - P.t - P.b;
   const narrow = cW < 320;
@@ -249,9 +249,10 @@ export function drawEmptyHistogram(): void {
       : 'Solve the puzzle, or pick a Gallery run, to see measurement counts';
   const s =
     `<g transform="translate(${String(P.l)},${String(P.t)})">` +
-    axes(cW, cH) +
+    `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>` +
     `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH / 2).toFixed(1)}"
       text-anchor="middle">${msg}</text></g>`;
+  paintAxis(H, P.t, cH, null);
   paint(W, H, s, `Measurement histogram: empty. ${msg}.`);
 }
 
@@ -279,14 +280,12 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
   const box = histBox();
   // Every outcome gets a bar. Past what the frame holds the chart runs wider and the
   // frame scrolls, so the tail of the distribution stays on the page.
-  const W = Math.max(box.W, 56 + 12 + entries.length * MIN_BAR_SLOT + GAP_AFTER_SOLUTIONS);
-  const H = box.H;
+  const W = Math.max(box.W, BAR_INSET + 12 + entries.length * MIN_BAR_SLOT + GAP_AFTER_SOLUTIONS);
   const bits = Math.max(...entries.map(([bs]) => bs.length));
   // Room under the axis for the bitstrings, set at 45°, plus the caption line.
   const labelDrop = Math.min(96, 8 + bits * CHAR_PX * 0.71);
-  const P = { t: 22, r: 12, b: labelDrop + LABEL_PX + 10, l: 56 };
-  const cW = W - P.l - P.r,
-    cH = H - P.t - P.b;
+  const P = { t: 22, r: 12, b: labelDrop + LABEL_PX + 10, l: BAR_INSET };
+  const cW = W - P.l - P.r;
 
   const maxProb = entries[0][1];
   // The gap the divider sits in, wide enough to read as a break in the ranking.
@@ -296,70 +295,78 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
   // A 12px label needs ~14px of run; past that, label every k-th bar.
   const every = Math.max(1, Math.ceil((LABEL_PX + 2) / slot));
 
-  let s = DITHER + `<g transform="translate(${String(P.l)},${String(P.t)})">`;
+  const drawAt = (H: number): void => {
+    const cH = H - P.t - P.b;
+    let s = DITHER + `<g transform="translate(${String(P.l)},${String(P.t)})">`;
 
-  for (const step of [0, 50, 100]) {
-    const p = (maxProb * step) / 100;
-    const y = (cH - (p / maxProb) * cH).toFixed(1);
-    s += `<line class="hist-grid" x1="0" y1="${y}" x2="${String(cW)}" y2="${y}"/>`;
-    s += `<text class="hist-text hist-muted" x="-6" y="${y}" text-anchor="end"
-      dominant-baseline="middle">${fp(p)}</text>`;
-  }
-
-  // Solid bars are grids the clues accept; the rest are what the run also turned up.
-  const solutions = new Set(verified.map(([bs]) => bs));
-  entries.forEach(([bs, prob], i) => {
-    // The bitstring key is server data landing in SVG markup — accept only
-    // literal 0/1 strings (anything else is dropped).
-    if (!/^[01]+$/.test(bs)) return;
-    const on = solutions.has(bs);
-    const bH = Math.max(1, (prob / maxProb) * cH);
-    const bx =
-      i * slot +
-      (slot - bW) / 2 +
-      (solutionsShown && i >= solutionsShown ? GAP_AFTER_SOLUTIONS : 0);
-    const by = cH - bH;
-    s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
-      width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
-    if (on && bW >= 30)
-      s += `<text class="hist-text" x="${(bx + bW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}"
-        text-anchor="middle">${fp(prob)}</text>`;
-    if (i % every === 0) {
-      const lx = (bx + bW / 2).toFixed(1);
-      const ly = (cH + 6).toFixed(1);
-      s += `<text class="hist-text hist-muted" x="${lx}" y="${ly}" text-anchor="end"
-        dominant-baseline="hanging" transform="rotate(-45,${lx},${ly})">${bs}</text>`;
+    // The figures for these lines are in the pane beside, which holds while this scrolls.
+    for (const step of [0, 50, 100]) {
+      const y = (cH - (step / 100) * cH).toFixed(1);
+      s += `<line class="hist-grid" x1="0" y1="${y}" x2="${String(cW)}" y2="${y}"/>`;
     }
-  });
 
-  // Where the solutions stop. Bars are ranked by how often they came back, so this
-  // says at a glance whether the run put them in front.
-  if (solutionsShown) {
-    const dx = solutionsShown * slot + GAP_AFTER_SOLUTIONS / 2;
-    s += `<line class="hist-divide" x1="${dx.toFixed(1)}" y1="0" x2="${dx.toFixed(1)}" y2="${String(cH)}"/>`;
-    // Both read left to right from their own side, so one solution does not push its
-    // own label off the chart.
-    s += `<text class="hist-text hist-divide-label" x="2" y="4">solutions</text>`;
-    s += `<text class="hist-text hist-divide-label" x="${(dx + 5).toFixed(1)}" y="4">the rest</text>`;
-  }
+    // Solid bars are grids the clues accept; the rest are what the run also turned up.
+    const solutions = new Set(verified.map(([bs]) => bs));
+    entries.forEach(([bs, prob], i) => {
+      // The bitstring key is server data landing in SVG markup — accept only
+      // literal 0/1 strings (anything else is dropped).
+      if (!/^[01]+$/.test(bs)) return;
+      const on = solutions.has(bs);
+      const bH = Math.max(1, (prob / maxProb) * cH);
+      const bx =
+        i * slot +
+        (slot - bW) / 2 +
+        (solutionsShown && i >= solutionsShown ? GAP_AFTER_SOLUTIONS : 0);
+      const by = cH - bH;
+      s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
+        width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
+      if (on && bW >= 30)
+        s += `<text class="hist-text" x="${(bx + bW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}"
+          text-anchor="middle">${fp(prob)}</text>`;
+      if (i % every === 0) {
+        const lx = (bx + bW / 2).toFixed(1);
+        const ly = (cH + 6).toFixed(1);
+        s += `<text class="hist-text hist-muted" x="${lx}" y="${ly}" text-anchor="end"
+          dominant-baseline="hanging" transform="rotate(-45,${lx},${ly})">${bs}</text>`;
+      }
+    });
 
-  s += axes(cW, cH);
+    // Where the solutions stop. Bars are ranked by how often they came back, so this
+    // says at a glance whether the run put them in front.
+    if (solutionsShown) {
+      const dx = solutionsShown * slot + GAP_AFTER_SOLUTIONS / 2;
+      s += `<line class="hist-divide" x1="${dx.toFixed(1)}" y1="0" x2="${dx.toFixed(1)}" y2="${String(cH)}"/>`;
+      // Both read left to right from their own side, so one solution does not push its
+      // own label off the chart.
+      s += `<text class="hist-text hist-divide-label" x="2" y="4">solutions</text>`;
+      s += `<text class="hist-text hist-divide-label" x="${(dx + 5).toFixed(1)}" y="4">the rest</text>`;
+    }
 
-  const lbl =
-    totalOutcomes != null && totalOutcomes > n
-      ? `top ${String(n)} of ${String(totalOutcomes)}`
-      : String(n);
-  const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
-  s += `</g>`;
+    s += `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>`;
 
-  const top = entries[0];
-  paint(
-    W,
-    H,
-    s,
-    `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
-      `${String(verified.length)} of them satisfy the clues.`,
-  );
+    const lbl =
+      totalOutcomes != null && totalOutcomes > n
+        ? `top ${String(n)} of ${String(totalOutcomes)}`
+        : String(n);
+    const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
+    s += `</g>`;
+
+    const top = entries[0];
+    paintAxis(H, P.t, cH, maxProb);
+    paint(
+      W,
+      H,
+      s,
+      `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
+        `${String(verified.length)} of them satisfy the clues.`,
+    );
+  };
+
+  // A scrollbar takes its height out of the frame, so the second pass draws into what
+  // is left and keeps the bitstrings on screen.
+  drawAt(box.H);
+  const left = elHistSvg.parentElement?.clientHeight ?? box.H;
+  if (left !== box.H) drawAt(left);
 }
 
 // Quantum solutions list renderer

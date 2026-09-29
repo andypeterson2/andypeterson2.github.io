@@ -86,3 +86,9 @@ const histEl = document.getElementById('qu-histogram');
 if (!(histEl instanceof SVGSVGElement))
   throw new Error('nonogram app: #qu-histogram missing (or not an <svg>)');
 export const elHistSvg = histEl;
+
+const axisEl = document.getElementById('qu-axis');
+if (!(axisEl instanceof SVGSVGElement))
+  throw new Error('nonogram app: #qu-axis missing (or not an <svg>)');
+/** The scale, drawn beside the bars so it holds while they scroll. */
+export const elHistAxis = axisEl;

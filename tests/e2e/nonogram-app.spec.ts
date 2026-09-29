@@ -181,6 +181,24 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(labels.nth(1)).toHaveText('the rest');
   });
 
+  test('the scale holds its place while the bars scroll past it', async ({ page }) => {
+    // The stored 3x3 run measured hundreds of outcomes, so the chart runs wider than
+    // its frame. The figures are drawn beside the frame rather than inside it.
+    await page.locator('#gallery-select').selectOption({ index: 3 });
+    await expect(page.locator('#qu-histogram .hist-bar').first()).toBeVisible();
+
+    const room = await page
+      .locator('#qu-scroll')
+      .evaluate((el) => [el.scrollWidth, el.clientWidth]);
+    expect(room[0]).toBeGreaterThan(room[1]);
+    await expect(page.locator('#qu-scroll #qu-axis')).toHaveCount(0);
+    await expect(page.locator('#qu-axis .hist-text').first()).toBeVisible();
+
+    // The rule over it names the run and carries the sampling as hover text.
+    await expect(page.locator('#hist-meta')).toHaveText(/shots/);
+    await expect(page.locator('#hist-meta')).toHaveAttribute('title', /shots/);
+  });
+
   test('the quantum solution matches the classical one', async ({ page }) => {
     // An asymmetric grid: a mirrored reading would show a different picture.
     for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
