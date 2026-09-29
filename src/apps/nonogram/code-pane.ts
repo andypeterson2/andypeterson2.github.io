@@ -160,18 +160,22 @@ function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rec
   frame.style.setProperty('--morph-w', `${String(from.width)}px`);
   live.classList.add('circ-arriving');
 
-  // What this block displaces starts where it stood and travels with the frame.
-  const after = svg.querySelector(`[data-after="${block}"]`);
-  const tail = after instanceof SVGElement ? after : null;
-  if (tail) {
-    tail.style.setProperty('--slide', `${String(from.width - to.width)}px`);
-    tail.classList.add('circ-slide');
+  // What this block displaces, and the name it keeps, both start where they stood and
+  // travel with the frame.
+  const slide = `${String(from.width - to.width)}px`;
+  const travelling: SVGElement[] = [];
+  for (const sel of [`[data-after="${block}"]`, '.circ-name']) {
+    const found = sel.startsWith('.') ? live.querySelector(sel) : svg.querySelector(sel);
+    if (!(found instanceof SVGElement)) continue;
+    found.style.setProperty('--slide', slide);
+    found.classList.add('circ-slide');
+    travelling.push(found);
   }
 
   requestAnimationFrame(() => {
     layer.classList.add('circ-morph--run');
     frame.style.setProperty('--morph-w', `${String(to.width)}px`);
-    tail?.style.setProperty('--slide', '0px');
+    for (const el of travelling) el.style.setProperty('--slide', '0px');
     live.classList.add('circ-arrived');
   });
 
@@ -179,7 +183,7 @@ function morph(svg: Element, circuit: Circuit, block: Block, from: Rect, to: Rec
   morphTimer = setTimeout(() => {
     layer.remove();
     live.classList.remove('circ-arriving', 'circ-arrived');
-    tail?.classList.remove('circ-slide');
+    for (const el of travelling) el.classList.remove('circ-slide');
     morphTimer = null;
   }, MORPH_MS);
 }

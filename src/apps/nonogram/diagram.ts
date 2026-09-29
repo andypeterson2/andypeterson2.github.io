@@ -109,16 +109,27 @@ function blockTitle(circuit: Circuit, block: Block): string {
         'gathered into one phase flip, and the writing is undone. It never sees a solution.';
 }
 
-/** The name down a box's right edge, rotated: a transform needs no layout. */
-function edgeName(right: number, mid: number, label: string, sub: string): string {
+/**
+ * The name down a block's right edge, rotated: a transform needs no layout.
+ *
+ * Wrapped, because it is the one mark a block keeps when it opens: the group is what
+ * travels to the new edge, leaving the rotation on the text where it belongs.
+ */
+function edgeName(right: number, mid: number, label: string): string {
   const nameX = right - 7;
   return (
-    `<text class="circ-box-name" x="${String(nameX)}" y="${String(mid)}" ` +
-    `transform="rotate(90 ${String(nameX)} ${String(mid)})">${esc(label)}</text>` +
-    (sub
-      ? `<text class="circ-box-sub" x="${String(right - COL / 2 - 5)}" y="${String(mid)}" ` +
-        `transform="rotate(90 ${String(right - COL / 2 - 5)} ${String(mid)})">${esc(sub)}</text>`
-      : '')
+    `<g class="circ-name"><text class="circ-box-name" x="${String(nameX)}" y="${String(mid)}" ` +
+    `transform="rotate(90 ${String(nameX)} ${String(mid)})">${esc(label)}</text></g>`
+  );
+}
+
+/** What a folded box says about itself, beside its name. It has no open form. */
+function edgeSub(right: number, mid: number, sub: string): string {
+  if (!sub) return '';
+  const subX = right - COL / 2 - 5;
+  return (
+    `<text class="circ-box-sub" x="${String(subX)}" y="${String(mid)}" ` +
+    `transform="rotate(90 ${String(subX)} ${String(mid)})">${esc(sub)}</text>`
   );
 }
 
@@ -233,34 +244,48 @@ function placement(circuit: Circuit, block: Block, x: number): Placement {
   };
 }
 
-/** What a block draws at `x`, without the shell that makes it pressable. */
-function blockMarks(circuit: Circuit, block: Block, x: number, open: boolean): [string, Rect] {
+/**
+ * What a block draws at `x`: the part that swaps when it opens, and the name that does
+ * not, kept apart so an animation can fade one and carry the other across.
+ */
+function blockMarks(
+  circuit: Circuit,
+  block: Block,
+  x: number,
+  open: boolean,
+): [body: string, name: string, rect: Rect] {
   const at = placement(circuit, block, x);
   const width = open ? openWidth(at.gates) : COL;
-  return [open ? opened(at) : folded(at), { x, y: at.top, width, height: at.height }];
+  const [body, name] = open ? opened(at) : folded(at);
+  return [body, name, { x, y: at.top, width, height: at.height }];
 }
 
 /** A block as a control: the same marks, wrapped in what a reader can press. */
 function blockAt(circuit: Circuit, block: Block, x: number, open: boolean): [string, Rect] {
-  const [marks, rect] = blockMarks(circuit, block, x, open);
+  const [body, name, rect] = blockMarks(circuit, block, x, open);
   const at = placement(circuit, block, x);
   return [
-    shell(block, open, at.label, at.sub, blockTitle(circuit, block)) + marks + '</g>',
+    shell(block, open, at.label, at.sub, blockTitle(circuit, block)) +
+      `<g class="circ-body">${body}</g>` +
+      name +
+      '</g>',
     rect,
   ];
 }
 
 /** A folded block: one named box spanning the wires it acts on. */
-function folded(at: Placement): string {
-  return (
+function folded(at: Placement): [body: string, name: string] {
+  const mid = at.top + at.height / 2;
+  return [
     `<rect class="circ-box" x="${String(at.x)}" y="${String(at.top)}" ` +
-    `width="${String(COL)}" height="${String(at.height)}"/>` +
-    edgeName(at.x + COL, at.top + at.height / 2, at.label, at.sub)
-  );
+      `width="${String(COL)}" height="${String(at.height)}"/>` +
+      edgeSub(at.x + COL, mid, at.sub),
+    edgeName(at.x + COL, mid, at.label),
+  ];
 }
 
 /** An opened block: a dashed frame with the gates it stands for inside it. */
-function opened(at: Placement): string {
+function opened(at: Placement): [body: string, name: string] {
   const width = openWidth(at.gates);
   let x = at.x + FRAME_PAD;
   const marks: string[] = [];
@@ -268,16 +293,16 @@ function opened(at: Placement): string {
     for (const gate of col) marks.push(gateMarks(gate, x, at.y));
     x += EXP_COL;
   }
-  return (
+  return [
     // An opened block is a frame and some gates, so most of it is paper a press would
     // fall straight through, onto the wire underneath.
     `<rect class="circ-hit-area" x="${String(at.x)}" y="${String(at.top)}" ` +
-    `width="${String(width)}" height="${String(at.height)}"/>` +
-    `<rect class="circ-frame" x="${String(at.x)}" y="${String(at.top)}" ` +
-    `width="${String(width)}" height="${String(at.height)}"/>` +
-    `<g class="circ-inner">${marks.join('')}</g>` +
-    edgeName(at.x + width, at.top + at.height / 2, at.label, '')
-  );
+      `width="${String(width)}" height="${String(at.height)}"/>` +
+      `<rect class="circ-frame" x="${String(at.x)}" y="${String(at.top)}" ` +
+      `width="${String(width)}" height="${String(at.height)}"/>` +
+      `<g class="circ-inner">${marks.join('')}</g>`,
+    edgeName(at.x + width, at.top + at.height / 2, at.label),
+  ];
 }
 
 /**
@@ -356,8 +381,8 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
  * that dropped it — and closing needs the same of the gates.
  */
 export function ghostBlock(circuit: Circuit, block: Block, x: number, open: boolean): string {
-  const [marks] = blockMarks(circuit, block, x, open);
-  // Marks only: a second thing answering to this block's name would take the next press
-  // and the next tab stop while the two forms are both on screen.
-  return `<g class="circ-ghost-block" aria-hidden="true">${marks}</g>`;
+  const [body] = blockMarks(circuit, block, x, open);
+  // The body alone. A second thing answering to this block's name would take the next
+  // press and the next tab stop, and the name itself stays with the block that keeps it.
+  return `<g class="circ-ghost-block" aria-hidden="true">${body}</g>`;
 }

@@ -885,21 +885,22 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     outline-offset: 2px;
   }
 
-  /* The frame a written-out step keeps around its gates, and the one that grows into
-     place ahead of them. Dashed, so it reads as the boundary a barrier draws. */
+  /* The frame a written-out step keeps around its gates: a box like any other, once it
+     has settled. */
   :global(.circ-frame),
   :global(.circ-morph-frame) {
     fill: none;
     stroke: var(--ink);
     stroke-width: 1;
-    stroke-dasharray: 4 3;
   }
 
-  /* x and width are CSS properties on an SVG rect, so the frame can be transitioned
-     between two widths the stylesheet never sees. */
+  /* The one still moving is dashed, the way a boundary being drawn is.
+     x and width are CSS properties on an SVG rect, so it can be transitioned between
+     two widths the stylesheet never sees. */
   :global(.circ-morph-frame) {
     x: var(--morph-x);
     width: var(--morph-w);
+    stroke-dasharray: 4 3;
     transition: width 200ms ease 140ms;
   }
 
@@ -941,12 +942,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     transition-delay: 0s;
   }
 
-  /* What the press produced, held back until the frame has finished opening. */
-  :global(.circ-hit.circ-arriving) {
+  /* What the press produced, held back until the frame has finished opening. The name
+     is outside this: it belongs to both states, so it travels rather than blinking. */
+  :global(.circ-hit.circ-arriving .circ-body) {
     opacity: 0;
   }
 
-  :global(.circ-hit.circ-arrived) {
+  :global(.circ-hit.circ-arrived .circ-body) {
     opacity: 1;
     transition: opacity 120ms linear 340ms;
   }
