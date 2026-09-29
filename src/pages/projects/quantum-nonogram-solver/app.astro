@@ -457,11 +457,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: none;
   }
 
-  :global(.rule-meta::before) {
-    content: '\00b7';
-    padding: 0 0.5em;
-  }
-
   /* ── Status line — with the output it reports on, and taking no room until a run has
      something to say; the buttons already say what pressing them will do. ── */
   .status-line:empty {
@@ -1238,9 +1233,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .editor-actions,
     .run-controls {
       flex-flow: row wrap;
+      align-items: flex-start;
       justify-content: center;
       width: 100%;
       order: 1;
+    }
+
+    /* Side by side, the row carries the space under the controls. */
+    .mode-toggle {
+      margin-bottom: 0;
     }
 
     /* Stacked, each control holds the column's width; in a row that is the whole line,
