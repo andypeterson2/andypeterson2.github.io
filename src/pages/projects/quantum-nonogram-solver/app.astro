@@ -50,7 +50,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
-        <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
         <div id="status-line" class="status-line" role="status"></div>
@@ -455,21 +454,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: none;
   }
 
-  /* The gallery entry's own note (e.g. how the same shape did on real hardware). */
-  .gallery-note {
-    margin: 0;
-    padding: 0 4px 4px;
-    font-size: var(--text-3xs);
-    text-align: center;
-    color: var(--color-text);
-  }
-
   :global(.status-line.status-err) {
     color: var(--color-danger);
-  }
-
-  :global(.status-line.status-ok) {
-    color: var(--color-success);
   }
 
   /* ── Controls bar ── */

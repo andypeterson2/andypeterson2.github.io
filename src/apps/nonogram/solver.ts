@@ -503,7 +503,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
   ]);
   metricRow(search, 'Per clue check', [
     `${cost.predicateGates} gates`,
-    local.capped ? '—' : `\u2264 ${String(cost.predicateGates)} gates`,
+    local.capped ? '—' : `up to ${String(cost.predicateGates)} gates`,
     hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
   ]);
   metricRow(search, 'Per extra cell', ['2x', '—', '1.41x']);

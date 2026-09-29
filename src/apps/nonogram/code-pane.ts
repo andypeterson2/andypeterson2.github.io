@@ -231,7 +231,6 @@ async function copy(): Promise<void> {
   if (!listing) return;
   try {
     await navigator.clipboard.writeText(listing);
-    setStatus('Circuit code copied.', 'ok');
   } catch {
     // Denied permission, an insecure origin, or no clipboard at all. The text is on
     // screen and selectable, so say that rather than failing silently.

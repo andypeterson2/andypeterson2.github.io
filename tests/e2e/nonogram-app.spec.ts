@@ -24,13 +24,10 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
   // "a real run on the Grover simulator", which describe a different grid.
   test('editing after a gallery run clears the run', async ({ page }) => {
     await page.locator('#gallery-select').selectOption({ index: 1 });
-    await expect(page.locator('#status-line')).toContainText('a real run on');
-    await expect(page.locator('#gallery-note')).toBeVisible();
+    await expect(page.locator('#qu-list .sol-table').first()).toBeVisible();
 
     await page.locator('td.cell').first().dispatchEvent('mousedown');
-    await expect(page.locator('#status-line')).toContainText('Edited');
     await expect(page.locator('#gallery-select')).toHaveValue('');
-    await expect(page.locator('#gallery-note')).toBeHidden();
     await expect(page.locator('#qu-sol-placeholder')).toContainText('Solve the puzzle');
   });
 
@@ -106,7 +103,6 @@ test.describe('Nonogram: typing the clues', () => {
     await page.locator('#btn-mode-draw').click();
     await expect(page.locator('.clue-slot--input')).toHaveCount(0);
     await expect(page.locator('td.cell')).toHaveCount(9);
-    await expect(page.locator('#status-line')).toContainText('clues follow the grid');
   });
 });
 
@@ -254,10 +250,9 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     await expect(page.locator('#code-listing')).toContainText('from qiskit import');
   });
 
-  test('Copy puts the listing on the clipboard and says so', async ({ page, context }) => {
+  test('Copy puts the listing on the clipboard', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.locator('#btn-copy-code').click();
-    await expect(page.locator('#status-line')).toContainText('copied');
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(copied).toContain('def oracle(qc):');
   });

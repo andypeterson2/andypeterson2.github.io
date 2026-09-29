@@ -2,7 +2,6 @@
 
 import {
   state,
-  $,
   must,
   clientId,
   elThresholdInput,
@@ -99,7 +98,7 @@ function bindSocket(s: NonogramSocket): void {
   });
   if (s.connected) s.emit('join', { client_id: clientId() });
   s.on('status', (p) => {
-    const { msg, level } = p as { msg: string; level?: 'err' | 'ok' };
+    const { msg, level } = p as { msg: string; level?: 'err' };
     setStatus(msg, level);
   });
   s.on('busy', (p) => {
@@ -170,7 +169,7 @@ function streamBenchmark(body: BenchmarkBody): void {
 // render the result with the same renderer the live bench_done event uses.
 async function runBenchmarkSync(body: BenchmarkBody): Promise<void> {
   setBusy(true);
-  setStatus('Contacting the live solver…');
+  setStatus('Contacting the live solver.');
   let result: ContractResult | null = null;
   try {
     result = await SiteContract.request((window.API_BASE ?? '') + '/api/benchmark/sync', {
@@ -181,7 +180,6 @@ async function runBenchmarkSync(body: BenchmarkBody): Promise<void> {
     });
     if (result.ok) {
       renderBenchmark(result.data as BenchmarkPayload);
-      setStatus('Benchmark complete (live solver).', 'ok');
     }
   } finally {
     setBusy(false);
@@ -215,7 +213,6 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
     return;
   }
   clearSolverResults();
-  showGalleryNote('');
   setBusy(true);
   // Defer one tick so the "Running…" state paints before the synchronous solve.
   setTimeout(() => {
@@ -338,7 +335,7 @@ function renderHardware(job: HardwareJob, collected: CollectedJob): void {
       ? `${device}, ${String(shots)} shots, transpiled depth ${String(job.transpiled_depth)}.`
       : `${device}, ${String(shots)} shots.`,
   });
-  setStatus(`${device}: ${verdict}.`, 'ok');
+  setStatus(`${device}: ${verdict}.`);
   track({
     app: 'nonogram',
     event: 'run.done',
@@ -382,9 +379,8 @@ async function runOnHardware(): Promise<void> {
   if (!withinHardwareLimit(rows, cols)) return;
 
   clearSolverResults();
-  showGalleryNote('');
   setBusy(true);
-  setStatus('Submitting to IBM…');
+  setStatus('Submitting to IBM.');
   const job = await submitJob(
     puzzle.row_clues,
     puzzle.col_clues,
@@ -421,14 +417,6 @@ interface GalleryPayload extends BenchmarkPayload {
   hardware?: string | null;
 }
 
-let galleryNotes = new Map<string, string>();
-
-function showGalleryNote(text: string): void {
-  const el = $('gallery-note');
-  if (!el) return;
-  el.textContent = text;
-  el.hidden = !text;
-}
 
 async function initGallery(): Promise<void> {
   const sel = document.getElementById('gallery-select');
@@ -441,7 +429,6 @@ async function initGallery(): Promise<void> {
     /* the gallery is optional */
   }
   if (!Array.isArray(index) || !index.length) return;
-  galleryNotes = new Map(index.map((e) => [e.slug, e.note ?? '']));
   // Name the list by what's in it: simulator runs unless a hardware run is cached.
   // Kept short so it fits the select at every width.
   const placeholder = sel.options.item(0);
@@ -497,8 +484,6 @@ async function loadGalleryEntry(slug: string): Promise<void> {
     histogram: shots,
     histogramHover: `A captured run on ${src}${shots ? `, over ${shots}` : ''}.`,
   });
-  setStatus(`${payload.label ?? slug} — a real run on ${src}.`, 'ok');
-  showGalleryNote(galleryNotes.get(slug) ?? '');
 }
 
 // Init
@@ -604,9 +589,7 @@ function init(): void {
     elQuSolPlaceholder.textContent = 'Solve the puzzle to see solutions.';
     const sel = document.getElementById('gallery-select');
     if (sel instanceof HTMLSelectElement) sel.value = '';
-    showGalleryNote('');
     drawEmptyHistogram();
-    setStatus('Edited — solve again to see results.');
   });
 
   void initGallery();

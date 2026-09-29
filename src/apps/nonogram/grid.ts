@@ -507,7 +507,6 @@ export function doClear(): void {
   buildGrid();
   syncGridToServer();
   onEdit();
-  setStatus(state.mode === 'clues' ? 'Clues cleared.' : 'Grid cleared.');
 }
 
 /**
@@ -523,11 +522,6 @@ export function setMode(mode: EditorMode): void {
   if (mode === 'draw') cluesFromGrid();
   buildGrid();
   onEdit();
-  setStatus(
-    mode === 'clues'
-      ? 'Clues mode — type the runs; a puzzle with no solution is a valid answer.'
-      : 'Draw mode — the clues follow the grid again.',
-  );
 }
 
 interface RawRandomize {
@@ -548,8 +542,6 @@ export async function doRandomize(): Promise<void> {
     cluesFromGrid();
     buildGrid();
     onEdit();
-    const filled = state.grid.flat().filter(Boolean).length;
-    setStatus(`Randomized ${String(rows)}×${String(cols)} puzzle (${String(filled)} filled).`);
     return;
   }
   try {
@@ -570,8 +562,6 @@ export async function doRandomize(): Promise<void> {
     buildGrid();
     syncGridToServer();
     onEdit();
-    const filled = state.grid.flat().filter(Boolean).length;
-    setStatus(`Randomized ${String(rows)}×${String(cols)} puzzle (${String(filled)} filled).`);
   } catch (err) {
     setStatus('Randomize error: ' + (err instanceof Error ? err.message : String(err)), 'err');
   }

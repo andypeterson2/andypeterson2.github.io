@@ -7,12 +7,17 @@
 import { state, $, must } from './state';
 import { MAX_HW_CELLS, currentStatus, isSignedIn } from './hardware';
 
-export function setStatus(msg: string, level?: 'err' | 'ok'): void {
+/**
+ * The status line.
+ *
+ * Colour is the design's one signal for a machine reporting state, and a fault is the
+ * only state worth spending it on; everything else is ink like the rest of the page.
+ */
+export function setStatus(msg: string, level?: 'err'): void {
   const el = $('status-line');
   if (!el) return;
   el.textContent = msg;
-  el.className =
-    'status-line' + (level === 'err' ? ' status-err' : level === 'ok' ? ' status-ok' : '');
+  el.className = 'status-line' + (level === 'err' ? ' status-err' : '');
 }
 
 /** What the run button will actually do: offline it solves classically in the
