@@ -50,10 +50,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
-        <div id="status-line" class="status-line" role="status"></div>
         <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
+        <div id="status-line" class="status-line" role="status"></div>
         <div class="sol-pair">
           <div class="sol-half">
             <div class="section-rule">
@@ -438,15 +438,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     padding: 0 0.5em;
   }
 
-  /* ── Status line — takes no room until a run has something to report; the buttons
-     already say what pressing them will do. ── */
+  /* ── Status line — with the output it reports on, and taking no room until a run has
+     something to say; the buttons already say what pressing them will do. ── */
   .status-line:empty {
     display: none;
   }
 
   .status-line {
     font-size: var(--text-3xs);
-    padding: 4px 0;
+    padding: 0 0 var(--space-2);
     text-align: center;
   }
 
