@@ -209,7 +209,7 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
   test('the code shows without solving, and describes the board on screen', async ({ page }) => {
     // The circuit describes the puzzle itself, so it is there before any run.
     await expect(page.locator('#code-pane')).toBeVisible();
-    await expect(page.locator('#code-meta')).toContainText('9 qubits');
+    await expect(page.locator('#circuit-svg .circ-label')).toHaveCount(9);
     await expect(page.locator('#code-listing')).toContainText('def oracle(qc):');
   });
 
@@ -287,7 +287,8 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
       await page.getByRole('button', { name: 'Add a column' }).click();
     }
     await expect(page.locator('#grid-size-label')).toHaveText('6 \u00d7 6');
-    await expect(page.locator('#code-meta')).toContainText('48 qubits');
+    // Too many wires to draw, so the drawing collapses the middle and says so.
+    await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
     await expect(page.locator('#code-listing')).toHaveAttribute(
       'title',
       /past what the page solves/,
@@ -373,30 +374,17 @@ test.describe('Nonogram: the circuit band follows the width', () => {
     await page.route('**/api/**', (r) => r.abort());
   });
 
-  test('opens on a desktop and folds away on a phone', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(APP);
-    await expect(page.locator('#circuit-band')).toHaveAttribute('open', '');
-
-    await page.setViewportSize({ width: 375, height: 800 });
-    await page.goto(APP);
-    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
-    // Folded, but one press away, and its summary still says what is inside.
-    await expect(page.locator('#code-meta')).toContainText('qubits');
-    await page.locator('#circuit-band > summary').click();
-    await expect(page.locator('#circuit-figure')).toBeVisible();
+  test('the circuit is on the page at every width, with nothing to unfold', async ({
+    page,
+  }) => {
+    for (const width of [1280, 375]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(APP);
+      await expect(page.locator('#circuit-figure')).toBeVisible();
+      await expect(page.locator('#circuit-band summary')).toHaveCount(0);
+    }
   });
 
-  test('a choice made by hand outlasts a resize', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(APP);
-    await page.locator('#circuit-band > summary').click();
-    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
-
-    await page.setViewportSize({ width: 375, height: 800 });
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
-  });
 });
 
 test.describe('Nonogram: the circuit opens up', () => {
@@ -492,7 +480,6 @@ test.describe('Nonogram: the circuit opens up', () => {
   test('a phone gets the same two boxes', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto(APP);
-    await page.locator('#circuit-band > summary').click();
     await expect(page.locator('#circuit-svg [data-block]').first()).toBeVisible();
     await expect(page.locator('#btn-view-circuit')).toBeVisible();
   });

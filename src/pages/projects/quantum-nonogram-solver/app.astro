@@ -51,12 +51,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           <button id="btn-bench" class="s6-btn">&#9654; Solve in browser</button>
           <button id="btn-hw" class="s6-btn" aria-disabled="true">&#9654; Run on IBM</button>
         </div>
-        <details id="circuit-band" class="nono-band">
-          <summary>
-            <span class="section-rule">
-              <span>Circuit</span><span id="code-meta" class="rule-meta"></span>
-            </span>
-          </summary>
+        <div id="circuit-band" class="nono-band">
           <div id="code-pane">
             <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
               <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
@@ -71,7 +66,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
               <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
             </div>
           </div>
-        </details>
+        </div>
       </div>
       <div class="nono-right">
         <div id="status-line" class="status-line" role="status"></div>
@@ -151,6 +146,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .nono-left {
     flex: 0 0 clamp(320px, 46%, 560px);
     min-width: 0;
+    display: flex;
+    flex-direction: column;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -182,45 +179,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* The circuit describes the puzzle rather than a run, so it sits under the editor
-     that builds it, and folds away. */
+     that builds it, at the foot of the column. */
   .nono-band {
     border-top: 2px solid var(--ink);
     padding-top: 12px;
-  }
-
-  .nono-band > summary {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .nono-band > summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .nono-band > summary::before {
-    content: '';
-    flex: none;
-    border-block: 4px solid transparent;
-    border-left: 5px solid currentcolor;
-  }
-
-  .nono-band[open] > summary::before {
-    border-inline: 4px solid transparent;
-    border-block: 5px solid currentcolor;
-    border-bottom: 0;
-  }
-
-  .nono-band > summary .section-rule {
-    flex: 1;
-    margin-bottom: 0;
-    min-width: 0;
-  }
-
-  .nono-band[open] > summary {
-    margin-bottom: 12px;
+    margin-top: auto;
   }
 
   /* ── Draw view / grid ──
@@ -573,18 +536,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .threshold-label {
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
+    font-weight: 600;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 4px;
   }
 
+  /* The figure reads as part of the label it belongs to, until it is being set. */
   .threshold-label input {
-    width: 60px;
-    border: 2px solid var(--ink);
-    background: var(--paper);
-    padding: 4px 6px;
-    font-size: var(--text-3xs);
-    text-align: center;
+    width: 44px;
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    text-align: right;
+  }
+
+  .threshold-label input:hover {
+    text-decoration: underline dotted;
   }
 
   /* Keep system.css's focus inversion: the local paper ground above would otherwise
@@ -1053,12 +1022,23 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     stroke-width: 1;
   }
 
-  /* What the drawing costs, set like the repeat count it sits beside. */
-  :global(.circ-cost) {
-    font-family: var(--font-sans);
+  /* The brace that gathers every wire into one count. */
+  :global(.circ-brace) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-gates) {
+    dominant-baseline: text-before-edge;
+  }
+
+  /* What a bracket or a brace says about the span it encloses. */
+  :global(.circ-span) {
+    font-family: var(--font-ui);
     font-size: var(--text-4xs);
     fill: var(--ink);
-    text-anchor: end;
+    text-anchor: middle;
     dominant-baseline: central;
   }
 

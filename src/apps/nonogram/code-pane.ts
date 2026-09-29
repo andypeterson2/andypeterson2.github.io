@@ -6,7 +6,7 @@
  * past a few cells nothing here will run anywhere we can offer, and someone with a
  * real simulator should still be able to pick the circuit up.
  */
-import { buildCircuit, circuitDepth, entanglingCount, totalGates } from './circuit';
+import { buildCircuit } from './circuit';
 import { groverOutcome } from './grover-sim';
 import { BLOCKS, drawCircuit, ghostBlock, type Block, type Rect } from './diagram';
 import { type Circuit } from './circuit';
@@ -51,11 +51,6 @@ function pane(): HTMLElement | null {
   return $('code-pane');
 }
 
-/** A short description of the circuit for the section rule. */
-function summary(qubits: number, depth: number, gates: number): string {
-  const plural = qubits === 1 ? 'qubit' : 'qubits';
-  return `${String(qubits)} ${plural}, depth ${depth.toLocaleString()}, ${gates.toLocaleString()} gates`;
-}
 
 /**
  * What the listing does not say, because the listing carries no prose. It is the
@@ -215,16 +210,6 @@ export function renderCodePane(rowClues: number[][], colClues: number[][]): void
   shown = circuit;
   paintCircuit();
 
-  const meta = $('code-meta');
-  if (meta) {
-    meta.textContent = summary(circuit.qubits, circuitDepth(circuit), totalGates(circuit));
-    const entangling = `${entanglingCount(circuit).toLocaleString()} entangling gates. `;
-    meta.title =
-      entangling +
-      (circuit.oracleKind === 'solutions'
-        ? 'The oracle marks the solutions the classical pass found.'
-        : 'The oracle checks each row and column, so it never sees a solution.');
-  }
   host.classList.add('visible');
 }
 
@@ -237,26 +222,6 @@ async function copy(): Promise<void> {
     // screen and selectable, so say that rather than failing silently.
     setStatus('Copying was blocked — select the code and copy it instead.', 'err');
   }
-}
-
-/**
- * The circuit band follows the width until the reader has an opinion.
- *
- * It is the tallest thing on the page and the least likely to be read first, so a
- * narrow screen gets it folded. Once someone opens or closes it themselves that choice
- * stands: otherwise rotating a tablet would reopen what they had just put away.
- */
-function followWidth(band: HTMLDetailsElement): void {
-  const wide = window.matchMedia('(min-width: 769px)');
-  let userDecided = false;
-
-  band.open = wide.matches;
-  band.addEventListener('toggle', () => {
-    userDecided = true;
-  });
-  wide.addEventListener('change', (e) => {
-    if (!userDecided) band.open = e.matches;
-  });
 }
 
 /** Wire the view buttons and Copy. Call once. */
@@ -296,7 +261,5 @@ export function initCodePane(onFormatChange: () => void): void {
   });
 
   $('btn-copy-code')?.addEventListener('click', () => void copy());
-  const band = $('circuit-band');
-  if (band instanceof HTMLDetailsElement) followWidth(band);
   paint();
 }

@@ -21,7 +21,8 @@ export const BLOCKS: readonly Block[] = ['oracle', 'diffuser'];
 
 const PITCH = 32;
 const BOX = 24;
-const TOP = 18;
+/** The first wire's y, leaving the depth bracket and its label room above it. */
+const TOP = 52;
 const GUTTER = 54;
 const COL = 46;
 const GAP = 14;
@@ -78,6 +79,19 @@ function wires(circuit: Circuit): Wire[] {
   if (circuit.ancillas > 0) shown.push(problemQubits, qubits - 1);
   else shown.push(qubits - 2, qubits - 1);
   return shown.map((qubit, i) => ({ qubit, y: TOP + i * PITCH }));
+}
+
+/** A curly brace down the right of the wires, gathering them into one count. */
+function brace(x: number, top: number, bottom: number): string {
+  const mid = (top + bottom) / 2;
+  const r = 6;
+  return (
+    `<path class="circ-brace" d="M${String(x)} ${String(top)} ` +
+    `q${String(r)} 0 ${String(r)} ${String(r)} ` +
+    `V${String(mid - r)} q0 ${String(r)} ${String(r)} ${String(r)} ` +
+    `q${String(-r)} 0 ${String(-r)} ${String(r)} ` +
+    `V${String(bottom - r)} q0 ${String(r)} ${String(-r)} ${String(r)}"/>`
+  );
 }
 
 function esc(text: string): string {
@@ -314,7 +328,8 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
   const rows = wires(circuit);
   const cellRows = rows.filter((w) => w.qubit !== null && w.qubit < circuit.problemQubits);
   const lastRow = rows[rows.length - 1].y;
-  const height = lastRow + TOP + 22;
+  // Room under the last wire for the repeat bracket and what it says.
+  const height = lastRow + 46;
 
   let x = GUTTER;
   const parts: string[] = [];
@@ -363,19 +378,36 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
     )
     .join('');
 
-  // The repeat bracket, under the two blocks it encloses, and what the whole drawing
-  // costs beside it — the two figures a reader takes away from a circuit.
+  // The repeat bracket, under the two blocks it encloses.
   const by = lastRow + 14;
   const bracket =
     `<path class="circ-bracket" d="M${String(repeatStart)} ${String(by)} v5 H${String(repeatEnd)} v-5"/>` +
     `<text class="circ-repeat" x="${String((repeatStart + repeatEnd) / 2)}" y="${String(by + 17)}">` +
-    `\u00d7 ${circuit.iterations.toLocaleString()}</text>` +
-    `<text class="circ-cost" x="${String(width - 12)}" y="${String(by + 17)}">` +
-    `depth ${circuitDepth(circuit).toLocaleString()} \u00b7 ` +
+    `\u00d7 ${circuit.iterations.toLocaleString()}</text>`;
+
+  // Depth is a span along the circuit, so it is bracketed like one, over the wires it
+  // runs the length of.
+  const dy = TOP - 22;
+  const depth =
+    `<path class="circ-bracket" d="M${String(GUTTER)} ${String(dy + 5)} v-5 H${String(width - 12)} v5"/>` +
+    `<text class="circ-span" x="${String((GUTTER + width - 12) / 2)}" y="${String(dy - 8)}">` +
+    `depth ${circuitDepth(circuit).toLocaleString()}</text>`;
+
+  // The gate count is of the whole register, so its brace takes in every wire.
+  const gx = width - 4;
+  const gates =
+    brace(gx, TOP - BOX / 2, lastRow + BOX / 2) +
+    `<text class="circ-span circ-gates" x="${String(gx + 9)}" y="${String((TOP + lastRow) / 2)}" ` +
+    `transform="rotate(90 ${String(gx + 9)} ${String((TOP + lastRow) / 2)})">` +
     `${totalGates(circuit).toLocaleString()} gates</text>`;
 
   const close = BLOCKS.map(() => '</g>').join('');
-  return { body: lines + parts.join('') + close + bracket, width, height, blocks };
+  return {
+    body: lines + parts.join('') + close + bracket + depth + gates,
+    width: width + 26,
+    height,
+    blocks,
+  };
 }
 
 /**

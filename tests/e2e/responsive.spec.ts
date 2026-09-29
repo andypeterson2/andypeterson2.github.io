@@ -75,7 +75,6 @@ test.describe('Reflow at 320px', () => {
     await page.locator('#btn-bench').click();
     // The frame is there from the start; the figures are what a solve adds.
     await expect(page.locator('.metrics-table tbody td:not(.na)').first()).not.toBeEmpty();
-    await page.locator('#circuit-band > summary').click();
     await expect(page.locator('#circuit-figure')).toBeVisible();
 
     const overflow = () =>
