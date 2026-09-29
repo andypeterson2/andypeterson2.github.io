@@ -158,16 +158,30 @@ async function connect(page: Page, stub: Stub): Promise<void> {
       }),
     );
   }, stub.url);
-  await expect(page.locator('#btn-hw')).toBeVisible();
-  // The button is drawn from the gateway's answer, so wait for it to have arrived.
-  await expect(page.locator('#btn-hw')).toHaveText(/Run on IBM|Sign in/);
+  await expect(page.locator('#btn-bench')).toBeVisible();
+  // The run button is drawn from the gateway's answer, so wait for it to have arrived:
+  // only a live backend turns a local solve into a simulator one.
+  await expect(page.locator('#btn-bench')).toContainText('Simulator solve');
 }
 
 /** The app opens at 3x3, which is past the hardware ceiling. Shrink to 2x2. */
 async function shrinkToTwoByTwo(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Remove a row' }).click();
-  await page.getByRole('button', { name: 'Remove a column' }).click();
-  await expect(page.locator('#grid-size-label')).toHaveText('2 × 2');
+  await setSize(page, 2, 2);
+}
+
+/** Type a board size into the corner the two runs of clues share. */
+async function setSize(page: Page, rows: number, cols: number): Promise<void> {
+  await page.locator('#size-rows').fill(String(rows));
+  await page.locator('#size-rows').press('Enter');
+  await page.locator('#size-cols').fill(String(cols));
+  await page.locator('#size-cols').press('Enter');
+  await expect(page.locator('td.cell')).toHaveCount(rows * cols);
+}
+
+/** The run button sends the puzzle wherever the toggle beside it points. */
+async function chooseHardware(page: Page): Promise<void> {
+  await page.locator('#btn-where-hw').click();
+  await expect(page.locator('#btn-bench')).toContainText('Hardware solve');
 }
 
 test.describe('Nonogram: the IBM tier', () => {
@@ -183,7 +197,8 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      const btn = page.locator('#btn-hw');
+      await chooseHardware(page);
+      const btn = page.locator('#btn-bench');
       await expect(btn).toBeDisabled();
       await expect(btn).toHaveAttribute('title', /authenticated account/);
 
@@ -216,8 +231,9 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await expect(page.locator('#btn-hw')).toBeDisabled();
-      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /may not spend/);
+      await chooseHardware(page);
+      await expect(page.locator('#btn-bench')).toBeDisabled();
+      await expect(page.locator('#btn-bench')).toHaveAttribute('title', /may not spend/);
       expect(stub.submits).toHaveLength(0);
     } finally {
       await stub.close();
@@ -236,8 +252,9 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await expect(page.locator('#btn-hw')).toBeDisabled();
-      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /budget/);
+      await chooseHardware(page);
+      await expect(page.locator('#btn-bench')).toBeDisabled();
+      await expect(page.locator('#btn-bench')).toHaveAttribute('title', /budget/);
     } finally {
       await stub.close();
     }
@@ -250,8 +267,9 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await expect(page.locator('#btn-hw')).toBeEnabled();
-      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /3 hardware runs left/);
+      await chooseHardware(page);
+      await expect(page.locator('#btn-bench')).toBeEnabled();
+      await expect(page.locator('#btn-bench')).toHaveAttribute('title', /3 hardware runs left/);
       // Signed in, so the menu bar offers the way back out.
       await expect(page.locator('.site-menubar .auth-item .auth-btn')).toHaveText('Sign out');
     } finally {
@@ -282,9 +300,10 @@ test.describe('Nonogram: the IBM tier', () => {
     ]);
     expect(Math.round(item!.x + item!.width)).toBeCloseTo(Math.round(bar!.x + bar!.width), -1);
 
-    // And the run button says which account it wants.
-    await expect(page.locator('#btn-hw')).toBeDisabled();
-    await expect(page.locator('#btn-hw')).toHaveAttribute('title', /authenticated account/);
+    // And the run button, set to hardware, says which account it wants.
+    await chooseHardware(page);
+    await expect(page.locator('#btn-bench')).toBeDisabled();
+    await expect(page.locator('#btn-bench')).toHaveAttribute('title', /authenticated account/);
   });
 
   // Shown rather than hidden: a capability the site has is worth seeing, and the
@@ -304,8 +323,9 @@ test.describe('Nonogram: the IBM tier', () => {
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
 
-    const btn = page.locator('#btn-hw');
+    const btn = page.locator('#btn-bench');
     await expect(btn).toBeVisible();
+    await chooseHardware(page);
     await expect(btn).toBeDisabled();
     await expect(btn).toHaveAttribute('title', /not connected/);
 
@@ -324,17 +344,19 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       // The app opens at 3x3 — nine cells, past where a real device says anything.
-      await expect(page.locator('#btn-hw')).toBeDisabled();
-      await expect(page.locator('#btn-hw')).toHaveAttribute('title', /stop at 6 cells/);
+      await chooseHardware(page);
+      await expect(page.locator('#btn-bench')).toBeDisabled();
+      await expect(page.locator('#btn-bench')).toHaveAttribute('title', /stop at 6 cells/);
 
       await shrinkToTwoByTwo(page);
-      await expect(page.locator('#btn-hw')).toBeEnabled();
+      await chooseHardware(page);
+      await expect(page.locator('#btn-bench')).toBeEnabled();
 
       // 3x2 is six cells: the deepest circuit still worth measuring.
-      await page.getByRole('button', { name: 'Add a row' }).click();
-      await expect(page.locator('#btn-hw')).toBeEnabled();
-      await page.getByRole('button', { name: 'Add a column' }).click();
-      await expect(page.locator('#btn-hw')).toBeDisabled();
+      await setSize(page, 3, 2);
+      await expect(page.locator('#btn-bench')).toBeEnabled();
+      await setSize(page, 3, 3);
+      await expect(page.locator('#btn-bench')).toBeDisabled();
       expect(stub.submits).toHaveLength(0);
     } finally {
       await stub.close();
@@ -366,7 +388,8 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await page.locator('#btn-hw').click();
+      await chooseHardware(page);
+      await page.locator('#btn-bench').click();
 
       await expect(page.locator('#status-line')).toContainText('queued');
       expect(stub.submits).toHaveLength(1);
@@ -399,7 +422,8 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await page.locator('#btn-hw').click();
+      await chooseHardware(page);
+      await page.locator('#btn-bench').click();
       await expect(page.locator('#status-line')).toContainText('queued');
 
       // Sixteen states, near-uniform: what a circuit deeper than the device returns.
@@ -419,8 +443,10 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
+      await chooseHardware(page);
       stub.refuse(403, 'hardware_refused', 'This account may not spend quantum credits.');
-      await page.locator('#btn-hw').click();
+      await chooseHardware(page);
+      await page.locator('#btn-bench').click();
       await expect(page.locator('#status-line')).toContainText('may not spend quantum credits');
       expect(stub.polls).toBe(0); // nothing to wait for
     } finally {
@@ -433,7 +459,8 @@ test.describe('Nonogram: the IBM tier', () => {
     try {
       await connect(page, stub);
       await shrinkToTwoByTwo(page);
-      await page.locator('#btn-hw').click();
+      await chooseHardware(page);
+      await page.locator('#btn-bench').click();
       await expect(page.locator('#status-line')).toContainText('queued');
 
       await page.reload();

@@ -14,6 +14,8 @@ import {
   applyTierControls,
   applyHardwareControl,
   isUnavailable,
+  runWhere,
+  setRunWhere,
 } from './ui';
 import {
   initGrid,
@@ -24,10 +26,6 @@ import {
   doClear,
   doReset,
   doRandomize,
-  addRow,
-  addCol,
-  removeRow,
-  removeCol,
   setOnGridEdit,
   type Puzzle,
 } from './grid';
@@ -224,8 +222,10 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
       // The classical search supplies the oracle, so the amplitudes follow in closed
       // form. With no circuit built, depth and gate counts stay unknown below.
       const qubits = rows * cols;
+      const q0 = performance.now();
       const outcome = groverOutcome(solutions.length, qubits);
       const quCounts = sampleCounts(solutions, qubits, LOCAL_SHOTS, outcome);
+      const qdt = performance.now() - q0;
 
       renderBenchmark({
         report: {
@@ -243,16 +243,18 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
         rows,
         cols,
         cl_times: [dt / 1000],
-        // No quantum solve time: timing a formula against a search would compare
-        // nothing, and the site does not put a number next to that claim.
-        qu_times: null,
+        qu_times: [qdt / 1000],
       });
 
       // Each figure sits on the section it describes, so nothing needs restating in
       // a status line underneath.
       setRunMeta({
         classical: `${dt.toFixed(1)} ms`,
-        quantum: `noiseless, ${String(outcome.iterations)} iteration${outcome.iterations === 1 ? '' : 's'}`,
+        // The time measures the draw: the amplitudes come from a closed form, so what
+        // takes any time at all is sampling them into counts.
+        quantum:
+          `noiseless, ${String(outcome.iterations)} iteration${outcome.iterations === 1 ? '' : 's'} · ` +
+          `${String(LOCAL_SHOTS)} shots drawn in ${qdt.toFixed(1)} ms`,
         histogram: `${String(LOCAL_SHOTS)} shots`,
         histogramHover: `Sampled from the exact distribution over ${String(LOCAL_SHOTS)} shots, the count a hardware run asks for.`,
       });
@@ -531,8 +533,23 @@ function init(): void {
 
   // Benchmark button — offline: solve the drawn puzzle in the browser; connected:
   // live Socket.IO stream, with a synchronous REST fallback.
-  must('btn-bench').addEventListener('click', () => {
+  const benchButton = must('btn-bench') as HTMLButtonElement;
+  for (const [id, target] of [
+    ['btn-where-local', 'local'],
+    ['btn-where-hw', 'hardware'],
+  ] as const) {
+    must(id).addEventListener('click', () => {
+      setRunWhere(target);
+    });
+  }
+
+  benchButton.addEventListener('click', () => {
     if (state.busy) return;
+    // Unavailable rather than disabled, so the click still arrives and is ignored.
+    if (runWhere() === 'hardware') {
+      if (!isUnavailable(benchButton)) void runOnHardware();
+      return;
+    }
     const puzzle = getCurrentPuzzle();
     if (!window.API_BASE) {
       runBenchmarkLocal(puzzle);
@@ -565,12 +582,6 @@ function init(): void {
     });
   }
 
-  const hwButton = must('btn-hw') as HTMLButtonElement;
-  hwButton.addEventListener('click', () => {
-    // Unavailable rather than disabled, so the click still arrives and is ignored.
-    if (!state.busy && !isUnavailable(hwButton)) void runOnHardware();
-  });
-
   watchSession(() => {
     applyHardwareControl();
   });
@@ -584,11 +595,6 @@ function init(): void {
   // A reload during an IBM queue rejoins the same job rather than losing it.
   const waiting = pendingJob();
   if (waiting) watch(waiting);
-
-  must('btn-add-row').addEventListener('click', addRow);
-  must('btn-add-col').addEventListener('click', addCol);
-  must('btn-remove-row').addEventListener('click', removeRow);
-  must('btn-remove-col').addEventListener('click', removeCol);
 
   // The circuit describes the board rather than a run, so it follows every edit
   // instead of waiting for a solve.

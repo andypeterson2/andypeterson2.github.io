@@ -10,6 +10,15 @@ type Page = import('@playwright/test').Page;
  * Playwright's `hasText` is a substring match, which would make 'Per extra cell' select
  * 'Per extra cell, measured' too, so the label is matched whole.
  */
+/** Type a board size into the corner the two runs of clues share. */
+const setSize = async (page: Page, rows: number, cols: number) => {
+  await page.locator('#size-rows').fill(String(rows));
+  await page.locator('#size-rows').press('Enter');
+  await page.locator('#size-cols').fill(String(cols));
+  await page.locator('#size-cols').press('Enter');
+  await expect(page.locator('td.cell')).toHaveCount(rows * cols);
+};
+
 const metricRow = (page: Page, name: string) =>
   page.locator('#metrics-pane tbody tr').filter({ has: page.getByText(name, { exact: true }) });
 
@@ -32,28 +41,27 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
   });
 
   test('the grid shrinks; Clear keeps the size and Reset returns it', async ({ page }) => {
-    const size = page.locator('#grid-size-label');
-    await page.getByRole('button', { name: 'Add a row' }).click();
-    await page.getByRole('button', { name: 'Add a column' }).click();
-    await expect(size).toHaveText('4 × 4');
-    await page.getByRole('button', { name: 'Remove a row' }).click();
-    await expect(size).toHaveText('3 × 4');
+    const rows = page.locator('#size-rows');
+    const cols = page.locator('#size-cols');
+    await setSize(page, 4, 4);
+    await expect(rows).toHaveValue('4');
+    await expect(cols).toHaveValue('4');
+    await setSize(page, 3, 4);
 
     // The board a reader sized is theirs; Clear empties it where it stands.
     await page.locator('td.cell').first().dispatchEvent('mousedown');
     await page.locator('#btn-clear').click();
-    await expect(size).toHaveText('3 × 4');
+    await expect(rows).toHaveValue('3');
+    await expect(cols).toHaveValue('4');
     await expect(page.locator('td.cell.filled')).toHaveCount(0);
 
     await page.locator('#btn-reset').click();
-    await expect(size).toHaveText('3 × 3');
+    await expect(rows).toHaveValue('3');
+    await expect(cols).toHaveValue('3');
   });
 
   test('a grid past the browser limit says what to do', async ({ page }) => {
-    for (let i = 0; i < 3; i++) {
-      await page.getByRole('button', { name: 'Add a row' }).click();
-      await page.getByRole('button', { name: 'Add a column' }).click();
-    }
+    await setSize(page, 6, 6);
     await page.locator('#btn-bench').click();
     await expect(page.locator('#status-line')).toContainText('remove a row or column');
   });
@@ -135,8 +143,10 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // Each figure annotates the section it measures rather than piling into one line.
     await expect(page.locator('#cl-meta')).toHaveText(/ms$/);
     await expect(page.locator('#qu-meta')).toContainText('noiseless');
-    // The chart marks the grids the clues accept rather than the ones a line clears.
-    await expect(page.locator('#qu-histogram .hist-divide')).toHaveCount(1);
+    // The chart marks the grids the clues accept rather than the ones a line clears:
+    // solid bars are solutions, and this board has exactly one.
+    await expect(page.locator('#qu-histogram .hist-bar:not(.hist-below)')).toHaveCount(1);
+    await expect(page.locator('#qu-list .sol-table')).toHaveCount(1);
     // Nothing restated underneath.
     await expect(page.locator('#status-line')).toBeHidden();
 
@@ -284,11 +294,7 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
   test('a board too big to solve still produces code', async ({ page }) => {
     // Past the local solve limit the constraint oracle takes over, which is the
     // whole reason a large board can still be exported.
-    for (let i = 0; i < 3; i++) {
-      await page.getByRole('button', { name: 'Add a row' }).click();
-      await page.getByRole('button', { name: 'Add a column' }).click();
-    }
-    await expect(page.locator('#grid-size-label')).toHaveText('6 \u00d7 6');
+    await setSize(page, 6, 6);
     // Too many wires to draw, so the drawing collapses the middle and says so.
     await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
     await expect(page.locator('#code-listing')).toHaveAttribute(

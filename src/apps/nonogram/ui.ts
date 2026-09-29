@@ -20,10 +20,30 @@ export function setStatus(msg: string, level?: 'err'): void {
   el.className = 'status-line' + (level === 'err' ? ' status-err' : '');
 }
 
-/** What the run button will actually do: offline it solves classically in the
- *  browser; with a live backend it runs the Grover simulator. */
+/** Where the run button sends the puzzle. */
+export type RunWhere = 'local' | 'hardware';
+
+let where: RunWhere = 'local';
+
+export function runWhere(): RunWhere {
+  return where;
+}
+
+export function setRunWhere(next: RunWhere): void {
+  where = next;
+  for (const [id, name] of [
+    ['btn-where-local', 'local'],
+    ['btn-where-hw', 'hardware'],
+  ] as const) {
+    $(id)?.setAttribute('aria-pressed', String(name === where));
+  }
+  applyTierControls();
+}
+
+/** What the run button will actually do, in the words of where it will do it. */
 function benchLabel(): string {
-  return window.API_BASE ? '▶ Run on simulator' : '▶ Solve in browser';
+  if (where === 'hardware') return '▶ Hardware solve';
+  return window.API_BASE ? '▶ Simulator solve' : '▶ Local solve';
 }
 
 /** Controls that only mean something with a live backend say so instead of
@@ -68,14 +88,21 @@ export function isUnavailable(btn: HTMLButtonElement): boolean {
   return btn.getAttribute('aria-disabled') === 'true';
 }
 
+/**
+ * The run button says what pressing it would actually do.
+ *
+ * Set to hardware it carries the same account and size checks the separate IBM button
+ * used to: spending quantum credits takes an account the owner has allowed, and a board
+ * past the size ceiling would come back as noise. Set to local there is nothing to ask.
+ */
 export function applyHardwareControl(): void {
-  const btn = must('btn-hw') as HTMLButtonElement;
+  const btn = must('btn-bench') as HTMLButtonElement;
   const status = currentStatus();
-  btn.hidden = false;
-
-  // Nothing to ask: on the browser tier there is no gateway to answer, and a probe
-  // that failed leaves the same nothing.
-  btn.textContent = '▶ Run on IBM';
+  if (where === 'local') {
+    btn.removeAttribute('aria-disabled');
+    btn.removeAttribute('title');
+    return;
+  }
   // Asked first because it is what stops most visitors, and because the menu bar
   // knows the answer on every page, with or without a backend awake.
   if (isSignedIn() === false) {
@@ -117,21 +144,19 @@ export function setBusy(busy: boolean): void {
   btn.textContent = busy ? 'Running…' : benchLabel();
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
-  for (const id of [
-    'btn-add-row',
-    'btn-add-col',
-    'btn-remove-row',
-    'btn-remove-col',
-    'btn-mode-draw',
-    'btn-mode-clues',
-  ]) {
+  (must('btn-reset') as HTMLButtonElement).disabled = busy;
+  for (const id of ['btn-mode-draw', 'btn-mode-clues', 'btn-where-local', 'btn-where-hw']) {
     (must(id) as HTMLButtonElement).disabled = busy;
+  }
+  for (const id of ['size-rows', 'size-cols']) {
+    const field = $(id);
+    if (field instanceof HTMLInputElement) field.disabled = busy;
   }
   applyHardwareControl();
 }
 
+/** The size is typed into the grid's own corner; this is what follows a change of it. */
 export function updateGridSizeLabel(): void {
-  must('grid-size-label').textContent = `${String(state.rows)} × ${String(state.cols)}`;
   // Whether a real device can say anything about this puzzle changes with its size,
   // and this runs on every rebuild.
   applyHardwareControl();

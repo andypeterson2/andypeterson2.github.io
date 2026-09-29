@@ -12,44 +12,38 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   <div id="nonogram-app">
     <div class="nono-columns">
       <div class="nono-left">
-        <!-- Above the grid: picking the mode comes before editing, and it keeps the grid
-             next to Clear in the tab order. -->
-        <span class="mode-toggle" role="group" aria-label="Editor mode">
-          <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
-          <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false">Clues</button>
-        </span>
-        <div id="draw-view"></div>
-        <div class="editor-actions">
-          <button id="btn-clear" class="s6-btn">Clear</button>
-          <button id="btn-random" class="s6-btn">Randomize</button>
-          <button id="btn-reset" class="s6-btn">Reset</button>
-        </div>
-        <div class="grid-size-controls">
-          <span class="size-stepper" role="group" aria-label="Rows">
-            <button id="btn-remove-row" class="s6-btn s6-btn--sm" aria-label="Remove a row"
-              >−</button
-            >
-            <span class="stepper-label">Rows</span>
-            <button id="btn-add-row" class="s6-btn s6-btn--sm" aria-label="Add a row">+</button>
-          </span>
-          <span id="grid-size-label">3 &times; 3</span>
-          <span class="size-stepper" role="group" aria-label="Columns">
-            <button id="btn-remove-col" class="s6-btn s6-btn--sm" aria-label="Remove a column"
-              >−</button
-            >
-            <span class="stepper-label">Cols</span>
-            <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
-          </span>
-        </div>
         <label class="gallery-label"
           >Gallery
           <select id="gallery-select">
             <option value="">— captured runs —</option>
           </select>
         </label>
-        <div class="controls-bar">
-          <button id="btn-bench" class="s6-btn">&#9654; Solve in browser</button>
-          <button id="btn-hw" class="s6-btn" aria-disabled="true">&#9654; Run on IBM</button>
+        <!-- Above the grid: picking the mode comes before editing, and it keeps the grid
+             next to Clear in the tab order. -->
+        <div class="editor-band">
+          <span class="mode-toggle" role="group" aria-label="Editor mode">
+            <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
+            <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false">Clues</button>
+          </span>
+          <div class="editor-row">
+            <div class="editor-actions">
+              <button id="btn-clear" class="s6-btn s6-btn--sm">Clear</button>
+              <button id="btn-random" class="s6-btn s6-btn--sm">Randomize</button>
+              <button id="btn-reset" class="s6-btn s6-btn--sm">Reset</button>
+            </div>
+            <div id="draw-view"></div>
+            <div class="run-controls">
+              <span class="mode-toggle" role="group" aria-label="Where to run">
+                <button id="btn-where-local" class="s6-btn s6-btn--sm" aria-pressed="true"
+                  >Local</button
+                >
+                <button id="btn-where-hw" class="s6-btn s6-btn--sm" aria-pressed="false"
+                  >Hardware</button
+                >
+              </span>
+              <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
+            </div>
+          </div>
         </div>
         <div id="circuit-band" class="nono-band">
           <div id="code-pane">
@@ -240,6 +234,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.nonogram-table .corner-cell) {
     background: transparent;
     padding: 0;
+    min-width: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    white-space: nowrap;
   }
 
   /* Clues are the puzzle: ink on plain paper, never on dither. Padding stays at zero so
@@ -324,36 +324,68 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Editor actions ── */
-  .editor-actions {
+
+  /* The board between what changes it and what runs it: actions down the left, the two
+     ways to run it down the right, and the grid in the middle at whatever size it is. */
+  .editor-band {
+    border-top: 1px solid var(--ink);
+    padding-top: 12px;
     display: flex;
-    gap: 8px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
   }
 
-  .grid-size-controls {
+  .editor-row {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    width: 100%;
   }
 
-  /* − Rows +  3 × 3  − Cols +: the grid shrinks as well as grows. */
-  .size-stepper {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+  .editor-actions,
+  .run-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 0 auto;
   }
 
-  .stepper-label {
+  :global(.editor-actions .s6-btn),
+  :global(.run-controls .s6-btn) {
+    width: 100%;
+    text-align: center;
+  }
+
+  #draw-view {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* The size, typed in the corner the two runs of clues share. */
+  :global(.size-input) {
+    /* A typed field is a touch target like any other, and the corner is the smallest
+       cell on the page (WCAG 2.2 asks for 24px). */
+    min-width: 24px;
+    min-height: 24px;
+    width: 24px;
+    border: 0;
+    background: none;
+    padding: 0;
     font-family: var(--font-ui);
-    font-size: var(--text-3xs);
+    font-size: var(--text-4xs);
+    text-align: center;
+    color: var(--ink);
   }
 
-  :global(#grid-size-label) {
+  :global(.size-input:hover) {
+    text-decoration: underline dotted;
+  }
+
+  :global(.size-times) {
     font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    color: var(--ink-2);
+    font-size: var(--text-4xs);
   }
 
   /* A run's own measure of itself, sitting on the rule that names the section: a
@@ -398,22 +430,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Controls bar ── */
-
-  /* Beside the editor now, in a column too narrow to sit them in a row: each control
-     takes the full width, with the primary action first. */
-  /* The two ways to run it, abreast: one choice, two answers. */
-  .controls-bar {
-    display: flex;
-    gap: 8px;
-    border-top: 1px solid var(--ink);
-    padding-top: 12px;
-  }
-
-  .controls-bar .s6-btn {
-    flex: 1 1 0;
-    min-width: 0;
-    text-align: center;
-  }
 
   /* Gallery — pre-computed REAL quantum runs, rendered with no backend. */
   .gallery-label {
@@ -1131,6 +1147,32 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .nono-columns {
       flex-direction: column;
       min-height: 0;
+    }
+
+    /* Three abreast is too much for a phone: the actions and the run controls take a
+       row each, above and below the board they act on. */
+    .editor-row {
+      flex-wrap: wrap;
+    }
+
+    .editor-actions,
+    .run-controls {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      order: 1;
+    }
+
+    .run-controls {
+      order: 3;
+    }
+
+    #draw-view {
+      order: 2;
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
 
     .nono-left,

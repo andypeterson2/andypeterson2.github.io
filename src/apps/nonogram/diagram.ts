@@ -398,14 +398,14 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
   const count = `${totalGates(circuit).toLocaleString()} gates`;
   const gates =
     brace(gx, TOP - BOX / 2, lastRow + BOX / 2) +
-    `<text class="circ-span circ-gates" x="${String(gx + 30)}" y="${String((TOP + lastRow) / 2)}">` +
+    `<text class="circ-span circ-gates" x="${String(gx + 38)}" y="${String((TOP + lastRow) / 2)}">` +
     `${count}</text>`;
 
   const close = BLOCKS.map(() => '</g>').join('');
   return {
     body: lines + parts.join('') + close + bracket + depth + gates,
     // Room for the brace and the count beside it, at the body face's ~6px advance.
-    width: width + 38 + count.length * 6,
+    width: width + 46 + count.length * 6,
     height,
     blocks,
   };
