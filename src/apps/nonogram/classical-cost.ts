@@ -27,8 +27,8 @@ export interface ClassicalCost {
   work: number;
   /**
    * Layers of that circuit, every candidate decided at once and the answers
-   * combined. Brute force has no sequential step, which is exactly what makes it
-   * shallow and Grover deep.
+   * combined. The exhaustive search has no sequential step, which is exactly what
+   * makes it shallow and Grover deep.
    */
   span: number;
   /** log2 of the work, which stays finite where the work itself does not. */

@@ -194,8 +194,8 @@ async function runBenchmarkSync(body: BenchmarkBody): Promise<void> {
 /** What a hardware run asks for, so a simulated histogram is shaped like a real one. */
 const LOCAL_SHOTS = 1024;
 
-// Offline demo tier — solve the drawn puzzle in the browser: brute force for the
-// classical half, and Grover's amplitudes for the quantum half. IBM runs stay live.
+// Offline demo tier — solve the drawn puzzle in the browser: the backtracking search
+// for the classical half, and Grover's amplitudes for the quantum half. IBM runs stay live.
 function runBenchmarkLocal(puzzle: Puzzle): void {
   const rows = puzzle.row_clues.length,
     cols = puzzle.col_clues.length;

@@ -1,8 +1,18 @@
 /**
- * Client-side classical nonogram solver — the offline demo tier. A port of the backend's
- * brute-force solver that enumerates each line's valid bit patterns and backtracks row by
- * row, pruning columns by the bits placed so far. Returns each solving grid as a row-major
- * "0"/"1" string ("1" = filled). Exponential, so bounded to LOCAL_MAX_CELLS.
+ * Client-side classical nonogram solver — the offline demo tier.
+ *
+ * Depth-first search over line domains: enumerate each line's legal bit patterns, then
+ * choose one row pattern per level, filtering every column's surviving patterns by the
+ * bit just placed and abandoning the branch when a column has none left. Forward
+ * checking on the columns, no propagation between unassigned ones, and none of the
+ * overlap and edge deductions a dedicated line solver applies.
+ *
+ * This is not the backend's search. `classical_solve` there tests all 2^cells grids
+ * against the clauses, which is the `Exhaustive` column of the comparison table; this
+ * is the `Backtracking` column. Only the pattern generator is shared.
+ *
+ * Returns each solving grid as a row-major "0"/"1" string ("1" = filled). Exponential,
+ * so bounded to LOCAL_MAX_CELLS.
  */
 
 /** Upper bound on cells solved in-browser (5×5). Keeps solves instant. */

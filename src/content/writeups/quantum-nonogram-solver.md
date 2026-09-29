@@ -9,7 +9,7 @@ Nonograms are picture-logic puzzles: fill a grid so every row and column matches
 
 Each puzzle is encoded as a Boolean formula with one variable per cell, using a precomputed lookup table of the legal fill patterns for every line. Two solvers then race on the *same* encoding:
 
-- a **classical brute-force** search that enumerates candidate grids, and
+- a **classical exhaustive** search that tests every candidate grid, and
 - a **Grover-based quantum** search whose oracle marks satisfying assignments — the quadratic query advantage Grover promises over unstructured search, which at this size is a correctness test of the encoding and the oracle, not a speed win.
 
 The browser UI has a canvas puzzle editor, live probability histograms, and a side-by-side classical-vs-quantum comparison.
@@ -20,7 +20,7 @@ Validated on **real IBM quantum hardware**: a 2×2 puzzle resolved the correct s
 
 ## Try it with nothing running
 
-The classical solver is ported to run **entirely in your browser** — draw or randomize a puzzle and it solves instantly, reporting real solve time and search-space size, with no backend awake. Quantum runs use the live solver; without it, a gallery of captured Grover-simulator runs shows real quantum output. The IBM-hardware result is the 32.3% above.
+A classical solver runs **entirely in your browser** — draw or randomize a puzzle and it solves instantly, reporting real solve time and search-space size, with no backend awake. It is a backtracking search rather than the exhaustive one above: it enumerates each line's legal patterns and prunes columns as it goes, so the comparison table scores both against Grover. Quantum runs use the live solver; without it, a gallery of captured Grover-simulator runs shows real quantum output. The IBM-hardware result is the 32.3% above.
 
 ## Stack
 
