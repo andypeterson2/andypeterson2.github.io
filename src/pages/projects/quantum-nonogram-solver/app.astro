@@ -444,11 +444,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     text-align: center;
   }
 
-  /* No heading over an empty section: the Metrics rule appears with its table. */
-  .section-rule:has(+ #metrics-pane:empty) {
-    display: none;
-  }
-
   :global(.status-line.status-err) {
     color: var(--color-danger);
   }

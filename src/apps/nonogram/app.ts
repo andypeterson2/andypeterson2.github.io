@@ -32,6 +32,7 @@ import {
   type Puzzle,
 } from './grid';
 import {
+  clearMetrics,
   clearSolverResults,
   renderClassical,
   renderQuantum,
@@ -596,6 +597,8 @@ function init(): void {
 
   requestAnimationFrame(() => {
     drawEmptyHistogram();
+    // The comparison's own frame, before there is anything to compare.
+    clearMetrics();
     refreshCode();
   });
 }

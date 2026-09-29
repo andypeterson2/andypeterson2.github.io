@@ -25,6 +25,7 @@ import {
   hardwareCost,
   measuredGrowth,
   overBudget,
+  type HardwareCost,
 } from './hardware-cost';
 import { solveLocal } from './classical-solver';
 import { chanceThreshold, groverOutcome, optimalIterations, shotCount } from './grover-sim';
@@ -348,10 +349,15 @@ export function renderQuantumList(): void {
 }
 
 // Metrics renderer
-function clearMetrics(): void {
-  const el = must('metrics-pane');
-  el.innerHTML = '';
-  el.classList.remove('visible');
+
+/**
+ * The table with its figures taken out.
+ *
+ * The frame stays: it is what the page is for, and a reader should be able to see what
+ * the comparison will ask before asking it. Only the answers wait for a run.
+ */
+export function clearMetrics(): void {
+  renderMetrics(null, true);
 }
 
 /** A row's note, keyed by its label. Absent means the label is not pressable. */
@@ -457,9 +463,53 @@ function naCell(tr: HTMLTableRowElement): void {
   td.append(label);
 }
 
-function renderMetrics(report: BenchmarkReport | null | undefined): void {
+/**
+ * The seven rows a device answers for, or the one line saying why it cannot.
+ *
+ * Blank, they stand as the questions a run will put; measured, they answer them.
+ */
+function deviceRows(
+  body: HTMLTableSectionElement,
+  ctx: { hw: HardwareCost | null; cells: number; blank: boolean; growth: string | null | false },
+  v: (values: (string | number)[]) => (string | number)[],
+): void {
+  const { hw, cells, blank, growth } = ctx;
+  if (!hw && !blank) {
+    const tr = body.insertRow();
+    tr.className = 'metrics-unmeasured';
+    const td = tr.insertCell();
+    td.colSpan = 4;
+    td.textContent =
+      'Not measured for this board. Transpiling one costs more than the figure is worth; ' +
+      'the circuit below carries the counts as written, before any device sees them.';
+    return;
+  }
+  const perRound = hw ? hw.depth / hw.iterations : 0;
+  const rows: [string, string | number][] = [
+    ['Qubits', cells],
+    ['Two-qubit gates', hw ? hw.two_qubit.toLocaleString() : ''],
+    ['Per extra cell, measured', growth || '—'],
+    ['Depth (layers)', hw ? hw.depth.toLocaleString() : ''],
+    [
+      'Device budget (layers)',
+      hw ? `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)` : '',
+    ],
+    [
+      'Rounds that fit',
+      hw ? `${String(Math.floor(DEPTH_BUDGET / perRound))} of ${String(hw.iterations)}` : '',
+    ],
+    ['P(solution), at chance', `${(100 / 2 ** cells).toFixed(1)}%`],
+  ];
+  for (const [label, value] of rows) metricRow(body, label, v([value]), true);
+}
+
+function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
+
+  /** Figures wait for a run; the labels and the shape of the table do not. */
+  const v = (values: (string | number)[]): (string | number)[] =>
+    blank ? values.map(() => '') : values;
 
   const puzzle = getCurrentPuzzle();
   const rows = puzzle.row_clues.length;
@@ -489,57 +539,40 @@ function renderMetrics(report: BenchmarkReport | null | undefined): void {
 
   const search = tbl.createTBody();
   search.className = 'metrics-group';
-  metricRow(search, 'Solutions', [found, found, found]);
-  metricRow(search, 'Clue checks', [
-    formatCount(2 ** cells, cells),
-    local.capped ? '—' : local.clueChecks.toLocaleString(),
-    iterations.toLocaleString(),
-  ]);
-  metricRow(search, 'Per clue check', [
-    `${cost.predicateGates} gates`,
-    local.capped ? '—' : `up to ${String(cost.predicateGates)} gates`,
-    hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
-  ]);
-  metricRow(search, 'Per extra cell', ['2x', '—', '1.41x']);
-  metricRow(search, 'P(solution), ideal', [
-    '100%',
-    found > 0 ? '100%' : '—',
-    found > 0 ? (ideal * 100).toFixed(1) + '%' : '—',
-  ]);
+  metricRow(search, 'Solutions', v([found, found, found]));
+  metricRow(
+    search,
+    'Clue checks',
+    v([
+      formatCount(2 ** cells, cells),
+      local.capped ? '—' : local.clueChecks.toLocaleString(),
+      iterations.toLocaleString(),
+    ]),
+  );
+  metricRow(
+    search,
+    'Per clue check',
+    v([
+      `${cost.predicateGates} gates`,
+      local.capped ? '—' : `up to ${String(cost.predicateGates)} gates`,
+      hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
+    ]),
+  );
+  metricRow(search, 'Per extra cell', v(['2x', '—', '1.41x']));
+  metricRow(
+    search,
+    'P(solution), ideal',
+    v([
+      '100%',
+      found > 0 ? '100%' : '—',
+      found > 0 ? (ideal * 100).toFixed(1) + '%' : '—',
+    ]),
+  );
 
   const device = tbl.createTBody();
   device.className = 'metrics-group metrics-group--device';
 
-  if (hw) {
-    const perCell = measuredGrowth(rows, cols, found);
-    metricRow(device, 'Qubits', [cells], true);
-    metricRow(device, 'Two-qubit gates', [hw.two_qubit.toLocaleString()], true);
-    metricRow(device, 'Per extra cell, measured', [perCell ?? '—'], true);
-    metricRow(device, 'Depth (layers)', [hw.depth.toLocaleString()], true);
-    metricRow(
-      device,
-      'Device budget (layers)',
-      [`${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)`],
-      true,
-    );
-    metricRow(
-      device,
-      'Rounds that fit',
-      [
-        `${String(Math.floor(DEPTH_BUDGET / (hw.depth / hw.iterations)))} of ${String(hw.iterations)}`,
-      ],
-      true,
-    );
-    metricRow(device, 'P(solution), at chance', [`${(100 / 2 ** cells).toFixed(1)}%`], true);
-  } else {
-    const tr = device.insertRow();
-    tr.className = 'metrics-unmeasured';
-    const td = tr.insertCell();
-    td.colSpan = 4;
-    td.textContent =
-      'Not measured for this board. Transpiling one costs more than the figure is worth; ' +
-      'the circuit below carries the counts as written, before any device sees them.';
-  }
+  deviceRows(device, { hw, cells, blank, growth: hw && measuredGrowth(rows, cols, found) }, v);
 
   addSpine(search, 'Search', `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`);
   addSpine(device, 'On the device', hw ? DEVICE_META : '');
