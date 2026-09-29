@@ -150,23 +150,14 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     min-height: 600px;
   }
 
-  /* The puzzle is the legend for every solution grid and histogram bar below it, so
-     it stays in view while the results scroll. Sticky needs a flex item that cannot
-     shrink, and align-self ends the full-height border — the divider moves right. */
+  /* The inputs — editor and the run buttons — in a column of their own, at a width the
+     3x3 grid and the widest button both fit. It scrolls with the page. */
   .nono-left {
     flex: 0 0 clamp(240px, 30%, 300px);
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-
-  @media (width >= 769px) and (height >= 700px) {
-    .nono-left {
-      position: sticky;
-      top: var(--space-4);
-      align-self: flex-start;
-    }
   }
 
   .nono-right {
