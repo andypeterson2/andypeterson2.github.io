@@ -4,7 +4,6 @@ import {
   state,
   must,
   clientId,
-  elThresholdInput,
   elClPlaceholder,
   elQuSolPlaceholder,
 } from './state';
@@ -41,7 +40,6 @@ import {
   setRunMeta,
   drawEmptyHistogram,
   drawHistogram,
-  renderQuantumList,
   type BenchmarkPayload,
   type ClassicalResult,
 } from './solver';
@@ -522,7 +520,6 @@ function init(): void {
   initGrid();
   buildGrid();
   applyTierControls();
-  elThresholdInput.disabled = true;
 
   // ResizeObserver redraws SVG histograms at actual pixel size
   new ResizeObserver(() => {
@@ -531,17 +528,6 @@ function init(): void {
   }).observe(must('qu-area'));
 
   // Threshold number input
-  elThresholdInput.addEventListener('input', () => {
-    const pct = parseFloat(elThresholdInput.value);
-    if (isNaN(pct)) return;
-    const val = Math.max(0, Math.min(1, pct / 100));
-    state.userThreshold = val;
-    if (state.histData) {
-      state.histData.threshold = val;
-      drawHistogram(state.histData);
-      renderQuantumList();
-    }
-  });
 
   // Benchmark button — offline: solve the drawn puzzle in the browser; connected:
   // live Socket.IO stream, with a synchronous REST fallback.

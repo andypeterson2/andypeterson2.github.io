@@ -95,20 +95,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div id="qu-area" class="histogram-area">
           <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
           <div id="qu-placeholder" class="placeholder-msg"></div>
-          <div class="histogram-controls" hidden>
-            <label class="threshold-label"
-              >threshold
-              <input
-                type="number"
-                id="threshold-input"
-                min="0"
-                max="100"
-                step="0.01"
-                value="0.50"
-              />
-              <span>%</span>
-            </label>
-          </div>
         </div>
         <div id="metrics-pane"></div>
       </div>
@@ -516,6 +502,74 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* ── Histogram ── */
   /* On the line it sets, at the right where the bars have run out. --at is the line's
      height as a fraction of the chart, which only the drawing knows. */
+  /* ── Solution canvases ── */
+  .sol-canvas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 40px;
+  }
+
+  :global(.placeholder-msg) {
+    color: var(--ink-3);
+    font-size: var(--text-3xs);
+    font-style: italic;
+    padding: 8px 0;
+  }
+
+  /* #qu-placeholder starts hidden and the solver reveals it with an explicit
+     display:block. A CSS rule rather than a style="display:none" attribute — the strict
+     hashed CSP blocks inline style attributes. */
+  :global(#qu-placeholder) {
+    display: none;
+  }
+
+  :global(.sol-grid-wrap) {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  :global(.sol-grid-label) {
+    font-size: var(--text-4xs);
+    font-weight: 600;
+  }
+
+  :global(.sol-table) {
+    border-collapse: collapse;
+  }
+
+  :global(.sol-table.sz-sm td) {
+    width: 10px;
+    height: 10px;
+  }
+
+  :global(.sol-table.sz-md td) {
+    width: 16px;
+    height: 16px;
+  }
+
+  :global(.sol-table.sz-lg td) {
+    width: 22px;
+    height: 22px;
+  }
+
+  :global(.sol-table td) {
+    border: 1px solid var(--ink);
+  }
+
+  :global(.sol-table td.f) {
+    background: var(--ink);
+  }
+
+  :global(.sol-table td.e) {
+    background: var(--paper);
+  }
+
+  /* ── Histogram ── */
+  /* On the line it sets, at the right where the bars have run out. --at is the line's
+     height as a fraction of the chart, which only the drawing knows. */
   .histogram-controls[hidden] {
     display: none;
   }
@@ -599,7 +653,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     fill: var(--ink);
   }
 
-  :global(.hist-threshold) {
+  /* Where the grids the clues accept give way to the rest. */
+  :global(.hist-divide) {
     stroke: var(--ink);
     stroke-width: 1.5;
     stroke-dasharray: 6 3;
@@ -630,7 +685,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.metrics-table) {
     width: 100%;
-    border: 1px solid var(--ink);
+    border: 2px solid var(--ink);
     border-collapse: collapse;
     font-size: var(--text-3xs);
   }
@@ -824,23 +879,26 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* One pane at a time, at a height that does not jump as the views swap. The drawing
      may ask for more and gets it: a frame that scrolled in both directions would put a
      second set of arrows on a figure that only ever runs wide. */
-  :global(#circuit-figure) {
-    min-height: 340px;
-  }
-
   .code-box {
     min-height: 340px;
     max-height: 340px;
   }
 
-  /* Framed like the other panes rather than floating on the page. The drawing sits in
-     the middle of the frame, and scrolls inside it when a block is written out. */
+  /* Framed like the other panes rather than floating on the page. The drawing takes the
+     height it needs and scrolls sideways when a block is written out.
+
+     Safe centring: a drawing wider than the frame starts at the left edge instead, so
+     the scroll reaches its far side. Plain centring puts the overflow on both sides and
+     the left of it becomes unreachable. */
   :global(#circuit-figure) {
+    min-height: 340px;
+    min-width: 0;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: auto;
-    border: 1px solid var(--ink);
+    justify-content: safe center;
+    align-items: safe center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 2px solid var(--ink);
     padding: 10px;
   }
 

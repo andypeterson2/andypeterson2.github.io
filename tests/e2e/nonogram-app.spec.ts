@@ -135,8 +135,8 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // Each figure annotates the section it measures rather than piling into one line.
     await expect(page.locator('#cl-meta')).toHaveText(/ms$/);
     await expect(page.locator('#qu-meta')).toContainText('noiseless');
-    // The chart carries its own threshold rather than a line restating the shot count.
-    await expect(page.locator('#threshold-input')).toHaveValue('0.68');
+    // The chart marks the grids the clues accept rather than the ones a line clears.
+    await expect(page.locator('#qu-histogram .hist-divide')).toHaveCount(1);
     // Nothing restated underneath.
     await expect(page.locator('#status-line')).toBeHidden();
 

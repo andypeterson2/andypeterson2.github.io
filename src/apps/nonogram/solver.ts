@@ -12,7 +12,6 @@ import {
   elClPlaceholder,
   elQuList,
   elQuSolPlaceholder,
-  elThresholdInput,
   type HistData,
 } from './state';
 import { getBestSolSize, getCurrentPuzzle } from './grid';
@@ -28,7 +27,7 @@ import {
   type HardwareCost,
 } from './hardware-cost';
 import { satisfies, solveLocal } from './classical-solver';
-import { chanceThreshold, groverOutcome, optimalIterations, shotCount } from './grover-sim';
+import { groverOutcome, optimalIterations } from './grover-sim';
 
 const MAX_DISPLAY = 30;
 
@@ -84,7 +83,6 @@ export function clearSolverResults(): void {
 
   elHistSvg.innerHTML = '';
   state.histData = null;
-  elThresholdInput.disabled = true;
   elQuPlaceholder.style.display = 'block';
 
   // The rules carried the last run's figures; they describe nothing now.
@@ -172,15 +170,8 @@ export function renderQuantum(
 
   entries = entries.slice(0, MAX_DISPLAY);
 
-  const threshold = state.userThreshold ?? chanceThreshold(rows * cols, shotCount(counts));
-
-  state.histData = { entries, verified, threshold, rows, cols, totalOutcomes };
-  elThresholdInput.disabled = false;
+  state.histData = { entries, verified, rows, cols, totalOutcomes };
   elQuPlaceholder.style.display = 'none';
-
-  const pctVal = threshold * 100;
-  const pctStr = pctVal.toFixed(pctVal < 1 ? 2 : 1);
-  elThresholdInput.value = pctStr;
 
   drawHistogram(state.histData);
   renderQuantumList();
@@ -204,7 +195,6 @@ function paint(W: number, H: number, body: string, label: string): void {
   svg.removeAttribute('aria-hidden');
   svg.innerHTML = body;
   centreOnContent(svg);
-  placeThresholdControl();
   elQuPlaceholder.style.display = 'none';
 }
 
@@ -277,28 +267,7 @@ const DITHER =
   '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="1" y="1" width="1" height="1"/>' +
   '</pattern></defs>';
 
-/**
- * Put the threshold's control on the line it sets.
- *
- * Read off the line as drawn rather than computed from the chart's own coordinates: the
- * drawing is re-framed to whatever it came to, so only the rendered geometry knows where
- * the line ended up.
- */
-function placeThresholdControl(): void {
-  const box = elThresholdInput.closest('.histogram-controls');
-  const area = elHistSvg.parentElement;
-  if (!(box instanceof HTMLElement) || !area) return;
-  const line = elHistSvg.querySelector('.hist-threshold');
-  if (!line) {
-    box.hidden = true;
-    return;
-  }
-  box.hidden = false;
-  const at = line.getBoundingClientRect().top - area.getBoundingClientRect().top;
-  box.style.setProperty('--at', `${at.toFixed(1)}px`);
-}
-
-export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
+export function drawHistogram({ entries, verified, totalOutcomes }: HistData): void {
   const n = entries.length;
   if (n === 0) {
     drawEmptyHistogram();
@@ -328,13 +297,15 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
       dominant-baseline="middle">${fp(p)}</text>`;
   }
 
-  let above = 0;
+  // Solid bars are grids the clues accept; the rest are what the run also turned up.
+  const solutions = new Set(verified.map(([bs]) => bs));
+  let lastSolution = -1;
   entries.forEach(([bs, prob], i) => {
     // The bitstring key is server data landing in SVG markup — accept only
     // literal 0/1 strings (anything else is dropped).
     if (!/^[01]+$/.test(bs)) return;
-    const on = prob >= threshold;
-    if (on) above++;
+    const on = solutions.has(bs);
+    if (on) lastSolution = i;
     const bH = Math.max(1, (prob / maxProb) * cH);
     const bx = i * slot + (slot - bW) / 2;
     const by = cH - bH;
@@ -351,11 +322,11 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
     }
   });
 
-  // The line, but not its name: the reader edits that, so it is a control sitting over
-  // the chart rather than a mark inside it.
-  if (threshold > 0 && threshold <= maxProb) {
-    const ty = cH - (threshold / maxProb) * cH;
-    s += `<line class="hist-threshold" x1="0" y1="${ty.toFixed(1)}" x2="${String(cW)}" y2="${ty.toFixed(1)}"/>`;
+  // Where the solutions stop. Bars are ranked by how often they came back, so this
+  // says at a glance whether the run put them in front.
+  if (lastSolution >= 0 && lastSolution < n - 1) {
+    const dx = ((lastSolution + 1) * slot).toFixed(1);
+    s += `<line class="hist-divide" x1="${dx}" y1="0" x2="${dx}" y2="${String(cH)}"/>`;
   }
 
   s += axes(cW, cH);
@@ -373,7 +344,7 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
     H,
     s,
     `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
-      `${String(above)} at or above the ${fp(threshold)} threshold.`,
+      `${String(verified.length)} of them satisfy the clues.`,
   );
 }
 

@@ -10,7 +10,6 @@ export interface HistData {
    * chart to draw is still reported.
    */
   verified: [string, number][];
-  threshold: number;
   rows: number;
   cols: number;
   totalOutcomes?: number;
@@ -31,7 +30,6 @@ export interface NonogramState {
   busy: boolean;
   histData: HistData | null;
   /** User-set threshold value (preserved across runs). */
-  userThreshold: number | null;
 }
 
 export const state: NonogramState = {
@@ -43,7 +41,6 @@ export const state: NonogramState = {
   colClues: [],
   busy: false,
   histData: null,
-  userThreshold: null,
 };
 
 /**
@@ -90,7 +87,3 @@ if (!(histEl instanceof SVGSVGElement))
   throw new Error('nonogram app: #qu-histogram missing (or not an <svg>)');
 export const elHistSvg = histEl;
 
-const thresholdEl = document.getElementById('threshold-input');
-if (!(thresholdEl instanceof HTMLInputElement))
-  throw new Error('nonogram app: #threshold-input missing (or not an <input>)');
-export const elThresholdInput = thresholdEl;
