@@ -61,13 +61,42 @@
    of reach, where fading the whole button would take its border with it. One treatment
    for both variants, so a disabled primary reads as disabled first. */
 .s6-btn:disabled,
-.s6-btn:disabled:hover,
 .s6-btn--primary:disabled,
-.s6-btn--primary:disabled:hover,
-.s6-btn[aria-disabled='true'],
-.s6-btn[aria-disabled='true']:hover {
+.s6-btn[aria-disabled='true'] {
   cursor: default;
   background: var(--dither-light);
+
+  /* A hard 1-bit halo, so the label reads over the stipple it sits on rather than
+     tangling with the dots. No blur: a soft edge would be a grey. */
+  text-shadow:
+    1px 0 0 var(--paper),
+    -1px 0 0 var(--paper),
+    0 1px 0 var(--paper),
+    0 -1px 0 var(--paper),
+    1px 1px 0 var(--paper),
+    -1px -1px 0 var(--paper),
+    1px -1px 0 var(--paper),
+    -1px 1px 0 var(--paper);
+}
+
+/* Under the pointer the whole surface inverts, stipple and halo with it. */
+.s6-btn:disabled:hover,
+.s6-btn:disabled:focus-visible,
+.s6-btn--primary:disabled:hover,
+.s6-btn[aria-disabled='true']:hover,
+.s6-btn[aria-disabled='true']:focus-visible {
+  cursor: default;
+  background: var(--dither-light-inverted);
+  color: var(--paper);
+  text-shadow:
+    1px 0 0 var(--ink),
+    -1px 0 0 var(--ink),
+    0 1px 0 var(--ink),
+    0 -1px 0 var(--ink),
+    1px 1px 0 var(--ink),
+    -1px -1px 0 var(--ink),
+    1px -1px 0 var(--ink),
+    -1px 1px 0 var(--ink);
 }
 /* An unavailable button carrying a title has something to say about why, and the help
    cursor is the invitation to hover and read it. aria-disabled rather than the disabled
