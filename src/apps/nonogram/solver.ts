@@ -233,6 +233,20 @@ const DITHER =
   '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="1" y="1" width="1" height="1"/>' +
   '</pattern></defs>';
 
+/**
+ * Put the threshold's control on the line it sets.
+ *
+ * The chart scales with its container, so the height is handed over as a fraction of
+ * the drawing and the stylesheet turns it back into a position. Null parks the control
+ * out of the way, for a chart with no line to sit on.
+ */
+function placeThresholdControl(fraction: number | null): void {
+  const box = elThresholdInput.closest('.histogram-controls');
+  if (!(box instanceof HTMLElement)) return;
+  box.hidden = fraction === null;
+  if (fraction !== null) box.style.setProperty('--at', `${(fraction * 100).toFixed(2)}%`);
+}
+
 export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
   const n = entries.length;
   if (n === 0) {
@@ -286,11 +300,14 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
     }
   });
 
+  // The line, but not its name: the reader edits that, so it is a control sitting over
+  // the chart rather than a mark inside it.
   if (threshold > 0 && threshold <= maxProb) {
-    const ty = (cH - (threshold / maxProb) * cH).toFixed(1);
-    s += `<line class="hist-threshold" x1="0" y1="${ty}" x2="${String(cW)}" y2="${ty}"/>`;
-    s += `<text class="hist-text hist-strong" x="${(cW - 2).toFixed(1)}" y="${(+ty - 5).toFixed(1)}"
-      text-anchor="end">threshold ${fp(threshold)}</text>`;
+    const ty = cH - (threshold / maxProb) * cH;
+    s += `<line class="hist-threshold" x1="0" y1="${ty.toFixed(1)}" x2="${String(cW)}" y2="${ty.toFixed(1)}"/>`;
+    placeThresholdControl((P.t + ty) / H);
+  } else {
+    placeThresholdControl(null);
   }
 
   s += axes(cW, cH);
@@ -300,8 +317,6 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
       ? `top ${String(n)} of ${String(totalOutcomes)}`
       : String(n);
   const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
-  s += `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH + P.b - 6).toFixed(1)}"
-    text-anchor="middle">${caption}</text>`;
   s += `</g>`;
 
   const top = entries[0];

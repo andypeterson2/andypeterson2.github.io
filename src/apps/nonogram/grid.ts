@@ -498,15 +498,24 @@ export function getCurrentPuzzle(): Puzzle {
 }
 
 /** Clear starts over: an empty 3×3, the size the app opens at. */
+/** The size the editor opens at, and the one Reset returns to. */
+const START_SIZE = 3;
+
+/** Empty the board it is on. The size is the reader's; Reset is what changes it. */
 export function doClear(): void {
-  state.rows = 3;
-  state.cols = 3;
   state.grid = Array.from({ length: state.rows }, () => Array<boolean>(state.cols).fill(false));
   if (state.mode === 'clues') blankClues();
   else cluesFromGrid();
   buildGrid();
   syncGridToServer();
   onEdit();
+}
+
+/** Back to the board the editor opened at: empty, and 3 by 3. */
+export function doReset(): void {
+  state.rows = START_SIZE;
+  state.cols = START_SIZE;
+  doClear();
 }
 
 /**

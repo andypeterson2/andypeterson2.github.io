@@ -383,9 +383,8 @@ test.describe('Nonogram: the IBM tier', () => {
       await expect(page.locator('#status-line')).toContainText('by chance', {
         timeout: POLL_GRACE_MS,
       });
-      // The device and its shots annotate the sections they describe.
+      // The device annotates the section it describes.
       await expect(page.locator('#qu-meta')).toHaveText('ibm_stub');
-      await expect(page.locator('#hist-meta')).toHaveText('1024 shots');
       await expect(page.locator('#status-line')).toContainText('against 6.25% by chance');
       await expect(page.locator('#qu-list .sol-table')).toHaveCount(1);
       await expect(page.locator('#qu-list .sol-grid-label').first()).toHaveText('92.8%');
@@ -453,9 +452,8 @@ test.describe('Nonogram: the IBM tier', () => {
       await expect(page.locator('#status-line')).toContainText('by chance', {
         timeout: POLL_GRACE_MS,
       });
-      // The device and its shots annotate the sections they describe.
+      // The device annotates the section it describes.
       await expect(page.locator('#qu-meta')).toHaveText('ibm_stub');
-      await expect(page.locator('#hist-meta')).toHaveText('1024 shots');
       expect(stub.submits).toHaveLength(1); // the same job, rejoined
     } finally {
       await stub.close();

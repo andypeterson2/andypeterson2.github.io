@@ -23,6 +23,7 @@ import {
   recomputeClues,
   getCurrentPuzzle,
   doClear,
+  doReset,
   doRandomize,
   addRow,
   addCol,
@@ -561,6 +562,7 @@ function init(): void {
 
   // Editor action buttons
   must('btn-clear').addEventListener('click', doClear);
+  must('btn-reset').addEventListener('click', doReset);
   must('btn-random').addEventListener('click', () => {
     void doRandomize();
   });

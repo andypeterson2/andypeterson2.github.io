@@ -29,6 +29,9 @@ interface Props {
   /** Short pages that want their last block at the foot of the window rather than
    *  floating under the content. The slotted root becomes the growing flex child. */
   fillPane?: boolean;
+  /** Pages whose window should end where their content does, growing to the full
+   *  height and scrolling inside once it needs more. */
+  fitContent?: boolean;
 }
 
 const {
@@ -38,6 +41,7 @@ const {
   ogImage = '/og-card.png',
   noindex,
   bare,
+  fitContent,
   fillPane,
 } = Astro.props;
 // Every title names the person: "Nonogram Solver - Name"; home is "Name - Job title".
@@ -184,7 +188,7 @@ const windowTitle = title || siteConfig.title;
     </nav>
 
     <div class="site-canvas">
-      <div class="window site-window">
+      <div class:list={['window', 'site-window', { 'site-window--fit': fitContent }]}>
         <header class="title-bar">
           <h1 class="title">{windowTitle}</h1>
         </header>
@@ -594,6 +598,13 @@ const windowTitle = title || siteConfig.title;
     border-width: 2px;
     border-right-width: 4px;
     border-bottom-width: 4px;
+  }
+
+  /* A window that ends where its content does. It still cannot outgrow the canvas, so
+     past that the pane scrolls as it always did. */
+  .site-window--fit {
+    align-self: flex-start;
+    max-height: 100%;
   }
 
   .site-window .title-bar .title {

@@ -81,7 +81,7 @@ describe('Layout Structure', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('uses system.css window structure', () => {
-    expect(layoutSrc).toContain('class="window');
+    expect(layoutSrc).toContain("'window'");
     expect(layoutSrc).toContain('title-bar');
     expect(layoutSrc).toContain('window-pane');
   });

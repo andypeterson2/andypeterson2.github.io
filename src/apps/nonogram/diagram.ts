@@ -11,7 +11,7 @@
  * Built as a string and assigned once, matching the histogram, and styled only through
  * classes so the 1-bit palette stays in the stylesheet.
  */
-import { gateQubits, type Circuit, type Gate } from './circuit';
+import { circuitDepth, gateQubits, totalGates, type Circuit, type Gate } from './circuit';
 
 /** The two folded steps a reader can open. */
 export type Block = 'oracle' | 'diffuser';
@@ -363,12 +363,16 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
     )
     .join('');
 
-  // The repeat bracket, under the two blocks it encloses.
+  // The repeat bracket, under the two blocks it encloses, and what the whole drawing
+  // costs beside it — the two figures a reader takes away from a circuit.
   const by = lastRow + 14;
   const bracket =
     `<path class="circ-bracket" d="M${String(repeatStart)} ${String(by)} v5 H${String(repeatEnd)} v-5"/>` +
     `<text class="circ-repeat" x="${String((repeatStart + repeatEnd) / 2)}" y="${String(by + 17)}">` +
-    `\u00d7 ${circuit.iterations.toLocaleString()}</text>`;
+    `\u00d7 ${circuit.iterations.toLocaleString()}</text>` +
+    `<text class="circ-cost" x="${String(width - 12)}" y="${String(by + 17)}">` +
+    `depth ${circuitDepth(circuit).toLocaleString()} \u00b7 ` +
+    `${totalGates(circuit).toLocaleString()} gates</text>`;
 
   const close = BLOCKS.map(() => '</g>').join('');
   return { body: lines + parts.join('') + close + bracket, width, height, blocks };

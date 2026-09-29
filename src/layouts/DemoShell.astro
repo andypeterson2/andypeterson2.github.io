@@ -13,11 +13,13 @@ interface Props {
   bare?: boolean;
   /** The demo's optional live backend, declared once (deploy-based; no port). */
   backend?: { service: string };
+  /** Demos whose window should end where their content does. */
+  fitContent?: boolean;
 }
-const { title, description, bare, backend } = Astro.props;
+const { title, description, bare, backend, fitContent } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} bare={bare}>
+<BaseLayout title={title} description={description} bare={bare} fitContent={fitContent}>
   <Fragment slot="head">
     {backend && <meta name="site-backend" content={backend.service} />}
     <slot name="head" />

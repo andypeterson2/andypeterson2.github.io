@@ -31,14 +31,21 @@ test.describe('Nonogram: results always describe the puzzle on screen', () => {
     await expect(page.locator('#qu-sol-placeholder')).toContainText('Solve the puzzle');
   });
 
-  test('the grid shrinks, and Clear starts over at 3 × 3', async ({ page }) => {
+  test('the grid shrinks; Clear keeps the size and Reset returns it', async ({ page }) => {
     const size = page.locator('#grid-size-label');
     await page.getByRole('button', { name: 'Add a row' }).click();
     await page.getByRole('button', { name: 'Add a column' }).click();
     await expect(size).toHaveText('4 × 4');
     await page.getByRole('button', { name: 'Remove a row' }).click();
     await expect(size).toHaveText('3 × 4');
+
+    // The board a reader sized is theirs; Clear empties it where it stands.
+    await page.locator('td.cell').first().dispatchEvent('mousedown');
     await page.locator('#btn-clear').click();
+    await expect(size).toHaveText('3 × 4');
+    await expect(page.locator('td.cell.filled')).toHaveCount(0);
+
+    await page.locator('#btn-reset').click();
     await expect(size).toHaveText('3 × 3');
   });
 
@@ -128,8 +135,8 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // Each figure annotates the section it measures rather than piling into one line.
     await expect(page.locator('#cl-meta')).toHaveText(/ms$/);
     await expect(page.locator('#qu-meta')).toContainText('noiseless');
-    await expect(page.locator('#hist-meta')).toHaveText('1024 shots');
-    await expect(page.locator('#hist-meta')).toHaveAttribute('title', /1024 shots/);
+    // The chart carries its own threshold rather than a line restating the shot count.
+    await expect(page.locator('#threshold-input')).toHaveValue('0.68');
     // Nothing restated underneath.
     await expect(page.locator('#status-line')).toBeHidden();
 
@@ -299,7 +306,9 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(page.locator('td.cell').first()).toBeVisible();
     for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
     await page.locator('#btn-bench').click();
-    await expect(page.locator('.metrics-table')).toBeVisible();
+    // The frame is on the page from the start, so wait for the figures rather than the
+    // table: until they land, a repaint can pull an element out from under an assertion.
+    await expect(page.locator('.metrics-table tbody td:not(.na)').first()).not.toBeEmpty();
   });
 
   test('names all three methods, in two sections named down the side', async ({ page }) => {
