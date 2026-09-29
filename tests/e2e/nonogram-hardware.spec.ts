@@ -180,7 +180,8 @@ async function setSize(page: Page, rows: number, cols: number): Promise<void> {
 
 /** The run button sends the puzzle wherever the toggle beside it points. */
 async function chooseHardware(page: Page): Promise<void> {
-  await page.locator('#btn-where-hw').click();
+  // The radio itself is the system's hidden input; its label is the visible control.
+  await page.locator('label[for="btn-where-hw"]').click();
   await expect(page.locator('#btn-bench')).toContainText('Hardware solve');
 }
 

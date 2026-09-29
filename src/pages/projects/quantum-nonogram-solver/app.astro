@@ -10,40 +10,57 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 >
   <!-- App shell -->
   <div id="nonogram-app">
+    <label class="gallery-label"
+      >Gallery
+      <select id="gallery-select">
+        <option value="">— captured runs —</option>
+      </select>
+    </label>
     <div class="nono-columns">
       <div class="nono-left">
-        <label class="gallery-label"
-          >Gallery
-          <select id="gallery-select">
-            <option value="">— captured runs —</option>
-          </select>
-        </label>
-        <!-- Above the grid: picking the mode comes before editing, and it keeps the grid
-             next to Clear in the tab order. -->
-        <div class="editor-band">
-          <span class="mode-toggle" role="group" aria-label="Editor mode">
-            <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
-            <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false">Clues</button>
-          </span>
-          <div class="editor-row">
-            <div class="editor-actions">
-              <button id="btn-clear" class="s6-btn s6-btn--sm">Clear</button>
-              <button id="btn-random" class="s6-btn s6-btn--sm">Randomize</button>
-              <button id="btn-reset" class="s6-btn s6-btn--sm">Reset</button>
-            </div>
-            <div id="draw-view"></div>
-            <div class="run-controls">
-              <span class="mode-toggle" role="group" aria-label="Where to run">
-                <button id="btn-where-local" class="s6-btn s6-btn--sm" aria-pressed="true"
-                  >Local</button
-                >
-                <button id="btn-where-hw" class="s6-btn s6-btn--sm" aria-pressed="false"
-                  >Hardware</button
-                >
-              </span>
-              <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
-            </div>
+        <div class="editor-row">
+          <div class="editor-actions">
+            <span class="mode-toggle" role="group" aria-label="Editor mode">
+              <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
+              <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false"
+                >Clues</button
+              >
+            </span>
+            <button id="btn-clear" class="s6-btn s6-btn--sm">Clear</button>
+            <button id="btn-random" class="s6-btn s6-btn--sm">Randomize</button>
+            <button id="btn-reset" class="s6-btn s6-btn--sm">Reset</button>
+            <span class="size-box" role="group" aria-label="Board size">
+              <input
+                id="size-rows"
+                class="size-input"
+                type="number"
+                min="1"
+                max="10"
+                value="3"
+                aria-label="Rows"
+              />
+              <span class="size-times">&times;</span>
+              <input
+                id="size-cols"
+                class="size-input"
+                type="number"
+                min="1"
+                max="10"
+                value="3"
+                aria-label="Columns"
+              />
+            </span>
           </div>
+          <div id="draw-view"></div>
+        </div>
+        <div class="run-controls">
+          <span class="run-where field-row" role="radiogroup" aria-label="Where to run">
+            <input type="radio" id="btn-where-local" name="run-where" checked />
+            <label for="btn-where-local">Local</label>
+            <input type="radio" id="btn-where-hw" name="run-where" />
+            <label for="btn-where-hw">Hardware</label>
+          </span>
+          <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
         </div>
         <div id="circuit-band" class="nono-band">
           <div id="code-pane">
@@ -325,35 +342,23 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* ── Editor actions ── */
 
-  /* The board between what changes it and what runs it: actions down the left, the two
-     ways to run it down the right, and the grid in the middle at whatever size it is. */
-  .editor-band {
-    border-top: 1px solid var(--ink);
-    padding-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-
+  /* What changes the board, down its left; the board itself beside them. */
   .editor-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    gap: 12px;
-    width: 100%;
+    gap: 14px;
+    padding-top: 12px;
   }
 
-  .editor-actions,
-  .run-controls {
+  .editor-actions {
     display: flex;
     flex-direction: column;
     gap: 6px;
     flex: 0 0 auto;
   }
 
-  :global(.editor-actions .s6-btn),
-  :global(.run-controls .s6-btn) {
+  :global(.editor-actions .s6-btn) {
     width: 100%;
     text-align: center;
   }
@@ -363,29 +368,59 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     min-width: 0;
   }
 
-  /* The size, typed in the corner the two runs of clues share. */
+  /* Rows and columns in one box, split into three: the two figures with their sign
+     between them, the way the size is written everywhere else on the page. */
+  .size-box {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+
   :global(.size-input) {
-    /* A typed field is a touch target like any other, and the corner is the smallest
-       cell on the page (WCAG 2.2 asks for 24px). */
+    /* A typed field is a touch target like any other (WCAG 2.2 asks for 24px). */
     min-width: 24px;
     min-height: 24px;
-    width: 24px;
+    flex: 1 1 0;
+    width: 100%;
     border: 0;
     background: none;
-    padding: 0;
+    padding: 2px 0;
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
     text-align: center;
     color: var(--ink);
   }
 
-  :global(.size-input:hover) {
-    text-decoration: underline dotted;
-  }
-
-  :global(.size-times) {
+  .size-times {
+    display: flex;
+    align-items: center;
+    padding: 0 3px;
+    border-inline: 2px solid var(--ink);
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
+  }
+
+  /* Where to run, and the one button that does it, under the board they act on. */
+  .run-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .run-where {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  :global(.run-controls .s6-btn) {
+    min-width: 14rem;
+    text-align: center;
   }
 
   /* A run's own measure of itself, sitting on the rule that names the section: a
@@ -438,6 +473,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     align-items: center;
     gap: 6px;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
   }
 
   .gallery-label select {
@@ -878,6 +916,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     margin-left: -1px;
   }
 
+  :global(.circuit-view .s6-btn[aria-pressed='true']) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
   :global(.circuit-view .s6-btn) {
     flex: 1 1 0;
     min-width: 0;
@@ -900,12 +943,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     max-height: 340px;
   }
 
-  /* Framed like the other panes rather than floating on the page. The drawing takes the
-     height it needs and scrolls sideways when a block is written out.
+  /* The track and thumb carry the scroll; system.css styles an increment and a
+     decrement button at each end, which draws as two arrows a side. */
+  :global(#circuit-figure::-webkit-scrollbar-button) {
+    display: none;
+  }
 
-     Safe centring: a drawing wider than the frame starts at the left edge instead, so
-     the scroll reaches its far side. Plain centring puts the overflow on both sides and
-     the left of it becomes unreachable. */
+  /* Framed like the other panes. The drawing takes the height it needs and scrolls
+     sideways when a block is written out; safe centring starts a drawing wider than the
+     frame at the left edge, so the scroll reaches its far side. */
   :global(#circuit-figure) {
     min-height: 340px;
     min-width: 0;

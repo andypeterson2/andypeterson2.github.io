@@ -31,12 +31,8 @@ export function runWhere(): RunWhere {
 
 export function setRunWhere(next: RunWhere): void {
   where = next;
-  for (const [id, name] of [
-    ['btn-where-local', 'local'],
-    ['btn-where-hw', 'hardware'],
-  ] as const) {
-    $(id)?.setAttribute('aria-pressed', String(name === where));
-  }
+  const picked = $(where === 'hardware' ? 'btn-where-hw' : 'btn-where-local');
+  if (picked instanceof HTMLInputElement) picked.checked = true;
   applyTierControls();
 }
 
@@ -145,18 +141,32 @@ export function setBusy(busy: boolean): void {
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
   (must('btn-reset') as HTMLButtonElement).disabled = busy;
-  for (const id of ['btn-mode-draw', 'btn-mode-clues', 'btn-where-local', 'btn-where-hw']) {
+  for (const id of ['btn-mode-draw', 'btn-mode-clues']) {
     (must(id) as HTMLButtonElement).disabled = busy;
   }
-  for (const id of ['size-rows', 'size-cols']) {
+  for (const id of ['btn-where-local', 'btn-where-hw', 'size-rows', 'size-cols']) {
     const field = $(id);
     if (field instanceof HTMLInputElement) field.disabled = busy;
   }
   applyHardwareControl();
 }
 
-/** The size is typed into the grid's own corner; this is what follows a change of it. */
+/**
+ * Hold the size fields to the board.
+ *
+ * They are typed into, but a gallery run, Reset or a randomize all change the board from
+ * elsewhere, and the fields have to say what is on screen.
+ */
 export function updateGridSizeLabel(): void {
+  for (const [id, value] of [
+    ['size-rows', state.rows],
+    ['size-cols', state.cols],
+  ] as const) {
+    const field = $(id);
+    if (field instanceof HTMLInputElement && field !== document.activeElement) {
+      field.value = String(value);
+    }
+  }
   // Whether a real device can say anything about this puzzle changes with its size,
   // and this runs on every rebuild.
   applyHardwareControl();

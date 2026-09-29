@@ -25,6 +25,7 @@ import {
   getCurrentPuzzle,
   doClear,
   doReset,
+  setSize,
   doRandomize,
   setOnGridEdit,
   type Puzzle,
@@ -533,12 +534,25 @@ function init(): void {
 
   // Benchmark button — offline: solve the drawn puzzle in the browser; connected:
   // live Socket.IO stream, with a synchronous REST fallback.
+  for (const [id, axis] of [
+    ['size-rows', 'rows'],
+    ['size-cols', 'cols'],
+  ] as const) {
+    must(id).addEventListener('change', (e) => {
+      const field = e.target;
+      if (!(field instanceof HTMLInputElement)) return;
+      const n = Math.round(Number(field.value));
+      if (!Number.isFinite(n)) return;
+      setSize(axis === 'rows' ? n : state.rows, axis === 'cols' ? n : state.cols);
+    });
+  }
+
   const benchButton = must('btn-bench') as HTMLButtonElement;
   for (const [id, target] of [
     ['btn-where-local', 'local'],
     ['btn-where-hw', 'hardware'],
   ] as const) {
-    must(id).addEventListener('click', () => {
+    must(id).addEventListener('change', () => {
       setRunWhere(target);
     });
   }

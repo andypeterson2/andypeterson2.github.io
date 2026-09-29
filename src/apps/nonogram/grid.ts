@@ -246,38 +246,8 @@ function makeDataCell(tr: HTMLTableRowElement, r: number, c: number): void {
   td.appendChild(btn);
 }
 
-/**
- * The board's size, typed where the two runs of clues meet.
- *
- * The corner is the one cell that belongs to both axes, and it is otherwise empty, so
- * the size sits at the intersection it describes rather than on a row of steppers.
- */
-function sizeField(axis: 'rows' | 'cols', value: number): HTMLInputElement {
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.className = 'size-input';
-  input.id = `size-${axis}`;
-  input.min = '1';
-  input.max = String(MAX_GRID);
-  input.value = String(value);
-  input.setAttribute('aria-label', axis === 'rows' ? 'Rows' : 'Columns');
-  input.addEventListener('change', () => {
-    const n = Math.round(Number(input.value));
-    if (!Number.isFinite(n)) return;
-    setSize(axis === 'rows' ? n : state.rows, axis === 'cols' ? n : state.cols, `size-${axis}`);
-  });
-  return input;
-}
-
-function sizeText(text: string): HTMLSpanElement {
-  const span = document.createElement('span');
-  span.className = 'size-times';
-  span.textContent = text;
-  return span;
-}
-
 /** Resize to a typed board, within what the editor draws. */
-export function setSize(rows: number, cols: number, refocus?: string): void {
+export function setSize(rows: number, cols: number): void {
   const r = Math.min(MAX_GRID, Math.max(1, rows));
   const c = Math.min(MAX_GRID, Math.max(1, cols));
   if (r === state.rows && c === state.cols) {
@@ -290,14 +260,6 @@ export function setSize(rows: number, cols: number, refocus?: string): void {
   state.rows = r;
   state.cols = c;
   resized();
-  // The table is rebuilt from scratch, so the field being typed in has to be found again.
-  if (refocus) {
-    const again = document.getElementById(refocus);
-    if (again instanceof HTMLInputElement) {
-      again.focus();
-      again.select();
-    }
-  }
 }
 
 export function buildGrid(): void {
@@ -318,7 +280,6 @@ export function buildGrid(): void {
 
   const corner = hdr.insertCell();
   corner.className = 'corner-cell';
-  corner.append(sizeField('rows', rows), sizeText('\u00d7'), sizeField('cols', cols));
 
   for (let c = 0; c < cols; c++) {
     const clue = state.colClues[c] ?? [];
