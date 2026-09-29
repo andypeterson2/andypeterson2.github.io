@@ -22,13 +22,10 @@ function benchLabel(): string {
 }
 
 /** Controls that only mean something with a live backend say so instead of
- *  sitting there inert: Trials is disabled offline, with the reason on hover. */
+ *  sitting there inert. */
 export function applyTierControls(): void {
   const btn = must('btn-bench') as HTMLButtonElement;
   if (!state.busy) btn.textContent = benchLabel();
-  const trials = must('trials-input') as HTMLInputElement;
-  trials.disabled = !window.API_BASE;
-  trials.title = window.API_BASE ? '' : 'Trials repeat a live quantum run — needs the live solver';
   applyHardwareControl();
 }
 

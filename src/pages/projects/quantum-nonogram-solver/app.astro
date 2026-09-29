@@ -40,15 +40,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
           </span>
         </div>
-        <div id="status-line" class="status-line" role="status"></div>
-        <p id="gallery-note" class="gallery-note" hidden></p>
-      </div>
-      <div class="nono-right">
         <div class="controls-bar">
-          <label class="trials-label"
-            >Trials
-            <input type="number" id="trials-input" min="1" max="20" value="1" />
-          </label>
           <button id="btn-bench" class="s6-btn s6-btn--primary">&#9654; Solve in browser</button>
           <button id="btn-hw" class="s6-btn" aria-disabled="true">&#9654; Run on IBM</button>
           <label class="gallery-label"
@@ -58,18 +50,30 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </select>
           </label>
         </div>
-        <div class="section-rule">
-          <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
-        </div>
-        <div id="cl-canvas" class="sol-canvas">
-          <div id="cl-placeholder" class="placeholder-msg">Solve the puzzle to see solutions.</div>
-        </div>
-        <div class="section-rule">
-          <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
-        </div>
-        <div id="qu-list" class="sol-canvas">
-          <div id="qu-sol-placeholder" class="placeholder-msg">
-            Solve the puzzle to see solutions.
+        <div id="status-line" class="status-line" role="status"></div>
+        <p id="gallery-note" class="gallery-note" hidden></p>
+      </div>
+      <div class="nono-right">
+        <div class="sol-pair">
+          <div class="sol-half">
+            <div class="section-rule">
+              <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
+            </div>
+            <div id="cl-canvas" class="sol-canvas">
+              <div id="cl-placeholder" class="placeholder-msg">
+                Solve the puzzle to see solutions.
+              </div>
+            </div>
+          </div>
+          <div class="sol-half">
+            <div class="section-rule">
+              <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
+            </div>
+            <div id="qu-list" class="sol-canvas">
+              <div id="qu-sol-placeholder" class="placeholder-msg">
+                Solve the puzzle to see solutions.
+              </div>
+            </div>
           </div>
         </div>
         <div class="section-rule">
@@ -90,6 +94,35 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div id="metrics-pane"></div>
       </div>
     </div>
+
+    <details id="circuit-band" class="nono-below">
+      <summary>
+        <span class="section-rule">
+          <span>Circuit</span><span id="code-meta" class="rule-meta"></span>
+        </span>
+      </summary>
+      <div id="code-pane">
+        <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit detail">
+          <button type="button" id="btn-view-folded" class="s6-btn s6-btn--sm">Folded</button>
+          <button type="button" id="btn-view-full" class="s6-btn s6-btn--sm">Full circuit</button>
+          <span id="circuit-caption" class="circuit-caption"></span>
+        </div>
+        <div id="circuit-figure">
+          <svg id="circuit-svg" aria-hidden="true"></svg>
+        </div>
+        <div id="circuit-decomp" class="circuit-decomp" hidden></div>
+        <p id="hardware-note" class="code-note"></p>
+        <div class="code-controls">
+          <div class="code-formats" role="group" aria-label="Code format">
+            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+          </div>
+          <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+        </div>
+        <pre id="code-listing" tabindex="0"></pre>
+        <p id="code-note" class="code-note"></p>
+      </div>
+    </details>
   </div>
 
   <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
@@ -117,21 +150,89 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     min-height: 600px;
   }
 
+  /* The puzzle is the legend for every solution grid and histogram bar below it, so
+     it stays in view while the results scroll. Sticky needs a flex item that cannot
+     shrink, and align-self ends the full-height border — the divider moves right. */
   .nono-left {
-    width: 40%;
-    border-right: 2px solid var(--ink);
+    flex: 0 0 clamp(240px, 30%, 300px);
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
+  @media (width >= 769px) and (height >= 700px) {
+    .nono-left {
+      position: sticky;
+      top: var(--space-4);
+      align-self: flex-start;
+    }
+  }
+
   .nono-right {
-    width: 60%;
+    flex: 1 1 auto;
+    min-width: 0;
+    border-left: 2px solid var(--ink);
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  /* The two answers read against each other, so they sit side by side. */
+  .sol-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .sol-half {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  /* The circuit describes the puzzle rather than a run, and it is the tallest thing on
+     the page, so it gets the full width and folds away. */
+  .nono-below {
+    border-top: 2px solid var(--ink);
+    padding: 16px;
+  }
+
+  .nono-below > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .nono-below > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .nono-below > summary::before {
+    content: '';
+    flex: none;
+    border-block: 4px solid transparent;
+    border-left: 5px solid currentcolor;
+  }
+
+  .nono-below[open] > summary::before {
+    border-inline: 4px solid transparent;
+    border-block: 5px solid currentcolor;
+    border-bottom: 0;
+  }
+
+  .nono-below > summary .section-rule {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  .nono-below[open] > summary {
+    margin-bottom: 12px;
   }
 
   /* ── Draw view / grid ──
@@ -322,8 +423,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.rule-meta) {
     text-transform: none;
     letter-spacing: 0;
-    color: var(--color-text-muted);
     white-space: nowrap;
+
+    /* A flex item will not shrink below its text, which pushes a narrow page sideways.
+       Clipping the figure keeps the rule inside the viewport. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   :global(.rule-meta:empty) {
@@ -343,7 +449,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   .status-line {
     font-size: var(--text-3xs);
-    color: var(--color-text-muted);
     padding: 4px 0;
     text-align: center;
   }
@@ -371,27 +476,18 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Controls bar ── */
+
+  /* Beside the editor now, in a column too narrow to sit them in a row: each control
+     takes the full width, with the primary action first. */
   .controls-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--ink);
+    padding-top: 12px;
   }
 
-  .trials-label {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .trials-label input {
-    width: 50px;
-    border: 2px solid var(--ink);
-    background: var(--paper);
-    padding: 4px 6px;
-    font-size: var(--text-3xs);
+  .controls-bar .s6-btn {
     text-align: center;
   }
 
@@ -402,7 +498,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: auto;
   }
 
   .gallery-label select {
@@ -445,7 +540,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.sol-grid-label) {
     font-size: var(--text-4xs);
-    color: var(--color-text-muted);
     font-weight: 600;
   }
 
@@ -469,7 +563,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.sol-table td) {
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
   }
 
   :global(.sol-table td.f) {
@@ -505,7 +599,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   /* Keep system.css's focus inversion: the local paper ground above would otherwise
      leave a focused field white on white. */
-  .trials-label input:focus-visible,
   .threshold-label input:focus-visible {
     background: var(--ink);
     color: var(--paper);
@@ -527,9 +620,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     stroke-width: 1;
   }
 
+  /* Dashed black: the gridlines sit under the solid axis by how broken the line is. */
   :global(.hist-grid) {
-    stroke: var(--paper-4);
+    stroke: var(--ink);
     stroke-width: 1;
+    stroke-dasharray: 1 3;
   }
 
   :global(.hist-bar) {
@@ -581,24 +676,333 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     font-size: var(--text-3xs);
   }
 
-  :global(.metrics-table th) {
-    background: var(--ink);
-    color: var(--paper);
+  /* A header reads as a header from its face and the rule under it. Inversion is the
+     system's selected state, so it stays free to mean that. */
+  :global(.metrics-table thead th) {
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
     text-transform: uppercase;
     padding: 4px 8px;
+    text-align: right;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  :global(.metrics-table thead th:first-child) {
     text-align: left;
   }
 
   :global(.metrics-table td) {
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
     padding: 3px 8px;
+    text-align: right;
   }
 
-  :global(.metrics-table .metric-label) {
-    font-weight: 600;
-    background: var(--paper-2);
+  /* Monaco is monospaced, so right alignment lines the digits up on its own. */
+  :global(.metrics-table th[scope='row']) {
+    border: 1px solid var(--ink);
+    padding: 3px 8px;
+    text-align: left;
+    font-weight: 400;
+  }
+
+  /* The group's own rule, set inside the table so both halves share the columns. */
+  :global(.metrics-table .group-row th) {
+    padding: 7px 8px 2px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  :global(.metrics-table tbody:first-of-type .group-row th) {
+    border-top: 0;
+  }
+
+  :global(.section-rule--in-table) {
+    margin-bottom: 0;
+  }
+
+  /* There is no device on the classical side. A hatched region says that; a column of
+     dashes would read as data that went missing. */
+  :global(.metrics-table .na) {
+    background: var(--dither-50);
+  }
+
+  /* A label with something to add is pressable — a title attribute reaches neither
+     touch nor the keyboard. */
+  :global(.metric-toggle) {
+    all: unset;
+    font: inherit;
+    cursor: help;
+    text-decoration: underline dotted;
+  }
+
+  :global(.metric-toggle:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 1px;
+  }
+
+  :global(.metric-note:not(.open)) {
+    display: none;
+  }
+
+  :global(.metric-note td) {
+    border-top: 0;
+    padding: 0 8px 6px 20px;
+    font-size: var(--text-4xs);
+    text-align: left;
+    line-height: var(--leading-normal);
+  }
+
+  :global(.metrics-unmeasured td) {
+    text-align: left;
+    line-height: var(--leading-normal);
+  }
+
+  /* Narrow: the label takes its own line and the three figures sit under it, so every
+     method survives. Switching display has to reach the whole table — a row left inside
+     a table-row-group gets wrapped in anonymous boxes. */
+  @media (width <= 640px) {
+    :global(.metrics-table),
+    :global(.metrics-table thead),
+    :global(.metrics-table tbody),
+    :global(.metrics-table tr) {
+      display: block;
+    }
+
+    :global(.metrics-table thead tr),
+    :global(.metrics-table tr.metric) {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* The label is its own full-width line, so the header's first cell has nothing
+       left to name. */
+    :global(.metrics-table thead th:first-child) {
+      display: none;
+    }
+
+    :global(.metrics-table th[scope='row']),
+    :global(.metrics-table .group-row th),
+    :global(.metrics-table .metric-note td),
+    :global(.metrics-table .metrics-unmeasured td) {
+      grid-column: 1 / -1;
+    }
+
+    /* colspan does not survive the switch to grid. */
+    :global(.metrics-table .na) {
+      grid-column: span 2;
+    }
+
+    /* border-collapse goes with the table display, so shared edges double up. */
+    :global(.metrics-table td + td),
+    :global(.metrics-table th[scope='row'] + td) {
+      border-left: 0;
+    }
+
+    :global(.metrics-table th[scope='row']) {
+      border-bottom: 0;
+    }
+  }
+
+  .circuit-view {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2);
+  }
+
+  .circuit-view[hidden] {
+    display: none;
+  }
+
+  /* A board whose oracle runs to hundreds of columns has nothing legible to expand,
+     and a phone has nowhere to put it. */
+  @media (width <= 640px) {
+    :global(#btn-view-full) {
+      display: none;
+    }
+  }
+
+  .circuit-caption {
+    font-size: var(--text-4xs);
+  }
+
+  .circuit-decomp {
+    border: 1px solid var(--ink);
+    padding: 8px 10px;
+    margin-bottom: var(--space-3);
+    font-size: var(--text-4xs);
+  }
+
+  .circuit-decomp[hidden] {
+    display: none;
+  }
+
+  :global(.decomp-head) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-family: var(--font-ui);
+    margin-bottom: 4px;
+  }
+
+  :global(.decomp-head > span) {
+    flex: 1;
+  }
+
+  :global(.circuit-decomp pre) {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-4xs);
+    line-height: var(--leading-normal);
+    white-space: pre-wrap;
+  }
+
+  /* ── Circuit diagram ── */
+
+  /* Framed like the other panes rather than floating on the page. */
+  :global(#circuit-figure) {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    border: 1px solid var(--ink);
+    padding: 10px;
+    margin-bottom: var(--space-3);
+  }
+
+  :global(#circuit-svg) {
+    display: block;
+    flex: none;
+  }
+
+  :global(.circ-wire) {
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-box) {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-gate) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-box-name) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  /* The box's own figure, set smaller than its name so the name reads first. */
+
+  /* Pressed, a box inverts — the system's selected state, and the one place it means
+     something here. Its figure has to come with it or it vanishes into the ink. */
+  :global(.circ-hit) {
+    cursor: pointer;
+  }
+
+  :global(.circ-hit:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  :global(.circ-pinned .circ-box) {
+    fill: var(--ink);
+  }
+
+  :global(.circ-pinned .circ-box-name),
+  :global(.circ-pinned .circ-box-sub) {
+    fill: var(--paper);
+  }
+
+  :global(.circ-ctrl) {
+    fill: var(--ink);
+  }
+
+  :global(.circ-open) {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-guard) {
+    stroke: var(--ink);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+
+  :global(.circ-stage) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+  }
+
+  :global(.circ-box-sub) {
+    font-family: var(--font-sans);
+    font-size: var(--text-4xs);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-label),
+  :global(.circ-more) {
+    font-family: var(--font-mono);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: end;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-meter) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-bracket) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-repeat) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  /* What the code means, kept beside the listing rather than inside it, so the
+     copied text is circuit and nothing else. */
+  :global(.code-note) {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-4xs);
+    line-height: var(--leading-normal);
+  }
+
+  :global(.code-note:empty) {
+    display: none;
+  }
+
+  :global(#code-listing) {
+    max-height: 340px;
+    overflow: auto;
+    margin: 0;
+    font-size: var(--text-4xs);
+    line-height: var(--leading-normal);
+    white-space: pre;
+    tab-size: 4;
   }
 
   /* Phones and tablets: one column, editor above results, and the controls wrap so
@@ -612,10 +1016,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .nono-left,
     .nono-right {
       width: 100%;
+      flex: 0 0 auto;
+    }
+
+    /* Stacked, the divider runs between them rather than beside. */
+    .nono-right {
+      border-left: 0;
     }
 
     .nono-left {
-      border-right: none;
       border-bottom: 2px solid var(--ink);
     }
 
@@ -627,6 +1036,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .gallery-label select {
       flex: 1;
       min-width: 0;
+    }
+  }
+
+  /* The two answers stack once the column is too narrow to hold both. */
+  @media (width <= 640px) {
+    .sol-pair {
+      grid-template-columns: 1fr;
     }
   }
 </style>

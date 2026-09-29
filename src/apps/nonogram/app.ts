@@ -45,6 +45,7 @@ import {
   type ClassicalResult,
 } from './solver';
 import { solveLocal, LOCAL_MAX_CELLS } from './classical-solver';
+import { initCodePane, renderCodePane } from './code-pane';
 import { groverOutcome, sampleCounts } from './grover-sim';
 import {
   pendingJob,
@@ -536,9 +537,9 @@ function init(): void {
       return;
     }
     clearSolverResults();
-    const trialsInput = must('trials-input') as HTMLInputElement;
-    const trials = Math.max(1, parseInt(trialsInput.value, 10) || 1);
-    const body: BenchmarkBody = { ...puzzle, trials, client_id: clientId() };
+    // One run: every figure the page reports is exact, so repeating a run only
+    // averages the clock.
+    const body: BenchmarkBody = { ...puzzle, trials: 1, client_id: clientId() };
     if (socket?.connected) streamBenchmark(body);
     else void runBenchmarkSync(body);
   });
@@ -586,10 +587,19 @@ function init(): void {
   must('btn-remove-row').addEventListener('click', removeRow);
   must('btn-remove-col').addEventListener('click', removeCol);
 
+  // The circuit describes the board rather than a run, so it follows every edit
+  // instead of waiting for a solve.
+  const refreshCode = (): void => {
+    const puzzle = getCurrentPuzzle();
+    renderCodePane(puzzle.row_clues, puzzle.col_clues);
+  };
+  initCodePane(refreshCode);
+
   // Any edit makes the results describe a different puzzle: clear them, drop the
   // gallery selection and its note, and say so.
   setOnGridEdit(() => {
     clearSolverResults();
+    refreshCode();
     elClPlaceholder.textContent = 'Solve the puzzle to see solutions.';
     elQuSolPlaceholder.textContent = 'Solve the puzzle to see solutions.';
     const sel = document.getElementById('gallery-select');
@@ -605,6 +615,7 @@ function init(): void {
 
   requestAnimationFrame(() => {
     drawEmptyHistogram();
+    refreshCode();
   });
 }
 

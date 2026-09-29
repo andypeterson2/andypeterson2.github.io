@@ -2,6 +2,17 @@ import { test, expect } from '@playwright/test';
 
 const APP = '/projects/quantum-nonogram-solver/app/';
 
+type Page = import('@playwright/test').Page;
+
+/**
+ * The metrics row whose label is exactly `name`.
+ *
+ * Playwright's `hasText` is a substring match, which would make 'Per extra cell' select
+ * 'Per extra cell, measured' too, so the label is matched whole.
+ */
+const metricRow = (page: Page, name: string) =>
+  page.locator('#metrics-pane tbody tr').filter({ has: page.getByText(name, { exact: true }) });
+
 test.describe('Nonogram: results always describe the puzzle on screen', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -85,7 +96,7 @@ test.describe('Nonogram: typing the clues', () => {
     await page.locator('#btn-bench').click();
     // Counted in the metrics table; the sections carry their own timings.
     await expect(
-      page.locator('#metrics-pane tr', { hasText: 'Solutions found' }).locator('td').nth(1),
+      metricRow(page, 'Solutions').locator('td').first(),
     ).toHaveText('1');
     await expect(page.locator('#cl-canvas .sol-grid-label')).toHaveText('Solution');
   });
@@ -102,8 +113,9 @@ test.describe('Nonogram: typing the clues', () => {
 // The browser tier runs Grover's amplitudes as well as the classical search, so the
 // Quantum panel answers without a backend — and says only what a simulation can.
 test.describe('Nonogram: the quantum half runs in the browser', () => {
-  const metric = (page: import('@playwright/test').Page, name: string) =>
-    page.locator('#metrics-pane tr', { hasText: name }).locator('td').nth(2);
+  const grover = (page: Page, name: string) => metricRow(page, name).locator('td').last();
+  const exhaustive = (page: Page, name: string) => metricRow(page, name).locator('td').first();
+  const backtracking = (page: Page, name: string) => metricRow(page, name).locator('td').nth(1);
 
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -124,12 +136,25 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(page.locator('#status-line')).toBeHidden();
 
     await expect(page.locator('#qu-histogram rect.hist-bar').first()).toBeVisible();
-    await expect(metric(page, 'Qubits')).toHaveText('9');
-    await expect(metric(page, 'Grover iterations')).not.toHaveText('—');
-    await expect(metric(page, 'Top probability')).toContainText('%');
-    // There is no circuit, so there is no depth and no quantum solve time to give.
-    await expect(metric(page, 'Circuit depth')).toHaveText('—');
-    await expect(metric(page, 'Solve time')).toHaveText('—');
+    await expect(grover(page, 'Qubits')).toHaveText('9');
+    await expect(grover(page, 'P(solution), ideal')).toContainText('%');
+
+    // Three methods, and the puzzle is not unstructured search: the page's own solver
+    // asks the clues fewer questions than Grover does.
+    const checks = async (fn: (p: Page, n: string) => ReturnType<typeof grover>) =>
+      Number((await fn(page, 'Clue checks').textContent())?.replace(/,/g, ''));
+    expect(await checks(exhaustive)).toBe(512);
+    expect(await checks(backtracking)).toBeLessThan(await checks(grover));
+
+    // The scaling, stated as arithmetic, against what the built circuit actually does.
+    await expect(exhaustive(page, 'Per extra cell')).toHaveText('×2');
+    await expect(grover(page, 'Per extra cell')).toHaveText('×1.41');
+    await expect(grover(page, 'Per extra cell, measured')).toHaveText('×2.17');
+
+    // Measured, and hopeless: the circuit asks for far more than the device holds.
+    await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');
+    await expect(grover(page, 'Device budget (layers)')).toContainText('over');
+    await expect(grover(page, 'Rounds that fit')).toContainText('of');
   });
 
   test('the quantum solution matches the classical one', async ({ page }) => {
@@ -164,6 +189,301 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // A sampled draw would put a few states over the line by luck; a flat
     // distribution puts none, which is what no solution means.
     await expect(page.locator('#qu-sol-placeholder')).toContainText('No solutions above threshold');
-    await expect(metric(page, 'Grover iterations')).toHaveText('0');
+    await expect(grover(page, 'Clue checks')).toHaveText('0');
+  });
+});
+
+test.describe('Nonogram: the circuit is copyable for any board', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto(APP);
+    await expect(page.locator('td.cell').first()).toBeVisible();
+  });
+
+  test('the code shows without solving, and describes the board on screen', async ({ page }) => {
+    // The circuit describes the puzzle itself, so it is there before any run.
+    await expect(page.locator('#code-pane')).toBeVisible();
+    await expect(page.locator('#code-meta')).toContainText('9 qubits');
+    await expect(page.locator('#code-listing')).toContainText('def oracle(qc):');
+  });
+
+  test('the circuit is drawn above the listing', async ({ page }) => {
+    const svg = page.locator('#circuit-svg');
+    await expect(svg).toBeVisible();
+    await expect(svg.locator('.circ-wire')).toHaveCount(9);
+    await expect(svg.locator('.circ-box-name').first()).toHaveText('Oracle');
+    await expect(svg.locator('.circ-repeat')).toContainText('\u00d7');
+  });
+
+  test('says what the circuit would cost on a real device', async ({ page }) => {
+    const note = page.locator('#hardware-note');
+    await expect(note).toContainText('ibm_torino');
+    await expect(note).toContainText('two-qubit gates');
+    // The figure is useless without the qualifiers that produced it.
+    await expect(note).toContainText('optimization');
+    await expect(note).toContainText('seeds');
+  });
+
+  test('the listing is circuit and nothing else', async ({ page }) => {
+    const text = (await page.locator('#code-listing').textContent()) ?? '';
+    for (const line of text.split('\n')) {
+      expect(line.trimStart().startsWith('#')).toBe(false);
+    }
+    // What it means sits beside the listing instead, where it is readable.
+    await expect(page.locator('#code-note')).toContainText('little-endian');
+  });
+
+  test('editing the grid rewrites the code', async ({ page }) => {
+    const before = await page.locator('#code-listing').textContent();
+    await page.locator('td.cell').first().dispatchEvent('mousedown');
+    await expect(page.locator('#code-listing')).not.toHaveText(before ?? '');
+  });
+
+  test('the listing never reaches for the oracle that enumerates every assignment', async ({
+    page,
+  }) => {
+    // PhaseOracleGate walks all 2^n assignments, so a pasted script would stall.
+    await expect(page.locator('#code-listing')).not.toContainText('PhaseOracleGate');
+    await expect(page.locator('#code-listing')).toContainText('for _ in range(ITERATIONS)');
+  });
+
+  test('the format switch swaps the listing and shows which is active', async ({ page }) => {
+    const qasm = page.locator('#btn-fmt-qasm');
+    const qiskit = page.locator('#btn-fmt-qiskit');
+    await expect(qiskit).toHaveAttribute('aria-pressed', 'true');
+
+    await qasm.click();
+    await expect(qasm).toHaveAttribute('aria-pressed', 'true');
+    await expect(qiskit).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#code-listing')).toContainText('OPENQASM 3.0;');
+    await expect(page.locator('#code-listing')).toContainText('gate diffuser');
+
+    await qiskit.click();
+    await expect(page.locator('#code-listing')).toContainText('from qiskit import');
+  });
+
+  test('Copy puts the listing on the clipboard and says so', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.locator('#btn-copy-code').click();
+    await expect(page.locator('#status-line')).toContainText('copied');
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toContain('def oracle(qc):');
+  });
+
+  test('a board too big to solve still produces code', async ({ page }) => {
+    // Past the local solve limit the constraint oracle takes over, which is the
+    // whole reason a large board can still be exported.
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole('button', { name: 'Add a row' }).click();
+      await page.getByRole('button', { name: 'Add a column' }).click();
+    }
+    await expect(page.locator('#grid-size-label')).toHaveText('6 \u00d7 6');
+    await expect(page.locator('#code-meta')).toContainText('48 qubits');
+    await expect(page.locator('#code-note')).toContainText('past what the page solves');
+    // Too many wires to draw, so the middle collapses and both ends stay.
+    await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
+    // Seven cells from the top, the last cell, and both ends of the ancillas.
+    await expect(page.locator('#circuit-svg .circ-wire')).toHaveCount(10);
+    // Nothing this size was ever transpiled, and the page says so rather than guessing.
+    await expect(page.locator('#hardware-note')).toContainText('No measurement');
+  });
+});
+
+test.describe('Nonogram: the metrics table compares three methods', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto(APP);
+    await expect(page.locator('td.cell').first()).toBeVisible();
+    for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('.metrics-table')).toBeVisible();
+  });
+
+  test('names all three methods, in two ruled groups', async ({ page }) => {
+    const heads = page.locator('.metrics-table thead th');
+    await expect(heads).toHaveText(['Metric', 'Exhaustive', 'Backtracking', 'Grover']);
+    const groups = page.locator('.metrics-table .group-row th');
+    await expect(groups).toHaveCount(2);
+    await expect(groups.first()).toContainText('Search');
+    await expect(groups.last()).toContainText('On the device');
+    // The measured column's oracle already holds the answer, so its cost is a floor.
+    await expect(groups.last()).toContainText('lower bound');
+  });
+
+  test('bold belongs to the headers, not the body', async ({ page }) => {
+    const weight = (l: ReturnType<typeof page.locator>) =>
+      l.first().evaluate((el) => getComputedStyle(el).fontWeight);
+    expect(Number(await weight(page.locator('.metrics-table thead th')))).toBeGreaterThan(500);
+    expect(Number(await weight(page.locator('.metrics-table th[scope="row"]')))).toBeLessThan(500);
+  });
+
+  test('the classical side of the device group is marked inapplicable, not missing', async ({
+    page,
+  }) => {
+    const na = page.locator('.metrics-table .na');
+    await expect(na.first()).toHaveAttribute('colspan', '2');
+    await expect(na.first().locator('.sr-only')).toHaveText('not applicable');
+  });
+
+  test('a note opens from the keyboard as well as the pointer', async ({ page }) => {
+    const toggle = page.locator('.metric-toggle').first();
+    const note = page.locator('.metric-note').first();
+    await expect(note).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    await toggle.click();
+    await expect(note).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(note).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('every method survives a narrow screen, on its own line', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    // Three figures abreast under a full-width label.
+    const row = page.locator('.metrics-table tr.metric').first();
+    await expect(row).toHaveCSS('display', 'grid');
+    const label = row.locator('th[scope="row"]');
+    await expect(label).toHaveCSS('grid-column-start', '1');
+    await expect(page.locator('.metrics-table thead th').first()).toBeHidden();
+    // Still three methods: nothing was dropped to make it fit.
+    await expect(page.locator('.metrics-table thead th')).toHaveCount(4);
+
+    const overflow = await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth;
+      return [...document.querySelectorAll('#metrics-pane *')].filter(
+        (e) => e.getBoundingClientRect().right > vw + 1,
+      ).length;
+    });
+    expect(overflow).toBe(0);
+  });
+});
+
+test.describe('Nonogram: the circuit band follows the width', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+  });
+
+  test('opens on a desktop and folds away on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(APP);
+    await expect(page.locator('#circuit-band')).toHaveAttribute('open', '');
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(APP);
+    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
+    // Folded, but one press away, and its summary still says what is inside.
+    await expect(page.locator('#code-meta')).toContainText('qubits');
+    await page.locator('#circuit-band > summary').click();
+    await expect(page.locator('#code-listing')).toBeVisible();
+  });
+
+  test('a choice made by hand outlasts a resize', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(APP);
+    await page.locator('#circuit-band > summary').click();
+    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.locator('#circuit-band')).not.toHaveAttribute('open', '');
+  });
+});
+
+test.describe('Nonogram: the circuit opens up', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(APP);
+    await expect(page.locator('#circuit-svg [data-block]').first()).toBeVisible();
+  });
+
+  const box = (page: Page, block: string) => page.locator(`#circuit-svg [data-block="${block}"]`);
+
+  test('the drawing is a group, so the boxes inside it stay reachable', async ({ page }) => {
+    // role="img" would make every mark presentational, the two controls included.
+    await expect(page.locator('#circuit-svg')).toHaveAttribute('role', 'group');
+    await expect(page.locator('#circuit-svg [data-block]')).toHaveCount(2);
+  });
+
+  test('pressing a box opens what it is made of, and pressing it again closes it', async ({
+    page,
+  }) => {
+    const panel = page.locator('#circuit-decomp');
+    await expect(panel).toBeHidden();
+
+    await box(page, 'oracle').click();
+    await expect(panel).toBeVisible();
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel).toContainText('controls q0-q7');
+    // The answer-key oracle, said out loud rather than left to be noticed.
+    await expect(panel).toContainText('built from the answers');
+
+    await box(page, 'oracle').click();
+    await expect(panel).toBeHidden();
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('the other box takes over rather than stacking', async ({ page }) => {
+    await box(page, 'oracle').click();
+    await box(page, 'diffuser').click();
+    await expect(page.locator('#circuit-decomp')).toContainText('reflection about the mean');
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(box(page, 'diffuser')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('a box opens from the keyboard', async ({ page }) => {
+    await box(page, 'diffuser').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await page.keyboard.press(' ');
+    await expect(page.locator('#circuit-decomp')).toBeHidden();
+  });
+
+  test('an open box survives an edit, though the drawing is rebuilt', async ({ page }) => {
+    await box(page, 'oracle').click();
+    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await page.locator('.cell-btn').first().click();
+    // The drawing is replaced wholesale, so both the pin and the listener have to
+    // live outside it.
+    await expect(page.locator('#circuit-decomp')).toBeVisible();
+    await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'true');
+    await box(page, 'oracle').click();
+    await expect(page.locator('#circuit-decomp')).toBeHidden();
+  });
+
+  test('the full circuit writes one iteration out, with a guard between the stages', async ({
+    page,
+  }) => {
+    await page.locator('#btn-view-full').click();
+    await expect(page.locator('#circuit-svg .circ-guard')).toHaveCount(1);
+    await expect(page.locator('#circuit-svg .circ-stage')).toHaveText(['oracle', 'diffuser']);
+    // A multi-controlled Z draws as dots joined to its target.
+    await expect(page.locator('#circuit-svg .circ-ctrl').first()).toBeVisible();
+    await expect(page.locator('#circuit-caption')).toContainText('One iteration of');
+    await expect(page.locator('#btn-view-full')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('a board whose oracle has no legible expansion is not offered one', async ({ page }) => {
+    // 6x6 uses the constraint oracle: hundreds of columns, and nothing to read.
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole('button', { name: 'Add a row' }).click();
+      await page.getByRole('button', { name: 'Add a column' }).click();
+    }
+    await expect(page.locator('#grid-size-label')).toHaveText('6 × 6');
+    await expect(page.locator('#circuit-view')).toBeHidden();
+  });
+
+  test('a phone gets the folded drawing only', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(APP);
+    await page.locator('#circuit-band > summary').click();
+    await expect(page.locator('#circuit-svg [data-block]').first()).toBeVisible();
+    // Expanding needs width the screen does not have; the listing carries the detail.
+    await expect(page.locator('#btn-view-full')).toBeHidden();
+    await expect(page.locator('#btn-view-folded')).toBeVisible();
   });
 });

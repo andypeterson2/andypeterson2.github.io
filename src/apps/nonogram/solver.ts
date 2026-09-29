@@ -15,7 +15,11 @@ import {
   elThresholdInput,
   type HistData,
 } from './state';
-import { getBestSolSize } from './grid';
+import { getBestSolSize, getCurrentPuzzle } from './grid';
+import { classicalCost, formatCount } from './classical-cost';
+import { DEPTH_BUDGET, hardwareCost, measuredGrowth, overBudget } from './hardware-cost';
+import { solveLocal } from './classical-solver';
+import { groverOutcome, optimalIterations } from './grover-sim';
 
 const MAX_DISPLAY = 30;
 
@@ -23,7 +27,6 @@ const MAX_DISPLAY = 30;
 
 export interface ClassicalReport {
   solutions_found?: number;
-  peak_memory_kb?: number | null;
 }
 
 export interface QuantumReport {
@@ -32,7 +35,6 @@ export interface QuantumReport {
   circuit_depth?: number;
   grover_iterations?: number;
   top_result_probability?: number | null;
-  peak_memory_kb?: number | null;
 }
 
 export interface BenchmarkReport {
@@ -367,63 +369,206 @@ function fmtAvg(times: number[] | null | undefined): string {
   return s;
 }
 
-export function renderMetrics(
-  report: BenchmarkReport | null | undefined,
-  cl_times: number[] | null | undefined,
-  qu_times: number[] | null | undefined,
+/** A row's note, keyed by its label. Absent means the label is not pressable. */
+const NOTES: Record<string, string> = {
+  'Clue checks':
+    'How many times each method asks the clues a question. Exhaustive counts to the ' +
+    'certainty Grover reaches, not the 256 it would average. Backtracking is this page\'s ' +
+    'own solver, so its count moves with the puzzle where the other two follow only the ' +
+    'cell count and the number of solutions.',
+  'Per clue check':
+    'One backtracking placement stops at the first column left with nothing, so it costs ' +
+    'at most a whole-grid check. Grover pays a full transpiled oracle every time.',
+  'Per extra cell':
+    'What one more cell does to each column. Exhaustive doubles; Grover takes the square ' +
+    'root of that. The measured row below is the same question asked of the built circuit.',
+  'Per extra cell, measured':
+    'Two-qubit gates grew 1,900 to 19,357 from six cells to nine. Per-call cost is not ' +
+    'constant yet: the multi-controlled gates and the routing onto a heavy-hex device both ' +
+    'grow with the register.',
+  'Rounds that fit':
+    'How many whole iterations sit inside the depth budget. The backend runs one truncated ' +
+    'round rather than none.',
+  'P(solution), at chance': 'One solution among the states — what a device returns once the circuit outruns its coherence.',
+};
+
+/** The measured group describes a circuit whose oracle already holds the answer. */
+const DEVICE_META = 'lower bound \u00b7 answer-marking oracle';
+
+function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElement {
+  const td = tr.insertCell();
+  td.textContent = String(text);
+  return td;
+}
+
+/** A group heading that spans the table, drawn as the page's own section rule. */
+function groupRow(body: HTMLTableSectionElement, label: string, meta: string): void {
+  const tr = body.insertRow();
+  tr.className = 'group-row';
+  const th = document.createElement('th');
+  th.colSpan = 4;
+  th.scope = 'rowgroup';
+  const rule = document.createElement('div');
+  rule.className = 'section-rule section-rule--in-table';
+  const name = document.createElement('span');
+  name.textContent = label;
+  rule.append(name);
+  if (meta) {
+    const fig = document.createElement('span');
+    fig.className = 'rule-meta';
+    fig.textContent = meta;
+    rule.append(fig);
+  }
+  th.append(rule);
+  tr.append(th);
+}
+
+/**
+ * One metric, plus the note row it opens.
+ *
+ * A label with a note becomes a button rather than carrying a title: a tooltip is
+ * invisible to touch and to the keyboard, which is most of the people the note is for.
+ */
+function metricRow(
+  body: HTMLTableSectionElement,
+  label: string,
+  values: (string | number)[],
+  naSpan = false,
 ): void {
+  const tr = body.insertRow();
+  tr.className = 'metric';
+  const th = document.createElement('th');
+  th.scope = 'row';
+  const note = NOTES[label];
+
+  if (note) {
+    const id = `note-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'metric-toggle';
+    button.textContent = label;
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', id);
+    th.append(button);
+    tr.append(th);
+
+    if (naSpan) naCell(tr);
+    for (const v of values) cell(tr, v);
+
+    const noteRow = body.insertRow();
+    noteRow.className = 'metric-note';
+    noteRow.id = id;
+    const td = noteRow.insertCell();
+    td.colSpan = 4;
+    td.textContent = note;
+
+    button.addEventListener('click', () => {
+      const open = noteRow.classList.toggle('open');
+      button.setAttribute('aria-expanded', String(open));
+    });
+    return;
+  }
+
+  th.textContent = label;
+  tr.append(th);
+  if (naSpan) naCell(tr);
+  for (const v of values) cell(tr, v);
+}
+
+/** The classical half of a device row: there is no device here, and the stipple says so. */
+function naCell(tr: HTMLTableRowElement): void {
+  const td = tr.insertCell();
+  td.colSpan = 2;
+  td.className = 'na';
+  const label = document.createElement('span');
+  label.className = 'sr-only';
+  label.textContent = 'not applicable';
+  td.append(label);
+}
+
+export function renderMetrics(report: BenchmarkReport | null | undefined): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
 
-  const cl = report?.classical;
-  const qu = report?.quantum;
-  const numVars = report?.num_variables;
+  const puzzle = getCurrentPuzzle();
+  const rows = puzzle.row_clues.length;
+  const cols = puzzle.col_clues.length;
+  const cells = rows * cols;
+  const local = solveLocal(puzzle.row_clues, puzzle.col_clues);
+  const found = report?.classical?.solutions_found ?? local.solutions.length;
+  const cost = classicalCost(puzzle.row_clues, puzzle.col_clues);
+  const hw = hardwareCost(rows, cols, found);
+  // No solutions means nothing to amplify, and optimalIterations says so with a zero
+  // rather than a count that would rotate the state nowhere useful.
+  const iterations = optimalIterations(found, cells);
+  const ideal = groverOutcome(found, cells, iterations).markedProbability;
 
   const tbl = document.createElement('table');
   tbl.className = 'metrics-table';
 
-  const thead = tbl.createTHead();
-  const hr = thead.insertRow();
-  for (const h of ['Metric', 'Classical', 'Quantum']) {
+  const head = tbl.createTHead().insertRow();
+  for (const h of ['Metric', 'Exhaustive', 'Backtracking', 'Grover']) {
     const th = document.createElement('th');
+    th.scope = 'col';
     th.textContent = h;
-    hr.appendChild(th);
+    head.append(th);
   }
 
-  const tbody = tbl.createTBody();
+  const search = tbl.createTBody();
+  search.className = 'metrics-group';
+  groupRow(
+    search,
+    'Search',
+    `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`,
+  );
+  metricRow(search, 'Solutions', [found, found, found]);
+  metricRow(search, 'Clue checks', [
+    formatCount(2 ** cells, cells),
+    local.capped ? '—' : local.clueChecks.toLocaleString(),
+    iterations.toLocaleString(),
+  ]);
+  metricRow(search, 'Per clue check', [
+    `${cost.predicateGates} gates`,
+    local.capped ? '—' : `\u2264 ${String(cost.predicateGates)} gates`,
+    hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
+  ]);
+  metricRow(search, 'Per extra cell', ['\u00d72', '—', '\u00d71.41']);
+  metricRow(search, 'P(solution), ideal', [
+    '100%',
+    found > 0 ? '100%' : '—',
+    found > 0 ? (ideal * 100).toFixed(1) + '%' : '—',
+  ]);
 
-  function row(label: string, cv: string | number, qv: string | number): void {
-    const tr = tbody.insertRow();
-    const tdL = tr.insertCell();
-    tdL.className = 'metric-label';
-    tdL.textContent = label;
-    tr.insertCell().textContent = String(cv);
-    tr.insertCell().textContent = String(qv);
+  const device = tbl.createTBody();
+  device.className = 'metrics-group metrics-group--device';
+  groupRow(device, 'On the device', hw ? DEVICE_META : '');
+
+  if (hw) {
+    const perCell = measuredGrowth(rows, cols, found);
+    metricRow(device, 'Qubits', [cells], true);
+    metricRow(device, 'Two-qubit gates', [hw.two_qubit.toLocaleString()], true);
+    metricRow(device, 'Per extra cell, measured', [perCell ?? '—'], true);
+    metricRow(device, 'Depth (layers)', [hw.depth.toLocaleString()], true);
+    metricRow(device, 'Device budget (layers)', [
+      `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}\u00d7 over)`,
+    ], true);
+    metricRow(device, 'Rounds that fit', [
+      `${String(Math.floor(DEPTH_BUDGET / (hw.depth / hw.iterations)))} of ${String(hw.iterations)}`,
+    ], true);
+    metricRow(device, 'P(solution), at chance', [
+      `\u2248 ${(100 / 2 ** cells).toFixed(1)}%`,
+    ], true);
+  } else {
+    const tr = device.insertRow();
+    tr.className = 'metrics-unmeasured';
+    const td = tr.insertCell();
+    td.colSpan = 4;
+    td.textContent =
+      'Not measured for this board. Transpiling one costs more than the figure is worth; ' +
+      'the circuit below carries the counts as written, before any device sees them.';
   }
 
-  row('Variables', numVars ?? '—', numVars ?? '—');
-  row(
-    'Search space',
-    numVars != null ? (2 ** numVars).toLocaleString() : '—',
-    numVars != null ? (2 ** numVars).toLocaleString() : '—',
-  );
-  row('Solve time', fmtAvg(cl_times), fmtAvg(qu_times));
-  row('Solutions found', cl?.solutions_found ?? '—', qu?.solutions_found ?? '—');
-  row('Qubits', '—', qu?.num_qubits ?? '—');
-  row('Circuit depth', '—', qu?.circuit_depth?.toLocaleString() ?? '—');
-  row('Grover iterations', '—', qu?.grover_iterations ?? '—');
-  row(
-    'Top probability',
-    '—',
-    qu?.top_result_probability != null ? (qu.top_result_probability * 100).toFixed(1) + '%' : '—',
-  );
-  row(
-    'Peak memory',
-    cl?.peak_memory_kb != null ? cl.peak_memory_kb.toFixed(1) + ' KB' : '—',
-    qu?.peak_memory_kb != null ? qu.peak_memory_kb.toFixed(1) + ' KB' : '—',
-  );
-
-  el.appendChild(tbl);
+  el.append(tbl);
   el.classList.add('visible');
 }
 
@@ -467,5 +612,5 @@ export function renderBenchmark({
 
   renderClassical({ solutions, rows, cols });
   renderQuantum(counts, rows, cols);
-  renderMetrics(report, cl_times, qu_times);
+  renderMetrics(report);
 }

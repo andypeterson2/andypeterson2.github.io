@@ -64,4 +64,30 @@ test.describe('Reflow at 320px', () => {
       expect(overflow).toEqual([]);
     });
   }
+
+  // The metrics table is hidden until a run fills it, so the sweep above never sees
+  // the widest thing the nonogram page draws.
+  test('no horizontal scroll once the nonogram has solved', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
+    await page.locator('#btn-bench').click();
+    await expect(page.locator('.metrics-table')).toBeVisible();
+    await page.locator('#circuit-band > summary').click();
+    await expect(page.locator('#code-listing')).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth;
+      return [...document.querySelectorAll('body *')]
+        .filter((e) => {
+          const r = e.getBoundingClientRect();
+          if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+          return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
+        })
+        .slice(0, 3)
+        .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`);
+    });
+    expect(overflow).toEqual([]);
+  });
 });
