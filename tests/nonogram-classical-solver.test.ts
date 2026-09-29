@@ -49,3 +49,67 @@ describe('Checking a measured grid against the clues', () => {
     expect(accepted).toBe(1);
   });
 });
+
+describe('The search finds every solution, not just one', () => {
+  /** Every grid of this size, checked one at a time — the search this page never runs. */
+  function bruteForce(rows: number[][], cols: number[][]): string[] {
+    const cells = rows.length * cols.length;
+    const found: string[] = [];
+    for (let i = 0; i < 2 ** cells; i++) {
+      const grid = i.toString(2).padStart(cells, '0');
+      if (satisfies(grid, rows, cols)) found.push(grid);
+    }
+    return found;
+  }
+
+  /** The clues a grid states, so a board can be built from a picture. */
+  function cluesOf(grid: string, rowCount: number, colCount: number) {
+    const runs = (line: string) =>
+      line
+        .split('0')
+        .filter(Boolean)
+        .map((r) => r.length);
+    const rows = Array.from({ length: rowCount }, (_, r) =>
+      runs(grid.slice(r * colCount, (r + 1) * colCount)),
+    );
+    const cols = Array.from({ length: colCount }, (_, c) =>
+      runs(
+        Array.from({ length: rowCount }, (_, r) => grid[r * colCount + c])
+          .join(''),
+      ),
+    );
+    return { rows, cols };
+  }
+
+  test('agrees with brute force on every 3x3 board', () => {
+    // 512 boards, each compared against all 512 grids: the pruning is sound only if it
+    // never drops a solution, and this is what says so rather than an argument that it
+    // cannot. Backtracking explores the same space; it just refuses branches where a
+    // column has no pattern left, which can hold no solution.
+    for (let i = 0; i < 512; i++) {
+      const picture = i.toString(2).padStart(9, '0');
+      const { rows, cols } = cluesOf(picture, 3, 3);
+      const searched = [...solveLocal(rows, cols).solutions].sort();
+      const every = bruteForce(rows, cols).sort();
+      expect(searched).toEqual(every);
+    }
+  });
+
+  test('agrees with brute force on rectangular boards too', () => {
+    for (let i = 0; i < 64; i++) {
+      const picture = i.toString(2).padStart(6, '0');
+      const { rows, cols } = cluesOf(picture, 2, 3);
+      expect([...solveLocal(rows, cols).solutions].sort()).toEqual(bruteForce(rows, cols).sort());
+    }
+  });
+
+  test('reports every solution when a board has more than one', () => {
+    // Clues that pin nothing: each row holds one cell, each column one cell.
+    const rows = [[1], [1]];
+    const cols = [[1], [1]];
+    const found = solveLocal(rows, cols).solutions.sort();
+    expect(found).toEqual(bruteForce(rows, cols).sort());
+    expect(found.length).toBeGreaterThan(1);
+  });
+});
+
