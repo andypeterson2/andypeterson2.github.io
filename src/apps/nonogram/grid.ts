@@ -378,7 +378,7 @@ function moveFocus(r: number, c: number, focus: boolean): void {
 }
 
 function toggleCell(r: number, c: number, fill: boolean): void {
-  if (state.grid[r]?.[c] !== fill) onEdit();
+  const changed = state.grid[r]?.[c] !== fill;
   state.grid[r][c] = fill;
   const td = document.querySelector(`td[data-r="${String(r)}"][data-c="${String(c)}"]`);
   if (td) td.className = 'cell' + (fill ? ' filled' : '');
@@ -386,6 +386,8 @@ function toggleCell(r: number, c: number, fill: boolean): void {
   moveFocus(r, c, false);
   recomputeClues();
   updateClueCells();
+  // Last, so a listener reading the puzzle sees the cell it was told about.
+  if (changed) onEdit();
 }
 
 function repaintClueSlots(el: HTMLElement, clue: number[], maxLen: number, label: string): void {
