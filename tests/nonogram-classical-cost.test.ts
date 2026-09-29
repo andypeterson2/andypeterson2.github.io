@@ -22,10 +22,7 @@ function alternating(rows: number, cols: number): [number[][], number[][]] {
     if (run) out.push(run);
     return out.length ? out : [0];
   };
-  return [
-    grid.map(clue),
-    Array.from({ length: cols }, (_, c) => clue(grid.map((row) => row[c]!))),
-  ];
+  return [grid.map(clue), Array.from({ length: cols }, (_, c) => clue(grid.map((row) => row[c]!)))];
 }
 
 describe('Classical cost in circuit terms', () => {

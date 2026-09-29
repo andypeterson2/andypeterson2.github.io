@@ -109,9 +109,7 @@ test.describe('Nonogram: typing the clues', () => {
     await page.locator(clue('col', 2, 0)).fill('3');
     await page.locator('#btn-bench').click();
     // Counted in the metrics table; the sections carry their own timings.
-    await expect(
-      metricRow(page, 'Solutions').locator('td').first(),
-    ).toHaveText('1');
+    await expect(metricRow(page, 'Solutions').locator('td').first()).toHaveText('1');
     await expect(page.locator('#cl-canvas .sol-grid-label')).toHaveText('Solution');
   });
 
@@ -142,7 +140,8 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
 
     // Each figure annotates the section it measures rather than piling into one line.
     await expect(page.locator('#cl-meta')).toHaveText(/ms$/);
-    await expect(page.locator('#qu-meta')).toContainText('noiseless');
+    // The rules carry a figure each; the quantum one is how long the draw took.
+    await expect(page.locator('#qu-meta')).toHaveText(/ms$/);
     // The chart marks the grids the clues accept rather than the ones a line clears:
     // solid bars are solutions, and this board has exactly one.
     await expect(page.locator('#qu-histogram .hist-bar:not(.hist-below)')).toHaveCount(1);
@@ -171,6 +170,15 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');
     await expect(grover(page, 'Device budget (layers)')).toContainText('over');
     await expect(grover(page, 'Rounds that fit')).toContainText('of');
+  });
+
+  test('the chart names the break between the solutions and the rest', async ({ page }) => {
+    // A stored run keeps every outcome it measured, so both sides of the break are drawn.
+    // A board solved here can amplify so hard that nothing else is measured at all.
+    await page.locator('#gallery-select').selectOption({ index: 1 });
+    const labels = page.locator('#qu-histogram .hist-divide-label');
+    await expect(labels.first()).toHaveText('solutions');
+    await expect(labels.nth(1)).toHaveText('the rest');
   });
 
   test('the quantum solution matches the classical one', async ({ page }) => {
@@ -295,16 +303,14 @@ test.describe('Nonogram: the circuit is copyable for any board', () => {
     // Past the local solve limit the constraint oracle takes over, which is the
     // whole reason a large board can still be exported.
     await setSize(page, 6, 6);
-    // Too many wires to draw, so the drawing collapses the middle and says so.
-    await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
+    // Every qubit gets a wire, however many the board asks for.
+    await expect(page.locator('#circuit-svg .circ-label')).toHaveCount(48);
     await expect(page.locator('#code-listing')).toHaveAttribute(
       'title',
       /past what the page solves/,
     );
-    // Too many wires to draw, so the middle collapses and both ends stay.
-    await expect(page.locator('#circuit-svg .circ-more')).toHaveCount(1);
-    // Seven cells from the top, the last cell, and both ends of the ancillas.
-    await expect(page.locator('#circuit-svg .circ-wire')).toHaveCount(10);
+    // One wire per qubit: 36 cells and the ancillas the constraint oracle needs.
+    await expect(page.locator('#circuit-svg .circ-wire')).toHaveCount(48);
   });
 });
 
@@ -324,7 +330,7 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     const heads = page.locator('.metrics-table thead th');
     await expect(heads).toHaveText(['Metric', 'Exhaustive', 'Backtracking', 'Grover']);
     const spines = page.locator('.metrics-table th.spine');
-    await expect(spines).toHaveText(['Search', 'On the device']);
+    await expect(spines).toHaveText(['Search', 'If it ran on a device']);
     // Each spine covers every row of its own section.
     await expect(spines.first()).toHaveAttribute('rowspan', '5');
     // The qualifiers the rotated names could not carry are their hover text. The
@@ -382,9 +388,7 @@ test.describe('Nonogram: the circuit band follows the width', () => {
     await page.route('**/api/**', (r) => r.abort());
   });
 
-  test('the circuit is on the page at every width, with nothing to unfold', async ({
-    page,
-  }) => {
+  test('the circuit is on the page at every width, with nothing to unfold', async ({ page }) => {
     for (const width of [1280, 375]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(APP);
@@ -392,7 +396,6 @@ test.describe('Nonogram: the circuit band follows the width', () => {
       await expect(page.locator('#circuit-band summary')).toHaveCount(0);
     }
   });
-
 });
 
 test.describe('Nonogram: the circuit opens up', () => {
@@ -428,9 +431,7 @@ test.describe('Nonogram: the circuit opens up', () => {
     await expect(box(page, 'oracle')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('the two open independently, and together write out a whole iteration', async ({
-    page,
-  }) => {
+  test('the two open independently, and together write out a whole iteration', async ({ page }) => {
     await box(page, 'oracle').click();
     await box(page, 'diffuser').click();
     await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(2);
@@ -448,8 +449,7 @@ test.describe('Nonogram: the circuit opens up', () => {
   });
 
   test('the drawing takes the room the gates need', async ({ page }) => {
-    const width = async () =>
-      (await page.locator('#circuit-svg').boundingBox())?.width ?? 0;
+    const width = async () => (await page.locator('#circuit-svg').boundingBox())?.width ?? 0;
     const folded = await width();
     await box(page, 'oracle').click();
     await expect(page.locator('#circuit-svg .circ-frame')).toHaveCount(1);
@@ -459,9 +459,7 @@ test.describe('Nonogram: the circuit opens up', () => {
   });
 
   test('a block says what it is made of on hover', async ({ page }) => {
-    await expect(box(page, 'oracle').locator('title')).toContainText(
-      'built from the answers',
-    );
+    await expect(box(page, 'oracle').locator('title')).toContainText('built from the answers');
     await expect(box(page, 'diffuser').locator('title')).toContainText('about the average');
   });
 

@@ -1,12 +1,6 @@
 /* Nonogram Web App — bootstrap / init. */
 
-import {
-  state,
-  must,
-  clientId,
-  elClPlaceholder,
-  elQuSolPlaceholder,
-} from './state';
+import { state, must, clientId, elClPlaceholder, elQuSolPlaceholder } from './state';
 import {
   setStatus,
   setBusy,
@@ -253,9 +247,7 @@ function runBenchmarkLocal(puzzle: Puzzle): void {
         classical: `${dt.toFixed(1)} ms`,
         // The time measures the draw: the amplitudes come from a closed form, so what
         // takes any time at all is sampling them into counts.
-        quantum:
-          `noiseless, ${String(outcome.iterations)} iteration${outcome.iterations === 1 ? '' : 's'} · ` +
-          `${String(LOCAL_SHOTS)} shots drawn in ${qdt.toFixed(1)} ms`,
+        quantum: `${qdt.toFixed(1)} ms`,
         histogram: `${String(LOCAL_SHOTS)} shots`,
         histogramHover: `Sampled from the exact distribution over ${String(LOCAL_SHOTS)} shots, the count a hardware run asks for.`,
       });
@@ -417,7 +409,6 @@ interface GalleryPayload extends BenchmarkPayload {
   /** The device a captured hardware run was measured on. */
   hardware?: string | null;
 }
-
 
 /** The board the page opens on: the largest the in-page simulator handles comfortably. */
 const OPENING_RUN = 'plus-3x3';

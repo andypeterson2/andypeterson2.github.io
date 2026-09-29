@@ -29,7 +29,10 @@ import {
 import { satisfies, solveLocal } from './classical-solver';
 import { groverOutcome, optimalIterations } from './grover-sim';
 
-const MAX_DISPLAY = 30;
+/** A bar narrower than this is not a bar, so the chart widens past its frame instead. */
+const MIN_BAR_SLOT = 9;
+/** The break between the grids the clues accept and everything else. */
+const GAP_AFTER_SOLUTIONS = 34;
 
 // Wire shapes (hand-derived from the nonogram backend's payloads)
 
@@ -154,7 +157,7 @@ export function renderQuantum(
     return;
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  let entries: [string, number][] = Object.entries(counts).map(([bs, cnt]) => [
+  const entries: [string, number][] = Object.entries(counts).map(([bs, cnt]) => [
     bs,
     total > 0 ? cnt / total : 0,
   ]);
@@ -167,8 +170,6 @@ export function renderQuantum(
   const verified = entries.filter(([bs]) =>
     satisfies(asGrid(bs), puzzle.row_clues, puzzle.col_clues),
   );
-
-  entries = entries.slice(0, MAX_DISPLAY);
 
   state.histData = { entries, verified, rows, cols, totalOutcomes };
   elQuPlaceholder.style.display = 'none';
@@ -190,6 +191,8 @@ function histBox(): { W: number; H: number } {
 function paint(W: number, H: number, body: string, label: string): void {
   const svg = elHistSvg;
   svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
+  svg.setAttribute('width', String(W));
+  svg.setAttribute('height', String(H));
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', label);
   svg.removeAttribute('aria-hidden');
@@ -242,8 +245,8 @@ export function drawEmptyHistogram(): void {
       ? 'Counts appear after a run'
       : 'Measurement counts appear here after a quantum run'
     : narrow
-      ? 'Pick a Gallery run'
-      : 'Pick a Gallery run to see real quantum measurement counts';
+      ? 'Solve, or pick a Gallery run'
+      : 'Solve the puzzle, or pick a Gallery run, to see measurement counts';
   const s =
     `<g transform="translate(${String(P.l)},${String(P.t)})">` +
     axes(cW, cH) +
@@ -273,7 +276,11 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
     drawEmptyHistogram();
     return;
   }
-  const { W, H } = histBox();
+  const box = histBox();
+  // Every outcome gets a bar. Past what the frame holds the chart runs wider and the
+  // frame scrolls, so the tail of the distribution stays on the page.
+  const W = Math.max(box.W, 56 + 12 + entries.length * MIN_BAR_SLOT + GAP_AFTER_SOLUTIONS);
+  const H = box.H;
   const bits = Math.max(...entries.map(([bs]) => bs.length));
   // Room under the axis for the bitstrings, set at 45°, plus the caption line.
   const labelDrop = Math.min(96, 8 + bits * CHAR_PX * 0.71);
@@ -282,7 +289,9 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
     cH = H - P.t - P.b;
 
   const maxProb = entries[0][1];
-  const slot = cW / n;
+  // The gap the divider sits in, wide enough to read as a break in the ranking.
+  const solutionsShown = verified.length && verified.length < n ? verified.length : 0;
+  const slot = (cW - (solutionsShown ? GAP_AFTER_SOLUTIONS : 0)) / n;
   const bW = Math.max(4, Math.min(44, slot * 0.72));
   // A 12px label needs ~14px of run; past that, label every k-th bar.
   const every = Math.max(1, Math.ceil((LABEL_PX + 2) / slot));
@@ -299,15 +308,16 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
 
   // Solid bars are grids the clues accept; the rest are what the run also turned up.
   const solutions = new Set(verified.map(([bs]) => bs));
-  let lastSolution = -1;
   entries.forEach(([bs, prob], i) => {
     // The bitstring key is server data landing in SVG markup — accept only
     // literal 0/1 strings (anything else is dropped).
     if (!/^[01]+$/.test(bs)) return;
     const on = solutions.has(bs);
-    if (on) lastSolution = i;
     const bH = Math.max(1, (prob / maxProb) * cH);
-    const bx = i * slot + (slot - bW) / 2;
+    const bx =
+      i * slot +
+      (slot - bW) / 2 +
+      (solutionsShown && i >= solutionsShown ? GAP_AFTER_SOLUTIONS : 0);
     const by = cH - bH;
     s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
       width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
@@ -324,9 +334,13 @@ export function drawHistogram({ entries, verified, totalOutcomes }: HistData): v
 
   // Where the solutions stop. Bars are ranked by how often they came back, so this
   // says at a glance whether the run put them in front.
-  if (lastSolution >= 0 && lastSolution < n - 1) {
-    const dx = ((lastSolution + 1) * slot).toFixed(1);
-    s += `<line class="hist-divide" x1="${dx}" y1="0" x2="${dx}" y2="${String(cH)}"/>`;
+  if (solutionsShown) {
+    const dx = solutionsShown * slot + GAP_AFTER_SOLUTIONS / 2;
+    s += `<line class="hist-divide" x1="${dx.toFixed(1)}" y1="0" x2="${dx.toFixed(1)}" y2="${String(cH)}"/>`;
+    // Both read left to right from their own side, so one solution does not push its
+    // own label off the chart.
+    s += `<text class="hist-text hist-divide-label" x="2" y="4">solutions</text>`;
+    s += `<text class="hist-text hist-divide-label" x="${(dx + 5).toFixed(1)}" y="4">the rest</text>`;
   }
 
   s += axes(cW, cH);
@@ -514,7 +528,7 @@ function deviceRows(
     td.colSpan = 4;
     td.textContent =
       'Not measured for this board. Transpiling one costs more than the figure is worth; ' +
-      'the circuit below carries the counts as written, before any device sees them.';
+      'the circuit beside this carries the counts as written, before any device sees them.';
     return;
   }
   const perRound = hw ? hw.depth / hw.iterations : 0;
@@ -595,11 +609,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
   metricRow(
     search,
     'P(solution), ideal',
-    v([
-      '100%',
-      found > 0 ? '100%' : '—',
-      found > 0 ? (ideal * 100).toFixed(1) + '%' : '—',
-    ]),
+    v(['100%', found > 0 ? '100%' : '—', found > 0 ? (ideal * 100).toFixed(1) + '%' : '—']),
   );
 
   const device = tbl.createTBody();
@@ -607,13 +617,16 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
 
   deviceRows(device, { hw, cells, blank, growth: hw && measuredGrowth(rows, cols, found) }, v);
 
-  addSpine(search, 'Search', `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`);
-  addSpine(device, 'On the device', hw ? DEVICE_META : '');
+  addSpine(
+    search,
+    'Search',
+    `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`,
+  );
+  addSpine(device, 'If it ran on a device', hw ? DEVICE_META : '');
 
   el.append(tbl);
   el.classList.add('visible');
 }
-
 
 // Benchmark result renderer
 

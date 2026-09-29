@@ -73,10 +73,7 @@ describe('The search finds every solution, not just one', () => {
       runs(grid.slice(r * colCount, (r + 1) * colCount)),
     );
     const cols = Array.from({ length: colCount }, (_, c) =>
-      runs(
-        Array.from({ length: rowCount }, (_, r) => grid[r * colCount + c])
-          .join(''),
-      ),
+      runs(Array.from({ length: rowCount }, (_, r) => grid[r * colCount + c]).join('')),
     );
     return { rows, cols };
   }
@@ -112,4 +109,3 @@ describe('The search finds every solution, not just one', () => {
     expect(found.length).toBeGreaterThan(1);
   });
 });
-

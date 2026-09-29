@@ -86,4 +86,3 @@ const histEl = document.getElementById('qu-histogram');
 if (!(histEl instanceof SVGSVGElement))
   throw new Error('nonogram app: #qu-histogram missing (or not an <svg>)');
 export const elHistSvg = histEl;
-

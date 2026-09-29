@@ -150,7 +150,6 @@ export function shotCount(counts: Record<string, number>): number | null {
   );
 }
 
-
 /**
  * Draw `shots` measurements from the exact distribution, keyed the way a real run is.
  *
