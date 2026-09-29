@@ -194,7 +194,9 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(page.locator('#cl-placeholder')).toContainText('No solutions found');
     // A sampled draw would put a few states over the line by luck; a flat
     // distribution puts none, which is what no solution means.
-    await expect(page.locator('#qu-sol-placeholder')).toContainText('No solutions above threshold');
+    await expect(page.locator('#qu-sol-placeholder')).toContainText(
+      'No solution among the measured grids',
+    );
     await expect(grover(page, 'Clue checks')).toHaveText('0');
   });
 });

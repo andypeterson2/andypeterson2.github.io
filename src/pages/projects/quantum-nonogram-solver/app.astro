@@ -58,7 +58,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
               <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
               <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
             </div>
-            <div id="circuit-figure">
+            <div id="circuit-figure" data-reflow-exempt>
               <svg id="circuit-svg" aria-hidden="true"></svg>
             </div>
             <div class="code-box">
@@ -181,9 +181,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The circuit describes the puzzle rather than a run, so it sits under the editor
      that builds it, at the foot of the column. */
   .nono-band {
-    border-top: 2px solid var(--ink);
-    padding-top: 12px;
     margin-top: auto;
+    padding-top: 12px;
   }
 
   /* ── Draw view / grid ──
@@ -525,7 +524,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     position: absolute;
     right: 10px;
     top: var(--at, 50%);
-    transform: translateY(-100%);
+    transform: translateY(-105%);
     z-index: 1;
     align-items: baseline;
     background: var(--paper);
@@ -822,8 +821,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The drawing and the source it stands for, read together. Each column takes half and
      may shrink: a written-out block is wider than any half, and scrolls inside its own
      frame rather than widening the page. */
-  /* One pane at a time, at a height that does not jump as the views swap. */
-  :global(#circuit-figure),
+  /* One pane at a time, at a height that does not jump as the views swap. The drawing
+     may ask for more and gets it: a frame that scrolled in both directions would put a
+     second set of arrows on a figure that only ever runs wide. */
+  :global(#circuit-figure) {
+    min-height: 340px;
+  }
+
   .code-box {
     min-height: 340px;
     max-height: 340px;
@@ -1030,7 +1034,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.circ-gates) {
-    dominant-baseline: text-before-edge;
+    text-anchor: start;
   }
 
   /* What a bracket or a brace says about the span it encloses. */

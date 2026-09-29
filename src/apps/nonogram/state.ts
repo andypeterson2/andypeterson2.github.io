@@ -3,6 +3,13 @@
 export interface HistData {
   /** [bitstring, probability] sorted desc, capped to MAX_DISPLAY. */
   entries: [string, number][];
+  /**
+   * The measured grids that satisfy the clues, checked rather than inferred.
+   *
+   * Taken over every outcome the run produced, so a grid measured too rarely for the
+   * chart to draw is still reported.
+   */
+  verified: [string, number][];
   threshold: number;
   rows: number;
   cols: number;

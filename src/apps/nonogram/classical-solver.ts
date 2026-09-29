@@ -47,6 +47,54 @@ export function linePatterns(len: number, clue: number[] | undefined): number[] 
   return results;
 }
 
+/** The runs of filled cells along one line, which is what a clue states. */
+function runsOf(line: boolean[]): number[] {
+  const runs: number[] = [];
+  let count = 0;
+  for (const filled of line) {
+    if (filled) count++;
+    else if (count) {
+      runs.push(count);
+      count = 0;
+    }
+  }
+  if (count) runs.push(count);
+  return runs;
+}
+
+/** A clue as the check compares it: the runs it states, with the empty line's 0 dropped. */
+function statedRuns(clue: number[] | undefined): number[] {
+  return (clue ?? []).filter((n) => n > 0);
+}
+
+/**
+ * Whether a grid satisfies the clues — the oracle's own question, asked classically.
+ *
+ * This is what makes a measured bitstring a solution or not. It costs one pass over the
+ * grid, which is why a candidate is checked rather than inferred from how often it came
+ * up: a run concentrates probability so that few shots are needed, and confirming what
+ * came back was always cheap.
+ */
+export function satisfies(bits: string, rowClues: number[][], colClues: number[][]): boolean {
+  const rows = rowClues.length;
+  const cols = colClues.length;
+  if (bits.length !== rows * cols) return false;
+  const at = (r: number, c: number): boolean => bits[r * cols + c] === '1';
+
+  const same = (a: number[], b: number[]): boolean =>
+    a.length === b.length && a.every((n, i) => n === b[i]);
+
+  for (let r = 0; r < rows; r++) {
+    const line = Array.from({ length: cols }, (_, c) => at(r, c));
+    if (!same(runsOf(line), statedRuns(rowClues[r]))) return false;
+  }
+  for (let c = 0; c < cols; c++) {
+    const line = Array.from({ length: rows }, (_, r) => at(r, c));
+    if (!same(runsOf(line), statedRuns(colClues[c]))) return false;
+  }
+  return true;
+}
+
 /** Render the chosen per-row bitmasks as a row-major "0"/"1" grid string. */
 function gridString(chosenRowPats: number[], rows: number, cols: number): string {
   let s = '';

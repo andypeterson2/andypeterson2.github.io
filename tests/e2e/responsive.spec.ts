@@ -56,6 +56,9 @@ test.describe('Reflow at 320px', () => {
             const r = e.getBoundingClientRect();
             // SVG internals are clipped by their own viewport; they can't scroll the page.
             if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            // A circuit needs its two-dimensional layout (WCAG 1.4.10 excepts diagrams),
+            // so it scrolls inside its own frame rather than shrinking to the column.
+            if (e.closest('[data-reflow-exempt]')) return false;
             return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
           })
           .slice(0, 3)
@@ -84,6 +87,7 @@ test.describe('Reflow at 320px', () => {
           .filter((e) => {
             const r = e.getBoundingClientRect();
             if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            if (e.closest('[data-reflow-exempt]')) return false;
             return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
           })
           .slice(0, 3)

@@ -377,7 +377,8 @@ test.describe('Nonogram: the IBM tier', () => {
       await expect(page.locator('#qu-sol-placeholder')).not.toContainText('%');
 
       // A real peak dominates: anything else stays under the display threshold.
-      stub.setDone({ '1111': 950, '0000': 74 });
+      // The satisfying grid for this board is 0111, little-endian on the wire.
+      stub.setDone({ '1110': 950, '0000': 74 });
       // Waited for on a phrase only the finished run produces: the queue message also
       // starts with the device name, so matching that would pass while still waiting.
       await expect(page.locator('#status-line')).toContainText('by chance', {
@@ -446,7 +447,8 @@ test.describe('Nonogram: the IBM tier', () => {
 
       // The same job, picked back up from the id the tab kept.
       await expect(page.locator('#status-line')).toContainText('queued');
-      stub.setDone({ '1111': 900, '0000': 124 });
+      // The same board, so the same satisfying grid.
+      stub.setDone({ '1110': 900, '0000': 124 });
       // Waited for on a phrase only the finished run produces: the queue message also
       // starts with the device name, so matching that would pass while still waiting.
       await expect(page.locator('#status-line')).toContainText('by chance', {

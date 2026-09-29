@@ -27,7 +27,7 @@ import {
   overBudget,
   type HardwareCost,
 } from './hardware-cost';
-import { solveLocal } from './classical-solver';
+import { satisfies, solveLocal } from './classical-solver';
 import { chanceThreshold, groverOutcome, optimalIterations, shotCount } from './grover-sim';
 
 const MAX_DISPLAY = 30;
@@ -137,6 +137,15 @@ export function renderClassical({ solutions, rows, cols }: ClassicalResult): voi
 }
 
 // Quantum histogram & solutions
+/**
+ * A measurement as a grid string.
+ *
+ * Qiskit reports little-endian bitstrings, so the first cell is the last character.
+ */
+function asGrid(bits: string): string {
+  return bits.split('').reverse().join('');
+}
+
 export function renderQuantum(
   counts: Record<string, number> | null | undefined,
   rows: number,
@@ -153,11 +162,19 @@ export function renderQuantum(
   ]);
   entries.sort((a, b) => b[1] - a[1]);
   const totalOutcomes = entries.length;
+
+  // Which grids are solutions is a fact about the clues, so it is checked here over
+  // everything that came back, before the chart drops what it cannot draw.
+  const puzzle = getCurrentPuzzle();
+  const verified = entries.filter(([bs]) =>
+    satisfies(asGrid(bs), puzzle.row_clues, puzzle.col_clues),
+  );
+
   entries = entries.slice(0, MAX_DISPLAY);
 
   const threshold = state.userThreshold ?? chanceThreshold(rows * cols, shotCount(counts));
 
-  state.histData = { entries, threshold, rows, cols, totalOutcomes };
+  state.histData = { entries, verified, threshold, rows, cols, totalOutcomes };
   elThresholdInput.disabled = false;
   elQuPlaceholder.style.display = 'none';
 
@@ -186,7 +203,34 @@ function paint(W: number, H: number, body: string, label: string): void {
   svg.setAttribute('aria-label', label);
   svg.removeAttribute('aria-hidden');
   svg.innerHTML = body;
+  centreOnContent(svg);
+  placeThresholdControl();
   elQuPlaceholder.style.display = 'none';
+}
+
+/**
+ * Sit the drawing in the middle of its frame.
+ *
+ * The chart reserves room for labels that turn out not to need all of it — the axis
+ * figures on one side, the rotated bitstrings under the bars — which leaves it low and
+ * to one side of its box. Measuring what was actually drawn and framing that instead
+ * centres it whatever the labels came to.
+ */
+function centreOnContent(svg: SVGSVGElement): void {
+  let box: DOMRect;
+  try {
+    box = svg.getBBox();
+  } catch {
+    // No layout yet (a hidden pane); the declared viewBox still stands.
+    return;
+  }
+  if (box.width <= 0 || box.height <= 0) return;
+  const pad = 6;
+  svg.setAttribute(
+    'viewBox',
+    `${(box.x - pad).toFixed(1)} ${(box.y - pad).toFixed(1)} ` +
+      `${(box.width + pad * 2).toFixed(1)} ${(box.height + pad * 2).toFixed(1)}`,
+  );
 }
 
 function axes(cW: number, cH: number): string {
@@ -236,15 +280,22 @@ const DITHER =
 /**
  * Put the threshold's control on the line it sets.
  *
- * The chart scales with its container, so the height is handed over as a fraction of
- * the drawing and the stylesheet turns it back into a position. Null parks the control
- * out of the way, for a chart with no line to sit on.
+ * Read off the line as drawn rather than computed from the chart's own coordinates: the
+ * drawing is re-framed to whatever it came to, so only the rendered geometry knows where
+ * the line ended up.
  */
-function placeThresholdControl(fraction: number | null): void {
+function placeThresholdControl(): void {
   const box = elThresholdInput.closest('.histogram-controls');
-  if (!(box instanceof HTMLElement)) return;
-  box.hidden = fraction === null;
-  if (fraction !== null) box.style.setProperty('--at', `${(fraction * 100).toFixed(2)}%`);
+  const area = elHistSvg.parentElement;
+  if (!(box instanceof HTMLElement) || !area) return;
+  const line = elHistSvg.querySelector('.hist-threshold');
+  if (!line) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const at = line.getBoundingClientRect().top - area.getBoundingClientRect().top;
+  box.style.setProperty('--at', `${at.toFixed(1)}px`);
 }
 
 export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
@@ -305,9 +356,6 @@ export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): 
   if (threshold > 0 && threshold <= maxProb) {
     const ty = cH - (threshold / maxProb) * cH;
     s += `<line class="hist-threshold" x1="0" y1="${ty.toFixed(1)}" x2="${String(cW)}" y2="${ty.toFixed(1)}"/>`;
-    placeThresholdControl((P.t + ty) / H);
-  } else {
-    placeThresholdControl(null);
   }
 
   s += axes(cW, cH);
@@ -338,18 +386,17 @@ export function renderQuantumList(): void {
     return;
   }
 
-  const { entries, threshold, rows, cols } = state.histData;
-  const above = entries.filter(([, prob]) => prob >= threshold);
+  const { verified, rows, cols } = state.histData;
   const sz = getBestSolSize(rows, cols);
 
-  if (above.length === 0) {
+  if (verified.length === 0) {
     elQuList.appendChild(elQuSolPlaceholder);
-    elQuSolPlaceholder.textContent = 'No solutions above threshold.';
+    elQuSolPlaceholder.textContent = 'No solution among the measured grids.';
     return;
   }
 
-  above.forEach(([bs, prob]) => {
-    const bsGrid = bs.split('').reverse().join('');
+  verified.forEach(([bs, prob]) => {
+    const bsGrid = asGrid(bs);
     const wrap = document.createElement('div');
     wrap.className = 'sol-grid-wrap';
 

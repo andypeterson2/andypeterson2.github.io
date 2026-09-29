@@ -395,16 +395,17 @@ export function drawCircuit(circuit: Circuit, expanded: ReadonlySet<Block> = new
 
   // The gate count is of the whole register, so its brace takes in every wire.
   const gx = width - 4;
+  const count = `${totalGates(circuit).toLocaleString()} gates`;
   const gates =
     brace(gx, TOP - BOX / 2, lastRow + BOX / 2) +
-    `<text class="circ-span circ-gates" x="${String(gx + 9)}" y="${String((TOP + lastRow) / 2)}" ` +
-    `transform="rotate(90 ${String(gx + 9)} ${String((TOP + lastRow) / 2)})">` +
-    `${totalGates(circuit).toLocaleString()} gates</text>`;
+    `<text class="circ-span circ-gates" x="${String(gx + 22)}" y="${String((TOP + lastRow) / 2)}">` +
+    `${count}</text>`;
 
   const close = BLOCKS.map(() => '</g>').join('');
   return {
     body: lines + parts.join('') + close + bracket + depth + gates,
-    width: width + 26,
+    // Room for the brace and the count beside it, at the body face's ~6px advance.
+    width: width + 30 + count.length * 6,
     height,
     blocks,
   };
