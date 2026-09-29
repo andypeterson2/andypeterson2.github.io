@@ -7,6 +7,39 @@ function textbookP(k: number, solutions: number, searchSpace: number): number {
   return Math.sin((2 * k + 1) * Math.asin(Math.sqrt(solutions / searchSpace))) ** 2;
 }
 
+describe('Optimal iteration count', () => {
+  // Values read off Qiskit's Grover.optimal_num_iterations, which the backend uses.
+  // The site must pick the same k, or the browser and the backend describe different
+  // circuits for one puzzle.
+  test('agrees with the count Qiskit picks', () => {
+    const cases: [number, number, number][] = [
+      // [solutions, qubits, expected k]
+      [1, 4, 3],
+      [2, 4, 2],
+      [1, 6, 6],
+      [1, 9, 17],
+      [2, 9, 12],
+      [1, 25, 4549],
+    ];
+    for (const [m, n, want] of cases) {
+      expect(optimalIterations(m, n)).toBe(want);
+    }
+  });
+
+  test('beats the small-angle approximation where they disagree', () => {
+    // 35 solutions over 512 states: (pi/4)*sqrt(N/M) floors to 3, but the peak is at 2.
+    expect(optimalIterations(35, 9)).toBe(2);
+    expect(groverOutcome(35, 9, 2).markedProbability).toBeGreaterThan(
+      groverOutcome(35, 9, 3).markedProbability,
+    );
+  });
+
+  test('a puzzle with no solutions and a fully marked space have no peak', () => {
+    expect(optimalIterations(0, 9)).toBe(0);
+    expect(optimalIterations(512, 9)).toBe(0);
+  });
+});
+
 describe('Grover amplitudes', () => {
   // Pins the arithmetic. The simulation reduces to this identity, so agreement here
   // is a regression check on the implementation rather than evidence about physics.

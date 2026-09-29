@@ -38,12 +38,16 @@ export interface GroverOutcome {
  * The iteration count that lands closest to a marked state.
  *
  * P(k) is periodic, so more is not better: past the peak the amplitude rotates back
- * off the solutions again.
+ * off the solutions again. Each iteration turns the state by 2θ from a start of θ,
+ * so the peak sits at arccos(θ̂)/2θ — the same count Qiskit picks. The familiar
+ * (π/4)·√(N/M) is its small-angle approximation and rounds to a different integer
+ * once M/N stops being tiny.
  */
 export function optimalIterations(solutionCount: number, qubits: number): number {
   const searchSpace = 2 ** qubits;
   if (solutionCount <= 0 || solutionCount >= searchSpace) return 0;
-  return Math.floor((Math.PI / 4) * Math.sqrt(searchSpace / solutionCount));
+  const amplitude = Math.sqrt(solutionCount / searchSpace);
+  return Math.round(Math.acos(amplitude) / (2 * Math.asin(amplitude)));
 }
 
 /** Amplitudes after `iterations` rounds, defaulting to the count that peaks. */
