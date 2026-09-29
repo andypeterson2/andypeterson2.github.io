@@ -17,7 +17,15 @@ import {
 } from './state';
 import { getBestSolSize, getCurrentPuzzle } from './grid';
 import { classicalCost, formatCount } from './classical-cost';
-import { DEPTH_BUDGET, hardwareCost, measuredGrowth, overBudget } from './hardware-cost';
+import {
+  COST_OPTIMIZATION,
+  COST_SEEDS,
+  COST_TARGET,
+  DEPTH_BUDGET,
+  hardwareCost,
+  measuredGrowth,
+  overBudget,
+} from './hardware-cost';
 import { solveLocal } from './classical-solver';
 import { groverOutcome, optimalIterations } from './grover-sim';
 
@@ -376,8 +384,18 @@ const NOTES: Record<string, string> = {
     'One solution among the states — what a device returns once the circuit outruns its coherence.',
 };
 
-/** The measured group describes a circuit whose oracle already holds the answer. */
-const DEVICE_META = 'lower bound \u00b7 answer-marking oracle';
+/**
+ * What produced the figures in the measured group, and what they are figures of.
+ *
+ * A transpiled depth means nothing without the device it was transpiled for and the
+ * settings that got it: the same circuit swings by a tenth across seeds alone. The
+ * target names Qiskit's snapshot of the Heron it was fitted to, which is what the
+ * figures were measured against. The oracle already holds the answer, so the cost is
+ * the floor rather than the price.
+ */
+const DEVICE_META =
+  `${COST_TARGET} \u00b7 opt ${String(COST_OPTIMIZATION)} \u00b7 ` +
+  `best of ${String(COST_SEEDS)} seeds \u00b7 lower bound \u00b7 answer-marking oracle`;
 
 function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElement {
   const td = tr.insertCell();

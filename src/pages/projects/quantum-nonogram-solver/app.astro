@@ -712,6 +712,15 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     margin-bottom: 0;
   }
 
+  /* The qualifiers this rule carries are the point of the figures under it, so a narrow
+     screen wraps them onto their own lines rather than clipping them to an ellipsis. */
+  @media (width <= 640px) {
+    :global(.section-rule--in-table .rule-meta) {
+      white-space: normal;
+      overflow: visible;
+    }
+  }
+
   /* There is no device on the classical side. A hatched region says that; a column of
      dashes would read as data that went missing. */
   :global(.metrics-table .na) {
