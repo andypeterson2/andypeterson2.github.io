@@ -202,26 +202,43 @@ const EXP_COL = 32;
 /** Past this the drawing stops being readable and the listing serves better. */
 export const MAX_EXPANDED_COLUMNS = 26;
 
-/** Pack gates into columns, each as early as the qubits it touches allow. */
+/**
+ * Pack gates into columns, each as early as the qubits it touches allow.
+ *
+ * A column holds one stage only. Packed by qubit alone, the oracle's closing flips
+ * share a column with the diffuser's first gates, and the guard drawn at that column
+ * puts part of the oracle on the diffuser's side of it.
+ */
 function columns(gates: Gate[]): Gate[][] {
   const packed: Gate[][] = [];
   const freeAt = new Map<number, number>();
+  let stage: Gate['stage'] | null = null;
+  let floor = 0;
   for (const gate of gates) {
-    const touched = gateQubits(gate);
-    let col = 0;
-    for (const q of touched) col = Math.max(col, freeAt.get(q) ?? 0);
-    // A multi-qubit gate blocks every wire it spans, so nothing slips underneath it.
-    const lo = Math.min(...touched);
-    const hi = Math.max(...touched);
-    if (touched.length > 1) {
-      for (let q = lo; q <= hi; q++) col = Math.max(col, freeAt.get(q) ?? 0);
-      for (let q = lo; q <= hi; q++) freeAt.set(q, col + 1);
-    } else {
-      for (const q of touched) freeAt.set(q, col + 1);
-    }
+    if (stage !== null && gate.stage !== stage) floor = packed.length;
+    stage = gate.stage;
+    const col = place(gate, freeAt, floor);
     (packed[col] ??= []).push(gate);
   }
   return packed;
+}
+
+/** Every wire a gate occupies. A multi-qubit gate blocks the ones it spans too. */
+function occupied(gate: Gate): number[] {
+  const touched = gateQubits(gate);
+  if (touched.length === 1) return touched;
+  const lo = Math.min(...touched);
+  const hi = Math.max(...touched);
+  return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+}
+
+/** The earliest column at or after `floor` where a gate fits, reserving its wires. */
+function place(gate: Gate, freeAt: Map<number, number>, floor: number): number {
+  const wires = occupied(gate);
+  let col = floor;
+  for (const q of wires) col = Math.max(col, freeAt.get(q) ?? 0);
+  for (const q of wires) freeAt.set(q, col + 1);
+  return col;
 }
 
 /** How wide the written-out circuit would be, so a caller can decline to draw it. */

@@ -269,6 +269,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     height: var(--cell);
     border: 1px solid var(--ink);
     background: var(--dither-50);
+
+    /* Collapsed borders put the border box on a half pixel, which snaps a 1px-feature
+       tile to solid ink. The padding box is whole-pixel, so the checker survives. */
+    background-clip: padding-box;
     user-select: none;
   }
 
@@ -724,6 +728,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      dashes would read as data that went missing. */
   :global(.metrics-table .na) {
     background: var(--dither-50);
+
+    /* Whole-pixel paint box, or the collapsed border snaps the checker to solid ink. */
+    background-clip: padding-box;
   }
 
   /* A label with something to add is pressable — a title attribute reaches neither
@@ -908,6 +915,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      something here. Its figure has to come with it or it vanishes into the ink. */
   :global(.circ-hit) {
     cursor: pointer;
+  }
+
+  /* A pointer press is answered by the box inverting, so it needs no ring; without this
+     the browser draws its own, in its own colour. The keyboard keeps an ink one. */
+  :global(.circ-hit:focus) {
+    outline: none;
   }
 
   :global(.circ-hit:focus-visible) {
