@@ -198,6 +198,12 @@ function paintCircuit(opening?: Block): void {
   if (opening && before && !stillness()) {
     morph(svg, circuit, opening, before[opening], blocks[opening]);
   }
+
+  // The listing stands where the drawing stood, so switching views holds the page still.
+  const frame = $('circuit-figure');
+  const host = pane();
+  const drawn = frame?.getBoundingClientRect().height ?? 0;
+  if (host && drawn > 0) host.style.setProperty('--pane-h', `${String(Math.round(drawn))}px`);
 }
 
 /** Build the circuit for these clues and show its code. */

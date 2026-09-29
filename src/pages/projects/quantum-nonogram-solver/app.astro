@@ -66,8 +66,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       <div class="nono-right">
         <div id="status-line" class="status-line" role="status"></div>
         <div class="sol-pair">
-          <div class="sol-half">
-            <div class="section-rule">
+          <div class="sol-half panel">
+            <div class="panel-title">
               <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
             </div>
             <div id="cl-canvas" class="sol-canvas">
@@ -76,8 +76,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
               </div>
             </div>
           </div>
-          <div class="sol-half">
-            <div class="section-rule">
+          <div class="sol-half panel">
+            <div class="panel-title">
               <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
             </div>
             <div id="qu-list" class="sol-canvas">
@@ -87,19 +87,21 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             </div>
           </div>
         </div>
-        <div class="section-rule">
-          <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
-        </div>
-        <div id="qu-area" class="histogram-area">
-          <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
-               and a region that scrolls has to be reachable from the keyboard. -->
-          <div id="qu-scroll" class="hist-scroll" data-reflow-exempt tabindex="0">
-            <!-- Inside the frame that scrolls, pinned to its left edge: the scale holds
-                 while the bars run past it, and the scrollbar spans the whole frame. -->
-            <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
-            <svg id="qu-histogram" height="100%" aria-hidden="true"></svg>
+        <div class="panel">
+          <div class="panel-title">
+            <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
           </div>
-          <div id="qu-placeholder" class="placeholder-msg"></div>
+          <div id="qu-area" class="histogram-area">
+            <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
+               and a region that scrolls has to be reachable from the keyboard. -->
+            <div id="qu-scroll" class="hist-scroll" data-reflow-exempt tabindex="0">
+              <!-- Inside the frame that scrolls, pinned to its left edge: the scale holds
+                 while the bars run past it, and the scrollbar spans the whole frame. -->
+              <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
+              <svg id="qu-histogram" height="100%" aria-hidden="true"></svg>
+            </div>
+            <div id="qu-placeholder" class="placeholder-msg"></div>
+          </div>
         </div>
         <div id="metrics-pane"></div>
       </div>
@@ -136,6 +138,10 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The solver's status and placeholder lines are set in the mono face. */
   #nonogram-app {
     font-family: var(--font-mono);
+
+    /* The window's own padding would leave a gutter three times the one between the
+       columns, so the app takes the whole pane and its sections pad themselves. */
+    margin: calc(-1 * var(--pane-pad-y)) calc(-1 * var(--pane-pad-x));
   }
 
   /* Buttons are the shared .s6-btn. */
@@ -372,7 +378,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   #draw-view {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
@@ -482,8 +488,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     align-items: center;
     gap: 6px;
     border-bottom: 1px solid var(--ink);
-    padding-bottom: 10px;
-    margin-bottom: 10px;
+    padding: 16px 16px 10px;
   }
 
   .gallery-label select {
@@ -496,6 +501,29 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     min-width: 0;
   }
 
+  /* A framed section with its name along the top, inside the frame rather than across a
+     rule that runs out either side of it. */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   /* ── Solution canvases ── */
   .sol-canvas {
     display: flex;
@@ -506,7 +534,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
        live in a frame of their own and scroll inside it. */
     max-height: 220px;
     overflow-y: auto;
-    border: 2px solid var(--ink);
     padding: 8px;
     min-height: 40px;
   }
@@ -624,7 +651,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      with the scale held beside them at a width of its own. */
   .histogram-area {
     height: 260px;
-    border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
   }
@@ -680,7 +706,16 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     fill: var(--ink);
   }
 
-  /* Where the grids the clues accept give way to the rest. */
+  /* The track and thumb carry the scroll. system.css names each end button with three
+     pseudo-classes, so hiding them takes a selector at least as particular. */
+  :global(.hist-scroll::-webkit-scrollbar-button:horizontal:start:decrement),
+  :global(.hist-scroll::-webkit-scrollbar-button:horizontal:end:increment),
+  :global(.hist-scroll::-webkit-scrollbar-button:vertical:start:decrement),
+  :global(.hist-scroll::-webkit-scrollbar-button:vertical:end:increment),
+  :global(.sol-canvas::-webkit-scrollbar-button:horizontal:start:decrement),
+  :global(.sol-canvas::-webkit-scrollbar-button:horizontal:end:increment),
+  :global(.sol-canvas::-webkit-scrollbar-button:vertical:start:decrement),
+  :global(.sol-canvas::-webkit-scrollbar-button:vertical:end:increment),
   :global(.hist-scroll::-webkit-scrollbar-button),
   :global(.sol-canvas::-webkit-scrollbar-button) {
     display: none;
@@ -927,8 +962,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
      second set of arrows on a figure that only ever runs wide. Copy sits on the listing
      it copies, so the frame is what anchors it. */
   .code-box {
-    min-height: 340px;
-    max-height: 340px;
+    min-height: var(--pane-h, 340px);
+    max-height: var(--pane-h, 340px);
     position: relative;
     display: flex;
   }

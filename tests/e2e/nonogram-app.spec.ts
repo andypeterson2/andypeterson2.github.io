@@ -384,7 +384,7 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     const titles = await page
       .locator('.metrics-table th')
       .evaluateAll((els) =>
-        els.filter((el) => !el.classList.contains('spine-corner')).map((el) => el.title),
+        els.filter((el) => !el.classList.contains('spine-corner')).map((el) => el.getAttribute('title') ?? ''),
       );
     expect(titles.length).toBeGreaterThan(14);
     expect(titles.filter((t) => t.length < 40)).toEqual([]);
