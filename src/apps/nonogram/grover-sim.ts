@@ -124,18 +124,30 @@ function uniformCounts(qubits: number): Record<string, number> {
 /** Above this many states the exact listing costs more than it is worth. */
 const EXACT_LIMIT = 12;
 
+/** Sample sizes a stored run is likely to have used, smallest first. */
+const SHOT_SIZES = [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+
 /**
- * How many shots a set of counts came from, or null when it is not a sample.
+ * How many shots a set of counts came from, or null when it never was a sample.
  *
- * A captured run may be stored either way: whole counts from a device or a simulator,
- * or the probabilities themselves. The two ask different questions of a histogram, so
- * they have to be told apart before either is read.
+ * A captured run may be stored either way: whole counts, or those counts divided by the
+ * shots. The second form threw the sample size away, but not the trace of it — every
+ * value is still a whole number of shots over the total, so the smallest sample size
+ * that makes all of them whole again is the one that produced them.
  */
 export function shotCount(counts: Record<string, number>): number | null {
   const values = Object.values(counts);
-  if (!values.length || !values.every((v) => Number.isInteger(v))) return null;
-  const total = values.reduce((a, b) => a + b, 0);
-  return total > 1 ? total : null;
+  if (!values.length) return null;
+  if (values.every((v) => Number.isInteger(v))) {
+    const total = values.reduce((a, b) => a + b, 0);
+    return total > 1 ? total : null;
+  }
+  if (Math.abs(values.reduce((a, b) => a + b, 0) - 1) > 1e-6) return null;
+  return (
+    SHOT_SIZES.find((shots) =>
+      values.every((v) => Math.abs(v * shots - Math.round(v * shots)) < 1e-6),
+    ) ?? null
+  );
 }
 
 /**

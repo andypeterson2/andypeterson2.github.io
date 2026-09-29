@@ -112,6 +112,8 @@ test.describe('Nonogram grid by keyboard', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(NONOGRAM);
     await expect(page.getByRole('table', { name: 'Puzzle grid, 3 by 3' })).toBeVisible();
+    // The page opens on a captured run; this one walks an empty grid.
+    await page.locator('#btn-clear').click();
     // The grid sits just before Clear in the tab order.
     await page.locator('#btn-clear').focus();
     await page.keyboard.press('Shift+Tab');

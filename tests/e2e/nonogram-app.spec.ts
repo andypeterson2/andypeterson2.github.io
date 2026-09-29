@@ -63,6 +63,8 @@ test.describe('Nonogram: typing the clues', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(APP);
     await expect(page.locator('td.cell').first()).toBeVisible();
+    // The page opens on a captured run; these tests are about an empty board.
+    await page.locator('#btn-clear').click();
     await page.locator('#btn-mode-clues').click();
   });
 

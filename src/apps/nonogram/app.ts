@@ -417,6 +417,30 @@ interface GalleryPayload extends BenchmarkPayload {
 }
 
 
+/** The board the page opens on: the largest the in-page simulator handles comfortably. */
+const OPENING_RUN = 'plus-3x3';
+
+/**
+ * Whether anyone has touched the app yet.
+ *
+ * The opening run arrives over the network, so it can land after a reader has already
+ * started drawing. It fills the grid and clears the results, which would take their
+ * work with it, so it gives way to anything done in the meantime.
+ */
+let untouched = true;
+
+function watchForUse(): void {
+  for (const event of ['pointerdown', 'keydown'] as const) {
+    document.addEventListener(
+      event,
+      () => {
+        untouched = false;
+      },
+      { capture: true, once: true },
+    );
+  }
+}
+
 async function initGallery(): Promise<void> {
   const sel = document.getElementById('gallery-select');
   if (!(sel instanceof HTMLSelectElement)) return;
@@ -445,6 +469,13 @@ async function initGallery(): Promise<void> {
   sel.addEventListener('change', () => {
     if (sel.value) void loadGalleryEntry(sel.value);
   });
+
+  // Open on a run rather than on an empty comparison: the page is about what the two
+  // searches cost, and a reader should see that before drawing anything themselves.
+  const opening = index.find((e) => e.slug === OPENING_RUN) ?? index[0];
+  if (!untouched) return;
+  sel.value = opening.slug;
+  await loadGalleryEntry(opening.slug);
 }
 
 async function loadGalleryEntry(slug: string): Promise<void> {
@@ -591,6 +622,7 @@ function init(): void {
     drawEmptyHistogram();
   });
 
+  watchForUse();
   void initGallery();
 
   updateGridSizeLabel();
