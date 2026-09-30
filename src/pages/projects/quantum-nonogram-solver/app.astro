@@ -847,7 +847,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     cursor: help;
   }
 
-  :global(.metrics-unmeasured td) {
+  :global(.metrics-unmeasured td),
+  :global(.metrics-note td) {
     text-align: left;
     line-height: var(--leading-normal);
   }
@@ -876,7 +877,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     }
 
     :global(.metrics-table th[scope='row']),
-    :global(.metrics-table .metrics-unmeasured td) {
+    :global(.metrics-table .metrics-unmeasured td),
+    :global(.metrics-table .metrics-note td) {
       grid-column: 1 / -1;
     }
 

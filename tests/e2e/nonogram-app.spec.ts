@@ -377,6 +377,17 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(na.first().locator('.sr-only')).toHaveText('not applicable');
   });
 
+  test('the device group costs the circuit the way an attack estimate is costed', async ({
+    page,
+  }) => {
+    // Width times depth, and what it comes to against one classical processor.
+    await expect(metricRow(page, 'Spacetime (qubit-layers)').locator('td').last()).toHaveText(
+      /[0-9,]+/,
+    );
+    await expect(page.locator('.metrics-note td')).toContainText('qubit-layers against');
+    await expect(page.locator('.metrics-note td')).toContainText('gate-steps');
+  });
+
   test('every label says what it means as hover text', async ({ page }) => {
     // Every row in the table is a figure, so nothing in it is pressable.
     await expect(page.locator('.metrics-table button')).toHaveCount(0);
@@ -384,7 +395,9 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     const titles = await page
       .locator('.metrics-table th')
       .evaluateAll((els) =>
-        els.filter((el) => !el.classList.contains('spine-corner')).map((el) => el.getAttribute('title') ?? ''),
+        els
+          .filter((el) => !el.classList.contains('spine-corner'))
+          .map((el) => el.getAttribute('title') ?? ''),
       );
     expect(titles.length).toBeGreaterThan(14);
     expect(titles.filter((t) => t.length < 40)).toEqual([]);

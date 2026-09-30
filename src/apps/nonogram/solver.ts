@@ -441,7 +441,8 @@ const NOTES: Record<string, string> = {
     'solver, and the oracle in the measured circuit marks exactly those grids.',
   'Clue checks':
     'How many times each method asks the clues a question: grids checked, row placements ' +
-    'tried, or Grover rounds. One question is a different size in each column.',
+    'tried, or Grover rounds. One question is a different size in each column: the 17 rounds ' +
+    'here are the whole speedup, and the device rows below are what they cost.',
   'Per clue check':
     'What one question costs. Exhaustive: two-input gates to test a whole grid. ' +
     'Backtracking: at most that, since it stops at the first blocked column. Grover: ' +
@@ -465,6 +466,10 @@ const NOTES: Record<string, string> = {
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
     'board with the same number of solutions. A dash means there was nothing to compare ' +
     'it with.',
+  'Spacetime (qubit-layers)':
+    'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
+    'a quantum attack would cost are quoted this way, since a shallow circuit on many qubits ' +
+    'and a deep one on few come to the same.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
     `fitted to the device. Best of the ${String(COST_SEEDS)} seeds tried, which differed ` +
@@ -602,12 +607,13 @@ function deviceRows(
     hw: HardwareCost | null;
     cells: number;
     found: number;
+    work: number;
     blank: boolean;
     growth: string | null | false;
   },
   v: (values: (string | number)[]) => (string | number)[],
 ): void {
-  const { hw, cells, found, blank, growth } = ctx;
+  const { hw, cells, found, work, blank, growth } = ctx;
   if (!hw && !blank) {
     const tr = body.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -624,6 +630,7 @@ function deviceRows(
     ['Two-qubit gates', hw ? hw.two_qubit.toLocaleString() : ''],
     ['Per extra cell, measured', growth || '—'],
     ['Depth (layers)', hw ? hw.depth.toLocaleString() : ''],
+    ['Spacetime (qubit-layers)', hw ? (cells * hw.depth).toLocaleString() : ''],
     [
       'Device budget (layers)',
       hw ? `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)` : '',
@@ -636,6 +643,35 @@ function deviceRows(
     ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`],
   ];
   for (const [label, value] of rows) metricRow(body, label, v([value]), true);
+  if (hw && !blank) crossoverNote(body, { hw, cells, work, growth });
+}
+
+/**
+ * Where the two costs stand against each other, in one line under the figures.
+ *
+ * The table gives both growth rates and both spacetime costs, and a reader can put them
+ * together; this says what they come to. The classical figure counts one gate per step on
+ * a single processor, which is the fairest thing to hold a width-times-depth cost against.
+ */
+function crossoverNote(
+  body: HTMLTableSectionElement,
+  ctx: { hw: HardwareCost; cells: number; work: number; growth: string | null | false },
+): void {
+  const { hw, cells, work, growth } = ctx;
+  const spacetime = cells * hw.depth;
+  const ratio = work > 0 ? spacetime / work : 0;
+  const rate =
+    typeof growth === 'string'
+      ? `The circuit grows ${growth} per cell where the exhaustive search grows 2x, so measured, nothing crosses over. `
+      : '';
+  const tr = body.insertRow();
+  tr.className = 'metrics-note';
+  const td = tr.insertCell();
+  td.colSpan = 4;
+  td.textContent =
+    `${rate}${String(cells)} cells cost ${spacetime.toLocaleString()} qubit-layers against ` +
+    `${work.toLocaleString()} gate-steps for one processor, about ` +
+    `${Math.round(ratio).toLocaleString()}x more.`;
 }
 
 function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
@@ -710,7 +746,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
 
   deviceRows(
     device,
-    { hw, cells, found, blank, growth: hw && measuredGrowth(rows, cols, found) },
+    { hw, cells, found, work: cost.work, blank, growth: hw && measuredGrowth(rows, cols, found) },
     v,
   );
 
