@@ -78,6 +78,31 @@ export function measuredGrowth(rows: number, cols: number, solutions: number): s
   return `${perCell.toFixed(2)}x`;
 }
 
+/**
+ * How the cost of one round grows per extra cell, measured against the next size down.
+ *
+ * The round count is fixed by the solution count and the register, so growth in the total
+ * carries it along; dividing it out leaves what a single oracle-and-diffuser pass costs,
+ * which is the part the compilation decides.
+ */
+export function measuredRoundGrowth(rows: number, cols: number, solutions: number): number | null {
+  const here = hardwareCost(rows, cols, solutions);
+  if (!here || here.iterations <= 0) return null;
+  const cells = rows * cols;
+  const smaller = COSTS.rows
+    .filter(
+      (r) =>
+        r.solutions === solutions && r.rows * r.cols < cells && r.two_qubit > 0 && r.iterations > 0,
+    )
+    .sort((a, b) => b.rows * b.cols - a.rows * a.cols)
+    .at(0);
+  if (!smaller) return null;
+  const step = cells - smaller.rows * smaller.cols;
+  const perRound = here.two_qubit / here.iterations;
+  const was = smaller.two_qubit / smaller.iterations;
+  return (perRound / was) ** (1 / step);
+}
+
 /** How far past a device's reach this circuit is. */
 export function overBudget(cost: HardwareCost): number {
   return cost.depth / DEPTH_BUDGET;

@@ -24,6 +24,7 @@ import {
   DEPTH_BUDGET,
   hardwareCost,
   measuredGrowth,
+  measuredRoundGrowth,
   overBudget,
   type HardwareCost,
 } from './hardware-cost';
@@ -464,12 +465,13 @@ const NOTES: Record<string, string> = {
     'already holds the answers.',
   'Per extra cell, measured':
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
-    'board with the same number of solutions. A dash means there was nothing to compare ' +
-    'it with.',
+    'board with the same number of solutions. One step between two boards, not a rate: the ' +
+    'steps measured so far run from 2.17x to 4.14x. A dash means there was nothing to ' +
+    'compare it with.',
   'Spacetime (qubit-layers)':
     'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
-    'a quantum attack would cost are quoted this way, since a shallow circuit on many qubits ' +
-    'and a deep one on few come to the same.',
+    'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
+    'holds idle, so it reads harder on the circuit than a gate count does.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
     `fitted to the device. Best of the ${String(COST_SEEDS)} seeds tried, which differed ` +
@@ -610,10 +612,11 @@ function deviceRows(
     work: number;
     blank: boolean;
     growth: string | null | false;
+    roundGrowth: number | null;
   },
   v: (values: (string | number)[]) => (string | number)[],
 ): void {
-  const { hw, cells, found, work, blank, growth } = ctx;
+  const { hw, cells, found, work, blank, growth, roundGrowth } = ctx;
   if (!hw && !blank) {
     const tr = body.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -643,35 +646,37 @@ function deviceRows(
     ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`],
   ];
   for (const [label, value] of rows) metricRow(body, label, v([value]), true);
-  if (hw && !blank) crossoverNote(body, { hw, cells, work, growth });
+  if (hw && !blank) crossoverNote(body, { hw, cells, work, roundGrowth });
 }
 
 /**
  * Where the two costs stand against each other, in one line under the figures.
  *
- * The table gives both growth rates and both spacetime costs, and a reader can put them
- * together; this says what they come to. The classical figure counts one gate per step on
- * a single processor, which is the fairest thing to hold a width-times-depth cost against.
+ * Which unit is charged decides the answer, so the line gives all three rather than the
+ * one that makes the point: two-qubit gates against classical gates is the closest thing
+ * to like for like, and width times depth charges the circuit for every qubit it holds
+ * idle while the classical side runs on one processor with no width at all.
  */
 function crossoverNote(
   body: HTMLTableSectionElement,
-  ctx: { hw: HardwareCost; cells: number; work: number; growth: string | null | false },
+  ctx: { hw: HardwareCost; cells: number; work: number; roundGrowth: number | null },
 ): void {
-  const { hw, cells, work, growth } = ctx;
-  const spacetime = cells * hw.depth;
-  const ratio = work > 0 ? spacetime / work : 0;
+  const { hw, cells, work, roundGrowth } = ctx;
+  if (work <= 0) return;
+  const each = (n: number): string => `${(n / work).toFixed(n / work < 10 ? 2 : 0)}x`;
   const rate =
-    typeof growth === 'string'
-      ? `The circuit grows ${growth} per cell where the exhaustive search grows 2x, so measured, nothing crosses over. `
-      : '';
+    roundGrowth == null
+      ? ''
+      : ` A round costs ${roundGrowth.toFixed(2)}x more per cell than on the next board down, which is what` +
+        ' compiling the marking oracle onto a fixed device costs rather than a rate the search sets.';
   const tr = body.insertRow();
   tr.className = 'metrics-note';
   const td = tr.insertCell();
   td.colSpan = 4;
   td.textContent =
-    `${rate}${String(cells)} cells cost ${spacetime.toLocaleString()} qubit-layers against ` +
-    `${work.toLocaleString()} gate-steps for one processor, about ` +
-    `${Math.round(ratio).toLocaleString()}x more.`;
+    `Against this board's ${work.toLocaleString()} classical gate-steps the circuit comes to ` +
+    `${each(hw.two_qubit)} by two-qubit gates, ${each(hw.gates)} by all gates, and ` +
+    `${each(cells * hw.depth)} by qubit-layers, so the unit charged decides the comparison.${rate}`;
 }
 
 function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
@@ -746,7 +751,15 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
 
   deviceRows(
     device,
-    { hw, cells, found, work: cost.work, blank, growth: hw && measuredGrowth(rows, cols, found) },
+    {
+      hw,
+      cells,
+      found,
+      work: cost.work,
+      blank,
+      growth: hw && measuredGrowth(rows, cols, found),
+      roundGrowth: hw && measuredRoundGrowth(rows, cols, found),
+    },
     v,
   );
 

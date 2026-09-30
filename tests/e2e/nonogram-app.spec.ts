@@ -384,8 +384,11 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(metricRow(page, 'Spacetime (qubit-layers)').locator('td').last()).toHaveText(
       /[0-9,]+/,
     );
-    await expect(page.locator('.metrics-note td')).toContainText('qubit-layers against');
-    await expect(page.locator('.metrics-note td')).toContainText('gate-steps');
+    // Three units, because the comparison turns on which one is charged.
+    const note = page.locator('.metrics-note td');
+    await expect(note).toContainText('by two-qubit gates');
+    await expect(note).toContainText('by qubit-layers');
+    await expect(note).toContainText('classical gate-steps');
   });
 
   test('every label says what it means as hover text', async ({ page }) => {
