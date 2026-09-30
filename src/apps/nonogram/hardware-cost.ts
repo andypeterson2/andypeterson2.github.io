@@ -18,10 +18,16 @@ export interface HardwareCost {
   iterations: number;
   /** How many boards of this shape share this solution count. */
   boards: number;
+  /** Spare qubits the synthesis pass was given, which it borrows for the big gates. */
+  ancillas: number;
   depth: number;
   depth_max: number;
   gates: number;
   two_qubit: number;
+  /** The same circuit compiled with nothing to borrow, six times dearer at nine cells. */
+  depth_noaux: number;
+  gates_noaux: number;
+  two_qubit_noaux: number;
 }
 
 interface CostTable {
@@ -29,6 +35,7 @@ interface CostTable {
   qiskit: string;
   optimization_level: number;
   seeds: number;
+  ancillas: number;
   worst_spread: number;
   rows: HardwareCost[];
 }
@@ -44,6 +51,8 @@ export const DEPTH_BUDGET = 200;
 export const COST_TARGET = COSTS.target;
 export const COST_SEEDS = COSTS.seeds;
 export const COST_OPTIMIZATION = COSTS.optimization_level;
+/** How far the seeds spread, as a percentage, for the rows deep enough to mean anything. */
+export const COST_SPREAD = COSTS.worst_spread;
 
 /** The measured cost for this board, or null when it was never measured. */
 export function hardwareCost(

@@ -150,7 +150,10 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(page.locator('#status-line')).toBeHidden();
 
     await expect(page.locator('#qu-histogram rect.hist-bar').first()).toBeVisible();
-    await expect(grover(page, 'Qubits')).toHaveText('9');
+    // One per cell, plus the spare ones synthesis borrows for the many-controlled gates.
+    await expect(grover(page, 'Qubits')).toHaveText('9 + 2');
+    // The same circuit with nothing to borrow, kept beside it.
+    await expect(grover(page, 'With nothing to borrow')).toContainText('x');
     await expect(grover(page, 'P(solution), ideal')).toContainText('%');
 
     // Three methods, and the puzzle is not unstructured search: the page's own solver
@@ -164,7 +167,9 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // A letter x: the body face has no multiplication sign of its own.
     await expect(exhaustive(page, 'Per extra cell')).toHaveText('2x');
     await expect(grover(page, 'Per extra cell')).toHaveText('1.41x');
-    await expect(grover(page, 'Per extra cell, measured')).toHaveText('2.17x');
+    // Measured, with spare qubits lent to synthesis: above the ideal 1.41x and under the
+    // 2x the exhaustive search pays.
+    await expect(grover(page, 'Per extra cell, measured')).toHaveText('1.82x');
 
     // Measured, and hopeless: the circuit asks for far more than the device holds.
     await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');

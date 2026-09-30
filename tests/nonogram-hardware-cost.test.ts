@@ -66,8 +66,10 @@ describe('Measured hardware cost', () => {
   });
 
   test('every board is far past what a device of that generation holds', () => {
+    // Even compiled with spare qubits to borrow, and with an oracle that already holds
+    // the answers, the circuit asks for tens of times the depth a device runs.
     const cost = hardwareCost(3, 3, 1)!;
-    expect(overBudget(cost)).toBeGreaterThan(100);
+    expect(overBudget(cost)).toBeGreaterThan(10);
     expect(DEPTH_BUDGET).toBe(200);
   });
 

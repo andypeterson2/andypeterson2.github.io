@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { classicalCost, formatCount } from '../src/apps/nonogram/classical-cost';
-import { hardwareCost } from '../src/apps/nonogram/hardware-cost';
+import { DEPTH_BUDGET, hardwareCost } from '../src/apps/nonogram/hardware-cost';
 import { solveLocal } from '../src/apps/nonogram/classical-solver';
 import { optimalIterations } from '../src/apps/nonogram/grover-sim';
 
@@ -68,13 +68,23 @@ describe('Classical cost in circuit terms', () => {
     expect(formatCount(1234, 10)).toBe('1,234');
   });
 
-  test('Grover is deeper than the whole classical search is wide', () => {
-    // The headline the two rows exist to show.
+  test('Grover runs deep where the classical search runs wide', () => {
+    // The headline the two rows exist to show: the classical cost is spent on width, at a
+    // span a device would hold, and the circuit's is spent on a depth no device holds.
     const [rc, cc] = alternating(3, 3);
     const cost = classicalCost(rc, cc);
     const quantum = hardwareCost(3, 3, 1)!;
-    expect(quantum.depth).toBeGreaterThan(cost.work);
-    expect(quantum.depth / cost.span).toBeGreaterThan(1000);
+    expect(quantum.depth / cost.span).toBeGreaterThan(100);
+    expect(cost.span).toBeLessThan(DEPTH_BUDGET);
+    expect(quantum.depth).toBeGreaterThan(DEPTH_BUDGET);
+  });
+
+  test('borrowing a spare qubit is most of the measured cost', () => {
+    // The same circuit, compiled with and without a qubit to lend the big gates.
+    const quantum = hardwareCost(3, 3, 1)!;
+    expect(quantum.ancillas).toBeGreaterThan(0);
+    expect(quantum.two_qubit_noaux / quantum.two_qubit).toBeGreaterThan(4);
+    expect(quantum.depth_noaux).toBeGreaterThan(quantum.depth);
   });
 });
 

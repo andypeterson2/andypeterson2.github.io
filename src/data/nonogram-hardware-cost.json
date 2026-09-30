@@ -3,8 +3,10 @@
  "qiskit": "2.4.1",
  "optimization_level": 3,
  "seeds": 8,
- "note": "Best of the seeds tried, per grid size and solution count.",
- "worst_spread": 0.01481,
+ "ancillas": 2,
+ "note": "Best of the seeds tried, per grid size and solution count. The main figures give synthesis the spare qubits a real device has; the _noaux figures are the same circuit compiled with none.",
+ "spread_floor": 100,
+ "worst_spread": 0.08413,
  "rows": [
   {
    "rows": 1,
@@ -12,10 +14,14 @@
    "solutions": 1,
    "iterations": 0,
    "boards": 2,
+   "ancillas": 0,
    "depth": 4,
    "depth_max": 4,
    "gates": 4,
-   "two_qubit": 0
+   "two_qubit": 0,
+   "depth_noaux": 4,
+   "gates_noaux": 4,
+   "two_qubit_noaux": 0
   },
   {
    "rows": 1,
@@ -23,10 +29,14 @@
    "solutions": 1,
    "iterations": 1,
    "boards": 4,
+   "ancillas": 0,
    "depth": 9,
    "depth_max": 10,
    "gates": 15,
-   "two_qubit": 2
+   "two_qubit": 2,
+   "depth_noaux": 9,
+   "gates_noaux": 15,
+   "two_qubit_noaux": 2
   },
   {
    "rows": 1,
@@ -34,10 +44,14 @@
    "solutions": 1,
    "iterations": 2,
    "boards": 8,
+   "ancillas": 1,
    "depth": 135,
    "depth_max": 137,
    "gates": 191,
-   "two_qubit": 37
+   "two_qubit": 37,
+   "depth_noaux": 136,
+   "gates_noaux": 191,
+   "two_qubit_noaux": 37
   },
   {
    "rows": 2,
@@ -45,10 +59,14 @@
    "solutions": 1,
    "iterations": 1,
    "boards": 4,
+   "ancillas": 0,
    "depth": 9,
    "depth_max": 10,
    "gates": 15,
-   "two_qubit": 2
+   "two_qubit": 2,
+   "depth_noaux": 9,
+   "gates_noaux": 15,
+   "two_qubit_noaux": 2
   },
   {
    "rows": 2,
@@ -56,10 +74,14 @@
    "solutions": 1,
    "iterations": 3,
    "boards": 14,
-   "depth": 430,
-   "depth_max": 433,
-   "gates": 574,
-   "two_qubit": 111
+   "ancillas": 2,
+   "depth": 327,
+   "depth_max": 334,
+   "gates": 466,
+   "two_qubit": 90,
+   "depth_noaux": 432,
+   "gates_noaux": 577,
+   "two_qubit_noaux": 111
   },
   {
    "rows": 2,
@@ -67,10 +89,14 @@
    "solutions": 2,
    "iterations": 2,
    "boards": 1,
-   "depth": 435,
-   "depth_max": 435,
-   "gates": 576,
-   "two_qubit": 111
+   "ancillas": 2,
+   "depth": 300,
+   "depth_max": 300,
+   "gates": 443,
+   "two_qubit": 86,
+   "depth_noaux": 435,
+   "gates_noaux": 576,
+   "two_qubit_noaux": 111
   },
   {
    "rows": 2,
@@ -78,10 +104,14 @@
    "solutions": 1,
    "iterations": 6,
    "boards": 52,
-   "depth": 5478,
-   "depth_max": 5488,
-   "gates": 8749,
-   "two_qubit": 1900
+   "ancillas": 2,
+   "depth": 1630,
+   "depth_max": 1630,
+   "gates": 2714,
+   "two_qubit": 541,
+   "depth_noaux": 5487,
+   "gates_noaux": 8772,
+   "two_qubit_noaux": 1900
   },
   {
    "rows": 2,
@@ -89,10 +119,14 @@
    "solutions": 2,
    "iterations": 4,
    "boards": 6,
-   "depth": 5470,
-   "depth_max": 5474,
-   "gates": 8754,
-   "two_qubit": 1900
+   "ancillas": 2,
+   "depth": 1554,
+   "depth_max": 1574,
+   "gates": 2586,
+   "two_qubit": 517,
+   "depth_noaux": 5470,
+   "gates_noaux": 8754,
+   "two_qubit_noaux": 1900
   },
   {
    "rows": 3,
@@ -100,10 +134,14 @@
    "solutions": 1,
    "iterations": 2,
    "boards": 8,
+   "ancillas": 1,
    "depth": 135,
    "depth_max": 137,
    "gates": 191,
-   "two_qubit": 37
+   "two_qubit": 37,
+   "depth_noaux": 136,
+   "gates_noaux": 191,
+   "two_qubit_noaux": 37
   },
   {
    "rows": 3,
@@ -111,10 +149,14 @@
    "solutions": 1,
    "iterations": 6,
    "boards": 52,
-   "depth": 5478,
-   "depth_max": 5488,
-   "gates": 8749,
-   "two_qubit": 1900
+   "ancillas": 2,
+   "depth": 1630,
+   "depth_max": 1630,
+   "gates": 2714,
+   "two_qubit": 541,
+   "depth_noaux": 5487,
+   "gates_noaux": 8772,
+   "two_qubit_noaux": 1900
   },
   {
    "rows": 3,
@@ -122,10 +164,14 @@
    "solutions": 2,
    "iterations": 4,
    "boards": 6,
-   "depth": 5479,
-   "depth_max": 5481,
-   "gates": 8760,
-   "two_qubit": 1900
+   "ancillas": 2,
+   "depth": 1462,
+   "depth_max": 1585,
+   "gates": 2401,
+   "two_qubit": 477,
+   "depth_noaux": 5480,
+   "gates_noaux": 8754,
+   "two_qubit_noaux": 1900
   },
   {
    "rows": 3,
@@ -133,10 +179,14 @@
    "solutions": 1,
    "iterations": 17,
    "boards": 384,
-   "depth": 49585,
-   "depth_max": 49602,
-   "gates": 88490,
-   "two_qubit": 19357
+   "ancillas": 2,
+   "depth": 6273,
+   "depth_max": 6273,
+   "gates": 15284,
+   "two_qubit": 3240,
+   "depth_noaux": 49602,
+   "gates_noaux": 88506,
+   "two_qubit_noaux": 19357
   },
   {
    "rows": 3,
@@ -144,10 +194,14 @@
    "solutions": 2,
    "iterations": 12,
    "boards": 59,
-   "depth": 52471,
-   "depth_max": 52487,
-   "gates": 93021,
-   "two_qubit": 20380
+   "ancillas": 2,
+   "depth": 5877,
+   "depth_max": 5936,
+   "gates": 15001,
+   "two_qubit": 3122,
+   "depth_noaux": 52487,
+   "gates_noaux": 93070,
+   "two_qubit_noaux": 20380
   },
   {
    "rows": 3,
@@ -155,10 +209,14 @@
    "solutions": 4,
    "iterations": 8,
    "boards": 1,
-   "depth": 58430,
-   "depth_max": 58430,
-   "gates": 103429,
-   "two_qubit": 22691
+   "ancillas": 2,
+   "depth": 6737,
+   "depth_max": 6737,
+   "gates": 16984,
+   "two_qubit": 3583,
+   "depth_noaux": 58430,
+   "gates_noaux": 103429,
+   "two_qubit_noaux": 22691
   },
   {
    "rows": 3,
@@ -166,11 +224,14 @@
    "solutions": 6,
    "iterations": 7,
    "boards": 1,
-   "depth": 71259,
-   "depth_max": 71259,
-   "gates": 127235,
-   "two_qubit": 27864
+   "ancillas": 2,
+   "depth": 7776,
+   "depth_max": 7776,
+   "gates": 19745,
+   "two_qubit": 4165,
+   "depth_noaux": 71259,
+   "gates_noaux": 127235,
+   "two_qubit_noaux": 27864
   }
- ],
- "spread_floor": 100
+ ]
 }

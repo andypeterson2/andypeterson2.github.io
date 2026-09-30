@@ -20,11 +20,11 @@ import { classicalCost, formatCount } from './classical-cost';
 import {
   COST_OPTIMIZATION,
   COST_SEEDS,
+  COST_SPREAD,
   COST_TARGET,
   DEPTH_BUDGET,
   hardwareCost,
   measuredGrowth,
-  measuredRoundGrowth,
   overBudget,
   type HardwareCost,
 } from './hardware-cost';
@@ -457,25 +457,30 @@ const NOTES: Record<string, string> = {
     "certain. Grover's figure is the exact formula at its best round count; more rounds " +
     'would lower it again.',
   Qubits:
-    'One qubit per cell. The measured circuit marks the known answers and needs no ' +
-    'working qubits; an oracle that tested the clues itself would need one more per line.',
+    'One qubit per cell, plus the spare ones synthesis borrows for the many-controlled ' +
+    'gates. The device holds over a hundred, so lending two costs nothing and saves ' +
+    'about six times the gates.',
+  'With nothing to borrow':
+    'The same circuit compiled with no spare qubit to borrow, which is what an earlier ' +
+    'run of this table measured. One decision in the compiler, and the figure above it ' +
+    'moves by that much.',
   'Two-qubit gates':
     'Gates acting on two qubits at once, the error-prone kind, counted over the whole ' +
     'circuit after it was fitted to the device. A lower bound, since the oracle here ' +
     'already holds the answers.',
   'Per extra cell, measured':
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
-    'board with the same number of solutions. One step between two boards, not a rate: the ' +
-    'steps measured so far run from 2.17x to 4.14x. A dash means there was nothing to ' +
-    'compare it with.',
+    'board with the same number of solutions. One step between two boards, not a rate, and ' +
+    'it moves with the compiler: the same boards compiled with nothing to borrow grow ' +
+    '2.17x per cell instead. A dash means there was nothing to compare it with.',
   'Spacetime (qubit-layers)':
     'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
     'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
     'holds idle, so it reads harder on the circuit than a gate count does.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
-    `fitted to the device. Best of the ${String(COST_SEEDS)} seeds tried, which differed ` +
-    'by under 2%.',
+    `fitted to the device. Best of the ${String(COST_SEEDS)} seeds tried, which differed by ` +
+    `up to ${(COST_SPREAD * 100).toFixed(0)}%.`,
   'Device budget (layers)':
     `A working figure of ${String(DEPTH_BUDGET)} layers, what a current device runs ` +
     'before noise takes over. Assumed rather than read off a device. The "over" figure ' +
@@ -513,8 +518,8 @@ const SPINE_NOTES: Record<string, string> = {
   'If it ran on a device':
     `Estimates, not a run. Qiskit fitted the circuit to ${COST_TARGET}, a snapshot of an ` +
     `IBM Heron, at optimization level ${String(COST_OPTIMIZATION)}, best of ` +
-    `${String(COST_SEEDS)} seeds. The oracle marks the answers it already holds, so every ` +
-    'figure here is a lower bound.',
+    `${String(COST_SEEDS)} seeds, with spare qubits to borrow for the big gates. The oracle ` +
+    'marks the answers it already holds, so every figure here is a lower bound.',
 };
 
 /**
@@ -528,7 +533,8 @@ const SPINE_NOTES: Record<string, string> = {
  */
 const DEVICE_META =
   `${COST_TARGET} \u00b7 opt ${String(COST_OPTIMIZATION)} \u00b7 ` +
-  `best of ${String(COST_SEEDS)} seeds \u00b7 lower bound \u00b7 answer-marking oracle`;
+  `best of ${String(COST_SEEDS)} seeds \u00b7 spare qubits lent \u00b7 lower bound \u00b7 ` +
+  'answer-marking oracle';
 
 function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElement {
   const td = tr.insertCell();
@@ -612,11 +618,10 @@ function deviceRows(
     work: number;
     blank: boolean;
     growth: string | null | false;
-    roundGrowth: number | null;
   },
   v: (values: (string | number)[]) => (string | number)[],
 ): void {
-  const { hw, cells, found, work, blank, growth, roundGrowth } = ctx;
+  const { hw, cells, found, work, blank, growth } = ctx;
   if (!hw && !blank) {
     const tr = body.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -628,12 +633,20 @@ function deviceRows(
     return;
   }
   const perRound = hw ? hw.depth / hw.iterations : 0;
+  const spare = hw?.ancillas ?? 0;
+  const held = cells + spare;
   const rows: [string, string | number][] = [
-    ['Qubits', cells],
+    ['Qubits', hw && spare ? `${String(cells)} + ${String(spare)}` : cells],
     ['Two-qubit gates', hw ? hw.two_qubit.toLocaleString() : ''],
+    [
+      'With nothing to borrow',
+      hw
+        ? `${hw.two_qubit_noaux.toLocaleString()} (${(hw.two_qubit_noaux / hw.two_qubit).toFixed(1)}x)`
+        : '',
+    ],
     ['Per extra cell, measured', growth || '—'],
     ['Depth (layers)', hw ? hw.depth.toLocaleString() : ''],
-    ['Spacetime (qubit-layers)', hw ? (cells * hw.depth).toLocaleString() : ''],
+    ['Spacetime (qubit-layers)', hw ? (held * hw.depth).toLocaleString() : ''],
     [
       'Device budget (layers)',
       hw ? `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)` : '',
@@ -646,7 +659,7 @@ function deviceRows(
     ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`],
   ];
   for (const [label, value] of rows) metricRow(body, label, v([value]), true);
-  if (hw && !blank) crossoverNote(body, { hw, cells, work, roundGrowth });
+  if (hw && !blank) crossoverNote(body, { hw, cells, work });
 }
 
 /**
@@ -659,16 +672,12 @@ function deviceRows(
  */
 function crossoverNote(
   body: HTMLTableSectionElement,
-  ctx: { hw: HardwareCost; cells: number; work: number; roundGrowth: number | null },
+  ctx: { hw: HardwareCost; cells: number; work: number },
 ): void {
-  const { hw, cells, work, roundGrowth } = ctx;
+  const { hw, cells, work } = ctx;
+  const held = cells + hw.ancillas;
   if (work <= 0) return;
   const each = (n: number): string => `${(n / work).toFixed(n / work < 10 ? 2 : 0)}x`;
-  const rate =
-    roundGrowth == null
-      ? ''
-      : ` A round costs ${roundGrowth.toFixed(2)}x more per cell than on the next board down, which is what` +
-        ' compiling the marking oracle onto a fixed device costs rather than a rate the search sets.';
   const tr = body.insertRow();
   tr.className = 'metrics-note';
   const td = tr.insertCell();
@@ -676,7 +685,7 @@ function crossoverNote(
   td.textContent =
     `Against this board's ${work.toLocaleString()} classical gate-steps the circuit comes to ` +
     `${each(hw.two_qubit)} by two-qubit gates, ${each(hw.gates)} by all gates, and ` +
-    `${each(cells * hw.depth)} by qubit-layers, so the unit charged decides the comparison.${rate}`;
+    `${each(held * hw.depth)} by qubit-layers, so the unit charged decides the comparison.`;
 }
 
 function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
@@ -758,7 +767,6 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
       work: cost.work,
       blank,
       growth: hw && measuredGrowth(rows, cols, found),
-      roundGrowth: hw && measuredRoundGrowth(rows, cols, found),
     },
     v,
   );
