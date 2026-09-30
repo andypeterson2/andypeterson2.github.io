@@ -167,8 +167,8 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     // A letter x: the body face has no multiplication sign of its own.
     await expect(exhaustive(page, 'Per extra cell')).toHaveText('2x');
     await expect(grover(page, 'Per extra cell')).toHaveText('1.41x');
-    // Measured, with spare qubits lent to synthesis: above the ideal 1.41x and under the
-    // 2x the exhaustive search pays.
+    // Measured, with spare qubits lent to synthesis. It counts gates where the row above
+    // counts questions, so it is not the 2x and 1.41x of that row in the same unit.
     await expect(grover(page, 'Per extra cell, measured')).toHaveText('1.82x');
 
     // Measured, and hopeless: the circuit asks for far more than the device holds.
@@ -393,7 +393,9 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     const note = page.locator('.metrics-note td');
     await expect(note).toContainText('by two-qubit gates');
     await expect(note).toContainText('by qubit-layers');
-    await expect(note).toContainText('classical gate-steps');
+    // The baseline is named, and the solver the page actually runs is not left out of it.
+    await expect(note).toContainText('for the exhaustive search');
+    await expect(note).toContainText('The backtracking column asks the clues far less');
   });
 
   test('every label says what it means as hover text', async ({ page }) => {

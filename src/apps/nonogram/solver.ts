@@ -458,8 +458,8 @@ const NOTES: Record<string, string> = {
     'would lower it again.',
   Qubits:
     'One qubit per cell, plus the spare ones synthesis borrows for the many-controlled ' +
-    'gates. The device holds over a hundred, so lending two costs nothing and saves ' +
-    'about six times the gates.',
+    'gates. Two is the fewest that gave the shallowest circuit of the settings tried; ' +
+    'lending more cuts the gate count further and runs deeper.',
   'With nothing to borrow':
     'The same circuit compiled with no spare qubit to borrow, which is what an earlier ' +
     'run of this table measured. One decision in the compiler, and the figure above it ' +
@@ -470,17 +470,18 @@ const NOTES: Record<string, string> = {
     'already holds the answers.',
   'Per extra cell, measured':
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
-    'board with the same number of solutions. One step between two boards, not a rate, and ' +
-    'it moves with the compiler: the same boards compiled with nothing to borrow grow ' +
-    '2.17x per cell instead. A dash means there was nothing to compare it with.',
+    'board. This one counts gates where the row above counts questions, so it is not a ' +
+    'like-for-like pair: exhaustive search grows about 2.45x per cell in gate-steps over the ' +
+    'same boards. One step between two boards, not a rate, and it moves with the compiler.',
   'Spacetime (qubit-layers)':
     'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
     'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
     'holds idle, so it reads harder on the circuit than a gate count does.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
-    `fitted to the device. Best of the ${String(COST_SEEDS)} seeds tried, which differed by ` +
-    `up to ${(COST_SPREAD * 100).toFixed(0)}%.`,
+    `fitted to the device, best of ${String(COST_SEEDS)} transpiler seeds. Boards that share ` +
+    `a size and a solution count differ by up to ${(COST_SPREAD * 100).toFixed(0)}%, so one ` +
+    'row stands for its class loosely rather than exactly.',
   'Device budget (layers)':
     `A working figure of ${String(DEPTH_BUDGET)} layers, what a current device runs ` +
     'before noise takes over. Assumed rather than read off a device. The "over" figure ' +
@@ -616,12 +617,14 @@ function deviceRows(
     cells: number;
     found: number;
     work: number;
+    /** What the page's own solver would spend here, as an upper bound. */
+    local: number;
     blank: boolean;
     growth: string | null | false;
   },
   v: (values: (string | number)[]) => (string | number)[],
 ): void {
-  const { hw, cells, found, work, blank, growth } = ctx;
+  const { hw, cells, found, work, local, blank, growth } = ctx;
   if (!hw && !blank) {
     const tr = body.insertRow();
     tr.className = 'metrics-unmeasured';
@@ -659,7 +662,7 @@ function deviceRows(
     ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`],
   ];
   for (const [label, value] of rows) metricRow(body, label, v([value]), true);
-  if (hw && !blank) crossoverNote(body, { hw, cells, work });
+  if (hw && !blank) crossoverNote(body, { hw, cells, work, local });
 }
 
 /**
@@ -672,9 +675,9 @@ function deviceRows(
  */
 function crossoverNote(
   body: HTMLTableSectionElement,
-  ctx: { hw: HardwareCost; cells: number; work: number },
+  ctx: { hw: HardwareCost; cells: number; work: number; local: number },
 ): void {
-  const { hw, cells, work } = ctx;
+  const { hw, cells, work, local } = ctx;
   const held = cells + hw.ancillas;
   if (work <= 0) return;
   const each = (n: number): string => `${(n / work).toFixed(n / work < 10 ? 2 : 0)}x`;
@@ -682,10 +685,15 @@ function crossoverNote(
   tr.className = 'metrics-note';
   const td = tr.insertCell();
   td.colSpan = 4;
+  const beats =
+    local > 0
+      ? ` The backtracking column asks the clues far less: at most ${local.toLocaleString()} gate-steps ` +
+        `on this board, which the two-qubit count alone is ${Math.round(hw.two_qubit / local).toLocaleString()}x past.`
+      : '';
   td.textContent =
-    `Against this board's ${work.toLocaleString()} classical gate-steps the circuit comes to ` +
-    `${each(hw.two_qubit)} by two-qubit gates, ${each(hw.gates)} by all gates, and ` +
-    `${each(held * hw.depth)} by qubit-layers, so the unit charged decides the comparison.`;
+    `Against this board's ${work.toLocaleString()} gate-steps for the exhaustive search the circuit ` +
+    `comes to ${each(hw.two_qubit)} by two-qubit gates, ${each(hw.gates)} by all gates, and ` +
+    `${each(held * hw.depth)} by qubit-layers, so the unit charged decides that comparison.${beats}`;
 }
 
 function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
@@ -765,6 +773,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
       cells,
       found,
       work: cost.work,
+      local: local.capped ? 0 : local.clueChecks * cost.predicateGates,
       blank,
       growth: hw && measuredGrowth(rows, cols, found),
     },

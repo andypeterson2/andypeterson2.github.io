@@ -24,6 +24,10 @@ const split = await read('nonogram-compile-split.json');
 const spread = await read('nonogram-query-spread.json');
 
 const W = 640;
+/** What every figure has to say about itself, wherever it ends up. */
+const PROVENANCE = (env) =>
+  `${env.target}, optimization level ${env.optimization_level}, qiskit ${env.qiskit}. A fit to a device model, not a run on hardware.\n` +
+  `The oracle marks grids already known to satisfy the clues, so every quantum figure is a lower bound.`;
 const INK = '#000';
 const PAPER = '#fff';
 
@@ -126,10 +130,10 @@ function figureSplit() {
       ],
     },
     {
-      label: 'spare qubits lent',
+      label: '2 spare qubits lent',
       parts: [
-        ['synthesis', s.ancilla_best_torino_two_qubit - s.ancilla_torino_routing_net],
-        ['routing', s.ancilla_torino_routing_net],
+        ['synthesis', s.synthesis_anc2_all_to_all],
+        ['routing', s.shipped_routing_net],
       ],
     },
   ];
@@ -153,21 +157,21 @@ function figureSplit() {
   body +=
     text(left, 8, 'solid: many-controlled synthesis', { size: 10 }) +
     text(left + 190, 8, 'stipple: SWAP routing onto the lattice', { size: 10 });
-  body += text(
+  body += note(
     left,
     136,
-    `The same circuit, one compiler decision apart: ${s.ancilla_vs_reference_two_qubit_factor}x the gates, ` +
-      `${s.ancilla_vs_reference_depth_factor}x the depth.`,
-    { size: 10 },
+    `The same circuit, one compiler decision apart: ${s.shipped_vs_reference_two_qubit_factor}x the gates, ` +
+      `${s.shipped_vs_reference_depth_factor}x the depth. Lending seven qubits instead of two reaches ` +
+      `${n(s.ancilla_best_torino_two_qubit)} gates but a deeper circuit, so the table ships the shallower one.`,
+    92,
   );
   return figure(
     'compile-split.svg',
     'A 3x3 Grover circuit: what its cost is made of',
     H,
     body,
-    `Routing is not a constant: it costs ${n(s.routing_net)} on top of the dearer synthesis and ${n(s.ancilla_torino_routing_net)} on top of the cheaper one.\n` +
-      `${split.environment.target}, optimization level ${split.environment.optimization_level}, qiskit ${split.environment.qiskit}. A fit to a device model, not a run on hardware.\n` +
-      `The oracle marks grids already known to satisfy the clues, so every figure is a lower bound.`,
+    `Routing is not a constant: it costs ${n(s.routing_net)} on top of the dearer synthesis and ${n(s.shipped_routing_net)} on top of the cheaper one.\n` +
+      PROVENANCE(split.environment),
   );
 }
 
@@ -221,14 +225,21 @@ function figureGrowth() {
     });
   });
   const g = split.growth;
+  // Exhaustive search in gate-steps over the same boards, so the comparison is gates
+  // against gates rather than gates against grids.
+  const work = (shape) => {
+    const sh = shapeOf(shape);
+    return 2 ** sh.cells * sh.predicateGatesMedianM1;
+  };
+  const classical69 = (work('3x3') / work('2x3')) ** (1 / 3);
   body += note(
     left,
     top + plotH + 38,
     `Per cell, over these boards: ${g['anc-kg24-torino'].per_cell}x with spare qubits, ` +
       `${g['base-torino'].per_cell}x without. Times the ${g.grover_rounds_per_cell}x the round ` +
       `count itself grows, that is ${g['anc-kg24-torino'].times_round_growth_sqrt2} and ` +
-      `${g['base-torino'].times_round_growth_sqrt2}, against ${g.brute_force_per_cell}x for ` +
-      'exhaustive search.',
+      `${g['base-torino'].times_round_growth_sqrt2} for the whole circuit, against ` +
+      `${classical69.toFixed(2)}x for exhaustive search counted in gate-steps over the same boards.`,
     100,
   );
   return figure(
@@ -236,8 +247,9 @@ function figureGrowth() {
     'Two-qubit gates per Grover round, against board size',
     H,
     body,
-    `Which side of exhaustive search the circuit grows on is decided by the decomposition, not by the search.\n` +
-      `Boards with one solution. ${split.environment.target}, optimization level ${split.environment.optimization_level}. Three points over one 5-cell span: a slope, not a scaling law.`,
+    `How steeply a round grows is set by the decomposition, not by the search: both compilations still grow more slowly than exhaustive search does.\n` +
+      `Boards with one solution. Three points over one 5-cell span: a slope, not a scaling law, and every decomposition Qiskit ships is polynomial per round.\n` +
+      PROVENANCE(split.environment),
   );
 }
 
@@ -279,7 +291,7 @@ function figureQueries() {
     });
   });
   body +=
-    text(left, top + plotH + 46, 'bar: middle of the backtracker, line: its full range', {
+    text(left, top + plotH + 46, 'bar: median to p90 of the backtracker, line: its full range', {
       size: 10,
     }) +
     text(left, top + plotH + 59, 'diamond: rounds Grover needs on the same board', { size: 10 });
@@ -288,7 +300,8 @@ function figureQueries() {
     'Questions put to the clues, over every solvable board',
     H,
     body,
-    `Boards with one solution; the count under each label is how many there are. 5x5 is a 400,000-grid sample.\n` +
+    `Boards with one solution; the count under each label is how many there are. 5x5 is a 400,000-grid sample, one grid per puzzle, so it is unbiased at one solution.\n` +
+      `Exhaustive search is off the top of this axis: 512 checks at 3x3, 33.5 million at 5x5.\n` +
       `A backtracking placement is at most one whole-grid check, so its count is an upper bound on its queries; Grover's round count is exact.\n` +
       `Rounds come from the noiseless formula. Nothing here ran on a quantum device.`,
   );
@@ -343,8 +356,9 @@ function figureBudget() {
     'Circuit depth against the depth a device runs before noise takes over',
     H,
     body,
-    `Both compilations sit past the budget at every size, so no whole Grover round completes either way.\n` +
-      `The 200-layer figure is a working assumption, not a number read off a device. ${split.environment.target}, optimization level ${split.environment.optimization_level}.`,
+    `From 2x3 up a single round is deeper than the budget either way, so no whole round completes. At 2x2 one round of three fits.\n` +
+      `The 200-layer figure is a working assumption, not a number read off a device.\n` +
+      PROVENANCE(split.environment),
   );
 }
 
@@ -352,7 +366,10 @@ function figureBudget() {
 function figureUnits() {
   const hw = row(3, 3, 1);
   const shape = shapeOf('3x3');
-  const work = 2 ** 9 * shape.predicateGates.median;
+  const work = 2 ** 9 * shape.predicateGatesMedianM1;
+  // What the page's own solver would spend on the same board, as an upper bound: one
+  // whole-grid check per placement, though a placement stops at the first blocked column.
+  const backtracking = shape.placementsM1.median * shape.predicateGatesMedianM1;
   const held = 9 + hw.ancillas;
   const bars = [
     ['two-qubit gates', hw.two_qubit / work],
@@ -380,17 +397,18 @@ function figureUnits() {
     body += text(left - 8, y + 14, label, { anchor: 'end' });
     body += text(left + x(to) + 8, y + 14, `${ratio.toFixed(2)}x`, { size: 10 });
   });
-  body += text(left, top + 150, 'left of the rule: cheaper than the classical search', {
+  body += text(left, top + 150, 'left of the rule: cheaper than the exhaustive search', {
     size: 10,
   });
   return figure(
     'unit-choice.svg',
-    'One circuit against one classical search, in three units',
+    'One circuit against exhaustive search, in three units',
     H,
     body,
-    `A 3x3 board with one solution, against ${n(work)} classical gate-steps on a single processor: ` +
-      `2^9 grids at the median predicate cost over every 3x3 board, rather than one puzzle's.\n` +
-      `Width times depth charges the circuit for qubits it holds idle, and the classical side for no width at all, which is most of the difference between the ends of this figure.`,
+    `A 3x3 board with one solution, against ${n(work)} gate-steps for exhaustive search on one processor: 2^9 grids at the median cost of a whole-grid check over one-solution boards.\n` +
+      `Against the page's own backtracker the circuit loses in every unit: about ${n(backtracking)} gate-steps at the median board, which its two-qubit count alone is ${(hw.two_qubit / backtracking).toFixed(0)}x past.\n` +
+      `Width times depth charges the circuit for qubits it holds idle, and the classical side for no width at all, which is most of the spread here.\n` +
+      PROVENANCE(split.environment),
   );
 }
 

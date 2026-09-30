@@ -1,118 +1,125 @@
 {
-  "environment": {
-    "qiskit": "2.4.1",
-    "target": "FakeTorino (133 q, heavy-hex, basis cz/id/rz/sx/x)",
-    "optimization_level": 3
+ "environment": {
+  "qiskit": "2.4.1",
+  "target": "FakeTorino (133 q, heavy-hex, basis cz/id/rz/sx/x)",
+  "optimization_level": 3
+ },
+ "circuit": {
+  "shape": "3x3",
+  "solutions": 1,
+  "qubits": 9,
+  "iterations": 17
+ },
+ "split": {
+  "reference_two_qubit": 19357,
+  "reference_depth": 49602,
+  "committed_two_qubit": 19357,
+  "committed_depth": 49585,
+  "synthesis_no_ancilla_all_to_all": 8568,
+  "synthesis_per_mcx_all_to_all": 252.0,
+  "routing_net": 10789,
+  "routing_net_share": 0.557,
+  "routing_gross_swaps_seed0": 4366,
+  "decomposition_choice_all_to_all": 7173,
+  "decomposition_choice_all_to_all_share_of_synthesis": 0.837,
+  "ancilla_best_torino_two_qubit": 2412,
+  "ancilla_best_torino_depth": 8710,
+  "ancilla_vs_reference_two_qubit_factor": 8.03,
+  "ancilla_vs_reference_depth_factor": 5.69,
+  "ancilla_torino_routing_net": 1017,
+  "shipped_ancillas": 2,
+  "shipped_two_qubit": 3240,
+  "shipped_depth": 6273,
+  "synthesis_anc2_all_to_all": 1395,
+  "shipped_routing_net": 1845,
+  "shipped_vs_reference_two_qubit_factor": 5.97,
+  "shipped_vs_reference_depth_factor": 7.91
+ },
+ "growth": {
+  "base-torino": {
+   "per_round_ratio_9_over_6": 3.595,
+   "per_cell": 1.532,
+   "times_round_growth_sqrt2": 2.166
   },
-  "circuit": {
-    "shape": "3x3",
-    "solutions": 1,
-    "qubits": 9,
-    "iterations": 17
+  "base-a2a": {
+   "per_round_ratio_9_over_6": 3.068,
+   "per_cell": 1.453,
+   "times_round_growth_sqrt2": 2.055
   },
-  "split": {
-    "reference_two_qubit": 19357,
-    "reference_depth": 49602,
-    "committed_two_qubit": 19357,
-    "committed_depth": 49585,
-    "synthesis_no_ancilla_all_to_all": 8568,
-    "synthesis_per_mcx_all_to_all": 252.0,
-    "routing_net": 10789,
-    "routing_net_share": 0.557,
-    "routing_gross_swaps_seed0": 4366,
-    "decomposition_choice_all_to_all": 7173,
-    "decomposition_choice_all_to_all_share_of_synthesis": 0.837,
-    "ancilla_best_torino_two_qubit": 2412,
-    "ancilla_best_torino_depth": 8710,
-    "ancilla_vs_reference_two_qubit_factor": 8.03,
-    "ancilla_vs_reference_depth_factor": 5.69,
-    "ancilla_torino_routing_net": 1017
+  "anc-m15-torino": {
+   "per_round_ratio_9_over_6": 1.826,
+   "per_cell": 1.222,
+   "times_round_growth_sqrt2": 1.729
   },
-  "growth": {
-    "base-torino": {
-      "per_round_ratio_9_over_6": 3.595,
-      "per_cell": 1.532,
-      "times_round_growth_sqrt2": 2.166
-    },
-    "base-a2a": {
-      "per_round_ratio_9_over_6": 3.068,
-      "per_cell": 1.453,
-      "times_round_growth_sqrt2": 2.055
-    },
-    "anc-m15-torino": {
-      "per_round_ratio_9_over_6": 1.826,
-      "per_cell": 1.222,
-      "times_round_growth_sqrt2": 1.729
-    },
-    "anc-kg24-torino": {
-      "per_round_ratio_9_over_6": 2.113,
-      "per_cell": 1.283,
-      "times_round_growth_sqrt2": 1.815
-    },
-    "anc-kg24-a2a": {
-      "per_round_ratio_9_over_6": 1.777,
-      "per_cell": 1.211,
-      "times_round_growth_sqrt2": 1.713
-    },
-    "brute_force_per_cell": 2.0,
-    "grover_rounds_per_cell": 1.414
+  "anc-kg24-torino": {
+   "per_round_ratio_9_over_6": 2.113,
+   "per_cell": 1.283,
+   "times_round_growth_sqrt2": 1.815
   },
-  "mcx_8_controls": {
-    "noaux_hp24 (default, no ancilla)": 252,
-    "noaux_v24": 324,
-    "mcphase(pi) standalone": 324,
-    "gray_code": 764,
-    "2_clean_kg24 (+2)": 42,
-    "1_clean_kg24 (+1)": 42,
-    "n_clean_m15 (+6)": 42,
-    "n_dirty_i15 (+6)": 58,
-    "2_dirty_kg24 (+2)": 78,
-    "1_clean_b95 (+1)": 104
+  "anc-kg24-a2a": {
+   "per_round_ratio_9_over_6": 1.777,
+   "per_cell": 1.211,
+   "times_round_growth_sqrt2": 1.713
   },
-  "configs": [
-    {
-      "label": "3x3-base-torino",
-      "qubits": 9,
-      "iterations": 17,
-      "target": "torino",
-      "spare": 0,
-      "plugin": null,
-      "two_qubit": 19357,
-      "depth": 49602,
-      "two_qubit_per_round": 1138.6
-    },
-    {
-      "label": "3x3-base-a2a",
-      "qubits": 9,
-      "iterations": 17,
-      "target": "a2a",
-      "spare": 0,
-      "plugin": null,
-      "two_qubit": 8568,
-      "depth": 25056,
-      "two_qubit_per_round": 504.0
-    },
-    {
-      "label": "3x3-rebuild-anc7-m15-torino",
-      "qubits": 9,
-      "iterations": 17,
-      "target": "torino",
-      "spare": 7,
-      "plugin": "n_clean_m15",
-      "two_qubit": 2412,
-      "depth": 8710,
-      "two_qubit_per_round": 141.9
-    },
-    {
-      "label": "3x3-rebuild-anc2-kg24-torino",
-      "qubits": 9,
-      "iterations": 17,
-      "target": "torino",
-      "spare": 2,
-      "plugin": "default",
-      "two_qubit": 3240,
-      "depth": 6273,
-      "two_qubit_per_round": 190.6
-    }
-  ]
+  "brute_force_per_cell": 2.0,
+  "grover_rounds_per_cell": 1.414
+ },
+ "mcx_8_controls": {
+  "noaux_hp24 (default, no ancilla)": 252,
+  "noaux_v24": 324,
+  "mcphase(pi) standalone": 324,
+  "gray_code": 764,
+  "2_clean_kg24 (+2)": 42,
+  "1_clean_kg24 (+1)": 42,
+  "n_clean_m15 (+6)": 42,
+  "n_dirty_i15 (+6)": 58,
+  "2_dirty_kg24 (+2)": 78,
+  "1_clean_b95 (+1)": 104
+ },
+ "configs": [
+  {
+   "label": "3x3-base-torino",
+   "qubits": 9,
+   "iterations": 17,
+   "target": "torino",
+   "spare": 0,
+   "plugin": null,
+   "two_qubit": 19357,
+   "depth": 49602,
+   "two_qubit_per_round": 1138.6
+  },
+  {
+   "label": "3x3-base-a2a",
+   "qubits": 9,
+   "iterations": 17,
+   "target": "a2a",
+   "spare": 0,
+   "plugin": null,
+   "two_qubit": 8568,
+   "depth": 25056,
+   "two_qubit_per_round": 504.0
+  },
+  {
+   "label": "3x3-rebuild-anc7-m15-torino",
+   "qubits": 9,
+   "iterations": 17,
+   "target": "torino",
+   "spare": 7,
+   "plugin": "n_clean_m15",
+   "two_qubit": 2412,
+   "depth": 8710,
+   "two_qubit_per_round": 141.9
+  },
+  {
+   "label": "3x3-rebuild-anc2-kg24-torino",
+   "qubits": 9,
+   "iterations": 17,
+   "target": "torino",
+   "spare": 2,
+   "plugin": "default",
+   "two_qubit": 3240,
+   "depth": 6273,
+   "two_qubit_per_round": 190.6
+  }
+ ]
 }
