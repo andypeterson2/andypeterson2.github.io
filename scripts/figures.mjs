@@ -1,0 +1,398 @@
+/**
+ * Draw the nonogram findings as standalone figures.
+ *
+ * The page's own charts are drawn at runtime against the box they land in; these are
+ * fixed-size files that carry a caption, so the same drawing serves the page and a
+ * report. They are build artifacts: run `npm run figures` after the measurements change.
+ *
+ * 1-bit throughout, as the rest of the site is: ink on paper, a stipple where a second
+ * fill is needed, no colour and no hue to rank by.
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, '..');
+const out = join(root, 'public/figures/nonogram');
+
+const read = async (name) =>
+  (await import(join(root, 'src/data', name), { with: { type: 'json' } })).default;
+
+const costs = await read('nonogram-hardware-cost.json');
+const split = await read('nonogram-compile-split.json');
+const spread = await read('nonogram-query-spread.json');
+
+const W = 640;
+const INK = '#000';
+const PAPER = '#fff';
+
+/** The 4px stipple the site fills a second surface with. */
+const DEFS =
+  `<defs><pattern id="stipple" width="4" height="4" patternUnits="userSpaceOnUse">` +
+  `<rect width="4" height="4" fill="${PAPER}"/>` +
+  `<rect width="1" height="1" fill="${INK}"/><rect x="2" y="2" width="1" height="1" fill="${INK}"/>` +
+  `</pattern></defs>`;
+
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const n = (v) => v.toLocaleString('en-US');
+
+function text(x, y, s, { size = 11, anchor = 'start', weight = 400, rotate } = {}) {
+  const t = rotate ? ` transform="rotate(${rotate},${x},${y})"` : '';
+  return (
+    `<text x="${x}" y="${y}" font-family="Geneva, Verdana, sans-serif" font-size="${size}" ` +
+    `font-weight="${weight}" fill="${INK}" text-anchor="${anchor}"${t}>${esc(s)}</text>`
+  );
+}
+
+function bar(x, y, w, h, fill) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${INK}" stroke-width="1"/>`;
+}
+
+/**
+ * Wrap the marks in a figure: a frame, a title above, and the settings underneath.
+ *
+ * Every figure states what produced it. A depth fitted to a device model is not a run on
+ * one, and a caption is the only place that distinction survives being pasted into a
+ * report.
+ */
+/** Fold a caption to the figure's width: about 120 characters at 10px in 640. */
+function wrap(line, max = 118) {
+  const out = [];
+  let row = '';
+  for (const word of line.split(' ')) {
+    if (row && `${row} ${word}`.length > max) {
+      out.push(row);
+      row = word;
+    } else row = row ? `${row} ${word}` : word;
+  }
+  if (row) out.push(row);
+  return out;
+}
+
+/** A block of small text inside a figure, folded to the width. */
+function note(x, y, line, max = 118) {
+  return wrap(line, max)
+    .map((l, i) => text(x, y + i * 13, l, { size: 10 }))
+    .join('');
+}
+
+function figure(name, title, height, body, caption) {
+  const lines = caption.split('\n').flatMap((l) => wrap(l));
+  const h = height + 16 + lines.length * 13;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="${W}" height="${h}" ` +
+    `role="img" aria-label="${esc(title)}. ${esc(lines.join(' '))}">` +
+    `<title>${esc(title)}</title><desc>${esc(lines.join(' '))}</desc>` +
+    DEFS +
+    `<rect width="${W}" height="${h}" fill="${PAPER}"/>` +
+    text(0, 12, title, { size: 12, weight: 700 }) +
+    `<g transform="translate(0,26)">${body}</g>` +
+    lines.map((l, i) => text(0, height + 28 + i * 13, l, { size: 10 })).join('') +
+    `</svg>\n`;
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, name), svg);
+  return `${name} (${svg.length} bytes)`;
+}
+
+/** A log scale, since every quantity here spans decades. */
+function logScale(min, max, px) {
+  const lo = Math.log10(min),
+    hi = Math.log10(max);
+  return (v) => (px * (Math.log10(v) - lo)) / (hi - lo);
+}
+
+function decades(min, max) {
+  const out = [];
+  for (let d = Math.floor(Math.log10(min)); d <= Math.ceil(Math.log10(max)); d++) {
+    const v = 10 ** d;
+    if (v >= min && v <= max) out.push(v);
+  }
+  return out;
+}
+
+const row = (r, c, m) => costs.rows.find((x) => x.rows === r && x.cols === c && x.solutions === m);
+const shapeOf = (s) => spread.shapes.find((x) => x.shape === s);
+
+// 1. What the measured cost is made of
+function figureSplit() {
+  const s = split.split;
+  const bars = [
+    {
+      label: 'no spare qubits',
+      parts: [
+        ['synthesis', s.synthesis_no_ancilla_all_to_all],
+        ['routing', s.routing_net],
+      ],
+    },
+    {
+      label: 'spare qubits lent',
+      parts: [
+        ['synthesis', s.ancilla_best_torino_two_qubit - s.ancilla_torino_routing_net],
+        ['routing', s.ancilla_torino_routing_net],
+      ],
+    },
+  ];
+  const H = 170;
+  const left = 110;
+  const max = s.reference_two_qubit;
+  const px = (v) => ((W - left - 120) * v) / max;
+  let body = '';
+  bars.forEach((b, i) => {
+    const y = 26 + i * 64;
+    let x = left;
+    b.parts.forEach(([part, v], j) => {
+      body += bar(x, y, px(v), 30, j === 0 ? INK : 'url(#stipple)');
+      if (px(v) > 58) body += text(x + px(v) / 2, y + 19, n(v), { anchor: 'middle', size: 10 });
+      x += px(v);
+    });
+    body += text(left - 8, y + 19, b.label, { anchor: 'end' });
+    const total = b.parts.reduce((a, [, v]) => a + v, 0);
+    body += text(x + 8, y + 19, `${n(total)} gates`, { size: 10 });
+  });
+  body +=
+    text(left, 8, 'solid: many-controlled synthesis', { size: 10 }) +
+    text(left + 190, 8, 'stipple: SWAP routing onto the lattice', { size: 10 });
+  body += text(
+    left,
+    136,
+    `The same circuit, one compiler decision apart: ${s.ancilla_vs_reference_two_qubit_factor}x the gates, ` +
+      `${s.ancilla_vs_reference_depth_factor}x the depth.`,
+    { size: 10 },
+  );
+  return figure(
+    'compile-split.svg',
+    'A 3x3 Grover circuit: what its cost is made of',
+    H,
+    body,
+    `Routing is not a constant: it costs ${n(s.routing_net)} on top of the dearer synthesis and ${n(s.ancilla_torino_routing_net)} on top of the cheaper one.\n` +
+      `${split.environment.target}, optimization level ${split.environment.optimization_level}, qiskit ${split.environment.qiskit}. A fit to a device model, not a run on hardware.\n` +
+      `The oracle marks grids already known to satisfy the clues, so every figure is a lower bound.`,
+  );
+}
+
+// 2. How a round grows with the register
+function figureGrowth() {
+  const pts = [
+    [2, 2],
+    [2, 3],
+    [3, 3],
+  ].map(([r, c]) => row(r, c, 1));
+  const series = [
+    { label: 'spare qubits lent', get: (x) => x.two_qubit / x.iterations, fill: INK },
+    { label: 'nothing to borrow', get: (x) => x.two_qubit_noaux / x.iterations, fill: PAPER },
+  ];
+  const H = 290;
+  const left = 56,
+    top = 14,
+    plotH = 170,
+    plotW = W - left - 150;
+  const lo = 20,
+    hi = 2000;
+  const y = logScale(lo, hi, plotH);
+  const xOf = (cells) => left + (plotW * (cells - 4)) / 5;
+  let body = '';
+  for (const d of decades(lo, hi)) {
+    const yy = top + plotH - y(d);
+    body +=
+      `<line x1="${left}" y1="${yy}" x2="${left + plotW}" y2="${yy}" stroke="${INK}" stroke-width="1" stroke-dasharray="1 3"/>` +
+      text(left - 6, yy + 4, n(d), { anchor: 'end', size: 10 });
+  }
+  body += `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="${INK}"/>`;
+  body += `<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="${INK}"/>`;
+  for (const p of pts) {
+    body += text(xOf(p.rows * p.cols), top + plotH + 14, `${p.rows}x${p.cols}`, {
+      anchor: 'middle',
+      size: 10,
+    });
+  }
+  series.forEach((s, i) => {
+    const path = pts
+      .map((p, j) => `${j ? 'L' : 'M'}${xOf(p.rows * p.cols)},${top + plotH - y(s.get(p))}`)
+      .join(' ');
+    body += `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${i ? 1 : 2}" ${i ? 'stroke-dasharray="5 3"' : ''}/>`;
+    for (const p of pts) {
+      const cy = top + plotH - y(s.get(p));
+      body += `<circle cx="${xOf(p.rows * p.cols)}" cy="${cy}" r="4" fill="${s.fill}" stroke="${INK}"/>`;
+    }
+    const last = pts[pts.length - 1];
+    body += text(xOf(last.rows * last.cols) + 10, top + plotH - y(s.get(last)) + 4, s.label, {
+      size: 10,
+    });
+  });
+  const g = split.growth;
+  body += note(
+    left,
+    top + plotH + 38,
+    `Per cell, over these boards: ${g['anc-kg24-torino'].per_cell}x with spare qubits, ` +
+      `${g['base-torino'].per_cell}x without. Times the ${g.grover_rounds_per_cell}x the round ` +
+      `count itself grows, that is ${g['anc-kg24-torino'].times_round_growth_sqrt2} and ` +
+      `${g['base-torino'].times_round_growth_sqrt2}, against ${g.brute_force_per_cell}x for ` +
+      'exhaustive search.',
+    100,
+  );
+  return figure(
+    'round-growth.svg',
+    'Two-qubit gates per Grover round, against board size',
+    H,
+    body,
+    `Which side of exhaustive search the circuit grows on is decided by the decomposition, not by the search.\n` +
+      `Boards with one solution. ${split.environment.target}, optimization level ${split.environment.optimization_level}. Three points over one 5-cell span: a slope, not a scaling law.`,
+  );
+}
+
+// 3. What each method asks the clues
+function figureQueries() {
+  const shapes = spread.shapes.filter((s) => s.groverRoundsM1);
+  const H = 290;
+  const left = 56,
+    top = 14,
+    plotH = 190,
+    plotW = W - left - 30;
+  const lo = 1,
+    hi = 40000;
+  const y = logScale(lo, hi, plotH);
+  const slot = plotW / shapes.length;
+  let body = '';
+  for (const d of decades(lo, hi)) {
+    const yy = top + plotH - y(d);
+    body +=
+      `<line x1="${left}" y1="${yy}" x2="${left + plotW}" y2="${yy}" stroke="${INK}" stroke-width="1" stroke-dasharray="1 3"/>` +
+      text(left - 6, yy + 4, n(d), { anchor: 'end', size: 10 });
+  }
+  body += `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="${INK}"/>`;
+  body += `<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="${INK}"/>`;
+  shapes.forEach((s, i) => {
+    const cx = left + slot * (i + 0.5);
+    const p = s.placementsM1 ?? s.placements;
+    const yy = (v) => top + plotH - y(Math.max(v, lo));
+    // The spread of what the backtracker asked, over every board of this shape.
+    body += `<line x1="${cx}" y1="${yy(p.min)}" x2="${cx}" y2="${yy(p.max)}" stroke="${INK}"/>`;
+    body += bar(cx - 11, yy(p.p90), 22, Math.max(2, yy(p.median) - yy(p.p90)), 'url(#stipple)');
+    body += `<line x1="${cx - 13}" y1="${yy(p.median)}" x2="${cx + 13}" y2="${yy(p.median)}" stroke="${INK}" stroke-width="2"/>`;
+    // What Grover needs on the same board, which is one number and not a spread.
+    body += `<path d="M${cx - 6},${yy(s.groverRoundsM1)} L${cx},${yy(s.groverRoundsM1) - 7} L${cx + 6},${yy(s.groverRoundsM1)} L${cx},${yy(s.groverRoundsM1) + 7} Z" fill="${INK}"/>`;
+    body += text(cx, top + plotH + 14, s.shape, { anchor: 'middle', size: 10 });
+    body += text(cx, top + plotH + 26, s.sampled ? '(sampled)' : `${n(s.puzzlesM1)}`, {
+      anchor: 'middle',
+      size: 9,
+    });
+  });
+  body +=
+    text(left, top + plotH + 46, 'bar: middle of the backtracker, line: its full range', {
+      size: 10,
+    }) +
+    text(left, top + plotH + 59, 'diamond: rounds Grover needs on the same board', { size: 10 });
+  return figure(
+    'queries.svg',
+    'Questions put to the clues, over every solvable board',
+    H,
+    body,
+    `Boards with one solution; the count under each label is how many there are. 5x5 is a 400,000-grid sample.\n` +
+      `A backtracking placement is at most one whole-grid check, so its count is an upper bound on its queries; Grover's round count is exact.\n` +
+      `Rounds come from the noiseless formula. Nothing here ran on a quantum device.`,
+  );
+}
+
+// 4. Against the depth a device holds
+function figureBudget() {
+  const budget = 200;
+  const shapes = [
+    [2, 2],
+    [2, 3],
+    [3, 3],
+  ].map(([r, c]) => row(r, c, 1));
+  const H = 200;
+  const left = 56,
+    top = 10;
+  const lo = 100,
+    hi = 100000;
+  const plotW = W - left - 120;
+  const x = logScale(lo, hi, plotW);
+  let body = '';
+  for (const d of decades(lo, hi)) {
+    body +=
+      `<line x1="${left + x(d)}" y1="${top}" x2="${left + x(d)}" y2="${top + 120}" stroke="${INK}" stroke-width="1" stroke-dasharray="1 3"/>` +
+      text(left + x(d), top + 134, n(d), { anchor: 'middle', size: 10 });
+  }
+  shapes.forEach((s, i) => {
+    const y = top + 8 + i * 38;
+    body += bar(left, y, x(s.depth), 12, INK);
+    body += bar(left, y + 13, x(s.depth_noaux), 12, 'url(#stipple)');
+    body += text(left - 6, y + 16, `${s.rows}x${s.cols}`, { anchor: 'end' });
+    body += text(
+      left + x(s.depth_noaux) + 8,
+      y + 16,
+      `${n(s.depth)} / ${n(s.depth_noaux)} layers`,
+      {
+        size: 10,
+      },
+    );
+  });
+  body +=
+    `<line x1="${left + x(budget)}" y1="${top}" x2="${left + x(budget)}" y2="${top + 120}" stroke="${INK}" stroke-width="2"/>` +
+    text(left + x(budget), top + 148, `${budget} layers a device holds`, {
+      anchor: 'middle',
+      size: 10,
+    });
+  body += text(left, top + 166, 'solid: spare qubits lent, stipple: nothing to borrow', {
+    size: 10,
+  });
+  return figure(
+    'depth-budget.svg',
+    'Circuit depth against the depth a device runs before noise takes over',
+    H,
+    body,
+    `Both compilations sit past the budget at every size, so no whole Grover round completes either way.\n` +
+      `The 200-layer figure is a working assumption, not a number read off a device. ${split.environment.target}, optimization level ${split.environment.optimization_level}.`,
+  );
+}
+
+// 5. The unit decides the verdict
+function figureUnits() {
+  const hw = row(3, 3, 1);
+  const shape = shapeOf('3x3');
+  const work = 2 ** 9 * shape.predicateGates.median;
+  const held = 9 + hw.ancillas;
+  const bars = [
+    ['two-qubit gates', hw.two_qubit / work],
+    ['all gates', hw.gates / work],
+    ['qubit-layers', (held * hw.depth) / work],
+  ];
+  const H = 170;
+  const left = 110,
+    top = 10;
+  const lo = 0.05,
+    hi = 20;
+  const plotW = W - left - 110;
+  const x = logScale(lo, hi, plotW);
+  let body = '';
+  for (const d of [0.1, 1, 10]) {
+    body +=
+      `<line x1="${left + x(d)}" y1="${top}" x2="${left + x(d)}" y2="${top + 116}" stroke="${INK}" stroke-width="${d === 1 ? 2 : 1}" ${d === 1 ? '' : 'stroke-dasharray="1 3"'}/>` +
+      text(left + x(d), top + 130, `${d}x`, { anchor: 'middle', size: 10 });
+  }
+  bars.forEach(([label, ratio], i) => {
+    const y = top + 8 + i * 34;
+    const from = Math.min(ratio, 1),
+      to = Math.max(ratio, 1);
+    body += bar(left + x(from), y, x(to) - x(from), 20, ratio > 1 ? 'url(#stipple)' : INK);
+    body += text(left - 8, y + 14, label, { anchor: 'end' });
+    body += text(left + x(to) + 8, y + 14, `${ratio.toFixed(2)}x`, { size: 10 });
+  });
+  body += text(left, top + 150, 'left of the rule: cheaper than the classical search', {
+    size: 10,
+  });
+  return figure(
+    'unit-choice.svg',
+    'One circuit against one classical search, in three units',
+    H,
+    body,
+    `A 3x3 board with one solution, against ${n(work)} classical gate-steps on a single processor: ` +
+      `2^9 grids at the median predicate cost over every 3x3 board, rather than one puzzle's.\n` +
+      `Width times depth charges the circuit for qubits it holds idle, and the classical side for no width at all, which is most of the difference between the ends of this figure.`,
+  );
+}
+
+const written = [figureSplit(), figureGrowth(), figureQueries(), figureBudget(), figureUnits()];
+console.log(`figures: ${written.join(', ')}`);
