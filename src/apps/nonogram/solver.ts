@@ -481,7 +481,9 @@ const NOTES: Record<string, string> = {
   'Spacetime (qubit-layers)':
     'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
     'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
-    'holds idle, so it reads harder on the circuit than a gate count does.',
+    'holds idle, so it reads harder on the circuit than a gate count does. Against ' +
+    'exhaustive search even this unit favours the circuit past about fourteen cells; against ' +
+    'the backtracking column no unit does, at any size measured.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
     `fitted to the device, best of ${String(COST_SEEDS)} transpiler seeds. Boards that share ` +
@@ -514,7 +516,9 @@ const COLUMN_NOTES: Record<string, string> = {
     'that leaves a column with no legal pattern left, so its counts move with the puzzle.',
   Grover:
     'Quantum search, simulated here. The probabilities come from an exact noiseless ' +
-    'formula run in the browser, and the device figures below are estimates, not a run.',
+    'formula run in the browser, and the device figures below are estimates, not a run. ' +
+    'Building the oracle is itself a pass over all 2^cells grids: a tenth of a second at ' +
+    'nine cells, forty-four seconds at eighteen.',
 };
 
 /** What a section covers, on the name down its side. */

@@ -1,0 +1,223 @@
+{
+ "environment": {
+  "qiskit": "2.4.1",
+  "target": "fake_torino",
+  "optimization_level": 3,
+  "seeds": 1,
+  "spare_qubits": 2
+ },
+ "note": "One Grover round over a single-solution oracle, and one multi-controlled X, transpiled with no coupling map and against the device. Seed 0 only: these are structural counts, not the best-of-seeds figures the cost table carries.",
+ "perRound": [
+  {
+   "qubits": 4,
+   "allToAll": 23,
+   "device": 30,
+   "deviceDepth": 117,
+   "allToAllNoSpare": 28,
+   "deviceNoSpare": 37,
+   "deviceDepthNoSpare": 140,
+   "routingFactor": 1.3,
+   "closedForm": 23
+  },
+  {
+   "qubits": 5,
+   "allToAll": 35,
+   "device": 55,
+   "deviceDepth": 195,
+   "allToAllNoSpare": 72,
+   "deviceNoSpare": 128,
+   "deviceDepthNoSpare": 374,
+   "routingFactor": 1.57,
+   "closedForm": 35
+  },
+  {
+   "qubits": 6,
+   "allToAll": 47,
+   "device": 101,
+   "deviceDepth": 295,
+   "allToAllNoSpare": 166,
+   "deviceNoSpare": 304,
+   "deviceDepthNoSpare": 909,
+   "routingFactor": 2.15,
+   "closedForm": 47
+  },
+  {
+   "qubits": 7,
+   "allToAll": 59,
+   "device": 114,
+   "deviceDepth": 367,
+   "allToAllNoSpare": 248,
+   "deviceNoSpare": 490,
+   "deviceDepthNoSpare": 1391,
+   "routingFactor": 1.93,
+   "closedForm": 59
+  },
+  {
+   "qubits": 8,
+   "allToAll": 71,
+   "device": 175,
+   "deviceDepth": 391,
+   "allToAllNoSpare": 360,
+   "deviceNoSpare": 837,
+   "deviceDepthNoSpare": 2199,
+   "routingFactor": 2.46,
+   "closedForm": 71
+  },
+  {
+   "qubits": 9,
+   "allToAll": 83,
+   "device": 195,
+   "deviceDepth": 411,
+   "allToAllNoSpare": 504,
+   "deviceNoSpare": 1098,
+   "deviceDepthNoSpare": 2892,
+   "routingFactor": 2.35,
+   "closedForm": 83
+  },
+  {
+   "qubits": 10,
+   "allToAll": 95,
+   "device": 224,
+   "deviceDepth": 425,
+   "allToAllNoSpare": 664,
+   "deviceNoSpare": 1656,
+   "deviceDepthNoSpare": 4350,
+   "routingFactor": 2.36,
+   "closedForm": 95
+  },
+  {
+   "qubits": 11,
+   "allToAll": 107,
+   "device": 261,
+   "deviceDepth": 507,
+   "allToAllNoSpare": 904,
+   "deviceNoSpare": 2279,
+   "deviceDepthNoSpare": 5310,
+   "routingFactor": 2.44,
+   "closedForm": 107
+  },
+  {
+   "qubits": 12,
+   "allToAll": 119,
+   "device": 296,
+   "deviceDepth": 617,
+   "allToAllNoSpare": 1128,
+   "deviceNoSpare": 3061,
+   "deviceDepthNoSpare": 7030,
+   "routingFactor": 2.49,
+   "closedForm": 119
+  },
+  {
+   "qubits": 13,
+   "allToAll": 131,
+   "device": 343,
+   "deviceDepth": 601,
+   "allToAllNoSpare": 1432,
+   "deviceNoSpare": 3890,
+   "deviceDepthNoSpare": 9300,
+   "routingFactor": 2.62,
+   "closedForm": 131
+  },
+  {
+   "qubits": 14,
+   "allToAll": 143,
+   "device": 379,
+   "deviceDepth": 687,
+   "allToAllNoSpare": 1704,
+   "deviceNoSpare": 4850,
+   "deviceDepthNoSpare": 11597,
+   "routingFactor": 2.65,
+   "closedForm": 143
+  },
+  {
+   "qubits": 15,
+   "allToAll": 155,
+   "device": 436,
+   "deviceDepth": 716,
+   "allToAllNoSpare": 2072,
+   "deviceNoSpare": 5865,
+   "deviceDepthNoSpare": 13833,
+   "routingFactor": 2.81,
+   "closedForm": 155
+  },
+  {
+   "qubits": 16,
+   "allToAll": 167,
+   "device": 449,
+   "deviceDepth": 786,
+   "allToAllNoSpare": 2376,
+   "deviceNoSpare": 6950,
+   "deviceDepthNoSpare": 16580,
+   "routingFactor": 2.69,
+   "closedForm": 167
+  }
+ ],
+ "mcx": [
+  {
+   "controls": 3,
+   "noSpare": 14,
+   "twoSpare": 12,
+   "ratio": 1.2,
+   "closedForm": 12
+  },
+  {
+   "controls": 5,
+   "noSpare": 84,
+   "twoSpare": 24,
+   "ratio": 3.5,
+   "closedForm": 24
+  },
+  {
+   "controls": 8,
+   "noSpare": 252,
+   "twoSpare": 42,
+   "ratio": 6.0,
+   "closedForm": 42
+  },
+  {
+   "controls": 11,
+   "noSpare": 564,
+   "twoSpare": 60,
+   "ratio": 9.4,
+   "closedForm": 60
+  },
+  {
+   "controls": 15,
+   "noSpare": 1188,
+   "twoSpare": 84,
+   "ratio": 14.1,
+   "closedForm": 84
+  },
+  {
+   "controls": 20,
+   "noSpare": 2316,
+   "twoSpare": 114,
+   "ratio": 20.3,
+   "closedForm": 114
+  },
+  {
+   "controls": 25,
+   "noSpare": 2988,
+   "twoSpare": 144,
+   "ratio": 20.8,
+   "closedForm": 144
+  }
+ ],
+ "oracleSynthesis": {
+  "note": "Wall-clock seconds to synthesise the clue oracle alone, inside transpile, on one machine. PhaseOracleGate is built instantly; the cost lands when synthesis reduces the formula over its 2^n rows. Doubling per cell, so compiling the circuit performs the same enumeration the exhaustive search is charged for.",
+  "cells": [
+   9,
+   12,
+   14,
+   16,
+   18
+  ],
+  "seconds": [
+   0.05,
+   0.43,
+   2.66,
+   9.55,
+   43.66
+  ]
+ }
+}

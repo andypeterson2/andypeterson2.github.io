@@ -22,6 +22,7 @@ const read = async (name) =>
 const costs = await read('nonogram-hardware-cost.json');
 const split = await read('nonogram-compile-split.json');
 const spread = await read('nonogram-query-spread.json');
+const perRound = await read('nonogram-per-round.json');
 
 const W = 640;
 /** What every figure has to say about itself, wherever it ends up. */
@@ -177,24 +178,23 @@ function figureSplit() {
 
 // 2. How a round grows with the register
 function figureGrowth() {
-  const pts = [
-    [2, 2],
-    [2, 3],
-    [3, 3],
-  ].map(([r, c]) => row(r, c, 1));
+  const pts = perRound.perRound;
   const series = [
-    { label: 'spare qubits lent', get: (x) => x.two_qubit / x.iterations, fill: INK },
-    { label: 'nothing to borrow', get: (x) => x.two_qubit_noaux / x.iterations, fill: PAPER },
+    { label: 'nothing to borrow', get: (p) => p.deviceNoSpare, dash: true, fill: PAPER },
+    { label: '2 spare qubits', get: (p) => p.device, dash: false, fill: INK },
+    { label: 'no routing (12n - 25)', get: (p) => p.allToAll, dash: true, fill: PAPER },
   ];
-  const H = 290;
+  const H = 280;
   const left = 56,
     top = 14,
-    plotH = 170,
-    plotW = W - left - 150;
-  const lo = 20,
-    hi = 2000;
+    plotH = 180,
+    plotW = W - left - 160;
+  const lo = 10,
+    hi = 10000;
   const y = logScale(lo, hi, plotH);
-  const xOf = (cells) => left + (plotW * (cells - 4)) / 5;
+  const first = pts[0].qubits,
+    span = pts[pts.length - 1].qubits - first;
+  const xOf = (q) => left + (plotW * (q - first)) / span;
   let body = '';
   for (const d of decades(lo, hi)) {
     const yy = top + plotH - y(d);
@@ -205,55 +205,105 @@ function figureGrowth() {
   body += `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="${INK}"/>`;
   body += `<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="${INK}"/>`;
   for (const p of pts) {
-    body += text(xOf(p.rows * p.cols), top + plotH + 14, `${p.rows}x${p.cols}`, {
+    if (p.qubits % 2) continue;
+    body += text(xOf(p.qubits), top + plotH + 14, String(p.qubits), {
       anchor: 'middle',
       size: 10,
     });
   }
-  series.forEach((s, i) => {
+  body += text(left + plotW / 2, top + plotH + 28, 'qubits', { anchor: 'middle', size: 10 });
+  for (const s of series) {
     const path = pts
-      .map((p, j) => `${j ? 'L' : 'M'}${xOf(p.rows * p.cols)},${top + plotH - y(s.get(p))}`)
+      .map((p, j) => `${j ? 'L' : 'M'}${xOf(p.qubits)},${top + plotH - y(s.get(p))}`)
       .join(' ');
-    body += `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${i ? 1 : 2}" ${i ? 'stroke-dasharray="5 3"' : ''}/>`;
+    body += `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${s.dash ? 1 : 2}" ${s.dash ? 'stroke-dasharray="5 3"' : ''}/>`;
     for (const p of pts) {
-      const cy = top + plotH - y(s.get(p));
-      body += `<circle cx="${xOf(p.rows * p.cols)}" cy="${cy}" r="4" fill="${s.fill}" stroke="${INK}"/>`;
+      if (p.qubits % 3 && p.qubits !== pts[pts.length - 1].qubits) continue;
+      body += `<circle cx="${xOf(p.qubits)}" cy="${top + plotH - y(s.get(p))}" r="3" fill="${s.fill}" stroke="${INK}"/>`;
     }
     const last = pts[pts.length - 1];
-    body += text(xOf(last.rows * last.cols) + 10, top + plotH - y(s.get(last)) + 4, s.label, {
-      size: 10,
-    });
-  });
-  const g = split.growth;
-  // Exhaustive search in gate-steps over the same boards, so the comparison is gates
-  // against gates rather than gates against grids.
-  const work = (shape) => {
-    const sh = shapeOf(shape);
-    return 2 ** sh.cells * sh.predicateGatesMedianM1;
-  };
-  const classical69 = (work('3x3') / work('2x3')) ** (1 / 3);
+    body += text(xOf(last.qubits) + 8, top + plotH - y(s.get(last)) + 4, s.label, { size: 10 });
+  }
+  const last = pts[pts.length - 1];
   body += note(
     left,
-    top + plotH + 38,
-    `Per cell, over these boards: ${g['anc-kg24-torino'].per_cell}x with spare qubits, ` +
-      `${g['base-torino'].per_cell}x without. Times the ${g.grover_rounds_per_cell}x the round ` +
-      `count itself grows, that is ${g['anc-kg24-torino'].times_round_growth_sqrt2} and ` +
-      `${g['base-torino'].times_round_growth_sqrt2} for the whole circuit, against ` +
-      `${classical69.toFixed(2)}x for exhaustive search counted in gate-steps over the same boards.`,
-    100,
+    top + plotH + 46,
+    `Without routing the cost of a round is exactly 12n - 25 at every size measured. Routing onto ` +
+      `the lattice multiplies that by ${pts[2].routingFactor} at six qubits and ${last.routingFactor} ` +
+      `at ${last.qubits}; refusing the spare qubits multiplies it by ` +
+      `${(pts[2].deviceNoSpare / pts[2].device).toFixed(1)} and ` +
+      `${(last.deviceNoSpare / last.device).toFixed(1)}.`,
+    102,
   );
   return figure(
     'round-growth.svg',
-    'Two-qubit gates per Grover round, against board size',
+    'Two-qubit gates per Grover round, against register size',
     H,
     body,
-    `How steeply a round grows is set by the decomposition, not by the search: both compilations still grow more slowly than exhaustive search does.\n` +
-      `Boards with one solution. These are chords on a falling curve, not rates: the circuit costs (root 2)^cells times a per-round cost that grows with the register, exhaustive search 2^cells times a per-check cost that grows the same way.\n` +
+    `The penalty for compiling without a spare qubit is not a constant: it widens from ${(pts[0].deviceNoSpare / pts[0].device).toFixed(1)}x at four qubits to ${(last.deviceNoSpare / last.device).toFixed(1)}x at ${last.qubits}.\n` +
+      `A single round over a one-solution oracle, seed 0, so these are structural counts rather than the best-of-seeds figures the cost table carries.\n` +
       PROVENANCE(split.environment),
   );
 }
 
-// 3. What each method asks the clues
+// 3. What one many-controlled gate costs, with and without a qubit to borrow
+function figureMcx() {
+  const pts = perRound.mcx;
+  const H = 250;
+  const left = 56,
+    top = 14,
+    plotH = 160,
+    plotW = W - left - 150;
+  const lo = 10,
+    hi = 10000;
+  const y = logScale(lo, hi, plotH);
+  const first = pts[0].controls,
+    span = pts[pts.length - 1].controls - first;
+  const xOf = (c) => left + (plotW * (c - first)) / span;
+  let body = '';
+  for (const d of decades(lo, hi)) {
+    const yy = top + plotH - y(d);
+    body +=
+      `<line x1="${left}" y1="${yy}" x2="${left + plotW}" y2="${yy}" stroke="${INK}" stroke-width="1" stroke-dasharray="1 3"/>` +
+      text(left - 6, yy + 4, n(d), { anchor: 'end', size: 10 });
+  }
+  body += `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="${INK}"/>`;
+  body += `<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="${INK}"/>`;
+  for (const p of pts) {
+    body += text(xOf(p.controls), top + plotH + 14, String(p.controls), {
+      anchor: 'middle',
+      size: 10,
+    });
+  }
+  body += text(left + plotW / 2, top + plotH + 28, 'controls', { anchor: 'middle', size: 10 });
+  for (const [key, label, dash] of [
+    ['noSpare', 'no spare qubit', true],
+    ['twoSpare', '2 spare, exactly 6(c - 1)', false],
+  ]) {
+    const path = pts
+      .map((p, j) => `${j ? 'L' : 'M'}${xOf(p.controls)},${top + plotH - y(p[key])}`)
+      .join(' ');
+    body += `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${dash ? 1 : 2}" ${dash ? 'stroke-dasharray="5 3"' : ''}/>`;
+    for (const p of pts) {
+      body += `<circle cx="${xOf(p.controls)}" cy="${top + plotH - y(p[key])}" r="3" fill="${dash ? PAPER : INK}" stroke="${INK}"/>`;
+    }
+    const end = pts[pts.length - 1];
+    body += text(xOf(end.controls) + 8, top + plotH - y(end[key]) + 4, label, { size: 10 });
+  }
+  const ratios = pts.map((p) => `${String(p.controls)}: ${p.ratio.toFixed(1)}x`).join(', ');
+  body += note(left, top + plotH + 46, `Ratio by control count — ${ratios}.`, 102);
+  return figure(
+    'mcx-cost.svg',
+    'One many-controlled X, with and without a qubit to borrow',
+    H,
+    body,
+    `The borrowed-qubit cost is exactly 6(c - 1) at every size; the ancilla-free path grows about c^2.4 to twenty controls, so the gap widens rather than holding at one factor.\n` +
+      `Transpiled to the device's basis with no coupling map, so this is synthesis alone, before any routing.\n` +
+      `The cost gap itself is long established — Barenco et al. 1995 give linear with borrowed work qubits against quadratic with none.`,
+  );
+}
+
+// 4. What each method asks the clues
 function figureQueries() {
   const shapes = spread.shapes.filter((s) => s.groverRoundsM1);
   const H = 290;
@@ -307,7 +357,7 @@ function figureQueries() {
   );
 }
 
-// 4. Against the depth a device holds
+// 5. Against the depth a device holds
 function figureBudget() {
   const budget = 200;
   const shapes = [
@@ -362,7 +412,7 @@ function figureBudget() {
   );
 }
 
-// 5. The unit decides the verdict
+// 6. The unit decides the verdict
 function figureUnits() {
   const hw = row(3, 3, 1);
   const shape = shapeOf('3x3');
@@ -412,5 +462,12 @@ function figureUnits() {
   );
 }
 
-const written = [figureSplit(), figureGrowth(), figureQueries(), figureBudget(), figureUnits()];
+const written = [
+  figureSplit(),
+  figureGrowth(),
+  figureMcx(),
+  figureQueries(),
+  figureBudget(),
+  figureUnits(),
+];
 console.log(`figures: ${written.join(', ')}`);
