@@ -21,22 +21,30 @@ export interface HardwareCost {
   /** Spare qubits the synthesis pass was given, which it borrows for the big gates. */
   ancillas: number;
   depth: number;
-  depth_max: number;
   gates: number;
   two_qubit: number;
+  /**
+   * What each metric took across every run of its arm: seeds and representative boards
+   * together, as [lowest, highest]. The figures above are one run, the shallowest.
+   */
+  depth_range: number[];
+  two_qubit_range: number[];
   /** The same circuit compiled with nothing to borrow, six times dearer at nine cells. */
   depth_noaux: number;
   gates_noaux: number;
   two_qubit_noaux: number;
+  depth_noaux_range: number[];
+  two_qubit_noaux_range: number[];
   /**
    * The same board through an oracle that tests the clues rather than holding the
    * answers: one flag qubit per line, one gate per pattern the clue allows.
    */
   depth_clue: number;
-  depth_clue_max: number;
   gates_clue: number;
   two_qubit_clue: number;
   qubits_clue: number;
+  depth_clue_range: number[];
+  two_qubit_clue_range: number[];
 }
 
 interface CostTable {
@@ -60,8 +68,24 @@ export const DEPTH_BUDGET = 200;
 export const COST_TARGET = COSTS.target;
 export const COST_SEEDS = COSTS.seeds;
 export const COST_OPTIMIZATION = COSTS.optimization_level;
-/** How far the seeds spread, as a percentage, for the rows deep enough to mean anything. */
+/** How far the runs spread, as a fraction, for the rows deep enough to mean anything. */
 export const COST_SPREAD = COSTS.worst_spread;
+
+/** A measured range, as the page writes it: "3,027 to 3,838". */
+export function rangeText(range: number[]): string {
+  return `${(range[0] ?? 0).toLocaleString()} to ${(range[1] ?? 0).toLocaleString()}`;
+}
+
+/**
+ * What a figure comes to per Grover round.
+ *
+ * The round count is fixed by the register and the solution count, so dividing it out is
+ * what makes a figure comparable with a paper that tabulates per iteration. Null where
+ * the board needs no rounds at all.
+ */
+export function perRound(total: number, iterations: number): number | null {
+  return iterations > 0 ? total / iterations : null;
+}
 
 /** The measured cost for this board, or null when it was never measured. */
 export function hardwareCost(

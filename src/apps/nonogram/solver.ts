@@ -25,6 +25,8 @@ import {
   DEPTH_BUDGET,
   hardwareCost,
   measuredGrowth,
+  perRound,
+  rangeText,
   overBudget,
   type HardwareCost,
 } from './hardware-cost';
@@ -430,6 +432,15 @@ export function clearMetrics(): void {
 }
 
 /**
+ * How every device figure was selected, appended to the rows that carry one.
+ *
+ * One transpiled circuit, the shallowest of the seeds tried, reported whole: depth and
+ * gate count disagree between layouts, so a figure assembled metric by metric would
+ * describe no circuit that exists.
+ */
+const SEED_NOTE = ` Each figure is one run, the shallowest of ${String(COST_SEEDS)} transpiler seeds.`;
+
+/**
  * What each label means, keyed by the label. Every row carries one.
  *
  * Written for a reader with no physics: what the figure counts, in what units, and what
@@ -467,16 +478,19 @@ const NOTES: Record<string, string> = {
     'What the same board costs through an oracle built from the clues rather than from the ' +
     'answers: one flag qubit per line, one gate per pattern that line allows. It costs more ' +
     'and knows less, so the figures above it are a lower bound on it rather than a price. ' +
-    'Unlike them it does not care how many solutions the board has.',
+    'It does not care which grids satisfy the puzzle, though looser clues allow more ' +
+    'patterns, so it is dearer per round on a board with many solutions.',
   'With nothing to borrow':
     'The same circuit compiled with no spare qubit to borrow, which is what an earlier run ' +
-    'of this table measured. The gap is not a constant: with nothing to borrow a gate of c ' +
-    'controls costs about c^2.4 up to twenty controls, against 6(c-1) with, so it widens as ' +
-    'the register grows.',
+    'of this table measured. The ratio is a span because both arms move with the seed, and ' +
+    'they do not move equally: the borrowed-qubit arm is the unstable one. The gap also ' +
+    'widens with the gate, from 6(c-1) against about the same at three controls to roughly ' +
+    'twenty times that past twenty.',
   'Two-qubit gates':
     'Gates acting on two qubits at once, the error-prone kind, counted over the whole ' +
     'circuit after it was fitted to the device. A lower bound: the oracle compiles to one ' +
-    'marked grid per solution, where an oracle that tested the clues would cost more.',
+    'marked grid per solution, where an oracle that tested the clues would cost more.' +
+    SEED_NOTE,
   'Per extra cell, measured':
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
     'board. One step on a falling curve rather than a rate: the circuit costs the square ' +
@@ -491,9 +505,11 @@ const NOTES: Record<string, string> = {
     'the backtracking column no unit does, at any size measured.',
   'Depth (layers)':
     'Layers of gates the circuit runs in sequence, every round included, after it was ' +
-    `fitted to the device, best of ${String(COST_SEEDS)} transpiler seeds. Boards that share ` +
-    `a size and a solution count differ by up to ${(COST_SPREAD * 100).toFixed(0)}%, so one ` +
-    'row stands for its class loosely rather than exactly.',
+    'fitted to the device. Not a stable figure: at optimization level 3 the compiler ' +
+    'already tries twenty layouts, and the seed picks between near-ties, so runs of the ' +
+    `same circuit land in clusters. The widest row here spans ` +
+    `${(COST_SPREAD * 100).toFixed(0)}% between its cheapest and dearest run.` +
+    SEED_NOTE,
   'Device budget (layers)':
     `A working figure of ${String(DEPTH_BUDGET)} layers, what a current device runs ` +
     'before noise takes over. Assumed rather than read off a device. The "over" figure ' +
@@ -594,6 +610,7 @@ function metricRow(
   label: string,
   values: (string | number)[],
   naSpan = false,
+  measured = '',
 ): void {
   const tr = body.insertRow();
   tr.className = 'metric';
@@ -602,7 +619,7 @@ function metricRow(
   th.textContent = label;
   const note = NOTES[label];
   if (note) {
-    th.title = note;
+    th.title = note + measured;
     th.className = 'has-note';
   }
   tr.append(th);
@@ -619,6 +636,21 @@ function naCell(tr: HTMLTableRowElement): void {
   label.className = 'sr-only';
   label.textContent = 'not applicable';
   td.append(label);
+}
+
+/**
+ * One arm against another, as the span the seeds allow rather than a single figure.
+ *
+ * Both arms move with the transpiler seed, so their ratio is a range: the narrowest it
+ * can be is the smaller arm's worst run over the larger arm's best, and the widest is the
+ * other way about.
+ */
+function ratioRange(over: number[], under: number[]): string {
+  const low = (over[0] ?? 0) / (under[1] ?? 1);
+  const high = (over[1] ?? 0) / (under[0] ?? 1);
+  return low.toFixed(1) === high.toFixed(1)
+    ? `${low.toFixed(1)}x`
+    : `${low.toFixed(1)}-${high.toFixed(1)}x`;
 }
 
 /**
@@ -651,40 +683,73 @@ function deviceRows(
       'the circuit beside this carries the counts as written, before any device sees them.';
     return;
   }
-  const perRound = hw ? hw.depth / hw.iterations : 0;
+  const rows = deviceFigures(hw, cells, found, growth);
+  for (const [label, value, measured] of rows) metricRow(body, label, v([value]), true, measured);
+  if (hw && !blank) crossoverNote(body, { hw, cells, work, local });
+}
+
+/**
+ * Every device figure, with the span its own arm covered.
+ *
+ * The span goes on the label's hover rather than in the cell: a cell wide enough for
+ * "3,234 (3,027 to 3,838)" crowds a table that already reflows to one line per figure on
+ * a phone.
+ */
+function deviceFigures(
+  hw: HardwareCost | null,
+  cells: number,
+  found: number,
+  growth: string | null | false,
+): [string, string | number, string][] {
+  const roundDepth = hw ? perRound(hw.depth, hw.iterations) : null;
   const spare = hw?.ancillas ?? 0;
   const held = cells + spare;
-  const rows: [string, string | number][] = [
-    ['Qubits', hw && spare ? `${String(cells)} + ${String(spare)}` : cells],
-    ['Two-qubit gates', hw ? hw.two_qubit.toLocaleString() : ''],
+  const span = (range: number[] | undefined, unit: string): string =>
+    hw && range
+      ? ` Over ${String(COST_SEEDS)} seeds this board ran ${rangeText(range)} ${unit}.`
+      : '';
+  const figures: [string, string | number, string][] = [
+    ['Qubits', hw && spare ? `${String(cells)} + ${String(spare)}` : cells, ''],
+    [
+      'Two-qubit gates',
+      hw ? hw.two_qubit.toLocaleString() : '',
+      span(hw?.two_qubit_range, 'gates'),
+    ],
     [
       'With nothing to borrow',
       hw
-        ? `${hw.two_qubit_noaux.toLocaleString()} (${(hw.two_qubit_noaux / hw.two_qubit).toFixed(1)}x)`
+        ? `${hw.two_qubit_noaux.toLocaleString()} (${ratioRange(hw.two_qubit_noaux_range, hw.two_qubit_range)})`
         : '',
+      span(hw?.two_qubit_noaux_range, 'gates'),
     ],
     [
       'Testing the clues instead',
       hw
-        ? `${hw.two_qubit_clue.toLocaleString()} (${(hw.two_qubit_clue / hw.two_qubit).toFixed(1)}x)`
+        ? `${hw.two_qubit_clue.toLocaleString()} (${ratioRange(hw.two_qubit_clue_range, hw.two_qubit_range)})`
         : '',
+      span(hw?.two_qubit_clue_range, 'gates'),
     ],
-    ['Per extra cell, measured', growth || '—'],
-    ['Depth (layers)', hw ? hw.depth.toLocaleString() : ''],
-    ['Spacetime (qubit-layers)', hw ? (held * hw.depth).toLocaleString() : ''],
+    ['Per extra cell, measured', growth || '—', ''],
+    ['Depth (layers)', hw ? hw.depth.toLocaleString() : '', span(hw?.depth_range, 'layers')],
+    ['Spacetime (qubit-layers)', hw ? (held * hw.depth).toLocaleString() : '', ''],
     [
       'Device budget (layers)',
       hw ? `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)` : '',
+      '',
     ],
     [
       'Rounds that fit',
-      hw ? `${String(Math.floor(DEPTH_BUDGET / perRound))} of ${String(hw.iterations)}` : '',
+      hw && roundDepth
+        ? `${String(Math.floor(DEPTH_BUDGET / roundDepth))} of ${String(hw.iterations)}`
+        : '—',
+      hw && roundDepth
+        ? ` This circuit runs ${Math.round(roundDepth).toLocaleString()} layers a round.`
+        : '',
     ],
     // The same question the ideal row asks: the chance of landing on any solution.
-    ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`],
+    ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`, ''],
   ];
-  for (const [label, value] of rows) metricRow(body, label, v([value]), true);
-  if (hw && !blank) crossoverNote(body, { hw, cells, work, local });
+  return figures;
 }
 
 /**
@@ -775,7 +840,9 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
     v([
       `${cost.predicateGates} gates`,
       local.capped ? '—' : `up to ${String(cost.predicateGates)} gates`,
-      hw ? `${Math.round(hw.two_qubit / hw.iterations).toLocaleString()} 2q` : '—',
+      hw && perRound(hw.two_qubit, hw.iterations) !== null
+        ? `${Math.round(perRound(hw.two_qubit, hw.iterations) ?? 0).toLocaleString()} 2q`
+        : '—',
     ]),
   );
   metricRow(search, 'Per extra cell', v(['2x', '—', '1.41x']));

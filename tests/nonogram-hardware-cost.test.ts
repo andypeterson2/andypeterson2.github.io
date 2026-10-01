@@ -51,18 +51,29 @@ describe('Measured hardware cost', () => {
     expect(hardwareCost(2, 3, 1)!.depth).toBeGreaterThan(hardwareCost(2, 2, 1)!.depth);
   });
 
-  test('the measured spread stays small enough for one row to stand for its class', () => {
-    // The table keeps one row per grid and solution count rather than per board.
-    // That only holds while boards in a class cost the same.
+  test('every figure is one run, and the range it came from is recorded', () => {
+    // A figure is the shallowest run of its arm, so it has to sit inside the range the
+    // arm covered; a range that did not contain its own headline would mean the two
+    // were computed from different sweeps.
     for (const [rows, cols, solutions] of [
       [3, 3, 1],
       [3, 3, 2],
       [2, 3, 1],
     ] as const) {
       const cost = hardwareCost(rows, cols, solutions)!;
-      expect((cost.depth_max - cost.depth) / cost.depth).toBeLessThan(0.02);
+      expect(cost.depth).toBe(cost.depth_range[0]);
+      expect(cost.two_qubit).toBeGreaterThanOrEqual(cost.two_qubit_range[0]);
+      expect(cost.two_qubit).toBeLessThanOrEqual(cost.two_qubit_range[1]);
       expect(cost.boards).toBeGreaterThan(1);
     }
+  });
+
+  test('borrowing a qubit costs the seed its reliability', () => {
+    // The ancilla-free decomposition dominates everything around it, so the layout the
+    // seed picks barely shows; the borrowed-qubit arm is a draw from a far wider spread.
+    const cost = hardwareCost(3, 3, 1)!;
+    const span = (range: number[]) => ((range[1] ?? 0) - (range[0] ?? 0)) / (range[0] ?? 1);
+    expect(span(cost.two_qubit_range)).toBeGreaterThan(span(cost.two_qubit_noaux_range));
   });
 
   test('every board is far past what a device of that generation holds', () => {

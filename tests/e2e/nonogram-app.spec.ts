@@ -169,7 +169,7 @@ test.describe('Nonogram: the quantum half runs in the browser', () => {
     await expect(grover(page, 'Per extra cell')).toHaveText('1.41x');
     // Measured, with spare qubits lent to synthesis. It counts gates where the row above
     // counts questions, so it is not the 2x and 1.41x of that row in the same unit.
-    await expect(grover(page, 'Per extra cell, measured')).toHaveText('1.82x');
+    await expect(grover(page, 'Per extra cell, measured')).toHaveText('1.81x');
 
     // Measured, and hopeless: the circuit asks for far more than the device holds.
     await expect(grover(page, 'Depth (layers)')).not.toHaveText('—');
@@ -399,10 +399,9 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
   });
 
   test('the device group prices an oracle that does not hold the answers', async ({ page }) => {
-    // Qiskit's oracle compiles to one marked grid per solution; this row is what an oracle
-    // built from the clues costs instead, which is dearer.
+    // The ratio is a span, because both arms move with the transpiler seed.
     const clue = metricRow(page, 'Testing the clues instead').locator('td').last();
-    await expect(clue).toHaveText(/[0-9,]+ \([0-9.]+x\)/);
+    await expect(clue).toHaveText(/[0-9,]+ \([0-9.]+(-[0-9.]+)?x\)/);
   });
 
   test('every label says what it means as hover text', async ({ page }) => {
