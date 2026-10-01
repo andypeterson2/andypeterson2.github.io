@@ -398,6 +398,13 @@ test.describe('Nonogram: the metrics table compares three methods', () => {
     await expect(note).toContainText('The backtracking column asks the clues far less');
   });
 
+  test('the device group prices an oracle that does not hold the answers', async ({ page }) => {
+    // Qiskit's oracle compiles to one marked grid per solution; this row is what an oracle
+    // built from the clues costs instead, which is dearer.
+    const clue = metricRow(page, 'Testing the clues instead').locator('td').last();
+    await expect(clue).toHaveText(/[0-9,]+ \([0-9.]+x\)/);
+  });
+
   test('every label says what it means as hover text', async ({ page }) => {
     // Every row in the table is a figure, so nothing in it is pressable.
     await expect(page.locator('.metrics-table button')).toHaveCount(0);

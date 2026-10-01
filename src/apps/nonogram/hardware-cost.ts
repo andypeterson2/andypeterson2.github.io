@@ -28,6 +28,15 @@ export interface HardwareCost {
   depth_noaux: number;
   gates_noaux: number;
   two_qubit_noaux: number;
+  /**
+   * The same board through an oracle that tests the clues rather than holding the
+   * answers: one flag qubit per line, one gate per pattern the clue allows.
+   */
+  depth_clue: number;
+  depth_clue_max: number;
+  gates_clue: number;
+  two_qubit_clue: number;
+  qubits_clue: number;
 }
 
 interface CostTable {

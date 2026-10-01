@@ -303,7 +303,81 @@ function figureMcx() {
   );
 }
 
-// 4. What each method asks the clues
+// 4. What the oracle's honesty costs
+function figureOracles() {
+  const pts = [
+    [2, 2],
+    [2, 3],
+    [3, 3],
+  ].map(([r, c]) => row(r, c, 1));
+  const series = [
+    { label: 'tests the clues', get: (x) => x.two_qubit_clue / x.iterations, fill: INK, dy: 4 },
+    { label: 'marks the answers', get: (x) => x.two_qubit / x.iterations, fill: PAPER, dy: 4 },
+    {
+      label: 'marks them, nothing to borrow',
+      get: (x) => x.two_qubit_noaux / x.iterations,
+      fill: PAPER,
+      // Its line ends close to the clue oracle's, so the two names are parted by hand.
+      dy: -9,
+    },
+  ];
+  const H = 250;
+  const left = 56,
+    top = 14,
+    plotH = 150,
+    plotW = W - left - 190;
+  const lo = 10,
+    hi = 10000;
+  const y = logScale(lo, hi, plotH);
+  const xOf = (cells) => left + (plotW * (cells - 4)) / 5;
+  let body = '';
+  for (const d of decades(lo, hi)) {
+    const yy = top + plotH - y(d);
+    body +=
+      `<line x1="${left}" y1="${yy}" x2="${left + plotW}" y2="${yy}" stroke="${INK}" stroke-width="1" stroke-dasharray="1 3"/>` +
+      text(left - 6, yy + 4, n(d), { anchor: 'end', size: 10 });
+  }
+  body += `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="${INK}"/>`;
+  body += `<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="${INK}"/>`;
+  for (const p of pts) {
+    body += text(xOf(p.rows * p.cols), top + plotH + 14, `${p.rows}x${p.cols}`, {
+      anchor: 'middle',
+      size: 10,
+    });
+  }
+  series.forEach((s, i) => {
+    const path = pts
+      .map((p, j) => `${j ? 'L' : 'M'}${xOf(p.rows * p.cols)},${top + plotH - y(s.get(p))}`)
+      .join(' ');
+    body += `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${i ? 1 : 2}" ${i ? 'stroke-dasharray="5 3"' : ''}/>`;
+    for (const p of pts)
+      body += `<circle cx="${xOf(p.rows * p.cols)}" cy="${top + plotH - y(s.get(p))}" r="4" fill="${s.fill}" stroke="${INK}"/>`;
+    const last = pts[pts.length - 1];
+    body += text(xOf(last.rows * last.cols) + 10, top + plotH - y(s.get(last)) + s.dy, s.label, {
+      size: 10,
+    });
+  });
+  const big = pts[pts.length - 1];
+  body += note(
+    left,
+    top + plotH + 36,
+    `At ${String(big.rows * big.cols)} cells an oracle that reads the clues costs ` +
+      `${(big.two_qubit_clue / big.two_qubit).toFixed(1)}x one that already holds the answers, ` +
+      `and holds ${String(big.qubits_clue)} qubits against ${String(big.rows * big.cols + big.ancillas)}.`,
+    100,
+  );
+  return figure(
+    'oracle-cost.svg',
+    'Two-qubit gates per round, by what the oracle knows',
+    H,
+    body,
+    `Qiskit reduces the clue formula over its whole truth table into one marked grid per solution, so the usual figures price an oracle nobody could build without solving the puzzle first.\n` +
+      `The clue oracle carries one flag qubit per line and one gate per pattern that line allows. Boards with one solution, best of ${String(perRound.environment.seeds + 7)} seeds.\n` +
+      `${split.environment.target}, optimization level ${split.environment.optimization_level}, qiskit ${split.environment.qiskit}. A fit to a device model, not a run on hardware.`,
+  );
+}
+
+// 5. What each method asks the clues
 function figureQueries() {
   const shapes = spread.shapes.filter((s) => s.groverRoundsM1);
   const H = 290;
@@ -357,7 +431,7 @@ function figureQueries() {
   );
 }
 
-// 5. Against the depth a device holds
+// 6. Against the depth a device holds
 function figureBudget() {
   const budget = 200;
   const shapes = [
@@ -412,7 +486,7 @@ function figureBudget() {
   );
 }
 
-// 6. The unit decides the verdict
+// 7. The unit decides the verdict
 function figureUnits() {
   const hw = row(3, 3, 1);
   const shape = shapeOf('3x3');
@@ -466,6 +540,7 @@ const written = [
   figureSplit(),
   figureGrowth(),
   figureMcx(),
+  figureOracles(),
   figureQueries(),
   figureBudget(),
   figureUnits(),

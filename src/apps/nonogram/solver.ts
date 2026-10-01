@@ -463,6 +463,11 @@ const NOTES: Record<string, string> = {
     'gates. Two is the fewest that gave the shallowest circuit of the settings tried; ' +
     'lending more cuts the gate count further and runs deeper. With a qubit to borrow, one ' +
     'gate of c controls costs 6(c-1) two-qubit gates at every size measured.',
+  'Testing the clues instead':
+    'What the same board costs through an oracle built from the clues rather than from the ' +
+    'answers: one flag qubit per line, one gate per pattern that line allows. It costs more ' +
+    'and knows less, so the figures above it are a lower bound on it rather than a price. ' +
+    'Unlike them it does not care how many solutions the board has.',
   'With nothing to borrow':
     'The same circuit compiled with no spare qubit to borrow, which is what an earlier run ' +
     'of this table measured. The gap is not a constant: with nothing to borrow a gate of c ' +
@@ -656,6 +661,12 @@ function deviceRows(
       'With nothing to borrow',
       hw
         ? `${hw.two_qubit_noaux.toLocaleString()} (${(hw.two_qubit_noaux / hw.two_qubit).toFixed(1)}x)`
+        : '',
+    ],
+    [
+      'Testing the clues instead',
+      hw
+        ? `${hw.two_qubit_clue.toLocaleString()} (${(hw.two_qubit_clue / hw.two_qubit).toFixed(1)}x)`
         : '',
     ],
     ['Per extra cell, measured', growth || '—'],
