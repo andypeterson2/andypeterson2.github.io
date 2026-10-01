@@ -162,8 +162,9 @@ function figureSplit() {
     left,
     136,
     `The same circuit, one compiler decision apart: ${s.shipped_vs_reference_two_qubit_factor}x the gates, ` +
-      `${s.shipped_vs_reference_depth_factor}x the depth, at nine qubits. The gap widens with the ` +
-      `gate: one of c controls costs 6(c-1) with a qubit to borrow and about c^2.4 with none.`,
+      `${s.shipped_vs_reference_depth_factor}x the depth, at nine qubits. One of c controls costs ` +
+      `6(c-1) with a qubit to borrow; with none the cost per control climbs to about 140 past ` +
+      `twenty controls, so the gap widens to roughly 21x and then holds.`,
     92,
   );
   return figure(
