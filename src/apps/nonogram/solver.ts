@@ -439,11 +439,13 @@ export function clearMetrics(): void {
 const NOTES: Record<string, string> = {
   Solutions:
     'Grids that satisfy every row and column clue. The count comes from the classical ' +
-    'solver, and the oracle in the measured circuit marks exactly those grids.',
+    'solver, and it also sets what the measured circuit costs: the oracle is written from ' +
+    'the clues, then compiled into one marked grid per solution.',
   'Clue checks':
     'How many times each method asks the clues a question: grids checked, row placements ' +
-    'tried, or Grover rounds. One question is a different size in each column: the 17 rounds ' +
-    'here are the whole speedup, and the device rows below are what they cost.',
+    'tried, or Grover rounds. One question is a different size in each column. Over every ' +
+    'one-solution board from 3x3 up, the backtracker asks fewer than Grover needs rounds on ' +
+    'its worst board, not just its median one.',
   'Per clue check':
     'What one question costs. Exhaustive: two-input gates to test a whole grid. ' +
     'Backtracking: at most that, since it stops at the first blocked column. Grover: ' +
@@ -459,20 +461,23 @@ const NOTES: Record<string, string> = {
   Qubits:
     'One qubit per cell, plus the spare ones synthesis borrows for the many-controlled ' +
     'gates. Two is the fewest that gave the shallowest circuit of the settings tried; ' +
-    'lending more cuts the gate count further and runs deeper.',
+    'lending more cuts the gate count further and runs deeper. With a qubit to borrow, one ' +
+    'gate of c controls costs 6(c-1) two-qubit gates at every size measured.',
   'With nothing to borrow':
-    'The same circuit compiled with no spare qubit to borrow, which is what an earlier ' +
-    'run of this table measured. One decision in the compiler, and the figure above it ' +
-    'moves by that much.',
+    'The same circuit compiled with no spare qubit to borrow, which is what an earlier run ' +
+    'of this table measured. The gap is not a constant: with nothing to borrow a gate of c ' +
+    'controls costs about c^2.4 up to twenty controls, against 6(c-1) with, so it widens as ' +
+    'the register grows.',
   'Two-qubit gates':
     'Gates acting on two qubits at once, the error-prone kind, counted over the whole ' +
-    'circuit after it was fitted to the device. A lower bound, since the oracle here ' +
-    'already holds the answers.',
+    'circuit after it was fitted to the device. A lower bound: the oracle compiles to one ' +
+    'marked grid per solution, where an oracle that tested the clues would cost more.',
   'Per extra cell, measured':
     'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
-    'board. This one counts gates where the row above counts questions, so it is not a ' +
-    'like-for-like pair: exhaustive search grows about 2.45x per cell in gate-steps over the ' +
-    'same boards. One step between two boards, not a rate, and it moves with the compiler.',
+    'board. One step on a falling curve rather than a rate: the circuit costs the square ' +
+    'root of 2 per cell times a cost per round that grows with the register, where ' +
+    'exhaustive search costs 2 per cell times a cost per check that grows the same way. ' +
+    'This row counts gates where the row above counts questions.',
   'Spacetime (qubit-layers)':
     'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
     'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
@@ -489,7 +494,8 @@ const NOTES: Record<string, string> = {
   'Rounds that fit':
     "Whole Grover rounds that fit inside the budget: this circuit's depth per round " +
     'against the rounds it needs. Zero means noise takes over before one round finishes. ' +
-    'The backend runs one truncated round rather than none.',
+    'The backend runs one truncated round rather than none. More solutions shorten the ' +
+    'search but cost one marked grid each, so the total rises with them rather than falling.',
   'P(solution), at chance':
     'The chance of landing on a solution by picking a grid at random, which is what a ' +
     'device returns once the circuit outruns its coherence.',
@@ -520,7 +526,8 @@ const SPINE_NOTES: Record<string, string> = {
     `Estimates, not a run. Qiskit fitted the circuit to ${COST_TARGET}, a snapshot of an ` +
     `IBM Heron, at optimization level ${String(COST_OPTIMIZATION)}, best of ` +
     `${String(COST_SEEDS)} seeds, with spare qubits to borrow for the big gates. The oracle ` +
-    'marks the answers it already holds, so every figure here is a lower bound.',
+    'compiles to one marked grid per solution, so these are the figures for any function of ' +
+    'this many bits with this many solutions, and a lower bound for one that tests clues.',
 };
 
 /**
@@ -529,13 +536,13 @@ const SPINE_NOTES: Record<string, string> = {
  * A transpiled depth means nothing without the device it was transpiled for and the
  * settings that got it: the same circuit swings by a tenth across seeds alone. The
  * target names Qiskit's snapshot of the Heron it was fitted to, which is what the
- * figures were measured against. The oracle already holds the answer, so the cost is
- * the floor rather than the price.
+ * figures were measured against. Synthesis reduces the clue formula to one marked grid
+ * per solution, so the cost is the floor rather than the price.
  */
 const DEVICE_META =
   `${COST_TARGET} \u00b7 opt ${String(COST_OPTIMIZATION)} \u00b7 ` +
   `best of ${String(COST_SEEDS)} seeds \u00b7 spare qubits lent \u00b7 lower bound \u00b7 ` +
-  'answer-marking oracle';
+  'one marked grid per solution';
 
 function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElement {
   const td = tr.insertCell();

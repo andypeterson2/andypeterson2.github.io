@@ -27,7 +27,7 @@ const W = 640;
 /** What every figure has to say about itself, wherever it ends up. */
 const PROVENANCE = (env) =>
   `${env.target}, optimization level ${env.optimization_level}, qiskit ${env.qiskit}. A fit to a device model, not a run on hardware.\n` +
-  `The oracle marks grids already known to satisfy the clues, so every quantum figure is a lower bound.`;
+  `The oracle is written from the clues and compiled into one marked grid per solution, so every quantum figure is a lower bound.`;
 const INK = '#000';
 const PAPER = '#fff';
 
@@ -161,8 +161,8 @@ function figureSplit() {
     left,
     136,
     `The same circuit, one compiler decision apart: ${s.shipped_vs_reference_two_qubit_factor}x the gates, ` +
-      `${s.shipped_vs_reference_depth_factor}x the depth. Lending seven qubits instead of two reaches ` +
-      `${n(s.ancilla_best_torino_two_qubit)} gates but a deeper circuit, so the table ships the shallower one.`,
+      `${s.shipped_vs_reference_depth_factor}x the depth, at nine qubits. The gap widens with the ` +
+      `gate: one of c controls costs 6(c-1) with a qubit to borrow and about c^2.4 with none.`,
     92,
   );
   return figure(
@@ -248,7 +248,7 @@ function figureGrowth() {
     H,
     body,
     `How steeply a round grows is set by the decomposition, not by the search: both compilations still grow more slowly than exhaustive search does.\n` +
-      `Boards with one solution. Three points over one 5-cell span: a slope, not a scaling law, and every decomposition Qiskit ships is polynomial per round.\n` +
+      `Boards with one solution. These are chords on a falling curve, not rates: the circuit costs (root 2)^cells times a per-round cost that grows with the register, exhaustive search 2^cells times a per-check cost that grows the same way.\n` +
       PROVENANCE(split.environment),
   );
 }
