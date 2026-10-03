@@ -1,4 +1,3 @@
-import { test_accuracy as mnistLinearAcc } from '../../public/classifiers/models/mnist.json';
 import { test_accuracy as qsvmIrisAcc } from '../../public/classifiers/models/qsvm-iris.json';
 import { test_accuracy as qsvmMnistAcc } from '../../public/classifiers/models/qsvm-mnist.json';
 
@@ -49,7 +48,10 @@ export const projects: Project[] = [
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
     metrics: [
       { value: 'BB84', label: 'simulated QKD: sift -> QBER -> Cascade -> Toeplitz' },
-      { value: '> 11%', label: 'QBER trips eavesdropper detection -> re-key' },
+      {
+        value: '> 7.3%',
+        label: 'QBER trips frame rejection — this Cascade’s limit, not BB84’s 11%',
+      },
     ],
     tech: ['WebRTC', 'BB84 QKD', 'AES-128-GCM', 'Python'],
   },
@@ -57,18 +59,21 @@ export const projects: Project[] = [
     title: 'Quantum Nonogram Solver',
     slug: 'quantum-nonogram-solver',
     description:
-      'Grover-based constraint-satisfaction solver, validated on real IBM quantum hardware, built at Qualcomm Institute.',
+      'Grover search scored against a backtracking solver on an NP-complete puzzle, enumerated to 4x4 and run on IBM hardware. Built at Qualcomm Institute.',
     appUrl: '/projects/quantum-nonogram-solver/app/',
     tier: 'browser',
     icon: 'grid_light.svg',
     repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver',
     metrics: [
       {
+        value: '62,535',
+        label: 'boards enumerated to 4x4: backtracking beats Grover on 100% from 3x3 up',
+      },
+      {
         value: '5x',
         label:
           'chance on real IBM hardware: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless)',
       },
-      { value: 'in-browser', label: 'classical solver runs client-side, zero backend' },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
   },
@@ -76,23 +81,27 @@ export const projects: Project[] = [
     title: 'Quantum ML Classifier Platform',
     slug: 'quantum-ml-classifier',
     description:
-      'Extensible ML platform benchmarking quantum-enhanced classifiers against classical baselines — plus a NISQ-era quantum SVM paper recreated end-to-end in Qiskit.',
+      'Extensible ML platform benchmarking quantum-hybrid classifiers against classical baselines on three datasets — plus a NISQ-era quantum SVM paper recreated end-to-end in Qiskit and run on IBM hardware.',
     appUrl: '/projects/ai-ml/app/',
     tier: 'browser',
     icon: 'microscope.svg',
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
       {
-        value: '10x',
+        value: 'every',
         label:
-          'closer to ideal than the 2019 paper: the same QSVM circuit on ibm_marrakesh, JS divergence 0.0127 vs 0.130 over the same 16 outcomes at 8,192 shots',
+          'published accuracy carries its 95% interval and its spread across seeds, held by a test to the exported artifact that produced it',
+      },
+      {
+        value: '19 / 1,530',
+        label:
+          'held-out predictions changed by the hardware alpha readout against the exact classical solution — a 1.58 degree boundary tilt, measured on ibm_marrakesh',
       },
       {
         value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,
         label:
           'held out: Iris setosa vs versicolor / MNIST 6 vs 9, the paper’s QSVM rule in your browser',
       },
-      { value: pct(mnistLinearAcc), label: 'MNIST, a linear baseline predicted in your browser' },
     ],
     tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask', 'Jupyter'],
   },
