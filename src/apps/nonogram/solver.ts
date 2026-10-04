@@ -5,24 +5,43 @@
 
 import {
   state,
+  $,
   must,
   elHistSvg,
+  elHistAxis,
   elQuPlaceholder,
   elClPlaceholder,
   elQuList,
   elQuSolPlaceholder,
-  elThresholdInput,
   type HistData,
 } from './state';
-import { getBestSolSize } from './grid';
+import { getBestSolSize, getCurrentPuzzle } from './grid';
+import { classicalCost, formatCount } from './classical-cost';
+import {
+  COST_OPTIMIZATION,
+  COST_SEEDS,
+  COST_SPREAD,
+  COST_TARGET,
+  DEPTH_BUDGET,
+  hardwareCost,
+  measuredGrowth,
+  perRound,
+  rangeText,
+  overBudget,
+  type HardwareCost,
+} from './hardware-cost';
+import { satisfies, solveLocal } from './classical-solver';
+import { groverOutcome, optimalIterations } from './grover-sim';
 
-const MAX_DISPLAY = 30;
+/** A bar narrower than this is not a bar, so the chart widens past its frame instead. */
+const MIN_BAR_SLOT = 9;
+/** The break between the grids the clues accept and everything else. */
+const GAP_AFTER_SOLUTIONS = 34;
 
 // Wire shapes (hand-derived from the nonogram backend's payloads)
 
 export interface ClassicalReport {
   solutions_found?: number;
-  peak_memory_kb?: number | null;
 }
 
 export interface QuantumReport {
@@ -31,7 +50,6 @@ export interface QuantumReport {
   circuit_depth?: number;
   grover_iterations?: number;
   top_result_probability?: number | null;
-  peak_memory_kb?: number | null;
 }
 
 export interface BenchmarkReport {
@@ -72,9 +90,10 @@ export function clearSolverResults(): void {
 
   elHistSvg.innerHTML = '';
   state.histData = null;
-  elThresholdInput.disabled = true;
   elQuPlaceholder.style.display = 'block';
 
+  // The rules carried the last run's figures; they describe nothing now.
+  setRunMeta({});
   clearMetrics();
 }
 
@@ -123,10 +142,13 @@ export function renderClassical({ solutions, rows, cols }: ClassicalResult): voi
 }
 
 // Quantum histogram & solutions
-function computeThreshold(rows: number, cols: number): number {
-  const numVars = rows * cols;
-  const baseline = 1.0 / Math.pow(2, numVars);
-  return Math.max(3.0 * baseline, 0.005);
+/**
+ * A measurement as a grid string.
+ *
+ * Qiskit reports little-endian bitstrings, so the first cell is the last character.
+ */
+function asGrid(bits: string): string {
+  return bits.split('').reverse().join('');
 }
 
 export function renderQuantum(
@@ -139,23 +161,22 @@ export function renderQuantum(
     return;
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  let entries: [string, number][] = Object.entries(counts).map(([bs, cnt]) => [
+  const entries: [string, number][] = Object.entries(counts).map(([bs, cnt]) => [
     bs,
     total > 0 ? cnt / total : 0,
   ]);
   entries.sort((a, b) => b[1] - a[1]);
   const totalOutcomes = entries.length;
-  entries = entries.slice(0, MAX_DISPLAY);
 
-  const threshold = state.userThreshold ?? computeThreshold(rows, cols);
+  // Which grids are solutions is a fact about the clues, so it is checked here over
+  // everything that came back, before the chart drops what it cannot draw.
+  const puzzle = getCurrentPuzzle();
+  const verified = entries.filter(([bs]) =>
+    satisfies(asGrid(bs), puzzle.row_clues, puzzle.col_clues),
+  );
 
-  state.histData = { entries, threshold, rows, cols, totalOutcomes };
-  elThresholdInput.disabled = false;
+  state.histData = { entries, verified, rows, cols, totalOutcomes };
   elQuPlaceholder.style.display = 'none';
-
-  const pctVal = threshold * 100;
-  const pctStr = pctVal.toFixed(pctVal < 1 ? 2 : 1);
-  elThresholdInput.value = pctStr;
 
   drawHistogram(state.histData);
   renderQuantumList();
@@ -166,14 +187,21 @@ export function renderQuantum(
 const LABEL_PX = 13;
 const CHAR_PX = 8;
 
+/** The scale's own pane, wide enough for a percentage and the line it labels. */
+const AXIS_W = 56;
+/** The bars start clear of the scale's rule rather than under it. */
+const BAR_INSET = 3;
+
 function histBox(): { W: number; H: number } {
   const parent = elHistSvg.parentElement;
-  return { W: parent?.clientWidth ?? 400, H: parent?.clientHeight ?? 260 };
+  return { W: parent?.clientWidth ?? 400, H: parent?.clientHeight ?? 256 };
 }
 
 function paint(W: number, H: number, body: string, label: string): void {
   const svg = elHistSvg;
   svg.setAttribute('viewBox', `0 0 ${String(W)} ${String(H)}`);
+  svg.setAttribute('width', String(W));
+  svg.setAttribute('height', String(H));
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', label);
   svg.removeAttribute('aria-hidden');
@@ -181,17 +209,37 @@ function paint(W: number, H: number, body: string, label: string): void {
   elQuPlaceholder.style.display = 'none';
 }
 
-function axes(cW: number, cH: number): string {
-  return (
-    `<line class="hist-axis" x1="0" y1="0" x2="0" y2="${String(cH)}"/>` +
-    `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>`
-  );
+/**
+ * Draw the scale beside the bars, at the heights they are drawn against.
+ *
+ * It sits outside the frame that scrolls, so the reader keeps the figures whatever part
+ * of the distribution is on screen. `top` and `cH` come from the bars, which is what
+ * lines the two drawings up.
+ */
+function paintAxis(H: number, top: number, cH: number, maxProb: number | null): void {
+  const svg = elHistAxis;
+  let body = '';
+  if (maxProb != null) {
+    for (const step of [0, 50, 100]) {
+      const p = (maxProb * step) / 100;
+      const y = (top + cH - (p / maxProb) * cH).toFixed(1);
+      body += `<text class="hist-text hist-muted" x="${String(AXIS_W - 8)}" y="${y}"
+        text-anchor="end" dominant-baseline="middle">${fp(p)}</text>`;
+    }
+  }
+  body +=
+    `<line class="hist-axis" x1="${String(AXIS_W - 1)}" y1="${String(top)}" ` +
+    `x2="${String(AXIS_W - 1)}" y2="${(top + cH).toFixed(1)}"/>`;
+  svg.setAttribute('viewBox', `0 0 ${String(AXIS_W)} ${String(H)}`);
+  svg.setAttribute('width', String(AXIS_W));
+  svg.setAttribute('height', String(H));
+  svg.innerHTML = body;
 }
 
 export function drawEmptyHistogram(): void {
   // An empty, labelled frame — never placeholder bars that look like data.
   const { W, H } = histBox();
-  const P = { t: 20, r: 12, b: 44, l: 56 };
+  const P = { t: 20, r: 12, b: 44, l: BAR_INSET };
   const cW = W - P.l - P.r,
     cH = H - P.t - P.b;
   const narrow = cW < 320;
@@ -200,13 +248,14 @@ export function drawEmptyHistogram(): void {
       ? 'Counts appear after a run'
       : 'Measurement counts appear here after a quantum run'
     : narrow
-      ? 'Pick a Gallery run'
-      : 'Pick a Gallery run to see real quantum measurement counts';
+      ? 'Solve, or pick a Gallery run'
+      : 'Solve the puzzle, or pick a Gallery run, to see measurement counts';
   const s =
     `<g transform="translate(${String(P.l)},${String(P.t)})">` +
-    axes(cW, cH) +
+    `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>` +
     `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH / 2).toFixed(1)}"
       text-anchor="middle">${msg}</text></g>`;
+  paintAxis(H, P.t, cH, null);
   paint(W, H, s, `Measurement histogram: empty. ${msg}.`);
 }
 
@@ -219,91 +268,122 @@ function fp(p: number): string {
   return String(Math.round(v)) + '%';
 }
 
-// A 2×2 checkerboard: the System-6 50% grey, in ink on paper.
+// The 4×4 stipple the rest of the page fills a disabled or inapplicable surface with.
 const DITHER =
-  '<defs><pattern id="hist-dither" width="2" height="2" patternUnits="userSpaceOnUse">' +
-  '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="1" y="1" width="1" height="1"/>' +
+  '<defs><pattern id="hist-dither" width="4" height="4" patternUnits="userSpaceOnUse">' +
+  '<rect class="hist-dot" width="1" height="1"/><rect class="hist-dot" x="2" y="2" width="1" height="1"/>' +
   '</pattern></defs>';
 
-export function drawHistogram({ entries, threshold, totalOutcomes }: HistData): void {
+export function drawHistogram({ entries, verified, totalOutcomes }: HistData): void {
   const n = entries.length;
   if (n === 0) {
     drawEmptyHistogram();
     return;
   }
-  const { W, H } = histBox();
+  const box = histBox();
+  // Every outcome gets a bar. Past what the frame holds the chart runs wider and the
+  // frame scrolls, so the tail of the distribution stays on the page.
+  // The scale holds a pane of its own at the left, so the bars have the rest.
+  const W = Math.max(
+    box.W - AXIS_W,
+    BAR_INSET + 12 + entries.length * MIN_BAR_SLOT + GAP_AFTER_SOLUTIONS,
+  );
   const bits = Math.max(...entries.map(([bs]) => bs.length));
   // Room under the axis for the bitstrings, set at 45°, plus the caption line.
   const labelDrop = Math.min(96, 8 + bits * CHAR_PX * 0.71);
-  const P = { t: 22, r: 12, b: labelDrop + LABEL_PX + 10, l: 56 };
-  const cW = W - P.l - P.r,
-    cH = H - P.t - P.b;
+  // The top holds the bracket over the solutions and the count above it. The left holds
+  // what the first bitstring reaches back past its own bar.
+  const P = {
+    t: 30,
+    r: 12,
+    b: labelDrop + LABEL_PX + 10,
+    l: BAR_INSET + Math.max(0, labelDrop - 8 - MIN_BAR_SLOT / 2),
+  };
+  const cW = W - P.l - P.r;
 
   const maxProb = entries[0][1];
-  const slot = cW / n;
+  // The gap the divider sits in, wide enough to read as a break in the ranking.
+  const solutionsShown = verified.length;
+  // A run that turned up nothing else has no break to draw.
+  const gap = solutionsShown && solutionsShown < n ? GAP_AFTER_SOLUTIONS : 0;
+  const slot = (cW - gap) / n;
   const bW = Math.max(4, Math.min(44, slot * 0.72));
   // A 12px label needs ~14px of run; past that, label every k-th bar.
   const every = Math.max(1, Math.ceil((LABEL_PX + 2) / slot));
 
-  let s = DITHER + `<g transform="translate(${String(P.l)},${String(P.t)})">`;
+  const drawAt = (H: number): void => {
+    const cH = H - P.t - P.b;
+    let s = DITHER + `<g transform="translate(${String(P.l)},${String(P.t)})">`;
 
-  for (const step of [0, 50, 100]) {
-    const p = (maxProb * step) / 100;
-    const y = (cH - (p / maxProb) * cH).toFixed(1);
-    s += `<line class="hist-grid" x1="0" y1="${y}" x2="${String(cW)}" y2="${y}"/>`;
-    s += `<text class="hist-text hist-muted" x="-6" y="${y}" text-anchor="end"
-      dominant-baseline="middle">${fp(p)}</text>`;
-  }
-
-  let above = 0;
-  entries.forEach(([bs, prob], i) => {
-    // The bitstring key is server data landing in SVG markup — accept only
-    // literal 0/1 strings (anything else is dropped).
-    if (!/^[01]+$/.test(bs)) return;
-    const on = prob >= threshold;
-    if (on) above++;
-    const bH = Math.max(1, (prob / maxProb) * cH);
-    const bx = i * slot + (slot - bW) / 2;
-    const by = cH - bH;
-    s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
-      width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
-    if (on && bW >= 30)
-      s += `<text class="hist-text" x="${(bx + bW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}"
-        text-anchor="middle">${fp(prob)}</text>`;
-    if (i % every === 0) {
-      const lx = (bx + bW / 2).toFixed(1);
-      const ly = (cH + 6).toFixed(1);
-      s += `<text class="hist-text hist-muted" x="${lx}" y="${ly}" text-anchor="end"
-        dominant-baseline="hanging" transform="rotate(-45,${lx},${ly})">${bs}</text>`;
+    // The figures for these lines are in the pane beside, which holds while this scrolls.
+    for (const step of [0, 50, 100]) {
+      const y = (cH - (step / 100) * cH).toFixed(1);
+      s += `<line class="hist-grid" x1="0" y1="${y}" x2="${String(cW)}" y2="${y}"/>`;
     }
-  });
 
-  if (threshold > 0 && threshold <= maxProb) {
-    const ty = (cH - (threshold / maxProb) * cH).toFixed(1);
-    s += `<line class="hist-threshold" x1="0" y1="${ty}" x2="${String(cW)}" y2="${ty}"/>`;
-    s += `<text class="hist-text hist-strong" x="${(cW - 2).toFixed(1)}" y="${(+ty - 5).toFixed(1)}"
-      text-anchor="end">threshold ${fp(threshold)}</text>`;
-  }
+    // Solid bars are grids the clues accept; the rest are what the run also turned up.
+    const solutions = new Set(verified.map(([bs]) => bs));
+    entries.forEach(([bs, prob], i) => {
+      // The bitstring key is server data landing in SVG markup — accept only
+      // literal 0/1 strings (anything else is dropped).
+      if (!/^[01]+$/.test(bs)) return;
+      const on = solutions.has(bs);
+      const bH = Math.max(1, (prob / maxProb) * cH);
+      const bx = i * slot + (slot - bW) / 2 + (i >= solutionsShown ? gap : 0);
+      const by = cH - bH;
+      s += `<rect class="hist-bar${on ? '' : ' hist-below'}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}"
+        width="${bW.toFixed(1)}" height="${bH.toFixed(1)}"/>`;
+      if (on && bW >= 30)
+        s += `<text class="hist-text" x="${(bx + bW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}"
+          text-anchor="middle">${fp(prob)}</text>`;
+      if (i % every === 0) {
+        const lx = (bx + bW / 2).toFixed(1);
+        const ly = (cH + 6).toFixed(1);
+        s += `<text class="hist-text hist-muted" x="${lx}" y="${ly}" text-anchor="end"
+          dominant-baseline="hanging" transform="rotate(-45,${lx},${ly})">${bs}</text>`;
+      }
+    });
 
-  s += axes(cW, cH);
+    // Which bars the clues accept, bracketed and counted over them the way the circuit
+    // brackets its depth. Bars are ranked by how often they came back, so the bracket
+    // also says whether the run put the solutions in front.
+    if (solutionsShown) {
+      const x1 = (slot - bW) / 2 - 3;
+      const x2 = (solutionsShown - 1) * slot + (slot - bW) / 2 + bW + 3;
+      const name = `${String(solutionsShown)} solution${solutionsShown === 1 ? '' : 's'}`;
+      // Centred over a bracket of one bar, the count would hang off the left edge of the
+      // chart, so it keeps half its own width from either end.
+      const half = (name.length * CHAR_PX) / 2;
+      const cx = Math.min(Math.max((x1 + x2) / 2, half), Math.max(half, cW - half));
+      s += `<path class="hist-bracket" d="M${x1.toFixed(1)} -3 v-5 H${x2.toFixed(1)} v5"/>`;
+      s += `<text class="hist-text hist-count" x="${cx.toFixed(1)}" y="-13">${name}</text>`;
+    }
 
-  const lbl =
-    totalOutcomes != null && totalOutcomes > n
-      ? `top ${String(n)} of ${String(totalOutcomes)}`
-      : String(n);
-  const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
-  s += `<text class="hist-text hist-muted" x="${(cW / 2).toFixed(1)}" y="${(cH + P.b - 6).toFixed(1)}"
-    text-anchor="middle">${caption}</text>`;
-  s += `</g>`;
+    s += `<line class="hist-axis" x1="0" y1="${String(cH)}" x2="${String(cW)}" y2="${String(cH)}"/>`;
 
-  const top = entries[0];
-  paint(
-    W,
-    H,
-    s,
-    `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
-      `${String(above)} at or above the ${fp(threshold)} threshold.`,
-  );
+    const lbl =
+      totalOutcomes != null && totalOutcomes > n
+        ? `top ${String(n)} of ${String(totalOutcomes)}`
+        : String(n);
+    const caption = `${lbl} outcome${n !== 1 ? 's' : ''}`;
+    s += `</g>`;
+
+    const top = entries[0];
+    paintAxis(H, P.t, cH, maxProb);
+    paint(
+      W,
+      H,
+      s,
+      `Measurement histogram: ${caption}. Most frequent ${top[0]} at ${fp(top[1])}; ` +
+        `${String(verified.length)} of them satisfy the clues.`,
+    );
+  };
+
+  // A scrollbar takes its height out of the frame, so the second pass draws into what
+  // is left and keeps the bitstrings on screen.
+  drawAt(box.H);
+  const left = elHistSvg.parentElement?.clientHeight ?? box.H;
+  if (left !== box.H) drawAt(left);
 }
 
 // Quantum solutions list renderer
@@ -315,18 +395,17 @@ export function renderQuantumList(): void {
     return;
   }
 
-  const { entries, threshold, rows, cols } = state.histData;
-  const above = entries.filter(([, prob]) => prob >= threshold);
+  const { verified, rows, cols } = state.histData;
   const sz = getBestSolSize(rows, cols);
 
-  if (above.length === 0) {
+  if (verified.length === 0) {
     elQuList.appendChild(elQuSolPlaceholder);
-    elQuSolPlaceholder.textContent = 'No solutions above threshold.';
+    elQuSolPlaceholder.textContent = 'No solution among the measured grids.';
     return;
   }
 
-  above.forEach(([bs, prob]) => {
-    const bsGrid = bs.split('').reverse().join('');
+  verified.forEach(([bs, prob]) => {
+    const bsGrid = asGrid(bs);
     const wrap = document.createElement('div');
     wrap.className = 'sol-grid-wrap';
 
@@ -341,90 +420,489 @@ export function renderQuantumList(): void {
 }
 
 // Metrics renderer
-function clearMetrics(): void {
-  const el = must('metrics-pane');
-  el.innerHTML = '';
-  el.classList.remove('visible');
+
+/**
+ * The table with its figures taken out.
+ *
+ * The frame stays: it is what the page is for, and a reader should be able to see what
+ * the comparison will ask before asking it. Only the answers wait for a run.
+ */
+export function clearMetrics(): void {
+  renderMetrics(null, true);
 }
 
-function fmtTime(t: number | null | undefined): string {
-  if (t == null) return '—';
-  return t < 1 ? (t * 1000).toFixed(1) + ' ms' : t.toFixed(3) + ' s';
+/**
+ * How every device figure was selected, appended to the rows that carry one.
+ *
+ * One transpiled circuit, the shallowest of the seeds tried, reported whole: depth and
+ * gate count disagree between layouts, so a figure assembled metric by metric would
+ * describe no circuit that exists.
+ */
+const SEED_NOTE = ` Each figure is one run, the shallowest of ${String(COST_SEEDS)} transpiler seeds.`;
+
+/**
+ * What each label means, keyed by the label. Every row carries one.
+ *
+ * Written for a reader with no physics: what the figure counts, in what units, and what
+ * it is an estimate of. Where a column's units differ from its neighbours', the note
+ * says so rather than letting the shared label imply otherwise.
+ */
+const NOTES: Record<string, string> = {
+  Solutions:
+    'Grids that satisfy every row and column clue. The count comes from the classical ' +
+    'solver, and it also sets what the measured circuit costs: the oracle is written from ' +
+    'the clues, then compiled into one marked grid per solution.',
+  'Clue checks':
+    'How many times each method asks the clues a question: grids checked, row placements ' +
+    'tried, or Grover rounds. One question is a different size in each column. Over every ' +
+    'one-solution board from 3x3 up, the backtracker asks fewer than Grover needs rounds on ' +
+    'its worst board, not just its median one.',
+  'Per clue check':
+    'What one question costs. Exhaustive: two-input gates to test a whole grid. ' +
+    'Backtracking: at most that, since it stops at the first blocked column. Grover: ' +
+    'two-qubit gates per round on the fitted circuit.',
+  'Per extra cell':
+    'How the count of checks grows when the grid gains one cell. Exhaustive doubles; ' +
+    'Grover grows by the square root of 2. Backtracking has no fixed rate, because its ' +
+    'count depends on the clues.',
+  'P(solution), ideal':
+    'Chance that one run ends on a solution, with no noise. The classical methods are ' +
+    "certain. Grover's figure is the exact formula at its best round count; more rounds " +
+    'would lower it again.',
+  Qubits:
+    'One qubit per cell, plus the spare ones synthesis borrows for the many-controlled ' +
+    'gates. Two is the fewest that gave the shallowest circuit of the settings tried; ' +
+    'lending more cuts the gate count further and runs deeper. With a qubit to borrow, one ' +
+    'gate of c controls costs 6(c-1) two-qubit gates at every size measured.',
+  'Testing the clues instead':
+    'What the same board costs through an oracle built from the clues rather than from the ' +
+    'answers: one flag qubit per line, one gate per pattern that line allows. It costs more ' +
+    'and knows less, so the figures above it are a lower bound on it rather than a price. ' +
+    'It does not care which grids satisfy the puzzle, though looser clues allow more ' +
+    'patterns, so it is dearer per round on a board with many solutions.',
+  'With nothing to borrow':
+    'The same circuit compiled with no spare qubit to borrow, which is what an earlier run ' +
+    'of this table measured. The ratio is a span because both arms move with the seed, and ' +
+    'they do not move equally: the borrowed-qubit arm is the unstable one. The gap also ' +
+    'widens with the gate, from 6(c-1) against about the same at three controls to roughly ' +
+    'twenty times that past twenty.',
+  'Two-qubit gates':
+    'Gates acting on two qubits at once, the error-prone kind, counted over the whole ' +
+    'circuit after it was fitted to the device. A lower bound: the oracle compiles to one ' +
+    'marked grid per solution, where an oracle that tested the clues would cost more.' +
+    SEED_NOTE,
+  'Per extra cell, measured':
+    'How the two-qubit gate count grew per added cell, against the next smaller measured ' +
+    'board. One step on a falling curve rather than a rate: the circuit costs the square ' +
+    'root of 2 per cell times a cost per round that grows with the register, where ' +
+    'exhaustive search costs 2 per cell times a cost per check that grows the same way. ' +
+    'This row counts gates where the row above counts questions.',
+  'Spacetime (qubit-layers)':
+    'Width times depth: every qubit held for as long as the circuit runs. Estimates of what ' +
+    'a quantum attack would cost are quoted this way. It charges the circuit for qubits it ' +
+    'holds idle, so it reads harder on the circuit than a gate count does. Against ' +
+    'exhaustive search even this unit favours the circuit past about fourteen cells; against ' +
+    'the backtracking column no unit does, at any size measured.',
+  'Depth (layers)':
+    'Layers of gates the circuit runs in sequence, every round included, after it was ' +
+    'fitted to the device. Not a stable figure: at optimization level 3 the compiler ' +
+    'already tries twenty layouts, and the seed picks between near-ties, so runs of the ' +
+    `same circuit land in clusters. The widest row here spans ` +
+    `${(COST_SPREAD * 100).toFixed(0)}% between its cheapest and dearest run.` +
+    SEED_NOTE,
+  'Device budget (layers)':
+    `A working figure of ${String(DEPTH_BUDGET)} layers, what a current device runs ` +
+    'before noise takes over. Assumed rather than read off a device. The "over" figure ' +
+    'is the depth above divided by it.',
+  'Rounds that fit':
+    "Whole Grover rounds that fit inside the budget: this circuit's depth per round " +
+    'against the rounds it needs. Zero means noise takes over before one round finishes. ' +
+    'The backend runs one truncated round rather than none. More solutions shorten the ' +
+    'search but cost one marked grid each, so the total rises with them rather than falling.',
+  'P(solution), at chance':
+    'The chance of landing on a solution by picking a grid at random, which is what a ' +
+    'device returns once the circuit outruns its coherence.',
+};
+
+/** What each method is, on the header that names it. */
+const COLUMN_NOTES: Record<string, string> = {
+  Metric:
+    'What each row counts. The three columns beside it are the methods being compared, ' +
+    'and every label carries its own note.',
+  Exhaustive:
+    'Checks every possible grid against the clues, so it is certain to find every ' +
+    'solution. How many checks that takes follows the cell count alone.',
+  Backtracking:
+    "This page's own solver. It places one row pattern at a time and drops any branch " +
+    'that leaves a column with no legal pattern left, so its counts move with the puzzle.',
+  Grover:
+    'Quantum search, simulated here. The probabilities come from an exact noiseless ' +
+    'formula run in the browser, and the device figures below are estimates, not a run. ' +
+    'Building the oracle is itself a pass over all 2^cells grids: a tenth of a second at ' +
+    'nine cells, forty-four seconds at eighteen.',
+};
+
+/** What a section covers, on the name down its side. */
+const SPINE_NOTES: Record<string, string> = {
+  Search:
+    'The work each method does to find the solutions, counted in its own units: grids ' +
+    'checked, row placements tried, or Grover rounds. Those units are not the same size.',
+  'If it ran on a device':
+    `Estimates, not a run. Qiskit fitted the circuit to ${COST_TARGET}, a snapshot of an ` +
+    `IBM Heron, at optimization level ${String(COST_OPTIMIZATION)}, best of ` +
+    `${String(COST_SEEDS)} seeds, with spare qubits to borrow for the big gates. The oracle ` +
+    'compiles to one marked grid per solution, so these are the figures for any function of ' +
+    'this many bits with this many solutions, and a lower bound for one that tests clues.',
+};
+
+/**
+ * What produced the figures in the measured group, and what they are figures of.
+ *
+ * A transpiled depth means nothing without the device it was transpiled for and the
+ * settings that got it: the same circuit swings by a tenth across seeds alone. The
+ * target names Qiskit's snapshot of the Heron it was fitted to, which is what the
+ * figures were measured against. Synthesis reduces the clue formula to one marked grid
+ * per solution, so the cost is the floor rather than the price.
+ */
+const DEVICE_META =
+  `${COST_TARGET} \u00b7 opt ${String(COST_OPTIMIZATION)} \u00b7 ` +
+  `best of ${String(COST_SEEDS)} seeds \u00b7 spare qubits lent \u00b7 lower bound \u00b7 ` +
+  'one marked grid per solution';
+
+function cell(tr: HTMLTableRowElement, text: string | number): HTMLTableCellElement {
+  const td = tr.insertCell();
+  td.textContent = String(text);
+  return td;
 }
 
-function fmtAvg(times: number[] | null | undefined): string {
-  if (!times?.length) return '—';
-  const avg = times.reduce((a, b) => a + b) / times.length;
-  let s = fmtTime(avg);
-  if (times.length >= 2) {
-    const mean = avg;
-    const sd = Math.sqrt(times.reduce((a, b) => a + (b - mean) ** 2, 0) / (times.length - 1));
-    s += ` ± ${fmtTime(sd)}`;
-  }
-  return s;
+/**
+ * The section's name, down a spine to the left of the rows it covers.
+ *
+ * Rotated rather than set across the table: the name belongs to every row under it, and
+ * a band spanning the columns cut the figures in half to say so. The circuit diagram
+ * names its boxes the same way.
+ */
+function addSpine(body: HTMLTableSectionElement, label: string, meta: string): void {
+  const first = body.rows.item(0);
+  if (!first) return;
+  const th = document.createElement('th');
+  th.scope = 'rowgroup';
+  th.className = 'spine';
+  // What the rotated name has no room for: what the section covers, then the settings
+  // the figures came from.
+  const note = SPINE_NOTES[label];
+  if (note) th.title = meta ? `${note} (${meta})` : note;
+  const name = document.createElement('span');
+  name.textContent = label;
+  th.append(name);
+  th.rowSpan = body.rows.length;
+  first.insertBefore(th, first.firstChild);
 }
 
-export function renderMetrics(
-  report: BenchmarkReport | null | undefined,
-  cl_times: number[] | null | undefined,
-  qu_times: number[] | null | undefined,
+/**
+ * One metric, plus the note row it opens.
+ *
+ * A label with a note becomes a button rather than carrying a title: a tooltip is
+ * invisible to touch and to the keyboard, which is most of the people the note is for.
+ */
+function metricRow(
+  body: HTMLTableSectionElement,
+  label: string,
+  values: (string | number)[],
+  naSpan = false,
+  measured = '',
 ): void {
+  const tr = body.insertRow();
+  tr.className = 'metric';
+  const th = document.createElement('th');
+  th.scope = 'row';
+  th.textContent = label;
+  const note = NOTES[label];
+  if (note) {
+    th.title = note + measured;
+    th.className = 'has-note';
+  }
+  tr.append(th);
+  if (naSpan) naCell(tr);
+  for (const v of values) cell(tr, v);
+}
+
+/** The classical half of a device row: there is no device here, and the stipple says so. */
+function naCell(tr: HTMLTableRowElement): void {
+  const td = tr.insertCell();
+  td.colSpan = 2;
+  td.className = 'na';
+  const label = document.createElement('span');
+  label.className = 'sr-only';
+  label.textContent = 'not applicable';
+  td.append(label);
+}
+
+/**
+ * One arm against another, as the span the seeds allow rather than a single figure.
+ *
+ * Both arms move with the transpiler seed, so their ratio is a range: the narrowest it
+ * can be is the smaller arm's worst run over the larger arm's best, and the widest is the
+ * other way about.
+ */
+function ratioRange(over: number[], under: number[]): string {
+  const low = (over[0] ?? 0) / (under[1] ?? 1);
+  const high = (over[1] ?? 0) / (under[0] ?? 1);
+  return low.toFixed(1) === high.toFixed(1)
+    ? `${low.toFixed(1)}x`
+    : `${low.toFixed(1)}-${high.toFixed(1)}x`;
+}
+
+/**
+ * The seven rows a device answers for, or the one line saying why it cannot.
+ *
+ * Blank, they stand as the questions a run will put; measured, they answer them.
+ */
+function deviceRows(
+  body: HTMLTableSectionElement,
+  ctx: {
+    hw: HardwareCost | null;
+    cells: number;
+    found: number;
+    work: number;
+    /** What the page's own solver would spend here, as an upper bound. */
+    local: number;
+    blank: boolean;
+    growth: string | null | false;
+  },
+  v: (values: (string | number)[]) => (string | number)[],
+): void {
+  const { hw, cells, found, work, local, blank, growth } = ctx;
+  if (!hw && !blank) {
+    const tr = body.insertRow();
+    tr.className = 'metrics-unmeasured';
+    const td = tr.insertCell();
+    td.colSpan = 4;
+    td.textContent =
+      'Not measured for this board. Transpiling one costs more than the figure is worth; ' +
+      'the circuit beside this carries the counts as written, before any device sees them.';
+    return;
+  }
+  const rows = deviceFigures(hw, cells, found, growth);
+  for (const [label, value, measured] of rows) metricRow(body, label, v([value]), true, measured);
+  if (hw && !blank) crossoverNote(body, { hw, cells, work, local });
+}
+
+/**
+ * Every device figure, with the span its own arm covered.
+ *
+ * The span goes on the label's hover rather than in the cell: a cell wide enough for
+ * "3,234 (3,027 to 3,838)" crowds a table that already reflows to one line per figure on
+ * a phone.
+ */
+function deviceFigures(
+  hw: HardwareCost | null,
+  cells: number,
+  found: number,
+  growth: string | null | false,
+): [string, string | number, string][] {
+  const roundDepth = hw ? perRound(hw.depth, hw.iterations) : null;
+  const spare = hw?.ancillas ?? 0;
+  const held = cells + spare;
+  const span = (range: number[] | undefined, unit: string): string =>
+    hw && range
+      ? ` Over ${String(COST_SEEDS)} seeds this board ran ${rangeText(range)} ${unit}.`
+      : '';
+  const figures: [string, string | number, string][] = [
+    ['Qubits', hw && spare ? `${String(cells)} + ${String(spare)}` : cells, ''],
+    [
+      'Two-qubit gates',
+      hw ? hw.two_qubit.toLocaleString() : '',
+      span(hw?.two_qubit_range, 'gates'),
+    ],
+    [
+      'With nothing to borrow',
+      hw
+        ? `${hw.two_qubit_noaux.toLocaleString()} (${ratioRange(hw.two_qubit_noaux_range, hw.two_qubit_range)})`
+        : '',
+      span(hw?.two_qubit_noaux_range, 'gates'),
+    ],
+    [
+      'Testing the clues instead',
+      hw
+        ? `${hw.two_qubit_clue.toLocaleString()} (${ratioRange(hw.two_qubit_clue_range, hw.two_qubit_range)})`
+        : '',
+      span(hw?.two_qubit_clue_range, 'gates'),
+    ],
+    ['Per extra cell, measured', growth || '—', ''],
+    ['Depth (layers)', hw ? hw.depth.toLocaleString() : '', span(hw?.depth_range, 'layers')],
+    ['Spacetime (qubit-layers)', hw ? (held * hw.depth).toLocaleString() : '', ''],
+    [
+      'Device budget (layers)',
+      hw ? `${String(DEPTH_BUDGET)} (${Math.round(overBudget(hw)).toLocaleString()}x over)` : '',
+      '',
+    ],
+    [
+      'Rounds that fit',
+      hw && roundDepth
+        ? `${String(Math.floor(DEPTH_BUDGET / roundDepth))} of ${String(hw.iterations)}`
+        : '—',
+      hw && roundDepth
+        ? ` This circuit runs ${Math.round(roundDepth).toLocaleString()} layers a round.`
+        : '',
+    ],
+    // The same question the ideal row asks: the chance of landing on any solution.
+    ['P(solution), at chance', `${((100 * Math.max(found, 1)) / 2 ** cells).toFixed(1)}%`, ''],
+  ];
+  return figures;
+}
+
+/**
+ * Where the two costs stand against each other, in one line under the figures.
+ *
+ * Which unit is charged decides the answer, so the line gives all three rather than the
+ * one that makes the point: two-qubit gates against classical gates is the closest thing
+ * to like for like, and width times depth charges the circuit for every qubit it holds
+ * idle while the classical side runs on one processor with no width at all.
+ */
+function crossoverNote(
+  body: HTMLTableSectionElement,
+  ctx: { hw: HardwareCost; cells: number; work: number; local: number },
+): void {
+  const { hw, cells, work, local } = ctx;
+  const held = cells + hw.ancillas;
+  if (work <= 0) return;
+  const each = (n: number): string => `${(n / work).toFixed(n / work < 10 ? 2 : 0)}x`;
+  const tr = body.insertRow();
+  tr.className = 'metrics-note';
+  const td = tr.insertCell();
+  td.colSpan = 4;
+  const beats =
+    local > 0
+      ? ` The backtracking column asks the clues far less: at most ${local.toLocaleString()} gate-steps ` +
+        `on this board, which the two-qubit count alone is ${Math.round(hw.two_qubit / local).toLocaleString()}x past.`
+      : '';
+  td.textContent =
+    `Against this board's ${work.toLocaleString()} gate-steps for the exhaustive search the circuit ` +
+    `comes to ${each(hw.two_qubit)} by two-qubit gates, ${each(hw.gates)} by all gates, and ` +
+    `${each(held * hw.depth)} by qubit-layers, so the unit charged decides that comparison.${beats}`;
+}
+
+function renderMetrics(report: BenchmarkReport | null | undefined, blank = false): void {
   const el = must('metrics-pane');
   el.innerHTML = '';
 
-  const cl = report?.classical;
-  const qu = report?.quantum;
-  const numVars = report?.num_variables;
+  /** Figures wait for a run; the labels and the shape of the table do not. */
+  const v = (values: (string | number)[]): (string | number)[] =>
+    blank ? values.map(() => '') : values;
+
+  const puzzle = getCurrentPuzzle();
+  const rows = puzzle.row_clues.length;
+  const cols = puzzle.col_clues.length;
+  const cells = rows * cols;
+  const local = solveLocal(puzzle.row_clues, puzzle.col_clues);
+  const found = report?.classical?.solutions_found ?? local.solutions.length;
+  const cost = classicalCost(puzzle.row_clues, puzzle.col_clues);
+  const hw = hardwareCost(rows, cols, found);
+  // No solutions means nothing to amplify, and optimalIterations says so with a zero
+  // rather than a count that would rotate the state nowhere useful.
+  const iterations = optimalIterations(found, cells);
+  const ideal = groverOutcome(found, cells, iterations).markedProbability;
 
   const tbl = document.createElement('table');
   tbl.className = 'metrics-table';
 
-  const thead = tbl.createTHead();
-  const hr = thead.insertRow();
-  for (const h of ['Metric', 'Classical', 'Quantum']) {
+  const head = tbl.createTHead().insertRow();
+  // The corner over the spine names nothing, the way a table's top left never does.
+  head.insertCell().className = 'spine-corner';
+  for (const h of ['Metric', 'Exhaustive', 'Backtracking', 'Grover']) {
     const th = document.createElement('th');
+    th.scope = 'col';
     th.textContent = h;
-    hr.appendChild(th);
+    const note = COLUMN_NOTES[h];
+    if (note) {
+      th.title = note;
+      th.className = 'has-note';
+    }
+    head.append(th);
   }
 
-  const tbody = tbl.createTBody();
-
-  function row(label: string, cv: string | number, qv: string | number): void {
-    const tr = tbody.insertRow();
-    const tdL = tr.insertCell();
-    tdL.className = 'metric-label';
-    tdL.textContent = label;
-    tr.insertCell().textContent = String(cv);
-    tr.insertCell().textContent = String(qv);
-  }
-
-  row('Variables', numVars ?? '—', numVars ?? '—');
-  row(
-    'Search space',
-    numVars != null ? (2 ** numVars).toLocaleString() : '—',
-    numVars != null ? (2 ** numVars).toLocaleString() : '—',
+  const search = tbl.createTBody();
+  search.className = 'metrics-group';
+  metricRow(search, 'Solutions', v([found, found, found]));
+  metricRow(
+    search,
+    'Clue checks',
+    v([
+      formatCount(2 ** cells, cells),
+      local.capped ? '—' : local.clueChecks.toLocaleString(),
+      iterations.toLocaleString(),
+    ]),
   );
-  row('Solve time', fmtAvg(cl_times), fmtAvg(qu_times));
-  row('Solutions found', cl?.solutions_found ?? '—', qu?.solutions_found ?? '—');
-  row('Qubits', '—', qu?.num_qubits ?? '—');
-  row('Circuit depth', '—', qu?.circuit_depth?.toLocaleString() ?? '—');
-  row('Grover iterations', '—', qu?.grover_iterations ?? '—');
-  row(
-    'Top probability',
-    '—',
-    qu?.top_result_probability != null ? (qu.top_result_probability * 100).toFixed(1) + '%' : '—',
+  metricRow(
+    search,
+    'Per clue check',
+    v([
+      `${cost.predicateGates} gates`,
+      local.capped ? '—' : `up to ${String(cost.predicateGates)} gates`,
+      hw && perRound(hw.two_qubit, hw.iterations) !== null
+        ? `${Math.round(perRound(hw.two_qubit, hw.iterations) ?? 0).toLocaleString()} 2q`
+        : '—',
+    ]),
   );
-  row(
-    'Peak memory',
-    cl?.peak_memory_kb != null ? cl.peak_memory_kb.toFixed(1) + ' KB' : '—',
-    qu?.peak_memory_kb != null ? qu.peak_memory_kb.toFixed(1) + ' KB' : '—',
+  metricRow(search, 'Per extra cell', v(['2x', '—', '1.41x']));
+  metricRow(
+    search,
+    'P(solution), ideal',
+    v(['100%', found > 0 ? '100%' : '—', found > 0 ? (ideal * 100).toFixed(1) + '%' : '—']),
   );
 
-  el.appendChild(tbl);
+  const device = tbl.createTBody();
+  device.className = 'metrics-group metrics-group--device';
+
+  deviceRows(
+    device,
+    {
+      hw,
+      cells,
+      found,
+      work: cost.work,
+      local: local.capped ? 0 : local.clueChecks * cost.predicateGates,
+      blank,
+      growth: hw && measuredGrowth(rows, cols, found),
+    },
+    v,
+  );
+
+  addSpine(
+    search,
+    'Search',
+    `${String(cells)} cells, ${formatCount(2 ** cells, cells)} candidates`,
+  );
+  addSpine(device, 'If it ran on a device', hw ? DEVICE_META : '');
+
+  el.append(tbl);
   el.classList.add('visible');
 }
 
 // Benchmark result renderer
+
+/** Annotate a section's rule with what its own run cost. */
+function setRuleMeta(id: string, text: string, hover = ''): void {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  if (hover) el.title = hover;
+  else el.removeAttribute('title');
+}
+
+/** Everything a run's rules should say, cleared and re-set together. */
+export function setRunMeta(meta: {
+  classical?: string;
+  quantum?: string;
+  histogram?: string;
+  histogramHover?: string;
+}): void {
+  setRuleMeta('cl-meta', meta.classical ?? '');
+  setRuleMeta('qu-meta', meta.quantum ?? '');
+  setRuleMeta('hist-meta', meta.histogram ?? '', meta.histogramHover);
+}
+
 export function renderBenchmark({
   report,
   solutions,
@@ -432,8 +910,6 @@ export function renderBenchmark({
   qu_counts_per_trial,
   rows,
   cols,
-  cl_times,
-  qu_times,
 }: BenchmarkPayload): void {
   // Use last trial counts if multi-trial
   const counts = qu_counts_per_trial
@@ -442,5 +918,5 @@ export function renderBenchmark({
 
   renderClassical({ solutions, rows, cols });
   renderQuantum(counts, rows, cols);
-  renderMetrics(report, cl_times, qu_times);
+  renderMetrics(report);
 }

@@ -3,27 +3,37 @@
 export interface HistData {
   /** [bitstring, probability] sorted desc, capped to MAX_DISPLAY. */
   entries: [string, number][];
-  threshold: number;
+  /**
+   * The measured grids that satisfy the clues, checked rather than inferred.
+   *
+   * Taken over every outcome the run produced, so a grid measured too rarely for the
+   * chart to draw is still reported.
+   */
+  verified: [string, number][];
   rows: number;
   cols: number;
   totalOutcomes?: number;
 }
 
+/** Draw a grid and read its clues off it, or type the clues and let the solver answer. */
+export type EditorMode = 'draw' | 'clues';
+
 export interface NonogramState {
+  mode: EditorMode;
   rows: number;
   cols: number;
-  /** 2-D bool array [row][col]. */
+  /** 2-D bool array [row][col]. In clues mode it holds whatever was drawn last. */
   grid: boolean[][];
-  /** One run-length clue per row (derived from grid). */
+  /** One run-length clue per row: read off the grid while drawing, typed in clues mode. */
   rowClues: number[][];
   colClues: number[][];
   busy: boolean;
   histData: HistData | null;
   /** User-set threshold value (preserved across runs). */
-  userThreshold: number | null;
 }
 
 export const state: NonogramState = {
+  mode: 'draw',
   rows: 3,
   cols: 3,
   grid: [],
@@ -31,8 +41,28 @@ export const state: NonogramState = {
   colClues: [],
   busy: false,
   histData: null,
-  userThreshold: null,
 };
+
+/**
+ * This tab's name for its own results. The solver addresses every emit to a room
+ * named by this, so one visitor's run never lands in another's window. It is kept in
+ * sessionStorage because the socket's own id is reissued on every reconnect, and a
+ * reload would otherwise leave a run with nowhere to be delivered.
+ */
+const CLIENT_KEY = 'nonogram.client';
+
+export function clientId(): string {
+  let id = '';
+  try {
+    id = sessionStorage.getItem(CLIENT_KEY) ?? '';
+    if (!id) sessionStorage.setItem(CLIENT_KEY, (id = crypto.randomUUID()));
+  } catch {
+    // Private windows and blocked site data both throw here. A per-load id still
+    // addresses this tab's results correctly; it just does not survive a reload.
+    id ||= crypto.randomUUID();
+  }
+  return id;
+}
 
 // Helpers
 export const $ = (id: string): HTMLElement | null => document.getElementById(id);
@@ -57,7 +87,8 @@ if (!(histEl instanceof SVGSVGElement))
   throw new Error('nonogram app: #qu-histogram missing (or not an <svg>)');
 export const elHistSvg = histEl;
 
-const thresholdEl = document.getElementById('threshold-input');
-if (!(thresholdEl instanceof HTMLInputElement))
-  throw new Error('nonogram app: #threshold-input missing (or not an <input>)');
-export const elThresholdInput = thresholdEl;
+const axisEl = document.getElementById('qu-axis');
+if (!(axisEl instanceof SVGSVGElement))
+  throw new Error('nonogram app: #qu-axis missing (or not an <svg>)');
+/** The scale, drawn beside the bars so it holds while they scroll. */
+export const elHistAxis = axisEl;

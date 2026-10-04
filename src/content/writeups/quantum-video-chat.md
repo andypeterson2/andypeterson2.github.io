@@ -18,9 +18,13 @@ The resulting key drives **AES-128-GCM** encryption of the WebRTC media streams 
 
 ## The security property
 
-The protocol carries its own tamper alarm: **eavesdropper detection rejects and re-exchanges keys whenever the QBER exceeds 11%** — the threshold above which a secure key can no longer be distilled.
+The protocol carries its own tamper alarm: **every frame whose QBER exceeds 7.3% is rejected**, and an intercept-resend eavesdropper lands near 25%, so a tapped channel mints nothing at all.
+
+7.3% rather than the textbook 11%, because those two numbers measure different things. 11% is where BB84's own rate `1 − 2h(Q)` reaches zero, and it charges error correction the Shannon bound. Cascade does not reach that bound — at the block sizes here it discloses about 1.65 times `h(Q)` — so this implementation runs out of key budget first. The gate is computed from the leakage model rather than quoted from the literature, and above it no pool of any size yields a key. Below it the cost is steep but payable: a clean channel mints from a few thousand pooled bits, 5% needs tens of thousands, and 7% needs millions.
 
 ## What's real
+
+The simulated channel is not an error-free one: it models Poisson photon statistics, fiber loss, APD dark counts and polarization misalignment, which leaves an undisturbed link at about 1.5% QBER. That is the point of modelling it — a channel with no errors would skip the error correction and the privacy amplification that the error rate pays for, and produce keys along a path no physical link offers.
 
 Unit, integration and browser suites cover the signaling server, the bench daemon and the client, and CI gates every merge on them. Media encryption is frame-level and SFrame-aligned (RFC 9605); a dropped connection recovers by ICE restart without surrendering the key, and a self-hosted TURN relay carries calls that cannot connect peer to peer.
 

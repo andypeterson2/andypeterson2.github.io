@@ -12,6 +12,7 @@ import chicago12Url from '@sakun/system.css/dist/ChiKareGo2.woff2?url';
 import monacoUrl from '@sakun/system.css/dist/monaco.woff2?url';
 import geneva9Url from '@sakun/system.css/dist/FindersKeepers.woff2?url';
 import PassLane from '../components/PassLane.astro';
+import AuthMenu from '../components/AuthMenu.astro';
 import Button from '../components/Button.astro';
 import CfBeacon from '../components/CfBeacon.astro';
 
@@ -25,9 +26,24 @@ interface Props {
   noindex?: boolean;
   /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
   bare?: boolean;
+  /** Short pages that want their last block at the foot of the window rather than
+   *  floating under the content. The slotted root becomes the growing flex child. */
+  fillPane?: boolean;
+  /** Pages whose window should end where their content does, growing to the full
+   *  height and scrolling inside once it needs more. */
+  fitContent?: boolean;
 }
 
-const { title, docTitle, description, ogImage = '/og-card.png', noindex, bare } = Astro.props;
+const {
+  title,
+  docTitle,
+  description,
+  ogImage = '/og-card.png',
+  noindex,
+  bare,
+  fitContent,
+  fillPane,
+} = Astro.props;
 // Every title names the person: "Nonogram Solver - Name"; home is "Name - Job title".
 const pageTitle =
   docTitle ??
@@ -140,7 +156,7 @@ const windowTitle = title || siteConfig.title;
           </button>
         </li>
         <li><a href="/">Home</a></li>
-        <li><a href="/#projects">Projects</a></li>
+        <li><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
 
@@ -167,18 +183,21 @@ const windowTitle = title || siteConfig.title;
           </button>
         </li>
         <li><a href="/">Home</a></li>
-        <li><a href="/#projects">Projects</a></li>
+        <li><a href="/projects/">Projects</a></li>
       </ul>
     </nav>
 
     <div class="site-canvas">
-      <div class="window site-window">
+      <div class:list={['window', 'site-window', { 'site-window--fit': fitContent }]}>
         <header class="title-bar">
           <h1 class="title">{windowTitle}</h1>
         </header>
         <!-- The page's one <main> landmark. Back to top is its last child, pinned to the
              pane's bottom-right corner, so it stays on the window's paper. -->
-        <main class="window-pane site-pane" id="main-content">
+        <main
+          class:list={['window-pane', 'site-pane', { 'site-pane--fill': fillPane }]}
+          id="main-content"
+        >
           <slot />
           <Button
             variant="secondary"
@@ -187,7 +206,7 @@ const windowTitle = title || siteConfig.title;
             aria-label="Back to top"
             type="button"
           >
-            &uarr; Top
+            ^ Top
           </Button>
         </main>
       </div>
@@ -311,6 +330,7 @@ const windowTitle = title || siteConfig.title;
     </script>
 
     <PassLane />
+    <AuthMenu />
     <!-- After the pass lane: deferred scripts run in document order, so a ?pass= token is
          scrubbed from the URL before the beacon can read it. -->
     {cfBeaconToken && <CfBeacon token={cfBeaconToken} />}
@@ -564,6 +584,11 @@ const windowTitle = title || siteConfig.title;
      would overflow a 320px viewport (400% zoom) and scroll the page sideways. */
   .site-window {
     width: 100%;
+
+    /* Caps the window so it still reads as a window on a wide monitor; the desktop
+       pattern fills the sides. */
+    max-width: var(--site-window-max, 66.25rem);
+    margin-inline: auto;
     min-width: 0;
     box-sizing: border-box;
     display: flex;
@@ -575,6 +600,19 @@ const windowTitle = title || siteConfig.title;
     border-bottom-width: 4px;
   }
 
+  /* A window that ends where its content does. It still cannot outgrow the canvas, so
+     past that the pane scrolls as it always did. */
+  .site-window--fit {
+    align-self: flex-start;
+    max-height: 100%;
+  }
+
+  /* A window sized to its content holds an app the reader works in: there is nothing to
+     come back up from, and the button would sit over the work. */
+  .site-window--fit .back-to-top {
+    display: none;
+  }
+
   .site-window .title-bar .title {
     font-size: var(--text-lg);
   }
@@ -583,6 +621,22 @@ const windowTitle = title || siteConfig.title;
     flex: 1;
     overflow-y: auto;
     padding: var(--pane-pad-y) var(--pane-pad-x);
+  }
+
+  /* Opt-in: the slotted root grows to take the height the content does not, so a
+     page can put its last block at the foot. Sizing it here rather than with a
+     percentage keeps the sticky back-to-top's own space out of the sum — a
+     min-height:100% child overflows the pane by exactly that button. */
+  .site-pane--fill {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* :global on the child — the slotted root carries the page's own scope id, so a
+     scoped selector here matches nothing. */
+  .site-pane--fill > :global(:first-child) {
+    flex: 1 0 auto;
+    min-height: 0;
   }
 
   /* ── Mobile floating nav: hidden on desktop (the .site-menubar serves there) ── */
@@ -601,7 +655,7 @@ const windowTitle = title || siteConfig.title;
     color: var(--ink);
     background: var(--paper);
     border: 2px solid var(--ink);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     box-shadow: var(--shadow-focus);
     cursor: pointer;
   }

@@ -17,9 +17,9 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).toContain('aria-label="Main navigation"');
   });
 
-  test('renders nav links (home + the timeline anchor)', () => {
+  test('renders nav links (home + the projects page)', () => {
     expect(layoutSrc).toContain('href="/"');
-    expect(layoutSrc).toContain('href="/#projects"');
+    expect(layoutSrc).toContain('href="/projects/"');
   });
 
   test('is a plain list of links, not an ARIA menubar (it has no menus)', () => {
@@ -27,8 +27,19 @@ describe('Nav (inline in BaseLayout)', () => {
     expect(layoutSrc).not.toMatch(/role="menu(bar|item|-bar|-item)/);
   });
 
+  // One <main>, and its classes come from class:list now that a page can opt into
+  // filling the pane, so match the element rather than a literal class string.
   test('the content pane is the one <main> landmark', () => {
-    expect(layoutSrc).toMatch(/<main class="window-pane site-pane" id="main-content">/);
+    // The prose above the element mentions <main> too, so count opening tags.
+    // One pass over nested comments leaves a `<!--` behind, so stripping repeats.
+    let markup = layoutSrc;
+    for (let pass = markup; ; pass = markup) {
+      markup = markup.replace(/<!--[\s\S]*?-->/g, '');
+      if (markup === pass) break;
+    }
+    expect(markup.match(/<main\b/g)).toHaveLength(1);
+    expect(markup).toMatch(/<main[\s\S]{0,160}id="main-content"/);
+    expect(markup).toMatch(/'window-pane', 'site-pane'/);
   });
 
   test('nav has border bottom', () => {
@@ -75,7 +86,7 @@ describe('Layout Structure', () => {
   const layoutSrc = readFileSync(resolve(ROOT, 'src/layouts/BaseLayout.astro'), 'utf-8');
 
   test('uses system.css window structure', () => {
-    expect(layoutSrc).toContain('class="window');
+    expect(layoutSrc).toContain("'window'");
     expect(layoutSrc).toContain('title-bar');
     expect(layoutSrc).toContain('window-pane');
   });
@@ -123,11 +134,15 @@ describe('Home Page', () => {
     );
   });
 
-  // The About ships as a writeup behind "? The longer version" on the Me card, outside
-  // the page under display:none.
-  test('the long-form about is reachable, not hidden', () => {
-    expect(indexSrc).toContain('<WriteupModal slug="about"');
-    expect(indexSrc).not.toContain('about-window');
+  // Contact spans both columns under Me and Intro rather than sitting in the row of
+  // short windows after the work, so the first screen carries a way to make contact.
+  test('contact spans the grid, above the timeline', () => {
+    const contactAt = indexSrc.indexOf('contact-window');
+    const introAt = indexSrc.indexOf('bio-window');
+    const timelineAt = indexSrc.indexOf('timeline-window');
+    expect(contactAt).toBeGreaterThan(introAt);
+    expect(contactAt).toBeLessThan(timelineAt);
+    expect(indexSrc).toContain('.main-cols > .contact-window');
   });
 
   test('links to project apps and repos', () => {

@@ -14,7 +14,6 @@ describe('Token CSS Output', () => {
     expect(tokensCss).toMatch(/:root\s*\{/);
     // the ink the stylesheets name by meaning
     expect(tokensCss).toContain('--color-text:');
-    expect(tokensCss).toContain('--color-text-muted:');
     // the status-light scale (L3) — the only color the design has
     expect(tokensCss).toContain('--color-success:');
     expect(tokensCss).toContain('--color-danger:');
@@ -26,6 +25,9 @@ describe('Token CSS Output', () => {
     expect(tokensCss).not.toContain('--color-accent:');
     expect(tokensCss).not.toContain('--color-text-secondary:');
     expect(tokensCss).not.toContain('--color-surface:');
+    // A paler ink is the same lie by another name: de-emphasis is a smaller step,
+    // a lighter weight or more whitespace.
+    expect(tokensCss).not.toContain('--color-text-muted:');
   });
 
   test('no light theme overrides (pure monochrome)', () => {

@@ -108,6 +108,9 @@ async function request(url: string, opts: RequestOpts = {}): Promise<ContractRes
   const { timeoutMs = DEFAULT_TIMEOUT, ...fetchOpts } = opts;
   const controller = new AbortController();
   fetchOpts.signal = controller.signal;
+  // The gateway decides tiers from the session cookie, and a cross-origin fetch
+  // sends none by default — without this a signed-in visitor looks anonymous.
+  fetchOpts.credentials ??= 'include';
   let timer: ReturnType<typeof setTimeout> | null = null;
   if (timeoutMs > 0) {
     timer = setTimeout(() => {

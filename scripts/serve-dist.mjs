@@ -53,10 +53,13 @@ createServer(async (req, res) => {
   const type = TYPES[extname(file)] ?? 'application/octet-stream';
   let body = await readFile(file);
   if (ALLOW_LOCALHOST && extname(file) === '.html') {
+    // The directive runs to the next `;` or to the end of the attribute. An apostrophe
+    // does not end it: `'self'` sits inside, and stopping there fused the added
+    // sources onto it as one unusable token.
     body = Buffer.from(
       body
         .toString('utf8')
-        .replace(/connect-src ([^;"']*)/, 'connect-src $1 http://localhost:* http://127.0.0.1:*'),
+        .replace(/connect-src ([^;"]*)/, 'connect-src $1 http://localhost:* http://127.0.0.1:*'),
     );
   }
   res.writeHead(200, { 'content-type': type });

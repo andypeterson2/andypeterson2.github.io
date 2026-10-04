@@ -5,76 +5,121 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 <DemoShell
   title="Nonogram Solver"
   description="Draw a nonogram and solve it in your browser, then compare it with captured Grover-search runs — the same encoding reached 32.3% on real IBM hardware against 6.25% by chance."
-  backend={{ service: 'nonogram', label: 'Nonogram Backend' }}
+  backend={{ service: 'nonogram' }}
+  fitContent
 >
   <!-- App shell -->
   <div id="nonogram-app">
+    <label class="gallery-label"
+      >Gallery
+      <select id="gallery-select">
+        <option value="">— captured runs —</option>
+      </select>
+    </label>
     <div class="nono-columns">
       <div class="nono-left">
-        <div class="section-rule"><span>Puzzle Editor</span></div>
-        <div id="draw-view"></div>
-        <div class="editor-actions">
-          <button id="btn-clear" class="s6-btn">Clear</button>
-          <button id="btn-random" class="s6-btn">Randomize</button>
+        <div class="editor-row">
+          <div class="editor-actions">
+            <span class="mode-toggle" role="group" aria-label="Editor mode">
+              <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
+              <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false"
+                >Clues</button
+              >
+            </span>
+            <button id="btn-clear" class="s6-btn s6-btn--sm">Clear</button>
+            <button id="btn-random" class="s6-btn s6-btn--sm">Randomize</button>
+            <button id="btn-reset" class="s6-btn s6-btn--sm">Reset</button>
+            <span class="size-box" role="group" aria-label="Board size">
+              <input
+                id="size-rows"
+                class="size-input"
+                type="number"
+                min="1"
+                max="10"
+                value="3"
+                aria-label="Rows"
+              />
+              <span class="size-times">&times;</span>
+              <input
+                id="size-cols"
+                class="size-input"
+                type="number"
+                min="1"
+                max="10"
+                value="3"
+                aria-label="Columns"
+              />
+            </span>
+          </div>
+          <div id="draw-view"></div>
         </div>
-        <div class="grid-size-controls">
-          <span class="size-stepper" role="group" aria-label="Rows">
-            <button id="btn-remove-row" class="s6-btn s6-btn--sm" aria-label="Remove a row"
-              >−</button
-            >
-            <span class="stepper-label">Rows</span>
-            <button id="btn-add-row" class="s6-btn s6-btn--sm" aria-label="Add a row">+</button>
+        <div class="run-controls">
+          <span class="run-where field-row" role="radiogroup" aria-label="Where to run">
+            <input type="radio" id="btn-where-local" name="run-where" checked />
+            <label for="btn-where-local">Local</label>
+            <input type="radio" id="btn-where-hw" name="run-where" />
+            <label for="btn-where-hw">Hardware</label>
           </span>
-          <span id="grid-size-label">3 &times; 3</span>
-          <span class="size-stepper" role="group" aria-label="Columns">
-            <button id="btn-remove-col" class="s6-btn s6-btn--sm" aria-label="Remove a column"
-              >−</button
-            >
-            <span class="stepper-label">Cols</span>
-            <button id="btn-add-col" class="s6-btn s6-btn--sm" aria-label="Add a column">+</button>
-          </span>
+          <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
         </div>
-        <div id="status-line" class="status-line">Ready — puzzles solve in your browser.</div>
-        <p id="gallery-note" class="gallery-note" hidden></p>
       </div>
       <div class="nono-right">
-        <div class="controls-bar">
-          <label class="trials-label"
-            >Trials
-            <input type="number" id="trials-input" min="1" max="20" value="1" />
-          </label>
-          <button id="btn-bench" class="s6-btn s6-btn--primary">&#9654; Solve in browser</button>
-          <label class="gallery-label"
-            >Gallery
-            <select id="gallery-select">
-              <option value="">— captured runs —</option>
-            </select>
-          </label>
-        </div>
-        <div class="section-rule"><span>Classical</span></div>
-        <div id="cl-canvas" class="sol-canvas">
-          <div id="cl-placeholder" class="placeholder-msg">Solve the puzzle to see solutions.</div>
-        </div>
-        <div class="section-rule"><span>Quantum</span></div>
-        <div id="qu-list" class="sol-canvas">
-          <div id="qu-sol-placeholder" class="placeholder-msg">
-            Solve the puzzle to see solutions.
+        <div id="status-line" class="status-line" role="status"></div>
+        <div class="sol-pair">
+          <div class="sol-half panel">
+            <div class="panel-title">
+              <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
+            </div>
+            <div id="cl-canvas" class="sol-canvas">
+              <div id="cl-placeholder" class="placeholder-msg">
+                Solve the puzzle to see solutions.
+              </div>
+            </div>
+          </div>
+          <div class="sol-half panel">
+            <div class="panel-title">
+              <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
+            </div>
+            <div id="qu-list" class="sol-canvas">
+              <div id="qu-sol-placeholder" class="placeholder-msg">
+                Solve the puzzle to see solutions.
+              </div>
+            </div>
           </div>
         </div>
-        <div class="section-rule"><span>Histogram</span></div>
-        <div class="histogram-controls">
-          <label class="threshold-label"
-            >Thr
-            <input type="number" id="threshold-input" min="0" max="100" step="0.01" value="0.50" />
-            <span>%</span>
-          </label>
+        <div class="panel">
+          <div class="panel-title">
+            <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
+          </div>
+          <div id="qu-area" class="histogram-area">
+            <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
+               and a region that scrolls has to be reachable from the keyboard. -->
+            <div id="qu-scroll" class="hist-scroll" data-reflow-exempt tabindex="0">
+              <!-- Inside the frame that scrolls, pinned to its left edge: the scale holds
+                 while the bars run past it, and the scrollbar spans the whole frame. -->
+              <svg id="qu-axis" class="hist-axis-pane" aria-hidden="true"></svg>
+              <svg id="qu-histogram" height="100%" aria-hidden="true"></svg>
+            </div>
+            <div id="qu-placeholder" class="placeholder-msg"></div>
+          </div>
         </div>
-        <div id="qu-area" class="histogram-area">
-          <svg id="qu-histogram" width="100%" height="100%" aria-hidden="true"></svg>
-          <div id="qu-placeholder" class="placeholder-msg"></div>
-        </div>
-        <div class="section-rule"><span>Metrics</span></div>
         <div id="metrics-pane"></div>
+      </div>
+      <div id="circuit-band" class="nono-band">
+        <div id="code-pane">
+          <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
+            <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
+            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
+            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+          </div>
+          <div id="circuit-figure" data-reflow-exempt>
+            <svg id="circuit-svg" aria-hidden="true"></svg>
+          </div>
+          <div class="code-box">
+            <pre id="code-listing" tabindex="0"></pre>
+            <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -93,20 +138,32 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   /* The solver's status and placeholder lines are set in the mono face. */
   #nonogram-app {
     font-family: var(--font-mono);
+
+    /* The window's own padding would leave a gutter three times the one between the
+       columns, so the app takes the whole pane and its sections pad themselves. */
+    margin: calc(-1 * var(--pane-pad-y)) calc(-1 * var(--pane-pad-x));
   }
 
   /* Buttons are the shared .s6-btn. */
 
-  /* ── Two-column layout ── */
+  /* ── Two-column layout ──
+     Editor above circuit on the left, results the full height on the right. Areas rather
+     than nested columns: stacked, the circuit has to fall behind the results it does not
+     describe, and only the grid can move it there. */
   .nono-columns {
-    display: flex;
-    gap: 0;
+    display: grid;
+    grid-template:
+      'editor results' auto
+      'circuit results' 1fr
+      / clamp(320px, 46%, 560px) minmax(0, 1fr);
     min-height: 600px;
   }
 
+  /* The inputs — editor and the run buttons — in a column of their own, at a width the
+     3x3 grid and the widest button both fit. It scrolls with the page. */
   .nono-left {
-    width: 40%;
-    border-right: 2px solid var(--ink);
+    grid-area: editor;
+    min-width: 0;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -114,11 +171,36 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   .nono-right {
-    width: 60%;
+    grid-area: results;
+    min-width: 0;
+    border-left: 2px solid var(--ink);
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  /* The two answers read against each other, so they sit side by side. */
+  .sol-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .sol-half {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  /* The circuit describes the puzzle rather than a run, so it sits under the editor
+     that builds it, at the foot of the column. */
+  .nono-band {
+    grid-area: circuit;
+    align-self: end;
+    min-width: 0;
+    padding: 12px 16px 16px;
   }
 
   /* ── Draw view / grid ──
@@ -131,16 +213,35 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     user-select: none;
   }
 
+  /* One square unit sizes every box in the table — grid cells and clue slots alike —
+     so a clue never sets a row's height and the cells stay square at any puzzle size. */
   :global(.nonogram-table) {
+    --cell: 24px;
+
     border-collapse: collapse;
   }
 
   :global(.nonogram-table td.cell) {
-    width: 24px;
-    height: 24px;
+    width: var(--cell);
+    height: var(--cell);
     border: 1px solid var(--ink);
     background: var(--paper);
     cursor: crosshair;
+  }
+
+  /* Clues mode: the grid is the unknown the clues describe, so the cells are inert and
+     carry the stipple — a third state between the empty paper and the filled ink a
+     solution uses, in the same 1-bit vocabulary. */
+  :global(.nonogram-table td.cell-unknown) {
+    width: var(--cell);
+    height: var(--cell);
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
+
+    /* Collapsed borders put the border box on a half pixel, which snaps a 1px-feature
+       tile to solid ink. The padding box is whole-pixel, so the checker survives. */
+    background-clip: padding-box;
+    user-select: none;
   }
 
   :global(.nonogram-table td.cell.filled) {
@@ -152,8 +253,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   :global(.nonogram-table .cell-btn) {
     all: unset;
     display: block;
-    width: 24px;
-    height: 24px;
+    width: var(--cell);
+    height: var(--cell);
     box-sizing: border-box;
     cursor: crosshair;
   }
@@ -170,133 +271,209 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.nonogram-table .corner-cell) {
     background: transparent;
+    padding: 0;
   }
 
-  /* Clues are the puzzle: ink on plain paper, never on dither. */
+  /* Clues are the puzzle: ink on plain paper, never on dither. Padding stays at zero so
+     the cell measures exactly as many square slots as the longest clue on its axis. */
   :global(.nonogram-table .row-clue),
   :global(.nonogram-table .col-clue) {
     background: var(--paper);
     text-align: center;
     font-size: var(--text-3xs);
     font-weight: 600;
-    border: 1px solid var(--paper-4);
-    padding: 2px;
+    border: 1px solid var(--ink);
+    padding: 0;
   }
 
   :global(.row-clue-slots) {
     display: flex;
-    gap: 2px;
     justify-content: flex-end;
-    padding: 0 4px;
   }
 
   :global(.col-clue-slots) {
     display: flex;
     flex-direction: column;
-    gap: 1px;
     align-items: center;
-    padding: 2px 4px;
   }
 
+  /* Square, and capped to the unit in both axes: a taller slot would push the row past
+     the cells beside it and render them as rectangles. */
   :global(.clue-slot) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--cell);
+    height: var(--cell);
     font-family: var(--font-ui);
-    font-size: var(--text-2xs);
+    font-size: min(var(--text-2xs), calc(var(--cell) * 0.7));
+    line-height: 1;
     color: var(--ink);
-    min-width: 1ch;
-    text-align: center;
   }
 
   :global(.clue-slot.empty) {
     visibility: hidden;
   }
 
+  /* A clue box that takes typing keeps the slot's exact square, so switching modes does
+     not move the grid. The table cell around it draws the box — border-collapse shares
+     that line with the neighbouring cells — and these draw only the slot divisions. */
+  :global(.clue-slot--input) {
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    text-align: center;
+    font-weight: 600;
+  }
+
+  :global(.row-clue-slots .clue-slot--input + .clue-slot--input) {
+    border-left: 1px solid var(--ink);
+  }
+
+  :global(.col-clue-slots .clue-slot--input + .clue-slot--input) {
+    border-top: 1px solid var(--ink);
+  }
+
+  :global(.clue-slot--input:focus) {
+    outline: 2px solid var(--ink);
+    outline-offset: -2px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* The pressed half of the Draw / Clues pair, in the System-6 selected idiom. */
+  .mode-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: clamp(6px, 1vw, 10px);
+  }
+
+  .mode-toggle button[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
   /* ── Editor actions ── */
+
+  /* What changes the board, down its left; the board itself beside them. */
+  .editor-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding-top: 12px;
+  }
+
   .editor-actions {
     display: flex;
-    gap: 8px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    flex: 0 0 auto;
   }
 
-  .grid-size-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* − Rows +  3 × 3  − Cols +: the grid shrinks as well as grows. */
-  .size-stepper {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .stepper-label {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-  }
-
-  :global(#grid-size-label) {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    color: var(--ink-2);
-  }
-
-  /* ── Status line ── */
-  .status-line {
-    font-size: var(--text-3xs);
-    color: var(--color-text-muted);
-    padding: 4px 0;
+  :global(.editor-actions .s6-btn) {
+    width: 100%;
     text-align: center;
   }
 
-  /* No heading over an empty section: the Metrics rule appears with its table. */
-  .section-rule:has(+ #metrics-pane:empty) {
+  #draw-view {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Rows and columns in one box, split into three: the two figures with their sign
+     between them, the way the size is written everywhere else on the page. */
+  .size-box {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+
+  :global(.size-input) {
+    /* A typed field is a touch target like any other (WCAG 2.2 asks for 24px). */
+    min-width: 24px;
+    min-height: 24px;
+    width: 100%;
+    border: 0;
+    background: none;
+    padding: 2px 0;
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    text-align: center;
+    color: var(--ink);
+  }
+
+  .size-times {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-inline: 2px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+  }
+
+  /* Where to run, and the one button that does it, under the board they act on. */
+  .run-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .run-where {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  :global(.run-controls .s6-btn) {
+    min-width: 14rem;
+    text-align: center;
+  }
+
+  /* A run's own measure of itself, sitting on the rule that names the section: a
+     lowercase aside against the uppercase label, so it reads as annotation. Leading
+     middot is escaped — a stylesheet served without a charset decodes it as latin-1
+     and splits the byte pair into two visible characters. */
+  :global(.rule-meta) {
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+
+    /* A flex item will not shrink below its text, which pushes a narrow page sideways.
+       Clipping the figure keeps the rule inside the viewport. */
+    min-width: 0;
+    overflow: auto hidden;
+    text-overflow: ellipsis;
+  }
+
+  :global(.rule-meta:empty) {
     display: none;
   }
 
-  /* The gallery entry's own note (e.g. how the same shape did on real hardware). */
-  .gallery-note {
-    margin: 0;
-    padding: 0 4px 4px;
+  /* ── Status line — with the output it reports on, and taking no room until a run has
+     something to say; the buttons already say what pressing them will do. ── */
+  .status-line:empty {
+    display: none;
+  }
+
+  .status-line {
     font-size: var(--text-3xs);
+    padding: 0 0 var(--space-2);
     text-align: center;
-    color: var(--color-text);
   }
 
   :global(.status-line.status-err) {
     color: var(--color-danger);
   }
 
-  :global(.status-line.status-ok) {
-    color: var(--color-success);
-  }
-
   /* ── Controls bar ── */
-  .controls-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .trials-label {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .trials-label input {
-    width: 50px;
-    border: 2px solid var(--ink);
-    background: var(--paper);
-    padding: 4px 6px;
-    font-size: var(--text-3xs);
-    text-align: center;
-  }
 
   /* Gallery — pre-computed REAL quantum runs, rendered with no backend. */
   .gallery-label {
@@ -305,7 +482,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: auto;
+    border-bottom: 1px solid var(--ink);
+    padding: 16px 16px 10px;
   }
 
   .gallery-label select {
@@ -314,7 +492,31 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     border: 2px solid var(--ink);
     background: var(--paper);
     padding: 3px 6px;
-    max-width: 190px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* A framed section with its name along the top, inside the frame rather than across a
+     rule that runs out either side of it. */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   /* ── Solution canvases ── */
@@ -322,6 +524,12 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+
+    /* A board with many solutions would run the column off the page, so the answers
+       live in a frame of their own and scroll inside it. */
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 8px;
     min-height: 40px;
   }
 
@@ -348,7 +556,6 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.sol-grid-label) {
     font-size: var(--text-4xs);
-    color: var(--color-text-muted);
     font-weight: 600;
   }
 
@@ -372,7 +579,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   :global(.sol-table td) {
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
   }
 
   :global(.sol-table td.f) {
@@ -384,7 +591,21 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   }
 
   /* ── Histogram ── */
+
+  /* On the line it sets, at the right where the bars have run out. --at is the line's
+     height as a fraction of the chart, which only the drawing knows. */
+  .histogram-controls[hidden] {
+    display: none;
+  }
+
   .histogram-controls {
+    position: absolute;
+    right: 10px;
+    top: var(--at, 50%);
+    transform: translateY(-105%);
+    z-index: 1;
+    align-items: baseline;
+    background: var(--paper);
     display: flex;
     gap: 8px;
   }
@@ -392,36 +613,65 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   .threshold-label {
     font-family: var(--font-ui);
     font-size: var(--text-3xs);
+    font-weight: 600;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 4px;
   }
 
+  /* The figure reads as part of the label it belongs to, until it is being set. */
   .threshold-label input {
-    width: 60px;
-    border: 2px solid var(--ink);
-    background: var(--paper);
-    padding: 4px 6px;
-    font-size: var(--text-3xs);
-    text-align: center;
+    width: 44px;
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    text-align: right;
+  }
+
+  .threshold-label input:hover {
+    text-decoration: underline dotted;
   }
 
   /* Keep system.css's focus inversion: the local paper ground above would otherwise
      leave a focused field white on white. */
-  .trials-label input:focus-visible,
   .threshold-label input:focus-visible {
     background: var(--ink);
     color: var(--paper);
     outline: none;
   }
 
-  /* 260px: room for 12px bitstring labels under the bars. */
+  /* 260px: room for 12px bitstring labels under the bars. A run with many outcomes
+     needs a bar each, so the bars keep their own width and scroll inside the frame,
+     with the scale held beside them at a width of its own. */
   .histogram-area {
     height: 260px;
-    border: 2px solid var(--ink);
     position: relative;
     background: var(--paper);
-    overflow: hidden;
+  }
+
+  /* Pinned to the left edge of the scroll, over the bars that pass behind it. Its own
+     drawn height, never the frame's: stretched, the scale would be scaled to fit and
+     its figures would sit off the lines they name. */
+  .hist-axis-pane {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    background: var(--paper);
+  }
+
+  .hist-scroll {
+    display: flex;
+    height: 100%;
+    overflow: auto hidden;
+  }
+
+  /* The chart keeps the width it drew itself at; a flex item that may shrink would be
+     squeezed back into the frame and never scroll. */
+  :global(#qu-histogram) {
+    flex: 0 0 auto;
   }
 
   /* The histogram's marks (classes on the script-drawn SVG), coloured from the tokens. */
@@ -430,9 +680,11 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     stroke-width: 1;
   }
 
+  /* Dashed black: the gridlines sit under the solid axis by how broken the line is. */
   :global(.hist-grid) {
-    stroke: var(--paper-4);
+    stroke: var(--ink);
     stroke-width: 1;
+    stroke-dasharray: 1 3;
   }
 
   :global(.hist-bar) {
@@ -449,10 +701,30 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     fill: var(--ink);
   }
 
-  :global(.hist-threshold) {
+  /* The track and thumb carry the scroll. system.css names each end button with three
+     pseudo-classes, so hiding them takes a selector at least as particular. */
+  :global(.hist-scroll::-webkit-scrollbar-button:horizontal:start:decrement),
+  :global(.hist-scroll::-webkit-scrollbar-button:horizontal:end:increment),
+  :global(.hist-scroll::-webkit-scrollbar-button:vertical:start:decrement),
+  :global(.hist-scroll::-webkit-scrollbar-button:vertical:end:increment),
+  :global(.sol-canvas::-webkit-scrollbar-button:horizontal:start:decrement),
+  :global(.sol-canvas::-webkit-scrollbar-button:horizontal:end:increment),
+  :global(.sol-canvas::-webkit-scrollbar-button:vertical:start:decrement),
+  :global(.sol-canvas::-webkit-scrollbar-button:vertical:end:increment),
+  :global(.hist-scroll::-webkit-scrollbar-button),
+  :global(.sol-canvas::-webkit-scrollbar-button) {
+    display: none;
+  }
+
+  :global(.hist-count) {
+    font-family: var(--font-ui);
+    text-anchor: middle;
+  }
+
+  :global(.hist-bracket) {
+    fill: none;
     stroke: var(--ink);
-    stroke-width: 1.5;
-    stroke-dasharray: 6 3;
+    stroke-width: 1;
   }
 
   :global(.hist-text) {
@@ -480,46 +752,529 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 
   :global(.metrics-table) {
     width: 100%;
+    border: 2px solid var(--ink);
     border-collapse: collapse;
     font-size: var(--text-3xs);
   }
 
-  :global(.metrics-table th) {
-    background: var(--ink);
-    color: var(--paper);
+  /* A header reads as a header from its face and the rule under it. Inversion is the
+     system's selected state, so it stays free to mean that. */
+  :global(.metrics-table thead th) {
     font-family: var(--font-ui);
     font-size: var(--text-4xs);
     text-transform: uppercase;
     padding: 4px 8px;
-    text-align: left;
+    text-align: center;
+    border: 1px solid var(--ink);
+    border-top: 0;
   }
 
+  /* Ruled both ways: the rows separate the metrics, the columns separate the methods. */
+  :global(.metrics-table td),
+  :global(.metrics-table th[scope='row']) {
+    border: 1px solid var(--ink);
+    padding: 4px 8px;
+  }
+
+  /* Monaco is monospaced, so right alignment lines the digits up on its own. */
   :global(.metrics-table td) {
-    border: 1px solid var(--paper-4);
-    padding: 3px 8px;
+    text-align: right;
   }
 
-  :global(.metrics-table .metric-label) {
+  :global(.metrics-table th[scope='row']) {
+    text-align: left;
+    font-weight: 400;
+    width: 34%;
+  }
+
+  /* The last row of a group runs into the rule the next group opens with. */
+  :global(.metrics-table tbody:not(:last-of-type) .metric:last-child td),
+  :global(.metrics-table tbody:not(:last-of-type) .metric:last-child th[scope='row']) {
+    border-bottom: 0;
+  }
+
+  /* The section's name, read bottom to top down the left of the rows it covers. A
+     rotated cell contributes no height of its own, so the name asks for the room it
+     needs: a section of one row is shorter than the words beside it. */
+  :global(.metrics-table th.spine) {
+    width: 1.75rem;
+    height: 9.5rem;
+    padding: 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    vertical-align: middle;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  :global(.metrics-table .spine-corner) {
+    border: 0;
+    border-right: 1px solid var(--ink);
+    padding: 0;
+  }
+
+  /* Where one section ends and the next begins — the one rule on the table with any
+     weight to it. */
+  :global(.metrics-table tbody + tbody tr:first-child > *) {
+    border-top: 2px solid var(--ink);
+  }
+
+  /* There is no device on the classical side. A hatched region says that; a column of
+     dashes would read as data that went missing. */
+  :global(.metrics-table .na) {
+    background: var(--dither-light);
+
+    /* Whole-pixel paint box, or the collapsed border snaps the checker to solid ink. */
+    background-clip: padding-box;
+  }
+
+  /* A label with more to say marks itself, and says it on hover. */
+  :global(.metrics-table th.has-note) {
+    cursor: help;
+    text-decoration: underline dotted;
+  }
+
+  /* Rotated, that mark would run down beside the name as a second rule, so the spine
+     keeps the cursor alone. */
+  :global(.metrics-table th.spine[title]) {
+    cursor: help;
+  }
+
+  :global(.metrics-unmeasured td),
+  :global(.metrics-note td) {
+    text-align: left;
+    line-height: var(--leading-normal);
+  }
+
+  /* Narrow: the label takes its own line and the three figures sit under it, so every
+     method survives. Switching display has to reach the whole table — a row left inside
+     a table-row-group gets wrapped in anonymous boxes. */
+  @media (width <= 640px) {
+    :global(.metrics-table),
+    :global(.metrics-table thead),
+    :global(.metrics-table tbody),
+    :global(.metrics-table tr) {
+      display: block;
+    }
+
+    :global(.metrics-table thead tr),
+    :global(.metrics-table tr.metric) {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* The label is its own full-width line, so the header's first cell has nothing
+       left to name. */
+    :global(.metrics-table thead th:first-of-type) {
+      display: none;
+    }
+
+    :global(.metrics-table th[scope='row']),
+    :global(.metrics-table .metrics-unmeasured td),
+    :global(.metrics-table .metrics-note td) {
+      grid-column: 1 / -1;
+    }
+
+    /* Rotated down the side of a 320px column there is nothing to read, so the name
+       bands across the top of the section it covers. Rowspan means nothing in a grid. */
+    :global(.metrics-table th.spine) {
+      grid-column: 1 / -1;
+      order: -1;
+      width: auto;
+      height: auto;
+      padding: 6px 0 2px;
+      border-right: 0;
+      text-align: left;
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+
+    :global(.metrics-table .spine-corner) {
+      display: none;
+    }
+
+    /* The name is first in the grid, so the divider that opens a section rides on it. */
+    :global(.metrics-table tbody + tbody tr:first-child > *) {
+      border-top: 0;
+    }
+
+    :global(.metrics-table tbody + tbody tr:first-child th.spine) {
+      border-top: 2px solid var(--ink);
+    }
+
+    /* colspan does not survive the switch to grid. */
+    :global(.metrics-table .na) {
+      grid-column: span 2;
+    }
+
+    /* border-collapse goes with the table display, so shared edges double up. */
+    :global(.metrics-table td + td),
+    :global(.metrics-table th[scope='row'] + td) {
+      border-left: 0;
+    }
+
+    /* The label's own line: the column width it holds in a table would leave the name
+       in a box a third as wide as the line it now sits on. */
+    :global(.metrics-table th[scope='row']) {
+      width: auto;
+      border-bottom: 0;
+    }
+  }
+
+  /* One switch across the pane, a third each, so no view reads as the main one. The
+     segments meet, sharing an edge the way a System 6 control does. */
+  .circuit-view {
+    display: flex;
+  }
+
+  :global(.circuit-view .s6-btn + .s6-btn) {
+    margin-left: -1px;
+  }
+
+  :global(.circuit-view .s6-btn[aria-pressed='true']) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  :global(.circuit-view .s6-btn) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .circuit-view[hidden] {
+    display: none;
+  }
+
+  /* ── Circuit diagram ── */
+
+  /* One pane at a time, at a height that does not jump as the views swap. The drawing
+     may ask for more and gets it: a frame that scrolled in both directions would put a
+     second set of arrows on a figure that only ever runs wide. Copy sits on the listing
+     it copies, so the frame is what anchors it. */
+  .code-box {
+    min-height: var(--pane-h, 340px);
+    max-height: var(--pane-h, 340px);
+    position: relative;
+    display: flex;
+  }
+
+  /* The track and thumb carry the scroll; system.css styles an increment and a
+     decrement button at each end, which draws as two arrows a side. */
+  :global(#circuit-figure::-webkit-scrollbar-button) {
+    display: none;
+  }
+
+  /* Framed like the other panes. The drawing takes the height it needs and scrolls
+     sideways when a block is written out; safe centring starts a drawing wider than the
+     frame at the left edge, so the scroll reaches its far side. */
+  :global(#circuit-figure) {
+    min-height: 340px;
+    min-width: 0;
+    display: flex;
+    justify-content: safe center;
+    align-items: safe center;
+    overflow: auto hidden;
+    border: 2px solid var(--ink);
+    padding: 10px;
+  }
+
+  :global(#circuit-figure[hidden]),
+  .code-box[hidden] {
+    display: none;
+  }
+
+  /* The pre scrolls; Copy is anchored to the frame around it, so it stays in the corner
+     whatever the code does, and it clears the scrollbar's gutter rather than sitting
+     on it. */
+  :global(.code-box #btn-copy-code) {
+    position: absolute;
+    top: 8px;
+    right: 30px;
+  }
+
+  :global(#circuit-svg) {
+    display: block;
+    flex: none;
+  }
+
+  :global(.circ-wire) {
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-box) {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  /* The code face. H and X have to stay apart at this size, which needs the open
+     diagonals of a monospace, and it matches the listing below the diagram. */
+  :global(.circ-gate) {
+    font-family: var(--font-mono);
+
+    /* A step above the chrome around it. The X's diagonals cover fewer pixels than the
+       H's uprights, so they need the size and the weight to hold the same density. */
+    font-size: var(--text-3xs);
     font-weight: 600;
-    background: var(--paper-2);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-box-name) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  /* The box's own figure, set smaller than its name so the name reads first. */
+
+  /* Pressed, a box inverts — the system's selected state, and the one place it means
+     something here. Its figure has to come with it or it vanishes into the ink. */
+  :global(.circ-hit) {
+    cursor: pointer;
+  }
+
+  /* A pointer press is answered by the box inverting, so it needs no ring; without this
+     the browser draws its own, in its own colour. The keyboard keeps an ink one. */
+  :global(.circ-hit:focus) {
+    outline: none;
+  }
+
+  :global(.circ-hit:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  /* The frame a written-out step keeps around its gates: a box like any other, once it
+     has settled. */
+  :global(.circ-frame),
+  :global(.circ-morph-frame) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  /* The one still moving is dashed, the way a boundary being drawn is.
+     x and width are CSS properties on an SVG rect, so it can be transitioned between
+     two widths the stylesheet never sees. */
+  :global(.circ-morph-frame) {
+    x: var(--morph-x);
+    width: var(--morph-w);
+    stroke-dasharray: 4 3;
+    transition: width 200ms ease 140ms;
+  }
+
+  /* The copy of the shape being replaced. On the way open it inverts first, the way a
+     pressed box does, then leaves while the frame is still growing. */
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box) {
+    fill: var(--ink);
+    transition: fill var(--dur-fast) linear;
+  }
+
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box-name),
+  :global(.circ-morph[data-dir='open'].circ-morph--run .circ-box-sub) {
+    fill: var(--paper);
+    transition: fill var(--dur-fast) linear;
+  }
+
+  :global(.circ-hit-area) {
+    fill: transparent;
+  }
+
+  /* The brackets that measure the whole drawing end up a different length, so they
+     cross over rather than travel, at the frame's own rate. */
+  :global(.circ-remeasure) {
+    opacity: 0;
+  }
+
+  :global(.circ-remeasured) {
+    opacity: 1;
+    transition: opacity 200ms ease 140ms;
+  }
+
+  /* What an opening block pushes along, travelling with the frame that displaces it. */
+  :global(.circ-slide) {
+    transform: translateX(var(--slide));
+    transition: transform 200ms ease 140ms;
+  }
+
+  :global(.circ-ghost-block) {
+    pointer-events: none;
+  }
+
+  :global(.circ-morph--run .circ-ghost-block) {
+    opacity: 0;
+    transition: opacity 100ms linear 140ms;
+  }
+
+  /* Folding back, the gates go before the frame starts closing over the space they
+     held; opening, the box waits until the frame has somewhere to put it. */
+  :global(.circ-morph[data-dir='close'].circ-morph--run .circ-ghost-block) {
+    transition-delay: 0s;
+  }
+
+  /* What the press produced, held back until the frame has finished opening. The name
+     is outside this: it belongs to both states, so it travels rather than blinking. */
+  :global(.circ-hit.circ-arriving .circ-body) {
+    opacity: 0;
+  }
+
+  :global(.circ-hit.circ-arrived .circ-body) {
+    opacity: 1;
+    transition: opacity 120ms linear 340ms;
+  }
+
+  :global(.circ-ctrl) {
+    fill: var(--ink);
+  }
+
+  :global(.circ-open) {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-box-sub) {
+    font-family: var(--font-sans);
+    font-size: var(--text-4xs);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-label),
+  :global(.circ-more) {
+    font-family: var(--font-mono);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: end;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-meter) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-bracket) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  /* The brace that gathers every wire into one count. */
+  :global(.circ-brace) {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  :global(.circ-gates) {
+    text-anchor: start;
+  }
+
+  /* What a bracket or a brace says about the span it encloses. */
+  :global(.circ-span) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(.circ-repeat) {
+    font-family: var(--font-ui);
+    font-size: var(--text-4xs);
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+
+  :global(#code-listing) {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    margin: 0;
+    font-size: var(--text-4xs);
+    line-height: var(--leading-normal);
+    white-space: pre;
+    tab-size: 4;
   }
 
   /* Phones and tablets: one column, editor above results, and the controls wrap so
      the Gallery (the only offline quantum output) is always on screen. */
   @media (width <= 768px) {
     .nono-columns {
-      flex-direction: column;
+      grid-template:
+        'editor'
+        'results'
+        'circuit'
+        / minmax(0, 1fr);
       min-height: 0;
     }
 
-    .nono-left,
-    .nono-right {
+    /* Three abreast is too much for a phone: the actions and the run controls take a
+       row each, above and below the board they act on. */
+    .editor-row {
+      flex-wrap: wrap;
+    }
+
+    .editor-actions,
+    .run-controls {
+      flex-flow: row wrap;
+      align-items: flex-start;
+      justify-content: center;
       width: 100%;
+      order: 1;
+    }
+
+    /* Side by side, the row carries the space under the controls. */
+    .mode-toggle {
+      margin-bottom: 0;
+    }
+
+    /* Stacked, each control holds the column's width; in a row that is the whole line,
+       so they take the room they need instead. */
+    :global(.editor-actions .s6-btn) {
+      width: auto;
+    }
+
+    .run-controls {
+      order: 3;
+    }
+
+    #draw-view {
+      order: 2;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Stacked, a divider runs between the sections rather than beside them. */
+    .nono-right {
+      border-left: 0;
     }
 
     .nono-left {
-      border-right: none;
       border-bottom: 2px solid var(--ink);
+    }
+
+    .nono-band {
+      align-self: auto;
+      border-top: 2px solid var(--ink);
     }
 
     .gallery-label {
@@ -530,6 +1285,13 @@ import DemoShell from '../../../layouts/DemoShell.astro';
     .gallery-label select {
       flex: 1;
       min-width: 0;
+    }
+  }
+
+  /* The two answers stack once the column is too narrow to hold both. */
+  @media (width <= 640px) {
+    .sol-pair {
+      grid-template-columns: 1fr;
     }
   }
 </style>

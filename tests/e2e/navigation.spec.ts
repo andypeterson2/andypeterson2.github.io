@@ -12,9 +12,9 @@ test.describe('Site navigation', () => {
     await page.goto('/');
     const nav = page.locator('.site-menubar');
 
-    await nav.locator('a[href="/#projects"]').click();
-    await expect(page).toHaveURL(/\/#projects$/);
-    await expect(page.locator('#projects')).toBeVisible();
+    await nav.locator('a[href="/projects/"]').click();
+    await expect(page).toHaveURL(/\/projects\/$/);
+    await expect(page.locator('.icon-grid .finder-icon').first()).toBeVisible();
 
     // "Home" links back to the root (the flat layout renamed About → Home).
     await nav.locator('a[href="/"]').click();
@@ -74,13 +74,13 @@ test.describe('The window pane keeps its place', () => {
     await expect.poll(() => paneTop(page)).toBe(1200);
   });
 
-  test('Back across an in-page link returns to the same place', async ({ page }) => {
+  test('Back from another page returns to the same place', async ({ page }) => {
     await page.goto('/');
     await expect.poll(() => page.evaluate(() => history.state?.paneTop ?? 0)).toBe(0);
     await page.locator('.site-pane').evaluate((el) => (el.scrollTop = 300));
     await expect.poll(() => page.evaluate(() => history.state?.paneTop)).toBe(300);
-    await page.locator('.bio-links a[href="#projects"]').click();
-    await expect.poll(() => paneTop(page)).toBeGreaterThan(300);
+    await page.locator('.site-menubar a[href="/projects/"]').click();
+    await expect(page).toHaveURL(/\/projects\/$/);
     await page.goBack();
     await expect.poll(() => paneTop(page)).toBe(300);
   });

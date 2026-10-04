@@ -4,7 +4,6 @@ import SidebarWindow from '../components/home/SidebarWindow.astro';
 import SidebarEntry from '../components/home/SidebarEntry.astro';
 import SkillGroup from '../components/home/SkillGroup.astro';
 import TimelineEntry from '../components/home/TimelineEntry.astro';
-import WriteupModal from '../components/WriteupModal.astro';
 import { siteConfig } from '../config/site';
 import { projects } from '../data/projects';
 import { experience } from '../data/experience';
@@ -12,6 +11,15 @@ import { education, certifications, skills } from '../data/credentials';
 import type { TimelineItem } from '../lib/timeline';
 
 const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
+
+// Each availability signal is its own switch, so the card says only what is true.
+// "open to" leads the line once and the rest are bare: open to work · relocation.
+const openTo = [
+  siteConfig.openToWork && 'work',
+  siteConfig.openToRelocation && 'relocation',
+  siteConfig.openToRemote && 'remote',
+].filter(Boolean) as string[];
+const availability = openTo.length > 0 ? `open to ${openTo.join(' · ')}` : '';
 
 // Projects placed on the timeline, newest first. Periods live here (timeline
 // presentation) rather than in the core project data.
@@ -53,22 +61,14 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
           width="178"
           height="220"
         />
-        <div class="bio-name">{siteConfig.displayName}</div>
-        <div class="bio-tagline">
-          <span>{siteConfig.jobTitle}</span>
-          <span>research → production</span>
-          <span>San Diego · open to remote</span>
-        </div>
-        <!-- The site's strongest evidence is the demos, so the card points at them
-             as well as the intro's last sentence. -->
-        <div class="bio-links">
-          <a class="bio-contact-link" href="#projects">Try a demo ↓</a>
-          <a class="bio-contact-link" href="#contact">Contact ↓</a>
-        </div>
-        <!-- The long About, behind a "?" like every other depth on the site. /about
-             lands here with the dialog open. -->
-        <div class="bio-more">
-          <WriteupModal slug="about" label="The longer version" hash="about" />
+        <div class="bio-ident">
+          <div class="bio-name">{siteConfig.displayName}</div>
+          <div class="bio-tagline">
+            <span class="bio-role">{siteConfig.jobTitle}</span>
+            <span class="bio-pitch">research and production</span>
+            {siteConfig.location && <span class="bio-meta">{siteConfig.location}</span>}
+            {availability && <span class="bio-meta">{availability}</span>}
+          </div>
         </div>
       </div>
     </div>
@@ -95,21 +95,70 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
             <strong>President of ACM Cyber</strong> through COVID lockdown, and built a MERN-stack platform
             serving 2,400 monthly active users for <strong>RIT Esports</strong>.
           </p>
-          <p>
-            Three of the four projects below run right here in your browser — try them. Every
-            project has a <em>?</em> writeup and a link to its source, and so does{' '}
-            <a href={`https://github.com/${siteConfig.github}/${siteConfig.github}.github.io`}
-              >this page</a
-            >.
-          </p>
-          <p>
-            What I'm after: a software engineering role where <strong
-              >correctness is checkable</strong
-            > and the result has to survive contact with real users — taking something that only works
-            in a paper, a notebook, or one person's head, and turning it into a system other people can
-            rely on.
-          </p>
+          <p>I am looking to be part of a team that ships code and solves hard problems.</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Contact — single-column, uniform-width buttons -->
+    <div class="window window--inactive contact-window" id="contact">
+      <div class="title-bar">
+        <h2 class="title">Contact</h2>
+      </div>
+      <div class="bio-contact">
+        <a href={`mailto:${siteConfig.email}`} class="btn"
+          ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
+            ><path
+              d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"
+            ></path></svg
+          > Email</a
+        >
+        <a
+          href={`https://linkedin.com/in/${siteConfig.linkedin}`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
+            ><path
+              d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"
+            ></path></svg
+          > LinkedIn</a
+        >
+        <a
+          href={`https://github.com/${siteConfig.github}`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
+            ><path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"
+            ></path></svg
+          > GitHub</a
+        >
+        <a
+          href={`https://api.${siteConfig.domain}/resume.pdf`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
+            ><path
+              d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"
+            ></path><path
+              d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"
+            ></path></svg
+          > Résumé</a
+        >
+        <a
+          href={`https://api.${siteConfig.domain}/cv.pdf`}
+          class="btn"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
+            ><path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"></path><path
+              d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2v9.255S12 12 8 12s-5 1.755-5 1.755V2a1 1 0 0 1 1-1h5.5z"
+            ></path></svg
+          > CV</a
+        >
       </div>
     </div>
 
@@ -125,69 +174,6 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
          Last in DOM order too, so the page reads Me → Intro → work → the rest at every
          width. -->
     <div class="more-cols">
-      <!-- Contact — single-column, uniform-width buttons -->
-      <div class="window window--inactive contact-window" id="contact">
-        <div class="title-bar">
-          <h2 class="title">Contact</h2>
-        </div>
-        <div class="bio-contact">
-          <a href={`mailto:${siteConfig.email}`} class="btn"
-            ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
-              ><path
-                d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"
-              ></path></svg
-            > Email</a
-          >
-          <a
-            href={`https://linkedin.com/in/${siteConfig.linkedin}`}
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
-              ><path
-                d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"
-              ></path></svg
-            > LinkedIn</a
-          >
-          <a
-            href={`https://github.com/${siteConfig.github}`}
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
-              ><path
-                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"
-              ></path></svg
-            > GitHub</a
-          >
-          <a
-            href={`https://api.${siteConfig.domain}/resume.pdf`}
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
-              ><path
-                d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"
-              ></path><path
-                d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"
-              ></path></svg
-            > Résumé <span class="btn-note">short</span></a
-          >
-          <a
-            href={`https://api.${siteConfig.domain}/cv.pdf`}
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            ><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"
-              ><path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"></path><path
-                d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2v9.255S12 12 8 12s-5 1.755-5 1.755V2a1 1 0 0 1 1-1h5.5z"
-              ></path></svg
-            > CV <span class="btn-note">full</span></a
-          >
-        </div>
-        {siteConfig.email && <p class="contact-email">{siteConfig.email}</p>}
-      </div>
-
       <!-- Education over Certs: the two short windows share a column. -->
       <div class="more-stack">
         <SidebarWindow title="Education">
@@ -244,6 +230,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     min-width: 0;
   }
 
+  .main-cols > .contact-window,
   .main-cols > .timeline-window,
   .main-cols > .more-cols {
     grid-column: 1 / -1;
@@ -261,26 +248,6 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     flex-direction: column;
     gap: var(--col-gap);
     min-width: 0;
-  }
-
-  /* Quick ways to the demos and to the contact buttons, which sit after the work. */
-  .bio-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0 clamp(10px, 1.4vw, 18px);
-    padding: 0 0 clamp(6px, 0.9vw, 10px);
-  }
-
-  .bio-contact-link {
-    font-family: var(--font-ui);
-    font-size: var(--text-2xs);
-  }
-
-  .bio-more {
-    display: flex;
-    justify-content: center;
-    padding: 0 clamp(6px, 0.9vw, 10px) clamp(8px, 1vw, 12px);
   }
 
   @media (width <= 600px) {
@@ -301,9 +268,17 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     }
 
     .bio-headshot {
-      grid-row: 2 / 6;
+      grid-row: 2 / 4;
       max-height: 30vh;
       object-fit: contain;
+    }
+
+    /* Centred against the portrait rather than stacked at its top, which left the
+       text hanging above a block of empty card. */
+    .bio-ident {
+      grid-column: 2;
+      grid-row: 2 / 4;
+      align-self: center;
     }
   }
 
@@ -350,10 +325,14 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     text-align: center;
     padding: clamp(5px, 0.8vw, 9px) clamp(6px, 1vw, 12px) 2px;
     font-family: var(--font-ui);
+
+    /* The identity line: everything under it is a caption, so it takes a step up. */
+    font-size: var(--text-sm);
+    line-height: 1.2;
   }
 
-  /* Role + location — a small centered caption under the name (moved here from the
-     Intro window's subtitle bar). */
+  /* Under the name, two tiers: the role in full ink, then where and how available
+     in the muted grey, so the card reads name / claim / detail at a glance. */
   .bio-tagline {
     display: flex;
     flex-direction: column;
@@ -366,20 +345,32 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     text-align: center;
   }
 
+  /* Subordinate to the role above them, by a step down the scale. */
+  .bio-pitch,
+  .bio-meta {
+    font-size: var(--text-4xs);
+  }
+
   /* ── Contact window ── */
   .contact-window {
     min-width: 0;
   }
 
   .bio-contact {
+    /* Flex because wrapped flex lines centre on their own; a grid's last row starts
+       at column 1, which leaves a 4 + 1 wrap hanging at the left edge. */
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: clamp(4px, 0.6vw, 8px);
     padding: clamp(10px, 1.3vw, 15px);
   }
 
   .bio-contact .btn {
-    width: 100%;
+    /* Five buttons: a 150px basis holds three per line above phone width, capping the
+       wrap at two lines, and 185px keeps a short last line near the one above. */
+    flex: 1 1 150px;
+    max-width: 185px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -395,24 +386,6 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
     flex: 0 0 1.4em;
     height: 1em;
     fill: currentcolor;
-  }
-
-  /* Tells Résumé from CV at a glance. */
-  .bio-contact .btn-note {
-    margin-left: auto;
-    font-family: var(--font-sans);
-    font-size: var(--text-3xs);
-    font-weight: 400;
-  }
-
-  /* The address as selectable text alongside the mailto:. */
-  .contact-email {
-    margin: 0;
-    padding: 0 clamp(10px, 1.3vw, 15px) clamp(10px, 1.3vw, 15px);
-    font-family: var(--font-sans);
-    font-size: var(--text-2xs);
-    overflow-wrap: anywhere;
-    user-select: all;
   }
 
   .timeline-window {

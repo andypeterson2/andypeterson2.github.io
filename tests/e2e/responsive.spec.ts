@@ -20,7 +20,7 @@ test.describe('Responsive layout', () => {
     await page.goto('/');
     await page.locator('.mobile-nav-btn').click();
     await page.locator('#mobile-nav-menu a').filter({ hasText: 'Projects' }).click();
-    await expect(page).toHaveURL(/\/#projects$/);
+    await expect(page).toHaveURL(/\/projects\/$/);
   });
 
   test('window chrome renders at all breakpoints', async ({ page }) => {
@@ -56,6 +56,9 @@ test.describe('Reflow at 320px', () => {
             const r = e.getBoundingClientRect();
             // SVG internals are clipped by their own viewport; they can't scroll the page.
             if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            // A circuit needs its two-dimensional layout (WCAG 1.4.10 excepts diagrams),
+            // so it scrolls inside its own frame rather than shrinking to the column.
+            if (e.closest('[data-reflow-exempt]')) return false;
             return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
           })
           .slice(0, 3)
@@ -64,4 +67,38 @@ test.describe('Reflow at 320px', () => {
       expect(overflow).toEqual([]);
     });
   }
+
+  // The metrics table is hidden until a run fills it, so the sweep above never sees
+  // the widest thing the nonogram page draws.
+  test('no horizontal scroll once the nonogram has solved', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/quantum-nonogram-solver/app/');
+    for (const i of [0, 1, 2, 3]) await page.locator('.cell-btn').nth(i).click();
+    await page.locator('#btn-bench').click();
+    // The frame is there from the start; the figures are what a solve adds.
+    await expect(page.locator('.metrics-table tbody td:not(.na)').first()).not.toBeEmpty();
+    await expect(page.locator('#circuit-figure')).toBeVisible();
+
+    const overflow = () =>
+      page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        return [...document.querySelectorAll('body *')]
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            if (e.closest('svg') && e.tagName.toLowerCase() !== 'svg') return false;
+            if (e.closest('[data-reflow-exempt]')) return false;
+            return r.width > 0 && r.right > vw + 1 && getComputedStyle(e).position !== 'fixed';
+          })
+          .slice(0, 3)
+          .map((el) => `${el.tagName.toLowerCase()}.${[...el.classList].join('.')}`);
+      });
+
+    expect(await overflow()).toEqual([]);
+
+    // Each view holds the width on its own; the listing is the widest of them.
+    await page.locator('#btn-fmt-qiskit').click();
+    await expect(page.locator('#code-listing')).toBeVisible();
+    expect(await overflow()).toEqual([]);
+  });
 });

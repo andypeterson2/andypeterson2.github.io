@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/** Specs that drive a stub server on localhost, so they need connect-src widened. */
+const LOCALHOST_STUB_SPECS = /(classifier-live|nonogram-hardware)\.spec\.ts/;
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -15,13 +18,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /classifier-live\.spec\.ts/,
+      testIgnore: LOCALHOST_STUB_SPECS,
       use: { ...devices['Desktop Chrome'] },
     },
     {
-      // Drives a localhost SSE stub, which needs connect-src widened (port 4322).
+      // Drives a localhost stub, which needs connect-src widened (port 4322).
       name: 'chromium-dev-csp',
-      testMatch: /classifier-live\.spec\.ts/,
+      testMatch: LOCALHOST_STUB_SPECS,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:4322' },
     },
     // firefox + webkit are slower; run them only in full sweeps (E2E_ALL_BROWSERS=1,
@@ -30,12 +33,12 @@ export default defineConfig({
       ? [
           {
             name: 'firefox',
-            testIgnore: /classifier-live\.spec\.ts/,
+            testIgnore: LOCALHOST_STUB_SPECS,
             use: { ...devices['Desktop Firefox'] },
           },
           {
             name: 'webkit',
-            testIgnore: /classifier-live\.spec\.ts/,
+            testIgnore: LOCALHOST_STUB_SPECS,
             use: { ...devices['Desktop Safari'] },
           },
         ]
