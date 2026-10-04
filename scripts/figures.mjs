@@ -39,7 +39,14 @@ const DEFS =
   `<rect width="1" height="1" fill="${INK}"/><rect x="2" y="2" width="1" height="1" fill="${INK}"/>` +
   `</pattern></defs>`;
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Quotes included: `esc` feeds double-quoted attributes as well as text nodes.
+const esc = (s) =>
+  String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 const n = (v) => v.toLocaleString('en-US');
 
 function text(x, y, s, { size = 11, anchor = 'start', weight = 400, rotate } = {}) {

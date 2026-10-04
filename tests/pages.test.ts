@@ -31,7 +31,12 @@ describe('Nav (inline in BaseLayout)', () => {
   // filling the pane, so match the element rather than a literal class string.
   test('the content pane is the one <main> landmark', () => {
     // The prose above the element mentions <main> too, so count opening tags.
-    const markup = layoutSrc.replace(/<!--[\s\S]*?-->/g, '');
+    // One pass over nested comments leaves a `<!--` behind, so stripping repeats.
+    let markup = layoutSrc;
+    for (let pass = markup; ; pass = markup) {
+      markup = markup.replace(/<!--[\s\S]*?-->/g, '');
+      if (markup === pass) break;
+    }
     expect(markup.match(/<main\b/g)).toHaveLength(1);
     expect(markup).toMatch(/<main[\s\S]{0,160}id="main-content"/);
     expect(markup).toMatch(/'window-pane', 'site-pane'/);

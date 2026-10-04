@@ -71,7 +71,14 @@ function brace(x: number, top: number, bottom: number): string {
 }
 
 function esc(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Quotes included: every call site below interpolates into a double-quoted
+  // attribute, where an unescaped quote ends the value and starts a new one.
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /** What the oracle box says about itself, so two puzzles do not draw the same. */
