@@ -42,10 +42,9 @@ export const projects: Project[] = [
     slug: 'quantum-video-chat',
     description:
       'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, built at Qualcomm Institute.',
-    appUrl: 'https://quantum-interns-at-qualcomm-institiute.github.io/Quantum-Video-Chat/',
     tier: 'external',
     icon: 'video_dark.svg',
-    repoUrl: 'https://github.com/Quantum-Interns-at-Qualcomm-Institiute/Quantum-Video-Chat',
+    repoUrl: 'https://github.com/andypeterson2/bb84-video-chat',
     metrics: [
       { value: 'BB84', label: 'simulated QKD: sift -> QBER -> Cascade -> Toeplitz' },
       {

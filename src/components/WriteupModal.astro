@@ -11,8 +11,10 @@ interface Props {
   repoUrl?: string;
   /** A URL fragment that opens this writeup on arrival (e.g. /#about, where /about lands). */
   hash?: string;
+  /** Styles the trigger as the card's default action, for a project with no demo to launch. */
+  primary?: boolean;
 }
-const { slug, label = 'Full writeup', appUrl, repoUrl, hash } = Astro.props;
+const { slug, label = 'Full writeup', appUrl, repoUrl, hash, primary = false } = Astro.props;
 const external = (url: string) => url.startsWith('http');
 
 const entry = await getEntry('writeups', slug);
@@ -28,7 +30,7 @@ const modalId = `writeup-${slug}`;
     <>
       <button
         type="button"
-        class="action-btn writeup-trigger"
+        class:list={['action-btn', 'writeup-trigger', { 'action-btn--primary': primary }]}
         data-writeup-open={modalId}
         aria-haspopup="dialog"
       >

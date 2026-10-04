@@ -78,6 +78,7 @@ const { entry } = Astro.props;
             label="Writeup"
             appUrl={entry.project.appUrl}
             repoUrl={entry.project.repoUrl}
+            primary={!entry.project.appUrl}
           />
           <a
             href={entry.project.repoUrl}
