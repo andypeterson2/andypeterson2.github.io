@@ -40,4 +40,7 @@ __pycache__/
 
 # Local scratch file with raw PII (patterns for the retired name-leakage gate).
 # Never commit it.
-/secret.txt
+/secret.txt# directory is required before the file, then everything else there stays local.
+!.claude/
+.claude/*
+!.claude/settings.json
