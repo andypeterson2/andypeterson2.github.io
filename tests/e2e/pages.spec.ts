@@ -61,15 +61,6 @@ test.describe('Home page about content', () => {
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
-  // The long About opens from the Me card, and /about lands on it.
-  test('the longer version opens from the Me card', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: /The longer version/ }).click();
-    const dialog = page.getByRole('dialog', { name: 'The longer version' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('heading', { name: 'The research years' })).toBeVisible();
-  });
-
   test('projects appear on the timeline with metrics', async ({ page }) => {
     await page.goto('/');
     const projectEntries = page.locator('.timeline-entry--project');
@@ -77,10 +68,14 @@ test.describe('Home page about content', () => {
     await expect(projectEntries.first().locator('.tl-metric').first()).toBeVisible();
   });
 
-  test('/about opens the longer version on the home page', async ({ page }) => {
-    await page.goto('/about');
-    await expect(page).toHaveURL('/#about');
-    await expect(page.getByRole('dialog', { name: 'The longer version' })).toBeVisible();
+  // Contact moved under the Me card, so it is on the first screen without scrolling.
+  test('contact sits beside the intro, not below the work', async ({ page }) => {
+    await page.goto('/');
+    const contact = page.locator('#contact');
+    await expect(contact).toBeVisible();
+    const timeline = await page.locator('#projects').boundingBox();
+    const box = await contact.boundingBox();
+    expect(box!.y).toBeLessThan(timeline!.y);
   });
 });
 
@@ -124,11 +119,13 @@ test.describe('Home: the window chrome says what is in front and what to press',
     page,
   }) => {
     await page.goto('/');
-    await page.locator('[data-writeup-open="writeup-about"]').click();
-    const dialog = page.locator('#writeup-about');
+    const trigger = page.locator('[data-writeup-open]').first();
+    const id = await trigger.getAttribute('data-writeup-open');
+    await trigger.click();
+    const dialog = page.locator(`#${id!}`);
     await expect(dialog).toBeVisible();
     expect(await stripes(page, '.site-window > .title-bar')).toBe('none');
-    expect(await stripes(page, '#writeup-about .writeup-titlebar')).not.toBe('none');
+    expect(await stripes(page, `#${id!} .writeup-titlebar`)).not.toBe('none');
     await page.mouse.click(8, 450);
     await expect(dialog).toBeHidden();
     expect(await stripes(page, '.site-window > .title-bar')).not.toBe('none');

@@ -18,10 +18,8 @@
   --paper-3: #e3e1d9;
   --paper-4: #d4d2ca;
 
-  /* Semantic aliases for the two ink roles the stylesheets name by meaning. */
+  /* The ink role the stylesheets name by meaning; de-emphasis is size, weight or space. */
   --color-text: var(--ink);
-  --color-text-muted: #6b6960; /* the one muted gray — de-emphasized text, in the
-                                  same warm family as the ink. */
 
   /* One accent hue — the résumé document's section labels and the editor's active
      state. Distinct from the status light below; site chrome stays inkless. */
@@ -82,7 +80,7 @@
   --canvas-pad-y: 0.5vw;
   --canvas-pad-x: 2vw; /* canvas-pad: around the outer window, below the menu bar */
   --pane-pad-y: 1vw; /* pane-pad: inside a window, around its content / nested windows */
-  --pane-pad-x: 4vw;
+  --pane-pad-x: clamp(16px, 4vw, 40px); /* clamped: past the window's cap a vw inset eats content */
   --window-gap: clamp(8px, 1vw, 14px); /* gap between stacked windows */
 
   /* ── radius — controls are gently rounded; content and windows stay hard-edged.

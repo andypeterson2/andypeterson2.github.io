@@ -1,0 +1,266 @@
+{
+ "generated": "2026-09-30T19:50:32.911Z",
+ "definitions": {
+  "queries": "clueChecks from solveLocal: row placements tried. Each placement filters the open columns against the partly filled grid and stops at the first empty column, so it costs at most one whole-grid predicate evaluation. Read it as an UPPER BOUND on whole-grid predicate queries.",
+  "cellTests": "column iterations inside a placement: one bit taken from the row pattern and used to filter one column.",
+  "bitTests": "evaluations of ((cp >> r) & 1) === bit inside the column filter: one candidate column pattern tested against one placed cell. The smallest unit of work the search executes.",
+  "patternSteps": "recursive calls in the line-pattern generator across all rows and columns; setup done once before the search.",
+  "candidates": "product of row pattern counts: grids satisfying the row clues alone.",
+  "predicateGates": "classicalCost().predicateGates: fan-in-2 gates to decide one grid against all clues.",
+  "exhaustiveWork": "2^cells x predicateGates.",
+  "groverRounds": "optimalIterations(M, cells).",
+  "percentiles": "nearest-rank: sorted[ceil(p*n)-1]. median = p50.",
+  "hardware": "src/data/nonogram-hardware-cost.json row for (shape, M) when one exists; twoQubitPerRound = two_qubit / iterations.",
+  "sampling": "2x2..4x4 enumerate every grid and deduplicate by (rowClues, colClues), so every solvable puzzle appears once. 5x5 draws random grids uniformly, which weights a puzzle by its solution count.",
+  "predicateGatesMedianM1": "Median fan-in-2 gate cost of one whole-grid clue check, over boards with a single solution."
+ },
+ "shapes": [
+  {
+   "shape": "2x2",
+   "cells": 4,
+   "puzzles": 15,
+   "sampled": null,
+   "placements": {
+    "min": 2,
+    "median": 3,
+    "p90": 4,
+    "max": 6
+   },
+   "bitTests": {
+    "min": 4,
+    "median": 6,
+    "p90": 8,
+    "max": 14
+   },
+   "predicateGates": {
+    "min": 7,
+    "median": 11,
+    "max": 15
+   },
+   "exhaustiveQueries": 16,
+   "groverRoundsM1": 3,
+   "winPctAll": 26.67,
+   "winPctM1": 28.57,
+   "puzzlesM1": 14,
+   "placementsM1": {
+    "min": 2,
+    "median": 3,
+    "p90": 4,
+    "max": 4
+   },
+   "predicateGatesMedianM1": 11
+  },
+  {
+   "shape": "2x3",
+   "cells": 6,
+   "puzzles": 58,
+   "sampled": null,
+   "placements": {
+    "min": 2,
+    "median": 4,
+    "p90": 6,
+    "max": 9
+   },
+   "bitTests": {
+    "min": 6,
+    "median": 10,
+    "p90": 23,
+    "max": 29
+   },
+   "predicateGates": {
+    "min": 11,
+    "median": 19,
+    "max": 27
+   },
+   "exhaustiveQueries": 64,
+   "groverRoundsM1": 6,
+   "winPctAll": 82.76,
+   "winPctM1": 92.31,
+   "puzzlesM1": 52,
+   "placementsM1": {
+    "min": 2,
+    "median": 4,
+    "p90": 5,
+    "max": 6
+   },
+   "predicateGatesMedianM1": 19
+  },
+  {
+   "shape": "2x4",
+   "cells": 8,
+   "puzzles": 233,
+   "sampled": null,
+   "placements": {
+    "min": 2,
+    "median": 5,
+    "p90": 10,
+    "max": 13
+   },
+   "bitTests": {
+    "min": 8,
+    "median": 16,
+    "p90": 35,
+    "max": 49
+   },
+   "predicateGates": {
+    "min": 15,
+    "median": 31,
+    "max": 43
+   },
+   "exhaustiveQueries": 256,
+   "groverRoundsM1": 12,
+   "winPctAll": 87.98,
+   "winPctM1": 97.14,
+   "puzzlesM1": 210,
+   "placementsM1": {
+    "min": 2,
+    "median": 5,
+    "p90": 7,
+    "max": 13
+   },
+   "predicateGatesMedianM1": 31
+  },
+  {
+   "shape": "3x3",
+   "cells": 9,
+   "puzzles": 445,
+   "sampled": null,
+   "placements": {
+    "min": 3,
+    "median": 6,
+    "p90": 11,
+    "max": 30
+   },
+   "bitTests": {
+    "min": 9,
+    "median": 17,
+    "p90": 38,
+    "max": 100
+   },
+   "predicateGates": {
+    "min": 17,
+    "median": 35,
+    "max": 53
+   },
+   "exhaustiveQueries": 512,
+   "groverRoundsM1": 17,
+   "winPctAll": 92.13,
+   "winPctM1": 100,
+   "puzzlesM1": 384,
+   "placementsM1": {
+    "min": 3,
+    "median": 6,
+    "p90": 8,
+    "max": 15
+   },
+   "predicateGatesMedianM1": 32
+  },
+  {
+   "shape": "3x4",
+   "cells": 12,
+   "puzzles": 3588,
+   "sampled": null,
+   "placements": {
+    "min": 3,
+    "median": 8,
+    "p90": 16,
+    "max": 56
+   },
+   "bitTests": {
+    "min": 12,
+    "median": 29,
+    "p90": 63,
+    "max": 220
+   },
+   "predicateGates": {
+    "min": 23,
+    "median": 54,
+    "max": 79
+   },
+   "exhaustiveQueries": 4096,
+   "groverRoundsM1": 50,
+   "winPctAll": 99.28,
+   "winPctM1": 100,
+   "puzzlesM1": 3152,
+   "placementsM1": {
+    "min": 3,
+    "median": 8,
+    "p90": 12,
+    "max": 25
+   },
+   "predicateGatesMedianM1": 52
+  },
+  {
+   "shape": "4x4",
+   "cells": 16,
+   "puzzles": 58196,
+   "sampled": null,
+   "placements": {
+    "min": 4,
+    "median": 12,
+    "p90": 23,
+    "max": 164
+   },
+   "bitTests": {
+    "min": 16,
+    "median": 51,
+    "p90": 106,
+    "max": 650
+   },
+   "predicateGates": {
+    "min": 31,
+    "median": 83,
+    "max": 127
+   },
+   "exhaustiveQueries": 65536,
+   "groverRoundsM1": 201,
+   "winPctAll": 99.95,
+   "winPctM1": 100,
+   "puzzlesM1": 52362,
+   "placementsM1": {
+    "min": 4,
+    "median": 11,
+    "p90": 20,
+    "max": 56
+   },
+   "predicateGatesMedianM1": 79
+  },
+  {
+   "shape": "5x5",
+   "cells": 25,
+   "puzzles": 396554,
+   "sampled": {
+    "grids": 400000,
+    "seed": 20260930
+   },
+   "placements": {
+    "min": 5,
+    "median": 25,
+    "p90": 65,
+    "max": 1030
+   },
+   "bitTests": {
+    "min": 25,
+    "median": 144,
+    "p90": 383,
+    "max": 4530
+   },
+   "predicateGates": {
+    "min": 49,
+    "median": 179,
+    "max": 299
+   },
+   "exhaustiveQueries": 33554432,
+   "groverRoundsM1": 4549,
+   "winPctAll": 99.99,
+   "winPctM1": 100,
+   "puzzlesM1": 299990,
+   "placementsM1": {
+    "min": 5,
+    "median": 21,
+    "p90": 43,
+    "max": 246
+   }
+  }
+ ]
+}

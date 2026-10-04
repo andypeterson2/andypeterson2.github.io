@@ -22,15 +22,18 @@ describe('Sitemap generation', () => {
     expect(existsSync(resolve(DIST, 'sitemap-0.xml'))).toBe(true);
   });
 
-  test('sitemap contains every local demo page (detail surface retired)', () => {
+  test('sitemap contains every local demo page and every project page', () => {
     const xml = readFileSync(resolve(DIST, 'sitemap-0.xml'), 'utf-8');
     for (const project of projects.filter((p) => p.appUrl?.startsWith('/'))) {
       // The demo URL is the card's appUrl (not slug-derived — the classifier
       // demo lives on the /projects/ai-ml/app/ umbrella).
       expect(xml, `missing sitemap entry for ${project.slug}`).toContain(project.appUrl!);
     }
-    // The retired detail pages must not resurface.
-    expect(xml).not.toMatch(/\/projects\/[\w-]+\/<\/loc>/);
+    for (const project of projects) {
+      expect(xml, `missing project page for ${project.slug}`).toContain(
+        `/projects/${project.slug}/`,
+      );
+    }
   });
 
   test('sitemap contains core pages', () => {

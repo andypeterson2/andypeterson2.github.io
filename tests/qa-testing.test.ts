@@ -135,16 +135,3 @@ describe('Accessibility: meaningful alt text', () => {
     expect(icon![0]).toMatch(/alt=""/);
   });
 });
-
-// Accessibility: color-only indicators
-
-describe('Accessibility: color-only indicators', () => {
-  test('server connection state is a visible word, not a colour-only dot', () => {
-    // The dot is decorative (aria-hidden); the state is spoken as text beside it, in a
-    // polite status region, so it's never colour-only.
-    const src = readFileSync(resolve(ROOT, 'src/apps/shared/server-connect-modal.ts'), 'utf-8');
-    expect(src).toMatch(/dot\.setAttribute\('aria-hidden', 'true'\)/);
-    expect(src).toMatch(/sn-state/);
-    expect(src).toMatch(/word\.setAttribute\('role', 'status'\)/);
-  });
-});

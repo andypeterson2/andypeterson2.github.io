@@ -5,6 +5,11 @@
  * (a single glyph, square), --block (full width). Hover and keyboard focus invert to an ink
  * fill; focus also gets the site's ink ring. Disabled is one treatment everywhere. The site
  * chrome's window push-button (system.css .btn) is a different object. ── */
+/* Outranks the browser's own [hidden] rule, which the class below would otherwise beat. */
+.s6-btn[hidden] {
+  display: none;
+}
+
 .s6-btn {
   display: inline-flex;
   align-items: center;
@@ -52,18 +57,56 @@
   min-width: 32px;
   padding: 2px;
 }
+/* Unavailable, and still legible: the stipple is the 1-bit way to say a control is out
+   of reach, where fading the whole button would take its border with it. One treatment
+   for both variants, so a disabled primary reads as disabled first. */
 .s6-btn:disabled,
-.s6-btn:disabled:hover {
-  opacity: 0.4;
-  cursor: default;
-  background: var(--paper);
-  color: var(--ink);
-}
 .s6-btn--primary:disabled,
-.s6-btn--primary:disabled:hover {
-  background: var(--ink);
-  color: var(--paper);
+.s6-btn[aria-disabled='true'] {
+  cursor: default;
+  background: var(--dither-light);
+
+  /* A hard 1-bit halo, so the label reads over the stipple it sits on rather than
+     tangling with the dots. No blur: a soft edge would be a grey. */
+  text-shadow:
+    1px 0 0 var(--paper),
+    -1px 0 0 var(--paper),
+    0 1px 0 var(--paper),
+    0 -1px 0 var(--paper),
+    1px 1px 0 var(--paper),
+    -1px -1px 0 var(--paper),
+    1px -1px 0 var(--paper),
+    -1px 1px 0 var(--paper);
 }
+
+/* Under the pointer the whole surface inverts, stipple and halo with it. */
+.s6-btn:disabled:hover,
+.s6-btn:disabled:focus-visible,
+.s6-btn--primary:disabled:hover,
+.s6-btn[aria-disabled='true']:hover,
+.s6-btn[aria-disabled='true']:focus-visible {
+  cursor: default;
+  background: var(--dither-light-inverted);
+  color: var(--paper);
+  text-shadow:
+    1px 0 0 var(--ink),
+    -1px 0 0 var(--ink),
+    0 1px 0 var(--ink),
+    0 -1px 0 var(--ink),
+    1px 1px 0 var(--ink),
+    -1px -1px 0 var(--ink),
+    1px -1px 0 var(--ink),
+    -1px 1px 0 var(--ink);
+}
+/* An unavailable button carrying a title has something to say about why, and the help
+   cursor is the invitation to hover and read it. aria-disabled rather than the disabled
+   attribute is what keeps that reachable: a disabled button leaves the tab order, so a
+   keyboard user could never find out why it will not work. */
+.s6-btn:disabled[title],
+.s6-btn[aria-disabled='true'][title] {
+  cursor: help;
+}
+
 /* Touch: every app button is a 44px target. */
 @media (pointer: coarse) {
   .s6-btn,

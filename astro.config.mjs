@@ -72,16 +72,6 @@ export default defineConfig({
     '/underconstruction.html': '/',
     '/underconstruction': '/',
     '/resume': '/',
-    // #about opens the home page's About writeup. trailingSlash 'ignore' makes this cover
-    // '/about/' too; defining both collides.
-    '/about': '/#about',
-    // The legacy project-detail surface is retired — the home timeline is the
-    // one showcase surface. Exact paths only (the /app/ demo pages live on).
-    '/projects': '/#projects',
-    '/projects/latex-resume-editor': '/#latex-resume-editor',
-    '/projects/quantum-video-chat': '/#quantum-video-chat',
-    '/projects/quantum-nonogram-solver': '/#quantum-nonogram-solver',
-    '/projects/quantum-ml-classifier': '/#quantum-ml-classifier',
     // The classifier demo lives under the AI/ML umbrella page.
     '/projects/quantum-ml-classifier/app': '/projects/ai-ml/app/',
     // /projects/ai-ml without /app/ anchors to the timeline card.

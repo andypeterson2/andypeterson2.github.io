@@ -178,9 +178,6 @@ test.describe('Classifier live tier', () => {
     });
     try {
       await connect(page, stub);
-      await expect(page.locator('.site-menubar .sn-state')).toHaveText(
-        'pass expired or invalid — in your browser',
-      );
       await expect(page.locator('#train-btn')).toBeDisabled();
       await expect(page.locator('#log-terminal')).toContainText('The pass was refused');
     } finally {

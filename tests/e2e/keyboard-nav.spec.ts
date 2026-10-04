@@ -11,8 +11,7 @@ test.describe('Keyboard navigation', () => {
 
   test('Enter activates a focused link', async ({ page }) => {
     await page.goto('/');
-    // Focus the first project link on the timeline directly (the Me card's first
-    // .action-btn is now the "The longer version" writeup button).
+    // Scoped to the timeline: the page carries .action-btn buttons elsewhere too.
     await page.locator('.timeline a.action-btn').first().focus();
     await page.keyboard.press('Enter');
     await page.waitForURL(/\/projects\/[\w-]+\//);
@@ -77,7 +76,7 @@ test.describe('Focused inputs keep their text visible', () => {
   const cases = [
     // The Train form is folded and disabled offline: open it and enable it to type.
     { path: '/projects/ai-ml/app/', selector: '#epochs', unfold: '#train-form' },
-    { path: '/projects/quantum-nonogram-solver/app/', selector: '#threshold-input' },
+    { path: '/projects/quantum-nonogram-solver/app/', selector: '#btn-clear' },
   ];
   for (const { path, selector, unfold } of cases) {
     test(`${selector} on ${path}`, async ({ page }) => {
