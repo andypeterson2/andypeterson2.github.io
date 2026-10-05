@@ -50,8 +50,10 @@ localhost target only while the page itself is served from localhost:
 
 1. a per-service parameter, `?classifiers=http://localhost:5001`
 2. `?backend=http://host:port`, which applies to every service at once
-3. an override previously saved to `localStorage`
-4. the page's own `<meta name="site-backend" data-port>`
+3. the default the page supplies through `<meta name="site-backend" data-port>`
+
+The live tier is separate: with a recruiter pass, `src/apps/shared/pass.ts` warms the
+gateway and dispatches `navbar:connect`, and an app opens its connection there.
 
 ## The backend contract
 
