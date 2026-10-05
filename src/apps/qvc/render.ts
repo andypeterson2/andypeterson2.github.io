@@ -181,6 +181,7 @@ function demoTier(): string {
         Both ends of the key exchange in this tab. No camera, no microphone, no second person.
       </p>
       ${state.demoRunning ? renderDashboard() : ''}
+      ${state.demoRunning ? '<button class="s6-btn s6-btn--sm" data-action="open-analytics">Open the analytics screen</button>' : ''}
     </div>`;
 }
 
@@ -316,6 +317,7 @@ export function renderCall(): string {
           data-action="toggle-mute"
           aria-pressed="${String(state.muted)}"
         >${state.muted ? 'Unmute' : 'Mute'}</button>
+        <button class="s6-btn s6-btn--sm" data-action="open-analytics">Analytics</button>
         <button class="s6-btn s6-btn--sm" data-action="leave">Leave</button>
       </div>
     </section>`;

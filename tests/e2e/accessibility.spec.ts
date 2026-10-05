@@ -51,6 +51,7 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
   { name: 'nonogram, dark', path: NONOGRAM, dark: true },
   { name: 'nonogram, phone', path: NONOGRAM, phone: true },
   { name: 'video chat', path: QVC },
+  { name: 'video chat analytics', path: '/projects/quantum-video-chat/analytics/' },
   { name: 'video chat, dark', path: QVC, dark: true },
   {
     name: 'video chat, simulation running',

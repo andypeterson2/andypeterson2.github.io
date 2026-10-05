@@ -7,7 +7,8 @@
         "/projects/ai-ml/app/",
         "/projects/latex-resume-editor/app/",
         "/projects/quantum-nonogram-solver/app/",
-        "/projects/quantum-video-chat/app/"
+        "/projects/quantum-video-chat/app/",
+        "/projects/quantum-video-chat/analytics/"
       ],
       "settings": {
         "formFactor": "desktop",

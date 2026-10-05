@@ -117,6 +117,11 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
       if (el instanceof HTMLInputElement) state.optical.token = el.value;
       void saveBench();
     },
+    'open-analytics': () => {
+      void import('./bus').then(({ openAnalyticsWindow }) => {
+        openAnalyticsWindow();
+      });
+    },
     'copy-link': () => {
       void navigator.clipboard.writeText(state.joinLink).then(
         () => {
@@ -167,9 +172,17 @@ function onSubmit(e: Event): void {
 async function startDemo(): Promise<void> {
   const { runDemo, setPhaseSink } = await import('./demo');
   const { applyEnginePhase } = await import('./engine-state');
+  const { openBus, startPublishing, logEvent } = await import('./bus');
   let firstKey = true;
   setPhaseSink((s) => {
     applyEnginePhase(s, showToast);
+    // The timeline is the point of the analytics screen, so each phase worth a
+    // row goes on the bus as it happens rather than waiting for the next tick.
+    if (s.phase === 'minted') logEvent('minted', { keyIndex: s.keyIndex });
+    else if (s.phase === 'rotated') logEvent('rotated', { keyIndex: s.keyIndex });
+    else if (s.phase === 'mode') logEvent('mode', { mode: s.mode });
+    else if (s.phase === 'exhausted') logEvent('compromised');
+    else if (s.phase === 'failed' && s.reason === 'qber-exceeded') logEvent('qber-abort');
     // The first mint is what says the exchange works; later ones are the same
     // event repeating, and a key every few seconds is not worth a beacon each.
     if (s.phase === 'minted' && firstKey) {
@@ -184,6 +197,11 @@ async function startDemo(): Promise<void> {
   state.dashboardExpanded = true;
   // The simulation drives alice, so the eavesdropper toggle belongs to it.
   state.isInitiator = true;
+  // The analytics screen reads the same snapshots a real call publishes, so the
+  // simulation feeds it too.
+  await openBus(() => undefined);
+  startPublishing();
+  logEvent('call-start');
   track({ app: 'qvc', event: 'run.start', tier: 'browser', variant: 'sim' });
   render();
   await runDemo();
@@ -197,6 +215,8 @@ async function saveBench(): Promise<void> {
 async function setDemoEavesdropper(on: boolean): Promise<void> {
   const { currentDemo } = await import('./demo');
   currentDemo()?.setEavesdropper(on);
+  const { logEvent } = await import('./bus');
+  logEvent('eve', { on });
   track({
     app: 'qvc',
     event: 'run.start',
