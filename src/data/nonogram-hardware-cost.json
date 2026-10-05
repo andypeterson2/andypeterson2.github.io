@@ -1,0 +1,642 @@
+{
+ "target": "fake_torino",
+ "qiskit": "2.4.1",
+ "optimization_level": 3,
+ "seeds": 24,
+ "ancillas": 2,
+ "note": "Each figure is one transpiled circuit: the shallowest of the seeds tried, reported whole, because depth and gate count disagree between layouts. The _range fields give what that metric took across every run of its arm, seeds and representative boards together. The main figures give synthesis the spare qubits a real device has; the _noaux figures are the same circuit compiled with none; the _clue figures replace Qiskit's answer-marking oracle with one built from the clues, over one flag qubit per line.",
+ "spread_floor": 100,
+ "worst_spread": 0.61392,
+ "rows": [
+  {
+   "rows": 1,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 0,
+   "boards": 2,
+   "ancillas": 0,
+   "depth": 4,
+   "gates": 4,
+   "two_qubit": 0,
+   "depth_range": [
+    4,
+    4
+   ],
+   "two_qubit_range": [
+    0,
+    0
+   ],
+   "depth_noaux": 4,
+   "gates_noaux": 4,
+   "two_qubit_noaux": 0,
+   "depth_noaux_range": [
+    4,
+    4
+   ],
+   "two_qubit_noaux_range": [
+    0,
+    0
+   ],
+   "depth_clue": 4,
+   "gates_clue": 4,
+   "two_qubit_clue": 0,
+   "qubits_clue": 5,
+   "depth_clue_range": [
+    4,
+    4
+   ],
+   "two_qubit_clue_range": [
+    0,
+    0
+   ]
+  },
+  {
+   "rows": 1,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 1,
+   "boards": 4,
+   "ancillas": 0,
+   "depth": 9,
+   "gates": 15,
+   "two_qubit": 2,
+   "depth_range": [
+    9,
+    10
+   ],
+   "two_qubit_range": [
+    2,
+    2
+   ],
+   "depth_noaux": 9,
+   "gates_noaux": 15,
+   "two_qubit_noaux": 2,
+   "depth_noaux_range": [
+    9,
+    9
+   ],
+   "two_qubit_noaux_range": [
+    2,
+    2
+   ],
+   "depth_clue": 127,
+   "gates_clue": 183,
+   "two_qubit_clue": 38,
+   "qubits_clue": 7,
+   "depth_clue_range": [
+    127,
+    206
+   ],
+   "two_qubit_clue_range": [
+    38,
+    68
+   ]
+  },
+  {
+   "rows": 1,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 2,
+   "boards": 8,
+   "ancillas": 1,
+   "depth": 135,
+   "gates": 190,
+   "two_qubit": 37,
+   "depth_range": [
+    135,
+    145
+   ],
+   "two_qubit_range": [
+    37,
+    39
+   ],
+   "depth_noaux": 135,
+   "gates_noaux": 190,
+   "two_qubit_noaux": 37,
+   "depth_noaux_range": [
+    135,
+    144
+   ],
+   "two_qubit_noaux_range": [
+    37,
+    39
+   ],
+   "depth_clue": 510,
+   "gates_clue": 931,
+   "two_qubit_clue": 195,
+   "qubits_clue": 9,
+   "depth_clue_range": [
+    510,
+    972
+   ],
+   "two_qubit_clue_range": [
+    195,
+    368
+   ]
+  },
+  {
+   "rows": 2,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 1,
+   "boards": 4,
+   "ancillas": 0,
+   "depth": 9,
+   "gates": 15,
+   "two_qubit": 2,
+   "depth_range": [
+    9,
+    10
+   ],
+   "two_qubit_range": [
+    2,
+    2
+   ],
+   "depth_noaux": 9,
+   "gates_noaux": 15,
+   "two_qubit_noaux": 2,
+   "depth_noaux_range": [
+    9,
+    9
+   ],
+   "two_qubit_noaux_range": [
+    2,
+    2
+   ],
+   "depth_clue": 113,
+   "gates_clue": 205,
+   "two_qubit_clue": 42,
+   "qubits_clue": 7,
+   "depth_clue_range": [
+    113,
+    212
+   ],
+   "two_qubit_clue_range": [
+    42,
+    72
+   ]
+  },
+  {
+   "rows": 2,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 3,
+   "boards": 14,
+   "ancillas": 2,
+   "depth": 327,
+   "gates": 466,
+   "two_qubit": 90,
+   "depth_range": [
+    327,
+    334
+   ],
+   "two_qubit_range": [
+    90,
+    90
+   ],
+   "depth_noaux": 432,
+   "gates_noaux": 577,
+   "two_qubit_noaux": 111,
+   "depth_noaux_range": [
+    432,
+    438
+   ],
+   "two_qubit_noaux_range": [
+    111,
+    113
+   ],
+   "depth_clue": 1014,
+   "gates_clue": 2575,
+   "two_qubit_clue": 566,
+   "qubits_clue": 10,
+   "depth_clue_range": [
+    1014,
+    1710
+   ],
+   "two_qubit_clue_range": [
+    536,
+    725
+   ]
+  },
+  {
+   "rows": 2,
+   "cols": 2,
+   "solutions": 2,
+   "iterations": 2,
+   "boards": 1,
+   "ancillas": 2,
+   "depth": 300,
+   "gates": 443,
+   "two_qubit": 86,
+   "depth_range": [
+    300,
+    300
+   ],
+   "two_qubit_range": [
+    86,
+    86
+   ],
+   "depth_noaux": 435,
+   "gates_noaux": 576,
+   "two_qubit_noaux": 111,
+   "depth_noaux_range": [
+    435,
+    442
+   ],
+   "two_qubit_noaux_range": [
+    111,
+    113
+   ],
+   "depth_clue": 1000,
+   "gates_clue": 2474,
+   "two_qubit_clue": 544,
+   "qubits_clue": 10,
+   "depth_clue_range": [
+    1000,
+    1336
+   ],
+   "two_qubit_clue_range": [
+    512,
+    561
+   ]
+  },
+  {
+   "rows": 2,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 6,
+   "boards": 52,
+   "ancillas": 2,
+   "depth": 1630,
+   "gates": 2714,
+   "two_qubit": 541,
+   "depth_range": [
+    1630,
+    1825
+   ],
+   "two_qubit_range": [
+    541,
+    617
+   ],
+   "depth_noaux": 5472,
+   "gates_noaux": 8808,
+   "two_qubit_noaux": 1915,
+   "depth_noaux_range": [
+    5472,
+    5571
+   ],
+   "two_qubit_noaux_range": [
+    1900,
+    1942
+   ],
+   "depth_clue": 4071,
+   "gates_clue": 10148,
+   "two_qubit_clue": 2232,
+   "qubits_clue": 13,
+   "depth_clue_range": [
+    4071,
+    6075
+   ],
+   "two_qubit_clue_range": [
+    1966,
+    2701
+   ]
+  },
+  {
+   "rows": 2,
+   "cols": 3,
+   "solutions": 2,
+   "iterations": 4,
+   "boards": 6,
+   "ancillas": 2,
+   "depth": 1554,
+   "gates": 2586,
+   "two_qubit": 517,
+   "depth_range": [
+    1554,
+    1792
+   ],
+   "two_qubit_range": [
+    517,
+    609
+   ],
+   "depth_noaux": 5461,
+   "gates_noaux": 8790,
+   "two_qubit_noaux": 1915,
+   "depth_noaux_range": [
+    5461,
+    5564
+   ],
+   "two_qubit_noaux_range": [
+    1900,
+    1942
+   ],
+   "depth_clue": 3684,
+   "gates_clue": 8806,
+   "two_qubit_clue": 1846,
+   "qubits_clue": 13,
+   "depth_clue_range": [
+    3684,
+    4961
+   ],
+   "two_qubit_clue_range": [
+    1838,
+    2206
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 1,
+   "solutions": 1,
+   "iterations": 2,
+   "boards": 8,
+   "ancillas": 1,
+   "depth": 135,
+   "gates": 190,
+   "two_qubit": 37,
+   "depth_range": [
+    135,
+    145
+   ],
+   "two_qubit_range": [
+    37,
+    39
+   ],
+   "depth_noaux": 135,
+   "gates_noaux": 190,
+   "two_qubit_noaux": 37,
+   "depth_noaux_range": [
+    135,
+    144
+   ],
+   "two_qubit_noaux_range": [
+    37,
+    39
+   ],
+   "depth_clue": 551,
+   "gates_clue": 975,
+   "two_qubit_clue": 212,
+   "qubits_clue": 9,
+   "depth_clue_range": [
+    551,
+    962
+   ],
+   "two_qubit_clue_range": [
+    212,
+    338
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 2,
+   "solutions": 1,
+   "iterations": 6,
+   "boards": 52,
+   "ancillas": 2,
+   "depth": 1630,
+   "gates": 2714,
+   "two_qubit": 541,
+   "depth_range": [
+    1630,
+    1825
+   ],
+   "two_qubit_range": [
+    541,
+    617
+   ],
+   "depth_noaux": 5472,
+   "gates_noaux": 8808,
+   "two_qubit_noaux": 1915,
+   "depth_noaux_range": [
+    5472,
+    5571
+   ],
+   "two_qubit_noaux_range": [
+    1900,
+    1942
+   ],
+   "depth_clue": 3830,
+   "gates_clue": 9071,
+   "two_qubit_clue": 1986,
+   "qubits_clue": 13,
+   "depth_clue_range": [
+    3830,
+    6426
+   ],
+   "two_qubit_clue_range": [
+    1913,
+    2894
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 2,
+   "solutions": 2,
+   "iterations": 4,
+   "boards": 6,
+   "ancillas": 2,
+   "depth": 1462,
+   "gates": 2401,
+   "two_qubit": 477,
+   "depth_range": [
+    1462,
+    1793
+   ],
+   "two_qubit_range": [
+    477,
+    609
+   ],
+   "depth_noaux": 5468,
+   "gates_noaux": 8789,
+   "two_qubit_noaux": 1915,
+   "depth_noaux_range": [
+    5468,
+    5566
+   ],
+   "two_qubit_noaux_range": [
+    1900,
+    1942
+   ],
+   "depth_clue": 3877,
+   "gates_clue": 9031,
+   "two_qubit_clue": 1904,
+   "qubits_clue": 13,
+   "depth_clue_range": [
+    3877,
+    5079
+   ],
+   "two_qubit_clue_range": [
+    1904,
+    2162
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 1,
+   "iterations": 17,
+   "boards": 384,
+   "ancillas": 2,
+   "depth": 6246,
+   "gates": 15248,
+   "two_qubit": 3234,
+   "depth_range": [
+    6246,
+    9437
+   ],
+   "two_qubit_range": [
+    3027,
+    3838
+   ],
+   "depth_noaux": 49468,
+   "gates_noaux": 88562,
+   "two_qubit_noaux": 19371,
+   "depth_noaux_range": [
+    49468,
+    52719
+   ],
+   "two_qubit_noaux_range": [
+    19266,
+    19899
+   ],
+   "depth_clue": 27585,
+   "gates_clue": 63602,
+   "two_qubit_clue": 13918,
+   "qubits_clue": 17,
+   "depth_clue_range": [
+    27585,
+    36454
+   ],
+   "two_qubit_clue_range": [
+    13845,
+    17560
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 2,
+   "iterations": 12,
+   "boards": 59,
+   "ancillas": 2,
+   "depth": 5877,
+   "gates": 15001,
+   "two_qubit": 3122,
+   "depth_range": [
+    5877,
+    9485
+   ],
+   "two_qubit_range": [
+    2966,
+    3856
+   ],
+   "depth_noaux": 52289,
+   "gates_noaux": 93483,
+   "two_qubit_noaux": 20450,
+   "depth_noaux_range": [
+    52289,
+    55673
+   ],
+   "two_qubit_noaux_range": [
+    20380,
+    21138
+   ],
+   "depth_clue": 28086,
+   "gates_clue": 59768,
+   "two_qubit_clue": 13080,
+   "qubits_clue": 17,
+   "depth_clue_range": [
+    28086,
+    30849
+   ],
+   "two_qubit_clue_range": [
+    12918,
+    13926
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 4,
+   "iterations": 8,
+   "boards": 1,
+   "ancillas": 2,
+   "depth": 6721,
+   "gates": 16995,
+   "two_qubit": 3582,
+   "depth_range": [
+    6721,
+    10529
+   ],
+   "two_qubit_range": [
+    3369,
+    4316
+   ],
+   "depth_noaux": 58204,
+   "gates_noaux": 103968,
+   "two_qubit_noaux": 22776,
+   "depth_noaux_range": [
+    58204,
+    62055
+   ],
+   "two_qubit_noaux_range": [
+    22680,
+    23449
+   ],
+   "depth_clue": 20008,
+   "gates_clue": 41675,
+   "two_qubit_clue": 9089,
+   "qubits_clue": 17,
+   "depth_clue_range": [
+    20008,
+    20965
+   ],
+   "two_qubit_clue_range": [
+    8925,
+    9330
+   ]
+  },
+  {
+   "rows": 3,
+   "cols": 3,
+   "solutions": 6,
+   "iterations": 7,
+   "boards": 1,
+   "ancillas": 2,
+   "depth": 7751,
+   "gates": 19772,
+   "two_qubit": 4162,
+   "depth_range": [
+    7751,
+    12480
+   ],
+   "two_qubit_range": [
+    3974,
+    5106
+   ],
+   "depth_noaux": 71259,
+   "gates_noaux": 127235,
+   "two_qubit_noaux": 27864,
+   "depth_noaux_range": [
+    71259,
+    76371
+   ],
+   "two_qubit_noaux_range": [
+    27814,
+    28887
+   ],
+   "depth_clue": 18739,
+   "gates_clue": 38537,
+   "two_qubit_clue": 8366,
+   "qubits_clue": 17,
+   "depth_clue_range": [
+    18739,
+    20044
+   ],
+   "two_qubit_clue_range": [
+    8071,
+    8609
+   ]
+  }
+ ]
+}

@@ -1,0 +1,265 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WriteupModal from '../../components/WriteupModal.astro';
+import { projects } from '../../data/projects';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({ params: { slug: project.slug } }));
+}
+
+const { slug } = Astro.params;
+const at = projects.findIndex((p) => p.slug === slug);
+const project = projects[at]!;
+const prev = at > 0 ? projects[at - 1] : null;
+const next = at < projects.length - 1 ? projects[at + 1] : null;
+
+// Where the demo runs, said once rather than implied — the same wording the
+// timeline cards use.
+const tier =
+  project.tier === 'browser' ? 'runs in your browser' : 'runs elsewhere, opens in a new tab';
+---
+
+<BaseLayout title={project.title} description={project.description} fillPane>
+  <div class="project-page">
+    <div class="project-main">
+      <div class="project-lede">
+        <header class="project-head">
+          <img src={`/icons/${project.icon}`} alt="" class="project-icon" width="64" height="64" />
+          <div class="project-headings">
+            <h1 class="project-title">{project.title}</h1>
+            <p class="project-tier">{tier}</p>
+          </div>
+        </header>
+
+        <p class="project-desc">{project.description}</p>
+
+        <div class="project-actions">
+          {
+            project.appUrl && (
+              <a
+                href={project.appUrl}
+                class="action-btn action-btn--primary"
+                {...(project.tier === 'external'
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                Open the demo
+              </a>
+            )
+          }
+          <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
+            Source
+          </a>
+          <WriteupModal slug={slug!} />
+        </div>
+      </div>
+
+      <div class="project-facts">
+        {
+          project.metrics && project.metrics.length > 0 && (
+            <div class="project-section">
+              <div class="section-rule">
+                <span>What it does</span>
+              </div>
+              <ul class="project-metrics">
+                {project.metrics.map((m) => (
+                  <li>
+                    <b>{m.value}</b> {m.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        {
+          project.tech && project.tech.length > 0 && (
+            <div class="project-section">
+              <div class="section-rule">
+                <span>Built with</span>
+              </div>
+              <ul class="project-tech">
+                {project.tech.map((t) => (
+                  <li class="btn">{t}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="project-section project-footer">
+      <div class="section-rule"><span>Browse projects</span></div>
+      <nav class="project-nav" aria-label="Project navigation">
+        {
+          prev ? (
+            <a href={`/projects/${prev.slug}/`} class="nav-link">
+              <span class="nav-dir">&lt;- Previous</span>
+              <span class="nav-title">{prev.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next ? (
+            <a href={`/projects/${next.slug}/`} class="nav-link nav-next">
+              <span class="nav-dir">Next -&gt;</span>
+              <span class="nav-title">{next.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+      </nav>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .project-page {
+    padding: clamp(12px, 2vw, 28px) 0;
+
+    /* fillPane makes this the growing child, so the footer below sits at the
+       foot of a short page. */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project-footer {
+    margin-top: auto;
+  }
+
+  /* Two columns while there is room for both: the lede keeps a readable measure and
+     the numbers take the width beside it. */
+  .project-main {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 0 clamp(20px, 3vw, 48px);
+    align-items: start;
+  }
+
+  .project-lede {
+    max-width: 68ch;
+  }
+
+  .project-head {
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.5vw, 20px);
+  }
+
+  .project-icon {
+    width: clamp(56px, 6vw, 88px);
+    height: clamp(56px, 6vw, 88px);
+    flex-shrink: 0;
+  }
+
+  .project-headings {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .project-title {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  .project-tier {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  .project-desc {
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    margin: clamp(10px, 1.5vw, 18px) 0;
+  }
+
+  .project-actions {
+    display: flex;
+    flex-wrap: wrap;
+
+    /* Centres the line: the primary button carries a 4px margin for its ring, and a
+       stretched line would grow its neighbours to match. */
+    align-items: center;
+    gap: clamp(6px, 0.8vw, 10px);
+  }
+
+  .project-section {
+    padding: clamp(12px, 2vw, 24px) 0 0;
+  }
+
+  .project-metrics {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 0.6vw, 8px);
+    font-size: var(--text-2xs);
+    line-height: 1.4;
+  }
+
+  .project-tech {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(4px, 0.6vw, 8px);
+  }
+
+  /* The .btn class is here for its frame: system.css draws it with a pixel
+     border-image that a border-radius can only approximate as a smooth curve.
+     Everything below cuts it back from button size to label size. */
+  .project-tech li.btn {
+    font-size: var(--text-3xs);
+    min-width: 0;
+    min-height: 0;
+    padding: 3px clamp(8px, 1vw, 12px);
+    cursor: default;
+  }
+
+  .project-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: clamp(8px, 1.5vw, 20px);
+  }
+
+  .nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-decoration: none;
+    color: var(--ink);
+    padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
+    border: 2px solid var(--ink);
+    max-width: 45%;
+  }
+
+  .nav-link:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .nav-next {
+    text-align: right;
+    margin-left: auto;
+  }
+
+  .nav-dir {
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-title {
+    font-size: var(--text-xs);
+  }
+</style>

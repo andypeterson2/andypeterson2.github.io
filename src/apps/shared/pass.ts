@@ -135,8 +135,8 @@ async function activateLive(): Promise<void> {
   document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
   const result = await warmUntilHealthy(service);
   if (result !== 'ok') {
-    // A refused pass is said as such and forgotten (a dead Bearer shouldn't ride on later
-    // requests); a backend that never woke keeps the pass and offers Retry.
+    // A refused pass is forgotten, so a dead Bearer stops riding on later requests;
+    // a backend that never woke keeps its pass for a retry.
     if (result === 'unauthorized') SitePass.clear();
     document.dispatchEvent(
       new CustomEvent('navbar:connect-failed', { detail: { service, reason: result } }),
@@ -151,7 +151,8 @@ async function activateLive(): Promise<void> {
     }),
   );
 }
-// The status item's Retry (after a give-up) re-runs the same health-gated activation.
+// Re-runs the same health-gated activation for a caller that wants another attempt
+// after a give-up. The lifecycle events above are the seam a status UI listens on.
 document.addEventListener('navbar:connect-retry', () => {
   void activateLive();
 });

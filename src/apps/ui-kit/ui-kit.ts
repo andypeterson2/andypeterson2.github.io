@@ -1,26 +1,22 @@
 /**
- * UI-KIT — Reusable UI behaviours.
- *
- * Opt-in initialisers for common interactive patterns: drawer, dropdown, resize
- * handle, and log terminal. Nothing auto-initialises — the consumer calls what
- * they need.
+ * Interactive behaviours the classifier page composes: a drawer, a dropdown, a
+ * drag-to-resize handle and a log terminal. Nothing auto-initialises — the page
+ * calls what it needs, and each initialiser wires its own listeners for the life
+ * of the page.
  *
  * Usage:
- *   import { UIKit } from '../ui-kit/ui-kit';
- *   UIKit.initDrawer(drawerEl, handleEl);
+ *   import { initDrawer } from '../ui-kit/ui-kit';
+ *   const drawer = initDrawer(drawerEl, handleEl);
  */
 
+/** A drawer the page can shut from elsewhere — its handle owns opening. */
 export interface DrawerHandle {
-  open(): void;
   close(): void;
-  toggle(): void;
-  destroy(): void;
 }
 
+/** A dropdown the page can shut from elsewhere — its trigger owns opening. */
 export interface DropdownHandle {
-  open(): void;
   close(): void;
-  destroy(): void;
 }
 
 export interface ResizeOpts {
@@ -36,23 +32,10 @@ export interface ResizeOpts {
 
 export type Logger = (msg: string, level?: string) => void;
 
-export interface UiKitApi {
-  initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle;
-  initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHandle;
-  onEscape(callback: () => void): () => void;
-  initResize(
-    handleEl: HTMLElement,
-    targetEl: HTMLElement,
-    containerEl: HTMLElement,
-    opts?: ResizeOpts,
-  ): void;
-  createLogger(terminalEl: HTMLElement, max?: number): Logger;
-}
-
 // DRAWER
 
 /** Initialise a collapsible drawer (adds/removes `.open` class). */
-function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle {
+export function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle {
   function open(): void {
     drawerEl.classList.add('open');
     handleEl.setAttribute('aria-expanded', 'true');
@@ -68,20 +51,13 @@ function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle 
 
   handleEl.addEventListener('click', toggle);
 
-  return {
-    open,
-    close,
-    toggle,
-    destroy() {
-      handleEl.removeEventListener('click', toggle);
-    },
-  };
+  return { close };
 }
 
 // DROPDOWN
 
 /** Initialise a dropdown (toggle + click-outside-to-close + keyboard a11y). */
-function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHandle {
+export function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHandle {
   function open(): void {
     menuEl.classList.remove('hidden');
     triggerEl.setAttribute('aria-expanded', 'true');
@@ -152,16 +128,7 @@ function initDropdown(triggerEl: HTMLElement, menuEl: HTMLElement): DropdownHand
   menuEl.addEventListener('keydown', onKeydown);
   document.addEventListener('click', onOutside);
 
-  return {
-    open,
-    close,
-    destroy() {
-      triggerEl.removeEventListener('click', onTrigger);
-      triggerEl.removeEventListener('keydown', onKeydown);
-      menuEl.removeEventListener('keydown', onKeydown);
-      document.removeEventListener('click', onOutside);
-    },
-  };
+  return { close };
 }
 
 // ESCAPE KEY
@@ -170,7 +137,7 @@ const escapeCallbacks: (() => void)[] = [];
 let escapeListenerAttached = false;
 
 /** Register a callback for the Escape key. Returns an unsubscribe function. */
-function onEscape(callback: () => void): () => void {
+export function onEscape(callback: () => void): () => void {
   if (!escapeListenerAttached) {
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
@@ -188,7 +155,7 @@ function onEscape(callback: () => void): () => void {
 // RESIZE HANDLE
 
 /** Initialise a drag-to-resize handle for a split layout. */
-function initResize(
+export function initResize(
   handleEl: HTMLElement,
   targetEl: HTMLElement,
   containerEl: HTMLElement,
@@ -242,7 +209,7 @@ function initResize(
 // LOG TERMINAL
 
 /** Create a log appender for a `.log-terminal` element. */
-function createLogger(terminalEl: HTMLElement, max = 200): Logger {
+export function createLogger(terminalEl: HTMLElement, max = 200): Logger {
   return function addLog(msg, level) {
     const time = new Date().toTimeString().slice(0, 8);
     const entry = document.createElement('div');
@@ -262,11 +229,3 @@ function createLogger(terminalEl: HTMLElement, max = 200): Logger {
     terminalEl.scrollTop = terminalEl.scrollHeight;
   };
 }
-
-export const UIKit: UiKitApi = {
-  initDrawer,
-  initDropdown,
-  onEscape,
-  initResize,
-  createLogger,
-};

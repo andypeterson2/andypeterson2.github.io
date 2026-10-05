@@ -11,6 +11,10 @@
   --dither-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M2 2h1v1H2z' fill='%23000'/%3E%3C/svg%3E");
   --dither-50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");
 
+  /* The light stipple with its two tones swapped, for a stippled control under the
+     pointer: the surface inverts the way every other control's does. */
+  --dither-light-inverted: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23000'/%3E%3Cpath d='M0 0h1v1H0z M2 2h1v1H2z' fill='%23fff'/%3E%3C/svg%3E");
+
   /* A dialog backdrop: the 50% checker with its paper pixels left see-through, so the
      page behind dims in 1-bit instead of washing grey. */
   --dither-scrim: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0z M1 1h1v1H1z' fill='%23000'/%3E%3C/svg%3E");

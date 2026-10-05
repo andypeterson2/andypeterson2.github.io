@@ -1,0 +1,115 @@
+---
+/**
+ * Sign in / sign out, in the menu bar on every page.
+ *
+ * The session lives at the gateway, so the answer comes from `GET /auth/me` — a real
+ * Google OIDC session behind an opaque cookie. Nothing here decides what an account
+ * may do: that stays the gateway's to answer, per feature.
+ *
+ * Rendered by the script rather than the markup, because the item has nothing useful
+ * to say until the gateway has answered, and a control that flips from "Sign in" to
+ * "Sign out" after a beat reads as a glitch.
+ */
+---
+
+<script>
+  import { GATEWAY_ORIGIN as GATEWAY } from '../lib/gateway';
+
+  interface Session {
+    authenticated: boolean;
+    email?: string | null;
+    name?: string | null;
+  }
+
+  async function session(): Promise<Session> {
+    try {
+      const res = await fetch(`${GATEWAY}/auth/me`, {
+        credentials: 'include',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return { authenticated: false };
+      return (await res.json()) as Session;
+    } catch {
+      // Offline, blocked, or the gateway is unreachable: signed out is the safe read.
+      return { authenticated: false };
+    }
+  }
+
+  function signIn(): void {
+    location.href = `${GATEWAY}/auth/login?redirect=${encodeURIComponent(location.href)}`;
+  }
+
+  async function signOut(): Promise<void> {
+    try {
+      await fetch(`${GATEWAY}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      // The cookie may already be gone; reloading settles it either way.
+    }
+    location.reload();
+  }
+
+  function item(who: Session, className: string): HTMLLIElement {
+    const li = document.createElement('li');
+    li.className = className;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'auth-btn';
+    btn.textContent = who.authenticated ? 'Sign out' : 'Sign in';
+    // The account is worth naming: signing out of the wrong one is a surprise.
+    if (who.authenticated && who.email) btn.title = `Signed in as ${who.email}`;
+    btn.addEventListener('click', () => {
+      if (who.authenticated) void signOut();
+      else signIn();
+    });
+    li.appendChild(btn);
+    return li;
+  }
+
+  async function mount(): Promise<void> {
+    const who = await session();
+    // Last in the bar, pushed to the right edge by .auth-item's auto margin.
+    document.querySelector('.site-menubar ul')?.appendChild(item(who, 'auth-item'));
+    // Phones read the same list top to bottom, so it goes at the end.
+    document.getElementById('mobile-nav-menu')?.appendChild(item(who, 'auth-item--mobile'));
+    document.dispatchEvent(new CustomEvent('site:session', { detail: who }));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => void mount());
+  } else {
+    void mount();
+  }
+</script>
+
+<style is:global>
+  /* Pushed to the right edge of the bar, away from the pages. */
+  .site-menubar ul > .auth-item {
+    margin-left: auto;
+  }
+
+  .auth-btn {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 10px;
+  }
+
+  .site-menubar ul > .auth-item:hover,
+  .site-menubar ul > .auth-item:focus-within {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* Matches the links beside it in the same menu. */
+  .auth-item--mobile .auth-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 12px;
+  }
+
+  .auth-item--mobile .auth-btn:hover,
+  .auth-item--mobile .auth-btn:focus-visible {
+    background: var(--ink);
+    color: var(--paper);
+  }
+</style>

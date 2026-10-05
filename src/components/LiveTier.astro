@@ -1,81 +1,16 @@
 ---
 /**
- * Server status nav — adds a status-dot nav item for each backend service
- * declared on the page. STATUS-only: there is no manual host/port connect
- * dialog; backends are deploy-based and connect through the pass-activated
- * gateway lane.
+ * Live tier — loads the pass lane, the service allowlist and the contract client
+ * for every backend a page declares.
  *
  * Meta-tag format:
- *   <meta name="site-backend" content="service-key" data-label="Label">
+ *   <meta name="site-backend" content="service-key">
  */
 ---
 
-<!-- Live tier (bundled module), on demo pages only: SitePass first, then ServiceConfig,
-     SiteContract, and the status-nav UI. Module scripts defer, so they run in document
-     order relative to the apps. -->
+<!-- Live tier (bundled module), on demo pages only: SitePass first, then ServiceConfig
+     and SiteContract. Module scripts defer, so they run in document order relative to
+     the apps. -->
 <script>
   import '../apps/shared/entry';
 </script>
-
-<style is:global>
-  /* ── Server nav item (injected by JS) ──
-     Status text, so no pointer cursor. */
-  .server-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-  }
-
-  /* Unset is a hollow ring, the System-6 idiom the editor uses. */
-  .sn-dot {
-    width: 0.55em;
-    height: 0.55em;
-    border-radius: var(--radius-round);
-    border: 1.5px solid var(--ink);
-    background-color: var(--paper) !important;
-    flex-shrink: 0;
-    pointer-events: none;
-  }
-
-  /* The state as a visible word. */
-  .sn-state {
-    font-family: var(--font-sans);
-    font-size: 0.85em;
-    font-weight: 400;
-    white-space: nowrap;
-  }
-
-  .sn-retry {
-    font: inherit;
-    font-size: 0.85em;
-    padding: 0 0.4em;
-    border: 1px solid currentcolor;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  .server-nav-item--mobile {
-    padding: 8px 12px;
-    font-size: var(--text-3xs);
-    gap: 0.5em;
-  }
-
-  .sn-dot.sn-green {
-    background-color: var(--color-success) !important;
-    opacity: 1;
-    box-shadow: var(--shadow-glow-success);
-  }
-
-  .sn-dot.sn-yellow {
-    background-color: var(--color-warning) !important;
-    opacity: 1;
-    box-shadow: var(--shadow-glow-warning);
-  }
-
-  .sn-dot.sn-red {
-    background-color: var(--color-danger) !important;
-    opacity: 1;
-    box-shadow: var(--shadow-glow-danger);
-  }
-</style>

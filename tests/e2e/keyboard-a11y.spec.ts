@@ -112,9 +112,11 @@ test.describe('Nonogram grid by keyboard', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(NONOGRAM);
     await expect(page.getByRole('table', { name: 'Puzzle grid, 3 by 3' })).toBeVisible();
-    // The grid sits just before Clear in the tab order.
-    await page.locator('#btn-clear').focus();
-    await page.keyboard.press('Shift+Tab');
+    // The page opens on a captured run; this one walks an empty grid.
+    await page.locator('#btn-clear').click();
+    // The size is typed in the grid's own corner, so those two fields lead the cells.
+    await page.locator('#size-cols').focus();
+    await page.keyboard.press('Tab');
     expect(await activeLabel(page)).toBe('Row 1, column 1');
     await page.keyboard.press('Space');
     const first = page.getByRole('button', { name: 'Row 1, column 1' });
@@ -127,9 +129,10 @@ test.describe('Nonogram grid by keyboard', () => {
       'true',
     );
     await expect(page.getByRole('rowheader', { name: 'Row 1 clue: 2' })).toBeVisible();
-    // One cell in the tab order at a time: Tab leaves the grid.
+    // One cell in the tab order at a time: Tab leaves the grid, for the controls that
+    // run the board rather than edit it.
     await page.keyboard.press('Tab');
-    await expect(page.locator('#btn-clear')).toBeFocused();
+    await expect(page.locator('#btn-where-local')).toBeFocused();
   });
 });
 

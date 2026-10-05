@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://andypeterson.dev/api-contract/telemetry-event.schema.json",
+  "title": "Telemetry event",
+  "description": "One usage event, written by the gateway for anything it proxies and posted by the browser for work that never leaves the page. The store behind it (Cloudflare Analytics Engine) keeps ordered arrays, not named fields, so each name below is pinned to a column for the life of the dataset: blobN and doubleN are positional and a reordering silently mixes two meanings in one column. Add a field at the next free position; never move or repurpose one. A meaning that has to change takes a new position and bumps `v`. No field may carry a durable identifier — no pass jti, no email, no address-derived value.",
+  "type": "object",
+  "required": ["v", "app", "event", "tier"],
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "description": "Schema version, so a reader knows how to read the rest. Column blob1.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "app": {
+      "description": "Which surface this came from. The store's one index, which is also how it samples, so every query filters on it first.",
+      "enum": ["nonogram", "classifiers", "cv", "portal"]
+    },
+    "event": {
+      "description": "What happened, as noun.verb. Column blob2. Page views are not here: Cloudflare Web Analytics already counts those.",
+      "enum": ["run.start", "run.done", "tier.change"]
+    },
+    "tier": {
+      "description": "Where the work actually ran, not what was on offer. Column blob3.",
+      "enum": ["browser", "live", "hardware"]
+    },
+    "outcome": {
+      "description": "How it ended. Column blob4. 'empty' is a run that finished and found nothing, which is a result and not a failure.",
+      "enum": ["ok", "empty", "error", "capped", "refused"]
+    },
+    "variant": {
+      "description": "The app's own sub-mode: draw or clues, a dataset name, a resume variant kind. Column blob5.",
+      "type": "string",
+      "maxLength": 32
+    },
+    "detail": {
+      "description": "One extra low-cardinality label. Column blob6. Capped because every distinct value is a row a query has to group.",
+      "type": "string",
+      "maxLength": 64
+    },
+    "release": {
+      "description": "Build identity (short commit SHA), so a change in the numbers can be tied to a deploy. Column blob7.",
+      "type": "string",
+      "maxLength": 40
+    },
+    "visit": {
+      "description": "A value drawn once per page load and held in memory only — never stored, gone on reload or navigation. Column blob8. It links a visitor's events within one visit, so a funnel can be counted, and identifies nobody: it cannot be recovered, correlated across visits, or tied to a person.",
+      "type": "string",
+      "maxLength": 36
+    },
+    "value": {
+      "description": "The one number the event is about — milliseconds, a score. Column double1.",
+      "type": "number"
+    },
+    "a": {
+      "description": "First dimension: rows, width, entries. Column double2.",
+      "type": "number"
+    },
+    "b": {
+      "description": "Second dimension: columns, height. Column double3.",
+      "type": "number"
+    },
+    "n": {
+      "description": "How many results came back: solutions found, models that answered. Column double4.",
+      "type": "number"
+    }
+  }
+}

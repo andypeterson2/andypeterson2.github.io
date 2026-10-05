@@ -7,6 +7,7 @@ interface NonogramSocket {
   disconnect(): void;
   /** Payloads are backend-defined; callers narrow them at the handler. */
   on(event: string, cb: (payload?: unknown) => void): void;
+  emit(event: string, payload?: unknown): void;
 }
 
 interface NonogramSocketOptions {

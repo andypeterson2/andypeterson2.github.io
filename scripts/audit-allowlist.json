@@ -1,0 +1,11 @@
+{
+  "reviewBy": "2027-04-04",
+  "advisories": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "severity": "high",
+      "reason": "Every published braces is affected (the advisory range is <=3.0.3 and 3.0.3 is the latest), so no version resolves it. It arrives only through micromatch -> fast-glob, which stylelint and purgecss use to walk the source tree; both are already at their latest, and npm's proposed fix is a major downgrade of stylelint. Nothing ships it to a browser and no untrusted string reaches it: the globs are written in this repo's own config and scripts."
+    }
+  ]
+}

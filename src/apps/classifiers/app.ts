@@ -2,7 +2,7 @@
  * Multi-Dataset Classifier App — client-side SPA logic.
  *
  * Reusable UI behaviours (theme toggle, drawer, dropdown, resize, log
- * terminal) come from UIKit; this module handles application-specific logic:
+ * terminal) come from the ui-kit module; this one handles application logic:
  * state management, SSE streaming, training, evaluation, prediction, model
  * persistence, and canvas drawing.
  *
@@ -10,7 +10,7 @@
  * hand-derived from the classifier backend's route handlers.
  */
 
-import { UIKit } from '../ui-kit/ui-kit';
+import { createLogger, initDrawer, initDropdown, initResize, onEscape } from '../ui-kit/ui-kit';
 import { connectionManager } from './connection';
 import { consumeSSE, type SseStructuredEvent } from './sse';
 import { MiniChart } from './chart';
@@ -263,18 +263,18 @@ function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
   return el;
 }
 
-const drawer = UIKit.initDrawer(byId('log-drawer', HTMLElement), byId('log-handle', HTMLElement));
-const dropdown = UIKit.initDropdown(
+const drawer = initDrawer(byId('log-drawer', HTMLElement), byId('log-handle', HTMLElement));
+const dropdown = initDropdown(
   byId('dataset-menu-btn', HTMLElement),
   byId('dataset-menu', HTMLElement),
 );
 
-UIKit.onEscape(() => {
+onEscape(() => {
   drawer.close();
   dropdown.close();
 });
 
-UIKit.initResize(
+initResize(
   byId('resize-h', HTMLElement),
   byId('left-col', HTMLElement),
   byId('split-layout', HTMLElement),
@@ -286,7 +286,7 @@ UIKit.initResize(
 );
 
 const logTerminal = byId('log-terminal', HTMLElement);
-const addLog = UIKit.createLogger(logTerminal, 200);
+const addLog = createLogger(logTerminal, 200);
 // Closed, the log shows its newest line; open or closed, it stays at the bottom.
 byId('log-handle', HTMLElement).addEventListener('click', () => {
   logTerminal.scrollTop = logTerminal.scrollHeight;

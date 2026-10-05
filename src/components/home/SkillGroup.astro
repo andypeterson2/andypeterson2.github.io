@@ -46,7 +46,9 @@ const { label, tags } = Astro.props;
   }
 
   .tag:not(:last-child)::after {
-    content: '·';
+    /* Escaped rather than literal: a stylesheet served without a charset falls back to
+       latin-1, which splits this byte pair into two visible characters. */
+    content: '\00b7';
     padding: 0 0.45em;
   }
 </style>

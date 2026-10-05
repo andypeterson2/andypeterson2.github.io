@@ -70,7 +70,7 @@ const { entry } = Astro.props;
               target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
               rel={entry.project.appUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
             >
-              {entry.project.appUrl.startsWith('http') ? 'Launch ↗' : 'Try it →'}
+              {entry.project.appUrl.startsWith('http') ? 'Launch ->' : 'Try it ->'}
             </a>
           )}
           <WriteupModal
@@ -78,6 +78,7 @@ const { entry } = Astro.props;
             label="Writeup"
             appUrl={entry.project.appUrl}
             repoUrl={entry.project.repoUrl}
+            primary={!entry.project.appUrl}
           />
           <a
             href={entry.project.repoUrl}
@@ -255,7 +256,9 @@ const { entry } = Astro.props;
   }
 
   .tl-tag:not(:last-child)::after {
-    content: '·';
+    /* Escaped rather than literal: a stylesheet served without a charset falls back to
+       latin-1, which splits this byte pair into two visible characters. */
+    content: '\00b7';
     padding: 0 0.45em;
   }
 

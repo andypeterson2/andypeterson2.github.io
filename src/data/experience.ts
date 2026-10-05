@@ -68,7 +68,8 @@ export const experience: ExperienceEntry[] = [
     role: 'Tutor / IT Lead',
     org: 'Mathnasium · Southern California',
     bullets: [
-      'Sole IT resource for transitioning the center to remote operations during COVID-19, keeping ~25 client families and ~15 active students connected.',
+      'Sole IT resource for transitioning the center to remote operations during COVID-19, keeping ~25 client families connected.',
+      "Tutored 50+ students in math, ~15 regularly at a time, most of them the center's advanced students, and helped pilot a new computer science pathway.",
     ],
   },
 ];

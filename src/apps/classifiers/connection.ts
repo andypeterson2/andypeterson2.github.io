@@ -17,7 +17,6 @@
  * Emits `connection:statechange` CustomEvent on every transition.
  */
 
-import type { ConnectWidget } from '../shared/server-connect-modal';
 import { ServiceConfig } from '../shared/service-config';
 import { parseSseFrames } from './sse';
 
@@ -261,21 +260,6 @@ document.addEventListener('navbar:connect', (e) => {
   if (!ServiceConfig.isAllowedUrl(detail.url)) return;
   if (_state !== 'idle') connectionManager.disconnect();
   connectionManager.connect(detail.url);
-});
-
-// Bridge: navbar widget subscribes to connection:statechange
-let _navWidget: ConnectWidget | null = null;
-
-document.addEventListener('navbar:connect-ready', (e) => {
-  const detail = (e as CustomEvent<{ service?: string; widget?: ConnectWidget }>).detail;
-  if (detail.service !== 'classifiers' || !detail.widget) return;
-  _navWidget = detail.widget;
-  _navWidget.setStatus(_state);
-});
-
-document.addEventListener('connection:statechange', (e) => {
-  if (_navWidget)
-    _navWidget.setStatus((e as CustomEvent<ConnectionStateChangeDetail>).detail.state);
 });
 
 // Public API

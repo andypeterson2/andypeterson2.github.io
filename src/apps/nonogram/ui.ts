@@ -5,29 +5,132 @@
  */
 
 import { state, $, must } from './state';
+import { MAX_HW_CELLS, currentStatus, isSignedIn } from './hardware';
 
-export function setStatus(msg: string, level?: 'err' | 'ok'): void {
+/**
+ * The status line.
+ *
+ * Colour is the design's one signal for a machine reporting state, and a fault is the
+ * only state worth spending it on; everything else is ink like the rest of the page.
+ */
+export function setStatus(msg: string, level?: 'err'): void {
   const el = $('status-line');
   if (!el) return;
   el.textContent = msg;
-  el.className =
-    'status-line' + (level === 'err' ? ' status-err' : level === 'ok' ? ' status-ok' : '');
+  el.className = 'status-line' + (level === 'err' ? ' status-err' : '');
 }
 
-/** What the run button will actually do: offline it solves classically in the
- *  browser; with a live backend it runs the Grover simulator. */
+/** Where the run button sends the puzzle. */
+export type RunWhere = 'local' | 'hardware';
+
+let where: RunWhere = 'local';
+
+export function runWhere(): RunWhere {
+  return where;
+}
+
+export function setRunWhere(next: RunWhere): void {
+  where = next;
+  const picked = $(where === 'hardware' ? 'btn-where-hw' : 'btn-where-local');
+  if (picked instanceof HTMLInputElement) picked.checked = true;
+  applyTierControls();
+}
+
+/** What the run button will actually do, in the words of where it will do it. */
 function benchLabel(): string {
-  return window.API_BASE ? '▶ Run on simulator' : '▶ Solve in browser';
+  if (where === 'hardware') return '▶ Hardware solve';
+  return window.API_BASE ? '▶ Simulator solve' : '▶ Local solve';
 }
 
 /** Controls that only mean something with a live backend say so instead of
- *  sitting there inert: Trials is disabled offline, with the reason on hover. */
+ *  sitting there inert. */
 export function applyTierControls(): void {
   const btn = must('btn-bench') as HTMLButtonElement;
   if (!state.busy) btn.textContent = benchLabel();
-  const trials = must('trials-input') as HTMLInputElement;
-  trials.disabled = !window.API_BASE;
-  trials.title = window.API_BASE ? '' : 'Trials repeat a live quantum run — needs the live solver';
+  applyHardwareControl();
+}
+
+/**
+ * The IBM button says what pressing it would actually do.
+ *
+ * Spending quantum credits takes an account the owner has allowed, so a visitor
+ * without one is offered the sign-in rather than a button that fails when pressed.
+ * The size ceiling shows as a disabled button rather than a hidden one, so the limit
+ * is visible instead of mysterious.
+ */
+/** Said the same way wherever hardware is out of reach for want of an account. */
+const NEEDS_ACCOUNT =
+  'Running on a real quantum computer needs an authenticated account — sign in from the menu bar.';
+
+/**
+ * Mark a control unavailable while leaving it reachable.
+ *
+ * `aria-disabled` rather than `disabled`: the reason lives in the title, and a
+ * natively disabled button is skipped by the tab order and answers no hover, so the
+ * reason would be unreadable for exactly the people most likely to need it.
+ */
+function setUnavailable(btn: HTMLButtonElement, reason: string): void {
+  btn.setAttribute('aria-disabled', 'true');
+  btn.title = reason;
+}
+
+function setAvailable(btn: HTMLButtonElement, hint: string): void {
+  btn.removeAttribute('aria-disabled');
+  btn.title = hint;
+}
+
+/** Whether a click on this control should do nothing. */
+export function isUnavailable(btn: HTMLButtonElement): boolean {
+  return btn.getAttribute('aria-disabled') === 'true';
+}
+
+/**
+ * The run button says what pressing it would actually do.
+ *
+ * Set to hardware it carries the same account and size checks the separate IBM button
+ * used to: spending quantum credits takes an account the owner has allowed, and a board
+ * past the size ceiling would come back as noise. Set to local there is nothing to ask.
+ */
+export function applyHardwareControl(): void {
+  const btn = must('btn-bench') as HTMLButtonElement;
+  const status = currentStatus();
+  if (where === 'local') {
+    btn.removeAttribute('aria-disabled');
+    btn.removeAttribute('title');
+    return;
+  }
+  // Asked first because it is what stops most visitors, and because the menu bar
+  // knows the answer on every page, with or without a backend awake.
+  if (isSignedIn() === false) {
+    setUnavailable(btn, NEEDS_ACCOUNT);
+    return;
+  }
+  if (!window.API_BASE || !status) {
+    setUnavailable(btn, 'Real hardware runs through the live backend, which is not connected.');
+    return;
+  }
+  if (!status.configured) {
+    setUnavailable(btn, status.reason);
+    return;
+  }
+
+  // No account yet: the run button says why it cannot be pressed, and the sign-in
+  // bar below the controls is what does something about it.
+  if (!status.signedIn) {
+    setUnavailable(btn, NEEDS_ACCOUNT);
+    return;
+  }
+
+  const tooBig = state.rows * state.cols > MAX_HW_CELLS;
+  if (tooBig) {
+    setUnavailable(
+      btn,
+      `Hardware runs stop at ${String(MAX_HW_CELLS)} cells — past that the circuit is deeper than the device holds, and the result is noise.`,
+    );
+    return;
+  }
+  if (state.busy || !status.allowed) setUnavailable(btn, status.reason);
+  else setAvailable(btn, status.reason);
 }
 
 export function setBusy(busy: boolean): void {
@@ -37,11 +140,34 @@ export function setBusy(busy: boolean): void {
   btn.textContent = busy ? 'Running…' : benchLabel();
   (must('btn-clear') as HTMLButtonElement).disabled = busy;
   (must('btn-random') as HTMLButtonElement).disabled = busy;
-  for (const id of ['btn-add-row', 'btn-add-col', 'btn-remove-row', 'btn-remove-col']) {
+  (must('btn-reset') as HTMLButtonElement).disabled = busy;
+  for (const id of ['btn-mode-draw', 'btn-mode-clues']) {
     (must(id) as HTMLButtonElement).disabled = busy;
   }
+  for (const id of ['btn-where-local', 'btn-where-hw', 'size-rows', 'size-cols']) {
+    const field = $(id);
+    if (field instanceof HTMLInputElement) field.disabled = busy;
+  }
+  applyHardwareControl();
 }
 
+/**
+ * Hold the size fields to the board.
+ *
+ * They are typed into, but a gallery run, Reset or a randomize all change the board from
+ * elsewhere, and the fields have to say what is on screen.
+ */
 export function updateGridSizeLabel(): void {
-  must('grid-size-label').textContent = `${String(state.rows)} × ${String(state.cols)}`;
+  for (const [id, value] of [
+    ['size-rows', state.rows],
+    ['size-cols', state.cols],
+  ] as const) {
+    const field = $(id);
+    if (field instanceof HTMLInputElement && field !== document.activeElement) {
+      field.value = String(value);
+    }
+  }
+  // Whether a real device can say anything about this puzzle changes with its size,
+  // and this runs on every rebuild.
+  applyHardwareControl();
 }
