@@ -10,6 +10,8 @@ const paths = [
   '/projects/ai-ml/app/',
   '/projects/quantum-nonogram-solver/app/',
   '/projects/latex-resume-editor/app/',
+  '/projects/quantum-video-chat/app/',
+  '/projects/quantum-video-chat/analytics/',
 ];
 const ALLOWED = [/The Content Security Policy directive 'frame-ancestors' is ignored/];
 // The editor asks the gateway "who am I?" on load; a signed-out visitor gets a 401 by

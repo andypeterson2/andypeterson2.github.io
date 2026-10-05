@@ -1,0 +1,166 @@
+---
+import DemoShell from '../../../layouts/DemoShell.astro';
+---
+
+<DemoShell
+  title="Quantum Video Chat — Analytics"
+  description="A live readout of one BB84-secured call: key reservoir, channel error rate, authentication, media and a timeline. Reads a call running in another window."
+  fitContent
+>
+  <div id="an-root">
+    <section class="an-panel an-panel-wide">
+      <h2>Waiting for a call</h2>
+      <p class="an-sub">
+        This screen reads a call in the other window. Start one there and the panels fill.
+      </p>
+    </section>
+  </div>
+
+  <script>
+    import '../../../apps/qvc/analytics/entry';
+  </script>
+</DemoShell>
+
+<style>
+  #an-root {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--space-3);
+    font-family: var(--font-ui);
+  }
+
+  #an-root :global(.an-panel),
+  #an-root :global(.an-summary) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-md);
+  }
+
+  #an-root :global(.an-scope) {
+    grid-column: 1 / -1;
+  }
+
+  #an-root :global(.an-panel-wide),
+  #an-root :global(.an-summary) {
+    grid-column: 1 / -1;
+  }
+
+  #an-root :global(h2) {
+    margin: 0;
+    font-size: var(--text-xs);
+  }
+
+  #an-root :global(.an-tiles) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  #an-root :global(.an-k) {
+    font-size: var(--text-3xs);
+    color: var(--ink-3);
+  }
+
+  #an-root :global(.an-v) {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+  }
+
+  #an-root :global(.an-v-sm) {
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+  }
+
+  #an-root :global(.an-sub) {
+    margin: 0;
+    font-size: var(--text-3xs);
+    color: var(--ink-3);
+  }
+
+  #an-root :global(.an-badge) {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-3xs);
+  }
+
+  #an-root :global(.an-bar) {
+    height: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--paper-3);
+    overflow: hidden;
+  }
+
+  #an-root :global(.an-bar span) {
+    display: block;
+    width: var(--an-fill, 0%);
+    height: 100%;
+    background: var(--color-success);
+  }
+
+  #an-root :global(.an-qber) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  #an-root :global(.an-qber-now) {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+  }
+
+  #an-root :global(.an-tone-success) {
+    color: var(--color-success);
+  }
+
+  #an-root :global(.an-tone-warning) {
+    color: var(--color-warning);
+  }
+
+  #an-root :global(.an-tone-danger) {
+    color: var(--color-danger);
+  }
+
+  #an-root :global(.an-chart) {
+    width: 100%;
+    height: var(--space-16);
+  }
+
+  #an-root :global(.an-sparkline) {
+    width: 100%;
+    height: var(--space-8);
+  }
+
+  #an-root :global(.an-sas-emoji) {
+    font-size: var(--text-base);
+  }
+
+  #an-root :global(.an-sas-digits) {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+  }
+
+  #an-root :global(.an-fp code) {
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+  }
+
+  #an-root :global(.an-timeline) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #an-root :global(.an-timeline li) {
+    display: flex;
+    gap: var(--space-3);
+    font-size: var(--text-3xs);
+  }
+
+  #an-root :global(.an-ev-t) {
+    min-width: var(--space-16);
+    color: var(--ink-3);
+  }
+</style>

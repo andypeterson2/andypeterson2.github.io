@@ -77,6 +77,7 @@ test.describe('Focused inputs keep their text visible', () => {
     // The Train form is folded and disabled offline: open it and enable it to type.
     { path: '/projects/ai-ml/app/', selector: '#epochs', unfold: '#train-form' },
     { path: '/projects/quantum-nonogram-solver/app/', selector: '#btn-clear' },
+    { path: '/projects/quantum-video-chat/app/', selector: '#qvc-room-input' },
   ];
   for (const { path, selector, unfold } of cases) {
     test(`${selector} on ${path}`, async ({ page }) => {

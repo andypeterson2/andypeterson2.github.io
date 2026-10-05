@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [svelte({ configFile: false })],
   resolve: { conditions: ['browser'] },
   test: {
-    include: ['tests/**/*.test.ts'],
+    // The ported engine suite stays JavaScript, as the evidence for the .js
+    // engine it exercises.
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.js'],
     exclude: ['tests/integration/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',

@@ -10,7 +10,7 @@ a shared HTTP API contract. There are no submodules.
 | LaTeX resume editor | [andypeterson2/cv](https://github.com/andypeterson2/cv) | Express · :3001 |
 | Quantum nonogram solver | [quantum-nonogram-solver](https://github.com/Quantum-Interns-at-Qualcomm-Institiute/quantum-nonogram-solver) | Flask · :5055 |
 | ML classifier platform | [quantum-machine-learning](https://github.com/andypeterson2/quantum-machine-learning) | Flask · :5001 |
-| Quantum video chat | [andypeterson2/bb84-video-chat](https://github.com/andypeterson2/bb84-video-chat) | not deployed; the portal links the repo |
+| Quantum video chat | [andypeterson2/bb84-video-chat](https://github.com/andypeterson2/bb84-video-chat) | Socket.IO signalling · Railway |
 
 ## Directory structure
 
@@ -18,7 +18,7 @@ a shared HTTP API contract. There are no submodules.
 src/                      Astro 7 portal (pages, layouts, components)
 src/editor/               The CV editor — a Svelte 5 island (components + runes stores)
 src/apps/                 App frontends as typed modules (shared portal scripts,
-                          ui-kit runtime, classifier + nonogram apps), bundled per page
+                          ui-kit runtime, classifier, nonogram and video-chat apps), bundled per page
 public/                   Served as-is: model weights, the nonogram gallery, icons,
                           vendored socket.io
 packages/system-six/      The portal's design-system CSS (tokens + element styles)
