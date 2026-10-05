@@ -22,6 +22,15 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=15552000; includeSubDomains
 
+# The video call captures camera AND microphone, and encrypts both tracks, so
+# both are granted here; the rule above denies them everywhere else. A leading
+# `!` detaches the header from the broader rule rather than adding a second one.
+# scripts/serve-dist.mjs does not apply this file, so local e2e cannot see it:
+# the live check is what proves it, not a passing test run.
+/projects/quantum-video-chat/*
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=()
+
 # ── Caching ──────────────────────────────────────────────────────────────────
 # Files under /_astro/ are content-hashed by the build (a new file name on every
 # change), so they can be cached for a year and never revalidated; the pixel fonts

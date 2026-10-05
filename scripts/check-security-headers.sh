@@ -77,6 +77,20 @@ if [ "${1:-}" = "--live" ]; then
   fi
   printf '%s' "$hdrs" | grep -qiE '^x-content-type-options:\s*nosniff' \
     && echo "✓ nosniff present" || echo "! no X-Content-Type-Options: nosniff (minor)" >&2
+  # The video call is the one page allowed the camera and microphone. Nothing
+  # local can prove this: serve-dist.mjs ignores _headers, so every e2e passes
+  # while a wrong policy here makes getUserMedia reject on the deployed site.
+  qvc_pp=$(curl -fsSI -m 15 -A "$UA" "$ORIGIN/projects/quantum-video-chat/app/" \
+    | grep -iE '^permissions-policy:' | head -1 | tr -d '\r' || true)
+  if printf '%s' "$qvc_pp" | grep -qi 'camera=(self)' \
+    && printf '%s' "$qvc_pp" | grep -qi 'microphone=(self)'; then
+    echo "✓ video chat may use the camera and microphone"
+  else
+    echo "✗ /projects/quantum-video-chat/ does not grant camera and microphone." >&2
+    echo "  Got: ${qvc_pp:-<no Permissions-Policy>}" >&2
+    echo "  The call captures and encrypts both tracks; getUserMedia rejects without them." >&2
+    live_fail=1
+  fi
   # Hashed build assets are immutable (public/_headers): check one from the live page.
   asset=$(curl -fsSL -m 15 -A "$UA" "$ORIGIN" | grep -oE '/_astro/[^"]+\.(css|js|woff2)' | head -1 || true)
   if [ -n "$asset" ] && curl -fsSI -m 15 -A "$UA" "$ORIGIN$asset" | grep -qiE '^cache-control:.*immutable'; then

@@ -1,0 +1,283 @@
+/**
+ * Channel authentication for the BB84 classical channel.
+ *
+ * BB84's security proof assumes the classical channel is authenticated — Eve
+ * may read but must not modify or inject. This module implements that layer:
+ *
+ *  - k_auth is derived (HKDF-SHA-256) from the join-link capability token,
+ *    which both parties hold and a network MITM does not (unless the invite
+ *    channel itself was compromised — see the SAS tier below).
+ *  - Direction separation: each role (initiator/joiner) signs with its own
+ *    derived key, so a reflected message never verifies.
+ *  - Every protocol message travels as {v, seq, payload, tag} with a monotonic
+ *    per-direction sequence — replay, reorder, drop and injection all fail
+ *    verification and fail the round as an integrity error. Sequence spaces
+ *    are per AuthenticatedClassicalChannel instance, and the orchestrator
+ *    creates a fresh instance per round, so a failed round never leaves the
+ *    two sides in permanently divergent sequence states.
+ *  - A short authentication string (SAS) is derived from the two DTLS
+ *    fingerprints alone — a pure function, identical on both sides by
+ *    construction. Two users comparing the SAS on camera authenticate the
+ *    media path even if the invite link leaked: a MITM terminating DTLS
+ *    presents different fingerprints and the strings visibly differ.
+ *
+ * Trust tiers: authenticated if your link channel was; verified if you
+ * compared the SAS.
+ */
+
+const CONTEXT_SALT = 'qvc-channel-auth-v1';
+const ROLES = ['initiator', 'joiner'];
+
+// 32 visually distinct emoji — 5 bits each, 4 shown → 20 bits, on top of the
+// 6 digits (~20 bits). Chosen to avoid near-duplicates at video resolution.
+const SAS_EMOJI = [
+  '🐙',
+  '🦊',
+  '🐢',
+  '🦉',
+  '🐝',
+  '🐳',
+  '🦋',
+  '🐸',
+  '🌵',
+  '🍄',
+  '🌻',
+  '🍁',
+  '🍕',
+  '🍩',
+  '🥑',
+  '🍒',
+  '⚓',
+  '🎈',
+  '🎲',
+  '🎸',
+  '🚀',
+  '🛸',
+  '⏰',
+  '🔑',
+  '⭐',
+  '🌙',
+  '🔥',
+  '❄️',
+  '☂️',
+  '🧲',
+  '💎',
+  '🧭',
+];
+
+/** A message that failed authentication — the round must abort, no retry. */
+export class ChannelAuthError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ChannelAuthError';
+  }
+}
+
+/**
+ * A message whose sequence number is not the one this channel expects:
+ * replayed, reordered, dropped, or left over from a session that has since
+ * been torn down. The two sides are out of step, which says nothing about
+ * whether the key is sound, so callers resynchronise instead of treating the
+ * channel as broken. A subclass, so code that aborts on any authentication
+ * failure still catches it.
+ */
+export class ChannelSyncError extends ChannelAuthError {
+  constructor(message) {
+    super(message);
+    this.name = 'ChannelSyncError';
+  }
+}
+
+const te = new TextEncoder();
+
+function toBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+function fromBase64(b64) {
+  try {
+    return Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+export class ChannelAuth {
+  /**
+   * Derive the per-direction MAC keys from the room's capability token.
+   * @param {string} roomToken - the join-link capability token
+   * @param {'initiator'|'joiner'} role - this side's role
+   * @returns {Promise<ChannelAuth>}
+   */
+  static async create(roomToken, role) {
+    if (!ROLES.includes(role)) throw new Error(`unknown role: ${role}`);
+    if (!roomToken) throw new Error('roomToken required');
+    const base = await crypto.subtle.importKey('raw', te.encode(roomToken), 'HKDF', false, [
+      'deriveKey',
+    ]);
+    const derive = (info) =>
+      crypto.subtle.deriveKey(
+        { name: 'HKDF', hash: 'SHA-256', salt: te.encode(CONTEXT_SALT), info: te.encode(info) },
+        base,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign', 'verify'],
+      );
+    const other = role === 'initiator' ? 'joiner' : 'initiator';
+    const [sendKey, recvKey] = await Promise.all([
+      derive(`qvc-mac-${role}`),
+      derive(`qvc-mac-${other}`),
+    ]);
+    return new ChannelAuth(role, sendKey, recvKey);
+  }
+
+  constructor(role, sendKey, recvKey) {
+    this._role = role;
+    this._sendKey = sendKey;
+    this._recvKey = recvKey;
+  }
+
+  /** @returns {'initiator'|'joiner'} this side's role. */
+  get role() {
+    return this._role;
+  }
+
+  /**
+   * MAC a message this side sends. `kind` domain-separates uses ('msg', 'fp').
+   * @returns {Promise<string>} base64 tag
+   */
+  async sign(kind, seq, payload) {
+    const tag = await crypto.subtle.sign(
+      'HMAC',
+      this._sendKey,
+      te.encode(`${kind}\n${seq}\n${payload}`),
+    );
+    return toBase64(tag);
+  }
+
+  /** Verify a peer's MAC. @returns {Promise<boolean>} */
+  async verify(kind, seq, payload, tagB64) {
+    const tag = fromBase64(tagB64);
+    if (!tag) return false;
+    return crypto.subtle.verify(
+      'HMAC',
+      this._recvKey,
+      tag,
+      te.encode(`${kind}\n${seq}\n${payload}`),
+    );
+  }
+
+  /**
+   * Derive the SAS from the two DTLS fingerprints. Pure: no transcript, no
+   * freezing, no per-side state, so two honest sides agree whatever their
+   * processing histories (a failed round, a dropped message). Fingerprints
+   * alone are what the SAS must bind: they identify the DTLS endpoints of the
+   * media path.
+   *
+   * Strength is ~40 bits: 6 decimal digits from a 32-bit word (~20 bits) plus
+   * 4 emoji at 5 bits each (SAS_EMOJI has exactly 32 entries, so b % 32 is
+   * unbiased). That is adequate only because the orchestrator's
+   * commit-then-reveal fingerprint exchange reduces an active MITM to a single
+   * blind guess at the displayed SAS, the ZRTP property (RFC 6189). Without
+   * that commitment step, the SAS must be wider.
+   * @param {string} fpInitiator - initiator's DTLS fingerprint
+   * @param {string} fpJoiner - joiner's DTLS fingerprint
+   * @returns {Promise<{digits: string, emoji: string[]}>}
+   */
+  async sas(fpInitiator, fpJoiner) {
+    const material = [`${CONTEXT_SALT}-sas`, fpInitiator, fpJoiner].join('\n');
+    const d = new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(material)));
+    const digits = String(((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) >>> 0)
+      .padStart(10, '0')
+      .slice(-6);
+    const emoji = [d[4], d[5], d[6], d[7]].map((b) => SAS_EMOJI[b % SAS_EMOJI.length]);
+    return { digits, emoji };
+  }
+}
+
+/**
+ * Wraps a classical channel in the {v, dom, seq, payload, tag} envelope.
+ *
+ * Lives at the adapter layer, below the frame/sift/distill logic. Sequence
+ * numbers are per-direction and monotonic from 0; the receive side accepts
+ * exactly the next expected sequence, so replayed, reordered, or dropped
+ * messages are reported as a ChannelSyncError rather than being absorbed.
+ *
+ * One instance covers one MAC domain: the orchestrator builds a fresh one per
+ * round (kind 'msg') and a one-shot one for the fingerprint exchange (kind
+ * 'fp'), so sequence spaces restart at each boundary and an envelope captured
+ * in one domain never verifies in another.
+ *
+ * `dom` names that domain on the wire so a message for another one is skipped
+ * before the sequence and MAC checks instead of failing them. Sessions share
+ * the underlying transport, so without it a message still in flight when a
+ * session is torn down lands in the successor and reads there as a sequence
+ * violation or a MAC failure — indistinguishable from an attack. The field
+ * cannot be abused: it is covered by the MAC, so changing it only causes the
+ * message to be skipped, exactly as not sending it would.
+ */
+export class AuthenticatedClassicalChannel {
+  /**
+   * @param {{send: Function, receive: Function}} inner - transport channel
+   * @param {ChannelAuth} auth
+   * @param {string} [kind] - MAC domain-separation label
+   */
+  constructor(inner, auth, kind = 'msg') {
+    this._inner = inner;
+    this._auth = auth;
+    this._kind = kind;
+    this._sendSeq = 0;
+    this._recvSeq = 0;
+    this._sendTail = Promise.resolve();
+  }
+
+  /**
+   * Concurrent sends sign in parallel but reach the wire in sequence order:
+   * signing completes out of order, and the peer rejects any sequence gap.
+   */
+  async send(data) {
+    const payload = JSON.stringify(data);
+    const seq = this._sendSeq++;
+    const tag = this._auth.sign(this._kind, seq, payload);
+    const sent = this._sendTail.then(async () =>
+      this._inner.send({ v: 1, dom: this._kind, seq, payload, tag: await tag }),
+    );
+    this._sendTail = sent.catch(() => {});
+    return sent;
+  }
+
+  async receive() {
+    for (;;) {
+      const env = await this._inner.receive();
+      if (
+        !env ||
+        typeof env !== 'object' ||
+        env.v !== 1 ||
+        typeof env.payload !== 'string' ||
+        typeof env.tag !== 'string' ||
+        !Number.isInteger(env.seq)
+      ) {
+        throw new ChannelAuthError('malformed authenticated envelope');
+      }
+      // A peer that does not label its domain gets the checks below, so a
+      // mixed-version call still works; only a mismatched label is skipped.
+      if (typeof env.dom === 'string' && env.dom !== this._kind) continue;
+      return this._open(env);
+    }
+  }
+
+  /** @private sequence, MAC and JSON checks for a message of this domain. */
+  async _open(env) {
+    if (env.seq !== this._recvSeq) {
+      throw new ChannelSyncError(`sequence violation: expected ${this._recvSeq}, got ${env.seq}`);
+    }
+    const ok = await this._auth.verify(this._kind, env.seq, env.payload, env.tag);
+    if (!ok) throw new ChannelAuthError('MAC verification failed');
+    this._recvSeq++;
+    try {
+      return JSON.parse(env.payload);
+    } catch {
+      throw new ChannelAuthError('authenticated payload is not valid JSON');
+    }
+  }
+}

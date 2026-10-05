@@ -1,0 +1,115 @@
+---
+import DemoShell from '../../../layouts/DemoShell.astro';
+
+// The relay is reached over WebSocket, so the scheme is named rather than left
+// to the CSP3 rule that lets an https source match wss.
+Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
+---
+
+<DemoShell
+  title="Quantum Video Chat"
+  description="A peer-to-peer video call whose encryption keys come from BB84 quantum key distribution. Run the key exchange in your browser, or place a real call with a pass."
+  backend={{ service: 'qvc' }}
+  fitContent
+>
+  <div id="qvc-app">
+    <!-- Lobby: the static skeleton the shell renders into. A visitor with no
+         pass gets the simulation; the call controls need the live tier. -->
+    <section id="qvc-lobby" class="qvc-lobby" aria-labelledby="qvc-lobby-title">
+      <h2 id="qvc-lobby-title" class="qvc-lobby-title">Quantum key distribution, end to end</h2>
+      <p class="qvc-lobby-lede">
+        Keys for this call come from BB84: single photons, measured in randomly chosen bases,
+        reconciled and privacy-amplified into an AES-GCM key. Run the exchange here on its own, or
+        place a real call.
+      </p>
+
+      <div class="qvc-tier">
+        <button id="qvc-run-demo" class="s6-btn s6-btn--primary" type="button">
+          Run the simulation
+        </button>
+        <p class="qvc-tier-note">
+          Simulation of the key exchange. No camera, no microphone, no second person.
+        </p>
+      </div>
+
+      <div class="qvc-tier">
+        <button id="qvc-create" class="s6-btn" type="button" disabled>Start a call</button>
+        <form id="qvc-join-form" class="qvc-join">
+          <label class="qvc-join-label" for="qvc-room-input">Invite link</label>
+          <input
+            id="qvc-room-input"
+            class="qvc-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Paste invite link"
+            disabled
+          />
+          <button id="qvc-join" class="s6-btn" type="submit" disabled>Join</button>
+        </form>
+        <p id="qvc-live-note" class="qvc-tier-note">
+          A real call needs a pass and a second person. Connect above to enable it.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
+       match the signalling server's socket.io family. Stays a classic script; it
+       supplies the `io` global the bundled app consumes. -->
+  <script is:inline src="/vendor/socket.io-4.7.5.min.js"></script>
+  <!-- Quantum-video-chat tier (bundled module): shell, signalling, demo. -->
+  <script>
+    import '../../../apps/qvc/entry';
+  </script>
+</DemoShell>
+
+<style>
+  .qvc-lobby {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 48rem;
+  }
+
+  .qvc-lobby-title {
+    margin: 0;
+    font-size: var(--font-size-5);
+  }
+
+  .qvc-lobby-lede {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .qvc-tier {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-2);
+  }
+
+  .qvc-tier-note {
+    margin: 0;
+    font-size: var(--font-size-1);
+    color: var(--color-text-muted);
+  }
+
+  .qvc-join {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: end;
+  }
+
+  .qvc-join-label {
+    flex-basis: 100%;
+    font-size: var(--font-size-1);
+  }
+
+  .qvc-input {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+</style>
