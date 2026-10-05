@@ -11,7 +11,7 @@
  * costs a few kilobytes and a static Lighthouse run logs no refused socket.
  */
 import { state, parseRoomToken, resetSession } from './state';
-import { renderLobby, renderCall } from './render';
+import { renderLobby, renderCall, fmtTime } from './render';
 import { drawQberChart } from './chart';
 import { track } from '../../telemetry';
 
@@ -225,23 +225,82 @@ async function setDemoEavesdropper(on: boolean): Promise<void> {
   });
 }
 
+async function onCallStart(): Promise<void> {
+  const { openBus, startPublishing, logEvent } = await import('./bus');
+  const { setFingerprintSource } = await import('./bus');
+  const { fingerprints } = await import('./signalling');
+  await openBus(applyCommand);
+  setFingerprintSource(fingerprints);
+  startPublishing();
+  logEvent('call-start');
+  startTimer();
+}
+
+/** Commands the analytics window may send back, each already allowlisted. */
+function applyCommand(cmd: 'toggle-eve' | 'force-rotate' | 'reset'): void {
+  if (cmd === 'toggle-eve') {
+    // Mirrors the in-call gate: the eavesdropper is the initiator's to run.
+    if (state.isInitiator) {
+      state.eavesdropper = !state.eavesdropper;
+      void import('./signalling').then(({ setEavesdropper }) => {
+        setEavesdropper(state.eavesdropper);
+      });
+    }
+  } else if (cmd === 'reset') {
+    void leaveCall();
+  }
+  render();
+}
+
+let elapsedTimer: number | null = null;
+
+function startTimer(): void {
+  if (elapsedTimer !== null) return;
+  elapsedTimer = window.setInterval(() => {
+    state.elapsed += 1;
+    const el = document.getElementById('qvc-timer');
+    if (el) el.textContent = fmtTime(state.elapsed);
+  }, 1000);
+}
+
+function stopTimer(): void {
+  if (elapsedTimer !== null) clearInterval(elapsedTimer);
+  elapsedTimer = null;
+}
+
+async function leaveCall(): Promise<void> {
+  const { leave } = await import('./signalling');
+  const { publishSummary, stopPublishing } = await import('./bus');
+  publishSummary();
+  stopPublishing();
+  stopTimer();
+  leave();
+  resetSession();
+  render();
+}
+
 async function startCall(): Promise<void> {
   const { startCall: begin } = await import('./signalling');
   track({ app: 'qvc', event: 'run.start', tier: 'live', variant: 'create' });
-  await begin();
+  await begin(() => {
+    void onCallStart();
+  });
 }
 
 async function joinCall(token: string): Promise<void> {
   const { joinCall: join } = await import('./signalling');
   track({ app: 'qvc', event: 'run.start', tier: 'live', variant: 'join' });
-  await join(token);
+  await join(token, () => {
+    void onCallStart();
+  });
 }
 
 document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'qvc' || !detail.url) return;
   const url = detail.url;
-  void import('./signalling').then(({ connect }) => {
+  void import('./signalling').then(({ connect, setHost }) => {
+    setHost({ render, notify: showToast });
     connect(url);
     state.connected = true;
     state.liveAvailable = true;
@@ -253,6 +312,8 @@ void import('./optical').then(({ loadSettings }) => {
   state.optical = loadSettings();
   render();
 });
+// The invite fragment carries the room, and may carry the pass beside it;
+// parseRoomToken stops at the first character outside the token alphabet.
 pendingRoomToken = parseRoomToken(window.location.hash);
 state.invited = pendingRoomToken !== '';
 document.addEventListener('click', onClick);
