@@ -42,7 +42,8 @@ export const projects: Project[] = [
     slug: 'quantum-video-chat',
     description:
       'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, built at Qualcomm Institute.',
-    tier: 'external',
+    appUrl: '/projects/quantum-video-chat/app/',
+    tier: 'browser',
     icon: 'video_dark.svg',
     repoUrl: 'https://github.com/andypeterson2/bb84-video-chat',
     metrics: [
