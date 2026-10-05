@@ -305,3 +305,21 @@ describe('the simulation reports only what it has', () => {
     expect(said[0]).toContain('Channel integrity lost');
   });
 });
+
+describe('the analytics screen omits what it cannot measure', () => {
+  test('with no call it says so instead of printing a grid of dashes', async () => {
+    const { renderPanels } = await import('../../src/apps/qvc/analytics/panels');
+    const html = renderPanels({ bb84Active: true, inCall: false }, Date.now());
+    expect(html).toContain('No call, so there is no media');
+    expect(html).not.toContain('DTLS');
+    // The four sparklines were the bulk of the empty grid.
+    expect(html).not.toContain('an-sparkline');
+  });
+
+  test('in a call the media and fingerprint rows come back', async () => {
+    const { renderPanels } = await import('../../src/apps/qvc/analytics/panels');
+    const html = renderPanels({ bb84Active: true, inCall: true }, Date.now());
+    expect(html).toContain('DTLS');
+    expect(html).toContain('Bandwidth');
+  });
+});

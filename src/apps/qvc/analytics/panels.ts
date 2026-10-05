@@ -149,6 +149,13 @@ function qberPanel(s: Snapshot): string {
 }
 
 function securityPanel(s: Snapshot): string {
+  // The fingerprints bind a DTLS session, which exists only with a peer.
+  const fpRows = s.inCall
+    ? `<div class="an-fp">
+        <div><span class="an-k">DTLS (you)</span> <code>${shortFp(s.fingerprints?.local)}</code></div>
+        <div><span class="an-k">DTLS (peer)</span> <code>${shortFp(s.fingerprints?.remote)}</code></div>
+      </div>`
+    : '';
   const emoji = s.sas?.emoji?.length ? esc(s.sas.emoji.join(' ')) : DASH;
   const digits = s.sas?.digits ? esc(s.sas.digits) : DASH;
   const verified = s.sasVerified
@@ -165,10 +172,7 @@ function securityPanel(s: Snapshot): string {
         <div class="an-sas-digits">${digits}</div>
         ${verified}
       </div>
-      <div class="an-fp">
-        <div><span class="an-k">DTLS (you)</span> <code>${shortFp(s.fingerprints?.local)}</code></div>
-        <div><span class="an-k">DTLS (peer)</span> <code>${shortFp(s.fingerprints?.remote)}</code></div>
-      </div>
+      ${fpRows}
     </section>`;
 }
 
@@ -180,6 +184,14 @@ function spark(label: string, current: string, chart: string): string {
 }
 
 function mediaPanel(s: Snapshot): string {
+  // With no peer there is no media to measure, and a grid of twelve dashes
+  // reads as a broken panel rather than an empty one. Say it in a line instead.
+  if (!s.inCall) {
+    return `<section class="an-panel">
+        <h2>Media and network</h2>
+        <p class="an-sub">No call, so there is no media, no bandwidth and no frame latency.</p>
+      </section>`;
+  }
   const q = s.quality ?? {};
   const c = s.crypto ?? {};
   const kbps =

@@ -382,8 +382,10 @@ export function renderLobby(): string {
   return `<section class="qvc-lobby" aria-labelledby="qvc-lobby-title">
       <h2 id="qvc-lobby-title" class="qvc-lobby-title">Quantum key distribution, end to end</h2>
       <p class="qvc-lede">
-        Keys for this call come from BB84: single photons, measured in randomly chosen bases,
-        reconciled and privacy-amplified into an AES-GCM key.
+        Keys come from BB84: photons measured in randomly chosen bases, reconciled and
+        privacy-amplified into an AES-GCM key. The photons are simulated — a channel model
+        with attenuation, detector efficiency, dark counts and polarization misalignment —
+        and everything above that model is the real protocol.
       </p>
       ${demoTier()}
       ${callTier()}
