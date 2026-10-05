@@ -308,6 +308,21 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     height: var(--space-16);
   }
 
+  /* Optical bench, in the builds that may reach one */
+  #qvc-app :global(.qvc-bench-toggle) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-size: var(--text-xs);
+  }
+
+  #qvc-app :global(.qvc-bench-fields) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+  }
+
   /* Toast */
   .qvc-toast {
     position: fixed;

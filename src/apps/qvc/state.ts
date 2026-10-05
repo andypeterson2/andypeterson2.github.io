@@ -2,10 +2,8 @@
  * Shell state for the video call.
  *
  * One object, mutated by the engine's phase events and the user's clicks, read
- * by the render functions. Everything the source shell kept for the optical
- * bench, the analytics window and the page's own theme is gone: the bench is
- * research-only, the dashboard already shows the live numbers, and the portal
- * owns the theme.
+ * by the render functions. The page's own theme handling is gone: the portal
+ * boots the theme, and a second writer would fight it.
  */
 
 /** What the crypto worker says about the media, which is not what BB84 says. */
@@ -60,6 +58,10 @@ export interface QvcState {
   dashboardExpanded: boolean;
   /** The simulation is running in this tab, with no media and no peer. */
   demoRunning: boolean;
+  /** Bench settings, in the builds that may reach one. */
+  optical: { enabled: boolean; url: string; token: string };
+  /** Pairing feedback shown beside the bench controls. */
+  opticalStatus: string;
 }
 
 /** Per-frame QBER points kept for the strip chart. */
@@ -98,6 +100,8 @@ export function initialState(): QvcState {
     mediaError: '',
     dashboardExpanded: false,
     demoRunning: false,
+    optical: { enabled: false, url: 'ws://127.0.0.1:8781', token: '' },
+    opticalStatus: '',
   };
 }
 
@@ -105,8 +109,8 @@ export const state: QvcState = initialState();
 
 /** Reset to a fresh lobby, keeping what the page learned about the tier. */
 export function resetSession(): void {
-  const { connected, liveAvailable, invited } = state;
-  Object.assign(state, initialState(), { connected, liveAvailable, invited });
+  const { connected, liveAvailable, invited, optical } = state;
+  Object.assign(state, initialState(), { connected, liveAvailable, invited, optical });
 }
 
 /** Record a QBER sample, holding the strip chart to its cap. */

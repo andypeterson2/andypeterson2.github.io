@@ -37,7 +37,7 @@ export const DOUBLE_COLUMNS = ['value', 'a', 'b', 'n'] as const;
 /** Bumped when a column's meaning changes, which is the only time one may. */
 const SCHEMA_VERSION = 1;
 
-export type TelemetryApp = 'nonogram' | 'classifiers' | 'cv' | 'portal';
+export type TelemetryApp = 'nonogram' | 'classifiers' | 'cv' | 'qvc' | 'portal';
 export type TelemetryName = 'run.start' | 'run.done' | 'tier.change';
 export type TelemetryTier = 'browser' | 'live' | 'hardware';
 export type TelemetryOutcome = 'ok' | 'empty' | 'error' | 'capped' | 'refused';

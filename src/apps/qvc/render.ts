@@ -11,6 +11,7 @@
  */
 import { MAX_QBER, HALF_RATE_QBER } from './engine/bench/distill.js';
 import { state } from './state';
+import { benchAvailable } from './optical';
 
 /** BB84 stops minting above this QBER; intercept-resend lands near 25%. */
 export const QBER_THRESHOLD: number = MAX_QBER;
@@ -233,6 +234,38 @@ function callTier(): string {
   return `<div class="qvc-tier">${body}</div>`;
 }
 
+/**
+ * The bench controls, in the builds that may reach one. Production ships no
+ * `ws://127.0.0.1` in connect-src, so there the control would only ever be
+ * refused, and this returns nothing.
+ */
+function benchTier(): string {
+  if (!benchAvailable()) return '';
+  const fields = state.optical.enabled
+    ? `<div class="qvc-bench-fields">
+         <label class="qvc-label" for="qvc-bench-url">Daemon address</label>
+         <input id="qvc-bench-url" class="qvc-input" type="text" data-action="bench-url" />
+         <label class="qvc-label" for="qvc-bench-token">Pairing token</label>
+         <input id="qvc-bench-token" class="qvc-input" type="password" data-action="bench-token" />
+         <p class="qvc-note">
+           Both peers need a bench; with one, the call uses the simulator on both sides.
+           ${state.opticalStatus ? `Daemon: ${esc(state.opticalStatus)}` : ''}
+         </p>
+       </div>`
+    : '';
+  return `<div class="qvc-tier">
+      <label class="qvc-bench-toggle">
+        <input
+          type="checkbox"
+          data-action="toggle-bench"
+          ${state.optical.enabled ? 'checked' : ''}
+        />
+        <span>Use an optical bench (hardware daemon)</span>
+      </label>
+      ${fields}
+    </div>`;
+}
+
 /** The pre-call view: both tiers, and whatever the live one is waiting on. */
 export function renderLobby(): string {
   return `<section class="qvc-lobby" aria-labelledby="qvc-lobby-title">
@@ -243,6 +276,7 @@ export function renderLobby(): string {
       </p>
       ${demoTier()}
       ${callTier()}
+      ${benchTier()}
     </section>`;
 }
 

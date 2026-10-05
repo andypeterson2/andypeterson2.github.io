@@ -13,6 +13,7 @@
 import { state, parseRoomToken, resetSession } from './state';
 import { renderLobby, renderCall } from './render';
 import { drawQberChart } from './chart';
+import { track } from '../../telemetry';
 
 let toastTimer: number | null = null;
 /** A token from an invite link, applied to the input once. */
@@ -48,8 +49,15 @@ function applySinks(): void {
   const sasDigits = document.getElementById('qvc-sas-digits');
   if (sasDigits && state.sas) sasDigits.textContent = state.sas.digits;
 
+  // The bench token is a credential, so it reaches the field through a value
+  // sink rather than a rendered markup string.
+  const benchUrl = document.getElementById('qvc-bench-url');
+  if (benchUrl instanceof HTMLInputElement) benchUrl.value = state.optical.url;
+  const benchToken = document.getElementById('qvc-bench-token');
+  if (benchToken instanceof HTMLInputElement) benchToken.value = state.optical.token;
+
   // The strict style-src admits no inline style attribute, so the bar's width
-  // is set as a custom property on the element after it is in the document.
+  // rides a custom property set once the element is in the document.
   const fill = document.getElementById('qvc-distill-fill');
   if (fill) {
     const pct = state.mintBudget ? Math.min(1, state.reservoirBits / state.mintBudget) : 0;
@@ -95,6 +103,19 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
     },
     'sas-mismatch': () => {
       showToast('Hang up. A mismatch means someone is relaying this call.');
+    },
+    'toggle-bench': (el) => {
+      if (el instanceof HTMLInputElement) state.optical.enabled = el.checked;
+      void saveBench();
+      render();
+    },
+    'bench-url': (el) => {
+      if (el instanceof HTMLInputElement) state.optical.url = el.value.trim();
+      void saveBench();
+    },
+    'bench-token': (el) => {
+      if (el instanceof HTMLInputElement) state.optical.token = el.value;
+      void saveBench();
     },
     'copy-link': () => {
       void navigator.clipboard.writeText(state.joinLink).then(
@@ -146,8 +167,15 @@ function onSubmit(e: Event): void {
 async function startDemo(): Promise<void> {
   const { runDemo, setPhaseSink } = await import('./demo');
   const { applyEnginePhase } = await import('./engine-state');
+  let firstKey = true;
   setPhaseSink((s) => {
     applyEnginePhase(s, showToast);
+    // The first mint is what says the exchange works; later ones are the same
+    // event repeating, and a key every few seconds is not worth a beacon each.
+    if (s.phase === 'minted' && firstKey) {
+      firstKey = false;
+      track({ app: 'qvc', event: 'run.done', tier: 'browser', outcome: 'ok', variant: 'sim' });
+    }
     render();
   });
   state.demoRunning = true;
@@ -156,22 +184,36 @@ async function startDemo(): Promise<void> {
   state.dashboardExpanded = true;
   // The simulation drives alice, so the eavesdropper toggle belongs to it.
   state.isInitiator = true;
+  track({ app: 'qvc', event: 'run.start', tier: 'browser', variant: 'sim' });
   render();
   await runDemo();
+}
+
+async function saveBench(): Promise<void> {
+  const { saveSettings } = await import('./optical');
+  saveSettings(state.optical);
 }
 
 async function setDemoEavesdropper(on: boolean): Promise<void> {
   const { currentDemo } = await import('./demo');
   currentDemo()?.setEavesdropper(on);
+  track({
+    app: 'qvc',
+    event: 'run.start',
+    tier: 'browser',
+    variant: on ? 'eavesdropper' : 'sim',
+  });
 }
 
 async function startCall(): Promise<void> {
   const { startCall: begin } = await import('./signalling');
+  track({ app: 'qvc', event: 'run.start', tier: 'live', variant: 'create' });
   await begin();
 }
 
 async function joinCall(token: string): Promise<void> {
   const { joinCall: join } = await import('./signalling');
+  track({ app: 'qvc', event: 'run.start', tier: 'live', variant: 'join' });
   await join(token);
 }
 
@@ -187,6 +229,10 @@ document.addEventListener('navbar:connect', (e) => {
   });
 });
 
+void import('./optical').then(({ loadSettings }) => {
+  state.optical = loadSettings();
+  render();
+});
 pendingRoomToken = parseRoomToken(window.location.hash);
 state.invited = pendingRoomToken !== '';
 document.addEventListener('click', onClick);
