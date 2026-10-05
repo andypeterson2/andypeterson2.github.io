@@ -150,7 +150,7 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
       );
     },
     'create-room': () => {
-      void startCall();
+      void startCall().catch(reportCallFailure);
     },
     leave: () => {
       resetSession();
@@ -192,7 +192,7 @@ function onSubmit(e: Event): void {
     showToast('Paste an invite link to join.');
     return;
   }
-  void joinCall(token);
+  void joinCall(token).catch(reportCallFailure);
 }
 
 async function startDemo(): Promise<void> {
@@ -322,6 +322,23 @@ async function leaveCall(): Promise<void> {
   stopTimer();
   leave();
   resetSession();
+  render();
+}
+
+/**
+ * A call that cannot start says why. Without this a rejected promise ends in
+ * silence and the button looks dead — which is what a refused ice-servers
+ * request looked like from the outside.
+ */
+function reportCallFailure(err: unknown): void {
+  console.warn('[qvc] call setup failed:', err);
+  const detail = err instanceof Error ? err.message : String(err);
+  showToast(
+    detail.startsWith('ice-servers:')
+      ? `The gateway refused the call setup (${detail}). The pass may have expired.`
+      : `The call could not be started: ${detail}`,
+  );
+  state.joining = false;
   render();
 }
 

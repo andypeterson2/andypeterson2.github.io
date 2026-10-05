@@ -281,15 +281,35 @@ async function ensureEngine(onCallStart: () => void): Promise<EngineManager> {
   return m;
 }
 
+/**
+ * What a getUserMedia failure actually was. Reporting "permission denied" for
+ * every one of these sends people to a settings page that is already correct —
+ * the common case on a second tab is a camera another tab already holds.
+ */
+function mediaFailure(err: unknown): string {
+  const name = err instanceof Error ? err.name : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Camera and microphone access was refused. Allow it in your browser’s site settings, then try again.';
+  }
+  if (name === 'NotReadableError' || name === 'AbortError') {
+    return 'The camera is in use by another tab or application. Close it and try again.';
+  }
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+    return 'No camera and microphone were found on this device.';
+  }
+  const detail = err instanceof Error ? err.message : String(err);
+  return `The camera could not be started: ${detail}`;
+}
+
 async function startLocalMedia(m: EngineManager): Promise<boolean> {
   if (localStream) return true;
   try {
     localStream = await m.getLocalMedia();
     attachStream('qvc-local-video', localStream);
     return true;
-  } catch {
-    state.mediaError =
-      'Camera and microphone access is required. Allow it in your browser’s site settings, then try again.';
+  } catch (err) {
+    console.warn('[qvc] getLocalMedia failed:', err);
+    state.mediaError = mediaFailure(err);
     host.render();
     return false;
   }
