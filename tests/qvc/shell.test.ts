@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /** The layer the port added: shell state, engine phases, and what renders. */
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import {
   state,
   initialState,
@@ -194,4 +194,23 @@ describe('leaving a call', () => {
     expect(state.liveAvailable).toBe(true);
     expect(state.invited).toBe(true);
   });
+});
+
+describe('the simulation wires both ends together', () => {
+  test('two orchestrators reach a shared key with no peer and no pass', async () => {
+    // jsdom has no RTCPeerConnection, so this exercises the in-memory fallback:
+    // the exchange runs, and with no certificates to bind it says so.
+    const { runDemo, setPhaseSink } = await import('../../src/apps/qvc/demo');
+    const seen: string[] = [];
+    setPhaseSink((s) => void seen.push(s.phase));
+    const run = await runDemo();
+    expect(run.authenticated).toBe(false);
+    try {
+      await vi.waitFor(() => {
+        expect(seen).toContain('minted');
+      }, 20_000);
+    } finally {
+      run.stop();
+    }
+  }, 30_000);
 });

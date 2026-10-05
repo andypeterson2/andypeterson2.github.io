@@ -58,6 +58,10 @@ export interface QvcState {
   dashboardExpanded: boolean;
   /** The simulation is running in this tab, with no media and no peer. */
   demoRunning: boolean;
+  /** The simulation got real certificates, so its channel is MAC'd and bound. */
+  demoAuthenticated: boolean;
+  /** Bob's SAS digits, which must match alice's for the binding to mean anything. */
+  peerSas: string | null;
   /** Bench settings, in the builds that may reach one. */
   optical: { enabled: boolean; url: string; token: string };
   /** Pairing feedback shown beside the bench controls. */
@@ -100,6 +104,8 @@ export function initialState(): QvcState {
     mediaError: '',
     dashboardExpanded: false,
     demoRunning: false,
+    demoAuthenticated: false,
+    peerSas: null,
     optical: { enabled: false, url: 'ws://127.0.0.1:8781', token: '' },
     opticalStatus: '',
   };

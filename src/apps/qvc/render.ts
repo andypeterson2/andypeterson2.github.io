@@ -169,6 +169,35 @@ export function renderDashboard(): string {
     ${state.dashboardExpanded ? dashboardBody() : ''}`;
 }
 
+/** What the simulation is, stated before it runs and corrected once it has. */
+function demoScope(): string {
+  if (!state.demoRunning) {
+    return 'Both ends of the key exchange in this tab. No camera, no microphone, no second person.';
+  }
+  return state.demoAuthenticated
+    ? `Both ends in this tab, joined by a real peer connection: the classical channel is
+       authenticated and the short authentication string below is derived from the two DTLS
+       certificates, as it is in a call. No camera, no microphone, no second person.`
+    : `Both ends in this tab over an in-memory channel, because this browser gave no peer
+       connection. There are no certificates to bind, so the channel is unauthenticated and
+       no short authentication string is derived.`;
+}
+
+/** Two independent ends reaching the same string, which is the whole claim. */
+function sasAgreement(): string {
+  if (!state.demoAuthenticated || !state.sas) return '';
+  const agree = state.peerSas !== null && state.peerSas === state.sas.digits;
+  return `<div class="qvc-sas">
+      <span class="qvc-sas-emoji" aria-hidden="true">${esc(state.sas.emoji.join(' '))}</span>
+      <strong class="qvc-sas-digits">${esc(state.sas.digits)}</strong>
+      <span class="qvc-sas-hint">${
+        agree
+          ? 'Both ends derived this independently and agree. In a call you would read it aloud.'
+          : 'Waiting for the other end to derive its own.'
+      }</span>
+    </div>`;
+}
+
 /** The simulation tier, which needs nothing from anyone. */
 function demoTier(): string {
   return `<div class="qvc-tier">
@@ -177,9 +206,8 @@ function demoTier(): string {
         data-action="run-demo"
         ${state.demoRunning ? 'disabled' : ''}
       >${state.demoRunning ? 'Simulation running' : 'Run the simulation'}</button>
-      <p class="qvc-note">
-        Both ends of the key exchange in this tab. No camera, no microphone, no second person.
-      </p>
+      <p class="qvc-note">${demoScope()}</p>
+      ${state.demoRunning ? sasAgreement() : ''}
       ${state.demoRunning ? renderDashboard() : ''}
       ${state.demoRunning ? '<button class="s6-btn s6-btn--sm" data-action="open-analytics">Open the analytics screen</button>' : ''}
     </div>`;

@@ -94,7 +94,13 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
     },
     'toggle-eve': () => {
       state.eavesdropper = !state.eavesdropper;
-      void setDemoEavesdropper(state.eavesdropper);
+      if (state.demoRunning) {
+        void setDemoEavesdropper(state.eavesdropper ? 1 : 0);
+      } else {
+        void import('./signalling').then(({ setEavesdropper }) => {
+          setEavesdropper(state.eavesdropper);
+        });
+      }
       render();
     },
     'sas-verify': () => {
@@ -174,7 +180,14 @@ async function startDemo(): Promise<void> {
   const { applyEnginePhase } = await import('./engine-state');
   const { openBus, startPublishing, logEvent } = await import('./bus');
   let firstKey = true;
-  setPhaseSink((s) => {
+  setPhaseSink((s, side) => {
+    // Alice drives the dashboard; both run the same protocol, so taking both
+    // would double every counter. Bob's SAS is kept to prove the two agree.
+    if (side === 'bob') {
+      if (s.phase === 'sas' && s.sas) state.peerSas = s.sas.digits;
+      render();
+      return;
+    }
     applyEnginePhase(s, showToast);
     // The timeline is the point of the analytics screen, so each phase worth a
     // row goes on the bus as it happens rather than waiting for the next tick.
@@ -204,7 +217,9 @@ async function startDemo(): Promise<void> {
   logEvent('call-start');
   track({ app: 'qvc', event: 'run.start', tier: 'browser', variant: 'sim' });
   render();
-  await runDemo();
+  const run = await runDemo();
+  state.demoAuthenticated = run.authenticated;
+  render();
 }
 
 async function saveBench(): Promise<void> {
@@ -212,16 +227,16 @@ async function saveBench(): Promise<void> {
   saveSettings(state.optical);
 }
 
-async function setDemoEavesdropper(on: boolean): Promise<void> {
+async function setDemoEavesdropper(fraction: number): Promise<void> {
   const { currentDemo } = await import('./demo');
-  currentDemo()?.setEavesdropper(on);
+  currentDemo()?.setEavesdropper(fraction);
   const { logEvent } = await import('./bus');
-  logEvent('eve', { on });
+  logEvent('eve', { fraction });
   track({
     app: 'qvc',
     event: 'run.start',
     tier: 'browser',
-    variant: on ? 'eavesdropper' : 'sim',
+    variant: fraction > 0 ? 'eavesdropper' : 'sim',
   });
 }
 
