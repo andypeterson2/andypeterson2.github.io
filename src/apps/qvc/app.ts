@@ -68,6 +68,9 @@ function applySinks(): void {
 export function render(): void {
   const app = root();
   if (!app) return;
+  // The engine repaints several times a second, which would otherwise take the
+  // slider out from under a drag. Its value and focus survive the swap.
+  const dragging = document.activeElement?.id === 'qvc-eve';
   // Re-renders happen while the user types, so the markup swap reads their
   // input back first and restores it.
   const typed =
@@ -80,6 +83,10 @@ export function render(): void {
     if (roomInput instanceof HTMLInputElement) roomInput.value = typed;
   }
   applySinks();
+  if (dragging) {
+    const eve = document.getElementById('qvc-eve');
+    if (eve instanceof HTMLInputElement) eve.focus();
+  }
   if (state.bb84Active && state.dashboardExpanded) drawQberChart();
 }
 
@@ -92,16 +99,20 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
       state.dashboardExpanded = !state.dashboardExpanded;
       render();
     },
-    'toggle-eve': () => {
-      state.eavesdropper = !state.eavesdropper;
+    'set-eve': (el) => {
+      if (!(el instanceof HTMLInputElement)) return;
+      state.eveFraction = Math.min(1, Math.max(0, Number(el.value) / 100));
+      state.eavesdropper = state.eveFraction > 0;
       if (state.demoRunning) {
-        void setDemoEavesdropper(state.eavesdropper ? 1 : 0);
+        void setDemoEavesdropper(state.eveFraction);
       } else {
         void import('./signalling').then(({ setEavesdropper }) => {
-          setEavesdropper(state.eavesdropper);
+          setEavesdropper(state.eveFraction);
         });
       }
-      render();
+      // The readout alone, so dragging does not rebuild the panel under the thumb.
+      const read = document.getElementById('qvc-eve-read');
+      if (read) read.textContent = `${String(Math.round(state.eveFraction * 100))}% of slots`;
     },
     'sas-verify': () => {
       state.sasVerified = true;
@@ -162,6 +173,15 @@ function onClick(e: Event): void {
   handler(el);
 }
 
+/** Ranges report through `input`, which `click` would miss while dragging. */
+function onInput(e: Event): void {
+  const el = e.target;
+  if (!(el instanceof HTMLInputElement) || el.type !== 'range') return;
+  const action = el.dataset.action;
+  if (!action) return;
+  ACTIONS.get(action)?.(el);
+}
+
 function onSubmit(e: Event): void {
   const form = e.target;
   if (!(form instanceof HTMLFormElement) || form.dataset.action !== 'join-room') return;
@@ -177,7 +197,7 @@ function onSubmit(e: Event): void {
 
 async function startDemo(): Promise<void> {
   const { runDemo, setPhaseSink } = await import('./demo');
-  const { applyEnginePhase } = await import('./engine-state');
+  const { applyEnginePhase, recordPeerDigest } = await import('./engine-state');
   const { openBus, startPublishing, logEvent } = await import('./bus');
   let firstKey = true;
   setPhaseSink((s, side) => {
@@ -185,6 +205,11 @@ async function startDemo(): Promise<void> {
     // would double every counter. Bob's SAS is kept to prove the two agree.
     if (side === 'bob') {
       if (s.phase === 'sas' && s.sas) state.peerSas = s.sas.digits;
+      // The detector's own digest for the same mint: the receipt only claims
+      // agreement once both ends have reported one.
+      if (s.phase === 'minted' && typeof s.keyIndex === 'number') {
+        recordPeerDigest(s.keyIndex, s.digest ?? null);
+      }
       render();
       return;
     }
@@ -256,9 +281,12 @@ function applyCommand(cmd: 'toggle-eve' | 'force-rotate' | 'reset'): void {
   if (cmd === 'toggle-eve') {
     // Mirrors the in-call gate: the eavesdropper is the initiator's to run.
     if (state.isInitiator) {
-      state.eavesdropper = !state.eavesdropper;
+      // The analytics window sends a plain toggle, so it swings between none
+      // and all of the channel.
+      state.eveFraction = state.eveFraction > 0 ? 0 : 1;
+      state.eavesdropper = state.eveFraction > 0;
       void import('./signalling').then(({ setEavesdropper }) => {
-        setEavesdropper(state.eavesdropper);
+        setEavesdropper(state.eveFraction);
       });
     }
   } else if (cmd === 'reset') {
@@ -332,5 +360,6 @@ void import('./optical').then(({ loadSettings }) => {
 pendingRoomToken = parseRoomToken(window.location.hash);
 state.invited = pendingRoomToken !== '';
 document.addEventListener('click', onClick);
+document.addEventListener('input', onInput);
 document.addEventListener('submit', onSubmit);
 render();

@@ -161,9 +161,72 @@ describe('the dashboard', () => {
   test('only an initiator is offered the eavesdropper', () => {
     state.bb84Active = true;
     state.dashboardExpanded = true;
-    expect(renderDashboard()).not.toContain('toggle-eve');
+    expect(renderDashboard()).not.toContain('set-eve');
     state.isInitiator = true;
-    expect(renderDashboard()).toContain('toggle-eve');
+    expect(renderDashboard()).toContain('set-eve');
+  });
+
+  test('the eavesdropper is a dial, not a switch', () => {
+    state.bb84Active = true;
+    state.dashboardExpanded = true;
+    state.isInitiator = true;
+    state.eveFraction = 0.37;
+    const html = renderDashboard();
+    expect(html).toContain('type="range"');
+    expect(html).toContain('value="37"');
+    expect(html).toContain('37% of slots');
+  });
+
+  test('the budget says what is missing rather than printing a number for it', () => {
+    state.bb84Active = true;
+    state.dashboardExpanded = true;
+    expect(renderDashboard()).toContain('no bound on what an eavesdropper knows');
+  });
+
+  test('the budget itemises the terms the mint was decided on', () => {
+    state.bb84Active = true;
+    state.dashboardExpanded = true;
+    state.budget = {
+      pooled: 4000,
+      samples: 800,
+      observed: 0.02,
+      penalty: 0.18,
+      bounded: 0.2,
+      privacy: 1100,
+      expectedLeak: 900,
+      paBits: 65,
+      verifyBits: 64,
+      target: 128,
+      remaining: 71,
+    };
+    const html = renderDashboard();
+    expect(html).toContain('4,000');
+    expect(html).toContain('2.00%');
+    expect(html).toContain('−65');
+    // Short of a key, and said so rather than shown as if it were enough.
+    expect(html).toContain('71 of 128 — not yet');
+  });
+
+  test('a receipt only claims agreement once both ends have reported', () => {
+    state.bb84Active = true;
+    state.dashboardExpanded = true;
+    state.receipts = [
+      {
+        keyIndex: 1,
+        disclosed: 600,
+        allowance: 900,
+        expectedLeak: 920,
+        pooled: 4000,
+        verified: true,
+        digest: 'aabbccdd',
+        peerDigest: null,
+      },
+    ];
+    expect(renderDashboard()).not.toContain('both ends');
+    state.receipts[0].peerDigest = 'aabbccdd';
+    expect(renderDashboard()).toContain('both ends aabbccdd');
+    state.receipts[0].peerDigest = 'ffffffff';
+    expect(renderDashboard()).toContain('ends disagree');
   });
 });
 

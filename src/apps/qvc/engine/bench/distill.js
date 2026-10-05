@@ -423,7 +423,7 @@ export function privacyAmplify(bits, targetLength, seed) {
 export async function distillSource(
   pool,
   io,
-  { mintId, target = 128, qber = DEFAULT_QBER, samples = 0, sampleErrors = 0, allowance },
+  { mintId, target = 128, qber = DEFAULT_QBER, samples = 0, sampleErrors = 0, allowance, onLedger },
 ) {
   // `allowance` is for exercising reconciliation on its own, at error rates no
   // pool can mint at. The engine never passes it: there the budget is the
@@ -468,6 +468,9 @@ export async function distillSource(
   if (!ok) throw new DistillError('corrected pools diverge (verification hash mismatch)', 'verify');
   const seed = randomBits(pool.length + target - 1);
   await io.send({ type: 'mint-seed', mintId, seed: toB64(packBits(seed)) });
+  if (typeof onLedger === 'function') {
+    onLedger({ disclosed, allowance, pooled: pool.length, blockSizes, verified: ok, target });
+  }
   return bitsToBytes(privacyAmplify(pool, target, seed));
 }
 

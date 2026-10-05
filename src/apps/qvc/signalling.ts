@@ -41,7 +41,7 @@ interface Orchestrator {
   init: (o: { roomToken: string; isInitiator: boolean }) => Promise<void>;
   handleMessage: (data: unknown) => void;
   configureBench: (b: unknown) => void;
-  setEavesdropper: (on: boolean) => void;
+  setEavesdropper: (fraction: number) => void;
   destroy: () => void;
 }
 
@@ -274,9 +274,10 @@ export async function joinCall(token: string, onCallStart: () => void): Promise<
   m.joinRoom(token);
 }
 
-export function setEavesdropper(on: boolean): void {
-  orchestrator?.setEavesdropper(on);
-  socket?.emit('eve_demo', { active: on });
+/** `fraction` is the share of slots she intercepts, 0 to 1. */
+export function setEavesdropper(fraction: number): void {
+  orchestrator?.setEavesdropper(fraction);
+  socket?.emit('eve_demo', { active: fraction > 0, fraction });
 }
 
 /** The DTLS fingerprints, for the analytics screen. Null before a call. */

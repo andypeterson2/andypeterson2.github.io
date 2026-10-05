@@ -13,6 +13,33 @@ export type CipherState =
 /** Where the key bits came from. Never claim photons that were not measured. */
 export type KeyMode = 'sim' | 'optical' | null;
 
+/** The key budget, itemised, straight from the functions that gate the mint. */
+export interface BudgetTerms {
+  pooled: number;
+  samples: number;
+  observed: number;
+  penalty: number;
+  bounded: number;
+  privacy: number;
+  expectedLeak: number;
+  paBits: number;
+  verifyBits: number;
+  target: number;
+  remaining: number;
+}
+
+/** What one mint actually cost. */
+export interface Receipt {
+  keyIndex: number;
+  disclosed: number;
+  allowance: number;
+  expectedLeak: number;
+  pooled: number;
+  verified: boolean;
+  digest: string | null;
+  peerDigest: string | null;
+}
+
 /** The fingerprint-bound short authentication string both sides compare. */
 export interface Sas {
   digits: string;
@@ -62,6 +89,12 @@ export interface QvcState {
   demoAuthenticated: boolean;
   /** Bob's SAS digits, which must match alice's for the binding to mean anything. */
   peerSas: string | null;
+  /** Share of slots the eavesdropper intercepts, 0 to 1. */
+  eveFraction: number;
+  /** The key budget's own terms, as the engine computed them. */
+  budget: BudgetTerms | null;
+  /** One row per mint: what reconciliation cost against what it was allowed. */
+  receipts: Receipt[];
   /** Bench settings, in the builds that may reach one. */
   optical: { enabled: boolean; url: string; token: string };
   /** Pairing feedback shown beside the bench controls. */
@@ -106,6 +139,9 @@ export function initialState(): QvcState {
     demoRunning: false,
     demoAuthenticated: false,
     peerSas: null,
+    eveFraction: 0,
+    budget: null,
+    receipts: [],
     optical: { enabled: false, url: 'ws://127.0.0.1:8781', token: '' },
     opticalStatus: '',
   };

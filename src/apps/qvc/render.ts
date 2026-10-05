@@ -11,6 +11,7 @@
  */
 import { MAX_QBER, HALF_RATE_QBER } from './engine/bench/distill.js';
 import { state } from './state';
+import type { BudgetTerms, Receipt } from './state';
 import { benchAvailable } from './optical';
 
 /** BB84 stops minting above this QBER; intercept-resend lands near 25%. */
@@ -109,6 +110,85 @@ function metric(label: string, value: string, extra = ''): string {
     </div>`;
 }
 
+/**
+ * Eve as a dial rather than a switch. The interesting region is between an
+ * undisturbed channel and the point where no pool of any size mints; a toggle
+ * jumps over all of it.
+ */
+function eveSlider(): string {
+  const pct = Math.round(state.eveFraction * 100);
+  return `<div class="qvc-eve">
+      <label class="qvc-label" for="qvc-eve">Eavesdropper intercepts</label>
+      <input
+        id="qvc-eve"
+        class="qvc-eve-range"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="${String(pct)}"
+        data-action="set-eve"
+        aria-describedby="qvc-eve-read"
+      />
+      <output id="qvc-eve-read" class="qvc-eve-read">${String(pct)}% of slots</output>
+    </div>`;
+}
+
+/** The budget as the engine computed it, term by term. */
+function budgetPanel(b: BudgetTerms | null): string {
+  if (!b) {
+    return '<p class="qvc-note">No sample yet, so no bound on what an eavesdropper knows.</p>';
+  }
+  const row = (k: string, v: string) =>
+    `<div class="qvc-budget-row"><span>${k}</span><span>${v}</span></div>`;
+  const pctOf = (x: number) => `${(x * 100).toFixed(2)}%`;
+  const short = b.remaining < b.target;
+  return `<div class="qvc-budget">
+      ${row('Pooled bits (n)', b.pooled.toLocaleString())}
+      ${row('Sampled (k)', b.samples.toLocaleString())}
+      ${row('Observed error', pctOf(b.observed))}
+      ${row('Finite-key penalty (μ)', pctOf(b.penalty))}
+      ${row('Eve bounded at', pctOf(b.bounded))}
+      ${row('Privacy n(1 − h)', b.privacy.toLocaleString())}
+      ${row('− reconciliation', `−${b.expectedLeak.toLocaleString()}`)}
+      ${row('− privacy amplification', `−${String(b.paBits)}`)}
+      ${row('− verification hash', `−${String(b.verifyBits)}`)}
+      ${row(
+        'Left for a key',
+        `${b.remaining.toLocaleString()} of ${String(b.target)}${short ? ' — not yet' : ''}`,
+      )}
+    </div>`;
+}
+
+/** One row per mint: what reconciliation cost against what it was allowed. */
+function receipts(rows: Receipt[]): string {
+  if (!rows.length) return '';
+  const body = rows
+    .map((r) => {
+      const ratio = r.expectedLeak > 0 ? (r.disclosed / r.expectedLeak).toFixed(2) : '—';
+      const agree =
+        r.digest && r.peerDigest
+          ? r.digest === r.peerDigest
+            ? `both ends ${esc(r.digest)}`
+            : 'ends disagree'
+          : r.digest
+            ? esc(r.digest)
+            : '—';
+      return `<li>
+          <span class="qvc-receipt-k">#${String(r.keyIndex)}</span>
+          <span>${r.disclosed.toLocaleString()} / ${r.allowance.toLocaleString()} parities</span>
+          <span>${ratio}× the estimate</span>
+          <span>${r.verified ? 'verified' : 'unverified'}</span>
+          <span class="qvc-receipt-d">${agree}</span>
+        </li>`;
+    })
+    .join('');
+  return `<div class="qvc-receipts">
+      <h3 class="qvc-receipts-title">What each key cost</h3>
+      <ul class="qvc-receipt-list">${body}</ul>
+    </div>`;
+}
+
 /** The expanded telemetry body: distillation, the four counters, the chart. */
 function dashboardBody(): string {
   const stalled = state.qber !== null && state.qber > QBER_THRESHOLD;
@@ -120,11 +200,7 @@ function dashboardBody(): string {
       : qberStatus() === 'warning'
         ? ' qvc-metric-value--warning'
         : '';
-  const eve = state.isInitiator
-    ? `<button class="s6-btn s6-btn--sm" data-action="toggle-eve" aria-pressed="${String(state.eavesdropper)}">
-         ${state.eavesdropper ? 'Eavesdropper active — click to remove' : 'Simulate eavesdropper'}
-       </button>`
-    : '';
+  const eve = state.isInitiator ? eveSlider() : '';
   return `<div class="qvc-qd-body" id="qvc-qd-body">
       <div class="qvc-distill">
         <div class="qvc-distill-bar">
@@ -146,6 +222,8 @@ function dashboardBody(): string {
       <canvas id="qvc-chart" class="qvc-chart" aria-label="Quantum bit error rate over time"
       ></canvas>
       ${eve}
+      ${budgetPanel(state.budget)}
+      ${receipts(state.receipts)}
     </div>`;
 }
 

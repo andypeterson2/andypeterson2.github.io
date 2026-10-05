@@ -11,13 +11,21 @@
  * simulator produces would come from a path no physical link takes.
  */
 
+/** A share of slots, from a boolean or a number. Anything else reads as none. */
+function toFraction(value) {
+  if (value === true) return 1;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
+
 export class SimulatedQuantumChannel {
   /**
    * @param {object} options
    * @param {number} options.fiberLengthKm - fiber length in km (default 1.0)
    * @param {number} options.sourceIntensity - mean photon number per pulse (default 0.1)
    * @param {number} options.detectorEfficiency - APD detection efficiency (default 0.10)
-   * @param {boolean} options.eavesdropperEnabled - whether Eve intercepts (default false)
+   * @param {boolean|number} options.eavesdropperEnabled - the share of slots Eve
+   *   intercepts, 0 to 1; `true` means every slot (default false)
    * @param {number} options.misalignmentError - chance a detected photon reads
    *   in the wrong polarization, the link's optical visibility error. 1.5% is
    *   the middle of what short-fiber BB84 benches report (default 0.015)
@@ -29,7 +37,7 @@ export class SimulatedQuantumChannel {
     this._fiberLengthKm = options.fiberLengthKm ?? 1.0;
     this._sourceIntensity = options.sourceIntensity ?? 0.1;
     this._detectorEfficiency = options.detectorEfficiency ?? 0.1;
-    this._eavesdropperEnabled = options.eavesdropperEnabled ?? false;
+    this._eavesdropperEnabled = toFraction(options.eavesdropperEnabled);
     this._misalignmentError = options.misalignmentError ?? 0.015;
     this._darkCountRate = options.darkCountRate ?? 1e-5;
 
@@ -60,13 +68,13 @@ export class SimulatedQuantumChannel {
   }
 
   /**
-   * Toggle eavesdropper.
+   * Set how much of the channel Eve touches.
    * @param {boolean} enabled
    */
   setEavesdropper(enabled) {
-    this._eavesdropperEnabled = enabled;
+    this._eavesdropperEnabled = toFraction(enabled);
     if (this._peer) {
-      this._peer._eavesdropperEnabled = enabled;
+      this._peer._eavesdropperEnabled = toFraction(enabled);
     }
   }
 
@@ -139,7 +147,12 @@ export class SimulatedQuantumChannel {
       return { bit: 0, basis, detected: false };
     }
 
-    let bit = this._eavesdropperEnabled ? this._intercept(qubit.bit, basis) : qubit.bit;
+    // Eve on a share of the slots: every intercepted one is measured and
+    // resent, so the error she adds scales with how much she touches.
+    let bit =
+      this._eavesdropperEnabled > 0 && Math.random() < this._eavesdropperEnabled
+        ? this._intercept(qubit.bit, basis)
+        : qubit.bit;
 
     // Misaligned polarization frames, so a share of right-basis photons read
     // wrong. The whole error rate on a short undisturbed fiber.

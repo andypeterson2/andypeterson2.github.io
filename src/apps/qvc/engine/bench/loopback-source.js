@@ -34,7 +34,7 @@ export class LoopbackFrameSource {
     this.role = role;
     this._sendToPeer = sendToPeer;
     this._channelOptions = { ...CHANNEL_OPTIONS, ...channelOptions };
-    this._eavesdropper = false;
+    this._eavesdropper = 0;
     this._onDetections = null;
     this._started = false;
   }
@@ -53,7 +53,7 @@ export class LoopbackFrameSource {
 
   setEavesdropper(enabled) {
     if (this.role !== 'source') throw new Error('only the source role owns the eavesdropper');
-    this._eavesdropper = !!enabled;
+    this._eavesdropper = enabled === true ? 1 : Number(enabled) || 0;
   }
 
   get eavesdropperEnabled() {

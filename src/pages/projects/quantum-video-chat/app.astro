@@ -308,6 +308,62 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     height: var(--space-16);
   }
 
+  /* Eavesdropper dial, budget and receipts */
+  #qvc-app :global(.qvc-eve) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  #qvc-app :global(.qvc-eve-range) {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  #qvc-app :global(.qvc-eve-read) {
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-budget) {
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-budget-row) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.1em 0;
+  }
+
+  #qvc-app :global(.qvc-receipts-title) {
+    margin: 0;
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-receipt-list) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-receipt-list li) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0.1em 0;
+  }
+
+  #qvc-app :global(.qvc-receipt-k) {
+    min-width: 2.5em;
+  }
+
   /* Optical bench, in the builds that may reach one */
   #qvc-app :global(.qvc-bench-toggle) {
     display: flex;

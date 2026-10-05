@@ -45,6 +45,11 @@ import {
   DistillError,
   DEFAULT_QBER,
   MAX_QBER,
+  binaryEntropy,
+  finiteKeyPenalty,
+  leakage,
+  PA_SECURITY_BITS,
+  VERIFY_HASH_BITS,
 } from './distill.js';
 import { DEFAULT_SLOTS_PER_FRAME } from './frame-source.js';
 
@@ -677,8 +682,41 @@ export class ReservoirEngine {
         this._poolSamples,
         this._poolSampleErrors,
       ),
+      // The terms the mint is decided on, so a reader sees the arithmetic the
+      // gate used rather than a second calculation that can drift from it.
+      budget: this._budgetTerms(),
       ...stats,
     });
+  }
+
+  /**
+   * The current pool's key budget, itemised. Every term comes from the same
+   * functions that decide whether a mint may run, so the display is the gate.
+   * @private
+   */
+  _budgetTerms() {
+    const n = this._pool.length;
+    const samples = this._poolSamples;
+    const sampleErrors = this._poolSampleErrors;
+    if (!n || samples <= 0) return null;
+    const observed = Math.min(0.5, Math.max(0, sampleErrors / samples));
+    const penalty = finiteKeyPenalty(n, samples);
+    const bounded = Math.min(0.5, observed + penalty);
+    const privacy = n * (1 - binaryEntropy(bounded));
+    const expectedLeak = leakage(n, Math.max(observed, 1e-6));
+    return {
+      pooled: n,
+      samples,
+      observed,
+      penalty,
+      bounded,
+      privacy: Math.floor(privacy),
+      expectedLeak: Math.round(expectedLeak),
+      paBits: PA_SECURITY_BITS,
+      verifyBits: VERIFY_HASH_BITS,
+      target: TARGET_KEY_BITS,
+      remaining: Math.floor(privacy - expectedLeak - PA_SECURITY_BITS - VERIFY_HASH_BITS),
+    };
   }
 
   /* Minting & rotation */
@@ -740,6 +778,15 @@ export class ReservoirEngine {
         qber,
         samples,
         sampleErrors,
+        // What the reconciliation actually cost, against what it was allowed.
+        onLedger: (ledger) => {
+          this._onState({
+            phase: 'mint-ledger',
+            mintId,
+            ...ledger,
+            expectedLeak: Math.round(leakage(pool.length, Math.max(qber, 1e-6))),
+          });
+        },
       });
     } else {
       const begin = await io.receive(['mint-begin']);
@@ -755,7 +802,16 @@ export class ReservoirEngine {
     }
     const keyIndex = this._keyIndex++;
     this._pendingKeys.push({ key, keyIndex });
-    this._onState({ phase: 'minted', keyIndex, poolDepth: this._pendingKeys.length, mintId });
+    // A short digest of the key, so two sides can be shown agreeing without the
+    // key itself ever reaching the page.
+    const digest = await keyDigest(key);
+    this._onState({
+      phase: 'minted',
+      keyIndex,
+      poolDepth: this._pendingKeys.length,
+      mintId,
+      digest,
+    });
     this._scheduleInstall();
   }
 
@@ -816,6 +872,18 @@ export function decodePeerDetections(p) {
 }
 
 /** Pool size past which the budget display gives up and reports null. */
+/** First four bytes of SHA-256 over the key: enough to show two sides agree. */
+async function keyDigest(key) {
+  try {
+    const hash = await crypto.subtle.digest('SHA-256', key);
+    return Array.from(new Uint8Array(hash).slice(0, 4), (b) => b.toString(16).padStart(2, '0')).join(
+      '',
+    );
+  } catch {
+    return null;
+  }
+}
+
 const MINT_BUDGET_SEARCH_LIMIT = 1 << 22;
 
 function mintBudgetBits(poolLen, qber, samples, sampleErrors) {

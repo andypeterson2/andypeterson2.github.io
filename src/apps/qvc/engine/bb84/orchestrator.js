@@ -46,6 +46,11 @@ export class BB84Orchestrator {
 
   /** @returns {boolean} whether the simulated eavesdropper is active. */
   get eavesdropperEnabled() {
+    return this._eavesdropper > 0;
+  }
+
+  /** @returns {number} the share of slots she intercepts, 0 to 1. */
+  get eavesdropperFraction() {
     return this._eavesdropper;
   }
 
@@ -55,7 +60,7 @@ export class BB84Orchestrator {
    * @param {boolean} enabled
    */
   setEavesdropper(enabled) {
-    this._eavesdropper = !!enabled;
+    this._eavesdropper = enabled === true ? 1 : Number(enabled) || 0;
     if (this._engine) this._engine.setEavesdropper(this._eavesdropper);
   }
 
@@ -128,7 +133,7 @@ export class BB84Orchestrator {
       onState: (s) => this._onEngineState(s),
       slotsPerFrame: this._slots,
     });
-    if (this._eavesdropper) this._engine.setEavesdropper(true);
+    if (this._eavesdropper) this._engine.setEavesdropper(this._eavesdropper);
     this._engine.start();
   }
 
@@ -223,10 +228,27 @@ export class BB84Orchestrator {
           mintBudget: s.mintBudget,
           detections: s.detections,
           slots: s.slots,
+          budget: s.budget,
         });
         break;
       case 'minted':
-        this._onStateChange({ phase: 'minted', keyIndex: s.keyIndex, poolDepth: s.poolDepth });
+        this._onStateChange({
+          phase: 'minted',
+          keyIndex: s.keyIndex,
+          poolDepth: s.poolDepth,
+          digest: s.digest,
+        });
+        break;
+      case 'mint-ledger':
+        this._onStateChange({
+          phase: 'mint-ledger',
+          mintId: s.mintId,
+          disclosed: s.disclosed,
+          allowance: s.allowance,
+          expectedLeak: s.expectedLeak,
+          pooled: s.pooled,
+          verified: s.verified,
+        });
         break;
       case 'rotated':
         this._onStateChange({ phase: 'rotated', keyIndex: s.keyIndex, poolDepth: s.poolDepth });
