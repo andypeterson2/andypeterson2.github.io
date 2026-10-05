@@ -52,7 +52,7 @@ function onFailure(s: EnginePhase, notify: Notify): void {
     return;
   }
   if (s.reason === 'setup') {
-    state.cipherState = 'compromised';
+    if (!state.demoRunning) state.cipherState = 'compromised';
     notify('Secure-channel setup failed — no key will be established.');
     return;
   }
@@ -107,6 +107,12 @@ const HANDLERS = new Map<string, (s: EnginePhase, notify: Notify) => void>(
     },
     failed: onFailure,
     exhausted: (_s: EnginePhase, notify: Notify) => {
+      if (state.demoRunning) {
+        // No media and no worker here, so nothing is compromised: the channel
+        // simply cannot clear its own budget at this error rate.
+        notify('No key is obtainable at this error rate — every frame is being rejected.');
+        return;
+      }
       // Frames still ride the last good key — the worker never downgrades — but no
       // fresh key is obtainable, so this says so and leaves the choice to the user.
       state.cipherState = 'compromised';

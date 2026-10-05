@@ -64,8 +64,12 @@ export function distillFraction(): number {
   return Math.min(1, state.reservoirBits / state.mintBudget);
 }
 
-/** The cipher pill, which reports the crypto worker and nothing else. */
+/**
+ * The cipher pill, which reports the crypto worker and nothing else. With no
+ * worker there is nothing to report, so no pill is drawn.
+ */
 function cipherPill(): string {
+  if (state.cipherState === null) return '';
   const views: Record<string, { mod: string; label: string }> = {
     establishing: { mod: 'establishing', label: 'Establishing encryption…' },
     encrypted: {

@@ -51,10 +51,6 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
   </div>
   <div id="qvc-toast" class="qvc-toast" role="status" aria-live="polite"></div>
 
-  <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
-       match the signalling server's socket.io family. Stays a classic script; it
-       supplies the `io` global the bundled app consumes. -->
-  <script is:inline src="/vendor/socket.io-4.7.5.min.js"></script>
   <!-- Quantum-video-chat tier (bundled module): shell, signalling, simulation. -->
   <script>
     import '../../../apps/qvc/entry';

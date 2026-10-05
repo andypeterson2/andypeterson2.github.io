@@ -277,3 +277,31 @@ describe('the simulation wires both ends together', () => {
     }
   }, 30_000);
 });
+
+describe('the simulation reports only what it has', () => {
+  test('no crypto worker means no cipher state and no pill', async () => {
+    const { renderCall } = await import('../../src/apps/qvc/render');
+    state.cipherState = null;
+    state.peerConnected = true;
+    expect(renderCall()).not.toContain('qvc-pill');
+    state.cipherState = 'encrypted';
+    expect(renderCall()).toContain('qvc-pill');
+  });
+
+  test('exhaustion in the simulation does not claim a compromised cipher', () => {
+    const said: string[] = [];
+    state.demoRunning = true;
+    state.cipherState = null;
+    applyEnginePhase({ phase: 'exhausted' }, (m) => void said.push(m));
+    expect(state.cipherState).toBeNull();
+    expect(said[0]).toContain('No key is obtainable');
+  });
+
+  test('exhaustion in a real call still reports the compromise', () => {
+    const said: string[] = [];
+    state.demoRunning = false;
+    applyEnginePhase({ phase: 'exhausted' }, (m) => void said.push(m));
+    expect(state.cipherState).toBe('compromised');
+    expect(said[0]).toContain('Channel integrity lost');
+  });
+});

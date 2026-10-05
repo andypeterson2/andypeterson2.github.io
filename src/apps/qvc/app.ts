@@ -231,6 +231,9 @@ async function startDemo(): Promise<void> {
   });
   state.demoRunning = true;
   state.bb84Active = true;
+  // There is no crypto worker in the simulation, so there is no cipher state to
+  // report; a dash says that, where 'establishing' would imply one exists.
+  state.cipherState = null;
   state.mode = 'sim';
   state.dashboardExpanded = true;
   // The simulation drives alice, so the eavesdropper toggle belongs to it.

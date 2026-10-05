@@ -49,6 +49,33 @@ export function setHost(next: Host): void {
   host = next;
 }
 
+/**
+ * The vendored Socket.IO classic script, fetched when a call needs it.
+ *
+ * It is 50KB and no visitor without a pass can use it, so the lobby does not
+ * carry it. Same-origin, so the strict script-src admits it; the page's own
+ * CSP needs no third-party source.
+ */
+const IO_SRC = '/vendor/socket.io-4.7.5.min.js';
+let ioLoading: Promise<void> | null = null;
+
+function loadSocketIo(): Promise<void> {
+  if (typeof io !== 'undefined') return Promise.resolve();
+  ioLoading ??= new Promise<void>((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = IO_SRC;
+    el.onload = () => {
+      resolve();
+    };
+    el.onerror = () => {
+      ioLoading = null;
+      reject(new Error('socket.io failed to load'));
+    };
+    document.head.append(el);
+  });
+  return ioLoading;
+}
+
 export function connect(url: string): void {
   // Allowlist the origin before opening a socket to it — anything on the page
   // can dispatch a CustomEvent, and this URL carries call setup.
@@ -57,6 +84,17 @@ export function connect(url: string): void {
     return;
   }
   if (socket) socket.disconnect();
+  apiBase = url;
+  void loadSocketIo().then(() => {
+    openSocket(url);
+  }, onLoadFailure);
+}
+
+function onLoadFailure(): void {
+  host.notify('The call components failed to load. Reload the page to try again.');
+}
+
+function openSocket(url: string): void {
   const target = new URL(url);
   const prefix = target.pathname.replace(/\/$/, '');
   const opts: QvcSocketOptions = {
@@ -66,7 +104,6 @@ export function connect(url: string): void {
   const pass = window.SitePass.token();
   if (pass) opts.query = { pass };
   socket = io(target.origin, opts);
-  apiBase = url;
 
   socket.on('connect', () => {
     state.connected = true;

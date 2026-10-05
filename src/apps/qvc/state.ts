@@ -75,7 +75,8 @@ export interface QvcState {
   rotations: number;
   /** Keys waiting in the reservoir to rotate in. */
   poolDepth: number;
-  cipherState: CipherState;
+  /** Null where there is no crypto worker to report on, as in the simulation. */
+  cipherState: CipherState | null;
   joinLink: string;
   sas: Sas | null;
   sasVerified: boolean;
