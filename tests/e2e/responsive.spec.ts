@@ -41,6 +41,7 @@ test.describe('Reflow at 320px', () => {
     '/',
     '/projects/ai-ml/app/',
     '/projects/quantum-nonogram-solver/app/',
+    '/projects/quantum-video-chat/app/',
     '/projects/latex-resume-editor/app/',
     '/nope',
   ]) {

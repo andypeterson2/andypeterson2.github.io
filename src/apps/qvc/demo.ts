@@ -6,6 +6,7 @@
  * in a real call. The cipher state is left out rather than faked: there is no
  * media worker here to report on.
  */
+import type { EnginePhase } from './engine-state';
 
 /** Both ends of a simulated exchange, already streaming. */
 export interface DemoRun {
@@ -17,6 +18,11 @@ export interface DemoRun {
 }
 
 let current: DemoRun | null = null;
+
+/** The simulation now running in this tab, if any. */
+export function currentDemo(): DemoRun | null {
+  return current;
+}
 
 export async function runDemo(): Promise<DemoRun> {
   current?.stop();
@@ -38,6 +44,13 @@ type DemoOrchestratorCtor = new (opts: {
   onStateChange: (s: unknown) => void;
   slotsPerFrame?: number;
 }) => DemoOrchestrator;
+
+/** How the shell is told about a phase; set once, by the module that renders. */
+let onPhase: (s: EnginePhase) => void = () => undefined;
+
+export function setPhaseSink(sink: (s: EnginePhase) => void): void {
+  onPhase = sink;
+}
 
 /** Mirror-image DTLS fingerprint views, as two honest peers would report. */
 const MIRROR_FPS = {
@@ -61,9 +74,13 @@ function start(Orchestrator: DemoOrchestratorCtor): DemoRun {
     getDtlsFingerprints: () => MIRROR_FPS[self],
   });
 
+  // One side drives the dashboard. Both run the same protocol, so taking both
+  // would double every counter.
   const alice = new Orchestrator({
     webrtcManager: transport('alice', 'bob'),
-    onStateChange: () => undefined,
+    onStateChange: (s: unknown) => {
+      onPhase(s as EnginePhase);
+    },
   });
   const bob = new Orchestrator({
     webrtcManager: transport('bob', 'alice'),

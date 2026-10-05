@@ -12,30 +12,27 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
   backend={{ service: 'qvc' }}
   fitContent
 >
+  <!-- The shell replaces this on load. It matches what the lobby renders, so
+       the first paint is the page rather than an empty box. -->
   <div id="qvc-app">
-    <!-- Lobby: the static skeleton the shell renders into. A visitor with no
-         pass gets the simulation; the call controls need the live tier. -->
-    <section id="qvc-lobby" class="qvc-lobby" aria-labelledby="qvc-lobby-title">
+    <section class="qvc-lobby" aria-labelledby="qvc-lobby-title">
       <h2 id="qvc-lobby-title" class="qvc-lobby-title">Quantum key distribution, end to end</h2>
-      <p class="qvc-lobby-lede">
+      <p class="qvc-lede">
         Keys for this call come from BB84: single photons, measured in randomly chosen bases,
-        reconciled and privacy-amplified into an AES-GCM key. Run the exchange here on its own, or
-        place a real call.
+        reconciled and privacy-amplified into an AES-GCM key.
       </p>
-
       <div class="qvc-tier">
-        <button id="qvc-run-demo" class="s6-btn s6-btn--primary" type="button">
-          Run the simulation
-        </button>
-        <p class="qvc-tier-note">
-          Simulation of the key exchange. No camera, no microphone, no second person.
+        <button class="s6-btn s6-btn--primary" data-action="run-demo">Run the simulation</button>
+        <p class="qvc-note">
+          Both ends of the key exchange in this tab. No camera, no microphone, no second person.
         </p>
       </div>
-
       <div class="qvc-tier">
-        <button id="qvc-create" class="s6-btn" type="button" disabled>Start a call</button>
-        <form id="qvc-join-form" class="qvc-join">
-          <label class="qvc-join-label" for="qvc-room-input">Invite link</label>
+        <button class="s6-btn s6-btn--primary" data-action="create-room" disabled>
+          Start a call
+        </button>
+        <form class="qvc-join" data-action="join-room">
+          <label class="qvc-label" for="qvc-room-input">Invite link</label>
           <input
             id="qvc-room-input"
             class="qvc-input"
@@ -44,72 +41,293 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
             placeholder="Paste invite link"
             disabled
           />
-          <button id="qvc-join" class="s6-btn" type="submit" disabled>Join</button>
+          <button class="s6-btn" type="submit" disabled>Join</button>
         </form>
-        <p id="qvc-live-note" class="qvc-tier-note">
+        <p class="qvc-note">
           A real call needs a pass and a second person. Connect above to enable it.
         </p>
       </div>
     </section>
   </div>
+  <div id="qvc-toast" class="qvc-toast" role="status" aria-live="polite"></div>
 
   <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
        match the signalling server's socket.io family. Stays a classic script; it
        supplies the `io` global the bundled app consumes. -->
   <script is:inline src="/vendor/socket.io-4.7.5.min.js"></script>
-  <!-- Quantum-video-chat tier (bundled module): shell, signalling, demo. -->
+  <!-- Quantum-video-chat tier (bundled module): shell, signalling, simulation. -->
   <script>
     import '../../../apps/qvc/entry';
   </script>
 </DemoShell>
 
 <style>
-  .qvc-lobby {
+  #qvc-app {
+    font-family: var(--font-ui);
+  }
+
+  #qvc-app :global(.qvc-lobby),
+  #qvc-app :global(.qvc-call) {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    max-width: 48rem;
+    max-width: var(--max-width);
   }
 
-  .qvc-lobby-title {
+  #qvc-app :global(.qvc-lobby-title) {
     margin: 0;
-    font-size: var(--font-size-5);
+    font-size: var(--text-xl);
   }
 
-  .qvc-lobby-lede {
+  #qvc-app :global(.qvc-lede),
+  #qvc-app :global(.qvc-note) {
     margin: 0;
-    color: var(--color-text-muted);
+    color: var(--ink-3);
   }
 
-  .qvc-tier {
+  #qvc-app :global(.qvc-note) {
+    font-size: var(--text-xs);
+  }
+
+  #qvc-app :global(.qvc-tier) {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    align-items: start;
     padding: var(--space-3);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-2);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-md);
   }
 
-  .qvc-tier-note {
-    margin: 0;
-    font-size: var(--font-size-1);
-    color: var(--color-text-muted);
-  }
-
-  .qvc-join {
+  #qvc-app :global(.qvc-join) {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
     align-items: end;
   }
 
-  .qvc-join-label {
+  #qvc-app :global(.qvc-label) {
     flex-basis: 100%;
-    font-size: var(--font-size-1);
+    font-size: var(--text-xs);
   }
 
-  .qvc-input {
+  #qvc-app :global(.qvc-input) {
     flex: 1 1 16rem;
     min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  #qvc-app :global(.qvc-error) {
+    margin: 0;
+    color: var(--color-danger);
+    font-size: var(--text-xs);
+  }
+
+  /* Call */
+  #qvc-app :global(.qvc-video-area) {
+    position: relative;
+    background: var(--paper-3);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  #qvc-app :global(.qvc-remote-video) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  #qvc-app :global(.qvc-pip-video) {
+    position: absolute;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    width: 28%;
+    max-width: 12rem;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+  }
+
+  #qvc-app :global(.qvc-call-info),
+  #qvc-app :global(.qvc-toolbar),
+  #qvc-app :global(.qvc-metrics),
+  #qvc-app :global(.qvc-sas-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  #qvc-app :global(.qvc-call-info) {
+    font-size: var(--text-xs);
+  }
+
+  #qvc-app :global(.qvc-pill) {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-2xs);
+  }
+
+  #qvc-app :global(.qvc-pill--encrypted) {
+    color: var(--color-success);
+  }
+
+  #qvc-app :global(.qvc-pill--compromised),
+  #qvc-app :global(.qvc-pill--unencrypted) {
+    color: var(--color-danger);
+  }
+
+  #qvc-app :global(.qvc-banner),
+  #qvc-app :global(.qvc-waiting) {
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--paper-2);
+    font-size: var(--text-xs);
+  }
+
+  /* Short authentication string */
+  #qvc-app :global(.qvc-sas) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-md);
+  }
+
+  #qvc-app :global(.qvc-sas-emoji) {
+    font-size: var(--text-xl);
+    letter-spacing: var(--space-1);
+  }
+
+  #qvc-app :global(.qvc-sas-digits) {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+  }
+
+  #qvc-app :global(.qvc-sas-hint) {
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+
+  /* Dashboard */
+  #qvc-app :global(.qvc-qd-toggle) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    font-size: var(--text-xs);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #qvc-app :global(.qvc-qd-mode),
+  #qvc-app :global(.qvc-qd-badge) {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-qd-badge--warning) {
+    color: var(--color-warning);
+  }
+
+  #qvc-app :global(.qvc-qd-badge--danger) {
+    color: var(--color-danger);
+  }
+
+  #qvc-app :global(.qvc-qd-inactive) {
+    margin: 0;
+    color: var(--ink-3);
+    font-size: var(--text-xs);
+  }
+
+  #qvc-app :global(.qvc-qd-body) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+  }
+
+  #qvc-app :global(.qvc-distill-bar) {
+    height: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--paper-3);
+    overflow: hidden;
+  }
+
+  #qvc-app :global(.qvc-distill-fill) {
+    display: block;
+    width: var(--qvc-fill, 0%);
+    height: 100%;
+    background: var(--color-success);
+  }
+
+  #qvc-app :global(.qvc-distill-fill--stalled) {
+    background: var(--color-danger);
+  }
+
+  #qvc-app :global(.qvc-distill-label) {
+    font-size: var(--text-3xs);
+    color: var(--ink-3);
+  }
+
+  #qvc-app :global(.qvc-metric) {
+    display: flex;
+    flex-direction: column;
+    min-width: var(--space-16);
+  }
+
+  #qvc-app :global(.qvc-metric-value) {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+  }
+
+  #qvc-app :global(.qvc-metric-value--warning) {
+    color: var(--color-warning);
+  }
+
+  #qvc-app :global(.qvc-metric-value--danger) {
+    color: var(--color-danger);
+  }
+
+  #qvc-app :global(.qvc-metric-label) {
+    font-size: var(--text-4xs);
+    color: var(--ink-3);
+  }
+
+  #qvc-app :global(.qvc-chart) {
+    width: 100%;
+    height: var(--space-16);
+  }
+
+  /* Toast */
+  .qvc-toast {
+    position: fixed;
+    left: 50%;
+    bottom: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--ink);
+    color: var(--paper);
+    font-size: var(--text-xs);
+    transform: translate(-50%, var(--space-4));
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--dur) ease,
+      transform var(--dur) ease;
+  }
+
+  .qvc-toast--visible {
+    transform: translate(-50%, 0);
+    opacity: 1;
   }
 </style>

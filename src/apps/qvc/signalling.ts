@@ -7,6 +7,7 @@
  * so the pass rides as `?pass=`, which the gateway reads and strips.
  */
 import { ServiceConfig } from '../shared/service-config';
+import { state } from './state';
 
 let socket: ReturnType<typeof io> | null = null;
 
@@ -70,7 +71,23 @@ async function loadEngine(): Promise<{
  * few kilobytes until someone actually places a call.
  */
 export async function startCall(): Promise<void> {
-  if (!apiBase) throw new Error('startCall before connect');
+  await ensureManager();
+  socket?.emit('create_room');
+  state.isInitiator = true;
+  state.waitingForPeer = true;
+}
+
+/** Join the room an invite link named. */
+export async function joinCall(token: string): Promise<void> {
+  await ensureManager();
+  socket?.emit('join_room', { room_id: token });
+  state.isInitiator = false;
+  state.joining = true;
+}
+
+async function ensureManager(): Promise<void> {
+  if (manager) return;
+  if (!apiBase) throw new Error('no gateway: connect runs first');
   const iceServers = await fetchIceServers(apiBase);
   const { WebRTCManager } = await loadEngine();
   manager = new WebRTCManager({ iceServers });

@@ -8,6 +8,7 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
 const EDITOR = '/projects/latex-resume-editor/app/';
 const NONOGRAM = '/projects/quantum-nonogram-solver/app/';
 const CLASSIFIER = '/projects/ai-ml/app/';
+const QVC = '/projects/quantum-video-chat/app/';
 
 type Setup = (page: Page) => Promise<void>;
 
@@ -49,6 +50,16 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
   { name: 'nonogram', path: NONOGRAM },
   { name: 'nonogram, dark', path: NONOGRAM, dark: true },
   { name: 'nonogram, phone', path: NONOGRAM, phone: true },
+  { name: 'video chat', path: QVC },
+  { name: 'video chat, dark', path: QVC, dark: true },
+  {
+    name: 'video chat, simulation running',
+    path: QVC,
+    setup: async (page) => {
+      await page.locator('[data-action="run-demo"]').click();
+      await expect(page.locator('.qvc-qd-toggle')).toBeVisible();
+    },
+  },
   {
     name: 'editor, first-run invite',
     path: EDITOR,
