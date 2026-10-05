@@ -323,3 +323,35 @@ describe('the analytics screen omits what it cannot measure', () => {
     expect(html).toContain('Bandwidth');
   });
 });
+
+describe('the invite link', () => {
+  test('carries the room, and the pass beside it', () => {
+    // What wireRoom builds, pinned: a reader of the link needs both, and the
+    // room must survive a pass sitting next to it.
+    const frag = new URLSearchParams({ room: 'AbCdEf0123456789xyz' });
+    frag.set('pass', 'a.pass.value');
+    const link = `https://example.test/app/#${frag.toString()}`;
+    expect(link).toContain('#room=AbCdEf0123456789xyz');
+    expect(link).toContain('pass=a.pass.value');
+    expect(parseRoomToken(link)).toBe('AbCdEf0123456789xyz');
+  });
+
+  test('without a pass it still carries the room', () => {
+    const frag = new URLSearchParams({ room: 'AbCdEf0123456789xyz' });
+    const link = `https://example.test/app/#${frag.toString()}`;
+    expect(link).toContain('#room=');
+    expect(link).not.toContain('pass=');
+    expect(parseRoomToken(link)).toBe('AbCdEf0123456789xyz');
+  });
+});
+
+describe('a call that cannot start', () => {
+  test('a refused ice-servers request is reported, not swallowed', async () => {
+    const { connect } = await import('../../src/apps/qvc/signalling');
+    // An origin outside the allowlist is ignored rather than dialled, so the
+    // handler must not leave the page believing a socket is coming.
+    expect(() => {
+      connect('https://evil.test/qvc');
+    }).not.toThrow();
+  });
+});
