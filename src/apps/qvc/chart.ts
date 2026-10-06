@@ -28,19 +28,21 @@ export function drawQberChart(): void {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, w, h);
 
-  const danger = token('--color-danger');
-  const warning = token('--color-warning');
-  const ink = token('--ink-3');
+  const ink = token('--ink');
+  const faint = token('--ink-4');
 
   const y = (q: number) => h - Math.min(1, q / CHART_CEILING) * h;
 
   // The two thresholds, so a reading is placed against them rather than guessed.
-  for (const [level, colour] of [
-    [QBER_THRESHOLD, danger],
-    [QBER_WARNING, warning],
+  // The page is 1-bit, so the two are told apart by dash length and weight: the
+  // abort threshold is the heavier, longer-dashed line of the pair.
+  for (const [level, colour, dash, width] of [
+    [QBER_THRESHOLD, ink, [6, 3], 1.5],
+    [QBER_WARNING, faint, [2, 3], 1],
   ] as const) {
     ctx.strokeStyle = colour;
-    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = width;
+    ctx.setLineDash([...dash]);
     ctx.beginPath();
     ctx.moveTo(0, y(level));
     ctx.lineTo(w, y(level));

@@ -48,7 +48,11 @@ function applySinks(): void {
   // Every render builds new <video> elements, and srcObject does not come with
   // them: without this the call shows two black rectangles.
   const { local, remote } = mediaStreams();
-  attachStream('qvc-remote-video', remote);
+  attachStream('qvc-remote-video', remote, () => {
+    if (state.peerStreaming) return;
+    state.peerStreaming = true;
+    render();
+  });
   attachStream('qvc-local-video', local);
 
   const invite = document.getElementById('qvc-invite-link');
@@ -95,6 +99,8 @@ export function render(): void {
       ? (document.getElementById('qvc-room-input') as HTMLInputElement).value
       : '';
   app.innerHTML = state.peerConnected ? renderCall() : renderLobby();
+  // A call that covers the viewport must not leave the page scrolling behind it.
+  document.body.classList.toggle('qvc-staged', state.peerConnected && state.stageFullBleed);
   if (typed) {
     const roomInput = document.getElementById('qvc-room-input');
     if (roomInput instanceof HTMLInputElement) roomInput.value = typed;
@@ -111,6 +117,10 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
   Object.entries({
     'run-demo': () => {
       void startDemo();
+    },
+    'toggle-stage': () => {
+      state.stageFullBleed = !state.stageFullBleed;
+      render();
     },
     'toggle-dashboard': () => {
       state.dashboardExpanded = !state.dashboardExpanded;

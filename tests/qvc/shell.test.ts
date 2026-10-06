@@ -11,6 +11,7 @@ import {
 import { applyEnginePhase } from '../../src/apps/qvc/engine-state';
 import {
   renderLobby,
+  renderCall,
   renderDashboard,
   qberStatus,
   qberStatusLabel,
@@ -353,6 +354,83 @@ describe('a call that cannot start', () => {
     expect(() => {
       connect('https://evil.test/qvc');
     }).not.toThrow();
+  });
+});
+
+describe('the call stage', () => {
+  test('the lobby carries the self-view, so a camera can be checked before calling', () => {
+    const html = renderLobby();
+    expect(html).toContain('qvc-preview');
+    expect(html).toContain('id="qvc-local-video"');
+  });
+
+  test('the self-view is the same element the call puts in the corner', () => {
+    // One id across both views: whatever is on screen is what gets the stream.
+    state.peerConnected = true;
+    expect(renderCall()).toContain('id="qvc-local-video"');
+    state.peerConnected = false;
+    expect(renderLobby()).toContain('id="qvc-local-video"');
+  });
+
+  test('full-bleed is a class on the call, and the toolbar offers the way back', () => {
+    state.stageFullBleed = true;
+    const staged = renderCall();
+    expect(staged).toContain('qvc-call--stage');
+    expect(staged).toContain('Back to the page');
+
+    state.stageFullBleed = false;
+    const framed = renderCall();
+    expect(framed).not.toContain('qvc-call--stage');
+    expect(framed).toContain('Fill the screen');
+  });
+
+  test('the stage choice outlives a call', () => {
+    // A preference the visitor set, so leaving a call must keep it.
+    state.stageFullBleed = false;
+    state.peerConnected = true;
+    resetSession();
+    expect(state.stageFullBleed).toBe(false);
+    expect(state.peerConnected).toBe(false);
+  });
+
+  test('the stage says what it is waiting for until the peer sends media', () => {
+    state.peerConnected = true;
+    state.peerStreaming = false;
+    expect(renderCall()).toContain('AWAITING PARTNER');
+    state.peerStreaming = true;
+    expect(renderCall()).not.toContain('AWAITING PARTNER');
+  });
+});
+
+describe('the test card', () => {
+  test('stands behind a video with nothing to show, and says which', async () => {
+    const { testCard } = await import('../../src/apps/qvc/testcard');
+    expect(testCard('AWAITING PARTNER')).toContain('AWAITING PARTNER');
+    expect(renderLobby()).toContain('CAMERA NOT STARTED');
+    state.peerConnected = true;
+    state.peerStreaming = false;
+    expect(renderCall()).toContain('AWAITING PARTNER');
+  });
+
+  test('a caption cannot carry markup into the page', async () => {
+    const { testCard } = await import('../../src/apps/qvc/testcard');
+    const card = testCard('<script>x</script>');
+    expect(card).not.toContain('<script>');
+    expect(card).toContain('&lt;script&gt;');
+  });
+
+  test('a camera the visitor switched off says so rather than going black', () => {
+    state.cameraOn = false;
+    expect(renderLobby()).toContain('CAMERA OFF');
+  });
+
+  test('it is drawn in ink and paper, with no colour of its own', async () => {
+    const { testCard } = await import('../../src/apps/qvc/testcard');
+    const card = testCard('NO SIGNAL');
+    // Every fill is a token or a pattern built from them: a literal colour here
+    // would be the one coloured thing on a 1-bit page.
+    expect(card).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+    expect(card).not.toMatch(/\b(rgb|hsl)a?\(/i);
   });
 });
 

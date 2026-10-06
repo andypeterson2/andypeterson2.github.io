@@ -206,6 +206,7 @@ function wireRoom(m: EngineManager): void {
   m.on('peer-disconnected', () => {
     endJoining();
     remoteStream = null;
+    state.peerStreaming = false;
     resetSession();
     host.render();
     host.notify('Your partner left the call.');
@@ -374,6 +375,7 @@ export function fingerprints(): unknown {
 export function leave(): void {
   endJoining();
   remoteStream = null;
+  state.peerStreaming = false;
   socket?.emit('leave_room');
   orchestrator?.destroy();
   orchestrator = null;

@@ -66,6 +66,10 @@
   cursor: default;
   background: var(--dither-light);
 
+  /* Ink, including on a disabled --primary: that variant's paper label over this
+     stipple, with the paper halo below, leaves nothing to read. */
+  color: var(--ink);
+
   /* A hard 1-bit halo, so the label reads over the stipple it sits on rather than
      tangling with the dots. No blur: a soft edge would be a grey. */
   text-shadow:
