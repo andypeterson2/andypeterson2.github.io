@@ -355,3 +355,28 @@ describe('a call that cannot start', () => {
     }).not.toThrow();
   });
 });
+
+describe('asking for the camera', () => {
+  test('happens before anything that awaits, so the click still counts', async () => {
+    // WebKit grants getUserMedia against the activation of the click, and an
+    // await spends it. The call path must reach getUserMedia first.
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/apps/qvc/signalling.ts', 'utf8'),
+    );
+    const body = /export async function startCall[\s\S]*?\n}/.exec(src)?.[0] ?? '';
+    expect(body).toContain('acquireMedia');
+    const mediaAt = body.indexOf('acquireMedia');
+    const engineAt = body.indexOf('ensureEngine');
+    expect(mediaAt).toBeGreaterThan(-1);
+    expect(engineAt).toBeGreaterThan(mediaAt);
+  });
+
+  test('the joiner asks first too', async () => {
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/apps/qvc/signalling.ts', 'utf8'),
+    );
+    const body = /export async function joinCall[\s\S]*?\n}/.exec(src)?.[0] ?? '';
+    expect(body.indexOf('acquireMedia')).toBeGreaterThan(-1);
+    expect(body.indexOf('ensureEngine')).toBeGreaterThan(body.indexOf('acquireMedia'));
+  });
+});

@@ -31,6 +31,7 @@ let localStream: MediaStream | null = null;
 interface EngineManager {
   on: (event: string, cb: (detail: never) => void) => void;
   getLocalMedia: () => Promise<MediaStream>;
+  useLocalMedia: (stream: MediaStream) => void;
   getDtlsFingerprints: () => unknown;
   createRoom: () => void;
   joinRoom: (id: string) => void;
@@ -301,31 +302,49 @@ function mediaFailure(err: unknown): string {
   return `The camera could not be started: ${detail}`;
 }
 
-async function startLocalMedia(m: EngineManager): Promise<boolean> {
-  if (localStream) return true;
+/**
+ * Ask for the camera before anything else a call needs.
+ *
+ * WebKit grants getUserMedia against the activation of the click that asked,
+ * and that activation does not survive an await. Fetching ICE servers or
+ * loading the engine first is enough to lose it, and the refusal that follows
+ * is indistinguishable from the visitor having denied permission.
+ */
+async function acquireMedia(): Promise<MediaStream | null> {
+  if (localStream) return localStream;
   try {
-    localStream = await m.getLocalMedia();
+    localStream = await navigator.mediaDevices.getUserMedia(MEDIA_CONSTRAINTS);
     attachStream('qvc-local-video', localStream);
-    return true;
+    return localStream;
   } catch (err) {
-    console.warn('[qvc] getLocalMedia failed:', err);
+    console.warn('[qvc] getUserMedia failed:', err);
     state.mediaError = mediaFailure(err);
     host.render();
-    return false;
+    return null;
   }
 }
 
+/** What the engine asks for, kept here so the page can ask first. */
+const MEDIA_CONSTRAINTS: MediaStreamConstraints = {
+  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
+  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+};
+
 export async function startCall(onCallStart: () => void): Promise<void> {
+  const stream = await acquireMedia();
+  if (!stream) return;
   const m = await ensureEngine(onCallStart);
+  m.useLocalMedia(stream);
   state.isInitiator = true;
-  if (!(await startLocalMedia(m))) return;
   m.createRoom();
 }
 
 export async function joinCall(token: string, onCallStart: () => void): Promise<void> {
+  const stream = await acquireMedia();
+  if (!stream) return;
   const m = await ensureEngine(onCallStart);
+  m.useLocalMedia(stream);
   state.isInitiator = false;
-  if (!(await startLocalMedia(m))) return;
   state.joining = true;
   host.render();
   m.joinRoom(token);
