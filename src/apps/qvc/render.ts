@@ -295,6 +295,19 @@ function demoTier(): string {
     </div>`;
 }
 
+/**
+ * The self-view. It is the same element the call puts in the corner, so the
+ * lobby, the wait and the call all drive one `<video>`; only one of them is in
+ * the document at a time. Empty until the camera is asked for, which is what a
+ * visitor who only wants the simulation should see.
+ */
+function selfPreview(): string {
+  return `<div class="qvc-preview">
+      <span class="qvc-video-label">You</span>
+      <video id="qvc-local-video" class="qvc-preview-video" autoplay muted playsinline></video>
+    </div>`;
+}
+
 /** Waiting for the other person, with the link that invites them. */
 function waitingForPeer(): string {
   return `<div class="qvc-waiting" role="status">Waiting for your partner to join…</div>
@@ -384,13 +397,12 @@ function callControls(live: boolean): string {
 
 /** The live tier, in whichever of its three states it is in. */
 function callTier(): string {
-  if (state.joining) {
-    return '<div class="qvc-tier"><div class="qvc-waiting" role="status">Connecting securely…</div></div>';
-  }
-  const body = state.waitingForPeer
-    ? waitingForPeer()
-    : callControls(state.liveAvailable && state.connected);
-  return `<div class="qvc-tier">${body}</div>`;
+  const body = state.joining
+    ? '<div class="qvc-waiting" role="status">Connecting securely…</div>'
+    : state.waitingForPeer
+      ? waitingForPeer()
+      : callControls(state.liveAvailable && state.connected);
+  return `<div class="qvc-tier qvc-tier--call">${selfPreview()}${body}</div>`;
 }
 
 /**
@@ -451,8 +463,16 @@ export function renderCall(): string {
       ? `<div class="qvc-banner">Your partner is running the eavesdropper demo — the rising
            QBER is expected, not a real attack.</div>`
       : '';
-  return `<section class="qvc-call" aria-label="Call">
+  // Before the peer's media arrives there is a black rectangle with nothing to
+  // say for itself, so the stage says what it is waiting for.
+  const placeholder = state.peerStreaming
+    ? ''
+    : '<p class="qvc-video-placeholder">Waiting for your partner’s camera…</p>';
+  const stage = state.stageFullBleed ? ' qvc-call--stage' : '';
+  return `<section class="qvc-call${stage}" aria-label="Call">
       <div class="qvc-video-area">
+        <span class="qvc-video-label">Partner</span>
+        ${placeholder}
         <video id="qvc-remote-video" class="qvc-remote-video" autoplay playsinline></video>
         <video id="qvc-local-video" class="qvc-pip-video" autoplay muted playsinline></video>
       </div>
@@ -478,7 +498,10 @@ export function renderCall(): string {
           aria-pressed="${String(state.muted)}"
         >${state.muted ? 'Unmute' : 'Mute'}</button>
         <button class="s6-btn s6-btn--sm" data-action="open-analytics">Analytics</button>
-        <button class="s6-btn s6-btn--sm" data-action="leave">Leave</button>
+        <button class="s6-btn s6-btn--sm" data-action="toggle-stage">
+          ${state.stageFullBleed ? 'Back to the page' : 'Fill the screen'}
+        </button>
+        <button class="s6-btn s6-btn--sm qvc-leave" data-action="leave">Leave</button>
       </div>
     </section>`;
 }

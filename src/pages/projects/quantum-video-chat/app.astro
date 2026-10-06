@@ -60,12 +60,17 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
 </DemoShell>
 
 <style>
+  /* Two layouts share this stylesheet. The lobby is a card in the document
+     flow; a connected call is a stage, where the video takes whatever height
+     the bars leave. That needs a column of fixed height, hence `flex: 1` on
+     the video and `flex-shrink: 0` on every bar. The page is 1-bit, so status
+     is carried by weight, fill and stipple. */
+
   #qvc-app {
     font-family: var(--font-ui);
   }
 
-  #qvc-app :global(.qvc-lobby),
-  #qvc-app :global(.qvc-call) {
+  #qvc-app :global(.qvc-lobby) {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
@@ -97,6 +102,17 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     border-radius: var(--radius-md);
   }
 
+  /* The live tier reads as the one panel that places a call, so it carries the
+     self-view and a heavier border than the simulation beside it. */
+  #qvc-app :global(.qvc-tier--call) {
+    gap: var(--space-3);
+    align-items: stretch;
+    max-width: 34rem;
+    padding: var(--space-4);
+    border: 2px solid var(--ink);
+    background: var(--paper-2);
+  }
+
   #qvc-app :global(.qvc-join) {
     display: flex;
     flex-wrap: wrap;
@@ -118,33 +134,131 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
 
   #qvc-app :global(.qvc-error) {
     margin: 0;
-    color: var(--color-danger);
     font-size: var(--text-xs);
+    font-weight: 700;
   }
 
-  /* Call */
+  /* The self-view, in the lobby and in the call's corner. */
+  #qvc-app :global(.qvc-preview) {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border: 2px solid var(--ink);
+    background: var(--dither-light);
+  }
+
+  #qvc-app :global(.qvc-preview-video) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    /* Mirrored, because a self-view that moves the other way reads as someone
+       else's camera. The remote video is never mirrored. */
+    transform: scaleX(-1);
+  }
+
+  #qvc-app :global(.qvc-video-label) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    padding: 2px var(--space-2);
+    background: var(--ink);
+    color: var(--paper);
+    font-size: var(--text-4xs);
+    pointer-events: none;
+  }
+
+  #qvc-app :global(.qvc-video-placeholder) {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: var(--space-6);
+    color: var(--paper);
+    font-size: var(--text-xs);
+    text-align: center;
+  }
+
+  /* The call, framed in the page or filling the screen. */
+  #qvc-app :global(.qvc-call) {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: var(--max-width);
+    border: 2px solid var(--ink);
+  }
+
+  /* Full-bleed: the call covers the page, including its chrome. The toolbar
+     carries the control that puts it back in the document. */
+  #qvc-app :global(.qvc-call--stage) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    max-width: none;
+    height: 100dvh;
+    border: 0;
+    background: var(--paper);
+  }
+
+  :global(body.qvc-staged) {
+    overflow: hidden;
+  }
+
   #qvc-app :global(.qvc-video-area) {
     position: relative;
-    background: var(--paper-3);
-    border-radius: var(--radius-md);
     overflow: hidden;
+    background: var(--ink);
+  }
+
+  /* Framed, the video keeps a shape. On the stage it takes the height the bars
+     leave, which is what makes the call feel like an application. */
+  #qvc-app :global(.qvc-call:not(.qvc-call--stage) .qvc-video-area) {
+    aspect-ratio: 16 / 9;
+  }
+
+  #qvc-app :global(.qvc-call--stage .qvc-video-area) {
+    flex: 1;
+    min-height: 0;
   }
 
   #qvc-app :global(.qvc-remote-video) {
     display: block;
     width: 100%;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
+    height: 100%;
+
+    /* contain: the whole of the partner's frame, letterboxed where it must be. */
+    object-fit: contain;
   }
 
   #qvc-app :global(.qvc-pip-video) {
     position: absolute;
-    right: var(--space-2);
-    bottom: var(--space-2);
-    width: 28%;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    z-index: 3;
+    width: 22%;
+    min-width: 7rem;
     max-width: 12rem;
-    border-radius: var(--radius-sm);
+    aspect-ratio: 16 / 9;
+    border: 2px solid var(--paper);
+    background: var(--ink);
     object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  /* Every bar below the video keeps its own height and never squeezes the
+     video out of the column. */
+  #qvc-app :global(.qvc-call-info),
+  #qvc-app :global(.qvc-sas),
+  #qvc-app :global(.qvc-qd),
+  #qvc-app :global(.qvc-toolbar),
+  #qvc-app :global(.qvc-call .qvc-banner) {
+    flex-shrink: 0;
+    border-top: 1px solid var(--ink-4);
   }
 
   #qvc-app :global(.qvc-call-info),
@@ -158,106 +272,176 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
   }
 
   #qvc-app :global(.qvc-call-info) {
-    font-size: var(--text-xs);
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-3xs);
+  }
+
+  #qvc-app :global(.qvc-call-info :global(#qvc-timer)) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  #qvc-app :global(.qvc-toolbar) {
+    justify-content: center;
+    padding: var(--space-3);
+  }
+
+  /* Leaving ends the call for both of you, so it is the one filled control in a
+     bar of outlined ones. */
+  #qvc-app :global(.qvc-leave) {
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 700;
+  }
+
+  #qvc-app :global(.qvc-leave:hover),
+  #qvc-app :global(.qvc-leave:focus-visible) {
+    background: var(--ink-2);
+    color: var(--paper);
   }
 
   #qvc-app :global(.qvc-pill) {
     padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--ink);
     border-radius: var(--radius-pill);
-    font-size: var(--text-2xs);
+    font-size: var(--text-4xs);
   }
 
-  #qvc-app :global(.qvc-pill--encrypted) {
-    color: var(--color-success);
+  /* Encrypted is the quiet state. Anything else is filled, so a call that is
+     not carrying a key cannot be mistaken for one that is. */
+  #qvc-app :global(.qvc-pill--establishing) {
+    background: var(--dither-light);
   }
 
   #qvc-app :global(.qvc-pill--compromised),
-  #qvc-app :global(.qvc-pill--unencrypted) {
-    color: var(--color-danger);
+  #qvc-app :global(.qvc-pill--unencrypted),
+  #qvc-app :global(.qvc-pill--unsupported) {
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 700;
   }
 
   #qvc-app :global(.qvc-banner),
   #qvc-app :global(.qvc-waiting) {
     padding: var(--space-2);
-    border-radius: var(--radius-sm);
     background: var(--paper-2);
     font-size: var(--text-xs);
   }
 
-  /* Short authentication string */
+  /* The short authentication string, read aloud to catch a man in the middle. */
   #qvc-app :global(.qvc-sas) {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    padding: var(--space-3);
-    border: 1px solid var(--ink-4);
-    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
   }
 
   #qvc-app :global(.qvc-sas-emoji) {
-    font-size: var(--text-xl);
-    letter-spacing: var(--space-1);
+    font-size: var(--text-base);
+    letter-spacing: 0.15em;
   }
 
   #qvc-app :global(.qvc-sas-digits) {
     font-family: var(--font-mono);
-    font-size: var(--text-lg);
+    font-size: var(--text-sm);
+    letter-spacing: 0.2em;
   }
 
   #qvc-app :global(.qvc-sas-hint) {
+    flex: 1 1 16rem;
     color: var(--ink-3);
-    font-size: var(--text-xs);
+    font-size: var(--text-3xs);
   }
 
-  /* Dashboard */
+  #qvc-app :global(.qvc-sas-actions) {
+    margin-left: auto;
+    flex-wrap: nowrap;
+  }
+
+  /* The key reservoir: a strip that opens into readings, a chart and a ledger. */
   #qvc-app :global(.qvc-qd-toggle) {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
     align-items: center;
     width: 100%;
-    padding: var(--space-2);
-    border: 1px solid var(--ink-4);
-    border-radius: var(--radius-sm);
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
     background: none;
     font: inherit;
-    font-size: var(--text-xs);
+    font-size: var(--text-3xs);
     text-align: left;
     cursor: pointer;
   }
 
-  #qvc-app :global(.qvc-qd-mode),
-  #qvc-app :global(.qvc-qd-badge) {
-    padding: 0 var(--space-1);
-    border-radius: var(--radius-pill);
-    font-size: var(--text-3xs);
+  #qvc-app :global(.qvc-qd-title) {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
+  #qvc-app :global(.qvc-qd-summary) {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #qvc-app :global(.qvc-qd-mode),
+  #qvc-app :global(.qvc-qd-badge) {
+    padding: 0 var(--space-2);
+    border: 1px solid var(--ink);
+    font-size: var(--text-4xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* A reading over the warning line is stippled; one over the abort line is
+     filled. Clean is left bare, so only trouble draws the eye. */
   #qvc-app :global(.qvc-qd-badge--warning) {
-    color: var(--color-warning);
+    background: var(--dither-light);
   }
 
   #qvc-app :global(.qvc-qd-badge--danger) {
-    color: var(--color-danger);
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 700;
   }
 
   #qvc-app :global(.qvc-qd-inactive) {
     margin: 0;
+    padding: var(--space-2) var(--space-3);
     color: var(--ink-3);
-    font-size: var(--text-xs);
+    font-size: var(--text-3xs);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
+  /* Readings, a chart and a ledger, held to a column: run edge to edge on a
+     wide stage and they stop reading as one panel. */
   #qvc-app :global(.qvc-qd-body) {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-2) 0;
+    gap: var(--space-3);
+    width: 100%;
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 0 var(--space-3) var(--space-3);
+  }
+
+  /* On the stage the dashboard is a drawer over a fixed-height column, so it
+     scrolls on its own rather than pushing the video off the screen. */
+  #qvc-app :global(.qvc-call--stage .qvc-qd-body) {
+    overflow-y: auto;
+    max-height: 40vh;
   }
 
   #qvc-app :global(.qvc-distill-bar) {
     height: var(--space-2);
-    border-radius: var(--radius-pill);
-    background: var(--paper-3);
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
     overflow: hidden;
   }
 
@@ -265,40 +449,62 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     display: block;
     width: var(--qvc-fill, 0%);
     height: 100%;
-    background: var(--color-success);
+    background: var(--ink);
   }
 
+  /* Stalled: the bar is still filling, but nothing will mint from it. */
   #qvc-app :global(.qvc-distill-fill--stalled) {
-    background: var(--color-danger);
+    background: var(--dither-50);
   }
 
   #qvc-app :global(.qvc-distill-label) {
-    font-size: var(--text-3xs);
+    display: block;
+    margin-top: var(--space-1);
     color: var(--ink-3);
+    font-size: var(--text-4xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Four readings, read together. Across the whole stage they stop being a
+     group, so the row keeps a width of its own. */
+  #qvc-app :global(.qvc-metrics) {
+    gap: var(--space-4);
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 34rem;
+    margin: 0 auto;
   }
 
   #qvc-app :global(.qvc-metric) {
     display: flex;
+    flex: 1;
     flex-direction: column;
-    min-width: var(--space-16);
+    align-items: center;
+    min-width: 0;
   }
 
   #qvc-app :global(.qvc-metric-value) {
     font-family: var(--font-mono);
     font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
   }
 
   #qvc-app :global(.qvc-metric-value--warning) {
-    color: var(--color-warning);
+    text-decoration: underline;
   }
 
   #qvc-app :global(.qvc-metric-value--danger) {
-    color: var(--color-danger);
+    padding: 0 var(--space-1);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   #qvc-app :global(.qvc-metric-label) {
-    font-size: var(--text-3xs);
+    margin-top: var(--space-1);
     color: var(--ink-3);
+    font-size: var(--text-4xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
   #qvc-app :global(.qvc-chart) {
@@ -306,7 +512,7 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     height: var(--space-16);
   }
 
-  /* Eavesdropper dial, budget and receipts */
+  /* The eavesdropper dial, the key budget and the mint receipts. */
   #qvc-app :global(.qvc-eve) {
     display: flex;
     flex-wrap: wrap;
@@ -314,33 +520,99 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     align-items: center;
   }
 
+  /* The browser's own range control is the one blue thing on a 1-bit page, so
+     the track and the thumb are drawn here instead. */
   #qvc-app :global(.qvc-eve-range) {
     flex: 1 1 12rem;
+    min-width: 0;
+    height: 1rem;
+    appearance: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  #qvc-app :global(.qvc-eve-range::-webkit-slider-runnable-track) {
+    height: var(--space-2);
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
+  }
+
+  #qvc-app :global(.qvc-eve-range::-moz-range-track) {
+    height: var(--space-2);
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
+  }
+
+  #qvc-app :global(.qvc-eve-range::-webkit-slider-thumb) {
+    width: var(--space-3);
+    height: 1rem;
+    margin-top: -5px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    appearance: none;
+    background: var(--paper);
+  }
+
+  #qvc-app :global(.qvc-eve-range::-moz-range-thumb) {
+    width: var(--space-3);
+    height: 1rem;
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    background: var(--paper);
+  }
+
+  /* The invite row: the link is the credential, so it gets the width. */
+  #qvc-app :global(.qvc-invite) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  #qvc-app :global(.qvc-invite :global(#qvc-invite-link)) {
+    flex: 1 1 14rem;
     min-width: 0;
   }
 
   #qvc-app :global(.qvc-eve-read) {
     font-family: var(--font-mono);
-    font-size: var(--text-3xs);
+    font-size: var(--text-4xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The ledger rows are prose against numbers. The UI face is a bitmap font
+     whose space glyph all but vanishes at these sizes, so the gap between
+     words is set here rather than left to the font. */
+  #qvc-app :global(.qvc-budget),
+  #qvc-app :global(.qvc-receipt-list) {
+    font-size: var(--text-4xs);
+    word-spacing: 0.3em;
   }
 
   #qvc-app :global(.qvc-budget) {
     display: flex;
     flex-direction: column;
     font-family: var(--font-mono);
-    font-size: var(--text-3xs);
   }
 
   #qvc-app :global(.qvc-budget-row) {
     display: flex;
     justify-content: space-between;
-    gap: var(--space-3);
-    padding: 0.1em 0;
+    gap: var(--space-4);
+    padding: 0.15em 0;
+    border-bottom: 1px solid var(--paper-3);
+  }
+
+  #qvc-app :global(.qvc-budget-row span:last-child) {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   #qvc-app :global(.qvc-receipts-title) {
     margin: 0;
-    font-size: var(--text-3xs);
+    font-size: var(--text-4xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
   #qvc-app :global(.qvc-receipt-list) {
@@ -348,21 +620,20 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     padding: 0;
     list-style: none;
     font-family: var(--font-mono);
-    font-size: var(--text-3xs);
   }
 
   #qvc-app :global(.qvc-receipt-list li) {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
-    padding: 0.1em 0;
+    gap: var(--space-3);
+    padding: 0.15em 0;
   }
 
   #qvc-app :global(.qvc-receipt-k) {
     min-width: 2.5em;
   }
 
-  /* Camera and microphone picker */
+  /* The camera and microphone picker. */
   #qvc-app :global(.qvc-devices) {
     display: flex;
     flex-direction: column;
@@ -370,13 +641,14 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     align-items: start;
     width: 100%;
     padding-top: var(--space-2);
+    border-top: 1px solid var(--ink-4);
   }
 
   #qvc-app :global(.qvc-devices select) {
     max-width: 100%;
   }
 
-  /* Optical bench, in the builds that may reach one */
+  /* The optical bench, in the builds that may reach one. */
   #qvc-app :global(.qvc-bench-toggle) {
     display: flex;
     gap: var(--space-2);
@@ -391,11 +663,12 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     width: 100%;
   }
 
-  /* Toast */
+  /* The toast. */
   .qvc-toast {
     position: fixed;
     left: 50%;
     bottom: var(--space-4);
+    z-index: var(--z-max);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
     background: var(--ink);
@@ -412,5 +685,20 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
   .qvc-toast--visible {
     transform: translate(-50%, 0);
     opacity: 1;
+  }
+
+  /* On a phone the dashboard gets more of the screen, since the bars take less. */
+  @media (width <= 40rem) {
+    #qvc-app :global(.qvc-metrics) {
+      gap: var(--space-2);
+    }
+
+    #qvc-app :global(.qvc-sas-actions) {
+      margin-left: 0;
+    }
+
+    #qvc-app :global(.qvc-call--stage .qvc-qd-body) {
+      max-height: 50vh;
+    }
   }
 </style>

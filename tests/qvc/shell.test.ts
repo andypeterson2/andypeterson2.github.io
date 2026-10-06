@@ -11,6 +11,7 @@ import {
 import { applyEnginePhase } from '../../src/apps/qvc/engine-state';
 import {
   renderLobby,
+  renderCall,
   renderDashboard,
   qberStatus,
   qberStatusLabel,
@@ -353,6 +354,51 @@ describe('a call that cannot start', () => {
     expect(() => {
       connect('https://evil.test/qvc');
     }).not.toThrow();
+  });
+});
+
+describe('the call stage', () => {
+  test('the lobby carries the self-view, so a camera can be checked before calling', () => {
+    const html = renderLobby();
+    expect(html).toContain('qvc-preview');
+    expect(html).toContain('id="qvc-local-video"');
+  });
+
+  test('the self-view is the same element the call puts in the corner', () => {
+    // One id across both views: whatever is on screen is what gets the stream.
+    state.peerConnected = true;
+    expect(renderCall()).toContain('id="qvc-local-video"');
+    state.peerConnected = false;
+    expect(renderLobby()).toContain('id="qvc-local-video"');
+  });
+
+  test('full-bleed is a class on the call, and the toolbar offers the way back', () => {
+    state.stageFullBleed = true;
+    const staged = renderCall();
+    expect(staged).toContain('qvc-call--stage');
+    expect(staged).toContain('Back to the page');
+
+    state.stageFullBleed = false;
+    const framed = renderCall();
+    expect(framed).not.toContain('qvc-call--stage');
+    expect(framed).toContain('Fill the screen');
+  });
+
+  test('the stage choice outlives a call', () => {
+    // A preference the visitor set, so leaving a call must keep it.
+    state.stageFullBleed = false;
+    state.peerConnected = true;
+    resetSession();
+    expect(state.stageFullBleed).toBe(false);
+    expect(state.peerConnected).toBe(false);
+  });
+
+  test('the stage says what it is waiting for until the peer sends media', () => {
+    state.peerConnected = true;
+    state.peerStreaming = false;
+    expect(renderCall()).toContain('Waiting for your partner');
+    state.peerStreaming = true;
+    expect(renderCall()).not.toContain('Waiting for your partner');
   });
 });
 

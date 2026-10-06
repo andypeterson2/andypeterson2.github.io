@@ -111,6 +111,10 @@ export interface QvcState {
   deviceChoice: { cameraId: string | null; microphoneId: string | null };
   /** What the last device check found, shown beside the picker. */
   deviceStatus: string;
+  /** Whether a call takes the whole viewport. A control switches it back. */
+  stageFullBleed: boolean;
+  /** Whether the peer's media has arrived, which decides the video placeholder. */
+  peerStreaming: boolean;
 }
 
 /** Per-frame QBER points kept for the strip chart. */
@@ -160,6 +164,8 @@ export function initialState(): QvcState {
     devicesLabelled: false,
     deviceChoice: { cameraId: null, microphoneId: null },
     deviceStatus: '',
+    stageFullBleed: true,
+    peerStreaming: false,
   };
 }
 
@@ -167,8 +173,16 @@ export const state: QvcState = initialState();
 
 /** Reset to a fresh lobby, keeping what the page learned about the tier. */
 export function resetSession(): void {
-  const { connected, liveAvailable, invited, optical, devices, devicesLabelled, deviceChoice } =
-    state;
+  const {
+    connected,
+    liveAvailable,
+    invited,
+    optical,
+    devices,
+    devicesLabelled,
+    deviceChoice,
+    stageFullBleed,
+  } = state;
   Object.assign(state, initialState(), {
     connected,
     liveAvailable,
@@ -177,6 +191,7 @@ export function resetSession(): void {
     devices,
     devicesLabelled,
     deviceChoice,
+    stageFullBleed,
   });
 }
 
