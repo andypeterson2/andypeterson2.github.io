@@ -127,6 +127,22 @@ export function mediaFailure(err: unknown): string {
   return `The camera could not be started — ${detail}`;
 }
 
+/**
+ * Point a video element at a stream, or clear it when there is none.
+ *
+ * Every render of the shell replaces its markup, so the `<video>` elements on
+ * screen are never the ones a previous render attached a stream to. An element
+ * built a moment ago has no `srcObject`, which is why this runs after each
+ * render rather than once when the stream arrives.
+ */
+export function attachStream(id: string, stream: MediaStream | null): void {
+  const el = document.getElementById(id);
+  if (!(el instanceof HTMLVideoElement)) return;
+  if (el.srcObject === stream) return;
+  el.srcObject = stream;
+  if (stream) void el.play().catch(() => undefined);
+}
+
 /** Stop every track, so the device light goes out and the handle is released. */
 export function stopStream(stream: MediaStream | null): void {
   for (const track of stream?.getTracks() ?? []) track.stop();

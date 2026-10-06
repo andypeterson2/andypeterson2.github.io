@@ -13,6 +13,7 @@
 import { state, parseRoomToken, resetSession } from './state';
 import { renderLobby, renderCall, fmtTime } from './render';
 import { drawQberChart } from './chart';
+import { attachStream } from './media';
 import { track } from '../../telemetry';
 
 let toastTimer: number | null = null;
@@ -32,8 +33,24 @@ export function showToast(message: string): void {
   toastTimer = window.setTimeout(() => el.classList.remove('qvc-toast--visible'), 5000);
 }
 
+/**
+ * The call's streams, once the live tier has loaded. Reading them through a
+ * captured function keeps socket.io out of the first chunk, which importing
+ * the signalling module here would pull in.
+ */
+let mediaStreams: () => { local: MediaStream | null; remote: MediaStream | null } = () => ({
+  local: null,
+  remote: null,
+});
+
 /** Values that must not travel through innerHTML go in after the markup. */
 function applySinks(): void {
+  // Every render builds new <video> elements, and srcObject does not come with
+  // them: without this the call shows two black rectangles.
+  const { local, remote } = mediaStreams();
+  attachStream('qvc-remote-video', remote);
+  attachStream('qvc-local-video', local);
+
   const invite = document.getElementById('qvc-invite-link');
   if (invite instanceof HTMLInputElement) invite.value = state.joinLink;
 
@@ -433,7 +450,8 @@ document.addEventListener('navbar:connect', (e) => {
   const detail = (e as CustomEvent<{ service?: string; url?: string }>).detail;
   if (detail.service !== 'qvc' || !detail.url) return;
   const url = detail.url;
-  void import('./signalling').then(({ connect, setHost }) => {
+  void import('./signalling').then(({ connect, setHost, mediaStreams: streams }) => {
+    mediaStreams = streams;
     setHost({ render, notify: showToast });
     connect(url);
     state.connected = true;
