@@ -356,6 +356,38 @@ describe('a call that cannot start', () => {
   });
 });
 
+describe('a join that is refused', () => {
+  test('the spinner is what joining shows, so it must be cleared', () => {
+    state.liveAvailable = true;
+    state.connected = true;
+    state.joining = true;
+    expect(renderLobby()).toContain('Connecting securely');
+    state.joining = false;
+    expect(renderLobby()).not.toContain('Connecting securely');
+  });
+
+  test('every refusal the server sends ends the attempt', async () => {
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/apps/qvc/signalling.ts', 'utf8'),
+    );
+    // The server's own reason slugs. A join refused for any of them gets no
+    // further events, so the spinner would otherwise never come down.
+    for (const reason of ['no-such-room', 'room-full', 'already-in-a-room']) {
+      expect(src).toContain(`'${reason}'`);
+    }
+    const handler = /m\.on\('error'[\s\S]*?\n  \}\);/.exec(src)?.[0] ?? '';
+    expect(handler).toContain('endJoining');
+  });
+
+  test('a join that goes quiet gives up rather than waiting forever', async () => {
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/apps/qvc/signalling.ts', 'utf8'),
+    );
+    const body = /export async function joinCall[\s\S]*?\n}/.exec(src)?.[0] ?? '';
+    expect(body).toContain('JOIN_TIMEOUT_MS');
+  });
+});
+
 describe('asking for the camera', () => {
   test('happens before anything that awaits, so the click still counts', async () => {
     // WebKit grants getUserMedia against the activation of the click, and an
