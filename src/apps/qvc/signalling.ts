@@ -13,6 +13,7 @@
 import { ServiceConfig } from '../shared/service-config';
 import { state, resetSession } from './state';
 import { applyEnginePhase, type EnginePhase } from './engine-state';
+import { constraintsFor, mediaFailure, stopStream } from './media';
 
 /** What this module needs from the page: a repaint and a message. */
 export interface Host {
@@ -283,26 +284,6 @@ async function ensureEngine(onCallStart: () => void): Promise<EngineManager> {
 }
 
 /**
- * What a getUserMedia failure actually was. Reporting "permission denied" for
- * every one of these sends people to a settings page that is already correct —
- * the common case on a second tab is a camera another tab already holds.
- */
-function mediaFailure(err: unknown): string {
-  const name = err instanceof Error ? err.name : '';
-  if (name === 'NotAllowedError' || name === 'SecurityError') {
-    return 'Camera and microphone access was refused. Allow it in your browser’s site settings, then try again.';
-  }
-  if (name === 'NotReadableError' || name === 'AbortError') {
-    return 'The camera is in use by another tab or application. Close it and try again.';
-  }
-  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-    return 'No camera and microphone were found on this device.';
-  }
-  const detail = err instanceof Error ? err.message : String(err);
-  return `The camera could not be started: ${detail}`;
-}
-
-/**
  * Ask for the camera before anything else a call needs.
  *
  * WebKit grants getUserMedia against the activation of the click that asked,
@@ -313,7 +294,7 @@ function mediaFailure(err: unknown): string {
 async function acquireMedia(): Promise<MediaStream | null> {
   if (localStream) return localStream;
   try {
-    localStream = await navigator.mediaDevices.getUserMedia(MEDIA_CONSTRAINTS);
+    localStream = await navigator.mediaDevices.getUserMedia(constraintsFor(state.deviceChoice));
     attachStream('qvc-local-video', localStream);
     return localStream;
   } catch (err) {
@@ -323,12 +304,6 @@ async function acquireMedia(): Promise<MediaStream | null> {
     return null;
   }
 }
-
-/** What the engine asks for, kept here so the page can ask first. */
-const MEDIA_CONSTRAINTS: MediaStreamConstraints = {
-  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
-  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-};
 
 export async function startCall(onCallStart: () => void): Promise<void> {
   const stream = await acquireMedia();
@@ -366,6 +341,6 @@ export function leave(): void {
   orchestrator?.destroy();
   orchestrator = null;
   manager = null;
-  for (const track of localStream?.getTracks() ?? []) track.stop();
+  stopStream(localStream);
   localStream = null;
 }

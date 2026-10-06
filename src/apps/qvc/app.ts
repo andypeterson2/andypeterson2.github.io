@@ -139,6 +139,17 @@ const ACTIONS = new Map<string, (el: HTMLElement) => void>(
         openAnalyticsWindow();
       });
     },
+    'check-devices': () => {
+      void checkDevices();
+    },
+    'pick-camera': (el) => {
+      if (el instanceof HTMLSelectElement) state.deviceChoice.cameraId = el.value;
+      void saveDeviceChoice();
+    },
+    'pick-mic': (el) => {
+      if (el instanceof HTMLSelectElement) state.deviceChoice.microphoneId = el.value;
+      void saveDeviceChoice();
+    },
     'copy-link': () => {
       void navigator.clipboard.writeText(state.joinLink).then(
         () => {
@@ -182,6 +193,15 @@ function onInput(e: Event): void {
   ACTIONS.get(action)?.(el);
 }
 
+/** Selects report through `change`, which the click delegate does not see. */
+function onChange(e: Event): void {
+  const el = e.target;
+  if (!(el instanceof HTMLSelectElement)) return;
+  const action = el.dataset.action;
+  if (!action) return;
+  ACTIONS.get(action)?.(el);
+}
+
 function onSubmit(e: Event): void {
   const form = e.target;
   if (!(form instanceof HTMLFormElement) || form.dataset.action !== 'join-room') return;
@@ -193,6 +213,57 @@ function onSubmit(e: Event): void {
     return;
   }
   void joinCall(token).catch(reportCallFailure);
+}
+
+async function saveDeviceChoice(): Promise<void> {
+  const { saveChoice } = await import('./media');
+  saveChoice(state.deviceChoice);
+}
+
+/**
+ * Open the chosen devices briefly, to prove they work and to learn their real
+ * names. The stream is stopped straight after, so the camera light does not
+ * stay on for a check.
+ */
+async function checkDevices(): Promise<void> {
+  const { listDevices, constraintsFor, mediaFailure, stopStream, saveChoice } =
+    await import('./media');
+  let probe: MediaStream | null = null;
+  try {
+    probe = await navigator.mediaDevices.getUserMedia(constraintsFor(state.deviceChoice));
+    const video = probe.getVideoTracks()[0]?.label ?? 'no camera track';
+    const audio = probe.getAudioTracks()[0]?.label ?? 'no microphone track';
+    state.deviceStatus = `Working — ${video}, ${audio}.`;
+    state.mediaError = '';
+  } catch (err) {
+    console.warn('[qvc] device check failed:', err);
+    state.deviceStatus = mediaFailure(err);
+  } finally {
+    stopStream(probe);
+  }
+  // Labels only exist once permission has been granted, so the list is read
+  // after the probe rather than before it.
+  const found = await listDevices();
+  state.devices = { cameras: found.cameras, microphones: found.microphones };
+  state.devicesLabelled = found.labelled;
+  state.deviceChoice.cameraId ??= found.cameras[0]?.id ?? null;
+  state.deviceChoice.microphoneId ??= found.microphones[0]?.id ?? null;
+  saveChoice(state.deviceChoice);
+  render();
+}
+
+/** Devices on arrival, but only where permission already exists: no prompt. */
+async function loadDevicesQuietly(): Promise<void> {
+  const { alreadyPermitted, listDevices, loadChoice } = await import('./media');
+  state.deviceChoice = loadChoice();
+  if (!(await alreadyPermitted())) return;
+  const found = await listDevices();
+  if (!found.labelled) return;
+  state.devices = { cameras: found.cameras, microphones: found.microphones };
+  state.devicesLabelled = true;
+  state.deviceChoice.cameraId ??= found.cameras[0]?.id ?? null;
+  state.deviceChoice.microphoneId ??= found.microphones[0]?.id ?? null;
+  render();
 }
 
 async function startDemo(): Promise<void> {
@@ -377,9 +448,11 @@ void import('./optical').then(({ loadSettings }) => {
 });
 // The invite fragment carries the room, and may carry the pass beside it;
 // parseRoomToken stops at the first character outside the token alphabet.
+void loadDevicesQuietly();
 pendingRoomToken = parseRoomToken(window.location.hash);
 state.invited = pendingRoomToken !== '';
 document.addEventListener('click', onClick);
 document.addEventListener('input', onInput);
+document.addEventListener('change', onChange);
 document.addEventListener('submit', onSubmit);
 render();

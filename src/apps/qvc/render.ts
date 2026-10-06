@@ -306,6 +306,53 @@ function waitingForPeer(): string {
     <p class="qvc-note">Send this link to the person you want to call.</p>`;
 }
 
+/**
+ * The camera and microphone picker. Shown with real names once permission
+ * exists; before that it offers to ask, because an unlabelled list cannot tell
+ * "none attached" from "not yet allowed".
+ */
+function devicePicker(): string {
+  const { cameras, microphones } = state.devices;
+  const status = state.deviceStatus
+    ? `<p class="qvc-note" role="status">${esc(state.deviceStatus)}</p>`
+    : '';
+  if (!state.devicesLabelled) {
+    return `<div class="qvc-devices">
+        <button class="s6-btn s6-btn--sm" data-action="check-devices">
+          Check camera and microphone
+        </button>
+        <p class="qvc-note">
+          Nothing is asked for until you press this, and the simulation above needs neither.
+        </p>
+        ${status}
+      </div>`;
+  }
+  const options = (list: { id: string; label: string }[], chosen: string | null) =>
+    list
+      .map(
+        (d) =>
+          `<option value="${esc(d.id)}"${d.id === chosen ? ' selected' : ''}>${esc(d.label)}</option>`,
+      )
+      .join('');
+  const none = '<p class="qvc-error" role="alert">None found on this device.</p>';
+  return `<div class="qvc-devices">
+      <label class="qvc-label" for="qvc-camera">Camera</label>
+      ${
+        cameras.length
+          ? `<select id="qvc-camera" class="qvc-input" data-action="pick-camera">${options(cameras, state.deviceChoice.cameraId)}</select>`
+          : none
+      }
+      <label class="qvc-label" for="qvc-mic">Microphone</label>
+      ${
+        microphones.length
+          ? `<select id="qvc-mic" class="qvc-input" data-action="pick-mic">${options(microphones, state.deviceChoice.microphoneId)}</select>`
+          : none
+      }
+      <button class="s6-btn s6-btn--sm" data-action="check-devices">Test these</button>
+      ${status}
+    </div>`;
+}
+
 /** Start and join, disabled until the gateway has answered. */
 function callControls(live: boolean): string {
   const off = live ? '' : 'disabled';
@@ -331,7 +378,8 @@ function callControls(live: boolean): string {
       />
       <button class="s6-btn" type="submit" ${off}>Join</button>
     </form>
-    <p class="qvc-note">${note}</p>`;
+    <p class="qvc-note">${note}</p>
+    ${devicePicker()}`;
 }
 
 /** The live tier, in whichever of its three states it is in. */
