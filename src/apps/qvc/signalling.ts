@@ -28,6 +28,27 @@ let manager: EngineManager | null = null;
 let orchestrator: Orchestrator | null = null;
 let localStream: MediaStream | null = null;
 
+/**
+ * How long a join may sit on "Connecting securely…" before it gives up. The
+ * state clears when the peer's media arrives, so anything that stops the
+ * negotiation short of that — a lost relay message, a blocked TURN path —
+ * would otherwise leave the lobby waiting with nothing to say.
+ */
+const JOIN_TIMEOUT_MS = 30_000;
+let joinTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** End the joining state, with a message when the attempt has failed. */
+function endJoining(message?: string): void {
+  if (joinTimer !== null) {
+    clearTimeout(joinTimer);
+    joinTimer = null;
+  }
+  if (!state.joining) return;
+  state.joining = false;
+  if (message) host.notify(message);
+  host.render();
+}
+
 /** The WebRTCManager surface the shell drives. */
 interface EngineManager {
   on: (event: string, cb: (detail: never) => void) => void;
@@ -182,16 +203,20 @@ function wireRoom(m: EngineManager): void {
     host.render();
   });
   m.on('peer-disconnected', () => {
+    endJoining();
     resetSession();
     host.render();
     host.notify('Your partner left the call.');
   });
 }
 
+/** The reasons the server refuses a join. Each one ends the attempt. */
+const JOIN_REFUSALS = new Set(['no-such-room', 'room-full', 'already-in-a-room']);
+
 function wireMedia(m: EngineManager, onCallStart: () => void): void {
   m.on('remote-stream', (d: { stream: MediaStream }) => {
     state.peerConnected = true;
-    state.joining = false;
+    endJoining();
     state.reconnecting = false;
     state.elapsed = 0;
     attachStream('qvc-remote-video', d.stream);
@@ -209,8 +234,11 @@ function wireMedia(m: EngineManager, onCallStart: () => void): void {
     }
     host.render();
   });
-  m.on('error', (d: { message?: string }) => {
+  m.on('error', (d: { message?: string; reason?: string }) => {
     host.notify(d.message ?? 'Something went wrong.');
+    // A refused join has no second act: nothing further arrives, so leaving
+    // `joining` set would hold the lobby on "Connecting securely…" forever.
+    if (JOIN_REFUSALS.has(d.reason ?? '')) endJoining();
   });
 }
 
@@ -321,6 +349,10 @@ export async function joinCall(token: string, onCallStart: () => void): Promise<
   m.useLocalMedia(stream);
   state.isInitiator = false;
   state.joining = true;
+  if (joinTimer !== null) clearTimeout(joinTimer);
+  joinTimer = setTimeout(() => {
+    endJoining('The call did not come up. Ask for a fresh invite link and try again.');
+  }, JOIN_TIMEOUT_MS);
   host.render();
   m.joinRoom(token);
 }
@@ -337,6 +369,7 @@ export function fingerprints(): unknown {
 }
 
 export function leave(): void {
+  endJoining();
   socket?.emit('leave_room');
   orchestrator?.destroy();
   orchestrator = null;
