@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Read-only, because nothing here writes to GitHub: these jobs lint, test, build
+# and compare. The one cross-repo call reads a public repository, which needs no
+# grant of its own. Without this block the jobs take the repository default, so
+# `npm ci` would run third-party install scripts next to a token that can push.
+permissions:
+  contents: read
+
 # The portal is now a single standalone Astro app — each sub-app lives in its own
 # repo with its own CI, and its built frontend is vendored under public/<app>/.
 # So CI here only lints, tests, builds, and e2e-checks the portal (no submodules).
