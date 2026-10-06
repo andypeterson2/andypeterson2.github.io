@@ -127,7 +127,7 @@ import DemoShell from '../../../layouts/DemoShell.astro';
   <!-- Vendored same-origin, so the CSP needs no third-party origin. Version must
        match the nonogram backend's socket.io family. Stays a classic script; it
        supplies the `io` global the bundled app consumes. -->
-  <script is:inline src="/vendor/socket.io-4.7.5.min.js"></script>
+  <script is:inline src="/vendor/socket.io-4.8.4.min.js"></script>
   <!-- Nonogram tier (bundled module): state/grid/solver/classical-solver/app. -->
   <script>
     import '../../../apps/nonogram/entry';

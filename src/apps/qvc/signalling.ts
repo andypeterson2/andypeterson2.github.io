@@ -80,7 +80,7 @@ export function setHost(next: Host): void {
  * carry it. Same-origin, so the strict script-src admits it; the page's own
  * CSP needs no third-party source.
  */
-const IO_SRC = '/vendor/socket.io-4.7.5.min.js';
+const IO_SRC = '/vendor/socket.io-4.8.4.min.js';
 let ioLoading: Promise<void> | null = null;
 
 function loadSocketIo(): Promise<void> {
