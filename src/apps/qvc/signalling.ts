@@ -223,7 +223,6 @@ function wireMedia(m: EngineManager, onCallStart: () => void): void {
     state.reconnecting = false;
     state.elapsed = 0;
     remoteStream = d.stream;
-    state.peerStreaming = true;
     onCallStart();
     host.render();
   });

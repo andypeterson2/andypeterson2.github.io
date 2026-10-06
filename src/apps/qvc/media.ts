@@ -135,12 +135,18 @@ export function mediaFailure(err: unknown): string {
  * built a moment ago has no `srcObject`, which is why this runs after each
  * render rather than once when the stream arrives.
  */
-export function attachStream(id: string, stream: MediaStream | null): void {
+export function attachStream(id: string, stream: MediaStream | null, onPicture?: () => void): void {
   const el = document.getElementById(id);
   if (!(el instanceof HTMLVideoElement)) return;
-  if (el.srcObject === stream) return;
-  el.srcObject = stream;
-  if (stream) void el.play().catch(() => undefined);
+  if (el.srcObject !== stream) {
+    el.srcObject = stream;
+    if (stream) void el.play().catch(() => undefined);
+  }
+  if (!onPicture || !stream) return;
+  // A track can be live and still send nothing, which paints the element black.
+  // The first decoded frame is what says there is a picture to show.
+  if (el.videoWidth > 0) onPicture();
+  else el.addEventListener('loadeddata', onPicture, { once: true });
 }
 
 /** Stop every track, so the device light goes out and the handle is released. */

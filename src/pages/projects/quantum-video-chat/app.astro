@@ -144,10 +144,12 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     overflow: hidden;
     aspect-ratio: 16 / 9;
     border: 2px solid var(--ink);
-    background: var(--dither-light);
+    background: var(--paper);
   }
 
   #qvc-app :global(.qvc-preview-video) {
+    position: relative;
+    z-index: 2;
     display: block;
     width: 100%;
     height: 100%;
@@ -170,18 +172,23 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
     pointer-events: none;
   }
 
-  #qvc-app :global(.qvc-video-placeholder) {
+  /* The alignment card, behind whichever video has nothing to show. A stream
+     that arrives paints over it. */
+  #qvc-app :global(.qvc-testcard) {
     position: absolute;
     inset: 0;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    padding: var(--space-6);
-    color: var(--paper);
-    font-size: var(--text-xs);
-    text-align: center;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The size is an attribute on the element, in the card's own user units, so
+     the caption scales with the card rather than with the page. */
+  #qvc-app :global(.qvc-testcard-text) {
+    font-family: var(--font-ui);
+    letter-spacing: 0.08em;
+    fill: var(--ink);
   }
 
   /* The call, framed in the page or filling the screen. */
@@ -227,6 +234,8 @@ Astro.csp?.insertDirective('connect-src wss://api.andypeterson.dev');
   }
 
   #qvc-app :global(.qvc-remote-video) {
+    position: relative;
+    z-index: 2;
     display: block;
     width: 100%;
     height: 100%;

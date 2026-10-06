@@ -48,7 +48,11 @@ function applySinks(): void {
   // Every render builds new <video> elements, and srcObject does not come with
   // them: without this the call shows two black rectangles.
   const { local, remote } = mediaStreams();
-  attachStream('qvc-remote-video', remote);
+  attachStream('qvc-remote-video', remote, () => {
+    if (state.peerStreaming) return;
+    state.peerStreaming = true;
+    render();
+  });
   attachStream('qvc-local-video', local);
 
   const invite = document.getElementById('qvc-invite-link');

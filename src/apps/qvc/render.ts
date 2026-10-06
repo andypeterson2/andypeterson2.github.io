@@ -11,6 +11,7 @@
  */
 import { MAX_QBER, HALF_RATE_QBER } from './engine/bench/distill.js';
 import { state } from './state';
+import { testCard } from './testcard';
 import type { BudgetTerms, Receipt } from './state';
 import { benchAvailable } from './optical';
 
@@ -303,6 +304,7 @@ function demoTier(): string {
  */
 function selfPreview(): string {
   return `<div class="qvc-preview">
+      ${testCard(state.cameraOn ? 'CAMERA NOT STARTED' : 'CAMERA OFF')}
       <span class="qvc-video-label">You</span>
       <video id="qvc-local-video" class="qvc-preview-video" autoplay muted playsinline></video>
     </div>`;
@@ -465,9 +467,7 @@ export function renderCall(): string {
       : '';
   // Before the peer's media arrives there is a black rectangle with nothing to
   // say for itself, so the stage says what it is waiting for.
-  const placeholder = state.peerStreaming
-    ? ''
-    : '<p class="qvc-video-placeholder">Waiting for your partner’s camera…</p>';
+  const placeholder = state.peerStreaming ? '' : testCard('AWAITING PARTNER');
   const stage = state.stageFullBleed ? ' qvc-call--stage' : '';
   return `<section class="qvc-call${stage}" aria-label="Call">
       <div class="qvc-video-area">
