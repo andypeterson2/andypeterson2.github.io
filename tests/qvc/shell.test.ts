@@ -356,6 +356,48 @@ describe('a call that cannot start', () => {
   });
 });
 
+describe('the call videos', () => {
+  test('a rebuilt element is given its stream again', async () => {
+    const { attachStream } = await import('../../src/apps/qvc/media');
+    const stream = { id: 'fake' } as unknown as MediaStream;
+    document.body.innerHTML = '<video id="qvc-remote-video"></video>';
+    const first = document.getElementById('qvc-remote-video') as HTMLVideoElement;
+    first.play = () => Promise.resolve();
+    attachStream('qvc-remote-video', stream);
+    expect(first.srcObject).toBe(stream);
+
+    // What a render does: the element on screen is a different one, with no
+    // srcObject of its own.
+    document.body.innerHTML = '<video id="qvc-remote-video"></video>';
+    const second = document.getElementById('qvc-remote-video') as HTMLVideoElement;
+    second.play = () => Promise.resolve();
+    expect(second.srcObject).toBeFalsy();
+    attachStream('qvc-remote-video', stream);
+    expect(second.srcObject).toBe(stream);
+  });
+
+  test('no stream clears the element rather than leaving the last frame', async () => {
+    const { attachStream } = await import('../../src/apps/qvc/media');
+    document.body.innerHTML = '<video id="qvc-local-video"></video>';
+    const el = document.getElementById('qvc-local-video') as HTMLVideoElement;
+    el.play = () => Promise.resolve();
+    attachStream('qvc-local-video', { id: 'fake' } as unknown as MediaStream);
+    attachStream('qvc-local-video', null);
+    expect(el.srcObject).toBeNull();
+  });
+
+  test('both videos are re-attached after the markup swap', async () => {
+    const src = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/apps/qvc/app.ts', 'utf8'),
+    );
+    // applySinks is what runs after every innerHTML swap, so both elements
+    // have to be named there or the call shows black rectangles.
+    const body = /function applySinks\(\)[\s\S]*?\n}/.exec(src)?.[0] ?? '';
+    expect(body).toContain('qvc-remote-video');
+    expect(body).toContain('qvc-local-video');
+  });
+});
+
 describe('a join that is refused', () => {
   test('the spinner is what joining shows, so it must be cleared', () => {
     state.liveAvailable = true;

@@ -27,6 +27,7 @@ let host: Host = { render: () => undefined, notify: () => undefined };
 let manager: EngineManager | null = null;
 let orchestrator: Orchestrator | null = null;
 let localStream: MediaStream | null = null;
+let remoteStream: MediaStream | null = null;
 
 /**
  * How long a join may sit on "Connecting securely…" before it gives up. The
@@ -204,6 +205,7 @@ function wireRoom(m: EngineManager): void {
   });
   m.on('peer-disconnected', () => {
     endJoining();
+    remoteStream = null;
     resetSession();
     host.render();
     host.notify('Your partner left the call.');
@@ -219,7 +221,7 @@ function wireMedia(m: EngineManager, onCallStart: () => void): void {
     endJoining();
     state.reconnecting = false;
     state.elapsed = 0;
-    attachStream('qvc-remote-video', d.stream);
+    remoteStream = d.stream;
     onCallStart();
     host.render();
   });
@@ -265,14 +267,6 @@ function wireCipher(m: EngineManager): void {
   m.on('decrypt-error', (msg: { failures?: number }) => {
     console.warn(`[qvc] frame decrypt failures in the last interval: ${String(msg.failures ?? 1)}`);
   });
-}
-
-function attachStream(id: string, stream: MediaStream): void {
-  const el = document.getElementById(id);
-  if (el instanceof HTMLVideoElement) {
-    el.srcObject = stream;
-    void el.play().catch(() => undefined);
-  }
 }
 
 /** Build the call engine once, on the first create or join. */
@@ -323,7 +317,6 @@ async function acquireMedia(): Promise<MediaStream | null> {
   if (localStream) return localStream;
   try {
     localStream = await navigator.mediaDevices.getUserMedia(constraintsFor(state.deviceChoice));
-    attachStream('qvc-local-video', localStream);
     return localStream;
   } catch (err) {
     console.warn('[qvc] getUserMedia failed:', err);
@@ -363,6 +356,16 @@ export function setEavesdropper(fraction: number): void {
   socket?.emit('eve_demo', { active: fraction > 0, fraction });
 }
 
+/**
+ * The streams a call is carrying. Every render replaces the page's markup, and
+ * with it the two `<video>` elements, so whatever is on screen has to be given
+ * its stream again afterwards — an element's `srcObject` does not survive the
+ * swap that created it.
+ */
+export function mediaStreams(): { local: MediaStream | null; remote: MediaStream | null } {
+  return { local: localStream, remote: remoteStream };
+}
+
 /** The DTLS fingerprints, for the analytics screen. Null before a call. */
 export function fingerprints(): unknown {
   return manager ? manager.getDtlsFingerprints() : null;
@@ -370,6 +373,7 @@ export function fingerprints(): unknown {
 
 export function leave(): void {
   endJoining();
+  remoteStream = null;
   socket?.emit('leave_room');
   orchestrator?.destroy();
   orchestrator = null;
