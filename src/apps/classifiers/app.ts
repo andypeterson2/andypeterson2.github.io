@@ -10,7 +10,7 @@
  * hand-derived from the classifier backend's route handlers.
  */
 
-import { createLogger, initDrawer, initDropdown, initResize, onEscape } from '../ui-kit/ui-kit';
+import { initDropdown, initResize, onEscape } from '../ui-kit/ui-kit';
 import { connectionManager } from './connection';
 import { consumeSSE, type SseStructuredEvent } from './sse';
 import { MiniChart } from './chart';
@@ -171,7 +171,6 @@ function dropToBrowserTier(): void {
       detail: { service: 'classifiers', reason: 'unauthorized' },
     }),
   );
-  addLog('The pass was refused, so predictions are back in your browser.', 'err');
 }
 
 /**
@@ -263,14 +262,12 @@ function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
   return el;
 }
 
-const drawer = initDrawer(byId('log-drawer', HTMLElement), byId('log-handle', HTMLElement));
 const dropdown = initDropdown(
   byId('dataset-menu-btn', HTMLElement),
   byId('dataset-menu', HTMLElement),
 );
 
 onEscape(() => {
-  drawer.close();
   dropdown.close();
 });
 
@@ -284,13 +281,6 @@ initResize(
     key: 'leftColWidth_v2',
   },
 );
-
-const logTerminal = byId('log-terminal', HTMLElement);
-const addLog = createLogger(logTerminal, 200);
-// Closed, the log shows its newest line; open or closed, it stays at the bottom.
-byId('log-handle', HTMLElement).addEventListener('click', () => {
-  logTerminal.scrollTop = logTerminal.scrollHeight;
-});
 
 const canvasCol = byId('canvas-col', HTMLElement);
 const tabularCol = byId('tabular-col', HTMLElement);
@@ -940,7 +930,7 @@ async function loadModels(): Promise<void> {
       if (info?.model_type) state.models[name] = { eval_result: null, ...info };
     }
   } catch (err) {
-    addLog(`Couldn't load the live models — ${errText(err)}`, 'err');
+    console.warn(`[classifiers] could not load the live models — ${errText(err)}`);
     return;
   }
   buildMetricsTable();
@@ -962,7 +952,7 @@ async function loadModelTypes(): Promise<void> {
       : [];
     modelTypeSelect.replaceChildren(...types.map((t) => new Option(t, t)));
   } catch (err) {
-    addLog(`Couldn't load the model types — ${errText(err)}`, 'err');
+    console.warn(`[classifiers] could not load the model types — ${errText(err)}`);
   }
   modelNameInput.value = defaultName(modelTypeSelect.value);
   applyTier();
@@ -1064,7 +1054,6 @@ trainBtn.addEventListener('click', () => {
   void (async () => {
     const modelType = modelTypeSelect.value;
     if (!modelType) {
-      addLog('Choose a model type first: the list comes from the live backend.', 'err');
       return;
     }
     const epochs = parseInt(byId('epochs', HTMLInputElement).value, 10);
@@ -1087,14 +1076,6 @@ trainBtn.addEventListener('click', () => {
       body.teacher = teacher;
       body.distill_weight = distillW;
     }
-
-    logTerminal.innerHTML = '';
-    addLog(
-      `Training '${name}'  ·  ${modelType}  ·  ${String(epochs)} epoch${epochs !== 1 ? 's' : ''}  ·  lr ${String(lr)}`,
-    );
-    if (patience != null)
-      addLog(`Early stopping: patience=${String(patience)}, val every ${String(valGap)} batches`);
-    if (teacher) addLog(`Distillation: teacher='${teacher}', α=${String(distillW)}`);
 
     trainBtn.disabled = true;
     trainBtn.classList.add('btn-loading');
@@ -1125,7 +1106,6 @@ trainBtn.addEventListener('click', () => {
       syncUrl: `${base()}/train/sync`,
       onStatus(msg) {
         if (typeof msg === 'string') {
-          addLog(msg);
           return;
         }
         const hist = asHistoryEvent(msg);
@@ -1139,12 +1119,6 @@ trainBtn.addEventListener('click', () => {
           }
           trainChart.render();
         }
-        addLog(
-          `loss: ${hist.train_loss.toFixed(4)}` +
-            (hist.val_accuracy != null
-              ? `  val_acc: ${(hist.val_accuracy * 100).toFixed(1)}%`
-              : ''),
-        );
       },
       onDone(rawEvent) {
         const event = rawEvent as RawTrainDone;
@@ -1159,17 +1133,13 @@ trainBtn.addEventListener('click', () => {
           eval_result: null,
         };
         trained.name = event.name;
-        if (event.stopped_early)
-          addLog(`Early stopping triggered at epoch ${String(event.epochs_completed)}`, 'ok');
-        if (event.best_val_accuracy != null)
-          addLog(`Best val accuracy: ${(event.best_val_accuracy * 100).toFixed(1)}%`, 'ok');
         buildMetricsTable();
         buildPredictionTable();
         buildSessionModelsList();
         modelNameInput.value = defaultName(modelTypeSelect.value);
       },
       onError(err) {
-        addLog(`Error: ${err}`, 'err');
+        console.warn(`[classifiers] training failed — ${errText(err)}`);
       },
     });
 
@@ -1178,7 +1148,6 @@ trainBtn.addEventListener('click', () => {
     trainBtn.textContent = '▶ Train';
 
     if (trained.name) {
-      addLog(`'${trained.name}' trained successfully`, 'ok');
       await runEvaluate();
     }
   })();
@@ -1220,19 +1189,8 @@ async function runPredict(): Promise<void> {
     Object.assign(state.predictions, data.results);
     buildPredictionTable();
   } catch (err) {
-    addLog(`Live predict failed — ${errText(err)}`, 'err');
+    console.warn(`[classifiers] live predict failed — ${errText(err)}`);
   }
-}
-
-/** One log line per prediction: each model's answer and its score. */
-function logPredictions(names: string[]): void {
-  const parts = names.flatMap((name) => {
-    const p = state.predictions[name];
-    if (!p) return [];
-    const score = p.qsvm ? margin(p.qsvm.s) : p.confidence != null ? pct(p.confidence) : '';
-    return [`${name} ${p.prediction}${score ? ` (${score})` : ''}`];
-  });
-  if (parts.length) addLog(`predict: ${parts.join(' · ')}`);
 }
 
 // Demo tier: run every in-browser model over the current canvas / feature
@@ -1262,7 +1220,6 @@ async function runPredictLocal(): Promise<void> {
   }
   markOutOfScope(locals);
   buildPredictionTable();
-  logPredictions(locals.map(([name]) => name));
 }
 
 /** The form's values in the order the model names its features. */
@@ -1372,7 +1329,6 @@ async function switchDataset(name: string): Promise<void> {
   window.UI_CONFIG = ds;
   const image = ds.input_type === 'image';
   applyInputVisibility();
-  addLog(`dataset → ${ds.display_name}`);
   state.models = {};
   state.predictions = {};
   modelTypeSelect.replaceChildren();
@@ -1415,7 +1371,6 @@ clearBtn.addEventListener('click', () => {
   clearCanvas();
   state.predictions = {};
   buildPredictionTable();
-  addLog('canvas cleared');
 });
 
 // Saved models on disk
@@ -1440,7 +1395,7 @@ async function loadSavedModels(): Promise<void> {
       importBtn.disabled = false;
     }
   } catch (err) {
-    addLog(`Couldn't list the saved models — ${errText(err)}`, 'err');
+    console.warn(`[classifiers] could not list the saved models — ${errText(err)}`);
   }
 }
 savedSelect.addEventListener('change', () => {
@@ -1475,7 +1430,7 @@ importBtn.addEventListener('click', () => {
       modelNameInput.value = defaultName(modelTypeSelect.value);
       await runEvaluate();
     } catch (err) {
-      addLog(`Import failed — ${errText(err)}`, 'err');
+      console.warn(`[classifiers] import failed — ${errText(err)}`);
     } finally {
       importBtn.disabled = !savedSelect.value;
     }
@@ -1497,7 +1452,7 @@ document.addEventListener('click', (e) => {
       });
       await loadSavedModels();
     } catch (err) {
-      addLog(`Export failed — ${errText(err)}`, 'err');
+      console.warn(`[classifiers] export failed — ${errText(err)}`);
     } finally {
       btn.disabled = false;
     }
@@ -1542,7 +1497,6 @@ ensembleBtn.addEventListener('click', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model_names: names }),
       });
-      addLog(`Ensemble accuracy: ${(data.accuracy * 100).toFixed(1)}%`, 'ok');
       // Store as a virtual model for display
       state.models.Ensemble = {
         model_type: 'Ensemble',
@@ -1561,7 +1515,7 @@ ensembleBtn.addEventListener('click', () => {
       };
       buildMetricsTable();
     } catch (err) {
-      addLog(`Ensemble error — ${errText(err)}`, 'err');
+      console.warn(`[classifiers] ensemble failed — ${errText(err)}`);
     } finally {
       ensembleBtn.disabled = false;
       ensembleBtn.textContent = 'Ensemble';
@@ -1578,7 +1532,6 @@ document.addEventListener('click', (e) => {
   if (!btn || !modelName) return;
   void (async () => {
     btn.disabled = true;
-    addLog(`Running ablation study on '${modelName}'…`);
 
     await consumeSSE(
       `${base()}/ablation`,
@@ -1586,25 +1539,23 @@ document.addEventListener('click', (e) => {
       {
         fetchImpl: apiFetch,
         onStatus(msg) {
-          if (typeof msg === 'string') {
-            addLog(msg);
-            return;
-          }
+          if (typeof msg === 'string') return;
           if (
             msg.type === 'ablation_result' &&
             typeof msg.accuracy === 'number' &&
             typeof msg.drop === 'number'
           ) {
-            addLog(
-              `  ${String(msg.layer)}: acc=${(msg.accuracy * 100).toFixed(1)}%, drop=${(msg.drop * 100).toFixed(1)}%`,
+            console.info(
+              `[classifiers] ablation ${modelName}: accuracy ${(msg.accuracy * 100).toFixed(1)}%,` +
+                ` drop ${(msg.drop * 100).toFixed(1)}%`,
             );
           }
         },
         onDone() {
-          addLog(`Ablation complete for '${modelName}'`, 'ok');
+          // The run's own result arrives through onStatus above.
         },
         onError(err) {
-          addLog(`Ablation error: ${err}`, 'err');
+          console.warn(`[classifiers] ablation failed — ${err}`);
         },
       },
     );
@@ -1644,18 +1595,12 @@ function applyTier(): void {
 document.addEventListener('connection:statechange', (e) => {
   const { state: s, previous } = (e as CustomEvent<{ state: string; previous: string }>).detail;
   applyTier();
-  if (s === 'connecting')
-    addLog(connectionManager.everConnected ? 'Reconnecting…' : 'Connecting to the live backend…');
-  if (s === 'degraded') addLog('Missed a heartbeat: checking the live backend…');
-  if (s === 'connected' && previous === 'degraded') addLog('The live backend answered', 'ok');
   if (s === 'connected' && previous !== 'degraded') {
-    addLog('Connected to the live backend', 'ok');
     void loadModels();
     void loadSavedModels();
     void loadModelTypes();
   }
   if (s === 'disconnected' && (previous === 'connected' || previous === 'degraded')) {
-    addLog('Lost the live backend: predictions are back in your browser', 'err');
     dropServerModels();
   }
 });
@@ -1710,7 +1655,6 @@ async function initLocalModels(): Promise<void> {
     const label = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
     const info = localModelInfo(model, file);
     state.models[label] = info;
-    addLog(`weights loaded: ${label} · ${info.num_params?.toLocaleString() ?? '?'} params`);
   }
   buildSessionModelsList();
   buildMetricsTable();
@@ -1722,7 +1666,5 @@ async function initLocalModels(): Promise<void> {
 void initLocalModels();
 renderDatasetMenu();
 applyTier();
-if (isOffline())
-  addLog('Running in your browser: predictions are local; training needs the live backend.');
 modelNameInput.value = defaultName(modelTypeSelect.value);
 void fetchModelInfo(modelTypeSelect.value);

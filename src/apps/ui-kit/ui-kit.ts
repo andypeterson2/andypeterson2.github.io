@@ -30,8 +30,6 @@ export interface ResizeOpts {
   key?: string;
 }
 
-export type Logger = (msg: string, level?: string) => void;
-
 // DRAWER
 
 /** Initialise a collapsible drawer (adds/removes `.open` class). */
@@ -207,25 +205,3 @@ export function initResize(
 }
 
 // LOG TERMINAL
-
-/** Create a log appender for a `.log-terminal` element. */
-export function createLogger(terminalEl: HTMLElement, max = 200): Logger {
-  return function addLog(msg, level) {
-    const time = new Date().toTimeString().slice(0, 8);
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    const t = document.createElement('span');
-    t.className = 'log-time';
-    t.textContent = time;
-    const m = document.createElement('span');
-    m.className = 'log-msg' + (level ? ' log-' + level : '');
-    m.textContent = msg;
-    entry.appendChild(t);
-    entry.appendChild(m);
-    terminalEl.appendChild(entry);
-    while (terminalEl.children.length > max && terminalEl.firstChild) {
-      terminalEl.removeChild(terminalEl.firstChild);
-    }
-    terminalEl.scrollTop = terminalEl.scrollHeight;
-  };
-}

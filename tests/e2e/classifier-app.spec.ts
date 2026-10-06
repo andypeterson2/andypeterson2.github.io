@@ -11,7 +11,6 @@ test.describe('Classifier app shell', () => {
     await page.goto('/projects/ai-ml/app/');
     await expect(page.locator('#classifier-app')).toBeVisible();
     await expect(page.locator('.app-navbar')).toBeVisible();
-    await expect(page.locator('#log-drawer')).toBeVisible();
   });
 
   test('renders ClassifierTrainCard with train button', async ({ page }) => {
@@ -197,20 +196,6 @@ test.describe('Classifier: what the models see and say', () => {
     const qsvm = page.locator('#pred-body tr').filter({ hasText: 'QSVM' });
     await expect(qsvm.locator('td').nth(2)).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
     await expect(page.locator('#pred-body').locator('..').locator('th').nth(2)).toHaveText('Score');
-  });
-
-  test('the log narrates the demo, and opening it shows more of it', async ({ page }) => {
-    const log = page.locator('#log-terminal');
-    await expect(log).toContainText('weights loaded');
-    await drawSeven(page);
-    await expect(log).toContainText('predict:');
-    await page.locator('#clear-btn').click();
-    await expect(log).toContainText('canvas cleared');
-    const closed = (await log.boundingBox())!.height;
-    await page.locator('#log-handle').click();
-    await expect(page.locator('#log-handle')).toHaveAttribute('aria-expanded', 'true');
-    const open = (await log.boundingBox())!.height;
-    expect(open).toBeGreaterThan(closed * 2);
   });
 
   test('in-browser models say which export their weights came from', async ({ page }) => {

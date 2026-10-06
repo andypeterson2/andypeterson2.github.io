@@ -116,10 +116,6 @@ test.describe('Classifier live tier', () => {
       await expect(page.locator('#train-btn')).toBeEnabled();
       await expect(page.locator('#model-name')).toHaveValue('CNN');
       await expect(page.locator('#session-models')).toContainText('CNN 1');
-      const log = page.locator('#log-terminal');
-      await expect(log).toContainText('Connected to the live backend');
-      await expect(log).toContainText('Connecting to the live backend');
-      await expect(log).not.toContainText('Reconnecting');
     } finally {
       await stub.close();
     }
@@ -158,15 +154,19 @@ test.describe('Classifier live tier', () => {
   });
 
   test('an error envelope is reported, not listed as a model', async ({ page }) => {
+    const warnings: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'warning') warnings.push(m.text());
+    });
     const stub = await startStub({
       models: { status: 500, body: { error: { code: 'internal_error', message: 'boom' } } },
     });
     try {
       await connect(page, stub);
-      await expect(page.locator('#log-terminal')).toContainText(
-        "Couldn't load the live models — internal_error: boom",
-      );
       await expect(page.locator('#session-models')).not.toContainText('error');
+      await expect
+        .poll(() => warnings.join('\n'))
+        .toContain('could not load the live models — internal_error: boom');
     } finally {
       await stub.close();
     }
@@ -179,7 +179,6 @@ test.describe('Classifier live tier', () => {
     try {
       await connect(page, stub);
       await expect(page.locator('#train-btn')).toBeDisabled();
-      await expect(page.locator('#log-terminal')).toContainText('The pass was refused');
     } finally {
       await stub.close();
     }
