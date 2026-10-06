@@ -74,7 +74,9 @@ describe('gateway requests carry the owner session', () => {
   }
 
   test('a gateway call sends credentials, so an Access cookie reaches the front door', async () => {
-    const spy = vi.fn(async () => new Response('{}', { status: 200 }));
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
     await wrapWith(spy);
     await window.fetch('https://api.andypeterson.dev/classifiers/health');
     const init = spy.mock.calls[0][1] as RequestInit | undefined;
@@ -82,7 +84,9 @@ describe('gateway requests carry the owner session', () => {
   });
 
   test('a caller that chose its own credentials keeps them', async () => {
-    const spy = vi.fn(async () => new Response('{}', { status: 200 }));
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
     await wrapWith(spy);
     await window.fetch('https://api.andypeterson.dev/classifiers/health', {
       credentials: 'omit',
@@ -92,7 +96,9 @@ describe('gateway requests carry the owner session', () => {
   });
 
   test('a call to another origin is left alone', async () => {
-    const spy = vi.fn(async () => new Response('{}', { status: 200 }));
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
     await wrapWith(spy);
     await window.fetch('https://example.test/thing');
     const init = spy.mock.calls[0][1] as RequestInit | undefined;
