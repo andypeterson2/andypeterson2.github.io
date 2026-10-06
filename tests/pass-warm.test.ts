@@ -64,3 +64,76 @@ describe('warmUntilHealthy', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('gateway requests carry the owner session', () => {
+  /** Install the spy first, so the wrapper closes over it as the real fetch. */
+  async function wrapWith(spy: ReturnType<typeof vi.fn>) {
+    vi.resetModules();
+    window.fetch = spy as unknown as typeof window.fetch;
+    await import('../src/apps/shared/pass');
+  }
+
+  test('a gateway call sends credentials, so an Access cookie reaches the front door', async () => {
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
+    await wrapWith(spy);
+    await window.fetch('https://api.andypeterson.dev/classifiers/health');
+    const init = spy.mock.calls[0][1] as RequestInit | undefined;
+    expect(init?.credentials).toBe('include');
+  });
+
+  test('a caller that chose its own credentials keeps them', async () => {
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
+    await wrapWith(spy);
+    await window.fetch('https://api.andypeterson.dev/classifiers/health', {
+      credentials: 'omit',
+    });
+    const init = spy.mock.calls[0][1] as RequestInit | undefined;
+    expect(init?.credentials).toBe('omit');
+  });
+
+  test('a call to another origin is left alone', async () => {
+    const spy = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}', { status: 200 }),
+    );
+    await wrapWith(spy);
+    await window.fetch('https://example.test/thing');
+    const init = spy.mock.calls[0][1] as RequestInit | undefined;
+    expect(init?.credentials).toBeUndefined();
+  });
+});
+
+describe('activation without a pass', () => {
+  /** The page as a demo page sees it: a backend named, no pass stored. */
+  async function activate(status: number) {
+    vi.resetModules();
+    sessionStorage.clear();
+    document.head.innerHTML = '<meta name="site-backend" content="classifiers" />';
+    const seen: string[] = [];
+    for (const n of ['navbar:connect', 'navbar:connect-pending', 'navbar:connect-failed']) {
+      document.addEventListener(n, () => seen.push(n));
+    }
+    window.fetch = vi.fn(async () => new Response('{}', { status })) as typeof window.fetch;
+    await import('../src/apps/shared/pass');
+    await vi.runAllTimersAsync();
+    return seen;
+  }
+
+  // The owner's credential is a cookie the page cannot read, so the only way to
+  // know is to ask: a 200 means the gateway let this caller through.
+  test('an authorised probe connects even though no pass is held', async () => {
+    expect(await activate(200)).toContain('navbar:connect');
+  });
+
+  test('a refused probe stays quiet rather than reporting a failure', async () => {
+    const seen = await activate(402);
+    expect(seen).not.toContain('navbar:connect');
+    // Nothing was claimed, so there is no failure to show — the client-side
+    // tier is simply what this visitor gets.
+    expect(seen).not.toContain('navbar:connect-failed');
+    expect(seen).not.toContain('navbar:connect-pending');
+  });
+});
