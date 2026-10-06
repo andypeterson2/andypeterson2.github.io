@@ -380,3 +380,45 @@ describe('asking for the camera', () => {
     expect(body.indexOf('ensureEngine')).toBeGreaterThan(body.indexOf('acquireMedia'));
   });
 });
+
+describe('choosing a camera and microphone', () => {
+  test('a remembered device is preferred, not demanded', async () => {
+    const { constraintsFor } = await import('../../src/apps/qvc/media');
+    const c = constraintsFor({ cameraId: 'cam-1', microphoneId: 'mic-1' });
+    const video = c.video as MediaTrackConstraints;
+    const audio = c.audio as MediaTrackConstraints;
+    // `ideal`, so a device that has since been unplugged costs a fallback
+    // rather than a failed call.
+    expect(video.deviceId).toEqual({ ideal: 'cam-1' });
+    expect(audio.deviceId).toEqual({ ideal: 'mic-1' });
+  });
+
+  test('with no choice it asks for anything', async () => {
+    const { constraintsFor } = await import('../../src/apps/qvc/media');
+    const c = constraintsFor({ cameraId: null, microphoneId: null });
+    expect((c.video as MediaTrackConstraints).deviceId).toBeUndefined();
+  });
+
+  test('a refusal points at the system settings, not just the browser', async () => {
+    const { mediaFailure } = await import('../../src/apps/qvc/media');
+    const err = new Error('denied');
+    err.name = 'NotAllowedError';
+    expect(mediaFailure(err)).toContain('Privacy & security');
+  });
+
+  test('a device that went away says so, rather than blaming permission', async () => {
+    const { mediaFailure } = await import('../../src/apps/qvc/media');
+    const err = new Error('gone');
+    err.name = 'NotFoundError';
+    const msg = mediaFailure(err);
+    expect(msg).toContain('no longer attached');
+    expect(msg).not.toContain('refused');
+  });
+
+  test('an unknown failure is quoted rather than guessed at', async () => {
+    const { mediaFailure } = await import('../../src/apps/qvc/media');
+    const err = new Error('something odd');
+    err.name = 'WeirdError';
+    expect(mediaFailure(err)).toContain('WeirdError: something odd');
+  });
+});

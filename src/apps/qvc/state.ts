@@ -100,6 +100,17 @@ export interface QvcState {
   optical: { enabled: boolean; url: string; token: string };
   /** Pairing feedback shown beside the bench controls. */
   opticalStatus: string;
+  /** Cameras and microphones this browser will admit to. */
+  devices: {
+    cameras: { id: string; label: string }[];
+    microphones: { id: string; label: string }[];
+  };
+  /** Whether the device labels are real, which needs permission once. */
+  devicesLabelled: boolean;
+  /** Which devices to use, remembered between visits. */
+  deviceChoice: { cameraId: string | null; microphoneId: string | null };
+  /** What the last device check found, shown beside the picker. */
+  deviceStatus: string;
 }
 
 /** Per-frame QBER points kept for the strip chart. */
@@ -145,6 +156,10 @@ export function initialState(): QvcState {
     receipts: [],
     optical: { enabled: false, url: 'ws://127.0.0.1:8781', token: '' },
     opticalStatus: '',
+    devices: { cameras: [], microphones: [] },
+    devicesLabelled: false,
+    deviceChoice: { cameraId: null, microphoneId: null },
+    deviceStatus: '',
   };
 }
 
@@ -152,8 +167,17 @@ export const state: QvcState = initialState();
 
 /** Reset to a fresh lobby, keeping what the page learned about the tier. */
 export function resetSession(): void {
-  const { connected, liveAvailable, invited, optical } = state;
-  Object.assign(state, initialState(), { connected, liveAvailable, invited, optical });
+  const { connected, liveAvailable, invited, optical, devices, devicesLabelled, deviceChoice } =
+    state;
+  Object.assign(state, initialState(), {
+    connected,
+    liveAvailable,
+    invited,
+    optical,
+    devices,
+    devicesLabelled,
+    deviceChoice,
+  });
 }
 
 /** Record a QBER sample, holding the strip chart to its cap. */
