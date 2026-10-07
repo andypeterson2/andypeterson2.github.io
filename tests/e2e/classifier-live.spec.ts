@@ -103,7 +103,7 @@ async function startStub(opts: StubOpts = {}): Promise<Stub> {
 /** Load the app on its in-browser models, then bring the live tier up against the stub. */
 async function connect(page: Page, stub: Stub): Promise<void> {
   await page.goto('/projects/ai-ml/app/');
-  await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM');
+  await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
   await page.evaluate((url) => {
     document.dispatchEvent(
       new CustomEvent('navbar:connect', { detail: { service: 'classifiers', url } }),

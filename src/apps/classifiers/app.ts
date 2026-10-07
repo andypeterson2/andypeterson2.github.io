@@ -210,8 +210,6 @@ interface ModelInfo {
   _local?: boolean;
   /** Model asset name for the in-browser tier. */
   _file?: string;
-  /** Binary-subset caveat (e.g. the QSVM answers only "6 vs 9"). */
-  _subset?: string | undefined;
   /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
   _classes?: string[] | undefined;
   /** Computed in this page (the ensemble result); the backend has no model by this name. */
@@ -631,7 +629,6 @@ function buildSessionModelsList(): void {
 
 function predictionAnswerCell(
   p: (Prediction & { outOfScope?: boolean }) | undefined,
-  m: ModelInfo | undefined,
 ): HTMLTableCellElement {
   const td = document.createElement('td');
   if (!p) {
@@ -643,12 +640,6 @@ function predictionAnswerCell(
   span.className = p.outOfScope ? 'pred-label pred-out' : 'pred-label';
   span.textContent = p.prediction;
   td.appendChild(span);
-  if (p.outOfScope && m?._subset) {
-    const note = document.createElement('span');
-    note.className = 'pred-out-note';
-    note.textContent = ` (only answers ${m._subset})`;
-    td.appendChild(note);
-  }
   return td;
 }
 
@@ -794,7 +785,7 @@ function metricSections(labels: string[]): MetricSection[] {
         {
           key: 'Prediction',
           fn: (_m, name) => (state.predictions[name] ? 'answered' : '—'),
-          node: (m, name) => predictionAnswerCell(state.predictions[name], m),
+          node: (_m, name) => predictionAnswerCell(state.predictions[name]),
           cellCls: 'metric-headline',
         },
         {
@@ -1721,7 +1712,6 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     },
     _local: true,
     _file: file,
-    _subset: model.display?.subset,
     _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
     _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
@@ -1740,8 +1730,11 @@ async function initLocalModels(): Promise<void> {
     } catch {
       continue; // model asset missing — degrade to whatever loaded
     }
-    // "QSVM (Yang et al. 2019)" is listed as "QSVM", with the citation in its Models row.
-    const label = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
+    // "QSVM (Yang et al. 2019)" is listed as "QSVM (6 vs 9)": the citation moves to
+    // the Models row, and the two classes it knows take its place in the name.
+    const base = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
+    const subset = model.display?.subset;
+    const label = subset ? `${base} (${subset})` : base;
     const info = localModelInfo(model, file);
     state.models[label] = info;
   }
