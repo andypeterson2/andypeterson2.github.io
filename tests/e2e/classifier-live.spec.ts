@@ -58,6 +58,20 @@ async function startStub(opts: StubOpts = {}): Promise<Stub> {
       };
       return json(res, m.status, m.body);
     }
+    if (path === '/d/mnist/ablation') {
+      req.on('data', () => undefined);
+      req.on('end', () => {
+        res.writeHead(200, { ...CORS, 'content-type': 'text/event-stream' });
+        // One event per layer: the layer name is what tells the rows apart.
+        res.write(
+          'data: {"type":"ablation_result","layer":"conv1","accuracy":0.8,"drop":0.12}\n\n',
+        );
+        res.write('data: {"type":"ablation_result","layer":"fc1","accuracy":0.9,"drop":0.02}\n\n');
+        res.write('data: {"type":"done"}\n\n');
+        res.end();
+      });
+      return;
+    }
     if (path === '/d/mnist/models/disk') return json(res, 200, []);
     if (path.startsWith('/d/mnist/model-info/')) return json(res, 404, {});
     if (path === '/d/mnist/predict') {
@@ -153,20 +167,33 @@ test.describe('Classifier live tier', () => {
     }
   });
 
+  test('ablation lands in the metrics table, a row per layer', async ({ page }) => {
+    const stub = await startStub();
+    try {
+      await connect(page, stub);
+      await page.locator('[data-ablation="CNN 1"]').click();
+      const table = page.locator('#metrics-body');
+      await expect(table).toContainText('Ablation (accuracy drop)');
+      // Without the layer name both rows would read the same.
+      await expect(table).toContainText('conv1');
+      await expect(table).toContainText('fc1');
+      await expect(table.locator('tr', { hasText: 'conv1' })).toContainText('12.0%');
+      await expect(table.locator('tr', { hasText: 'fc1' })).toContainText('2.0%');
+    } finally {
+      await stub.close();
+    }
+  });
+
   test('an error envelope is reported, not listed as a model', async ({ page }) => {
-    const warnings: string[] = [];
-    page.on('console', (m) => {
-      if (m.type() === 'warning') warnings.push(m.text());
-    });
     const stub = await startStub({
       models: { status: 500, body: { error: { code: 'internal_error', message: 'boom' } } },
     });
     try {
       await connect(page, stub);
       await expect(page.locator('#session-models')).not.toContainText('error');
-      await expect
-        .poll(() => warnings.join('\n'))
-        .toContain('could not load the live models — internal_error: boom');
+      await expect(page.locator('#models-status')).toContainText(
+        "Couldn't load the live models — internal_error: boom",
+      );
     } finally {
       await stub.close();
     }

@@ -204,6 +204,8 @@ interface ModelInfo {
   training_history?: unknown[];
   stopped_early?: boolean;
   eval_result: RawEvalResult | null;
+  /** Accuracy drop per ablated layer, filled in by an ablation run. */
+  ablation?: Record<string, number>;
   /** In-browser demo model — no backend to ablate/export/remove against. */
   _local?: boolean;
   /** Model asset name for the in-browser tier. */
@@ -301,6 +303,11 @@ const datasetCurrent = byId('dataset-current', HTMLElement);
 const evalProgress = byId('evaluate-progress', HTMLElement);
 const evalBar = byId('eval-bar', HTMLElement);
 const evalStatus = byId('eval-status', HTMLElement);
+// What a failed run says, in the card whose button started it.
+const trainStatus = byId('train-status', HTMLElement);
+const modelsStatus = byId('models-status', HTMLElement);
+const savedStatus = byId('saved-status', HTMLElement);
+const ablationStatus = modelsStatus;
 const metricsHead = byId('metrics-head', HTMLElement);
 const metricsBody = byId('metrics-body', HTMLElement);
 const predBody = byId('pred-body', HTMLElement);
@@ -788,6 +795,17 @@ interface MetricSection {
   rows: MetricRow[];
 }
 
+/** Every layer any model has an ablation figure for, in first-seen order. */
+function ablatedLayers(): string[] {
+  const seen: string[] = [];
+  for (const [, m] of modelEntries()) {
+    for (const layer of Object.keys(m.ablation ?? {})) {
+      if (!seen.includes(layer)) seen.push(layer);
+    }
+  }
+  return seen;
+}
+
 function metricSections(labels: string[]): MetricSection[] {
   return [
     {
@@ -828,6 +846,20 @@ function metricSections(labels: string[]): MetricSection[] {
           cls: 'num',
         },
       ],
+    },
+    {
+      label: 'Ablation (accuracy drop)',
+      rows: ablatedLayers().map((layer) => ({
+        key: layer,
+        fn: (m: ModelInfo) => {
+          const drop = m.ablation?.[layer];
+          // A bigger drop means the layer carried more of the answer, so the
+          // scale runs the other way from accuracy.
+          return drop != null ? `<span class="${accClass(1 - drop)}">${pct(drop)}</span>` : '—';
+        },
+        html: true,
+        cls: 'num',
+      })),
     },
     {
       label: 'Per-Class Accuracy',
@@ -930,7 +962,7 @@ async function loadModels(): Promise<void> {
       if (info?.model_type) state.models[name] = { eval_result: null, ...info };
     }
   } catch (err) {
-    console.warn(`[classifiers] could not load the live models — ${errText(err)}`);
+    modelsStatus.textContent = `Couldn't load the live models — ${errText(err)}`;
     return;
   }
   buildMetricsTable();
@@ -952,7 +984,7 @@ async function loadModelTypes(): Promise<void> {
       : [];
     modelTypeSelect.replaceChildren(...types.map((t) => new Option(t, t)));
   } catch (err) {
-    console.warn(`[classifiers] could not load the model types — ${errText(err)}`);
+    trainStatus.textContent = `Couldn't load the model types — ${errText(err)}`;
   }
   modelNameInput.value = defaultName(modelTypeSelect.value);
   applyTier();
@@ -1139,7 +1171,7 @@ trainBtn.addEventListener('click', () => {
         modelNameInput.value = defaultName(modelTypeSelect.value);
       },
       onError(err) {
-        console.warn(`[classifiers] training failed — ${errText(err)}`);
+        trainStatus.textContent = `Training failed — ${err}`;
       },
     });
 
@@ -1189,7 +1221,7 @@ async function runPredict(): Promise<void> {
     Object.assign(state.predictions, data.results);
     buildPredictionTable();
   } catch (err) {
-    console.warn(`[classifiers] live predict failed — ${errText(err)}`);
+    modelsStatus.textContent = `Live predict failed — ${errText(err)}`;
   }
 }
 
@@ -1395,7 +1427,7 @@ async function loadSavedModels(): Promise<void> {
       importBtn.disabled = false;
     }
   } catch (err) {
-    console.warn(`[classifiers] could not list the saved models — ${errText(err)}`);
+    savedStatus.textContent = `Couldn't list the saved models — ${errText(err)}`;
   }
 }
 savedSelect.addEventListener('change', () => {
@@ -1430,7 +1462,7 @@ importBtn.addEventListener('click', () => {
       modelNameInput.value = defaultName(modelTypeSelect.value);
       await runEvaluate();
     } catch (err) {
-      console.warn(`[classifiers] import failed — ${errText(err)}`);
+      savedStatus.textContent = `Import failed — ${errText(err)}`;
     } finally {
       importBtn.disabled = !savedSelect.value;
     }
@@ -1452,7 +1484,7 @@ document.addEventListener('click', (e) => {
       });
       await loadSavedModels();
     } catch (err) {
-      console.warn(`[classifiers] export failed — ${errText(err)}`);
+      savedStatus.textContent = `Export failed — ${errText(err)}`;
     } finally {
       btn.disabled = false;
     }
@@ -1515,7 +1547,7 @@ ensembleBtn.addEventListener('click', () => {
       };
       buildMetricsTable();
     } catch (err) {
-      console.warn(`[classifiers] ensemble failed — ${errText(err)}`);
+      modelsStatus.textContent = `Ensemble failed — ${errText(err)}`;
     } finally {
       ensembleBtn.disabled = false;
       ensembleBtn.textContent = 'Ensemble';
@@ -1532,6 +1564,7 @@ document.addEventListener('click', (e) => {
   if (!btn || !modelName) return;
   void (async () => {
     btn.disabled = true;
+    ablationStatus.textContent = `Ablating ${modelName}…`;
 
     await consumeSSE(
       `${base()}/ablation`,
@@ -1540,22 +1573,23 @@ document.addEventListener('click', (e) => {
         fetchImpl: apiFetch,
         onStatus(msg) {
           if (typeof msg === 'string') return;
+          // One event per ablated layer, so the layer name is what tells them
+          // apart; without it a four-layer model reports four identical rows.
           if (
             msg.type === 'ablation_result' &&
-            typeof msg.accuracy === 'number' &&
+            typeof msg.layer === 'string' &&
             typeof msg.drop === 'number'
           ) {
-            console.info(
-              `[classifiers] ablation ${modelName}: accuracy ${(msg.accuracy * 100).toFixed(1)}%,` +
-                ` drop ${(msg.drop * 100).toFixed(1)}%`,
-            );
+            const model = state.models[modelName];
+            if (model) model.ablation = { ...model.ablation, [msg.layer]: msg.drop };
           }
         },
         onDone() {
-          // The run's own result arrives through onStatus above.
+          buildMetricsTable();
+          ablationStatus.textContent = '';
         },
         onError(err) {
-          console.warn(`[classifiers] ablation failed — ${err}`);
+          ablationStatus.textContent = `Ablation failed — ${err}`;
         },
       },
     );

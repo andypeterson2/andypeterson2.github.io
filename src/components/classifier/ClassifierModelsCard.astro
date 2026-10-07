@@ -9,6 +9,7 @@ import Button from '../Button.astro';
   <div class="row models-row">
     <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
   </div>
+  <p id="models-status" class="card-status" role="status"></p>
 </section>
 
 <!-- Saved models: checkpoints on the live backend, so shown only with one. -->
@@ -29,9 +30,21 @@ import Button from '../Button.astro';
   <div class="row models-row">
     <Button app variant="secondary" id="import-btn" type="button" disabled>Import</Button>
   </div>
+  <p id="saved-status" class="card-status" role="status"></p>
 </section>
 
 <style>
+  /* What a failed run says, beside the button that failed. Empty until then,
+     so it takes no room on a card that is working. */
+  .card-status {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-3xs);
+  }
+
+  .card-status:empty {
+    display: none;
+  }
+
   /* The refresh glyph a size up; .s6-btn--icon gives it the 32px (44px touch)
      target. */
   :global(#classifier-app .icon-btn) {

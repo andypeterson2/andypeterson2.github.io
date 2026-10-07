@@ -1,18 +1,8 @@
 /**
- * Interactive behaviours the classifier page composes: a drawer, a dropdown, a
- * drag-to-resize handle and a log terminal. Nothing auto-initialises — the page
- * calls what it needs, and each initialiser wires its own listeners for the life
- * of the page.
- *
- * Usage:
- *   import { initDrawer } from '../ui-kit/ui-kit';
- *   const drawer = initDrawer(drawerEl, handleEl);
+ * Interactive behaviours the classifier page composes: a dropdown and a
+ * drag-to-resize handle. Nothing auto-initialises — the page calls what it
+ * needs, and each initialiser wires its own listeners for the life of the page.
  */
-
-/** A drawer the page can shut from elsewhere — its handle owns opening. */
-export interface DrawerHandle {
-  close(): void;
-}
 
 /** A dropdown the page can shut from elsewhere — its trigger owns opening. */
 export interface DropdownHandle {
@@ -31,26 +21,6 @@ export interface ResizeOpts {
 }
 
 // DRAWER
-
-/** Initialise a collapsible drawer (adds/removes `.open` class). */
-export function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle {
-  function open(): void {
-    drawerEl.classList.add('open');
-    handleEl.setAttribute('aria-expanded', 'true');
-  }
-  function close(): void {
-    drawerEl.classList.remove('open');
-    handleEl.setAttribute('aria-expanded', 'false');
-  }
-  function toggle(): void {
-    if (drawerEl.classList.contains('open')) close();
-    else open();
-  }
-
-  handleEl.addEventListener('click', toggle);
-
-  return { close };
-}
 
 // DROPDOWN
 
@@ -203,5 +173,3 @@ export function initResize(
     document.addEventListener('mouseup', onUp);
   });
 }
-
-// LOG TERMINAL
