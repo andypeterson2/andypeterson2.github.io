@@ -309,9 +309,7 @@ const savedStatus = byId('saved-status', HTMLElement);
 const ablationStatus = modelsStatus;
 const metricsHead = byId('metrics-head', HTMLElement);
 const metricsBody = byId('metrics-body', HTMLElement);
-const predBody = byId('pred-body', HTMLElement);
 const modelNameInput = byId('model-name', HTMLInputElement);
-const sessionModels = byId('session-models', HTMLElement);
 const chartArea = byId('chart-area', HTMLElement);
 const trainChartCanvas = byId('train-chart', HTMLCanvasElement);
 const ensembleBtn = byId('ensemble-btn', HTMLButtonElement);
@@ -621,67 +619,6 @@ function confClass(v: number): string {
 
 // Session models list (MODELS card)
 
-/** One cell, with the class the column wants. */
-function modelCell(text: string, cls = ''): HTMLTableCellElement {
-  const td = document.createElement('td');
-  if (cls) td.className = cls;
-  td.textContent = text;
-  return td;
-}
-
-/** Whether any model has something the actions column could hold. */
-function anyModelActionable(): boolean {
-  return modelEntries().some(([, m]) => !m._local);
-}
-
-function buildSessionModelRow(
-  name: string,
-  m: ModelInfo,
-  withActions: boolean,
-): HTMLTableRowElement {
-  const row = document.createElement('tr');
-
-  const nameTd = document.createElement('th');
-  nameTd.scope = 'row';
-  nameTd.className = 'model-name';
-  nameTd.textContent = name;
-  // What the model is limited to and whose paper it is, on hover: the dotted
-  // underline is the shared table's mark for a label with more to say.
-  const notes = [m._subset ? `${m._subset} only` : '', m._cite ?? ''].filter(Boolean);
-  if (notes.length) {
-    nameTd.classList.add('has-note');
-    nameTd.title = notes.join(' · ');
-  }
-  row.appendChild(nameTd);
-
-  row.appendChild(modelCell(m.num_params ? m.num_params.toLocaleString() : '—', 'num'));
-  row.appendChild(modelCell(m._local ? 'browser' : m._virtual ? 'computed' : 'live'));
-
-  // The commit the weights came from, so a figure here traces to the code that
-  // produced it. The date rides in the tooltip, since the card is narrow.
-  const detail = m._provenance?.replace(/^weights · /, '').split(' · ') ?? [];
-  const prov = modelCell(detail[0] ?? '—', 'num');
-  if (detail.length > 1) prov.title = `exported ${detail.slice(1).join(' · ')}`;
-  row.appendChild(prov);
-
-  // An in-browser model has no backend to ablate, export or remove against, so
-  // the column exists only while something in the table can use it.
-  if (!withActions) return row;
-  const actions = document.createElement('td');
-  actions.className = 'model-actions';
-  if (!m._local) {
-    if (!m._virtual) actions.append(...serverModelActions(name));
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
-    removeBtn.dataset.remove = name;
-    removeBtn.setAttribute('aria-label', 'Remove ' + name);
-    removeBtn.textContent = '×';
-    actions.appendChild(removeBtn);
-  }
-  row.appendChild(actions);
-  return row;
-}
-
 /** Ablation and save-to-disk, for a model the backend holds. */
 function serverModelActions(name: string): HTMLButtonElement[] {
   const ablationBtn = document.createElement('button');
@@ -698,64 +635,12 @@ function serverModelActions(name: string): HTMLButtonElement[] {
   return [ablationBtn, exportBtn];
 }
 
-// Type is not here: the metrics table already carries it under Config, and this
-// card is the narrow one.
-const MODEL_COLUMNS = ['Model', 'Params', 'Runs', 'Weights'];
-
 function buildSessionModelsList(): void {
-  const entries = modelEntries();
-  if (entries.length === 0) {
-    sessionModels.innerHTML = '<p class="ui-list-empty">No models loaded</p>';
-  } else {
-    sessionModels.innerHTML = '';
-    const table = document.createElement('table');
-    table.className = 's6-data-table models-table';
-    const thead = document.createElement('thead');
-    const htr = document.createElement('tr');
-    for (const label of MODEL_COLUMNS) {
-      const th = document.createElement('th');
-      th.scope = 'col';
-      th.textContent = label;
-      htr.appendChild(th);
-    }
-    const withActions = anyModelActionable();
-    if (withActions) {
-      // Buttons carry their own labels, so the header is named for a screen
-      // reader and left blank on screen.
-      const actionsTh = document.createElement('th');
-      actionsTh.scope = 'col';
-      const actionsLabel = document.createElement('span');
-      actionsLabel.className = 'sr-only';
-      actionsLabel.textContent = 'Actions';
-      actionsTh.appendChild(actionsLabel);
-      htr.appendChild(actionsTh);
-    }
-    thead.appendChild(htr);
-    table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    for (const [name, m] of entries) tbody.appendChild(buildSessionModelRow(name, m, withActions));
-    table.appendChild(tbody);
-    sessionModels.appendChild(table);
-  }
   updateTeacherSelect();
   updateEnsembleBtn();
 }
 
 // Prediction table (TRY card)
-
-function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCellElement {
-  const td = document.createElement('th');
-  td.scope = 'row';
-  td.className = 'pred-model-name';
-  td.textContent = name;
-  // That a binary model knows only two classes is on hover, marked by the
-  // dotted underline the shared table gives a label with more to say.
-  if (m?._subset) {
-    td.classList.add('has-note');
-    td.title = `${m._subset} only`;
-  }
-  return td;
-}
 
 function predictionAnswerCell(
   p: (Prediction & { outOfScope?: boolean }) | undefined,
@@ -809,19 +694,27 @@ function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
   return td;
 }
 
+/**
+ * Refill the two rows that move under the pen, leaving the rest of the table
+ * alone. A stroke lands several times a second, and rebuilding eighteen rows
+ * at that rate would throw away scroll position and every open tooltip.
+ */
 function buildPredictionTable(): void {
-  const names = Object.keys(state.models);
-  if (names.length === 0) {
-    predBody.innerHTML = `<tr class="empty-row"><td colspan="3">No prediction yet</td></tr>`;
-    return;
-  }
-  predBody.innerHTML = '';
-  for (const name of names) {
-    const p = state.predictions[name];
-    const m = state.models[name];
-    const tr = document.createElement('tr');
-    tr.append(predictionNameCell(name, m), predictionAnswerCell(p, m), predictionScoreCell(p));
-    predBody.appendChild(tr);
+  const entries = modelEntries();
+  const sections = metricSections(window.UI_CONFIG?.class_labels ?? []);
+  const now = sections.find((sec) => sec.label === 'Now');
+  if (!now) return;
+  for (const row of now.rows) {
+    const tr = metricsBody.querySelector<HTMLTableRowElement>(
+      `tr[data-metric="${CSS.escape(row.key)}"]`,
+    );
+    // No such row yet: the table has not been built, or it has no models.
+    if (!tr) continue;
+    const label = tr.firstElementChild;
+    tr.replaceChildren(
+      ...(label ? [label] : []),
+      ...entries.map(([name, m]) => metricCell(row, m, name)),
+    );
   }
 }
 
@@ -829,16 +722,33 @@ function buildPredictionTable(): void {
 
 interface MetricRow {
   key: string;
-  fn: (m: ModelInfo) => string;
+  fn: (m: ModelInfo, name: string) => string;
   cls?: string;
   html?: boolean;
   /** The row's class, e.g. the headline Test Acc row. */
   rowCls?: string;
+  /**
+   * Builds the cell itself, for a value that is more than text. Preferred over
+   * `html`, which would need every server-supplied string escaped by hand.
+   */
+  node?: (m: ModelInfo, name: string) => HTMLTableCellElement;
+  /** Shown on hover against the row's label. */
+  note?: string;
 }
 
 interface MetricSection {
   label: string;
   rows: MetricRow[];
+  /**
+   * Drawn even when every cell is empty. The live rows must exist before the
+   * first stroke, because the updater refills them rather than creating them.
+   */
+  always?: boolean;
+}
+
+/** The commit and export date a model's weights came from, if it has them. */
+function provenanceParts(m: ModelInfo): string[] {
+  return m._provenance?.replace(/^weights · /, '').split(' · ') ?? [];
 }
 
 /** Every layer any model has an ablation figure for, in first-seen order. */
@@ -854,6 +764,47 @@ function ablatedLayers(): string[] {
 
 function metricSections(labels: string[]): MetricSection[] {
   return [
+    // First, because it is what changes under the pen: everything below it
+    // holds still while these two rows move.
+    {
+      label: 'Now',
+      always: true,
+      rows: [
+        {
+          key: 'Prediction',
+          fn: (_m, name) => (state.predictions[name] ? 'answered' : '—'),
+          node: (m, name) => predictionAnswerCell(state.predictions[name], m),
+          rowCls: 'metric-headline',
+        },
+        {
+          key: 'Score',
+          fn: (_m, name) => (state.predictions[name] ? 'scored' : '—'),
+          node: (_m, name) => predictionScoreCell(state.predictions[name]),
+          note: 'Linear models: softmax of the top class, uncalibrated. QSVM: signed margin s from its decision boundary.',
+        },
+      ],
+    },
+    {
+      label: 'Model',
+      rows: [
+        { key: 'Runs', fn: (m) => (m._local ? 'browser' : m._virtual ? 'computed' : 'live') },
+        {
+          key: 'Weights',
+          fn: (m) => provenanceParts(m)[0] ?? '—',
+          cls: 'num',
+          note: 'The commit the weights were exported from',
+          // Each model carries its own export date, so the date is per cell.
+          node: (m) => {
+            const parts = provenanceParts(m);
+            const td = document.createElement('td');
+            td.className = 'num';
+            td.textContent = parts[0] ?? '—';
+            if (parts.length > 1) td.title = `exported ${parts.slice(1).join(' · ')}`;
+            return td;
+          },
+        },
+      ],
+    },
     {
       label: 'Config',
       rows: [
@@ -964,11 +915,56 @@ function buildMetricsTable(): void {
 
   metricsBody.innerHTML = '';
   for (const section of metricSections(labels)) renderMetricSection(section, entries);
+  renderActionsRow(entries);
+}
+
+/**
+ * Ablate, export and remove, under the column each acts on. An in-browser model
+ * has no backend to do any of it against, so the row appears only once one of
+ * the columns can use it.
+ */
+function renderActionsRow(entries: [string, ModelInfo][]): void {
+  if (!entries.some(([, m]) => !m._local)) return;
+  const tr = document.createElement('tr');
+  tr.dataset.metric = 'Actions';
+  const labelTh = document.createElement('th');
+  labelTh.scope = 'row';
+  labelTh.className = 'metric-label';
+  labelTh.textContent = 'Actions';
+  tr.appendChild(labelTh);
+  for (const [name, m] of entries) {
+    const td = document.createElement('td');
+    td.className = 'model-actions';
+    if (!m._local) {
+      if (!m._virtual) td.append(...serverModelActions(name));
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
+      removeBtn.dataset.remove = name;
+      removeBtn.setAttribute('aria-label', 'Remove ' + name);
+      removeBtn.textContent = '×';
+      td.appendChild(removeBtn);
+    }
+    tr.appendChild(td);
+  }
+  metricsBody.appendChild(tr);
+}
+
+/** One cell of a metric row: the row builds it, or it is text. */
+function metricCell(row: MetricRow, m: ModelInfo, name: string): HTMLTableCellElement {
+  if (row.node) return row.node(m, name);
+  const td = document.createElement('td');
+  if (row.cls) td.className = row.cls;
+  const val = row.fn(m, name);
+  if (row.html) td.innerHTML = val;
+  else td.textContent = val;
+  return td;
 }
 
 /** A row only earns its place if some model has a value for it. */
 function renderMetricSection(section: MetricSection, entries: [string, ModelInfo][]): void {
-  const rows = section.rows.filter((row) => entries.some(([, m]) => row.fn(m) !== '—'));
+  const rows = section.always
+    ? section.rows
+    : section.rows.filter((row) => entries.some(([n, m]) => row.fn(m, n) !== '—'));
   if (rows.length === 0) return;
   const sepTr = document.createElement('tr');
   sepTr.className = 'metrics-section-row';
@@ -981,19 +977,19 @@ function renderMetricSection(section: MetricSection, entries: [string, ModelInfo
   for (const row of rows) {
     const tr = document.createElement('tr');
     if (row.rowCls) tr.className = row.rowCls;
+    // Named, so a row that changes under the pen can be found and refilled
+    // without rebuilding the table around it.
+    tr.dataset.metric = row.key;
     const labelTh = document.createElement('th');
     labelTh.scope = 'row';
     labelTh.className = 'metric-label';
     labelTh.textContent = row.key;
-    tr.appendChild(labelTh);
-    for (const [, m] of entries) {
-      const td = document.createElement('td');
-      if (row.cls) td.className = row.cls;
-      const val = row.fn(m);
-      if (row.html) td.innerHTML = val;
-      else td.textContent = val;
-      tr.appendChild(td);
+    if (row.note) {
+      labelTh.classList.add('has-note');
+      labelTh.title = row.note;
     }
+    tr.appendChild(labelTh);
+    for (const [name, m] of entries) tr.appendChild(metricCell(row, m, name));
     metricsBody.appendChild(tr);
   }
 }

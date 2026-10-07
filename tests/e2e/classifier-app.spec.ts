@@ -25,14 +25,12 @@ test.describe('Classifier app shell', () => {
 
   test('renders ClassifierModelsCard regions', async ({ page }) => {
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#session-models')).toBeAttached();
     await expect(page.locator('#saved-select')).toBeAttached();
     await expect(page.locator('#import-btn')).toBeAttached();
   });
 
   test('renders ClassifierResultsPanel regions', async ({ page }) => {
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#pred-body')).toBeAttached();
     await expect(page.locator('#metrics-head')).toBeAttached();
     await expect(page.locator('#metrics-body')).toBeAttached();
   });
@@ -62,28 +60,26 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await expect(page.locator('#saved-card')).toBeHidden();
   });
 
-  test('Models comes before Train, and the demo models carry no tier suffix', async ({ page }) => {
+  test('every model is a column, and the demo models carry no tier suffix', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    const titles = page.locator('#left-col > section:not([hidden]) .card-title');
-    await expect(titles).toHaveText(['Models', 'Train']);
-    await expect(page.locator('#session-models .model-name')).toHaveText([
+    await expect(page.locator('#metrics-head .col-model-name')).toHaveText([
       'Logistic Regression',
-      // The name cell carries the subset caveat and the citation under it.
-      /^QSVM/,
+      'QSVM',
     ]);
-    await expect(page.locator('#session-models .model-name').nth(1)).toHaveAttribute(
-      'title',
-      /Yang et al. 2019/,
-    );
     await expect(page.locator('#tier-label')).toHaveCount(0);
   });
 
   test('Evaluation shows only rows with a value', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-head .col-model-name')).toHaveCount(2);
+    // Now is drawn before a stroke lands; the rest earn their rows.
     await expect(page.locator('#metrics-body .metric-label')).toHaveText([
+      'Prediction',
+      'Score',
+      'Runs',
+      'Weights',
       'Type',
       'Params',
       'Test Acc',
@@ -95,12 +91,15 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
   }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
     await page.locator('#dataset-menu-btn').click();
     await page.locator('.ui-dropdown-item', { hasText: 'BB84' }).click();
     await expect(page.locator('.feature-label').first()).toContainText('QBER');
     await expect(page.locator('.feature-hint').first()).toHaveText('0.00 – 0.32');
-    const answer = page.locator('#pred-body tr').first().locator('.pred-label');
+    const answer = page
+      .locator('#metrics-body tr[data-metric="Prediction"] td')
+      .first()
+      .locator('.pred-label');
     await page.locator('#feature-qber').fill('0.01');
     await expect(answer).toHaveText('clean');
     await page.locator('.feature-range').first().fill('0.3');
@@ -114,11 +113,12 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
     // The in-browser models load after hydration; draw only once they're listed.
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
     // Nothing to press: a stroke is what asks for a prediction. Until one lands
-    // the model rows are there with nothing in them.
-    await expect(page.locator('#pred-body tr')).toHaveCount(2);
-    await expect(page.locator('#pred-body tr').first().locator('td').first()).toHaveText('—');
+    // the live rows are drawn and empty.
+    const prediction = page.locator('#metrics-body tr[data-metric="Prediction"] td');
+    await expect(prediction).toHaveCount(2);
+    await expect(prediction.first()).toHaveText('—');
     const cv = page.locator('#draw-canvas');
     const b = (await cv.boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.22);
@@ -126,8 +126,6 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.mouse.move(b.x + b.width * 0.7, b.y + b.height * 0.22, { steps: 20 });
     await page.mouse.move(b.x + b.width * 0.45, b.y + b.height * 0.8, { steps: 20 });
     await page.mouse.up();
-    const rows = page.locator('.pred-model-name');
-    await expect(rows.filter({ hasText: 'QSVM' })).toHaveAttribute('title', '6 vs 9 only');
     await expect(page.locator('.pred-label').first()).toHaveText('7');
     await expect(page.locator('.pred-out-note')).toContainText('only answers 6 vs 9');
   });
@@ -137,7 +135,7 @@ test.describe('Classifier: what the models see and say', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
   });
 
   async function drawSeven(page: import('@playwright/test').Page) {
@@ -199,23 +197,23 @@ test.describe('Classifier: what the models see and say', () => {
 
   test('the QSVM row shows its margin and features, not a percentage', async ({ page }) => {
     await drawSeven(page);
-    const qsvm = page.locator('#pred-body tr').filter({ hasText: 'QSVM' });
-    await expect(qsvm.locator('td').nth(1)).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
-    await expect(page.locator('#pred-body').locator('..').locator('th').nth(2)).toHaveText('Score');
+    // QSVM is the second column, so its score is the second cell of that row.
+    const score = page.locator('#metrics-body tr[data-metric="Score"] td').nth(1);
+    await expect(score).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
   });
 
   test('in-browser models say which export their weights came from', async ({ page }) => {
-    const weights = page.locator('#session-models tbody tr').first().locator('td').nth(2);
+    const weights = page.locator('#metrics-body tr[data-metric="Weights"] td').first();
     await expect(weights).toHaveText(/^[0-9a-f]{7}$/);
     // The date is the tooltip; the hash is what identifies the build.
     await expect(weights).toHaveAttribute('title', /^exported \d{4}-/);
   });
 
   test('a label with more to say marks itself and says it on hover', async ({ page }) => {
-    const qsvm = page.locator('#session-models .model-name').nth(1);
-    await expect(qsvm).toHaveAttribute('title', /6 vs 9 only · Yang et al. 2019/);
+    const score = page.locator('#metrics-body tr[data-metric="Score"] .metric-label');
+    await expect(score).toHaveAttribute('title', /softmax of the top class/);
     // The dotted underline is what tells a reader there is something to hover.
-    await expect(qsvm).toHaveClass(/has-note/);
+    await expect(score).toHaveClass(/has-note/);
   });
 });
 
@@ -223,7 +221,7 @@ test.describe('Classifier: every stroke gets scored', () => {
   test('a stroke that runs off the pad is scored when it leaves', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
     const b = (await page.locator('#draw-canvas').boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.2);
     await page.mouse.down();

@@ -45,33 +45,14 @@ import Button from '../Button.astro';
   </div>
 </section>
 
-<!-- Predictions -->
-<section class="card" id="predictions-card">
-  <h2 class="card-title">Predictions</h2>
-  <table class="s6-data-table pred-table">
-    <colgroup><col class="col-name" /><col class="col-answer" /><col class="col-score" /></colgroup>
-    <thead>
-      <tr>
-        <th>Model</th><th>Prediction</th><th
-          title="Linear models: softmax of the top class, uncalibrated. QSVM: signed margin s from its decision boundary."
-          >Score</th
-        >
-      </tr>
-    </thead>
-    <tbody id="pred-body">
-      <tr class="empty-row"><td colspan="3">No prediction yet</td></tr>
-    </tbody>
-  </table>
-</section>
-
 <!-- Chart area -->
 <div id="chart-area" class="card hidden">
   <canvas id="train-chart" width="600" height="250"></canvas>
 </div>
 
-<!-- Evaluation -->
-<section class="card">
-  <h2 class="card-title">Evaluation</h2>
+<!-- Every model, a column each: what it just said, what it is, how it scored. -->
+<section class="card" id="models-card">
+  <h2 class="card-title">Models</h2>
   <div id="evaluate-progress" class="hidden">
     <div class="progress-bar" role="progressbar">
       <div id="eval-bar" class="progress-bar-fill"></div>
@@ -80,7 +61,7 @@ import Button from '../Button.astro';
   </div>
   <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
        make scrollers focusable on its own). -->
-  <div class="metrics-wrap" tabindex="0" role="region" aria-label="Evaluation table">
+  <div class="metrics-wrap" tabindex="0" role="region" aria-label="Models table">
     <table class="s6-data-table metrics-table">
       <thead id="metrics-head"></thead>
       <tbody id="metrics-body">
@@ -88,28 +69,14 @@ import Button from '../Button.astro';
       </tbody>
     </table>
   </div>
+  <div class="row models-row">
+    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
+  </div>
+  <p id="models-status" class="card-status" role="status"></p>
 </section>
 
 <style>
   /* ── Tables: the shared 1-bit grid, with what these three add ── */
-  /* Fixed columns, so the table holds still while predictions change under the pen. */
-  .pred-table {
-    table-layout: fixed;
-  }
-
-  .pred-table .col-name {
-    width: 42%;
-  }
-
-  .pred-table .col-answer {
-    width: 22%;
-  }
-
-  .pred-table th:last-child,
-  .pred-table :global(tr:not(.empty-row) > td:last-child) {
-    text-align: right;
-  }
-
   .metrics-table {
     table-layout: fixed;
   }

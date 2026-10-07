@@ -103,7 +103,7 @@ async function startStub(opts: StubOpts = {}): Promise<Stub> {
 /** Load the app on its in-browser models, then bring the live tier up against the stub. */
 async function connect(page: Page, stub: Stub): Promise<void> {
   await page.goto('/projects/ai-ml/app/');
-  await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+  await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
   await page.evaluate((url) => {
     document.dispatchEvent(
       new CustomEvent('navbar:connect', { detail: { service: 'classifiers', url } }),
@@ -129,7 +129,7 @@ test.describe('Classifier live tier', () => {
       await expect(page.locator('#model-type-row')).toBeVisible();
       await expect(page.locator('#train-btn')).toBeEnabled();
       await expect(page.locator('#model-name')).toHaveValue('CNN');
-      await expect(page.locator('#session-models')).toContainText('CNN 1');
+      await expect(page.locator('#metrics-head .col-model-name')).toContainText(['CNN 1']);
     } finally {
       await stub.close();
     }
@@ -139,7 +139,7 @@ test.describe('Classifier live tier', () => {
     const stub = await startStub();
     try {
       await connect(page, stub);
-      await expect(page.locator('#session-models')).toContainText('CNN 1');
+      await expect(page.locator('#metrics-head .col-model-name')).toContainText(['CNN 1']);
       // Only one server model: no ensemble, and only it can be a distillation teacher.
       await expect(page.locator('#ensemble-btn')).toBeHidden();
       await expect(page.locator('#teacher-select option')).toHaveText(['— none —', 'CNN 1']);
@@ -152,32 +152,34 @@ test.describe('Classifier live tier', () => {
     const stub = await startStub();
     try {
       await connect(page, stub);
-      await expect(page.locator('#session-models')).toContainText('CNN 1');
+      await expect(page.locator('#metrics-head .col-model-name')).toContainText(['CNN 1']);
       await drawSeven(page);
       await expect.poll(() => stub.predictBodies.length).toBeGreaterThan(0);
       const png = Buffer.from(stub.predictBodies[0]?.image ?? '', 'base64');
       // PNG IHDR: width and height as big-endian ints at bytes 16 and 20.
       expect(png.readUInt32BE(16)).toBe(28);
       expect(png.readUInt32BE(20)).toBe(28);
-      const rows = page.locator('#pred-body tr');
-      await expect(rows.filter({ hasText: 'CNN 1' })).toContainText('7');
-      await expect(rows.filter({ hasText: 'QSVM' }).locator('.pred-label')).not.toHaveText('');
+      // CNN 1 is the column the stub added, so its answer is the last cell.
+      const prediction = page.locator('#metrics-body tr[data-metric="Prediction"] td');
+      await expect(prediction.last()).toContainText('7');
+      await expect(prediction.first().locator('.pred-label')).not.toHaveText('');
     } finally {
       await stub.close();
     }
   });
 
   // In the browser tier there is nothing to ablate, export or remove, so the
-  // column that holds those buttons is not drawn at all.
-  test('the actions column appears only once a model can use it', async ({ page }) => {
-    const headers = page.locator('#session-models thead th');
+  // row that holds those buttons is not drawn at all.
+  test('the actions row appears only once a model can use it', async ({ page }) => {
+    const actions = page.locator('#metrics-body tr[data-metric="Actions"]');
     const stub = await startStub();
     try {
       await page.goto('/projects/ai-ml/app/');
-      await expect(headers).toHaveText(['Model', 'Params', 'Runs', 'Weights']);
+      await expect(page.locator('#metrics-head .col-model-name')).toHaveCount(2);
+      await expect(actions).toHaveCount(0);
       await connect(page, stub);
-      await expect(headers).toHaveCount(5);
-      await expect(page.locator('#session-models [data-ablation]').first()).toBeVisible();
+      await expect(actions).toHaveCount(1);
+      await expect(actions.locator('[data-ablation]').first()).toBeVisible();
     } finally {
       await stub.close();
     }
@@ -206,7 +208,7 @@ test.describe('Classifier live tier', () => {
     });
     try {
       await connect(page, stub);
-      await expect(page.locator('#session-models')).not.toContainText('error');
+      await expect(page.locator('#metrics-head')).not.toContainText('error');
       await expect(page.locator('#models-status')).toContainText(
         "Couldn't load the live models — internal_error: boom",
       );

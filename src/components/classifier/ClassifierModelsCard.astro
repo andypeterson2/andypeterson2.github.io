@@ -2,20 +2,6 @@
 import Button from '../Button.astro';
 ---
 
-<!-- Session models -->
-<section class="card">
-  <h2 class="card-title">Models</h2>
-  <!-- Scrollable, so it takes focus and carries a name: a keyboard has no other
-       way to reach a region it can only scroll. -->
-  <div class="models-wrap" tabindex="0" role="region" aria-label="Models">
-    <div id="session-models"></div>
-  </div>
-  <div class="row models-row">
-    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
-  </div>
-  <p id="models-status" class="card-status" role="status"></p>
-</section>
-
 <!-- Saved models: checkpoints on the live backend, so shown only with one. -->
 <section class="card" id="saved-card" hidden>
   <h2 class="card-title">Saved</h2>
