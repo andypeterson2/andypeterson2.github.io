@@ -500,34 +500,33 @@
                 : 'demo — not saved'}</span
             ><span class="sb-variant">{` · ${editor.variantLabel}`}</span></span
           >
-          <button
-            class="conn"
-            class:cta={demoMode && !signedInOffline}
-            onclick={() => (demoMode && !signedInOffline ? editor.signIn() : editor.connect())}
-            disabled={editor.connecting || editor.signingIn}
-            title={signedInOffline
-              ? "Signed in, but your saved résumés didn't load — try again"
-              : demoMode
-                ? 'Sign in with Google to keep your edits'
+          <!-- Connection state, and the retry for a session whose résumés didn't load.
+               Signing in is the menubar's, so a signed-out demo shows nothing here. -->
+          {#if !demoMode || signedInOffline}
+            <button
+              class="conn"
+              onclick={() => editor.connect()}
+              disabled={editor.connecting || editor.signingIn}
+              title={signedInOffline
+                ? "Signed in, but your saved résumés didn't load — try again"
                 : 'Connection status'}
-          >
-            <span
-              class="dot"
-              class:live={editor.connected}
-              class:busy={editor.connecting || editor.signingIn}
-              aria-hidden="true"
-            ></span><span class="conn-label"
-              >{editor.signingIn
-                ? 'signing in…'
-                : editor.connecting
-                  ? 'connecting…'
-                  : editor.connected
-                    ? 'connected'
-                    : signedInOffline
-                      ? "Couldn't load your résumés — retry"
-                      : 'Sign in with Google to keep your edits'}</span
             >
-          </button>
+              <span
+                class="dot"
+                class:live={editor.connected}
+                class:busy={editor.connecting || editor.signingIn}
+                aria-hidden="true"
+              ></span><span class="conn-label"
+                >{editor.signingIn
+                  ? 'signing in…'
+                  : editor.connecting
+                    ? 'connecting…'
+                    : editor.connected
+                      ? 'connected'
+                      : "Couldn't load your résumés — retry"}</span
+              >
+            </button>
+          {/if}
           {#if editor.identity}
             <span class="sb-r account">
               <span class="acct-who" title={editor.identity.email ?? ''}
@@ -711,7 +710,9 @@
      (see .statusbar); justify-self keeps it centred there. */
   .conn {
     font: inherit;
-    justify-self: center;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
     display: inline-flex;
     align-items: center;
     background: none;
@@ -723,17 +724,6 @@
 
   .conn:disabled {
     cursor: default;
-  }
-
-  /* Sign-in CTA: drop the status dot and read as an obvious link. */
-  .conn.cta .dot {
-    display: none;
-  }
-
-  .conn.cta .conn-label {
-    font-weight: 700;
-    text-decoration: underline;
-    color: var(--ink);
   }
 
   /* The demo invitation — a centered System-6 pop-up window carrying the guided
@@ -1144,12 +1134,12 @@
     word-break: break-word;
   }
 
-  /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
-     the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
+  /* Three columns: the connection state (left), save/mode status (centre), the
+     account (right). The 1fr / auto / 1fr split keeps the centre column dead-centre
      regardless of the side widths. */
   .statusbar {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     border-top: 1px solid var(--ink);
@@ -1160,12 +1150,19 @@
     color: var(--ink-2);
   }
 
+  /* Spans the whole row and centres its own text, so the label holds still as it
+     changes width between saving and saved. The items beside it come later in the
+     row, so they take their own clicks back. */
   .sb-l {
-    justify-self: start;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
     white-space: nowrap;
   }
 
   .sb-r {
+    grid-column: 3;
+    grid-row: 1;
     justify-self: end;
     white-space: nowrap;
   }
@@ -1274,9 +1271,9 @@
       display: none; /* its buttons all moved into the ☰ menu */
     }
 
-    /* Status bar — pinned across the bottom, showing just the centred connection CTA.
-       Its side columns (save state, key hint) are dropped on a phone; the ☰ menu and
-       the doc carry that context. This is the same bar as desktop, re-anchored. */
+    /* Status bar — pinned across the bottom, showing just the centred save state.
+       Its side columns are dropped on a phone; the ☰ menu and the doc carry that
+       context. This is the same bar as desktop, re-anchored. */
     .statusbar {
       position: fixed;
       left: 0;

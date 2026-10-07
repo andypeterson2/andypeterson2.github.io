@@ -77,8 +77,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     // Portal chrome is stripped in bare mode.
     await expect(page.locator('.site-menubar')).toBeHidden();
-    // The status bar is the sign-in invitation — the demo saves nothing until then.
-    await expect(page.locator('.conn')).toContainText('Sign in with Google');
+    // Signing in is the menubar's; the status bar says only that nothing is saved.
+    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.statusbar')).toContainText('demo — not saved');
+    await expect(page.locator('.conn')).toHaveCount(0);
   });
 
   test('clicking an entry opens the type-aware inline editor', async ({ page }) => {
@@ -171,9 +173,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
     await expect(invite).toContainText('Nothing is saved');
-    // With the gateway reachable, a 403 means "sign in", not "down": the status bar itself
-    // is the sign-in invitation, and tapping it opens the Access popup.
-    await expect(page.locator('.conn')).toContainText('Sign in with Google');
+    // With the gateway reachable, a 403 means "sign in", not "down": the menubar offers
+    // it, and tapping it opens the Access popup.
+    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
   });
 
   test('the invitation dismisses for good; File ▸ Reset demo restores the sample', async ({
@@ -183,12 +185,12 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { keepInvite: true });
 
     // The invite is a modal pop-up on load. Dismissing is final — it only auto-appears
-    // on load, and the status bar becomes a sign-in button.
+    // on load, and the menubar is what still offers the sign-in.
     const invite = page.locator('.invite');
     await expect(invite).toBeVisible();
     await invite.getByRole('button', { name: 'Dismiss' }).click();
     await expect(invite).toHaveCount(0);
-    await expect(page.locator('.conn')).toContainText('Sign in with Google');
+    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
 
     // Edit the demo — the whole point of inviting people to touch it.
     await page.locator('.entry').first().click();
@@ -244,10 +246,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drop).toHaveCount(0);
     await expect(file).toBeFocused();
 
-    // A press outside dismisses it, the way a real pull-down does.
+    // A press outside dismisses it, the way a real pull-down does. The bar's left
+    // edge is the target: its label is centred, under where the tour panel sits.
     await file.click();
     await expect(drop).toBeVisible();
-    await page.locator('.sb-l').click();
+    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
     await expect(drop).toHaveCount(0);
   });
 
@@ -296,7 +299,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(sections).toHaveText(['Summary', 'Skills', 'Education']);
 
     // ⌘Z outside a text field drives the document-level undo.
-    await page.locator('.sb-l').click();
+    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
     await page.keyboard.press('ControlOrMeta+z');
 
     // Back at its original index, with everything that was inside it.
@@ -332,7 +335,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
     await expect(page.locator('.doc .entry')).toHaveCount(0);
 
-    await page.locator('.sb-l').click();
+    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
     await page.keyboard.press('ControlOrMeta+z');
     await expect(page.locator('.doc .entry')).toHaveCount(1);
     await expect(page.locator('.doc')).toContainText('Analyst');
@@ -567,7 +570,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     const bullets = await page.locator('.doc .edit .bl').count();
 
     // The signature interaction: one touch outside the tour hands back the wheel.
-    await page.locator('.sb-l').click();
+    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
     await expect(tour.locator('.wheel')).toHaveText('Paused — you have the wheel.');
     await expect(tour.getByRole('button', { name: /Resume/ })).toBeVisible();
 
@@ -666,7 +669,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The moment the owner takes the wheel, the tour bows out and the document is
     // put back exactly as it was — re-open the entry and the bullet is gone.
-    await page.locator('.sb-l').click();
+    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
     await expect(tour).toHaveCount(0);
     await page.locator('.doc .entry').first().click();
     await expect(page.locator('.doc .edit .bl')).toHaveCount(0);
@@ -1707,7 +1710,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page); // gotoEditor defaults /auth/me → 401 (signed out)
-    await expect(page.locator('.conn')).toContainText('Sign in with Google');
+    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
     await expect(page.locator('.statusbar .account')).toHaveCount(0);
   });
 
@@ -1918,7 +1921,7 @@ test.describe('Demo edits survive sign-in', () => {
       }),
     );
 
-    await page.locator('button.conn').click();
+    await page.locator('.auth-nav button').click();
     const offer = page.getByRole('dialog', { name: 'Your demo edits' });
     await expect(offer).toBeVisible({ timeout: 15000 });
     await offer.getByRole('button', { name: 'Bring them in' }).click();
@@ -1940,7 +1943,9 @@ test.describe('Editor state copy', () => {
     await page.route('**/health', (r) => r.fulfill({ status: 503 }));
     await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada' } });
     await expect(page.locator('.conn')).toContainText("Couldn't load your résumés");
-    await expect(page.locator('.conn')).not.toContainText('Sign in with Google');
+    // Offering a sign-in to someone already signed in would just loop, so the
+    // menubar says Sign out and the retry is the only thing on offer.
+    await expect(page.locator('.auth-nav button')).toHaveText('Sign out');
   });
 
   test('on a phone the status bar still says the demo is not saved', async ({ page }) => {
