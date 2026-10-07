@@ -167,6 +167,22 @@ test.describe('Classifier live tier', () => {
     }
   });
 
+  // In the browser tier there is nothing to ablate, export or remove, so the
+  // column that holds those buttons is not drawn at all.
+  test('the actions column appears only once a model can use it', async ({ page }) => {
+    const headers = page.locator('#session-models thead th');
+    const stub = await startStub();
+    try {
+      await page.goto('/projects/ai-ml/app/');
+      await expect(headers).toHaveText(['Model', 'Params', 'Runs', 'Weights']);
+      await connect(page, stub);
+      await expect(headers).toHaveCount(5);
+      await expect(page.locator('#session-models [data-ablation]').first()).toBeVisible();
+    } finally {
+      await stub.close();
+    }
+  });
+
   test('ablation lands in the metrics table, a row per layer', async ({ page }) => {
     const stub = await startStub();
     try {

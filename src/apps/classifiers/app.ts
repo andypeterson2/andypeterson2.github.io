@@ -629,7 +629,16 @@ function modelCell(text: string, cls = ''): HTMLTableCellElement {
   return td;
 }
 
-function buildSessionModelRow(name: string, m: ModelInfo): HTMLTableRowElement {
+/** Whether any model has something the actions column could hold. */
+function anyModelActionable(): boolean {
+  return modelEntries().some(([, m]) => !m._local);
+}
+
+function buildSessionModelRow(
+  name: string,
+  m: ModelInfo,
+  withActions: boolean,
+): HTMLTableRowElement {
   const row = document.createElement('tr');
 
   const nameTd = document.createElement('th');
@@ -655,6 +664,9 @@ function buildSessionModelRow(name: string, m: ModelInfo): HTMLTableRowElement {
   if (detail.length > 1) prov.title = `exported ${detail.slice(1).join(' · ')}`;
   row.appendChild(prov);
 
+  // An in-browser model has no backend to ablate, export or remove against, so
+  // the column exists only while something in the table can use it.
+  if (!withActions) return row;
   const actions = document.createElement('td');
   actions.className = 'model-actions';
   if (!m._local) {
@@ -706,19 +718,22 @@ function buildSessionModelsList(): void {
       th.textContent = label;
       htr.appendChild(th);
     }
-    // The actions column is buttons with their own labels, so its header is
-    // named for screen readers and left blank on screen.
-    const actionsTh = document.createElement('th');
-    actionsTh.scope = 'col';
-    const actionsLabel = document.createElement('span');
-    actionsLabel.className = 'sr-only';
-    actionsLabel.textContent = 'Actions';
-    actionsTh.appendChild(actionsLabel);
-    htr.appendChild(actionsTh);
+    const withActions = anyModelActionable();
+    if (withActions) {
+      // Buttons carry their own labels, so the header is named for a screen
+      // reader and left blank on screen.
+      const actionsTh = document.createElement('th');
+      actionsTh.scope = 'col';
+      const actionsLabel = document.createElement('span');
+      actionsLabel.className = 'sr-only';
+      actionsLabel.textContent = 'Actions';
+      actionsTh.appendChild(actionsLabel);
+      htr.appendChild(actionsTh);
+    }
     thead.appendChild(htr);
     table.appendChild(thead);
     const tbody = document.createElement('tbody');
-    for (const [name, m] of entries) tbody.appendChild(buildSessionModelRow(name, m));
+    for (const [name, m] of entries) tbody.appendChild(buildSessionModelRow(name, m, withActions));
     table.appendChild(tbody);
     sessionModels.appendChild(table);
   }
