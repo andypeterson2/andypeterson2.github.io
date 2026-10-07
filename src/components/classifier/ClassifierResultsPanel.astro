@@ -201,6 +201,36 @@ import Button from '../Button.astro';
     }
   }
 
+  /* ── Score: a figure over the bar that gives it a size ── */
+  :global(#classifier-app .score-cell) {
+    line-height: 1.2;
+  }
+
+  :global(#classifier-app .score-bar) {
+    position: relative;
+    display: block;
+    height: 7px;
+    margin-top: 2px;
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
+  }
+
+  /* The decision boundary: the fill grows out from it, left or right. */
+  :global(#classifier-app .score-bar--lean)::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--ink);
+  }
+
+  :global(#classifier-app .score-fill) {
+    position: absolute;
+    inset-block: 0;
+    background: var(--ink);
+  }
+
   /* ── Colour helpers ── */
   :global(.pred-label) {
     font-weight: 700;

@@ -78,8 +78,6 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await expect(page.locator('#metrics-head .metric-label')).toHaveText([
       'Prediction',
       'Score',
-      'Runs',
-      'Weights',
       'Type',
       'Params',
       'Test Acc',
@@ -195,18 +193,22 @@ test.describe('Classifier: what the models see and say', () => {
     expect(ink).toBeGreaterThan(0);
   });
 
-  test('the QSVM row shows its margin and features, not a percentage', async ({ page }) => {
+  test('the QSVM score is how far it leans, drawn out from the boundary', async ({ page }) => {
     await drawSeven(page);
-    // QSVM is the second column, so its score is the second cell of that row.
+    // QSVM is the second model, so its score is the second cell of that column.
     const score = page.locator('#metrics-body td[data-metric="Score"]').nth(1);
-    await expect(score).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
+    await expect(score).toContainText(/^\d+\.\d%$/);
+    // The bar is the diverging one, and the raw margin is what the hover says.
+    await expect(score.locator('.score-bar--lean')).toBeVisible();
+    await expect(score).toHaveAttribute('title', /^Margin -?\d\.\d{3}, .* of the evidence/);
   });
 
-  test('in-browser models say which export their weights came from', async ({ page }) => {
-    const weights = page.locator('#metrics-body td[data-metric="Weights"]').first();
-    await expect(weights).toHaveText(/^[0-9a-f]{7}$/);
-    // The date is the tooltip; the hash is what identifies the build.
-    await expect(weights).toHaveAttribute('title', /^exported \d{4}-/);
+  test('a linear model fills its score bar from the left, not the middle', async ({ page }) => {
+    await drawSeven(page);
+    const score = page.locator('#metrics-body td[data-metric="Score"]').first();
+    await expect(score).toContainText(/^\d+\.\d%$/);
+    await expect(score.locator('.score-bar')).toBeVisible();
+    await expect(score.locator('.score-bar--lean')).toHaveCount(0);
   });
 
   test('a label with more to say marks itself and says it on hover', async ({ page }) => {

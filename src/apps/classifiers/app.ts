@@ -216,8 +216,6 @@ interface ModelInfo {
   _classes?: string[] | undefined;
   /** Computed in this page (the ensemble result); the backend has no model by this name. */
   _virtual?: boolean;
-  /** The in-browser weights' source, e.g. "weights · 63fe983 · 2026-09-04". */
-  _provenance?: string | undefined;
   /** The paper a model recreates, e.g. "Yang et al. 2019". */
   _cite?: string | undefined;
 }
@@ -654,28 +652,66 @@ function predictionAnswerCell(
   return td;
 }
 
-/** A QSVM margin as shown: "s +0.31". */
-function margin(s: number): string {
-  return `s ${s >= 0 ? '+' : '-'}${Math.abs(s).toFixed(2)}`;
+/**
+ * A figure and the bar that gives it a size, so a reader sees how strong a
+ * score is without knowing what scale it is on. `lean` runs -1 to 1 and fills
+ * out from the middle; otherwise the bar fills from the left.
+ */
+function scoreBar(fraction: number, opts: { lean?: boolean } = {}): HTMLElement {
+  const bar = document.createElement('span');
+  bar.className = opts.lean ? 'score-bar score-bar--lean' : 'score-bar';
+  const fill = document.createElement('span');
+  fill.className = 'score-fill';
+  const size = Math.min(Math.abs(fraction), 1);
+  if (opts.lean) {
+    fill.style.width = `${String(50 * size)}%`;
+    fill.style.left = fraction >= 0 ? '50%' : `${String(50 - 50 * size)}%`;
+  } else {
+    fill.style.width = `${String(100 * size)}%`;
+    fill.style.left = '0';
+  }
+  bar.appendChild(fill);
+  return bar;
 }
 
-function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
+/**
+ * How decisive the QSVM was, as a share of the evidence it had: its two feature
+ * terms argue for opposite classes, and the margin is what one wins by. At 0%
+ * they cancel and the answer sits on the boundary; at 100% one term decided it
+ * alone. A ratio rather than the raw margin, which is on no scale a reader knows.
+ */
+function qsvmLean(q: NonNullable<Prediction['qsvm']>): number {
+  const total = Math.abs(q.t1) + Math.abs(q.t2);
+  return total === 0 ? 0 : q.s / total;
+}
+
+function predictionScoreCell(
+  p: Prediction | undefined,
+  m: ModelInfo | undefined,
+): HTMLTableCellElement {
   const td = document.createElement('td');
-  td.className = 'num';
+  td.className = 'num score-cell';
   if (p?.qsvm) {
-    // A sign classifier has no probability; its margin is its strength.
-    const { f1, f2, s } = p.qsvm;
-    td.textContent = margin(s);
-    const feats = document.createElement('span');
-    feats.className = 'pred-scope';
-    feats.textContent = ` (f1 ${f1.toFixed(2)}, f2 ${f2.toFixed(2)})`;
-    td.appendChild(feats);
-    td.title = 'Signed margin from the decision boundary, computed from the two features';
+    // A sign classifier has no probability; how far it leans is its strength.
+    const { f1, f2, s, t1, t2 } = p.qsvm;
+    const lean = qsvmLean(p.qsvm);
+    const num = document.createElement('span');
+    num.className = confClass(Math.abs(lean));
+    num.textContent = pct(Math.abs(lean));
+    td.appendChild(num);
+    td.appendChild(scoreBar(lean, { lean: true }));
+    const sides = m?._classes ?? [];
+    const toward = lean >= 0 ? sides[0] : sides[1];
+    td.title =
+      `Margin ${s.toFixed(3)}, ${pct(Math.abs(lean))} of the evidence` +
+      (toward ? ` toward ${toward}` : '') +
+      `. Feature terms ${t1.toFixed(3)} and ${t2.toFixed(3)}, from f1 ${f1.toFixed(2)} and f2 ${f2.toFixed(2)}.`;
   } else if (p?.confidence != null) {
-    const span = document.createElement('span');
-    span.className = confClass(p.confidence);
-    span.textContent = pct(p.confidence);
-    td.appendChild(span);
+    const num = document.createElement('span');
+    num.className = confClass(p.confidence);
+    num.textContent = pct(p.confidence);
+    td.appendChild(num);
+    td.appendChild(scoreBar(p.confidence));
     td.title = 'Softmax of the top class: uncalibrated, so high on a scribble too';
   } else {
     td.textContent = '—';
@@ -736,11 +772,6 @@ interface MetricSection {
   always?: boolean;
 }
 
-/** The commit and export date a model's weights came from, if it has them. */
-function provenanceParts(m: ModelInfo): string[] {
-  return m._provenance?.replace(/^weights · /, '').split(' · ') ?? [];
-}
-
 /** Every layer any model has an ablation figure for, in first-seen order. */
 function ablatedLayers(): string[] {
   const seen: string[] = [];
@@ -769,29 +800,8 @@ function metricSections(labels: string[]): MetricSection[] {
         {
           key: 'Score',
           fn: (_m, name) => (state.predictions[name] ? 'scored' : '—'),
-          node: (_m, name) => predictionScoreCell(state.predictions[name]),
-          note: 'Linear models: softmax of the top class, uncalibrated. QSVM: signed margin s from its decision boundary.',
-        },
-      ],
-    },
-    {
-      label: 'Model',
-      rows: [
-        { key: 'Runs', fn: (m) => (m._local ? 'browser' : m._virtual ? 'computed' : 'live') },
-        {
-          key: 'Weights',
-          fn: (m) => provenanceParts(m)[0] ?? '—',
-          cls: 'num',
-          note: 'The commit the weights were exported from',
-          // Each model carries its own export date, so the date is per cell.
-          node: (m) => {
-            const parts = provenanceParts(m);
-            const td = document.createElement('td');
-            td.className = 'num';
-            td.textContent = parts[0] ?? '—';
-            if (parts.length > 1) td.title = `exported ${parts.slice(1).join(' · ')}`;
-            return td;
-          },
+          node: (m, name) => predictionScoreCell(state.predictions[name], m),
+          note: 'How sure the model is. Linear models: softmax of the top class, uncalibrated. QSVM: how far its margin leans, as a share of the evidence the two features gave it.',
         },
       ],
     },
@@ -1696,7 +1706,6 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     model.kind === 'qsvm'
       ? (model.num_params ?? null)
       : model.weight.length * (model.weight[0]?.length ?? 0) + model.bias.length;
-  const prov = model.provenance;
   return {
     model_type: model.kind === 'qsvm' ? 'QSVM' : 'Linear',
     epochs: '—',
@@ -1714,9 +1723,6 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     _file: file,
     _subset: model.display?.subset,
     _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
-    _provenance: prov?.source_sha
-      ? `weights · ${prov.source_sha.slice(0, 7)}${prov.exported_at ? ` · ${prov.exported_at}` : ''}`
-      : undefined,
     _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
 }

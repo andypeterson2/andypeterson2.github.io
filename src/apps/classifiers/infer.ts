@@ -59,8 +59,12 @@ export interface Prediction {
   prediction: string;
   confidence: number | null;
   probs: number[] | null;
-  /** The QSVM's two features and its signed margin s (distance from the boundary). */
-  qsvm?: { f1: number; f2: number; s: number };
+  /**
+   * The QSVM's two features, its signed margin s, and the two terms that sum to
+   * it. A term's sign is the class it argues for, and its size is how loudly:
+   * s is what is left when they are set against each other.
+   */
+  qsvm?: { f1: number; f2: number; s: number; t1: number; t2: number };
 }
 
 export interface ClassifierInferApi {
@@ -164,12 +168,14 @@ function predictQsvm(model: QsvmModel, raw: number[]): Prediction {
   const [f1, f2] =
     model.raw_input === 'pixels' ? inkRatios(raw, model.ink_threshold) : [raw[0] ?? 0, raw[1] ?? 0];
   const { w, map, classes } = model;
-  const s = w[0] * (map.a * f1 + map.b) + w[1] * (map.c * f2 + map.d);
+  const t1 = w[0] * (map.a * f1 + map.b);
+  const t2 = w[1] * (map.c * f2 + map.d);
+  const s = t1 + t2;
   return {
     prediction: s > 0 ? classes[0] : classes[1],
     confidence: null,
     probs: null,
-    qsvm: { f1, f2, s },
+    qsvm: { f1, f2, s, t1, t2 },
   };
 }
 
