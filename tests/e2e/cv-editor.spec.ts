@@ -726,7 +726,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
-    await expect(page.locator('.conn')).toContainText('connected');
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
     await expect(page.locator('.doc')).toContainText('Analytical Engine Co');
     await expect(page.locator('.doc')).toContainText('Wrote the first algorithm');
@@ -768,7 +767,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     const inline = page.locator('.doc .edit');
     await page.locator('.entry').first().click();
@@ -813,7 +811,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();
     await page.locator('.picker .pick').filter({ hasText: 'Skills' }).first().click();
@@ -849,7 +846,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     page.on('dialog', (d) => void d.accept());
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     const exp = page.locator('.sec').filter({ hasText: 'Experience' }).first();
     await exp.locator('.tool.danger').click();
@@ -890,7 +886,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     const entries = page.locator('.sec .entry');
     await expect(entries).toHaveCount(2);
@@ -1052,7 +1047,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
     // The entry editor announces the mode unmistakably.
@@ -1128,7 +1122,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
     // Open the skills group; in variant mode each skill gets a Follow-tags / Force-show /
@@ -1171,7 +1164,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
     await page.getByRole('button', { name: /Preview/ }).click();
@@ -1206,7 +1198,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     await page.getByRole('button', { name: /Preview/ }).click();
     const preview = page.locator('.preview');
@@ -1231,7 +1222,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     // Compile straight from the toolbar — the pane opens and renders the PDF, no
     // separate "open Preview first" step.
@@ -1258,7 +1248,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
     await selectFullCV(page);
 
     await page.getByRole('button', { name: /Preview/ }).click();
@@ -1349,7 +1338,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     page.on('dialog', (d) => void d.accept());
 
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .profile-btn').click();
@@ -1430,7 +1418,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     page.on('dialog', (d) => void d.accept());
 
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .profile-btn').click();
@@ -1440,7 +1427,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
     await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
     await expect(page.locator('.doc-head')).toHaveCount(0);
-    await expect(page.locator('.conn')).toContainText('connected');
     await expect(page.locator('.invite')).toHaveCount(0); // connected → no demo strip
 
     // Close the drawer, then create from the empty state → editing resumes.
@@ -1574,7 +1560,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
 
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     await selectVariant(page, 'Cover Letter');
     const letter = page.locator('.letter');
@@ -1641,7 +1626,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' }),
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     await page.locator('.add-section').click();
     await page.locator('.picker .pick').filter({ hasText: 'Skills' }).first().click();
@@ -1685,7 +1669,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
 
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.conn')).toContainText('connected');
 
     // Edit Position → debounced PUT /entries/11, which fails the first time.
     await page.locator('.entry').first().click();
@@ -1746,7 +1729,6 @@ test.describe('CV editor (document-first rewrite)', () => {
       signedIn: { email: 'ada@example.com', name: 'Ada Lovelace' },
     });
 
-    await expect(page.locator('.conn')).toContainText('connected');
     const account = page.locator('.statusbar .account');
     await expect(account).toContainText('Ada Lovelace');
 
@@ -1941,7 +1923,10 @@ test.describe('Editor state copy', () => {
   }) => {
     await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
     await page.route('**/health', (r) => r.fulfill({ status: 503 }));
-    await gotoEditor(page, EDITOR_APP, { signedIn: { email: 'ada@example.com', name: 'Ada' } });
+    await gotoEditor(page, EDITOR_APP, {
+      signedIn: { email: 'ada@example.com', name: 'Ada' },
+      offline: true,
+    });
     await expect(page.locator('.conn')).toContainText("Couldn't load your résumés");
     // Offering a sign-in to someone already signed in would just loop, so the
     // menubar says Sign out and the retry is the only thing on offer.

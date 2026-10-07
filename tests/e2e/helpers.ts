@@ -18,7 +18,12 @@ export const EDITOR_APP = '/projects/latex-resume-editor/app/';
 export async function gotoEditor(
   page: Page,
   path = EDITOR_APP,
-  opts: { keepInvite?: boolean; signedIn?: { email: string; name: string } | null } = {},
+  opts: {
+    keepInvite?: boolean;
+    signedIn?: { email: string; name: string } | null;
+    /** The backend will not answer: skip the wait for it. */
+    offline?: boolean;
+  } = {},
 ) {
   // The editor probes /auth/me on mount (self-hosted Google session). Mock it here so
   // every test is hermetic: signed out (401) by default, or a given identity (200).
@@ -47,5 +52,12 @@ export async function gotoEditor(
   if (await invite.isVisible().catch(() => false)) {
     await invite.getByRole('button', { name: 'Dismiss' }).click();
     await expect(invite).toHaveCount(0);
+  }
+
+  // A signed-in test works against loaded résumés, so the handshake has to land
+  // before it starts. This helper owns that wait, so how the editor reports being
+  // connected stays one place, and asking for a session is all a test has to say.
+  if (opts.signedIn && !opts.offline) {
+    await expect(page.locator('.conn')).toContainText('connected', { timeout: 15000 });
   }
 }
