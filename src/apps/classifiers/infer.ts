@@ -33,6 +33,10 @@ export interface LinearModel {
   features?: string[];
   feature_ranges?: [number, number][];
   test_accuracy?: number;
+  /** Wilson interval on test_accuracy, and the sample it was measured over. */
+  test_accuracy_ci?: [number, number];
+  test_n?: number;
+  test_protocol?: string;
   display?: ModelDisplay;
   provenance?: ModelProvenance;
 }
@@ -49,6 +53,10 @@ export interface QsvmModel {
   features?: string[];
   feature_ranges?: [number, number][];
   test_accuracy?: number;
+  /** Wilson interval on test_accuracy, and the sample it was measured over. */
+  test_accuracy_ci?: [number, number];
+  test_n?: number;
+  test_protocol?: string;
   display?: ModelDisplay;
   provenance?: ModelProvenance;
 }

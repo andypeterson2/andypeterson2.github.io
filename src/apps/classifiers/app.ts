@@ -212,6 +212,12 @@ interface ModelInfo {
   _file?: string;
   /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
   _classes?: string[] | undefined;
+  /** The inputs a shipped model reads, which can be a subset of the form's. */
+  _features?: string[] | undefined;
+  /** Wilson interval on the test accuracy, with the sample it came from. */
+  _accCi?: [number, number] | undefined;
+  _testN?: number | undefined;
+  _testProtocol?: string | undefined;
   /** Computed in this page (the ensemble result); the backend has no model by this name. */
   _virtual?: boolean;
   /** The paper a model recreates, e.g. "Yang et al. 2019". */
@@ -763,6 +769,19 @@ interface MetricSection {
   always?: boolean;
 }
 
+/**
+ * What a test accuracy was measured over: the sample, the interval around it,
+ * and the protocol. A percentage on 30 samples is worth four points either way.
+ */
+function accuracyNote(m: ModelInfo): string {
+  const acc = m.eval_result?.accuracy ?? 0;
+  const parts: string[] = [];
+  if (m._testN) parts.push(`${String(Math.round(acc * m._testN))} of ${String(m._testN)}`);
+  if (m._accCi) parts.push(`95% CI ${pct(m._accCi[0])}–${pct(m._accCi[1])}`);
+  if (m._testProtocol) parts.push(m._testProtocol);
+  return parts.length > 0 ? parts.join('; ') : 'Measured on the held-out split';
+}
+
 /** Every layer any model has an ablation figure for, in first-seen order. */
 function ablatedLayers(): string[] {
   const seen: string[] = [];
@@ -813,6 +832,12 @@ function metricSections(labels: string[]): MetricSection[] {
           cls: 'cfg-cell num',
         },
         { key: 'Early Stop', fn: (m) => (m.stopped_early ? 'Yes' : '—'), cls: 'cfg-cell' },
+        {
+          key: 'Reads',
+          fn: (m) => m._features?.join(', ') ?? '—',
+          cls: 'cfg-cell',
+          note: 'The inputs this model takes. A form input missing here does not move its answer.',
+        },
       ],
     },
     {
@@ -820,13 +845,25 @@ function metricSections(labels: string[]): MetricSection[] {
       rows: [
         {
           key: 'Test Acc',
-          fn: (m) =>
-            m.eval_result
-              ? `<span class="${accClass(m.eval_result.accuracy)}">${pct(m.eval_result.accuracy)}</span>`
-              : '—',
-          html: true,
+          fn: (m) => (m.eval_result ? pct(m.eval_result.accuracy) : '—'),
           cls: 'num',
           cellCls: 'metric-headline',
+          // A bare percentage on 30 samples reads as precise. The hover carries
+          // the sample it came from and the interval around it.
+          node: (m) => {
+            const td = document.createElement('td');
+            td.className = 'num';
+            if (!m.eval_result) {
+              td.textContent = '—';
+              return td;
+            }
+            const span = document.createElement('span');
+            span.className = accClass(m.eval_result.accuracy);
+            span.textContent = pct(m.eval_result.accuracy);
+            td.appendChild(span);
+            td.title = accuracyNote(m);
+            return td;
+          },
         },
         {
           key: 'Test Loss',
@@ -1713,6 +1750,10 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     _local: true,
     _file: file,
     _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
+    _features: model.features ? [...model.features] : undefined,
+    _accCi: model.test_accuracy_ci,
+    _testN: model.test_n,
+    _testProtocol: model.test_protocol,
     _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
 }

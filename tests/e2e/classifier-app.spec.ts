@@ -80,6 +80,7 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
       'Score',
       'Type',
       'Params',
+      'Reads',
       'Test Acc',
     ]);
   });

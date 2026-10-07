@@ -3,7 +3,7 @@ title: The QSVM paper recreation
 project: quantum-ml-classifier
 summary: Yang, Awan & Vall-Llosera's NISQ-era least-squares quantum SVM, rebuilt end-to-end in modern Qiskit, verified on ibm_marrakesh, and shipped to the browser as six numbers.
 ---
-In 2019, Yang, Awan & Vall-Llosera at Ericsson Research took the least-squares quantum SVM — an algorithm that on paper needs error-corrected hardware — and re-engineered it until it ran on a real 5-qubit IBM device ([arXiv:1909.11988](https://arxiv.org/abs/1909.11988)). The recreation lives as an [executed notebook](https://github.com/andypeterson2/quantum-machine-learning/tree/main/notebooks/qsvm-iris) in the quantum-machine-learning repo, rebuilt end-to-end in modern Qiskit — and its final classifiers run **live on [the classifier demo](/projects/ai-ml/app/)**: the QSVM rows in the Models, Predictions, and Evaluation panels are the paper's actual solved decision rule.
+In 2019, Yang, Awan & Vall-Llosera at Ericsson Research took the least-squares quantum SVM — an algorithm that on paper needs error-corrected hardware — and re-engineered it until it ran on a real 5-qubit IBM device ([arXiv:1909.11988](https://arxiv.org/abs/1909.11988)). The recreation lives as an [executed notebook](https://github.com/andypeterson2/quantum-machine-learning/tree/main/notebooks/qsvm-iris) in the quantum-machine-learning repo, rebuilt end-to-end in modern Qiskit — and its final classifiers run **live on [the classifier demo](/projects/ai-ml/app/)**: the QSVM rows in the models table are the paper's actual solved decision rule — on Iris and MNIST under the paper's own parameters, and on BB84 under the same rule with the two free parameters picked here, since the paper never ran that dataset.
 
 ## The least-squares QSVM
 
@@ -31,11 +31,17 @@ Because the training geometry is fixed, the quantum solution is **dataset-indepe
 
 ## The quantum pipeline
 
-The **kernel oracle** is a depth-1 circuit whose raw measurement counts reconstruct the 2×2 kernel matrix — no state tomography. The **optimized HHL solver** is the paper's 4-qubit shallow circuit (Fig. 10), reconstructed from the text; its shot readout yields α ∝ (0.51, −0.49), which the notebook **verifies against the classical LS-SVM solution** α ∝ (1, −1) — the sign rule is identical, so the deployed classifier is provably the classical solution with the quantum measurement's ~1.5° boundary tilt.
+The **kernel oracle** is a depth-1 circuit whose raw measurement counts reconstruct the 2×2 kernel matrix — no state tomography. The **optimized HHL solver** is the paper's 4-qubit shallow circuit (Fig. 10), reconstructed from the text; its shot readout under the Aer simulator yields α ∝ (0.51, −0.49), and the ibm_marrakesh run yields the (0.501, −0.485) that ships; the notebook **verifies both against the classical LS-SVM solution** α ∝ (1, −1) — the sign rule is identical, so the deployed classifier is provably the classical solution with the quantum measurement's ~1.5° boundary tilt.
 
 ## Results — and the rule you're clicking
 
-On held-out data the rule scores **96.7% on Iris** (setosa vs versicolor from sepal width and petal length; 29 of 30). The same quantum solution, with only the map coefficients changed, scores **89.1% on MNIST 6-vs-9** (1,000 held-out digits) using the paper's pixel-ratio features — the fraction of ink in the left vs right and top vs bottom halves of the image. A classical logistic regression fitted to the same points scores 100% and 91.6%: a two-number quantum solution lands a few points under a classical linear model on the same features, which is what it should do.
+On held-out data the rule scores **96.7% on Iris** (setosa vs versicolor from sepal width and petal length; 29 of 30, 95% CI 83.3–99.4%). The same quantum solution, with only the map coefficients changed, scores **89.1% on MNIST 6-vs-9** (1,000 held-out digits) using the paper's pixel-ratio features — the fraction of ink in the left vs right and top vs bottom halves of the image. A classical logistic regression fitted to the same points scores 100% and 91.6%.
+
+On Iris, none of that 3.3-point gap is the quantum part: rebuilding the rule from the exact classical α changes none of the 30 predictions. The gap is the paper's fixed map geometry. Pinning the two class means to the paper's targets solves *a* to 7.67 while *c* stays at the paper's 0.95, so in raw units the shipped Iris rule reads
+
+<div class="math-scroll"><code>s = 2.505·sepal_width − 0.357·petal_length − 6.377</code></div>
+
+— sepal width at about seven times the weight of petal length, on a pair that petal length separates by itself (setosa reaches 1.9 cm, versicolor starts at 3.0). A depth-1 decision stump gets 100% on this pair in 10-fold cross-validation, so 96.7% is below the floor a trivial fitted model sets, and the single miss is a wide-sepalled versicolor at (3.3, 4.7). The demo loads on (sepal width 3.2, petal length 4.0), where the rule answers setosa and the logistic regression beside it answers versicolor; the logistic regression is right. What the recreation shows at this point is the paper's geometry, not a competitive classifier.
 
 The notebook closes with the paper's own noise yardstick — the Jensen–Shannon divergence between ideal and measured output distributions — first under a depolarizing + readout model standing in for the retired IBMQX2, and then **on real hardware**: the same optimized circuit executed on **ibm_marrakesh** (2026, 8192 raw shots) scored **D_JS = 0.0127** against the paper's **0.130** on IBMQX2 in 2019.
 
