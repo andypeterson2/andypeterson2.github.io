@@ -63,19 +63,19 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
   test('every model is a column, and the demo models carry no tier suffix', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#metrics-head .col-model-name')).toHaveText([
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveText([
       'Logistic Regression',
       'QSVM',
     ]);
     await expect(page.locator('#tier-label')).toHaveCount(0);
   });
 
-  test('Evaluation shows only rows with a value', async ({ page }) => {
+  test('Evaluation shows only columns with a value', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#metrics-head .col-model-name')).toHaveCount(2);
-    // Now is drawn before a stroke lands; the rest earn their rows.
-    await expect(page.locator('#metrics-body .metric-label')).toHaveText([
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveCount(2);
+    // Now is drawn before a stroke lands; the rest earn their columns.
+    await expect(page.locator('#metrics-head .metric-label')).toHaveText([
       'Prediction',
       'Score',
       'Runs',
@@ -91,13 +91,13 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
   }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM');
     await page.locator('#dataset-menu-btn').click();
     await page.locator('.ui-dropdown-item', { hasText: 'BB84' }).click();
     await expect(page.locator('.feature-label').first()).toContainText('QBER');
     await expect(page.locator('.feature-hint').first()).toHaveText('0.00 – 0.32');
     const answer = page
-      .locator('#metrics-body tr[data-metric="Prediction"] td')
+      .locator('#metrics-body td[data-metric="Prediction"]')
       .first()
       .locator('.pred-label');
     await page.locator('#feature-qber').fill('0.01');
@@ -113,10 +113,10 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
     // The in-browser models load after hydration; draw only once they're listed.
-    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM');
     // Nothing to press: a stroke is what asks for a prediction. Until one lands
     // the live rows are drawn and empty.
-    const prediction = page.locator('#metrics-body tr[data-metric="Prediction"] td');
+    const prediction = page.locator('#metrics-body td[data-metric="Prediction"]');
     await expect(prediction).toHaveCount(2);
     await expect(prediction.first()).toHaveText('—');
     const cv = page.locator('#draw-canvas');
@@ -135,7 +135,7 @@ test.describe('Classifier: what the models see and say', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM');
   });
 
   async function drawSeven(page: import('@playwright/test').Page) {
@@ -198,19 +198,19 @@ test.describe('Classifier: what the models see and say', () => {
   test('the QSVM row shows its margin and features, not a percentage', async ({ page }) => {
     await drawSeven(page);
     // QSVM is the second column, so its score is the second cell of that row.
-    const score = page.locator('#metrics-body tr[data-metric="Score"] td').nth(1);
+    const score = page.locator('#metrics-body td[data-metric="Score"]').nth(1);
     await expect(score).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
   });
 
   test('in-browser models say which export their weights came from', async ({ page }) => {
-    const weights = page.locator('#metrics-body tr[data-metric="Weights"] td').first();
+    const weights = page.locator('#metrics-body td[data-metric="Weights"]').first();
     await expect(weights).toHaveText(/^[0-9a-f]{7}$/);
     // The date is the tooltip; the hash is what identifies the build.
     await expect(weights).toHaveAttribute('title', /^exported \d{4}-/);
   });
 
   test('a label with more to say marks itself and says it on hover', async ({ page }) => {
-    const score = page.locator('#metrics-body tr[data-metric="Score"] .metric-label');
+    const score = page.locator('#metrics-head th[data-metric="Score"]');
     await expect(score).toHaveAttribute('title', /softmax of the top class/);
     // The dotted underline is what tells a reader there is something to hover.
     await expect(score).toHaveClass(/has-note/);
@@ -221,7 +221,7 @@ test.describe('Classifier: every stroke gets scored', () => {
   test('a stroke that runs off the pad is scored when it leaves', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#metrics-head .col-model-name').nth(1)).toHaveText('QSVM');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM');
     const b = (await page.locator('#draw-canvas').boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.2);
     await page.mouse.down();

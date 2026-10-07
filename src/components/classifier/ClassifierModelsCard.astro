@@ -41,43 +41,8 @@ import Button from '../Button.astro';
     font-size: var(--text-2xs);
   }
 
-  /* Room for the two in-browser models before they load. */
-  #session-models {
-    min-height: 4.5em;
-  }
-
   .models-row {
     justify-content: flex-end;
     margin-top: 6px;
-  }
-
-  /* One row per model, a column per fact. The card is the narrow one, so the
-     table scrolls sideways rather than squeezing the provenance hash. */
-  .models-wrap {
-    overflow-x: auto;
-  }
-
-  :global(#classifier-app .models-table) {
-    min-width: 15rem;
-  }
-
-  :global(#classifier-app .models-table .model-name) {
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  /* The subset caveat belongs to the name, in the muted weight the facts use. */
-  :global(#classifier-app .models-table .model-scope) {
-    display: block;
-    font-weight: 400;
-    font-size: var(--text-4xs);
-    color: var(--ink-3);
-  }
-
-  :global(#classifier-app .models-table .model-actions) {
-    display: flex;
-    justify-content: flex-end;
-    gap: 4px;
-    border-bottom: 0;
   }
 </style>

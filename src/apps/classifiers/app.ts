@@ -684,38 +684,39 @@ function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
 }
 
 /**
- * Refill the two rows that move under the pen, leaving the rest of the table
- * alone. A stroke lands several times a second, and rebuilding eighteen rows
+ * Refill the two cells that move under the pen, leaving the rest of the table
+ * alone. A stroke lands several times a second, and rebuilding eighteen columns
  * at that rate would throw away scroll position and every open tooltip.
  */
 function buildPredictionTable(): void {
-  const entries = modelEntries();
-  const sections = metricSections(window.UI_CONFIG?.class_labels ?? []);
-  const now = sections.find((sec) => sec.label === 'Now');
+  const now = metricSections(window.UI_CONFIG?.class_labels ?? []).find(
+    (sec) => sec.label === 'Now',
+  );
   if (!now) return;
-  for (const row of now.rows) {
+  for (const [name, m] of modelEntries()) {
     const tr = metricsBody.querySelector<HTMLTableRowElement>(
-      `tr[data-metric="${CSS.escape(row.key)}"]`,
+      `tr[data-model="${CSS.escape(name)}"]`,
     );
     // No such row yet: the table has not been built, or it has no models.
     if (!tr) continue;
-    const label = tr.firstElementChild;
-    tr.replaceChildren(
-      ...(label ? [label] : []),
-      ...entries.map(([name, m]) => metricCell(row, m, name)),
-    );
+    for (const row of now.rows) {
+      const cell = tr.querySelector<HTMLTableCellElement>(
+        `td[data-metric="${CSS.escape(row.key)}"]`,
+      );
+      if (cell) cell.replaceWith(metricCell(row, m, name));
+    }
   }
 }
 
-// Columnar metrics table (TEST card)
+// Metrics table: a row per model, a column per metric (TEST card)
 
 interface MetricRow {
   key: string;
   fn: (m: ModelInfo, name: string) => string;
   cls?: string;
   html?: boolean;
-  /** The row's class, e.g. the headline Test Acc row. */
-  rowCls?: string;
+  /** An extra class on the cell, e.g. the headline Test Acc column. */
+  cellCls?: string;
   /**
    * Builds the cell itself, for a value that is more than text. Preferred over
    * `html`, which would need every server-supplied string escaped by hand.
@@ -729,7 +730,7 @@ interface MetricSection {
   label: string;
   rows: MetricRow[];
   /**
-   * Drawn even when every cell is empty. The live rows must exist before the
+   * Drawn even when every cell is empty. The live columns must exist before the
    * first stroke, because the updater refills them rather than creating them.
    */
   always?: boolean;
@@ -753,8 +754,8 @@ function ablatedLayers(): string[] {
 
 function metricSections(labels: string[]): MetricSection[] {
   return [
-    // First, because it is what changes under the pen: everything below it
-    // holds still while these two rows move.
+    // First, because it is what changes under the pen: everything after it
+    // holds still while these two columns move.
     {
       label: 'Now',
       always: true,
@@ -763,7 +764,7 @@ function metricSections(labels: string[]): MetricSection[] {
           key: 'Prediction',
           fn: (_m, name) => (state.predictions[name] ? 'answered' : '—'),
           node: (m, name) => predictionAnswerCell(state.predictions[name], m),
-          rowCls: 'metric-headline',
+          cellCls: 'metric-headline',
         },
         {
           key: 'Score',
@@ -824,7 +825,7 @@ function metricSections(labels: string[]): MetricSection[] {
               : '—',
           html: true,
           cls: 'num',
-          rowCls: 'metric-headline',
+          cellCls: 'metric-headline',
         },
         {
           key: 'Test Loss',
@@ -863,31 +864,70 @@ function metricSections(labels: string[]): MetricSection[] {
   ];
 }
 
-function buildMetricsHead(names: string[]): void {
-  const htr = document.createElement('tr');
+/**
+ * The two header rows: the section each metric belongs to, then the metrics
+ * themselves. Actions spans both, because it belongs to no section.
+ */
+function buildMetricsHead(sections: MetricSection[], withActions: boolean): void {
+  const groupTr = document.createElement('tr');
   const corner = document.createElement('th');
   corner.className = 'corner-cell';
   corner.scope = 'col';
+  corner.rowSpan = 2;
   // An empty header announces nothing: name it for screen readers, visually hidden.
   const cornerLabel = document.createElement('span');
   cornerLabel.className = 'sr-only';
-  cornerLabel.textContent = 'Metric';
+  cornerLabel.textContent = 'Model';
   corner.appendChild(cornerLabel);
-  htr.appendChild(corner);
-  for (const name of names) {
+  groupTr.appendChild(corner);
+  for (const section of sections) {
+    const th = document.createElement('th');
+    th.scope = 'colgroup';
+    th.colSpan = section.rows.length;
+    th.className = 'metrics-section-head';
+    th.textContent = section.label;
+    groupTr.appendChild(th);
+  }
+  if (withActions) {
     const th = document.createElement('th');
     th.scope = 'col';
-    const head = document.createElement('div');
-    head.className = 'model-col-head';
-    const colName = document.createElement('span');
-    colName.className = 'col-model-name';
-    colName.textContent = name;
-    head.appendChild(colName);
-    th.appendChild(head);
-    htr.appendChild(th);
+    th.rowSpan = 2;
+    th.className = 'metric-label';
+    th.dataset.metric = 'Actions';
+    th.textContent = 'Actions';
+    groupTr.appendChild(th);
   }
-  metricsHead.innerHTML = '';
-  metricsHead.appendChild(htr);
+
+  const keyTr = document.createElement('tr');
+  for (const section of sections) {
+    for (const row of section.rows) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.className = 'metric-label';
+      // Named, so the column that changes under the pen can be found and
+      // refilled without rebuilding the table around it.
+      th.dataset.metric = row.key;
+      th.textContent = row.key;
+      if (row.note) {
+        th.classList.add('has-note');
+        th.title = row.note;
+      }
+      keyTr.appendChild(th);
+    }
+  }
+  metricsHead.replaceChildren(groupTr, keyTr);
+}
+
+/** The sections, dropping every metric and section no model has a value for. */
+function visibleSections(entries: [string, ModelInfo][], labels: string[]): MetricSection[] {
+  return metricSections(labels)
+    .map((section) => ({
+      label: section.label,
+      rows: section.always
+        ? section.rows
+        : section.rows.filter((row) => entries.some(([n, m]) => row.fn(m, n) !== '—')),
+    }))
+    .filter((section) => section.rows.length > 0);
 }
 
 function buildMetricsTable(): void {
@@ -900,87 +940,69 @@ function buildMetricsTable(): void {
     return;
   }
 
-  buildMetricsHead(entries.map(([name]) => name));
-
-  metricsBody.innerHTML = '';
-  for (const section of metricSections(labels)) renderMetricSection(section, entries);
-  renderActionsRow(entries);
+  // An in-browser model has no backend to ablate, export or remove against, so
+  // the column appears only once one of the models can use it.
+  const withActions = entries.some(([, m]) => !m._local);
+  const sections = visibleSections(entries, labels);
+  buildMetricsHead(sections, withActions);
+  metricsBody.replaceChildren(
+    ...entries.map(([name, m]) => modelRow(name, m, sections, withActions)),
+  );
 }
 
-/**
- * Ablate, export and remove, under the column each acts on. An in-browser model
- * has no backend to do any of it against, so the row appears only once one of
- * the columns can use it.
- */
-function renderActionsRow(entries: [string, ModelInfo][]): void {
-  if (!entries.some(([, m]) => !m._local)) return;
+/** One model: its name, then a cell under every column the table drew. */
+function modelRow(
+  name: string,
+  m: ModelInfo,
+  sections: MetricSection[],
+  withActions: boolean,
+): HTMLTableRowElement {
   const tr = document.createElement('tr');
-  tr.dataset.metric = 'Actions';
-  const labelTh = document.createElement('th');
-  labelTh.scope = 'row';
-  labelTh.className = 'metric-label';
-  labelTh.textContent = 'Actions';
-  tr.appendChild(labelTh);
-  for (const [name, m] of entries) {
-    const td = document.createElement('td');
-    td.className = 'model-actions';
-    if (!m._local) {
-      if (!m._virtual) td.append(...serverModelActions(name));
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
-      removeBtn.dataset.remove = name;
-      removeBtn.setAttribute('aria-label', 'Remove ' + name);
-      removeBtn.textContent = '×';
-      td.appendChild(removeBtn);
-    }
-    tr.appendChild(td);
+  // Named, so the cells that change under the pen can be found by model.
+  tr.dataset.model = name;
+  const nameTh = document.createElement('th');
+  nameTh.scope = 'row';
+  nameTh.className = 'col-model-name';
+  nameTh.textContent = name;
+  tr.appendChild(nameTh);
+  for (const section of sections) {
+    for (const row of section.rows) tr.appendChild(metricCell(row, m, name));
   }
-  metricsBody.appendChild(tr);
+  if (withActions) tr.appendChild(actionsCell(name, m));
+  return tr;
 }
 
-/** One cell of a metric row: the row builds it, or it is text. */
-function metricCell(row: MetricRow, m: ModelInfo, name: string): HTMLTableCellElement {
-  if (row.node) return row.node(m, name);
+/** Ablate, export and remove, on the row of the model each acts on. */
+function actionsCell(name: string, m: ModelInfo): HTMLTableCellElement {
   const td = document.createElement('td');
-  if (row.cls) td.className = row.cls;
-  const val = row.fn(m, name);
-  if (row.html) td.innerHTML = val;
-  else td.textContent = val;
+  td.className = 'model-actions';
+  td.dataset.metric = 'Actions';
+  if (m._local) return td;
+  if (!m._virtual) td.append(...serverModelActions(name));
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
+  removeBtn.dataset.remove = name;
+  removeBtn.setAttribute('aria-label', 'Remove ' + name);
+  removeBtn.textContent = '×';
+  td.appendChild(removeBtn);
   return td;
 }
 
-/** A row only earns its place if some model has a value for it. */
-function renderMetricSection(section: MetricSection, entries: [string, ModelInfo][]): void {
-  const rows = section.always
-    ? section.rows
-    : section.rows.filter((row) => entries.some(([n, m]) => row.fn(m, n) !== '—'));
-  if (rows.length === 0) return;
-  const sepTr = document.createElement('tr');
-  sepTr.className = 'metrics-section-row';
-  const sepTd = document.createElement('td');
-  sepTd.colSpan = entries.length + 1;
-  sepTd.textContent = section.label;
-  sepTr.appendChild(sepTd);
-  metricsBody.appendChild(sepTr);
-
-  for (const row of rows) {
-    const tr = document.createElement('tr');
-    if (row.rowCls) tr.className = row.rowCls;
-    // Named, so a row that changes under the pen can be found and refilled
-    // without rebuilding the table around it.
-    tr.dataset.metric = row.key;
-    const labelTh = document.createElement('th');
-    labelTh.scope = 'row';
-    labelTh.className = 'metric-label';
-    labelTh.textContent = row.key;
-    if (row.note) {
-      labelTh.classList.add('has-note');
-      labelTh.title = row.note;
-    }
-    tr.appendChild(labelTh);
-    for (const [name, m] of entries) tr.appendChild(metricCell(row, m, name));
-    metricsBody.appendChild(tr);
+/** One cell of a metric column: the metric builds it, or it is text. */
+function metricCell(row: MetricRow, m: ModelInfo, name: string): HTMLTableCellElement {
+  let td: HTMLTableCellElement;
+  if (row.node) {
+    td = row.node(m, name);
+  } else {
+    td = document.createElement('td');
+    if (row.cls) td.className = row.cls;
+    const val = row.fn(m, name);
+    if (row.html) td.innerHTML = val;
+    else td.textContent = val;
   }
+  if (row.cellCls) td.classList.add(row.cellCls);
+  td.dataset.metric = row.key;
+  return td;
 }
 
 // Load models from server on page load
