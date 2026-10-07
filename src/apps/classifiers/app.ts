@@ -10,7 +10,7 @@
  * hand-derived from the classifier backend's route handlers.
  */
 
-import { initDropdown, initResize, onEscape } from '../ui-kit/ui-kit';
+import { initDropdown, onEscape } from '../ui-kit/ui-kit';
 import { connectionManager } from './connection';
 import { consumeSSE, type SseStructuredEvent } from './sse';
 import { MiniChart } from './chart';
@@ -272,17 +272,6 @@ const dropdown = initDropdown(
 onEscape(() => {
   dropdown.close();
 });
-
-initResize(
-  byId('resize-h', HTMLElement),
-  byId('left-col', HTMLElement),
-  byId('split-layout', HTMLElement),
-  {
-    min: 180,
-    default: 300,
-    key: 'leftColWidth_v2',
-  },
-);
 
 const canvasCol = byId('canvas-col', HTMLElement);
 const tabularCol = byId('tabular-col', HTMLElement);

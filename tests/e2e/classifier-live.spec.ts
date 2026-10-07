@@ -112,6 +112,9 @@ async function connect(page: Page, stub: Stub): Promise<void> {
 }
 
 async function drawSeven(page: Page): Promise<void> {
+  // page.mouse works in viewport coordinates and scrolls nothing itself, and the
+  // pad sits below the fold once the Train card above it unfolds.
+  await page.locator('#draw-canvas').scrollIntoViewIfNeeded();
   const b = (await page.locator('#draw-canvas').boundingBox())!;
   await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.22);
   await page.mouse.down();

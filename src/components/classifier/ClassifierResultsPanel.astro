@@ -231,12 +231,11 @@ import Button from '../Button.astro';
     background-size: calc(100% / 28) calc(100% / 28);
   }
 
-  /* Pushed to the edge the answers begin at, so the drawing and what the models
-     were given to read sit together. */
+  /* Beside the pad it is made from, so a stroke and its 28x28 reduction are read
+     together. */
   #seen-canvas {
     display: block;
     flex: none;
-    margin-left: auto;
     width: 84px;
     height: 84px;
     border: 1px solid var(--ink);

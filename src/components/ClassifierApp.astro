@@ -9,20 +9,15 @@ import '../styles/classifier.css';
 <div id="classifier-app">
   <ClassifierNavbar />
 
-  <!-- DOM order is results first: on a narrow screen that's also the visual order
-       (draw → predictions → evaluation, then the backend tools), so focus order
-       matches what you see. Wide screens put the tools column on the left with
-       flex order. -->
+  <!-- One column, in the order it is read: what to train, what to draw on, then
+       what every model made of it. A section, not <main>/<aside>: the page's one
+       <main> is the site pane, and a landmark nested inside it would be
+       misplaced. -->
   <div id="split-layout" class="split-layout">
-    <!-- Sections, not <main>/<aside>: the page's one <main> is the site pane,
-         and a landmark nested inside it would be misplaced. -->
-    <section class="right-col" aria-label="Draw and results">
-      <ClassifierResultsPanel />
-    </section>
-    <div id="resize-h" class="resize-handle"></div>
-    <section id="left-col" class="left-col" aria-label="Models and training">
-      <ClassifierModelsCard />
+    <section class="right-col" aria-label="Train, draw and results">
       <ClassifierTrainCard />
+      <ClassifierResultsPanel />
+      <ClassifierModelsCard />
     </section>
   </div>
 </div>
@@ -50,49 +45,18 @@ import '../styles/classifier.css';
     overflow: hidden;
   }
 
-  .left-col {
-    order: -2;
-    overflow-y: auto;
-    padding: 8px;
-    flex-shrink: 0;
-    border-right: 2px solid var(--ink);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  /* The input and its answers side by side; everything else full width below. */
   .right-col {
     flex: 1;
     overflow-y: auto;
     padding: 8px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     min-width: 0;
   }
 
-  .right-col > :global(:not(#canvas-col, #tabular-col)) {
-    grid-column: 1 / -1;
-  }
-
-  .resize-handle {
-    order: -1;
-    width: 5px;
-    cursor: col-resize;
-    background: var(--dither-50);
-    flex-shrink: 0;
-  }
-
-  .resize-handle:hover {
-    background: var(--ink-4);
-  }
-
-  /* Narrow screens: no pane scrollers. The app flows in the page's own scroll, so the
-     draw canvas is never squeezed into a 110px window: results first, then the
-     tools. */
+  /* Narrow screens: no pane scroller. The app flows in the page's own scroll, so
+     the draw canvas is never squeezed into a 110px window. */
   @media (width <= 900px) {
     #classifier-app {
       height: auto;
@@ -104,24 +68,8 @@ import '../styles/classifier.css';
       overflow: visible;
     }
 
-    .left-col,
     .right-col {
       overflow: visible;
-    }
-
-    .right-col {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .left-col {
-      order: 1;
-      border-right: none;
-      border-top: 2px solid var(--ink);
-      width: 100% !important;
-    }
-
-    .resize-handle {
-      display: none;
     }
   }
 </style>
