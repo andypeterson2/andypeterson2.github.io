@@ -67,9 +67,10 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.goto('/projects/ai-ml/app/');
     const titles = page.locator('#left-col > section:not([hidden]) .card-title');
     await expect(titles).toHaveText(['Models', 'Train']);
-    await expect(page.locator('#session-models .ui-list-name')).toHaveText([
+    await expect(page.locator('#session-models .model-name')).toHaveText([
       'Logistic Regression',
-      'QSVM',
+      // The name cell carries the subset caveat and the citation under it.
+      /^QSVM/,
     ]);
     await expect(page.locator('#session-models')).toContainText('Yang et al. 2019');
     await expect(page.locator('#tier-label')).toHaveCount(0);
@@ -199,7 +200,15 @@ test.describe('Classifier: what the models see and say', () => {
   });
 
   test('in-browser models say which export their weights came from', async ({ page }) => {
-    await expect(page.locator('#session-models')).toContainText(/weights · [0-9a-f]{7} · \d{4}-/);
+    const weights = page.locator('#session-models tbody tr').first().locator('td').nth(3);
+    await expect(weights).toHaveText(/^[0-9a-f]{7}$/);
+    // The date is the tooltip; the hash is what identifies the build.
+    await expect(weights).toHaveAttribute('title', /^exported \d{4}-/);
+  });
+
+  test('a model credits the paper it comes from, on the page', async ({ page }) => {
+    // Attribution stays in the page text, where a reader will see it.
+    await expect(page.locator('#session-models .model-scope')).toContainText('Yang et al. 2019');
   });
 });
 

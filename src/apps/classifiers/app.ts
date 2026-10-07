@@ -622,45 +622,53 @@ function confClass(v: number): string {
 
 // Session models list (MODELS card)
 
-function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
-  const row = document.createElement('div');
-  row.className = 'ui-list-row';
-  const text = document.createElement('div');
-  text.className = 'ui-list-text';
-  const nameSpan = document.createElement('div');
-  nameSpan.className = 'ui-list-name';
-  nameSpan.textContent = name;
-  text.appendChild(nameSpan);
-  const tier = m._local ? 'in your browser' : m._virtual ? 'computed here' : 'live';
-  const facts = [
-    m.model_type,
-    m.num_params ? `${m.num_params.toLocaleString()} params` : '',
-    m._subset ? `${m._subset} only` : '',
-    tier,
-  ];
-  const lines = [facts, [m._provenance ?? '', m._cite ?? '']];
-  for (const line of lines) {
-    const meta = line.filter(Boolean).join(' · ');
-    if (!meta) continue;
-    const div = document.createElement('div');
-    div.className = 'ui-list-meta';
-    div.textContent = meta;
-    text.appendChild(div);
+/** One cell, with the class the column wants. */
+function modelCell(text: string, cls = ''): HTMLTableCellElement {
+  const td = document.createElement('td');
+  if (cls) td.className = cls;
+  td.textContent = text;
+  return td;
+}
+
+function buildSessionModelRow(name: string, m: ModelInfo): HTMLTableRowElement {
+  const row = document.createElement('tr');
+
+  const nameTd = document.createElement('td');
+  nameTd.className = 'model-name';
+  nameTd.textContent = name;
+  // Under the name: what the model is limited to, and whose paper it is.
+  // Attribution stays on the page rather than in a tooltip.
+  const notes = [m._subset ? `${m._subset} only` : '', m._cite ?? ''].filter(Boolean);
+  if (notes.length) {
+    const scope = document.createElement('span');
+    scope.className = 'model-scope';
+    scope.textContent = notes.join(' · ');
+    nameTd.appendChild(scope);
   }
-  row.appendChild(text);
-  if (m._local) {
-    // In-browser models have no backend to ablate/export/remove against.
-    return row;
+  row.appendChild(nameTd);
+
+  row.appendChild(modelCell(m.num_params ? m.num_params.toLocaleString() : '—', 'num'));
+  row.appendChild(modelCell(m._local ? 'browser' : m._virtual ? 'computed' : 'live'));
+
+  // The commit the weights came from, so a figure here traces to the code that
+  // produced it. The date rides in the tooltip, since the card is narrow.
+  const detail = m._provenance?.replace(/^weights · /, '').split(' · ') ?? [];
+  const prov = modelCell(detail[0] ?? '—', 'num');
+  if (detail.length > 1) prov.title = `exported ${detail.slice(1).join(' · ')}`;
+  row.appendChild(prov);
+
+  const actions = document.createElement('td');
+  actions.className = 'model-actions';
+  if (!m._local) {
+    if (!m._virtual) actions.append(...serverModelActions(name));
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
+    removeBtn.dataset.remove = name;
+    removeBtn.setAttribute('aria-label', 'Remove ' + name);
+    removeBtn.textContent = '×';
+    actions.appendChild(removeBtn);
   }
-  if (!m._virtual) {
-    row.append(...serverModelActions(name));
-  }
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
-  removeBtn.dataset.remove = name;
-  removeBtn.setAttribute('aria-label', 'Remove ' + name);
-  removeBtn.textContent = '×';
-  row.appendChild(removeBtn);
+  row.appendChild(actions);
   return row;
 }
 
@@ -680,13 +688,41 @@ function serverModelActions(name: string): HTMLButtonElement[] {
   return [ablationBtn, exportBtn];
 }
 
+// Type is not here: the metrics table already carries it under Config, and this
+// card is the narrow one.
+const MODEL_COLUMNS = ['Model', 'Params', 'Runs', 'Weights'];
+
 function buildSessionModelsList(): void {
   const entries = modelEntries();
   if (entries.length === 0) {
     sessionModels.innerHTML = '<p class="ui-list-empty">No models loaded</p>';
   } else {
     sessionModels.innerHTML = '';
-    for (const [name, m] of entries) sessionModels.appendChild(buildSessionModelRow(name, m));
+    const table = document.createElement('table');
+    table.className = 'app-table models-table';
+    const thead = document.createElement('thead');
+    const htr = document.createElement('tr');
+    for (const label of MODEL_COLUMNS) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      htr.appendChild(th);
+    }
+    // The actions column is buttons with their own labels, so its header is
+    // named for screen readers and left blank on screen.
+    const actionsTh = document.createElement('th');
+    actionsTh.scope = 'col';
+    const actionsLabel = document.createElement('span');
+    actionsLabel.className = 'sr-only';
+    actionsLabel.textContent = 'Actions';
+    actionsTh.appendChild(actionsLabel);
+    htr.appendChild(actionsTh);
+    thead.appendChild(htr);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const [name, m] of entries) tbody.appendChild(buildSessionModelRow(name, m));
+    table.appendChild(tbody);
+    sessionModels.appendChild(table);
   }
   updateTeacherSelect();
   updateEnsembleBtn();
