@@ -28,11 +28,6 @@
   // svelte-ignore state_referenced_locally
   if (identity) editor.hydrateDemoIdentity(identity);
 
-  const person = $derived(editor.person);
-  const fullName = $derived(
-    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim(),
-  );
-
   // Flips true once mounted → the stage gets `data-hydrated`, a deterministic
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
@@ -249,6 +244,27 @@
       <a class="navlink" href="/projects/">Projects</a>
     </nav>
     <MenuBar {menus} />
+    <!-- The portal's own menubar is hidden on a bare page, so the account sits at the
+         right of this one, where the rest of the site puts it. -->
+    <nav class="auth-nav" aria-label="Account">
+      {#if editor.identity}
+        <button
+          type="button"
+          class="navlink"
+          title={editor.identity.email ? `Signed in as ${editor.identity.email}` : 'Sign out'}
+          onclick={() => editor.signOut()}>Sign out</button
+        >
+      {:else}
+        <button
+          type="button"
+          class="navlink"
+          disabled={editor.signingIn}
+          title="Sign in with Google to keep your edits"
+          onclick={() => editor.signIn()}
+          >{editor.signingIn ? 'Signing in…' : 'Sign in'}</button
+        >
+      {/if}
+    </nav>
   </div>
 
   {#if editor.signingIn}
@@ -343,9 +359,6 @@
     </div>
     <div class="workspace-body">
       <div class="window toolbar-window">
-        <div class="titlebar">
-          <span class="close"></span><span class="title">Toolbar</span><span class="fill"></span>
-        </div>
         <div class="toolbar">
           <span class="field"
             >Profile
@@ -413,11 +426,6 @@
       </div>
 
       <div class="window doc-window">
-        <div class="titlebar">
-          <span class="close"></span><span class="title"
-            >{fullName || editor.profileLabel} — {editor.variantLabel}</span
-          ><span class="fill"></span>
-        </div>
         <div class="wbody" class:split={editor.preview.open}>
           <div class="doc-scroll" data-tour-spot="document">
             {#if editor.noProfiles}
@@ -620,6 +628,12 @@
     position: sticky;
     top: 0;
     z-index: var(--z-sticky);
+  }
+
+  .auth-nav {
+    display: flex;
+    align-items: stretch;
+    margin-left: auto;
   }
 
   /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
@@ -1348,12 +1362,10 @@
   }
 
   /* Short laptop windows (1366×768 minus browser chrome is ~650px): the decorative
-     "Resume Editor" frame title and the "Toolbar" window title cost ~125px of a small
-     screen; the menubar already names the app, so drop them and give the document the
-     room. */
+     "Resume Editor" frame title costs height a small screen needs; the menubar already
+     names the app, so drop it and give the document the room. */
   @media (width > 768px) and (height > 500px) and (height <= 760px) {
-    .app-titlebar,
-    .toolbar-window > .titlebar {
+    .app-titlebar {
       display: none;
     }
   }

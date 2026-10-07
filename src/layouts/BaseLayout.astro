@@ -354,10 +354,14 @@ const windowTitle = title || siteConfig.title;
     margin: 0;
   }
 
+  /* max-width goes with the margin: the chromed layout caps the window and centres
+     it, and a bare page that kept the cap without the centring sat against the left
+     edge with the canvas showing beside it. */
   body.is-bare .site-window {
     border: 0;
     box-shadow: none;
     margin: 0;
+    max-width: none;
     background: none;
   }
 
