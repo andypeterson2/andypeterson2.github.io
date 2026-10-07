@@ -51,25 +51,21 @@ import Button from '../Button.astro';
 </div>
 
 <!-- Every model a row, every metric a column: what it just said, what it is,
-     how it scored. -->
-<section class="card" id="models-card">
-  <h2 class="card-title">Models</h2>
+     how it scored. No card around it — the table is already a frame, and a
+     second one only narrows it. -->
+<section id="models-card" aria-label="Models">
   <div id="evaluate-progress" class="hidden">
     <div class="progress-bar" role="progressbar">
       <div id="eval-bar" class="progress-bar-fill"></div>
     </div>
     <span id="eval-status"></span>
   </div>
-  <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
-       make scrollers focusable on its own). -->
-  <div class="metrics-wrap" tabindex="0" role="region" aria-label="Models table">
-    <table class="s6-data-table metrics-table">
-      <thead id="metrics-head"></thead>
-      <tbody id="metrics-body">
-        <tr class="empty-row"><td>No models trained yet</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <table class="s6-data-table metrics-table">
+    <thead id="metrics-head"></thead>
+    <tbody id="metrics-body">
+      <tr class="empty-row"><td>No models trained yet</td></tr>
+    </tbody>
+  </table>
   <div class="row models-row">
     <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
   </div>
@@ -79,11 +75,16 @@ import Button from '../Button.astro';
 <style>
   /* ── Tables: the shared 1-bit grid, with what these three add ── */
 
-  /* Every metric is a column, so the table is wider than the card and the cells
-     are sized by what is in them rather than by an equal share. */
+  /* Every metric is a column, and they share the width evenly: the table has no
+     scroller of its own, so it fits the page rather than running past it. */
   .metrics-table {
-    width: auto;
-    min-width: 100%;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  .models-row {
+    justify-content: flex-end;
+    margin-top: 6px;
   }
 
   /* Data is set in the mono face; the rest of the app is Geneva. */
@@ -91,13 +92,6 @@ import Button from '../Button.astro';
     font-family: var(--font-mono);
   }
 
-  /* Room for the in-browser models up front, so the card doesn't grow under the
-     reader when they load, and a cap past which the table scrolls. */
-  .metrics-wrap {
-    overflow: auto;
-    min-height: 120px;
-    max-height: 300px;
-  }
 
   :global(.sr-only) {
     position: absolute;
@@ -111,26 +105,10 @@ import Button from '../Button.astro';
     border: 0;
   }
 
-  /* The model names hold their place while the metrics scroll past them. */
   :global(.corner-cell),
   :global(#classifier-app .metrics-table th[scope='row']) {
     width: 110px;
-    min-width: 110px;
-    position: sticky;
-    left: 0;
-
-    /* Local within-table stacking, above the scrolling cells but below a page
-       layer — so a small raw value stands in for a --z-* token. */
-    z-index: 2;
-
-    /* Opaque because it is sticky — the cells must not show through it. */
-    background: var(--paper);
     text-align: left;
-  }
-
-  /* Above the row headers it scrolls over. */
-  :global(.corner-cell) {
-    z-index: 3;
   }
 
   :global(.col-model-name) {
@@ -170,8 +148,15 @@ import Button from '../Button.astro';
   /* Narrow screens: a table this wide cannot reflow into 320px, so each model
      becomes a block and every cell names the metric it answers. */
   @media (width <= 700px) {
-    .metrics-wrap {
-      max-height: none;
+    .draw-row {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    .draw-pad,
+    #seen-canvas {
+      grid-column: 1;
+      justify-self: center;
     }
 
     .metrics-table,
@@ -260,11 +245,17 @@ import Button from '../Button.astro';
   }
 
   /* ── Canvas ── */
+  /* Three columns: the pad takes the middle one, so it is centred on the card,
+     and the 28x28 sits in the third beside it. */
   .draw-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
     gap: 12px;
+  }
+
+  .draw-pad {
+    grid-column: 2;
   }
 
   .draw-pad {
@@ -297,7 +288,8 @@ import Button from '../Button.astro';
      together. */
   #seen-canvas {
     display: block;
-    flex: none;
+    grid-column: 3;
+    justify-self: start;
     width: 84px;
     height: 84px;
     border: 1px solid var(--ink);

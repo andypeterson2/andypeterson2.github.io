@@ -13,13 +13,11 @@ import '../styles/classifier.css';
        what every model made of it. A section, not <main>/<aside>: the page's one
        <main> is the site pane, and a landmark nested inside it would be
        misplaced. -->
-  <div id="split-layout" class="split-layout">
-    <section class="right-col" aria-label="Train, draw and results">
-      <ClassifierTrainCard />
-      <ClassifierResultsPanel />
-      <ClassifierModelsCard />
-    </section>
-  </div>
+  <section class="app-col" aria-label="Train, draw and results">
+    <ClassifierTrainCard />
+    <ClassifierResultsPanel />
+    <ClassifierModelsCard />
+  </section>
 </div>
 
 <!-- Classifier tier (bundled module): config seeds window.API_BASE / UI_CONFIG,
@@ -30,46 +28,18 @@ import '../styles/classifier.css';
 </script>
 
 <style>
+  /* No scroller of its own at any width: the app is as tall as its content and
+     the site pane scrolls it, so a reader never meets a scrollbar inside one. */
   #classifier-app {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
     font-family: var(--font-sans);
     font-size: var(--text-2xs);
   }
 
-  .split-layout {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .right-col {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
+  .app-col {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding: 8px;
     min-width: 0;
-  }
-
-  /* Narrow screens: no pane scroller. The app flows in the page's own scroll, so
-     the draw canvas is never squeezed into a 110px window. */
-  @media (width <= 900px) {
-    #classifier-app {
-      height: auto;
-    }
-
-    .split-layout {
-      flex-direction: column;
-      flex: none;
-      overflow: visible;
-    }
-
-    .right-col {
-      overflow: visible;
-    }
   }
 </style>
