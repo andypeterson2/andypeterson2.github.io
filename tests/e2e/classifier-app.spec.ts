@@ -115,8 +115,8 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.goto('/projects/ai-ml/app/');
     // The in-browser models load after hydration; draw only once they're listed.
     await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
-    await page.locator('#predict-btn').click();
-    // No placeholder row: the model rows are there with nothing in them yet.
+    // Nothing to press: a stroke is what asks for a prediction. Until one lands
+    // the model rows are there with nothing in them.
     await expect(page.locator('#pred-body tr')).toHaveCount(2);
     await expect(page.locator('#pred-body tr').first().locator('td').first()).toHaveText('—');
     const cv = page.locator('#draw-canvas');

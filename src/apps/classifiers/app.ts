@@ -294,7 +294,6 @@ const ctx = canvasCtx;
 const seenCtx = byId('seen-canvas', HTMLCanvasElement).getContext('2d');
 const trainBtn = byId('train-btn', HTMLButtonElement);
 const clearBtn = byId('clear-btn', HTMLButtonElement);
-const predictBtn = document.getElementById('predict-btn');
 const importBtn = byId('import-btn', HTMLButtonElement);
 const refreshSavedBtn = byId('refresh-saved-btn', HTMLButtonElement);
 const savedSelect = byId('saved-select', HTMLSelectElement);
@@ -1412,10 +1411,6 @@ async function switchDataset(name: string): Promise<void> {
   if (!image) void runPredictLocal();
 }
 
-if (predictBtn)
-  predictBtn.addEventListener('click', () => {
-    void runPredict();
-  });
 const predictBtnTab = document.getElementById('predict-btn-tab');
 if (predictBtnTab)
   predictBtnTab.addEventListener('click', () => {

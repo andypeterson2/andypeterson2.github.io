@@ -20,19 +20,18 @@ import Button from '../Button.astro';
       ></canvas>
       <div class="draw-grid" aria-hidden="true"></div>
     </div>
-    <figure class="seen">
-      <canvas
-        id="seen-canvas"
-        width="28"
-        height="28"
-        role="img"
-        aria-label="The drawing as the model sees it"></canvas>
-      <figcaption>As the model sees it: cropped to 20px, centred by mass</figcaption>
-    </figure>
+    <!-- What the models are actually given. The title carries what it is, so the
+         picture needs no caption under it. -->
+    <canvas
+      id="seen-canvas"
+      width="28"
+      height="28"
+      role="img"
+      title="The drawing as the model sees it: cropped to 20px, centred by mass"
+      aria-label="The drawing as the model sees it: cropped to 20px, centred by mass"></canvas>
   </div>
   <div class="row">
     <Button app variant="secondary" id="clear-btn" type="button">Clear</Button>
-    <Button app variant="solid" id="predict-btn" type="button">Predict</Button>
   </div>
 </section>
 
@@ -149,7 +148,9 @@ import Button from '../Button.astro';
     /* Local within-table stacking, above the sticky row/col headers but below a page
        layer — so a small raw value stands in for a --z-* token. */
     z-index: 3;
-    background: var(--paper-2);
+
+    /* Opaque because it is sticky — the rows must not show through it. */
+    background: var(--paper);
   }
 
   :global(.model-col-head) {
@@ -168,11 +169,11 @@ import Button from '../Button.astro';
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 4px 6px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
   }
 
   :global(.metric-label) {
-    background: var(--paper-2);
+    background: var(--paper);
     font-size: var(--text-4xs);
     font-weight: 600;
     text-transform: uppercase;
@@ -263,23 +264,16 @@ import Button from '../Button.astro';
     background-size: calc(100% / 28) calc(100% / 28);
   }
 
-  .seen {
-    margin: 0;
-    width: 84px;
-  }
-
+  /* Pushed to the edge the answers begin at, so the drawing and what the models
+     were given to read sit together. */
   #seen-canvas {
     display: block;
+    flex: none;
+    margin-left: auto;
     width: 84px;
     height: 84px;
     border: 1px solid var(--ink);
     image-rendering: pixelated;
-  }
-
-  .seen figcaption {
-    margin-top: 4px;
-    font-size: var(--text-4xs);
-    line-height: 1.3;
   }
 
   /* ── Chart ── */
