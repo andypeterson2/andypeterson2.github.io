@@ -72,7 +72,10 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
       // The name cell carries the subset caveat and the citation under it.
       /^QSVM/,
     ]);
-    await expect(page.locator('#session-models')).toContainText('Yang et al. 2019');
+    await expect(page.locator('#session-models .model-name').nth(1)).toHaveAttribute(
+      'title',
+      /Yang et al. 2019/,
+    );
     await expect(page.locator('#tier-label')).toHaveCount(0);
   });
 
@@ -113,7 +116,9 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     // The in-browser models load after hydration; draw only once they're listed.
     await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
     await page.locator('#predict-btn').click();
-    await expect(page.locator('#pred-body')).toContainText('Draw a digit');
+    // No placeholder row: the model rows are there with nothing in them yet.
+    await expect(page.locator('#pred-body tr')).toHaveCount(2);
+    await expect(page.locator('#pred-body tr').first().locator('td').first()).toHaveText('—');
     const cv = page.locator('#draw-canvas');
     const b = (await cv.boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.22);
@@ -122,7 +127,7 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.mouse.move(b.x + b.width * 0.45, b.y + b.height * 0.8, { steps: 20 });
     await page.mouse.up();
     const rows = page.locator('.pred-model-name');
-    await expect(rows.filter({ hasText: 'QSVM' })).toContainText('6 vs 9 only');
+    await expect(rows.filter({ hasText: 'QSVM' })).toHaveAttribute('title', '6 vs 9 only');
     await expect(page.locator('.pred-label').first()).toHaveText('7');
     await expect(page.locator('.pred-out-note')).toContainText('only answers 6 vs 9');
   });
@@ -195,20 +200,22 @@ test.describe('Classifier: what the models see and say', () => {
   test('the QSVM row shows its margin and features, not a percentage', async ({ page }) => {
     await drawSeven(page);
     const qsvm = page.locator('#pred-body tr').filter({ hasText: 'QSVM' });
-    await expect(qsvm.locator('td').nth(2)).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
+    await expect(qsvm.locator('td').nth(1)).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
     await expect(page.locator('#pred-body').locator('..').locator('th').nth(2)).toHaveText('Score');
   });
 
   test('in-browser models say which export their weights came from', async ({ page }) => {
-    const weights = page.locator('#session-models tbody tr').first().locator('td').nth(3);
+    const weights = page.locator('#session-models tbody tr').first().locator('td').nth(2);
     await expect(weights).toHaveText(/^[0-9a-f]{7}$/);
     // The date is the tooltip; the hash is what identifies the build.
     await expect(weights).toHaveAttribute('title', /^exported \d{4}-/);
   });
 
-  test('a model credits the paper it comes from, on the page', async ({ page }) => {
-    // Attribution stays in the page text, where a reader will see it.
-    await expect(page.locator('#session-models .model-scope')).toContainText('Yang et al. 2019');
+  test('a label with more to say marks itself and says it on hover', async ({ page }) => {
+    const qsvm = page.locator('#session-models .model-name').nth(1);
+    await expect(qsvm).toHaveAttribute('title', /6 vs 9 only · Yang et al. 2019/);
+    // The dotted underline is what tells a reader there is something to hover.
+    await expect(qsvm).toHaveClass(/has-note/);
   });
 });
 

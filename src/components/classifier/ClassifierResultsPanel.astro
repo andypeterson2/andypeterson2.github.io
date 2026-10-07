@@ -49,7 +49,7 @@ import Button from '../Button.astro';
 <!-- Predictions -->
 <section class="card" id="predictions-card">
   <h2 class="card-title">Predictions</h2>
-  <table class="app-table pred-table">
+  <table class="s6-data-table pred-table">
     <colgroup><col class="col-name" /><col class="col-answer" /><col class="col-score" /></colgroup>
     <thead>
       <tr>
@@ -82,7 +82,7 @@ import Button from '../Button.astro';
   <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
        make scrollers focusable on its own). -->
   <div class="metrics-wrap" tabindex="0" role="region" aria-label="Evaluation table">
-    <table class="app-table metrics-table">
+    <table class="s6-data-table metrics-table">
       <thead id="metrics-head"></thead>
       <tbody id="metrics-body">
         <tr class="empty-row"><td>No models trained yet</td></tr>
@@ -92,25 +92,7 @@ import Button from '../Button.astro';
 </section>
 
 <style>
-  /* ── Tables ── */
-  .app-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--text-3xs);
-  }
-
-  .app-table th,
-  .app-table td {
-    padding: 3px 6px;
-    border-bottom: 1px solid var(--paper-3);
-    text-align: left;
-  }
-
-  .app-table th {
-    font-weight: 700;
-    background: var(--paper-2);
-  }
-
+  /* ── Tables: the shared 1-bit grid, with what these three add ── */
   /* Fixed columns, so the table holds still while predictions change under the pen. */
   .pred-table {
     table-layout: fixed;
@@ -180,6 +162,7 @@ import Button from '../Button.astro';
 
   :global(.metrics-section-row > td) {
     background: var(--paper);
+    text-align: left;
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;

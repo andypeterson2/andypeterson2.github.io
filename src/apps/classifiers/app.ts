@@ -633,17 +633,16 @@ function modelCell(text: string, cls = ''): HTMLTableCellElement {
 function buildSessionModelRow(name: string, m: ModelInfo): HTMLTableRowElement {
   const row = document.createElement('tr');
 
-  const nameTd = document.createElement('td');
+  const nameTd = document.createElement('th');
+  nameTd.scope = 'row';
   nameTd.className = 'model-name';
   nameTd.textContent = name;
-  // Under the name: what the model is limited to, and whose paper it is.
-  // Attribution stays on the page rather than in a tooltip.
+  // What the model is limited to and whose paper it is, on hover: the dotted
+  // underline is the shared table's mark for a label with more to say.
   const notes = [m._subset ? `${m._subset} only` : '', m._cite ?? ''].filter(Boolean);
   if (notes.length) {
-    const scope = document.createElement('span');
-    scope.className = 'model-scope';
-    scope.textContent = notes.join(' · ');
-    nameTd.appendChild(scope);
+    nameTd.classList.add('has-note');
+    nameTd.title = notes.join(' · ');
   }
   row.appendChild(nameTd);
 
@@ -699,7 +698,7 @@ function buildSessionModelsList(): void {
   } else {
     sessionModels.innerHTML = '';
     const table = document.createElement('table');
-    table.className = 'app-table models-table';
+    table.className = 's6-data-table models-table';
     const thead = document.createElement('thead');
     const htr = document.createElement('tr');
     for (const label of MODEL_COLUMNS) {
@@ -731,15 +730,15 @@ function buildSessionModelsList(): void {
 // Prediction table (TRY card)
 
 function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCellElement {
-  const td = document.createElement('td');
+  const td = document.createElement('th');
+  td.scope = 'row';
   td.className = 'pred-model-name';
   td.textContent = name;
-  // Say up front that a binary model only knows two classes.
+  // That a binary model knows only two classes is on hover, marked by the
+  // dotted underline the shared table gives a label with more to say.
   if (m?._subset) {
-    const scope = document.createElement('span');
-    scope.className = 'pred-scope';
-    scope.textContent = ` · ${m._subset} only`;
-    td.appendChild(scope);
+    td.classList.add('has-note');
+    td.title = `${m._subset} only`;
   }
   return td;
 }
@@ -803,9 +802,6 @@ function buildPredictionTable(): void {
     return;
   }
   predBody.innerHTML = '';
-  if (window.UI_CONFIG?.input_type === 'image' && Object.keys(state.predictions).length === 0) {
-    predBody.innerHTML = `<tr class="empty-row"><td colspan="3">Draw a digit — predictions appear as you draw.</td></tr>`;
-  }
   for (const name of names) {
     const p = state.predictions[name];
     const m = state.models[name];
