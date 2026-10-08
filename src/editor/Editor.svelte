@@ -9,6 +9,9 @@
   import Drawer from './components/Drawer.svelte';
   import SymbolPalette from './components/SymbolPalette.svelte';
   import { symbols } from './lib/symbol-input.svelte';
+
+  /** The export menu: "Export" alone never said in what. */
+  let exportOpen = $state(false);
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
   import TagsDrawer from './components/TagsDrawer.svelte';
@@ -121,7 +124,10 @@
             >Resume
             <button
               class="popup profile-btn"
-              title="Resumes"
+              title={editor.connected
+                ? 'Switch resume'
+                : 'Your resumes live in your account — sign in to switch between them'}
+              disabled={!editor.connected}
               onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
             ></span
           >
@@ -175,6 +181,14 @@
               >
             </button>
           {/if}
+          <UiButton
+            variant="toolbar"
+            title={editor.connected
+              ? 'The demo sample is only shown while signed out'
+              : 'Empty the demo, to start from nothing'}
+            disabled={editor.connected}
+            onclick={() => editor.clearDemo()}>⌫ Clear</UiButton
+          >
           <UiButton
             variant="toolbar"
             active={editor.openDrawer === 'history'}
@@ -245,9 +259,11 @@
             >
             <UiButton
               variant="toolbar"
-              title="Export this resume as JSON"
+              active={exportOpen}
+              aria-expanded={exportOpen}
+              title="Take this resume away in a chosen format"
               disabled={editor.noProfiles}
-              onclick={() => editor.exportJson()}>⤓ Export</UiButton
+              onclick={() => (exportOpen = !exportOpen)}>⤓ Export</UiButton
             >
           </div>
         </div>
@@ -273,7 +289,7 @@
           {#if editor.preview.open}
             <div class="preview">
               <div class="pv-bar">
-                <span>{editor.pdfName}</span>
+                <span>{editor.preview.url ? editor.pdfName : 'No PDF yet'}</span>
                 <span class="pv-tools">
                   {#if editor.preview.url}
                     <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
@@ -309,6 +325,45 @@
       </div>
     </div>
   </div>
+
+  {#if exportOpen}
+    <div class="sym-window export-window" role="dialog" aria-label="Export">
+      <div class="titlebar">
+        <button class="close" aria-label="Close export" onclick={() => (exportOpen = false)}
+        ></button>
+        <span class="title">Export</span>
+        <span class="fill"></span>
+      </div>
+      <div class="ex-body">
+        <p class="ex-note">Take this resume away in whichever form you need it.</p>
+        <button
+          class="ex-opt"
+          disabled={!editor.preview.url}
+          onclick={() => {
+            editor.downloadPdf();
+            exportOpen = false;
+          }}
+        >
+          <span class="ex-name">PDF</span>
+          <span class="ex-what"
+            >{editor.preview.url
+              ? 'The compiled document, as it prints'
+              : 'Compile it first — there is no PDF yet'}</span
+          >
+        </button>
+        <button
+          class="ex-opt"
+          onclick={() => {
+            void editor.exportJson();
+            exportOpen = false;
+          }}
+        >
+          <span class="ex-name">JSON</span>
+          <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
+        </button>
+      </div>
+    </div>
+  {/if}
 
   {#if symbols.open}
     <div class="sym-window window" role="dialog" aria-label="Insert a symbol">
@@ -535,6 +590,55 @@
   .sym-body {
     max-height: min(22rem, 50vh);
     overflow: auto;
+  }
+
+  .ex-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .ex-note {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
+  }
+
+  /* One row per format: what it is, then what it gives you. */
+  .ex-opt {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    padding: 8px 10px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  .ex-opt:hover:not(:disabled),
+  .ex-opt:focus-visible:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .ex-opt:disabled {
+    cursor: default;
+    background: var(--dither-light);
+  }
+
+  .ex-name {
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  .ex-what {
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
   }
 
   /* Sits above the scroller, so the document's scrollbar begins below this. */

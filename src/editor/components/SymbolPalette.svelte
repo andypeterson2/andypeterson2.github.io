@@ -50,7 +50,7 @@
     font-family: var(--mono);
     font-size: 0.92em;
     background: var(--paper);
-    border: 1px solid var(--faint, var(--paper-4));
+    border: 1px solid var(--ink);
     padding: 0 3px;
   }
 

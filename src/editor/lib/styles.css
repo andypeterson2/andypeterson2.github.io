@@ -5,7 +5,7 @@
   --chrome: var(--paper);
   --chrome-hi: var(--paper);
   --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text */
-  --dim-text: var(--ink-3); /* secondary text: passes AA in both themes */
+  --dim-text: var(--ink); /* the editor is 1-bit: controls are ink or they are not there */
   --disabled: var(--ink-4); /* disabled controls (exempt from contrast minimums) */
 
   /* Semantic state routes to the shared status light. Demo deliberately has NO
@@ -242,7 +242,8 @@ body {
 /* inline text-link button (drawer footers) */
 .ui.link {
   font: inherit;
-  color: var(--link);
+  color: var(--ink);
+  font-weight: 700;
   background: none;
   border: 0;
   padding: 0;

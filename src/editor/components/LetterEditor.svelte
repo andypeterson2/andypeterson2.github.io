@@ -172,7 +172,7 @@
     flex-direction: column;
     gap: 10px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--paper-4);
+    border-bottom: 1px solid var(--ink);
   }
 
   .fld {
@@ -302,7 +302,7 @@
 
   .lf {
     padding-top: 20px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
   }
 
   .signoff {

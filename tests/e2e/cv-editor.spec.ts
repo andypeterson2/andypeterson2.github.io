@@ -320,7 +320,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
 
     page.on('dialog', (d) => d.accept());
-    await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
+    await page
+      .locator('.doc .edit[data-sortable]')
+      .first()
+      .getByRole('button', { name: /^Delete entry$/ })
+      .click();
     await expect(page.locator('.doc .edit[data-sortable]')).toHaveCount(0);
 
     await page.locator('.title-bar').click();
@@ -1089,7 +1093,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
     await expect(page.locator('.toolbar')).toContainText('Resume');
 
+    // Switching resumes needs the account that holds them, so the control is out
+    // of reach until then — and the drawer says why when the editor opens it.
+    await expect(page.locator('.toolbar .profile-btn')).toBeDisabled();
     const drawer = page.locator('.drawer');
+    await page.evaluate(() => document.querySelector('.profile-btn')?.removeAttribute('disabled'));
     await page.locator('.toolbar .profile-btn').click();
     await expect(drawer).toBeVisible();
     await expect(drawer).toContainText('Resumes live on the server');
@@ -1410,8 +1418,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.keyboard.press('Escape');
 
     // Export downloads a JSON file with the backend's import-compatible shape.
-    const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: /Export/ }).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('.export-window').getByRole('button', { name: /JSON/ }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.json$/);
 

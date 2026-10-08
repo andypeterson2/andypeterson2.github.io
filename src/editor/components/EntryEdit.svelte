@@ -12,6 +12,7 @@
   import { typeDef } from '../lib/section-types';
   import { itemIncluded } from '../lib/variant-lens';
   import { sortable, reorderKeydown } from '../lib/sortable';
+  import { autogrow } from '../lib/autogrow';
   import TagChips from './TagChips.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
   import type { Entry, Item, Section } from '../lib/types';
@@ -115,8 +116,12 @@
     >
     {#if !overriding}
       <span class="eacts">
-        <UiButton variant="mini" tone="danger" onclick={() => editor.deleteEntry(section, entry.id)}
-          >Delete</UiButton
+        <UiButton
+          variant="mini"
+          tone="danger"
+          title="Delete this entry"
+          aria-label="Delete entry"
+          onclick={() => editor.deleteEntry(section, entry.id)}>×</UiButton
         >
       </span>
     {/if}
@@ -132,8 +137,9 @@
   {#if def?.isParagraph}
     <div class="ov-wrap">
       <textarea
+        use:autogrow
         class="in para"
-        rows="5"
+        rows="1"
         placeholder="Write your summary…"
         value={fieldVal('text')}
         oninput={(e) => onFieldInput('text', e.currentTarget.value)}></textarea>
@@ -260,8 +266,9 @@
                   oninput={() => editor.saveItem(it)}
                 />
                 <textarea
+                  use:autogrow
                   class="in bl-content"
-                  rows="2"
+                  rows="1"
                   placeholder={`${def.itemLabel ?? 'Bullet'} text…`}
                   bind:value={it.content}
                   onfocus={() => editor.suggest.request('item', it, it.content)}
@@ -451,7 +458,13 @@
 
   .para {
     font-family: var(--serif);
-    resize: vertical;
+  }
+
+  /* No scroller and no resize grabber of its own: `autogrow` keeps the box as tall
+     as what is typed into it, so every line is on show. */
+  textarea.in {
+    resize: none;
+    overflow: hidden;
   }
 
   .ov-wrap {

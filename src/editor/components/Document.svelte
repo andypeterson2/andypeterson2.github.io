@@ -202,7 +202,7 @@
 
   .sec {
     margin-top: 28px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
     padding-top: 15px;
   }
 

@@ -770,6 +770,16 @@ class EditorState {
     downloadJson(data, `${label}.json`);
   }
 
+  /** Save the compiled PDF, under the name the preview bar shows. */
+  downloadPdf() {
+    const url = this.preview.url;
+    if (!url || typeof document === 'undefined') return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = this.pdfName;
+    a.click();
+  }
+
   /** The working document as an import-compatible tree, serialized client-side. */
   private localExport(): ExportDoc {
     return buildExport(
@@ -916,6 +926,43 @@ class EditorState {
   }
 
   /** The pristine sample in place of the working document (no undo bookkeeping). */
+  /**
+   * Empty the demo down to a blank document, so a visitor can see what starting from
+   * scratch is like. Demo only: there is no server copy to lose, and the reload that
+   * brings the sample back is one keypress.
+   */
+  clearDemo() {
+    if (this.connected) return;
+    if (
+      this.dirty &&
+      typeof window !== 'undefined' &&
+      !window.confirm('Empty this resume? Your demo edits go with it.')
+    )
+      return;
+    this.person = {
+      id: this.person.id,
+      name: '',
+      personal: {},
+      sections: [],
+      variants: [],
+      coverletter: this.person.coverletter,
+    };
+    this.selection = { kind: 'none' };
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.history.clear();
+    this.preview.reset();
+    this.tags.highlight = null;
+    this.openDrawer = null;
+    this.scrollTarget = null;
+    this.undo.clear();
+    this.dirty = false;
+    this.lastEditedAt = null;
+    this.saveState = 'demo';
+    this.#shadow.reseat(this.person, this.style);
+    this.say('Emptied — reload the page to bring the sample back.');
+  }
+
   private applyPristineDemo() {
     this.person = createDemoPerson(this.demoIdentity ?? undefined);
     this.selection = { kind: 'none' };

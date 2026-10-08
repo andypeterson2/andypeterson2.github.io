@@ -80,7 +80,7 @@
     font-size: var(--text-4xs);
     color: var(--ink-2);
     background: var(--chrome-hi);
-    border: 1px solid var(--paper-4);
+    border: 1px solid var(--ink);
     border-radius: var(--radius-lg);
     padding: 1px 3px 1px 7px;
   }
@@ -103,7 +103,7 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    border: 1px dashed var(--paper-4);
+    border: 1px dashed var(--ink);
     border-radius: var(--radius-lg);
     padding: 1px 3px 1px 5px;
   }

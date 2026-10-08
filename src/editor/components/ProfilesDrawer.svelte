@@ -54,7 +54,12 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete resume</UiButton>
+      <UiButton
+        variant="del"
+        title="Delete this resume"
+        aria-label="Delete resume"
+        onclick={() => confirmDelete(meta)}>×</UiButton
+      >
     </div>
   {/if}
 {/if}
@@ -100,7 +105,7 @@
   .edit {
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
     display: flex;
     flex-direction: column;
     gap: 13px;
