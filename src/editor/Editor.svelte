@@ -352,22 +352,23 @@
         <div class="ex-body">
           <p class="ex-note">Take this resume away in whichever form you need it.</p>
           <button
-            class="ex-opt"
-            disabled={!editor.preview.url}
+            class="s6-btn ex-opt"
+            aria-disabled={!editor.preview.url}
+            title={editor.preview.url
+              ? 'Save the compiled PDF'
+              : 'There is no PDF yet — press Compile first'}
             onclick={() => {
+              if (!editor.preview.url) return;
               editor.downloadPdf();
               exportOpen = false;
             }}
           >
             <span class="ex-name">PDF</span>
-            <span class="ex-what"
-              >{editor.preview.url
-                ? 'The compiled document, as it prints'
-                : 'Compile it first — there is no PDF yet'}</span
-            >
+            <span class="ex-what">The compiled document, as it prints</span>
           </button>
           <button
-            class="ex-opt"
+            class="s6-btn ex-opt"
+            title="Save the whole document as JSON"
             onclick={() => {
               void editor.exportJson();
               exportOpen = false;
@@ -377,7 +378,8 @@
             <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
           </button>
           <button
-            class="ex-opt"
+            class="s6-btn ex-opt"
+            title="Save the work history as paste-ready blocks"
             onclick={() => {
               void editor.exportLinkedin();
               exportOpen = false;
@@ -661,38 +663,15 @@
     color: var(--ink-2);
   }
 
-  /* One row per format: what it is, then what it gives you. */
+  /* One row per format: what it is, then what it gives you. The shared .s6-btn
+     carries everything else, out-of-reach included. */
   .ex-opt {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 2px;
     text-align: left;
     padding: 8px 10px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-
-  .ex-opt:hover:not(:disabled),
-  .ex-opt:focus-visible:not(:disabled) {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .ex-opt:disabled {
-    cursor: default;
-    background: var(--dither-light);
-  }
-
-  /* The row carries its own paper panel, so the stipple halo that keeps a button's
-     label legible would only blur this one. */
-  .ex-opt:disabled .ex-name,
-  .ex-opt:disabled .ex-what {
-    background: var(--paper);
-    text-shadow: none;
-    padding: 0 3px;
   }
 
   .ex-name {
