@@ -23,6 +23,7 @@ import { humanize, FieldShadow } from './undo';
 import { ProfileCache } from './profile-cache';
 import type { SaveHost } from './host';
 import { move, pdfFileName } from './util';
+import { exportLinkedin } from './linkedin';
 
 /** Trigger a client-side download of `data` as a pretty-printed JSON file. */
 function downloadJson(data: unknown, filename: string) {
@@ -748,14 +749,22 @@ class EditorState {
    * the authoritative backend export; the local demo (and any unsaved edits) is
    * serialized client-side. Either way it re-imports losslessly.
    */
-  async exportJson() {
-    if (this.noProfiles) return;
-    // Keep Unicode letters (resume, non-Latin names); strip only filesystem-unsafe
-    // characters + leading/trailing dots/spaces (\w would flatten accents to dashes).
-    const label =
+  /**
+   * The stem both JSON exports share. Keeps Unicode letters (non-Latin names);
+   * strips only filesystem-unsafe characters and leading/trailing dots or spaces
+   * (`\w` would flatten accents to dashes).
+   */
+  private exportLabel(): string {
+    return (
       (this.profileLabel || 'resume')
         .replace(/[/\\:*?"<>|\x00-\x1f]+/g, '-')
-        .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume';
+        .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume'
+    );
+  }
+
+  async exportJson() {
+    if (this.noProfiles) return;
+    const label = this.exportLabel();
     let data: unknown;
     if (this.connected && this.activePersonId != null) {
       const res = await api.exportPerson(this.activePersonId);
@@ -768,6 +777,16 @@ class EditorState {
       data = this.localExport();
     }
     downloadJson(data, `${label}.json`);
+  }
+
+  /**
+   * The work history as LinkedIn-ready blocks. The same transform the cv backend
+   * runs, done here so a demo session gets the same file without an account.
+   */
+  async exportLinkedin() {
+    if (this.noProfiles) return;
+    const data = await exportLinkedin(this.person.sections, this.activeVariant);
+    downloadJson(data, `${this.exportLabel()}-linkedin.json`);
   }
 
   /** Save the compiled PDF, under the name the preview bar shows. */

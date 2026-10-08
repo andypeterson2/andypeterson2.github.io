@@ -361,6 +361,18 @@
           <span class="ex-name">JSON</span>
           <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
         </button>
+        <button
+          class="ex-opt"
+          onclick={() => {
+            void editor.exportLinkedin();
+            exportOpen = false;
+          }}
+        >
+          <span class="ex-name">LinkedIn JSON</span>
+          <span class="ex-what"
+            >Work history as paste-ready blocks, for LinkedIn, Indeed or Handshake</span
+          >
+        </button>
       </div>
     </div>
   {/if}

@@ -1420,7 +1420,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Export downloads a JSON file with the backend's import-compatible shape.
     await page.getByRole('button', { name: /Export/ }).click();
     const downloadPromise = page.waitForEvent('download');
-    await page.locator('.export-window').getByRole('button', { name: /JSON/ }).click();
+    await page.locator('.export-window').getByRole('button', { name: /^JSON/ }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.json$/);
 
