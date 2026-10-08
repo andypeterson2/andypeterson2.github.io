@@ -13,11 +13,13 @@ interface Props {
   backend?: { service: string };
   /** Demos whose window should end where their content does. */
   fitContent?: boolean;
+  /** Demos that scroll their own regions (the editor): the pane holds still. */
+  ownScroll?: boolean;
 }
-const { title, description, backend, fitContent } = Astro.props;
+const { title, description, backend, fitContent, ownScroll } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} fitContent={fitContent}>
+<BaseLayout title={title} description={description} fitContent={fitContent} ownScroll={ownScroll}>
   <Fragment slot="head">
     {backend && <meta name="site-backend" content={backend.service} />}
     <slot name="head" />

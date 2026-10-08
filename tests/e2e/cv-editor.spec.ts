@@ -979,16 +979,14 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The PDF renderer paints one <canvas> per page into the pane (the 2-page fixture → 2).
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
-    // The editor has one scroller, so the pane lays its pages out in full rather than
-    // clipping them into a column of its own — guards the "doesn't reach the bottom"
-    // regression, which is now about being able to scroll to the last page at all.
-    const clipped = await preview
+    // The pane scrolls internally (pages taller than the viewport-capped column) rather
+    // than growing the shell — guards the "doesn't reach the bottom" regression.
+    const scrolls = await preview
       .locator('.pv-pages')
-      .evaluate((el) => el.scrollHeight > el.clientHeight + 4);
-    expect(clipped).toBe(false);
-    const lastPage = preview.locator('.pv-pages canvas').last();
-    await lastPage.scrollIntoViewIfNeeded();
-    await expect(lastPage).toBeInViewport();
+      .evaluate(
+        (el) => el.scrollHeight > el.clientHeight + 4 && el.clientHeight <= window.innerHeight,
+      );
+    expect(scrolls).toBe(true);
     await expect.poll(() => pdfHits).toBe(1);
     // The download link carries the variant filename.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(

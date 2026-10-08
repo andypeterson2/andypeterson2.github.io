@@ -100,9 +100,10 @@
 {/if}
 
 <style>
-  /* No scroller of its own: the editor has one, and the pages lay out in full
-     under it so the last of them is reachable. */
   .pv-pages {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
     display: flex;
     flex-direction: column;
     align-items: center;

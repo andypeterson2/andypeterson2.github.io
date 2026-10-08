@@ -348,11 +348,14 @@
 </div>
 
 <style>
-  /* As tall as its content: the page's own pane is the one scroller, so the toolbar
-     can stick to its top while the document runs past underneath. */
+  /* Exactly as tall as the pane it is slotted into, so the pane never scrolls and
+     the document below the toolbar carries the editor's one scrollbar — which then
+     starts under the toolbar rather than running up alongside it. */
   .stage {
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   /* Hollow = unset = nothing is being written: the System-6 idiom, so demo never
@@ -493,6 +496,8 @@
      inside its body, exactly as the home cards nest inside the "Home" window. */
   /* No frame of its own: the page's own .site-window is the window. */
   .workspace {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -501,25 +506,24 @@
   /* No inset of its own: the toolbar and the document run the full width of the
      page, as the menubar above them does. Each supplies its own padding. */
   .workspace-body {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
   /* The toolbar sits above the document, separated by a rule rather than a frame. */
-  /* Stuck to the top of the pane, bled out to its edges so the document passes
-     under it rather than through the strip of padding above it. */
+  /* Sits above the scroller, so the document's scrollbar begins below this. */
   .toolbar-window {
-    position: sticky;
-    top: calc(-1 * var(--pane-pad-y));
-    z-index: var(--z-sticky);
-    margin: calc(-1 * var(--pane-pad-y)) calc(-1 * var(--pane-pad-x)) 0;
-    padding: var(--pane-pad-y) var(--pane-pad-x) 0;
+    flex: none;
     background: var(--paper);
     border-bottom: 1px solid var(--ink);
   }
 
   /* The document fills the remaining height; its .wbody panes scroll inside it. */
   .doc-window {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
@@ -656,16 +660,21 @@
   }
 
   .wbody {
+    flex: 1;
+    min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .wbody.split {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 
-  /* No scroller of its own: the document is as tall as it is and the pane scrolls it. */
+  /* The editor's one scrollbar, below the toolbar rather than beside it. */
   .doc-scroll {
+    min-height: 0;
+    overflow: auto;
     background: var(--paper);
   }
 
