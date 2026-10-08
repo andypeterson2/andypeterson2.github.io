@@ -29,30 +29,6 @@
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
 
-  // The menubar heart toggles the site theme. Its aria is set imperatively: the island
-  // renders light on the server but hydrates against the real theme.
-  let heartEl: HTMLButtonElement | undefined;
-  let theme: 'light' | 'dark' = 'light';
-  function reflectTheme() {
-    const dark = theme === 'dark';
-    const btn = heartEl ?? document.querySelector<HTMLButtonElement>('.heart-toggle');
-    btn?.setAttribute('aria-pressed', String(dark)); // the name stays "Dark mode"
-  }
-  onMount(() => {
-    theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-    reflectTheme();
-  });
-  function toggleTheme() {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = theme;
-    try {
-      localStorage.setItem('sm-theme', theme);
-    } catch {
-      /* private mode: the theme just won't persist */
-    }
-    reflectTheme();
-  }
-
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
@@ -135,6 +111,13 @@
   onMount(() => {
     hydrated = true;
     void editor.connect();
+    // The sign-in lives in the site menubar, which knows nothing about unsaved
+    // demo edits: this is where they are stashed before it navigates away.
+    const onSignIn = (e: Event) => {
+      if (!editor.prepareSignIn()) e.preventDefault();
+    };
+    document.addEventListener('site:signin', onSignIn);
+    return () => document.removeEventListener('site:signin', onSignIn);
   });
 
   const isEditable = (t: EventTarget | null) =>
@@ -159,43 +142,7 @@
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   <div class="menubar">
-    <nav class="site-nav" aria-label="Site">
-      <button
-        type="button"
-        class="navlink heart-toggle"
-        bind:this={heartEl}
-        aria-label="Dark mode"
-        title="Dark mode"
-        aria-pressed="false"
-        onclick={toggleTheme}
-      >
-        <img src="/icons/heart.svg" alt="" class="heart-icon" width="18" height="18" />
-      </button>
-      <a class="navlink" href="/">Home</a>
-      <a class="navlink" href="/projects/">Projects</a>
-    </nav>
     <MenuBar {menus} />
-    <!-- The portal's own menubar is hidden on a bare page, so the account sits at the
-         right of this one, where the rest of the site puts it. -->
-    <nav class="auth-nav" aria-label="Account">
-      {#if editor.identity}
-        <button
-          type="button"
-          class="navlink"
-          title={editor.identity.email ? `Signed in as ${editor.identity.email}` : 'Sign out'}
-          onclick={() => editor.signOut()}>Sign out</button
-        >
-      {:else}
-        <button
-          type="button"
-          class="navlink"
-          disabled={editor.signingIn}
-          title="Sign in with Google to keep your edits"
-          onclick={() => editor.signIn()}
-          >{editor.signingIn ? 'Signing in…' : 'Sign in'}</button
-        >
-      {/if}
-    </nav>
   </div>
 
   {#if editor.signingIn}
@@ -235,11 +182,6 @@
   {/if}
 
   <div class="workspace">
-    <div class="titlebar app-titlebar">
-      <span class="close"></span><span class="title app-title">Resume Editor</span><span
-        class="fill"
-      ></span>
-    </div>
     <div class="workspace-body">
       <div class="toolbar-window">
         <div class="toolbar">
@@ -485,10 +427,8 @@
     border: 0;
   }
 
-  /* Mirrors the portfolio menubar: Chicago face, 3px
-     rule, rounded top, flush full-height items that invert on hover. No
-     overflow:hidden here (it would clip the pull-down menus) — the corner is
-     rounded on the leftmost item (the heart) itself instead. */
+  /* The editor's own commands, under the window's title bar. No overflow:hidden
+     here — it would clip the pull-down menus. */
   .menubar {
     flex: none;
     display: flex;
@@ -503,55 +443,6 @@
     position: sticky;
     top: 0;
     z-index: var(--z-sticky);
-  }
-
-  .auth-nav {
-    display: flex;
-    align-items: stretch;
-    margin-left: auto;
-  }
-
-  /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
-     invert on hover, mirroring the portfolio menubar. */
-  .site-nav {
-    display: flex;
-    align-items: stretch;
-  }
-
-  .navlink {
-    display: flex;
-    align-items: center;
-    padding: 0.6vh 1vw;
-    font: inherit;
-    line-height: 1;
-    color: var(--ink);
-    background: none;
-    border: 0;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .navlink:hover,
-  .navlink:focus-visible {
-    background: var(--ink);
-    color: var(--paper);
-    outline: none;
-  }
-
-  /* The heart is the leftmost item, so it carries the menubar's rounded corner. */
-  .heart-toggle {
-    border-top-left-radius: 0.75vw;
-  }
-
-  .heart-icon {
-    width: 1em;
-    height: 1em;
-    display: block;
-  }
-
-  .heart-toggle:hover .heart-icon,
-  .heart-toggle:focus-visible .heart-icon {
-    filter: invert(1);
   }
 
   /* On phones the floating site-nav takes over (as on the portfolio). */
@@ -699,18 +590,13 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
-  /* The System-6 window the whole editor lives in — the same frame every other
-     page draws around its content, at the width of this one. */
+  /* No frame of its own: the page's own .site-window is the window. */
   .workspace {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
-    background: var(--paper);
-    border: 2px solid var(--ink);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
   }
 
   /* No inset of its own: the toolbar and the document run the full width of the
@@ -1183,13 +1069,6 @@
       flex: none;
     }
 
-    /* The outer "Resume Editor" frame is desktop chrome. On phones the editor is a
-       full-bleed fixed layout (menubar / document / status are each position:fixed),
-       so drop the frame and let the fixed windows fill the viewport as before. */
-    .app-titlebar {
-      display: none;
-    }
-
     .workspace {
       max-width: none;
       margin: 0;
@@ -1226,12 +1105,4 @@
     }
   }
 
-  /* Short laptop windows (1366×768 minus browser chrome is ~650px): the decorative
-     "Resume Editor" frame title costs height a small screen needs; the menubar already
-     names the app, so drop it and give the document the room. */
-  @media (width > 768px) and (height > 500px) and (height <= 760px) {
-    .app-titlebar {
-      display: none;
-    }
-  }
 </style>

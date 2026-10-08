@@ -36,6 +36,10 @@
   }
 
   function signIn(): void {
+    // A page with unsaved work gets to prepare for the redirect, or call it off:
+    // the editor stashes a visitor's demo edits here so they survive the round trip.
+    const ready = document.dispatchEvent(new CustomEvent('site:signin', { cancelable: true }));
+    if (!ready) return;
     location.href = `${GATEWAY}/auth/login?redirect=${encodeURIComponent(location.href)}`;
   }
 

@@ -1065,24 +1065,29 @@ class EditorState {
   }
 
   /**
-   * Sign in with Google (self-hosted OIDC). A full-page
-   * redirect to the gateway's /auth/login, which runs the Google flow and returns
-   * here with a session cookie; `redirect` carries the browser back to this editor.
+   * Make ready for the site menubar's Google sign-in, a same-tab redirect to the
+   * gateway's /auth/login that returns here with a session cookie. Keeps a demo
+   * visitor's edits so they can bring them into the account afterwards; returns
+   * false when they'd rather not go than lose them.
    */
-  signIn() {
-    if (typeof window === 'undefined') return;
-    // Sign-in is a same-tab redirect: keep the visitor's demo edits so they can
-    // bring them into their account afterwards. If this browser won't
-    // let us keep them, say so before they're lost.
+  prepareSignIn(): boolean {
+    if (typeof window === 'undefined') return true;
+    // If this browser won't let us keep the edits, say so before they're lost.
     if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
       const go = window.confirm(
         "This browser won't let the editor keep your demo edits through sign-in. " +
           'Sign in anyway? (File ▸ Export as JSON saves a copy first.)',
       );
-      if (!go) return;
+      if (!go) return false;
     }
     this.signingIn = true;
     this.connectError = null;
+    return true;
+  }
+
+  /** Start the sign-in from inside the editor (the drawers' inline offers). */
+  signIn() {
+    if (typeof window === 'undefined' || !this.prepareSignIn()) return;
     window.location.href = api.loginUrl(window.location.href);
   }
 

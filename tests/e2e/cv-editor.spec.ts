@@ -74,10 +74,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     // The demo renders the owner's real CV, but its name and contacts come from build-time
     // env (blank here), so assert on the hardcoded professional content.
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
-    // Portal chrome is stripped in bare mode.
-    await expect(page.locator('.site-menubar')).toBeHidden();
+    // The editor is an ordinary page: the portal's own chrome frames it.
+    await expect(page.locator('.site-menubar')).toBeVisible();
+    await expect(page.locator('.title-bar .title')).toHaveText('LaTeX Resume Editor');
     // Signing in is the menubar's; the status bar says only that nothing is saved.
-    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
     await expect(page.locator('.statusbar')).toContainText('demo — not saved');
     await expect(page.locator('.conn')).toHaveCount(0);
   });
@@ -172,14 +173,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     // With the gateway reachable, a 403 means "sign in", not "down": the demo is
     // there to edit, and the menubar offers the way to keep those edits.
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
-    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
     await expect(page.locator('.statusbar')).toContainText('demo — not saved');
   });
 
   test('File ▸ Reset demo restores the sample', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
 
     // Edit the demo — the whole point of letting people touch it.
     await page.locator('.entry').first().click();
@@ -1555,7 +1556,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page); // gotoEditor defaults /auth/me → 401 (signed out)
-    await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
     await expect(page.locator('.statusbar .account')).toHaveCount(0);
   });
 
@@ -1765,7 +1766,7 @@ test.describe('Demo edits survive sign-in', () => {
       }),
     );
 
-    await page.locator('.auth-nav button').click();
+    await page.locator('.site-menubar .auth-btn').click();
     const offer = page.getByRole('dialog', { name: 'Your demo edits' });
     await expect(offer).toBeVisible({ timeout: 15000 });
     await offer.getByRole('button', { name: 'Bring them in' }).click();
@@ -1792,7 +1793,7 @@ test.describe('Editor state copy', () => {
     await expect(page.locator('.conn')).toContainText("Couldn't load your résumés");
     // Offering a sign-in to someone already signed in would just loop, so the
     // menubar says Sign out and the retry is the only thing on offer.
-    await expect(page.locator('.auth-nav button')).toHaveText('Sign out');
+    await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign out');
   });
 
   test('on a phone the status bar still says the demo is not saved', async ({ page }) => {
