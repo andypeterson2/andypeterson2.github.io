@@ -241,7 +241,7 @@
       ></span>
     </div>
     <div class="workspace-body">
-      <div class="window toolbar-window">
+      <div class="toolbar-window">
         <div class="toolbar">
           <span class="field"
             >Profile
@@ -306,7 +306,7 @@
         </div>
       </div>
 
-      <div class="window doc-window">
+      <div class="doc-window">
         <div class="wbody" class:split={editor.preview.open}>
           <div class="doc-scroll">
             {#if editor.noProfiles}
@@ -469,8 +469,7 @@
   }
 
   /* The editor's chrome text, in its own windows too, is set in the mono face. */
-  .stage,
-  .stage :global(.window) {
+  .stage {
     font-family: var(--font-mono);
   }
 
@@ -706,31 +705,25 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 1320px;
-    margin: var(--canvas-pad-y) auto;
     background: var(--paper);
-    border: 2px solid var(--ink);
-    border-right-width: 4px;
-    border-bottom-width: 4px;
   }
 
+  /* No inset of its own: the toolbar and the document run the full width of the
+     page, as the menubar above them does. Each supplies its own padding. */
   .workspace-body {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: var(--pane-pad-y) var(--pane-pad-x);
   }
 
-  /* The toolbar is the body of its own System-6 window (.toolbar-window) above
-     the document — the .window wrapper supplies the paper/border/shadow chrome
-     and striped titlebar, matching the document and drawer windows. */
+  /* The toolbar sits above the document, separated by a rule rather than a frame. */
   .toolbar-window {
     flex: none;
-    margin-bottom: var(--window-gap);
+    border-bottom: 1px solid var(--ink);
   }
 
-  /* The document window fills the remaining height; its .wbody panes scroll inside it. */
+  /* The document fills the remaining height; its .wbody panes scroll inside it. */
   .doc-window {
     flex: 1;
     min-height: 0;
@@ -806,11 +799,6 @@
     width: 1px;
     margin: 2px;
     background: var(--ink-5);
-  }
-
-  .window {
-    background: var(--paper);
-    border: 1.5px solid var(--ink);
   }
 
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
@@ -1172,9 +1160,8 @@
     }
 
     /* Resume: fixed between the two bars, edge-to-edge; only its body scrolls, so the
-       three fixed regions together cover the whole viewport (no grey gaps). system.css's
-       global `.window` also adds margin:16px + min-width:320px — override those too. */
-    .window {
+       three fixed regions together cover the whole viewport (no grey gaps). */
+    .doc-window {
       position: fixed;
       inset: var(--top-h) 0 var(--bot-h) 0;
       display: flex;
