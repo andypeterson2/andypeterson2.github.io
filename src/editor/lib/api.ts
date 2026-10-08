@@ -13,6 +13,7 @@ import type {
   CoverletterHeader,
   LetterSection,
 } from './types';
+import { loginUrl as gatewayLoginUrl } from '../../lib/gateway';
 import { GLYPH_BY_CMD } from './symbols';
 import type {
   RawMain,
@@ -212,7 +213,7 @@ export class CvApi {
   }
   /** Full-page Google sign-in URL; `redirect` returns the browser to the editor. */
   loginUrl(redirect: string): string {
-    return `${this.authBase}/auth/login?redirect=${encodeURIComponent(redirect)}`;
+    return gatewayLoginUrl(this.authBase, redirect);
   }
   /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
   async me(): Promise<{ authenticated: boolean; email: string | null; name: string | null }> {

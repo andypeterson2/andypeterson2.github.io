@@ -16,3 +16,11 @@ export function gatewayOriginOf(appBase: string | undefined): string {
     return GATEWAY_ORIGIN;
   }
 }
+
+/**
+ * The gateway's full-page Google sign-in, returning the browser to `redirect`.
+ * One builder for every caller: the menu bar and the editor sign in the same way.
+ */
+export function loginUrl(origin: string, redirect: string): string {
+  return `${origin}/auth/login?redirect=${encodeURIComponent(redirect)}`;
+}
