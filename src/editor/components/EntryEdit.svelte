@@ -484,7 +484,6 @@
     background: var(--paper);
     color: var(--ink-2);
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
     white-space: nowrap;
   }
 

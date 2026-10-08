@@ -51,7 +51,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius-md);
     background: var(--paper);
-    box-shadow: var(--shadow);
     padding: 13px 14px;
     margin: 0 -10px;
     font-family: var(--sans);

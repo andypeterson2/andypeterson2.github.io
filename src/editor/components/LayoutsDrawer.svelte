@@ -66,7 +66,6 @@
     padding: 9px 11px;
     cursor: pointer;
     font-family: var(--sans);
-    box-shadow: var(--shadow-sm);
   }
 
   .row.on {

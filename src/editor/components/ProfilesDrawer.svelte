@@ -90,7 +90,6 @@
 
   :global(.ui.opt.on) .radio {
     border-color: var(--paper);
-    box-shadow: var(--shadow-ring);
   }
 
   .opt-name {

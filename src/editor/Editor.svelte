@@ -145,20 +145,6 @@
               onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
             ></span
           >
-          <!-- Which tier is in play, and whether the work is kept: two separate
-               notices, because they answer two different questions. -->
-          <span class="note" class:live={editor.connected}
-            >{editor.connected ? 'live' : 'demo'}</span
-          >
-          <span class="note" role="status"
-            >{editor.connected
-              ? editor.saveState === 'saving'
-                ? 'saving…'
-                : editor.saveState === 'error'
-                  ? '⚠ save failed'
-                  : '✓ saved'
-              : 'not saved'}</span
-          >
           {#if !demoMode || signedInOffline}
             <!-- The retry for a session whose resumes didn't load. Signing in is the
                  site menubar's, so a signed-out demo shows nothing here. -->
@@ -188,22 +174,38 @@
           {/if}
           <UiButton
             variant="toolbar"
-            title={editor.connected
-              ? 'The demo sample is only shown while signed out'
-              : 'Empty the demo, to start from nothing'}
-            disabled={editor.connected}
-            onclick={() => editor.clearDemo()}>⌫ Clear</UiButton
+            active={editor.openDrawer === 'history'}
+            onclick={() => (editor.openDrawer = 'history')}>History</UiButton
           >
           <UiButton
             variant="toolbar"
-            active={editor.openDrawer === 'history'}
-            onclick={() => (editor.openDrawer = 'history')}>History</UiButton
+            active={exportOpen}
+            aria-expanded={exportOpen}
+            title="Take this resume away in a chosen format"
+            disabled={editor.noProfiles}
+            onclick={() => (exportOpen = !exportOpen)}>⤓ Export</UiButton
+          >
+          <!-- Which tier is in play, and whether the work is kept: two separate
+               notices, because they answer two different questions. They report rather
+               than act, so they sit at the far end of the row. -->
+          <span class="tb-gap"></span>
+          <span class="note" class:live={editor.connected}
+            >{editor.connected ? 'live' : 'demo'}</span
+          >
+          <span class="note" role="status"
+            >{editor.connected
+              ? editor.saveState === 'saving'
+                ? 'saving…'
+                : editor.saveState === 'error'
+                  ? '⚠ save failed'
+                  : '✓ saved'
+              : 'not saved'}</span
           >
         </div>
 
         <!-- Below the line, the commands sit over what they act on: the document's
              own on the left, the PDF's on the right, splitting where the panes do. -->
-        <div class="tb-split" class:split={editor.preview.open}>
+        <div class="tb-split">
           <div class="tb-doc">
             <UiButton
               variant="toolbar"
@@ -221,17 +223,17 @@
             >
             <UiButton
               variant="toolbar"
-              active={editor.openDrawer === 'tags'}
-              onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
+              title={editor.connected
+                ? 'The demo sample is only shown while signed out'
+                : 'Empty the demo, to start from nothing'}
+              disabled={editor.connected}
+              onclick={() => editor.clearDemo()}>⌫ Clear</UiButton
             >
+            <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
-              active={editor.openDrawer === 'layouts'}
-              title={editor.connected
-                ? 'Choose the LaTeX template'
-                : 'Choosing a template needs an account — sign in to pick one'}
-              disabled={!editor.connected}
-              onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
+              active={editor.openDrawer === 'tags'}
+              onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
             >
             <UiButton
               variant="toolbar"
@@ -250,6 +252,15 @@
           <div class="tb-pdf">
             <UiButton
               variant="toolbar"
+              active={editor.openDrawer === 'layouts'}
+              title={editor.connected
+                ? 'Choose the LaTeX template'
+                : 'Choosing a template needs an account — sign in to pick one'}
+              disabled={!editor.connected}
+              onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
+            >
+            <UiButton
+              variant="toolbar"
               active={editor.preview.open}
               onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
             >
@@ -261,14 +272,6 @@
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
               >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
-            >
-            <UiButton
-              variant="toolbar"
-              active={exportOpen}
-              aria-expanded={exportOpen}
-              title="Take this resume away in a chosen format"
-              disabled={editor.noProfiles}
-              onclick={() => (exportOpen = !exportOpen)}>⤓ Export</UiButton
             >
           </div>
         </div>
@@ -626,7 +629,7 @@
   /* The caret keeps its place in the field behind, so a glyph lands where it was. */
   .sym-window {
     position: relative;
-    width: min(24rem, calc(100vw - 48px));
+    width: min(34rem, calc(100vw - 48px));
     max-height: calc(100vh - 48px);
     display: flex;
     flex-direction: column;
@@ -637,8 +640,11 @@
   }
 
   .sym-body {
-    max-height: min(22rem, 50vh);
     overflow: auto;
+  }
+
+  .export-window {
+    width: min(24rem, calc(100vw - 48px));
   }
 
   .ex-body {
@@ -678,6 +684,15 @@
   .ex-opt:disabled {
     cursor: default;
     background: var(--dither-light);
+  }
+
+  /* The row carries its own paper panel, so the stipple halo that keeps a button's
+     label legible would only blur this one. */
+  .ex-opt:disabled .ex-name,
+  .ex-opt:disabled .ex-what {
+    background: var(--paper);
+    text-shadow: none;
+    padding: 0 3px;
   }
 
   .ex-name {
@@ -731,10 +746,6 @@
      commands sits over the pane it acts on. */
   .tb-split {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .tb-split.split {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 
@@ -791,7 +802,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius);
     padding: 4px 10px;
-    box-shadow: var(--shadow);
   }
 
   button.popup {
@@ -806,7 +816,6 @@
 
   button.popup:active {
     transform: translate(1px, 1px);
-    box-shadow: var(--shadow-sm);
   }
 
   .popup.lens {
@@ -927,12 +936,10 @@
     border-radius: var(--radius-md);
     padding: 8px 16px;
     cursor: pointer;
-    box-shadow: var(--shadow);
   }
 
   .np-btn:active {
     transform: translate(1px, 1px);
-    box-shadow: var(--shadow-sm);
   }
 
   /* Cap the preview column to the same height as the document column (.doc-scroll)
@@ -979,7 +986,6 @@
     padding: 3px 9px;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: var(--shadow-sm);
   }
 
   .pv-btn:active {
@@ -1029,6 +1035,12 @@
 
   /* The tier and the save state, each its own notice on the toolbar. Mono and
      muted: they report, they are not pressed. */
+
+  /* Pushes whatever follows it to the right end of the row. */
+  .tb-gap {
+    flex: 1;
+  }
+
   .note {
     font-family: var(--mono);
     font-size: var(--text-4xs);

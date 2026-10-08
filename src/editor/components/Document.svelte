@@ -191,7 +191,7 @@
   }
 
   .doc-head h1.untitled {
-    color: var(--dim-text);
+    color: var(--ink);
   }
 
   .contact {
@@ -224,10 +224,10 @@
     margin: 0;
   }
 
+  /* Always at full strength: a control that fades until hovered reads as disabled,
+     and a half-strength mark is a grey the rest of the editor does not use. */
   .sec-tools {
     margin-left: auto;
-    opacity: 0.35;
-    transition: opacity var(--dur-fast);
   }
 
   .grip {
@@ -239,16 +239,6 @@
     border: 0;
     padding: 2px 4px;
     cursor: grab;
-    opacity: 0.3;
-    transition: opacity var(--dur-fast);
-  }
-
-  .sec:hover .grip {
-    opacity: 0.85;
-  }
-
-  .grip:hover {
-    opacity: 1;
   }
 
   .grip:active {
@@ -263,10 +253,6 @@
     outline: 2px dashed var(--dim);
     outline-offset: 2px;
     border-radius: var(--radius);
-  }
-
-  .sec:hover .sec-tools {
-    opacity: 1;
   }
 
   .tool {
@@ -446,7 +432,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius-md);
     background: var(--paper);
-    box-shadow: var(--shadow);
     padding: 8px;
   }
 
@@ -499,7 +484,6 @@
     background: var(--paper);
     padding: 5px;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
   }
 
   /* Touch: grips and section tools get a 44px hit area and stop hiding behind

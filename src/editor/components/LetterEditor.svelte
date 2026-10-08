@@ -144,7 +144,6 @@
     border-radius: var(--radius);
     padding: 3px 9px;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
   }
 
   .sym-toggle.on {
