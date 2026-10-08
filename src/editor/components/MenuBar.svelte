@@ -85,7 +85,7 @@
     );
   }
   function onMegaKey(e: KeyboardEvent) {
-    // Stop here so the window-level Escape (which would end a tour) never fires.
+    // Stop here so the window-level Escape never fires.
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
@@ -112,7 +112,7 @@
     const pool = enabledItems(menus[mi]);
     const cur = itemEls.findIndex((el) => el === document.activeElement);
     if (e.key === 'Escape') {
-      // Stop here: the window-level Escape handlers would otherwise end the tour
+      // Stop here: the window-level Escape handler would otherwise see it too
       // or close a drawer behind the menu.
       e.preventDefault();
       e.stopPropagation();

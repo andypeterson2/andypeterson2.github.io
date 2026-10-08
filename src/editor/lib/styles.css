@@ -40,11 +40,9 @@
   box-sizing: border-box;
 }
 
-/* A small System-6 utility window floating above the statusbar. Shared by the
-   save-error toast and the guided-tour narrator: same paper, same 1px ink rule,
-   same hard shadow, same mono chrome. They are one family, so the triad is
-   named once here instead of being retyped per component. Components add only
-   their own width and inner layout. */
+/* A small System-6 utility window floating above the statusbar, used by the
+   save-error toast: paper, a 1px ink rule, a hard shadow and mono chrome.
+   Components add only their own width and inner layout. */
 .floating-panel {
   position: fixed;
   bottom: 46px;
@@ -83,7 +81,7 @@ body {
    scoped inside components. `.on` is the shared selected/pressed modifier
    (the component's `active` prop). */
 
-/* toolbar actions (Tags/Layout/Style/Preview/Compile/Export, tour start) */
+/* toolbar actions (Tags/Layout/Style/Preview/Compile/Export) */
 .ui.btn {
   font-size: var(--text-3xs);
   font-weight: 600;
@@ -164,27 +162,6 @@ body {
 .ui.mini:active {
   transform: translate(1px, 1px);
   box-shadow: none;
-}
-
-/* the tour bubble's mono controls */
-.ui.tbtn {
-  font-family: var(--mono);
-  font-size: var(--text-3xs);
-  color: var(--ink);
-  background: var(--chrome-hi);
-  border: 1px solid var(--ink);
-  padding: 2px 8px;
-  cursor: pointer;
-}
-
-.ui.tbtn:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.ui.tbtn:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
 }
 
 /* pill chips (history versions; go/add carry the weight) */

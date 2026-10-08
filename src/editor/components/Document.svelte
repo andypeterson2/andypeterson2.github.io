@@ -133,7 +133,6 @@
         class:dim={sectionDim(section)}
         data-sortable
         id={`sec-${section.id}`}
-        data-tour-spot={section.type === 'experience' ? 'experience' : undefined}
         use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
       >
         <div class="sec-head">

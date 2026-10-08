@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { gotoEditor, EDITOR_APP } from './helpers';
-import { DWELL_MS } from '../../src/editor/lib/tour';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -168,31 +167,21 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
     // state every visitor lands in, since the backend is owner-only.
     await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
-    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
+    await gotoEditor(page);
 
-    const invite = page.locator('.invite');
-    await expect(invite).toBeVisible();
-    await expect(invite).toContainText('Nothing is saved');
-    // With the gateway reachable, a 403 means "sign in", not "down": the menubar offers
-    // it, and tapping it opens the Access popup.
+    // With the gateway reachable, a 403 means "sign in", not "down": the demo is
+    // there to edit, and the menubar offers the way to keep those edits.
+    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
+    await expect(page.locator('.statusbar')).toContainText('demo — not saved');
   });
 
-  test('the invitation dismisses for good; File ▸ Reset demo restores the sample', async ({
-    page,
-  }) => {
+  test('File ▸ Reset demo restores the sample', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
-
-    // The invite is a modal pop-up on load. Dismissing is final — it only auto-appears
-    // on load, and the menubar is what still offers the sign-in.
-    const invite = page.locator('.invite');
-    await expect(invite).toBeVisible();
-    await invite.getByRole('button', { name: 'Dismiss' }).click();
-    await expect(invite).toHaveCount(0);
+    await gotoEditor(page);
     await expect(page.locator('.auth-nav button')).toHaveText('Sign in');
 
-    // Edit the demo — the whole point of inviting people to touch it.
+    // Edit the demo — the whole point of letting people touch it.
     await page.locator('.entry').first().click();
     const inline = page.locator('.doc .edit');
     await expect(inline).toBeVisible();
@@ -247,7 +236,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(file).toBeFocused();
 
     // A press outside dismisses it, the way a real pull-down does. The bar's left
-    // edge is the target: its label is centred, under where the tour panel sits.
+    // edge is the target, since its label is centred.
     await file.click();
     await expect(drop).toBeVisible();
     await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
@@ -547,132 +536,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await openMenu(page, 'File');
     await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeDisabled();
     await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeEnabled();
-  });
-
-  test('the guided tour drives the real editor, then yields at the first touch', async ({
-    page,
-  }) => {
-    await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
-
-    const tour = page.locator('.tour');
-    await page.locator('.tour-start').click();
-    await expect(tour).toBeVisible();
-    await expect(tour.locator('.count')).toHaveText('1 of 7');
-    // Step 1 drives the REAL editor — the same inline editor a click opens.
-    await expect(page.locator('.doc .edit')).toBeVisible();
-
-    // Step 2 types a new bullet into the document. Auto-advance waits out step 1's dwell
-    // (long enough to read each caption), so the timeout tracks DWELL_MS.
-    await expect(tour.locator('.count')).toHaveText('2 of 7', { timeout: DWELL_MS + 4000 });
-    const typed = page.locator('.doc .edit .bl-content').last();
-    await expect(typed).toHaveValue(/^Added/);
-    const bullets = await page.locator('.doc .edit .bl').count();
-
-    // The signature interaction: one touch outside the tour hands back the wheel.
-    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
-    await expect(tour.locator('.wheel')).toHaveText('Paused — you have the wheel.');
-    await expect(tour.getByRole('button', { name: /Resume/ })).toBeVisible();
-
-    // It stops mid-word and stays stopped — a paused tour never auto-resumes.
-    const frozen = await typed.inputValue();
-    await page.waitForTimeout(1200); // > nothing: proves no dwell timer survived
-    expect(await typed.inputValue()).toBe(frozen);
-    await expect(tour.locator('.count')).toHaveText('2 of 7');
-
-    // Resume re-enters the step, so narration matches the screen — and because
-    // `enter` is idempotent it restages the same bullet rather than adding another.
-    await tour.getByRole('button', { name: /Resume/ }).click();
-    await expect(tour.locator('.wheel')).toHaveCount(0);
-    await expect(typed).toHaveValue(/threshold\.$/, { timeout: 5000 });
-    expect(await page.locator('.doc .edit .bl').count()).toBe(bullets);
-
-    // Esc ends it outright (the drawer convention).
-    await page.keyboard.press('Escape');
-    await expect(tour).toHaveCount(0);
-  });
-
-  test('reduced motion degrades the tour to a manual step-through', async ({ page }) => {
-    // The tour moves the page — a vestibular hazard, so auto-advance must not happen.
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
-
-    const tour = page.locator('.tour');
-    await page.locator('.tour-start').click();
-    await expect(tour.locator('.count')).toHaveText('1 of 7');
-    await expect(tour.getByRole('button', { name: /Next/ })).toBeVisible();
-    await expect(tour.getByRole('button', { name: /Pause/ })).toHaveCount(0);
-
-    // Sit on step 1: nothing advances on its own.
-    await page.waitForTimeout(1500);
-    await expect(tour.locator('.count')).toHaveText('1 of 7');
-
-    await tour.getByRole('button', { name: /Next/ }).click();
-    await expect(tour.locator('.count')).toHaveText('2 of 7');
-    // …and the typewriter becomes an instant state change.
-    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/threshold\.$/);
-  });
-
-  test('ending the tour puts away the drawer it opened', async ({ page }) => {
-    // Step 5 opens the variant drawer, whose modal scrim must not outlive the tour. Reduced
-    // motion makes it deterministic: step through with Next instead of dwell timers.
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page, EDITOR_APP, { keepInvite: true });
-
-    const tour = page.locator('.tour');
-    await page.locator('.tour-start').click();
-    const next = tour.getByRole('button', { name: /Next/ });
-    for (let i = 0; i < 4; i += 1) await next.click();
-    await expect(tour.locator('.count')).toHaveText('5 of 7');
-    await expect(page.locator('.drawer')).toBeVisible();
-
-    await tour.getByRole('button', { name: '✕ End', exact: true }).click();
-    await expect(tour).toHaveCount(0);
-    await expect(page.locator('.drawer')).toHaveCount(0);
-    await expect(page.locator('.scrim')).toHaveCount(0);
-  });
-
-  test('a forwarded ?tour=1 link opens straight into the narrative', async ({ page }) => {
-    await page.route('**/api/**', (route) => route.abort());
-    // ?tour=1 auto-starts the tour, which dismisses the invite itself — skip the
-    // helper's dismiss step (there is nothing to dismiss).
-    await gotoEditor(page, `${EDITOR_APP}?tour=1`, { keepInvite: true });
-    await expect(page.locator('.tour')).toBeVisible();
-    await expect(page.locator('.tour .count')).toHaveText('1 of 7');
-  });
-
-  test('the tour runs for a signed-in owner too — sandboxed, then restores the CV', async ({
-    page,
-  }) => {
-    // The tour drives the REAL CV but is sandboxed: its one mutation is an ephemeral bullet,
-    // and the document is put back untouched on exit. The catch-all abort proves no write escapes.
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.route('**/cv/api/**', (r) => r.abort()); // specific persons routes (below) win
-    await mockAdaWithVariant(page);
-    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
-    await expect(page.locator('.tour-start')).toHaveCount(0); // the demo invite strip is gone
-
-    // Signed-in entry point: Help ▸ Guided tour (the strip that carries it is demo-only).
-    await openMenu(page, 'Help');
-    await page.getByRole('menuitem', { name: /Guided tour/ }).click();
-    const tour = page.locator('.tour');
-    await expect(tour.locator('.count')).toHaveText('1 of 7');
-
-    // Step 2 types an ephemeral bullet onto Ada's real entry — locally, never saved.
-    await tour.getByRole('button', { name: /Next/ }).click();
-    await expect(tour.locator('.count')).toHaveText('2 of 7');
-    await expect(page.locator('.doc .edit .bl-content').last()).toHaveValue(/threshold\.$/);
-
-    // The moment the owner takes the wheel, the tour bows out and the document is
-    // put back exactly as it was — re-open the entry and the bullet is gone.
-    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
-    await expect(tour).toHaveCount(0);
-    await page.locator('.doc .entry').first().click();
-    await expect(page.locator('.doc .edit .bl')).toHaveCount(0);
   });
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
@@ -1427,7 +1290,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
     await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
     await expect(page.locator('.doc-head')).toHaveCount(0);
-    await expect(page.locator('.invite')).toHaveCount(0); // connected → no demo strip
 
     // Close the drawer, then create from the empty state → editing resumes.
     await page.keyboard.press('Escape');

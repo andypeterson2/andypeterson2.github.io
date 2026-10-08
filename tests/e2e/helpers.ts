@@ -19,7 +19,6 @@ export async function gotoEditor(
   page: Page,
   path = EDITOR_APP,
   opts: {
-    keepInvite?: boolean;
     signedIn?: { email: string; name: string } | null;
     /** The backend will not answer: skip the wait for it. */
     offline?: boolean;
@@ -38,21 +37,6 @@ export async function gotoEditor(
   );
   await page.goto(path);
   await expect(page.locator('.stage[data-hydrated]')).toBeAttached({ timeout: 15000 });
-
-  // The demo invite's modal scrim blocks the editor; dismiss it once the backend probe
-  // settles. keepInvite is for the few tests that exercise the invite itself.
-  if (opts.keepInvite) return;
-  const invite = page.locator('.invite');
-  await Promise.race([
-    invite.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),
-    expect(page.locator('.conn'))
-      .toContainText('connected', { timeout: 5000 })
-      .catch(() => {}),
-  ]);
-  if (await invite.isVisible().catch(() => false)) {
-    await invite.getByRole('button', { name: 'Dismiss' }).click();
-    await expect(invite).toHaveCount(0);
-  }
 
   // A signed-in test works against loaded résumés, so the handshake has to land
   // before it starts. This helper owns that wait, so how the editor reports being

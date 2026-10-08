@@ -14,7 +14,7 @@
 
   // One per button family; FAMILY maps each to its `.ui.<family>` class.
   type Variant =
-    'toolbar' | 'mini' | 'tour' | 'chip' | 'act' | 'link' | 'opt' | 'new' | 'del' | 'toast';
+    'toolbar' | 'mini' | 'chip' | 'act' | 'link' | 'opt' | 'new' | 'del' | 'toast';
 
   interface Props extends HTMLButtonAttributes {
     variant: Variant;
@@ -41,7 +41,6 @@
   const FAMILY: Record<Variant, string> = {
     toolbar: 'btn',
     mini: 'mini',
-    tour: 'tbtn',
     chip: 'chip',
     act: 'act',
     link: 'link',

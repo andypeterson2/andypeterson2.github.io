@@ -53,8 +53,8 @@ class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(createDemoPerson());
   /** The owner's identity — name + public contacts — overlaid onto the demo person
-   *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo and the
-   *  tour re-apply it after re-cloning the pristine sample. Never committed PII. */
+   *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo
+   *  re-applies it after re-cloning the pristine sample. Never committed PII. */
   private demoIdentity: Partial<Personal> | null = null;
   selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
@@ -203,26 +203,6 @@ class EditorState {
   #shadow = new FieldShadow();
   #cache = new ProfileCache();
 
-  /** A demo visitor's own edited document, held while the guided tour drives a
-   *  pristine sample, and put back when it ends. */
-  #demoResume: { doc: Person; dirty: boolean } | null = null;
-
-  /**
-   * The signed-in owner's real document, view and save status, captured when they
-   * start the guided tour so it can drive their live CV and then put everything
-   * back untouched. Null unless a connected tour is staged (the demo uses
-   * #demoResume).
-   */
-  #tourResume: {
-    doc: Person;
-    selection: Selection;
-    activeVariantId: number | null;
-    openDrawer: null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles' | 'history';
-    highlight: string | null;
-    dirty: boolean;
-    saveState: 'demo' | 'saved' | 'saving' | 'error';
-  } | null = null;
-
   /**
    * NOTE — the `$state` proxy trap. Pushing a raw object into a reactive array and
    * keeping the raw reference gives you an object that is never `===` the element
@@ -312,9 +292,8 @@ class EditorState {
     this.saveError = null;
   }
   /**
-   * Speak through the editor's single aria-live region. Public so the guided tour
-   * can narrate its captions here rather than mount a second live region — two of
-   * them talk over each other.
+   * Speak through the editor's single aria-live region — one region for the whole
+   * editor, so announcements never talk over each other.
    */
   narrate(msg: string) {
     this.say(msg);
@@ -534,21 +513,6 @@ class EditorState {
     } else {
       entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
     }
-  }
-  /**
-   * Add a bullet that never touches the network and records no undo — the guided
-   * tour's one scripted mutation. In demo it's the same local write a real click
-   * makes, and it simply stays (nothing is saved anyway). When a signed-in owner
-   * takes the tour, stageTour/unstageTour sandbox it: this bullet lives only in
-   * memory and is wiped when the tour ends, so their real CV is never altered.
-   */
-  addEphemeralBullet(entry: Entry): Item {
-    const index = entry.items.length;
-    entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
-    const item = this.live(entry.items, index);
-    this.#shadow.seedItem(item);
-    this.dirty = true;
-    return item;
   }
   async deleteBullet(entry: Entry, itemId: number) {
     const index = entry.items.findIndex((i) => i.id === itemId);
@@ -902,7 +866,7 @@ class EditorState {
   /**
    * Overlay the owner's identity (name + public contacts, resolved from siteConfig
    * on the server and handed down as the editor's `identity` prop) onto the demo person.
-   * Stored so resetDemo and the tour keep it across re-clones. A no-op once connected —
+   * Stored so resetDemo keeps it across re-clones. A no-op once connected —
    * the real CV brings its own identity. Runs at mount, so the first paint already
    * shows the owner's contact fields.
    */
@@ -920,7 +884,6 @@ class EditorState {
     if (this.connected) return;
     const before = this.dirty ? $state.snapshot(this.person) : null;
     const beforeDirty = this.dirty;
-    this.#demoResume = null; // an explicit reset is the visitor's fresh start
     this.applyPristineDemo();
     this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
     // The reset itself is undoable, so "Reset demo" is never a one-way door.
@@ -938,7 +901,7 @@ class EditorState {
   }
 
   /**
-   * Reset from the UI (File ▸ Reset demo, the tour's closing panel): asks first when
+   * Reset from the UI (File ▸ Reset demo): asks first when
    * the visitor has edits, since those edits are the only copy.
    */
   requestResetDemo() {
@@ -968,7 +931,7 @@ class EditorState {
     this.saveState = 'demo';
   }
 
-  /** Put a demo document back (undoing a reset, or ending the tour). */
+  /** Put a demo document back (undoing a reset). */
   private adoptDemoDocument(doc: Person, dirty: boolean) {
     this.person = doc;
     this.selection = { kind: 'none' };
@@ -979,74 +942,6 @@ class EditorState {
     this.dirty = dirty;
     this.saveState = 'demo';
     this.#shadow.reseat(this.person, this.style);
-  }
-
-  /**
-   * Stage the guided tour. Demo → hold the visitor's edits (if any) and drive the
-   * pristine sample (determinism beats continuity). A signed-in owner → snapshot
-   * their live document, view and save status so the tour can drive the real CV and
-   * restore it afterwards; nothing the tour does will persist or outlive it.
-   */
-  stageTour() {
-    if (!this.connected) {
-      // The tour needs the pristine sample to drive, but a visitor's own edits are
-      // held and put back when it ends.
-      const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
-      this.applyPristineDemo();
-      this.rebase('demo');
-      this.#demoResume = keep;
-      return;
-    }
-    this.#tourResume = {
-      doc: $state.snapshot(this.person),
-      selection: $state.snapshot(this.selection),
-      activeVariantId: this.activeVariantId,
-      openDrawer: this.openDrawer,
-      highlight: this.tags.highlight,
-      dirty: this.dirty,
-      saveState: this.saveState,
-    };
-  }
-
-  /**
-   * Tear down the guided tour. Demo → put back the visitor's own edits if they had
-   * any; otherwise leave the sample as the tour left it (the visitor keeps
-   * exploring; nothing is saved regardless). A signed-in owner → restore the captured document, view and save status, wiping every
-   * ephemeral edit. Re-activates the snapshot so the cache, shadow and undo scope
-   * follow the fresh objects; the old undo stack can't replay against them, so it
-   * is dropped (the tour clears undo when it visits a cover letter anyway).
-   */
-  unstageTour() {
-    if (!this.connected) {
-      const mine = this.#demoResume;
-      this.#demoResume = null;
-      if (mine) {
-        this.adoptDemoDocument(mine.doc, mine.dirty);
-        this.rebase('demo'); // the tour's commands point at the sample; they can't replay here
-        this.say('Tour over — your edits are back.');
-      }
-      return;
-    }
-    const resume = this.#tourResume;
-    this.#tourResume = null;
-    if (!resume) return;
-    const pid = this.activePersonId;
-    if (pid != null) {
-      this.#cache.drop(pid);
-      this.activate(resume.doc, pid, true);
-      this.undo.clear();
-    } else {
-      this.person = resume.doc;
-      this.#shadow.reseat(this.person, this.style);
-    }
-    // activate() resets the view to a clean Main; put the owner back where they were.
-    this.selection = resume.selection;
-    this.openDrawer = resume.openDrawer;
-    this.tags.highlight = resume.highlight;
-    this.scrollTarget = null;
-    this.dirty = resume.dirty;
-    this.saveState = resume.saveState;
-    if (resume.activeVariantId != null) this.variants.select(resume.activeVariantId);
   }
 
   /** Connected but with no profiles — shows the "create your first profile" prompt. */

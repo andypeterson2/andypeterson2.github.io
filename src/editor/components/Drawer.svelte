@@ -3,7 +3,6 @@
   // Modal while open: the page behind goes inert and focus returns to the opener.
   import type { Snippet } from 'svelte';
   import { editor } from '../lib/store.svelte';
-  import { tour } from '../lib/tour.svelte';
   import { holdModal } from '../lib/modal';
 
   let { title, children }: { title: string; children: Snippet } = $props();
@@ -11,10 +10,8 @@
   let layer: HTMLDivElement | undefined = $state();
   let closeBtn: HTMLButtonElement | undefined = $state();
 
-  // Not while the tour is showing a drawer: the narrator (Pause, End) must stay
-  // live. If the visitor takes over mid-tour, the drawer becomes modal then.
   $effect(() => {
-    if (!layer || tour.state !== 'idle') return;
+    if (!layer) return;
     return holdModal(layer, closeBtn);
   });
 

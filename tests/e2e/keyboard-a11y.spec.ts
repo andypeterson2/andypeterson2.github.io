@@ -43,21 +43,9 @@ test.describe('Editor panels are modal', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(EDITOR);
     await expect(page.locator('[data-hydrated]')).toBeAttached();
-    // The invite opens once the backend check settles (demo mode).
-    await expect(page.locator('#demo-invite')).toBeVisible();
-  });
-
-  test('the first-run invite takes focus, and Escape dismisses it', async ({ page }) => {
-    const invite = page.getByRole('dialog', { name: 'Resume Editor' });
-    await expect(invite).toBeVisible();
-    await expect(page.locator('#demo-invite .tour-start')).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#demo-invite')).toHaveCount(0);
   });
 
   test('a drawer takes focus, keeps Tab inside, and hands focus back', async ({ page }) => {
-    await page.keyboard.press('Escape'); // the invite
-    await expect(page.locator('#demo-invite')).toHaveCount(0); // the page is live again
     const trigger = page.getByRole('button', { name: 'Tags', exact: true }).first();
     await trigger.focus();
     await page.keyboard.press('Enter');
@@ -78,7 +66,7 @@ test.describe('Editor panels are modal', () => {
   });
 });
 
-// Entries are named by their heading; the tour announces its steps.
+// Entries are named by their heading.
 test.describe('The editor to a screen reader', () => {
   test('document entries are named by their heading', async ({ page }) => {
     await page.goto(EDITOR);
@@ -92,18 +80,6 @@ test.describe('The editor to a screen reader', () => {
     }
   });
 
-  test('the tour takes focus and announces its steps', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(EDITOR);
-    await expect(page.locator('[data-hydrated]')).toBeAttached();
-    await expect(page.locator('#demo-invite')).toBeVisible();
-    await expect(page.locator('#demo-invite .tour-start')).toBeFocused();
-    await page.keyboard.press('Enter'); // the invite's focus starts on "Guided tour"
-    const panel = page.getByRole('region', { name: 'Guided tour' });
-    await expect(panel).toBeFocused();
-    await expect(panel.locator('[aria-live="polite"] .cap')).not.toBeEmpty();
-    await page.keyboard.press('Escape');
-  });
 });
 
 // The grid can be drawn from the keyboard and exposes each cell's state.

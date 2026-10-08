@@ -106,7 +106,7 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
     expect(editor.undo.undoLabel).toBe('Delete entry');
   });
 
-  test('addBullet records "Add bullet"; addEphemeralBullet records nothing (the tour)', async () => {
+  test('addBullet records "Add bullet"', async () => {
     const sec = experience();
     await editor.addEntry(sec);
     const entry = sec.entries.at(-1)!;
@@ -115,11 +115,6 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
     await editor.addBullet(entry);
     expect(entry.items).toHaveLength(1);
     expect(editor.undo.undoLabel).toBe('Add bullet');
-
-    editor.undo.clear();
-    const ghost = editor.addEphemeralBullet(entry);
-    expect(entry.items).toContain(ghost);
-    expect(editor.undo.canUndo).toBe(false); // ephemeral: never recorded
   });
 
   test('deleteBullet removes it and records "Delete bullet"', async () => {
@@ -205,7 +200,7 @@ describe('EditorState — the save-state machine (persist / settle / retry)', ()
   });
 });
 
-describe('EditorState — demo / identity / tour lifecycle', () => {
+describe('EditorState — demo / identity lifecycle', () => {
   test('hydrateDemoIdentity overlays contacts onto the demo person', () => {
     editor.hydrateDemoIdentity({ firstName: 'Andrew', email: 'a@b.dev' });
     expect(editor.person.personal.firstName).toBe('Andrew');
@@ -251,30 +246,11 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
     vi.unstubAllGlobals();
   });
 
-  test("the tour gives a demo visitor's edits back when it ends", async () => {
-    await editor.addEntry(experience());
-    const count = experience().entries.length;
-    editor.stageTour();
-    expect(editor.dirty).toBe(false); // the tour drives the pristine sample
-    expect(experience().entries.length).toBe(count - 1);
-    editor.unstageTour();
-    expect(experience().entries.length).toBe(count);
-    expect(editor.dirty).toBe(true);
-  });
-
   test('resetDemo is a no-op when connected (real data to protect)', () => {
     editor.connected = true;
     editor.person.personal.firstName = 'REAL';
     editor.resetDemo();
     expect(editor.person.personal.firstName).toBe('REAL');
-  });
-
-  test('staging the tour in demo resets to the pristine sample', async () => {
-    const sec = experience();
-    await editor.addEntry(sec);
-    const dirtyCount = sec.entries.length;
-    editor.stageTour();
-    expect(experience().entries.length).toBe(dirtyCount - 1); // reset dropped the added entry
   });
 
   test('exportJson is gated by noProfiles and runs offline without touching the backend', async () => {

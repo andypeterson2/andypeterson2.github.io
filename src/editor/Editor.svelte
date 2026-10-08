@@ -2,9 +2,6 @@
   import { onMount } from 'svelte';
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
-  import { tour } from './lib/tour.svelte';
-  import { tourIntent } from './lib/tour';
-  import Tour from './components/Tour.svelte';
   import UiButton from './components/ui/Button.svelte';
   import MenuBar from './components/MenuBar.svelte';
   import type { MenuDef } from './lib/menus';
@@ -62,23 +59,8 @@
   // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
-  // The invite (with the guided tour) appears once, on load. Dismissing it is final —
-  // the status bar becomes a sign-in button.
-  let inviteOpen = $state(true);
-  // The invite and the carried-over-edits offer are modal pop-ups over a scrim:
-  // `use:modal` makes the page behind inert and puts focus on the answer.
-  // Escape dismisses the invite (the offer needs a real answer).
-  function onInviteKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && demoMode && inviteOpen && !editor.pendingDraft) inviteOpen = false;
-  }
-
-  // Starting the tour dismisses the invitation first: on mobile the invite is a
-  // popup window that would otherwise sit over the narrator, and on desktop the
-  // strip has served its purpose. The status chip reopens the invite afterwards.
-  function startTour() {
-    inviteOpen = false;
-    tour.start();
-  }
+  // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
+  // the page behind inert and puts focus on the answer.
 
   /** Open a drawer from the menu (they are mutually exclusive — one at a time). */
   const drawerItem = (label: string, drawer: NonNullable<typeof editor.openDrawer>) => ({
@@ -146,41 +128,15 @@
         drawerItem('Style', 'style'),
       ],
     },
-    {
-      // Signed-in owners have no invite popup, so the tour lives here too (sandboxed
-      // on their own CV: nothing is saved).
-      title: 'Help',
-      items: [
-        {
-          label: '▶ Guided tour',
-          disabled: tour.state !== 'idle',
-          onSelect: () => startTour(),
-        },
-      ],
-    },
   ]);
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
-  // `?tour=1` lets a forwarded link open straight into the narrative — the only
-  // way the tour ever autoplays. It runs once we know which mode we're in: the
-  // demo for a visitor, or the owner's own CV (sandboxed) for a signed-in owner.
   onMount(() => {
     hydrated = true;
-    void editor.connect().then(() => {
-      if (new URLSearchParams(location.search).get('tour') === '1') startTour();
-    });
+    void editor.connect();
   });
 
-  // A tour is staged for the mode it began in (demo vs. the owner's live CV). If
-  // the session flips mid-tour — a sign-in popup lands while a demo tour plays —
-  // the document changes under it, so end rather than drive stale steps against it.
-  $effect(() => {
-    if (tour.state !== 'idle' && editor.connected !== tour.liveAtStart) tour.end();
-  });
-
-  const inTourChrome = (t: EventTarget | null) =>
-    t instanceof Element && !!t.closest('[data-tour]');
   const isEditable = (t: EventTarget | null) =>
     t instanceof HTMLElement &&
     (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
@@ -191,39 +147,14 @@
    * event it fires routes through saveEntry, which records it like any other edit.
    */
   function onGlobalKey(e: KeyboardEvent) {
-    onInviteKey(e);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
       e.preventDefault();
-      if (tour.active) tour.takeover(); // a keystroke means the visitor is driving
       void (e.shiftKey ? editor.undo.redo() : editor.undo.undo());
-      return;
     }
-    onTourKey(e);
-  }
-
-  /** Esc ends, Space pauses/resumes, anything else means the visitor is driving. */
-  function onTourKey(e: KeyboardEvent) {
-    if (!tour.active) return;
-    const intent = tourIntent({
-      type: 'keydown',
-      key: e.key,
-      insideTour: inTourChrome(e.target),
-      editable: isEditable(e.target),
-    });
-    if (intent === 'ignore') return;
-    if (intent === 'end') tour.end();
-    else if (intent === 'toggle') {
-      e.preventDefault(); // Space would otherwise scroll the document out from under them
-      tour.toggle();
-    } else tour.takeover();
-  }
-  /** A click or a scroll anywhere but the tour's own chrome hands back the wheel. */
-  function onTourPointer(e: Event) {
-    if (tour.active && !inTourChrome(e.target)) tour.takeover();
   }
 </script>
 
-<svelte:window onkeydown={onGlobalKey} onpointerdown={onTourPointer} onwheel={onTourPointer} />
+<svelte:window onkeydown={onGlobalKey} />
 
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
@@ -289,7 +220,7 @@
         >
         <UiButton
           variant="toolbar"
-          class="tour-start"
+          class="invite-cta"
           tone="primary"
           id="draft-primary"
           disabled={editor.importingDraft}
@@ -299,54 +230,6 @@
         <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
           >Start fresh instead</button
         >
-      </div>
-    </div>
-  {:else if demoMode && inviteOpen}
-    <!-- On phones this whole block presents as a centered pop-up window: the scrim
-         and the System-6 titlebar below are shown only there. On desktop it stays
-         the inline invitation strip and both are display:none. -->
-    <div class="invite-layer" use:modal={'.tour-start'}>
-      <!-- The scrim is for pointers; keyboards have Escape and the Dismiss buttons. -->
-      <button
-        class="invite-scrim"
-        aria-hidden="true"
-        tabindex="-1"
-        onclick={() => (inviteOpen = false)}
-      ></button>
-      <div
-        class="invite"
-        id="demo-invite"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="invite-title"
-        aria-describedby="invite-text"
-      >
-        <div class="titlebar invite-tbar">
-          <button
-            class="close invite-close"
-            aria-label="Dismiss"
-            onclick={() => (inviteOpen = false)}
-          ></button>
-          <span class="title" id="invite-title">Resume Editor</span>
-          <span class="fill"></span>
-        </div>
-        <span class="txt" id="invite-text"
-          >This is the real editor, running in your browser. Edit anything — drag, tag, switch
-          variants, export. <b
-            >Nothing is saved until you sign in — then your edits come with you.</b
-          ></span
-        >
-        <UiButton
-          variant="toolbar"
-          class="tour-start"
-          disabled={tour.state !== 'idle'}
-          title="Watch the editor drive itself — touch anything to take over"
-          onclick={startTour}>▶ Guided tour</UiButton
-        >
-        {#if editor.connectError === 'offline'}
-          <button class="link" onclick={() => editor.connect()}>Retry</button>
-        {/if}
-        <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
       </div>
     </div>
   {/if}
@@ -374,7 +257,6 @@
               class="popup variant-btn"
               class:lens={editor.activeVariantId !== null}
               title="Variants + the lens"
-              data-tour-spot="variants"
               onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
             ></span
           >
@@ -417,7 +299,6 @@
             <UiButton
               variant="toolbar"
               title="Export this resume as JSON"
-              data-tour-spot="export"
               disabled={editor.noProfiles}
               onclick={() => editor.exportJson()}>⤓ Export</UiButton
             >
@@ -427,7 +308,7 @@
 
       <div class="window doc-window">
         <div class="wbody" class:split={editor.preview.open}>
-          <div class="doc-scroll" data-tour-spot="document">
+          <div class="doc-scroll">
             {#if editor.noProfiles}
               <div class="no-profiles">
                 <p class="np-title">No profiles yet</p>
@@ -556,11 +437,7 @@
     <Drawer title="History"><HistoryDrawer /></Drawer>
   {/if}
 
-  <Tour />
-
-  <!-- The toast and the tour share the bottom-center slot; the tour wins. (In demo
-       mode nothing saves, so nothing can fail — this only matters if the two ever meet.) -->
-  {#if editor.saveError && !tour.active}
+  {#if editor.saveError}
     <div class="save-toast floating-panel" role="alert" aria-live="assertive">
       <span class="st-icon" aria-hidden="true">⚠</span>
       <span class="st-msg">{editor.saveError}</span>
@@ -726,8 +603,7 @@
     cursor: default;
   }
 
-  /* The demo invitation — a centered System-6 pop-up window carrying the guided
-     tour, over a dismiss scrim. Shown once, on load; the same on every viewport. */
+  /* The carried-over-edits offer — a centered System-6 pop-up window over a scrim. */
   .invite-scrim {
     position: fixed;
     inset: 0;
@@ -792,7 +668,7 @@
     padding: 4px 10px;
   }
 
-  .invite :global(.ui.btn.tour-start) {
+  .invite :global(.ui.btn.invite-cta) {
     width: 100%;
     padding: 10px;
     font-size: var(--text-3xs);
