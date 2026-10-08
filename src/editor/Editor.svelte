@@ -65,6 +65,11 @@
    * event it fires routes through saveEntry, which records it like any other edit.
    */
   function onGlobalKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && (exportOpen || symbols.open)) {
+      exportOpen = false;
+      symbols.close();
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
       e.preventDefault();
       void (e.shiftKey ? editor.undo.redo() : editor.undo.undo());
@@ -327,64 +332,78 @@
   </div>
 
   {#if exportOpen}
-    <div class="sym-window export-window" role="dialog" aria-label="Export">
-      <div class="titlebar">
-        <button class="close" aria-label="Close export" onclick={() => (exportOpen = false)}
-        ></button>
-        <span class="title">Export</span>
-        <span class="fill"></span>
-      </div>
-      <div class="ex-body">
-        <p class="ex-note">Take this resume away in whichever form you need it.</p>
-        <button
-          class="ex-opt"
-          disabled={!editor.preview.url}
-          onclick={() => {
-            editor.downloadPdf();
-            exportOpen = false;
-          }}
-        >
-          <span class="ex-name">PDF</span>
-          <span class="ex-what"
-            >{editor.preview.url
-              ? 'The compiled document, as it prints'
-              : 'Compile it first — there is no PDF yet'}</span
+    <div class="modal-layer" use:modal={'.ex-opt'}>
+      <button
+        class="modal-scrim"
+        aria-hidden="true"
+        tabindex="-1"
+        onclick={() => (exportOpen = false)}
+      ></button>
+      <div class="sym-window export-window" role="dialog" aria-modal="true" aria-label="Export">
+        <div class="titlebar">
+          <button class="close" aria-label="Close export" onclick={() => (exportOpen = false)}
+          ></button>
+          <span class="title">Export</span>
+          <span class="fill"></span>
+        </div>
+        <div class="ex-body">
+          <p class="ex-note">Take this resume away in whichever form you need it.</p>
+          <button
+            class="ex-opt"
+            disabled={!editor.preview.url}
+            onclick={() => {
+              editor.downloadPdf();
+              exportOpen = false;
+            }}
           >
-        </button>
-        <button
-          class="ex-opt"
-          onclick={() => {
-            void editor.exportJson();
-            exportOpen = false;
-          }}
-        >
-          <span class="ex-name">JSON</span>
-          <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
-        </button>
-        <button
-          class="ex-opt"
-          onclick={() => {
-            void editor.exportLinkedin();
-            exportOpen = false;
-          }}
-        >
-          <span class="ex-name">LinkedIn JSON</span>
-          <span class="ex-what"
-            >Work history as paste-ready blocks, for LinkedIn, Indeed or Handshake</span
+            <span class="ex-name">PDF</span>
+            <span class="ex-what"
+              >{editor.preview.url
+                ? 'The compiled document, as it prints'
+                : 'Compile it first — there is no PDF yet'}</span
+            >
+          </button>
+          <button
+            class="ex-opt"
+            onclick={() => {
+              void editor.exportJson();
+              exportOpen = false;
+            }}
           >
-        </button>
+            <span class="ex-name">JSON</span>
+            <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
+          </button>
+          <button
+            class="ex-opt"
+            onclick={() => {
+              void editor.exportLinkedin();
+              exportOpen = false;
+            }}
+          >
+            <span class="ex-name">LinkedIn JSON</span>
+            <span class="ex-what"
+              >Work history as paste-ready blocks, for LinkedIn, Indeed or Handshake</span
+            >
+          </button>
+        </div>
       </div>
     </div>
   {/if}
 
   {#if symbols.open}
-    <div class="sym-window window" role="dialog" aria-label="Insert a symbol">
-      <div class="titlebar">
-        <button class="close" aria-label="Close symbols" onclick={() => symbols.close()}></button>
-        <span class="title">Symbols</span>
-        <span class="fill"></span>
+    <div class="modal-layer">
+      <!-- Not inert behind it: a glyph lands in the field the caret left, and an
+           inert page would take that field's focus with it. -->
+      <button class="modal-scrim" aria-hidden="true" tabindex="-1" onclick={() => symbols.close()}
+      ></button>
+      <div class="sym-window window" role="dialog" aria-label="Insert a symbol">
+        <div class="titlebar">
+          <button class="close" aria-label="Close symbols" onclick={() => symbols.close()}></button>
+          <span class="title">Symbols</span>
+          <span class="fill"></span>
+        </div>
+        <div class="sym-body"><SymbolPalette onpick={symbols.insert} /></div>
       </div>
-      <div class="sym-body"><SymbolPalette onpick={symbols.insert} /></div>
     </div>
   {/if}
 
@@ -585,14 +604,32 @@
     flex-direction: column;
   }
 
-  /* Floats over the document, like the symbol dialog a word processor opens: the
-     caret keeps its place in the field behind, so a glyph lands where it was. */
-  .sym-window {
+  /* Centred over the page it covers, with the work dimmed behind it. */
+  .modal-layer {
     position: fixed;
-    right: 24px;
-    bottom: 24px;
+    inset: 0;
     z-index: var(--z-overlay);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  .modal-scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim-soft);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  /* The caret keeps its place in the field behind, so a glyph lands where it was. */
+  .sym-window {
+    position: relative;
     width: min(24rem, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
     background: var(--paper);
     border: 2px solid var(--ink);
     border-right-width: 4px;
