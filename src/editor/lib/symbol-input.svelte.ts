@@ -1,11 +1,11 @@
-// Shared glue for the symbols palette: a factory holding the palette's open state
-// and the last-focused field it inserts into. Each editor calls `symbolInput()`
-// once, binds `track` to its root's focusin, and renders an Ω toggle, a
-// <SymbolPalette>, and an <UnknownWarning>. Only per-editor UI state lives here.
+// The symbols palette, shared by the whole editor: one open state and one record of
+// the field a glyph should land in. The toolbar renders the Ω toggle and the popup;
+// every text field in the document feeds `track` through the editor root's focusin,
+// so a glyph goes wherever the caret last was.
 
 import { insertAtCaret } from './caret';
 
-export function symbolInput() {
+function createSymbols() {
   let open = $state(false);
   // Not reactive: it only feeds `insert`, which reads it at click time.
   let field: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -17,14 +17,21 @@ export function symbolInput() {
     toggle() {
       open = !open;
     },
+    close() {
+      open = false;
+    },
     /** Remember the focused text field, so a palette-chip click knows where to insert. */
     track(e: FocusEvent) {
       const t = e.target;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) field = t;
     },
-    /** Insert a glyph at the last-focused field's caret (no-op if none yet). */
+    /** Insert a glyph at the last-focused field's caret, and hand focus back to it. */
     insert(glyph: string) {
-      if (field) insertAtCaret(field, glyph);
+      if (!field) return;
+      insertAtCaret(field, glyph);
+      field.focus();
     },
   };
 }
+
+export const symbols = createSymbols();

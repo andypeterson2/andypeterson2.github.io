@@ -12,16 +12,17 @@
   import { typeDef } from '../lib/section-types';
   import { itemIncluded } from '../lib/variant-lens';
   import { sortable, reorderKeydown } from '../lib/sortable';
-  import { symbolInput } from '../lib/symbol-input.svelte';
   import TagChips from './TagChips.svelte';
-  import SymbolPalette from './SymbolPalette.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
   import type { Entry, Item, Section } from '../lib/types';
 
-  let { section, entry }: { section: Section; entry: Entry } = $props();
+  let {
+    section,
+    entry,
+    index,
+    dim = false,
+  }: { section: Section; entry: Entry; index: number; dim?: boolean } = $props();
   const def = $derived(typeDef(section.type));
-
-  const sym = symbolInput();
 
   // Variant-lens editing state.
   const lens = $derived(editor.activeVariant);
@@ -95,28 +96,30 @@
 {/snippet}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="edit" onfocusin={sym.track}>
+<div class="edit" class:dim data-sortable>
   <div class="ehead">
+    <button
+      class="egrip"
+      data-drag-handle
+      draggable="true"
+      title="Drag, or press Alt+↑/↓ to reorder"
+      aria-label="Reorder entry"
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      onkeydown={(ev) =>
+        reorderKeydown(ev, index, section.entries.length, (f, t) =>
+          editor.reorderEntries(section, f, t),
+        )}>⠿</button
+    >
     <span class="etype"
       >{def?.label ?? section.type}{def?.entryLabel ? ` · ${def.entryLabel}` : ''}</span
     >
-    <span class="eacts">
-      <UiButton
-        variant="mini"
-        class="sym-toggle"
-        active={sym.open}
-        title="Insert a symbol"
-        aria-expanded={sym.open}
-        onclick={() => sym.toggle()}>Ω</UiButton
-      >
-      {#if !overriding}
+    {#if !overriding}
+      <span class="eacts">
         <UiButton variant="mini" tone="danger" onclick={() => editor.deleteEntry(section, entry.id)}
           >Delete</UiButton
         >
-      {/if}
-      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton
-      >
-    </span>
+      </span>
+    {/if}
   </div>
 
   {#if overriding}
@@ -124,10 +127,6 @@
       Editing <strong>{lens?.name}</strong> — field edits and visibility below apply to this variant only.
       Switch the Variant menu to Main to edit the base.
     </div>
-  {/if}
-
-  {#if sym.open}
-    <SymbolPalette onpick={sym.insert} />
   {/if}
 
   {#if def?.isParagraph}
@@ -315,6 +314,27 @@
     padding: 13px 14px;
     margin: 4px -10px;
     font-family: var(--sans);
+  }
+
+  /* The entry's drag handle, matching the section grip above it. */
+  .egrip {
+    font-size: var(--text-xs);
+    line-height: 1;
+    color: var(--ink-3);
+    background: none;
+    border: 0;
+    padding: 0 6px 0 0;
+    cursor: grab;
+  }
+
+  .egrip:hover,
+  .egrip:focus-visible {
+    color: var(--ink);
+  }
+
+  /* Greyed by the tag spotlight, the same signal the document uses elsewhere. */
+  .edit.dim {
+    opacity: 0.4;
   }
 
   .ehead {

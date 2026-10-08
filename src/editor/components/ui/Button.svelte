@@ -13,8 +13,7 @@
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
   // One per button family; FAMILY maps each to its `.ui.<family>` class.
-  type Variant =
-    'toolbar' | 'mini' | 'chip' | 'act' | 'link' | 'opt' | 'new' | 'del' | 'toast';
+  type Variant = 'toolbar' | 'mini' | 'chip' | 'act' | 'link' | 'opt' | 'new' | 'del' | 'toast';
 
   interface Props extends HTMLButtonAttributes {
     variant: Variant;

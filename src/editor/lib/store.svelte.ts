@@ -1118,7 +1118,6 @@ class EditorState {
     clearDemoDraft();
     this.pendingDraft = null;
   }
-
 }
 
 export const editor = new EditorState();

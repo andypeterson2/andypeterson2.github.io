@@ -7,6 +7,8 @@
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
+  import SymbolPalette from './components/SymbolPalette.svelte';
+  import { symbols } from './lib/symbol-input.svelte';
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
   import TagsDrawer from './components/TagsDrawer.svelte';
@@ -69,7 +71,8 @@
 
 <svelte:window onkeydown={onGlobalKey} />
 
-<div class="stage" data-hydrated={hydrated || undefined}>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="stage" data-hydrated={hydrated || undefined} onfocusin={symbols.track}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
   {#if editor.signingIn}
     <div class="invite busy" role="status">
@@ -214,6 +217,13 @@
               active={editor.openDrawer === 'style'}
               onclick={() => (editor.openDrawer = 'style')}>Style</UiButton
             >
+            <UiButton
+              variant="toolbar"
+              active={symbols.open}
+              title="Insert a symbol"
+              aria-expanded={symbols.open}
+              onclick={() => symbols.toggle()}>Ω</UiButton
+            >
             <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
@@ -314,6 +324,17 @@
     </div>
   </div>
 
+  {#if symbols.open}
+    <div class="sym-window window" role="dialog" aria-label="Insert a symbol">
+      <div class="titlebar">
+        <button class="close" aria-label="Close symbols" onclick={() => symbols.close()}></button>
+        <span class="title">Symbols</span>
+        <span class="fill"></span>
+      </div>
+      <div class="sym-body"><SymbolPalette onpick={symbols.insert} /></div>
+    </div>
+  {/if}
+
   {#if editor.openDrawer === 'style'}
     <Drawer title="Style"><StyleDrawer /></Drawer>
   {:else if editor.openDrawer === 'layouts'}
@@ -356,6 +377,9 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+
+    /* The editor's chrome text is set in the mono face. */
+    font-family: var(--font-mono);
   }
 
   /* Hollow = unset = nothing is being written: the System-6 idiom, so demo never
@@ -389,7 +413,6 @@
     background: none;
     border: 0;
     padding: 0;
-    color: inherit;
     cursor: pointer;
   }
 
@@ -491,9 +514,6 @@
     color: var(--ink-2);
   }
 
-  /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
-     mirroring the home page's outer window. The toolbar + document are nested windows
-     inside its body, exactly as the home cards nest inside the "Home" window. */
   /* No frame of its own: the page's own .site-window is the window. */
   .workspace {
     flex: 1;
@@ -512,7 +532,25 @@
     flex-direction: column;
   }
 
-  /* The toolbar sits above the document, separated by a rule rather than a frame. */
+  /* Floats over the document, like the symbol dialog a word processor opens: the
+     caret keeps its place in the field behind, so a glyph lands where it was. */
+  .sym-window {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: var(--z-overlay);
+    width: min(24rem, calc(100vw - 48px));
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  .sym-body {
+    max-height: min(22rem, 50vh);
+    overflow: auto;
+  }
+
   /* Sits above the scroller, so the document's scrollbar begins below this. */
   .toolbar-window {
     flex: none;
@@ -526,11 +564,6 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  /* The editor's chrome text, in its own windows too, is set in the mono face. */
-  .stage {
-    font-family: var(--font-mono);
   }
 
   .sr-only {
@@ -964,5 +997,4 @@
       border-top: 1px solid var(--ink);
     }
   }
-
 </style>

@@ -66,20 +66,30 @@ test.describe('Editor panels are modal', () => {
   });
 });
 
-// Entries are named by their heading.
+// Every entry is an open editor, so each one says what it is and labels its fields.
 test.describe('The editor to a screen reader', () => {
-  test('document entries are named by their heading', async ({ page }) => {
+  test('each entry editor names itself and labels every field', async ({ page }) => {
     await page.goto(EDITOR);
-    const names = await page
-      .locator('.entry[role="button"]')
-      .evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
-    expect(names.length).toBeGreaterThan(3);
-    for (const n of names) {
-      expect(n).toMatch(/^Edit entry/);
-      expect(n.length).toBeLessThan(120);
+    const editors = page.locator('.doc .edit');
+    await expect(editors.first()).toBeVisible();
+    const types = await editors
+      .locator('.etype')
+      .evaluateAll((els) => els.map((e) => (e.textContent ?? '').trim()));
+    expect(types.length).toBeGreaterThan(3);
+    for (const t of types) {
+      expect(t.length).toBeGreaterThan(0);
+      expect(t.length).toBeLessThan(120);
     }
+    // No field is left for a screen reader to guess at.
+    const unlabelled = await editors
+      .locator('.fld input, .fld textarea')
+      .evaluateAll(
+        (els) =>
+          els.filter((e) => !(e.closest('label')?.querySelector('.lbl')?.textContent ?? '').trim())
+            .length,
+      );
+    expect(unlabelled).toBe(0);
   });
-
 });
 
 // The grid can be drawn from the keyboard and exposes each cell's state.

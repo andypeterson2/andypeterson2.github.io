@@ -46,6 +46,73 @@ async function mockAdaWithVariant(page: Page) {
 }
 
 /** Open a menubar pull-down by title. */
+/** What the document holds: the editors are the document, so its text is their values. */
+const docText = (page: Page) =>
+  page.locator('.doc').evaluate((el) =>
+    [...el.querySelectorAll('input, textarea')]
+      .map((f) => (f as HTMLInputElement | HTMLTextAreaElement).value)
+      .concat(el.textContent ?? '')
+      .join('\n'),
+  );
+const expectDoc = (page: Page, text: string) => expect.poll(() => docText(page)).toContain(text);
+const expectNotDoc = (page: Page, text: string) =>
+  expect.poll(() => docText(page)).not.toContain(text);
+
+/**
+ * Drag one sortable row onto another. Playwright's dragTo does not start an HTML5
+ * drag from a nested grip, so the three events the binding listens for are
+ * dispatched directly — dragstart on the handle, then dragover and drop on the target.
+ */
+async function dragRow(page: Page, selector: string, from: number, to: number) {
+  await page
+    .locator(selector)
+    .first()
+    .evaluate(
+      (el, { sel, f, t }) => {
+        const rows = [...el.closest('[data-sortable]')!.parentElement!.querySelectorAll(sel)];
+        const dt = new DataTransfer();
+        const fire = (type: string, node: Element) =>
+          node.dispatchEvent(
+            new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt }),
+          );
+        fire('dragstart', rows[f].querySelector('[data-drag-handle]') ?? rows[f]);
+        fire('dragover', rows[t]);
+        fire('drop', rows[t]);
+      },
+      { sel: selector, f: from, t: to },
+    );
+}
+
+/** The index of the first row whose fields hold this text (hasText sees no values). */
+async function rowWith(page: Page, selector: string, text: string) {
+  const rows = page.locator(selector);
+  const i = await rows.evaluateAll(
+    (els, t) =>
+      els.findIndex(
+        (el) =>
+          [...el.querySelectorAll('input, textarea')].some((f) =>
+            (f as HTMLInputElement | HTMLTextAreaElement).value.includes(t),
+          ) || (el.textContent ?? '').includes(t),
+      ),
+    text,
+  );
+  expect(i, `no ${selector} holding "${text}"`).toBeGreaterThanOrEqual(0);
+  return rows.nth(i);
+}
+const bulletWith = (page: Page, text: string) => rowWith(page, '.doc .edit .bl', text);
+const entryWith = (page: Page, text: string) => rowWith(page, '.doc .edit[data-sortable]', text);
+
+/** The editor for one entry, named by the type header it carries. */
+const editorFor = (page: Page, type: string | RegExp) =>
+  page.locator('.doc .edit').filter({ has: page.locator('.etype', { hasText: type }) });
+/** The toolbar's symbols popup: one palette for the whole document. */
+async function openSymbols(page: Page) {
+  await page.getByRole('button', { name: 'Ω' }).click();
+  await expect(page.locator('.sym-window .palette')).toBeVisible();
+}
+const pickSymbol = (page: Page, glyph: string) =>
+  page.locator('.sym-window .palette .sym').filter({ hasText: glyph }).first().click();
+
 /** Undo / Redo name what they will act on, so a test can ask for them by that. */
 const undoBtn = (page: Page) => page.getByRole('button', { name: /^Undo/ });
 const redoBtn = (page: Page) => page.getByRole('button', { name: /^Redo/ });
@@ -72,7 +139,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.toolbar')).toContainText('Profile');
     // The demo renders the owner's real CV, but its name and contacts come from build-time
     // env (blank here), so assert on the hardcoded professional content.
-    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
+    await expect(page.getByRole('textbox', { name: 'Organization' }).first()).toHaveValue(
+      'Qualcomm Institute (CALIT2)',
+    );
     // The editor is an ordinary page: the portal's own chrome frames it.
     await expect(page.locator('.site-menubar')).toBeVisible();
     await expect(page.locator('.title-bar .title')).toHaveText('LaTeX Resume Editor');
@@ -83,26 +152,24 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.conn')).toHaveCount(0);
   });
 
-  test('clicking an entry opens the type-aware inline editor', async ({ page }) => {
+  test('every entry is its own type-aware editor, open from the start', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    // gotoEditor waited for hydration, so the entry's click handler is live.
-    const inline = page.locator('.doc .edit');
-    await page.locator('.entry').first().click();
-    await expect(inline).toBeVisible();
-
-    // Role fields + the collapse control for an experience entry.
-    await expect(inline.locator('.lbl', { hasText: 'Position' })).toBeVisible();
-    await expect(inline.locator('button', { hasText: 'Done' })).toBeVisible();
+    // Nothing to click open: the personal details and every entry are already editors.
+    await expect(editorFor(page, 'Personal details')).toBeVisible();
+    const role = editorFor(page, /Experience/).first();
+    await expect(role.locator('.lbl', { hasText: 'Position' })).toBeVisible();
+    // The editors are the document, so no read-only view is left to return to.
+    await expect(page.locator('.doc .entry, .doc .entry-hit')).toHaveCount(0);
+    await expect(page.locator('.doc .edit button').filter({ hasText: 'Done' })).toHaveCount(0);
   });
 
   test('the symbols palette inserts a glyph; an unknown command warns', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    await page.locator('.entry').first().click();
-    const edit = page.locator('.doc .edit');
+    const edit = editorFor(page, /Experience/).first();
     await expect(edit).toBeVisible();
     const field = edit.locator('.fld input').first();
 
@@ -118,9 +185,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     // The palette inserts the glyph at the caret (fill leaves it at the end).
     await field.fill('AB');
     await field.focus();
-    await edit.locator('.sym-toggle').click();
-    await expect(edit.locator('.palette')).toBeVisible();
-    await edit.locator('.palette .sym').filter({ hasText: '→' }).first().click();
+    await openSymbols(page);
+    await pickSymbol(page, '→');
     await expect(field).toHaveValue('AB→');
   });
 
@@ -128,16 +194,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    await page.locator('.doc-head').click();
-    const edit = page.locator('.doc .edit');
+    const edit = editorFor(page, 'Personal details');
     await expect(edit).toBeVisible();
     const field = edit.locator('.grid .fld input').first();
 
     await field.fill('Ada');
     await field.focus();
-    await edit.locator('.sym-toggle').click();
-    await expect(edit.locator('.palette')).toBeVisible();
-    await edit.locator('.palette .sym').filter({ hasText: 'α' }).first().click();
+    await openSymbols(page);
+    await pickSymbol(page, 'α');
     await expect(field).toHaveValue('Adaα');
 
     await field.fill('\\nope');
@@ -155,9 +219,8 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     await field.fill('Globex');
     await field.focus();
-    await letter.locator('.sym-toggle').click();
-    await expect(letter.locator('.palette')).toBeVisible();
-    await letter.locator('.palette .sym').filter({ hasText: '→' }).first().click();
+    await openSymbols(page);
+    await pickSymbol(page, '→');
     await expect(field).toHaveValue('Globex→');
 
     await field.fill('\\zilch');
@@ -172,7 +235,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // With the gateway reachable, a 403 means "sign in", not "down": the demo is
     // there to edit, and the menubar offers the way to keep those edits.
-    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
+    await expectDoc(page, 'Qualcomm Institute (CALIT2)');
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
     await expect(page.locator('.toolbar')).toContainText('demo');
     await expect(page.locator('.toolbar')).toContainText('not saved');
@@ -184,12 +247,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
 
     // Edit the demo — the whole point of letting people touch it.
-    await page.locator('.entry').first().click();
-    const inline = page.locator('.doc .edit');
+    const inline = editorFor(page, /Experience/).first();
     await expect(inline).toBeVisible();
     await inline.locator('.fld').first().locator('input').fill('Chief Tinkerer');
-    await inline.locator('button', { hasText: 'Done' }).click();
-    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+    await expectDoc(page, 'Chief Tinkerer');
 
     // Reset lives in File, where a System-6 user looks for Revert. With edits on the
     // page it asks first, and the reset is undoable.
@@ -200,10 +261,10 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     await page.getByRole('button', { name: /Reset/ }).click();
     expect(asked).toMatch(/Discard your changes/);
-    await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
-    await expect(page.locator('.doc')).toContainText('Research Intern');
+    await expectNotDoc(page, 'Chief Tinkerer');
+    await expectDoc(page, 'Research Intern');
     await undoBtn(page).click();
-    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+    await expectDoc(page, 'Chief Tinkerer');
   });
 
   test('Edit ▸ Undo restores a typed burst, and Redo puts it back', async ({ page }) => {
@@ -215,22 +276,23 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(redoBtn(page)).toBeDisabled();
     await page.keyboard.press('Escape');
 
-    await page.locator('.entry').first().click();
-    const field = page.locator('.doc .edit .fld input').first();
+    const field = editorFor(page, /Experience/)
+      .first()
+      .locator('.fld input')
+      .first();
     await field.fill('Chief Tinkerer');
-    await page.locator('.doc .edit button', { hasText: 'Done' }).click();
-    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+    await expectDoc(page, 'Chief Tinkerer');
 
     // The label names what will be undone, and typing collapsed into one command.
     await expect(page.getByRole('button', { name: 'Undo Position' })).toBeEnabled();
     await page.getByRole('button', { name: 'Undo Position' }).click();
-    await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
-    await expect(page.locator('.doc')).toContainText('Research Intern');
+    await expectNotDoc(page, 'Chief Tinkerer');
+    await expectDoc(page, 'Research Intern');
 
     // One command covers the fourteen keystrokes: the stack is now empty.
     await expect(undoBtn(page)).toBeDisabled();
     await page.getByRole('button', { name: 'Redo Position' }).click();
-    await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
+    await expectDoc(page, 'Chief Tinkerer');
   });
 
   test('undo restores a deleted section with its bullets and tags', async ({ page }) => {
@@ -240,6 +302,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     const sections = page.locator('.doc .sec h2');
     await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
+
+    // The counts are the fixture's; what matters is that undo brings them all back.
+    const bulletsBefore = await page.locator('.doc .edit .bl').count();
+    const chipsBefore = await page.locator('.doc .edit .bl .chip').count();
 
     const experience = page
       .locator('.doc .sec')
@@ -253,10 +319,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Back at its original index, with everything that was inside it.
     await expect(sections).toHaveText(['Summary', 'Experience', 'Skills', 'Education']);
-    await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
-    await expect(page.locator('.doc')).toContainText('Simulated a noisy quantum channel');
-    await expect(page.locator('.doc .entry li')).toHaveCount(7);
-    await expect(page.locator('.doc .entry li .tag')).toHaveCount(9);
+    await expectDoc(page, 'Qualcomm Institute (CALIT2)');
+    await expectDoc(page, 'Simulated a noisy quantum channel');
+    await expect(page.locator('.doc .edit .bl')).toHaveCount(bulletsBefore);
+    await expect(page.locator('.doc .edit .bl .chip')).toHaveCount(chipsBefore);
   });
 
   test('undoing a delete re-creates the row on the backend', async ({ page }) => {
@@ -277,17 +343,16 @@ test.describe('CV editor (document-first rewrite)', () => {
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
 
     page.on('dialog', (d) => d.accept());
-    await page.locator('.entry').first().click();
     await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
-    await expect(page.locator('.doc .entry')).toHaveCount(0);
+    await expect(page.locator('.doc .edit[data-sortable]')).toHaveCount(0);
 
     await page.locator('.title-bar').click();
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.locator('.doc .entry')).toHaveCount(1);
-    await expect(page.locator('.doc')).toContainText('Analyst');
+    await expect(page.locator('.doc .edit[data-sortable]')).toHaveCount(1);
+    await expectDoc(page, 'Analyst');
 
     // DELETE, then a real POST to re-create it — and the order PATCH carries the
     // the new server id (99), replacing the dead one (11).
@@ -305,14 +370,12 @@ test.describe('CV editor (document-first rewrite)', () => {
     await drawer.locator('.opt').filter({ hasText: 'Quantum Research' }).click();
 
     // Exclude #research → a quantum bullet that also carries it drops out of the lens.
-    const researchBullet = page
-      .locator('.doc li')
-      .filter({ hasText: 'Simulated a noisy quantum channel' });
-    await expect(researchBullet).not.toHaveClass(/dim/);
+    const researchBullet = await bulletWith(page, 'Simulated a noisy quantum channel');
+    await expect(researchBullet.locator('.bl-ins')).not.toHaveClass(/dim/);
     const excludeIn = drawer.locator('.rule').filter({ hasText: 'Exclude' }).locator('.tag-in');
     await excludeIn.fill('research');
     await excludeIn.press('Enter');
-    await expect(researchBullet).toHaveClass(/dim/);
+    await expect(researchBullet.locator('.bl-ins')).toHaveClass(/dim/);
 
     // The Edit menu names the exact rule; undoing it lifts the veto and re-dims live.
     await page.keyboard.press('Escape'); // close the drawer so ⌘Z isn't inside the chip input
@@ -425,17 +488,19 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
     // fetchActive defaults to the highest id → Ada (8). Edit her position field.
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
-    await page.locator('.entry').first().click();
-    await page.locator('.doc .edit .fld input').first().fill('Chief Analyst');
-    await page.locator('.doc .edit button', { hasText: 'Done' }).click();
-    await expect(page.locator('.doc')).toContainText('Chief Analyst');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
+    await editorFor(page, /Experience/)
+      .first()
+      .locator('.fld input')
+      .first()
+      .fill('Chief Analyst');
+    await expectDoc(page, 'Chief Analyst');
 
     // Switch to Grace: a different profile, her own (empty) history.
     await page.locator('.toolbar .profile-btn').click();
     await page.locator('.drawer .opt').filter({ hasText: 'Grace Hopper' }).click();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.doc')).toContainText('Admiral');
+    await expectDoc(page, 'Admiral');
     await expect(undoBtn(page)).toBeDisabled();
     await page.keyboard.press('Escape');
 
@@ -443,14 +508,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.toolbar .profile-btn').click();
     await page.locator('.drawer .opt').filter({ hasText: 'Ada Lovelace' }).click();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.getByRole('textbox', { name: 'Last name' })).toHaveValue('Lovelace');
     expect(adaGets).toBe(1); // cache hit — no refetch
-    await expect(page.locator('.doc')).toContainText('Chief Analyst');
+    await expectDoc(page, 'Chief Analyst');
 
     await expect(page.getByRole('button', { name: 'Undo Position' })).toBeEnabled();
     await page.getByRole('button', { name: 'Undo Position' }).click();
-    await expect(page.locator('.doc')).toContainText('Analyst');
-    await expect(page.locator('.doc')).not.toContainText('Chief Analyst');
+    await expectDoc(page, 'Analyst');
+    await expectNotDoc(page, 'Chief Analyst');
   });
 
   test('the toolbar toggles the preview pane and opens the panels', async ({ page }) => {
@@ -476,7 +541,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // in the menu instead of offering a command that silently does nothing.
     await mockAdaWithVariant(page);
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
 
     await expect(page.getByRole('button', { name: /Reset/ })).toBeDisabled();
     await expect(page.getByRole('button', { name: /Export/ })).toBeEnabled();
@@ -533,9 +598,9 @@ test.describe('CV editor (document-first rewrite)', () => {
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
-    await expect(page.locator('.doc')).toContainText('Analytical Engine Co');
-    await expect(page.locator('.doc')).toContainText('Wrote the first algorithm');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
+    await expectDoc(page, 'Analytical Engine Co');
+    await expectDoc(page, 'Wrote the first algorithm');
   });
 
   test('autosaves an edited field to the backend, LaTeX-escaped', async ({ page }) => {
@@ -575,8 +640,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
-    const inline = page.locator('.doc .edit');
-    await page.locator('.entry').first().click();
+    const inline = editorFor(page, /Experience/).first();
     await expect(inline).toBeVisible();
 
     // Edit Position with a '%' → debounced PUT /entries/11 with it escaped to '\%'.
@@ -694,10 +758,11 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
-    const entries = page.locator('.sec .entry');
+    const entries = page.locator('.sec .edit[data-sortable]');
     await expect(entries).toHaveCount(2);
     // Drag the 2nd entry (Beta / id 12) onto the 1st (Alpha / id 11) → [12, 11].
-    await entries.nth(1).dragTo(entries.nth(0));
+    // The grip is what the sortable binding listens on.
+    await dragRow(page, '.sec > .edit[data-sortable]', 1, 0);
     await expect.poll(() => orderBody?.ids).toEqual([12, 11]);
   });
 
@@ -742,26 +807,23 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Spotlight #leadership: entries carrying it stay lit, the untagged summary dims.
     await leadershipRow.click();
-    await expect(page.locator('.doc .para')).toHaveClass(/dim/);
-    await expect(page.locator('.doc .entry').filter({ hasText: 'ACM Cyber' })).not.toHaveClass(
-      /dim/,
-    );
+    await expect(editorFor(page, /Paragraph/)).toHaveClass(/dim/);
+    await expect(await entryWith(page, 'ACM Cyber')).not.toHaveClass(/dim/);
 
     // Clearing the spotlight restores everything.
     await drawer.locator('.clear').click();
-    await expect(page.locator('.doc .para')).not.toHaveClass(/dim/);
+    await expect(editorFor(page, /Paragraph/)).not.toHaveClass(/dim/);
     await page.keyboard.press('Escape');
     await expect(drawer).toHaveCount(0);
 
-    // Inline chips: open an untagged entry and add + remove a tag.
-    const inline = page.locator('.doc .edit');
-    await page.locator('.entry').filter({ hasText: 'December 2024' }).click();
+    // Inline chips: the untagged entry takes a tag and gives it back.
+    const inline = await entryWith(page, 'December 2024');
     await expect(inline).toBeVisible();
 
     const tagIn = inline.locator('.tags-row .tag-in');
     await tagIn.fill('honors');
     await tagIn.press('Enter');
-    await expect(inline.locator('.tags-row .chip')).toContainText('#honors');
+    await expect(inline.locator('.tags-row .chip').first()).toContainText('#honors');
 
     await inline.locator('.tags-row .chip .cx').click();
     await expect(inline.locator('.tags-row .chip')).toHaveCount(0);
@@ -784,13 +846,11 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Applying it dims the untagged summary while a #quantum entry stays lit.
     await drawer.locator('.opt').filter({ hasText: 'Quantum Research' }).click();
-    await expect(page.locator('.doc .para')).toHaveClass(/dim/);
-    await expect(
-      page.locator('.doc .entry').filter({ hasText: 'Qualcomm Institute' }),
-    ).not.toHaveClass(/dim/);
+    await expect(editorFor(page, /Paragraph/)).toHaveClass(/dim/);
+    await expect(await entryWith(page, 'Real-time video encryption')).not.toHaveClass(/dim/);
     // The lens reaches into bullets: a non-#quantum bullet drops inside a lit entry.
     await expect(
-      page.locator('.doc li').filter({ hasText: 'Presented algorithmic research' }),
+      (await bulletWith(page, 'Presented algorithmic research')).locator('.bl-ins'),
     ).toHaveClass(/dim/);
 
     // Editing a rule updates the lens live: excluding #research vetoes a lit bullet.
@@ -798,7 +858,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await excludeIn.fill('research');
     await excludeIn.press('Enter');
     await expect(
-      page.locator('.doc li').filter({ hasText: 'Simulated a noisy quantum channel' }),
+      (await bulletWith(page, 'Simulated a noisy quantum channel')).locator('.bl-ins'),
     ).toHaveClass(/dim/);
 
     // Back to Main clears the lens entirely.
@@ -813,8 +873,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
 
     // A cvskills group now opens the bullet editor — each skill is its own item row.
-    await page.locator('.doc .skill').filter({ hasText: 'Languages' }).click();
-    const edit = page.locator('.doc .edit');
+    const edit = editorFor(page, /Skills/).first();
     await expect(edit).toBeVisible();
     await expect(edit.locator('.bl')).toHaveCount(5); // Python … SQL
     // The add control is relabelled by the type's itemLabel ("Skill", not "Bullet").
@@ -831,11 +890,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await firstTagIn.press('Enter');
     await expect(edit.locator('.bl').first().locator('.chip')).toContainText('#systems');
 
-    // Close the editor → the group re-renders with the new skill in the document.
-    await edit.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('.doc .skill').filter({ hasText: 'Languages' })).toContainText(
-      'Rust',
-    );
+    await expect(await entryWith(page, 'Rust')).toBeVisible();
   });
 
   test('a variant field edit writes an override (not the base), shown live; reset restores Main', async ({
@@ -857,8 +912,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await selectFullCV(page);
 
     // The entry editor announces the mode unmistakably.
-    await page.locator('.doc .entry').first().click();
-    const edit = page.locator('.doc .edit');
+    const edit = editorFor(page, /Experience/).first();
     await expect(edit.locator('.vmode')).toContainText('Full CV');
 
     // Editing Position writes a per-variant fields_override and leaves the base entry alone.
@@ -871,18 +925,17 @@ test.describe('CV editor (document-first rewrite)', () => {
         fieldsOverride: { position: 'Senior Analyst' },
       });
 
-    // The lens shows it live once the editor closes; the base was never written.
-    await edit.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('.doc .entry').first()).toContainText('Senior Analyst');
+    // The lens shows it live; the base was never written.
+    await expectDoc(page, 'Senior Analyst');
     expect(baseWrites).toBe(0);
 
     // Reopen → the field carries a "reset to Main"; using it clears the override.
-    await page.locator('.doc .entry').first().click();
     await edit.locator('.fld').first().locator('.ov-reset').click();
     await expect.poll(() => overrides.at(-1)?.fieldsOverride).toBeNull();
-    await edit.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('.doc .entry').first()).toContainText('Analyst');
-    await expect(page.locator('.doc .entry').first()).not.toContainText('Senior Analyst');
+    await expectDoc(page, 'Analyst');
+    await expect(page.locator('.doc .edit[data-sortable]').first()).not.toContainText(
+      'Senior Analyst',
+    );
   });
 
   test('a variant can hide a single skill: the item override dims it in-document', async ({
@@ -933,8 +986,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Open the skills group; in variant mode each skill gets a Follow-tags / Force-show /
     // Force-hide control.
-    await page.locator('.doc .skill').filter({ hasText: 'Languages' }).click();
-    const edit = page.locator('.doc .edit');
+    const edit = editorFor(page, /Skills/).first();
     await expect(edit.locator('.vmode')).toBeVisible();
     const python = edit.locator('.bl.ro').filter({ hasText: 'Python' });
     await python.getByRole('button', { name: 'Force hide' }).click();
@@ -945,11 +997,8 @@ test.describe('CV editor (document-first rewrite)', () => {
       .toMatchObject({ targetType: 'item', targetId: 200, included: false });
 
     // Close → the hidden skill dims in the document while the other stays lit.
-    await edit.getByRole('button', { name: 'Done' }).click();
-    await expect(page.locator('.doc .skill-item').filter({ hasText: 'Python' })).toHaveClass(/dim/);
-    await expect(page.locator('.doc .skill-item').filter({ hasText: 'Rust' })).not.toHaveClass(
-      /dim/,
-    );
+    await expect((await bulletWith(page, 'Python')).locator('.bl-ins')).toHaveClass(/dim/);
+    await expect((await bulletWith(page, 'Rust')).locator('.bl-ins')).not.toHaveClass(/dim/);
   });
 
   test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
@@ -1154,7 +1203,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Create → a new empty profile appears, is selected, and loads (blank doc-head).
     await drawer.getByRole('button', { name: /New profile/ }).click();
     await expect(drawer.locator('.opt')).toHaveCount(2);
-    await expect(page.locator('.doc-head h1.untitled')).toHaveText('Your name');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('');
 
     // Rename the new profile's label via the drawer.
     const nameInput = drawer.locator('.rename .in');
@@ -1167,7 +1216,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
     await expect.poll(() => deleted).toBe(true);
     await expect(drawer.locator('.opt')).toHaveCount(1);
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
   });
 
   test('deleting the last profile shows an empty state and lets you start over', async ({
@@ -1233,14 +1282,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Delete the only profile → the connected empty state (not a sign-in prompt).
     await drawer.getByRole('button', { name: /Delete profile/ }).click();
     await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
-    await expect(page.locator('.doc-head')).toHaveCount(0);
+    await expect(page.locator('.doc .edit')).toHaveCount(0);
 
     // Close the drawer, then create from the empty state → editing resumes.
     await page.keyboard.press('Escape');
     await expect(drawer).toHaveCount(0);
     await page.locator('.no-profiles .np-btn').click();
     await expect(page.locator('.no-profiles')).toHaveCount(0);
-    await expect(page.locator('.doc-head h1.untitled')).toHaveText('Your name');
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('');
   });
 
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
@@ -1260,14 +1309,13 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.sr-only[aria-live]')).toContainText('Section moved to position 2');
     await expect(page.locator('.doc .sec').nth(1).locator('.sec-head .grip')).toBeFocused();
 
-    // Entries reorder from the focused row itself (no separate grip).
-    const firstEntry = page.locator('.doc .sec').first().locator('.entry').first();
-    const firstEntryText = ((await firstEntry.locator('.entry-title').textContent()) ?? '').trim();
-    await firstEntry.focus();
+    // Entries reorder from their own grip, as sections do.
+    const entries = page.locator('.doc .sec').first().locator('.edit[data-sortable]');
+    const firstField = entries.first().locator('.fld input').first();
+    const firstValue = await firstField.inputValue();
+    await entries.first().locator('.egrip').focus();
     await page.keyboard.press('Alt+ArrowDown');
-    await expect(page.locator('.doc .sec').first().locator('.entry-title').nth(1)).toHaveText(
-      firstEntryText,
-    );
+    await expect(entries.nth(1).locator('.fld input').first()).toHaveValue(firstValue);
   });
 
   test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
@@ -1387,8 +1435,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
 
     // Confirm the island has hydrated (its click handlers are live) before export.
-    const inline = page.locator('.doc .edit');
-    await page.locator('.entry').first().click();
+    const inline = editorFor(page, /Experience/).first();
     await expect(inline).toBeVisible();
     await page.keyboard.press('Escape');
 
@@ -1477,8 +1524,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
     // Edit Position → debounced PUT /entries/11, which fails the first time.
-    await page.locator('.entry').first().click();
-    const inline = page.locator('.doc .edit');
+    const inline = editorFor(page, /Experience/).first();
     await expect(inline).toBeVisible();
     await inline.locator('.fld').first().locator('input').fill('Lead Analyst');
 
@@ -1603,8 +1649,7 @@ test.describe('Tag suggestions', () => {
     });
 
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
-    await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
-    await page.locator('.entry').first().click();
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
 
     const bullet = page.locator('.doc .edit .bl').first();
     await bullet.locator('.bl-content').focus();
@@ -1651,7 +1696,6 @@ test.describe('Tag suggestions', () => {
       });
     });
     await gotoEditor(page);
-    await page.locator('.entry').first().click();
     await page.locator('.doc .edit .bl-content').first().focus();
     await page.waitForTimeout(1000);
     await expect(page.locator('.doc .edit .sug')).toHaveCount(0);
