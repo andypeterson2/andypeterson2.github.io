@@ -22,7 +22,7 @@ import { UndoController } from './undo.svelte';
 import { humanize, FieldShadow } from './undo';
 import { ProfileCache } from './profile-cache';
 import type { SaveHost } from './host';
-import { move } from './util';
+import { move, pdfFileName } from './util';
 
 /** Trigger a client-side download of `data` as a pretty-printed JSON file. */
 function downloadJson(data: unknown, filename: string) {
@@ -111,6 +111,13 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Main". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
+  /** What a compiled PDF downloads as: the day, whose résumé it is, and which variant. */
+  pdfName = $derived(
+    pdfFileName(
+      `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
+      this.variantLabel,
+    ),
+  );
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
   /** the save infra every slice-controller composes. */

@@ -175,13 +175,12 @@
               >
             </button>
           {/if}
-          <span class="sp"></span>
-          <!-- Every command the editor has, grouped by job and divided by hairlines:
-           the change timeline (Undo/Redo/History), what shapes the document
-           (Tags/Layout/Style), then what comes out of it (Preview/Compile/Export) and
-           starting over. `display:contents` keeps them flat in the toolbar flex (the
-           .sp above pushes the whole group right); the toolbar is hidden on mobile. -->
-          <div class="actions">
+        </div>
+
+        <!-- Below the line, the commands sit over what they act on: the document's
+             own on the left, the PDF's on the right, splitting where the panes do. -->
+        <div class="tb-split" class:split={editor.preview.open}>
+          <div class="tb-doc">
             <UiButton
               variant="toolbar"
               title={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Nothing to undo'}
@@ -227,20 +226,6 @@
             <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
-              active={editor.preview.open}
-              onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
-            >
-            <UiButton
-              variant="toolbar"
-              title={editor.preview.compilable
-                ? 'Compile this résumé to a PDF'
-                : 'Compiling to PDF needs an account — sign in to compile'}
-              disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
-              onclick={() => editor.preview.openAndCompile()}
-              >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
-            >
-            <UiButton
-              variant="toolbar"
               title="Export this resume as JSON"
               disabled={editor.noProfiles}
               onclick={() => editor.exportJson()}>⤓ Export</UiButton
@@ -252,6 +237,23 @@
                 : 'Put the demo résumé back the way it started'}
               disabled={editor.connected}
               onclick={() => editor.requestResetDemo()}>↺ Reset</UiButton
+            >
+          </div>
+
+          <div class="tb-pdf">
+            <UiButton
+              variant="toolbar"
+              active={editor.preview.open}
+              onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              title={editor.preview.compilable
+                ? 'Compile this résumé to a PDF'
+                : 'Compiling to PDF needs an account — sign in to compile'}
+              disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
+              onclick={() => editor.preview.openAndCompile()}
+              >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
             >
           </div>
         </div>
@@ -277,7 +279,7 @@
           {#if editor.preview.open}
             <div class="preview">
               <div class="pv-bar">
-                <span>{editor.variantLabel}.pdf</span>
+                <span>{editor.pdfName}</span>
                 <span class="pv-tools">
                   <button
                     class="pv-btn"
@@ -286,11 +288,7 @@
                     >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
                   >
                   {#if editor.preview.url}
-                    <a
-                      class="pv-btn"
-                      href={editor.preview.url}
-                      download={`${editor.variantLabel}.pdf`}>⤓ PDF</a
-                    >
+                    <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
                   {/if}
                 </span>
               </div>
@@ -578,12 +576,38 @@
     border: 0;
   }
 
+  /* Row one: which résumé is open and whether its work is kept. */
   .toolbar {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 14px;
+    border-bottom: 1px solid var(--paper-3);
+  }
+
+  /* Rows two and three, on the seam the panes below them use, so each group of
+     commands sits over the pane it acts on. */
+  .tb-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tb-split.split {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .tb-doc,
+  .tb-pdf {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+  }
+
+  .tb-pdf {
+    border-left: 1px solid var(--paper-3);
   }
 
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */

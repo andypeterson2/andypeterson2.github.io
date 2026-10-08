@@ -388,7 +388,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    await page.locator('.toolbar .btn', { hasText: 'Style' }).click();
+    await page.locator('.tb-doc .btn', { hasText: 'Style' }).click();
     const drawer = page.locator('.drawer');
     await expect(drawer.locator('.swatch')).toHaveCount(9);
 
@@ -403,7 +403,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.getByRole('button', { name: 'Undo Accent color' }).click();
 
     // Reopen Style: the original swatch is selected again.
-    await page.locator('.toolbar .btn', { hasText: 'Style' }).click();
+    await page.locator('.tb-doc .btn', { hasText: 'Style' }).click();
     await expect(drawer.locator('.swatch.on')).toHaveAttribute('aria-label', originally!);
   });
 
@@ -1036,10 +1036,10 @@ test.describe('CV editor (document-first rewrite)', () => {
       );
     expect(scrolls).toBe(true);
     await expect.poll(() => pdfHits).toBe(1);
-    // The download link carries the variant filename.
+    // The download link carries the dated name: day, whose CV, which variant.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
       'download',
-      'Full CV.pdf',
+      /^\d{4}-\d{2}-\d{2}-Ada-Lovelace-Full-CV\.pdf$/,
     );
   });
 
@@ -1059,10 +1059,10 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     await expect(preview.locator('.pv-pages canvas').first()).toBeVisible();
     await expect.poll(() => mainHits).toBe(1);
-    // The download link carries the Main filename.
+    // Same shape for the base document, with Main as the variant.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
       'download',
-      'Main.pdf',
+      /^\d{4}-\d{2}-\d{2}-Ada-Lovelace-Main\.pdf$/,
     );
   });
 
@@ -1077,10 +1077,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
+    // Close the pane first, so the reveal is part of what Compile is shown to do.
+    await page.getByRole('button', { name: /Preview/ }).click();
+    await expect(page.locator('.preview')).toHaveCount(0);
+
     // Compile straight from the toolbar — the pane opens and renders the PDF, no
     // separate "open Preview first" step.
     await page
-      .locator('.toolbar')
+      .locator('.tb-pdf')
       .getByRole('button', { name: /Compile/ })
       .click();
     const preview = page.locator('.preview');
