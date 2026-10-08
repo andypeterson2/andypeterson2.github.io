@@ -522,15 +522,16 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    // The button is a toggle, and says so through aria-pressed, which a screen
-    // reader reads as state.
+    // The pane is open from the start, and the button is a toggle that says so
+    // through aria-pressed, which a screen reader reads as state.
     const preview = page.getByRole('button', { name: /Preview/ });
-    await expect(preview).toHaveAttribute('aria-pressed', 'false');
-    await preview.click();
     await expect(page.locator('.preview')).toBeVisible();
     await expect(preview).toHaveAttribute('aria-pressed', 'true');
     await preview.click();
     await expect(page.locator('.preview')).toHaveCount(0);
+    await expect(preview).toHaveAttribute('aria-pressed', 'false');
+    await preview.click();
+    await expect(page.locator('.preview')).toBeVisible();
 
     await page.getByRole('button', { name: 'Tags' }).click();
     await expect(page.locator('.drawer[aria-label="Tags"]')).toBeVisible();
@@ -1006,7 +1007,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
     await expect(page.locator('.toolbar')).toContainText('Profile');
 
-    await page.getByRole('button', { name: /Preview/ }).click();
     await expect(page.locator('.preview')).toBeVisible();
     await expect(page.locator('.preview')).toContainText('Sign in to compile');
     await expect(page.locator('.preview .pv-btn')).toBeDisabled();
@@ -1022,7 +1022,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await selectFullCV(page);
 
-    await page.getByRole('button', { name: /Preview/ }).click();
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 
@@ -1055,7 +1054,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     });
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
 
-    await page.getByRole('button', { name: /Preview/ }).click();
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 
@@ -1106,7 +1104,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await selectFullCV(page);
 
-    await page.getByRole('button', { name: /Preview/ }).click();
     const preview = page.locator('.preview');
     await preview.getByRole('button', { name: /Compile/ }).click();
 

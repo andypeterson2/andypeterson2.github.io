@@ -7,8 +7,9 @@ import { api } from './api';
 import type { Variant } from './types';
 
 export class PreviewController {
-  /** whether the preview pane is open */
-  open = $state(false);
+  /** whether the preview pane is open — it is, from the start: the point of the
+   *  editor is seeing what the résumé will look like while editing it. */
+  open = $state(true);
   /** compile lifecycle of the active variant's PDF */
   state = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
   /** object URL of the compiled PDF, or null (used by the download link) */

@@ -38,13 +38,13 @@ beforeEach(() => {
 });
 
 describe('PreviewController', () => {
-  test('toggle flips the pane open/closed', () => {
+  test('toggle flips the pane closed/open from its open default', () => {
     const p = make(true, null);
+    expect(p.open).toBe(true); // the pane is what the editor is for
+    p.toggle();
     expect(p.open).toBe(false);
     p.toggle();
     expect(p.open).toBe(true);
-    p.toggle();
-    expect(p.open).toBe(false);
   });
 
   test('compilable needs a live backend AND something to compile (a variant or a profile)', () => {
@@ -108,6 +108,7 @@ describe('PreviewController', () => {
       data: new Blob(['%PDF']),
     });
     const p = make(true, null, 9);
+    p.toggle(); // closed, so the reveal is the thing under test
     expect(p.open).toBe(false);
     await p.openAndCompile();
     expect(p.open).toBe(true);
