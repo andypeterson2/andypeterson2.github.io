@@ -348,9 +348,11 @@ const windowTitle = title || siteConfig.title;
   /* The floating site-nav is deliberately not hidden in bare mode — it is the one
      consistent way back out of a full-bleed app page like the editor. */
 
+  /* Keeps the thin desktop surround a window needs to read as one, without the
+     chromed layout's wide inset — a full-bleed app wants the width. */
   body.is-bare .site-canvas {
     max-width: none;
-    padding: 0;
+    padding: var(--canvas-pad-y);
     margin: 0;
   }
 

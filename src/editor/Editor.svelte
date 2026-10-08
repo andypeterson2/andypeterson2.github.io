@@ -699,6 +699,8 @@
   /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
      mirroring the home page's outer window. The toolbar + document are nested windows
      inside its body, exactly as the home cards nest inside the "Home" window. */
+  /* The System-6 window the whole editor lives in — the same frame every other
+     page draws around its content, at the width of this one. */
   .workspace {
     flex: 1;
     min-height: 0;
@@ -706,6 +708,9 @@
     flex-direction: column;
     width: 100%;
     background: var(--paper);
+    border: 2px solid var(--ink);
+    border-right-width: 4px;
+    border-bottom-width: 4px;
   }
 
   /* No inset of its own: the toolbar and the document run the full width of the
