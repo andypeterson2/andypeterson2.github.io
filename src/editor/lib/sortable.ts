@@ -9,6 +9,66 @@ export interface SortableParam {
   onReorder: (from: number, to: number) => void;
 }
 
+/** How close to an edge a drag has to get before the list starts moving under it. */
+const EDGE = 56;
+/** Pixels per frame at the very edge; it eases in across the EDGE band. */
+const MAX_STEP = 18;
+
+/** The nearest ancestor that actually scrolls, which is what a drag has to move. */
+function scrollerFor(el: HTMLElement): HTMLElement | null {
+  for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+  }
+  return null;
+}
+
+/**
+ * Keep scrolling while a drag rests near the top or bottom of the list.
+ *
+ * HTML5 drag-and-drop fires `dragover` only while the pointer moves, so a drag held
+ * still at the edge would stall with the drop target off screen. A frame loop carries
+ * it instead, and stops as soon as the pointer leaves the band or the drag ends.
+ */
+function createEdgeScroll() {
+  let frame = 0;
+  let step = 0;
+  let target: HTMLElement | null = null;
+
+  const tick = () => {
+    if (!target || step === 0) {
+      frame = 0;
+      return;
+    }
+    target.scrollTop += step;
+    frame = requestAnimationFrame(tick);
+  };
+
+  return {
+    /** Called on every dragover: works out which way to go, and how fast. */
+    at(el: HTMLElement, clientY: number) {
+      target ??= scrollerFor(el);
+      if (!target) return;
+      const box = target.getBoundingClientRect();
+      const above = clientY - box.top;
+      const below = box.bottom - clientY;
+      step =
+        above < EDGE
+          ? -Math.ceil(((EDGE - above) / EDGE) * MAX_STEP)
+          : below < EDGE
+            ? Math.ceil(((EDGE - below) / EDGE) * MAX_STEP)
+            : 0;
+      if (step !== 0 && frame === 0) frame = requestAnimationFrame(tick);
+    },
+    stop() {
+      step = 0;
+      target = null;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    },
+  };
+}
+
 /**
  * Keyboard reordering for a focused reorderable item (or its grip). Alt+ArrowUp/
  * Down moves by one; Alt+Home/End jumps to an end. Alt avoids clashing with
@@ -57,6 +117,7 @@ export function reorderKeydown(
 export function sortable(container: HTMLElement, param: SortableParam) {
   let onReorder = param.onReorder;
   let from = -1;
+  const edge = createEdgeScroll();
 
   const items = () =>
     Array.from(container.querySelectorAll<HTMLElement>(':scope > [data-sortable]'));
@@ -88,6 +149,7 @@ export function sortable(container: HTMLElement, param: SortableParam) {
   function onOver(e: DragEvent) {
     if (from < 0) return;
     e.preventDefault();
+    edge.at(container, e.clientY);
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     const to = indexOfClosest(e.target);
     items().forEach((el, i) => el.toggleAttribute('data-over', to >= 0 && i === to && i !== from));
@@ -102,6 +164,7 @@ export function sortable(container: HTMLElement, param: SortableParam) {
   }
 
   function clear() {
+    edge.stop();
     from = -1;
     for (const el of items()) {
       el.removeAttribute('data-dragging');

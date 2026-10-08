@@ -95,13 +95,16 @@ body {
   color: var(--paper);
 }
 
-.ui.btn:active {
+.ui.btn:active:not([aria-disabled='true']) {
   transform: translate(1px, 1px);
 }
 
 .ui.btn:disabled,
 .ui.mini:disabled,
-.ui.del:disabled {
+.ui.del:disabled,
+.ui.btn[aria-disabled='true'],
+.ui.mini[aria-disabled='true'],
+.ui.del[aria-disabled='true'] {
   cursor: default;
   box-shadow: none;
   background: var(--dither-light);
@@ -119,11 +122,27 @@ body {
     -1px 1px 0 var(--paper);
 }
 
+/* Under the pointer the whole surface inverts, stipple and halo with it. */
 .ui.btn:disabled:hover,
 .ui.mini:disabled:hover,
-.ui.del:disabled:hover {
-  background: var(--dither-light);
-  color: var(--ink);
+.ui.del:disabled:hover,
+.ui.btn[aria-disabled='true']:hover,
+.ui.mini[aria-disabled='true']:hover,
+.ui.del[aria-disabled='true']:hover,
+.ui.btn[aria-disabled='true']:focus-visible,
+.ui.mini[aria-disabled='true']:focus-visible,
+.ui.del[aria-disabled='true']:focus-visible {
+  background: var(--dither-light-inverted);
+  color: var(--paper);
+  text-shadow:
+    1px 0 0 var(--ink),
+    -1px 0 0 var(--ink),
+    0 1px 0 var(--ink),
+    0 -1px 0 var(--ink),
+    1px 1px 0 var(--ink),
+    -1px -1px 0 var(--ink),
+    1px -1px 0 var(--ink),
+    -1px 1px 0 var(--ink);
 }
 
 /* compact entry/personal editing actions */

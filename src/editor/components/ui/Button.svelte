@@ -32,11 +32,27 @@
     variant,
     active,
     tone,
+    disabled,
+    onclick,
     el = $bindable(),
     class: cls = '',
     children,
     ...rest
   }: Props = $props();
+
+  /**
+   * Out of reach, the way the rest of the site says it: `aria-disabled` rather than
+   * the native attribute, because a natively disabled button leaves the tab order and
+   * answers no hover, so the `title` explaining why would be unreadable for exactly
+   * the people most likely to need it. The press is swallowed here instead.
+   */
+  function press(e: MouseEvent) {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
+    onclick?.(e as MouseEvent & { currentTarget: EventTarget & HTMLButtonElement });
+  }
 
   const FAMILY: Record<Variant, string> = {
     toolbar: 'btn',
@@ -53,6 +69,14 @@
   const classes = $derived(['ui', FAMILY[variant], tone, cls].filter(Boolean).join(' '));
 </script>
 
-<button bind:this={el} class={classes} class:on={active} aria-pressed={active} {...rest}>
+<button
+  bind:this={el}
+  class={classes}
+  class:on={active}
+  aria-pressed={active}
+  aria-disabled={disabled}
+  onclick={press}
+  {...rest}
+>
   {@render children()}
 </button>

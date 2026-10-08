@@ -672,6 +672,9 @@
     gap: 2px;
     text-align: left;
     padding: 8px 10px;
+
+    /* The shared button is square-cornered; everything in this editor is not. */
+    border-radius: var(--radius);
   }
 
   .ex-name {
