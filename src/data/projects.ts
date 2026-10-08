@@ -93,7 +93,7 @@ export const projects: Project[] = [
           'published accuracy carries its 95% interval and its spread across seeds, held by a test to the exported artifact that produced it',
       },
       {
-        value: '19 / 1,530',
+        value: '15 / 1,030',
         label:
           'held-out predictions changed by the hardware alpha readout against the exact classical solution — a 1.58 degree boundary tilt, measured on ibm_marrakesh',
       },

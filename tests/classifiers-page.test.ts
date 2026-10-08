@@ -36,7 +36,13 @@ describe('Browser model weights', () => {
       readFileSync(resolve(ROOT, `public/classifiers/models/${name}.json`), 'utf-8'),
     ) as Record<string, unknown>;
 
-  for (const name of ['iris', 'mnist', 'bb84', 'qsvm-iris', 'qsvm-mnist', 'qsvm-bb84']) {
+  for (const name of [
+    'iris',
+    'mnist',
+    'qsvm-iris',
+    'qsvm-mnist',
+    'qsvm-iris-ovo',
+  ]) {
     test(`${name}.json carries exporter provenance`, () => {
       const prov = load(name).provenance as Record<string, unknown>;
       expect(prov).toBeDefined();
@@ -47,7 +53,7 @@ describe('Browser model weights', () => {
     });
   }
 
-  for (const dataset of ['iris', 'mnist', 'bb84']) {
+  for (const dataset of ['iris', 'mnist']) {
     test(`${dataset}.json matches the linear infer.js contract`, () => {
       const model = load(dataset);
       expect(model.kind).toBe('linear');
@@ -60,7 +66,7 @@ describe('Browser model weights', () => {
     });
   }
 
-  for (const dataset of ['iris', 'mnist', 'bb84']) {
+  for (const dataset of ['iris', 'mnist']) {
     test(`qsvm-${dataset}.json matches the qsvm infer.js contract`, () => {
       const model = load(`qsvm-${dataset}`);
       expect(model.kind).toBe('qsvm');
@@ -78,4 +84,35 @@ describe('Browser model weights', () => {
       expect(typeof display.subset).toBe('string');
     });
   }
+
+  // The three-class Iris rule is a separate kind, so none of the assertions
+  // above have to be loosened to admit it.
+  test('qsvm-iris-ovo.json matches the one-vs-one contract', () => {
+    const model = load('qsvm-iris-ovo');
+    expect(model.kind).toBe('qsvm-ovo');
+    expect(model.dataset).toBe('iris');
+    expect(model.classes).toEqual(['setosa', 'versicolor', 'virginica']);
+    expect(model.features).toHaveLength(4);
+    expect(model.raw_input).toBe('features');
+    expect(model.w).toHaveLength(4);
+    expect(model.targets).toHaveLength(2);
+    const rules = model.rules as { pair: string[]; a: number[]; b: number[] }[];
+    expect(rules).toHaveLength(3);
+    for (const rule of rules) {
+      expect(rule.pair).toHaveLength(2);
+      expect(rule.a).toHaveLength(4);
+      expect(rule.b).toHaveLength(4);
+    }
+    expect(typeof model.test_accuracy).toBe('number');
+    expect(typeof model.cv_accuracy).toBe('number');
+    const display = model.display as Record<string, unknown>;
+    expect(display.label).toContain('QSVM');
+  });
+
+  // The paper's own Iris experiment keeps its slot beside the widened rule.
+  test('the binary Iris rule is still the paper\u2019s two features', () => {
+    const binary = load('qsvm-iris');
+    expect(binary.classes).toEqual(['setosa', 'versicolor']);
+    expect(binary.features).toEqual(['sepal_width', 'petal_length']);
+  });
 });

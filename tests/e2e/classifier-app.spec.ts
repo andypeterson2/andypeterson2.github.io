@@ -45,7 +45,7 @@ test.describe('Classifier app shell', () => {
 });
 
 // Offline, the backend-only controls say so instead of failing, a blank canvas
-// predicts nothing, and the two-class QSVM says it's two-class.
+// predicts nothing, and a model that knows fewer classes than the dataset says so.
 test.describe('Classifier: the browser tier is honest about what it can do', () => {
   test('backend-only controls are folded and disabled, with the reason shown', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -85,30 +85,69 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     ]);
   });
 
-  test('Iris and BB84 take a slider or an exact value, and re-score as they move', async ({
+  test('Iris takes a slider or an exact value, and re-scores as they move', async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/ai-ml/app/');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
+    await page.locator('#dataset-menu-btn').click();
+    await page.locator('.ui-dropdown-item', { hasText: 'Iris' }).click();
+    await expect(page.locator('.feature-label').first()).toContainText('Sepal length');
+    await expect(page.locator('.feature-hint').first()).toHaveText('4.3 – 8.0 cm');
+    const answer = page
+      .locator('#metrics-body td[data-metric="Prediction"]')
+      .first()
+      .locator('.pred-label');
+    await page.locator('#feature-petal_length').fill('1.3');
+    await expect(answer).toHaveText('setosa');
+    // The slider and the exact-value box are two views of one number.
+    await page.locator('.feature-range').nth(2).fill('5.9');
+    await expect(page.locator('#feature-petal_length')).toHaveValue('5.9');
+    await expect(answer).toHaveText('virginica');
+    await page.locator('#reset-features-btn').click();
+    await expect(page.locator('#feature-petal_length')).toHaveValue('4.0');
+  });
+
+  test('Iris carries both QSVM rules, and only one of them reads every slider', async ({
     page,
   }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
     await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
     await page.locator('#dataset-menu-btn').click();
-    await page.locator('.ui-dropdown-item', { hasText: 'BB84' }).click();
-    await expect(page.locator('.feature-label').first()).toContainText('QBER');
-    await expect(page.locator('.feature-hint').first()).toHaveText('0.00 – 0.32');
-    const answer = page
-      .locator('#metrics-body td[data-metric="Prediction"]')
-      .first()
-      .locator('.pred-label');
-    await page.locator('#feature-qber').fill('0.01');
-    await expect(answer).toHaveText('clean');
-    await page.locator('.feature-range').first().fill('0.3');
-    await expect(page.locator('#feature-qber')).toHaveValue('0.3');
-    await expect(answer).toHaveText('eavesdropped');
-    await page.locator('#reset-features-btn').click();
-    await expect(page.locator('#feature-qber')).toHaveValue('0.16');
+    await page.locator('.ui-dropdown-item', { hasText: 'Iris' }).click();
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveText([
+      'Logistic Regression',
+      'QSVM (setosa vs versicolor)',
+      'QSVM one-vs-one (3 species)',
+    ]);
+    // The paper's rule takes two of the four measurements; the one-vs-one rule
+    // takes all four, and the Reads column is where that is stated.
+    const reads = page.locator('#metrics-body td[data-metric="Reads"]');
+    await expect(reads.nth(1)).toHaveText('sepal_width, petal_length');
+    await expect(reads.nth(2)).toHaveText(
+      'sepal_length, sepal_width, petal_length, petal_width',
+    );
+
+    // sepal_length is one of the two the paper's rule ignores. Moving it must
+    // move the one-vs-one score and leave the binary one where it was.
+    const score = page.locator('#metrics-body td[data-metric="Score"]');
+    const binaryBefore = await score.nth(1).innerText();
+    const ovoBefore = await score.nth(2).innerText();
+    await page.locator('#feature-sepal_length').fill('7.8');
+    await expect(score.nth(2)).not.toHaveText(ovoBefore);
+    await expect(score.nth(1)).toHaveText(binaryBefore);
+
+    // Three species, so the third is reachable — no binary rule here can say it.
+    await page.locator('#feature-petal_width').fill('2.4');
+    await page.locator('#feature-petal_length').fill('5.8');
+    const answer = page.locator('#metrics-body td[data-metric="Prediction"]').nth(2);
+    await expect(answer).toHaveText('virginica');
+    await expect(score.nth(2)).toHaveAttribute('title', /^Vote \d of 3 for virginica\./);
   });
 
-  test('a blank canvas predicts nothing; the QSVM names the pair it knows', async ({ page }) => {
+  test('a blank canvas predicts nothing; the QSVM names the classes it knows', async ({
+    page,
+  }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
     // The in-browser models load after hydration; draw only once they're listed.

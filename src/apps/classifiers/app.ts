@@ -210,7 +210,7 @@ interface ModelInfo {
   _local?: boolean;
   /** Model asset name for the in-browser tier. */
   _file?: string;
-  /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
+  /** The classes a shipped model knows, which can be fewer than the dataset's. */
   _classes?: string[] | undefined;
   /** The inputs a shipped model reads, which can be a subset of the form's. */
   _features?: string[] | undefined;
@@ -218,6 +218,9 @@ interface ModelInfo {
   _accCi?: [number, number] | undefined;
   _testN?: number | undefined;
   _testProtocol?: string | undefined;
+  /** Mean accuracy over several splits, where one held-out split is too small. */
+  _cvAccuracy?: number | undefined;
+  _cvSplits?: number | undefined;
   /** Computed in this page (the ensemble result); the backend has no model by this name. */
   _virtual?: boolean;
   /** The paper a model recreates, e.g. "Yang et al. 2019". */
@@ -688,7 +691,24 @@ function predictionScoreCell(
 ): HTMLTableCellElement {
   const td = document.createElement('td');
   td.className = 'num score-cell';
-  if (p?.qsvm) {
+  if (p?.ovo) {
+    // Three pairwise rules decide this one. The figure is the narrowest contest
+    // the winner was in: how close the answer came to going the other way.
+    const { votes, contests, tightest } = p.ovo;
+    const lean = tightest.winner === p.prediction ? tightest.lean : -Math.abs(tightest.lean);
+    const num = document.createElement('span');
+    num.className = confClass(Math.abs(lean));
+    num.textContent = pct(Math.abs(lean));
+    td.appendChild(num);
+    td.appendChild(scoreBar(lean, { lean: true }));
+    const others = contests
+      .map((k) => `${k.pair[0]} vs ${k.pair[1]} ${k.s >= 0 ? '+' : ''}${k.s.toFixed(3)}`)
+      .join(', ');
+    td.title =
+      `Vote ${String(votes[p.prediction] ?? 0)} of ${String(contests.length)} for ${p.prediction}. ` +
+      `Tightest contest ${tightest.pair[0]} vs ${tightest.pair[1]}, ` +
+      `${pct(Math.abs(tightest.lean))} of the evidence. All three: ${others}.`;
+  } else if (p?.qsvm) {
     // A sign classifier has no probability; how far it leans is its strength.
     const { f1, f2, s, t1, t2 } = p.qsvm;
     const lean = qsvmLean(p.qsvm);
@@ -778,6 +798,9 @@ function accuracyNote(m: ModelInfo): string {
   const parts: string[] = [];
   if (m._testN) parts.push(`${String(Math.round(acc * m._testN))} of ${String(m._testN)}`);
   if (m._accCi) parts.push(`95% CI ${pct(m._accCi[0])}–${pct(m._accCi[1])}`);
+  if (m._cvAccuracy != null) {
+    parts.push(`${pct(m._cvAccuracy)} over ${String(m._cvSplits ?? 0)} splits`);
+  }
   if (m._testProtocol) parts.push(m._testProtocol);
   return parts.length > 0 ? parts.join('; ') : 'Measured on the held-out split';
 }
@@ -811,7 +834,7 @@ function metricSections(labels: string[]): MetricSection[] {
           key: 'Score',
           fn: (_m, name) => (state.predictions[name] ? 'scored' : '—'),
           node: (m, name) => predictionScoreCell(state.predictions[name], m),
-          note: 'How sure the model is. Linear models: softmax of the top class, uncalibrated. QSVM: how far its margin leans, as a share of the evidence the two features gave it.',
+          note: 'How sure the model is. Linear models: softmax of the top class, uncalibrated. QSVM: how far its margin leans, as a share of the evidence its features gave it; for the one-vs-one rule, the narrowest contest the winner was in.',
         },
       ],
     },
@@ -1318,7 +1341,7 @@ async function runPredict(): Promise<void> {
 
 // Demo tier: run every in-browser model over the current canvas / feature
 // inputs, producing the same shape the server /predict returns. Each model
-// reads its own feature subset (the QSVM uses 2 of the 4 iris inputs).
+// reads the features it names, which can be a subset of the form's.
 async function runPredictLocal(): Promise<void> {
   const locals = modelEntries().filter(([, m]) => m._local);
   const image = window.UI_CONFIG?.input_type === 'image';
@@ -1354,8 +1377,9 @@ function featureValues(model: ClassifierModel): number[] {
 }
 
 /**
- * A binary model (the QSVM) answers every input with one of its two classes; when the
- * full model's answer is outside that pair, the binary answer is out of scope.
+ * A model that knows fewer classes than the dataset answers every input with one
+ * of the classes it has; when the full model's answer is not among them, that
+ * answer is out of scope. A model covering every class is never marked.
  */
 function markOutOfScope(locals: [string, ModelInfo][]): void {
   const reference = locals.find(([, m]) => !m._classes)?.[0];
@@ -1368,7 +1392,7 @@ function markOutOfScope(locals: [string, ModelInfo][]): void {
 
 // Client-side dataset switching
 
-// Build the tabular feature form (Iris, BB84) from the model's feature list + ranges:
+// Build the tabular feature form (Iris) from the model's feature list + ranges:
 // a slider to explore with and a box for the exact value, kept in step.
 function buildFeatureInputs(model: ClassifierModel): void {
   const wrap = document.querySelector('#tabular-col .feature-inputs');
@@ -1730,12 +1754,13 @@ document.addEventListener('connection:statechange', (e) => {
 
 /** A shipped weight file as a session model, with its real test accuracy. */
 function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
+  const quantum = model.kind === 'qsvm' || model.kind === 'qsvm-ovo';
   const numParams =
-    model.kind === 'qsvm'
+    model.kind === 'qsvm' || model.kind === 'qsvm-ovo'
       ? (model.num_params ?? null)
       : model.weight.length * (model.weight[0]?.length ?? 0) + model.bias.length;
   return {
-    model_type: model.kind === 'qsvm' ? 'QSVM' : 'Linear',
+    model_type: quantum ? 'QSVM' : 'Linear',
     epochs: '—',
     batch_size: '—',
     lr: null,
@@ -1749,11 +1774,13 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     },
     _local: true,
     _file: file,
-    _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
+    _classes: quantum ? [...model.classes] : undefined,
     _features: model.features ? [...model.features] : undefined,
     _accCi: model.test_accuracy_ci,
     _testN: model.test_n,
     _testProtocol: model.test_protocol,
+    _cvAccuracy: model.kind === 'qsvm-ovo' ? model.cv_accuracy : undefined,
+    _cvSplits: model.kind === 'qsvm-ovo' ? model.cv_splits : undefined,
     _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
 }

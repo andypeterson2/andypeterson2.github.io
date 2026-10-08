@@ -16,7 +16,7 @@ import Button from '../Button.astro';
         width="280"
         height="280"
         role="img"
-        aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris or BB84 under Dataset and type the values."
+        aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris under Dataset and type the values."
       ></canvas>
       <div class="draw-grid" aria-hidden="true"></div>
     </div>
@@ -341,7 +341,7 @@ import Button from '../Button.astro';
     transition: width var(--dur);
   }
 
-  /* ── Tabular feature form (built client-side for Iris and BB84) ──
+  /* ── Tabular feature form (built client-side for Iris) ──
      Label and range hint, a slider across the middle, the exact value at the right. */
   :global(#tabular-col .feature-inputs) {
     margin-bottom: 12px;

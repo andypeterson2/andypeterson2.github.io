@@ -7,7 +7,7 @@ An extensible platform for training, evaluating, and comparing classifiers — b
 
 ## How it works
 
-Each dataset is a plugin that declares its models, preprocessing, and UI config. MNIST ships a CNN, a linear model and a hinge-loss SVM; Iris and BB84 ship a linear model, an SVM and a variational quantum circuit each, and PennyLane is an optional extra, so a lean install simply does not offer the quantum rows rather than failing at train time. Everything trains with **live curves streamed over Server-Sent Events**, and evaluates past a single accuracy number: per-class breakdowns, **knowledge distillation**, **ensembles**, and **ablation studies**.
+Each dataset is a plugin that declares its models, preprocessing, and UI config. MNIST ships a CNN, a linear model and a hinge-loss SVM; the tabular datasets ship a linear model, an SVM and a variational quantum circuit each, and PennyLane is an optional extra, so a lean install simply does not offer the quantum rows rather than failing at train time. Everything trains with **live curves streamed over Server-Sent Events**, and evaluates past a single accuracy number: per-class breakdowns, **knowledge distillation**, **ensembles**, and **ablation studies**.
 
 ## Every number has to survive a test
 
@@ -19,15 +19,15 @@ Negative results stay in. Distilling the MNIST CNN into the linear student **cos
 
 Yang et al.'s 2019 least-squares QSVM is rebuilt end to end and its decision rule ships to the browser as six numbers. Four are solved classically from the class means; the other two come from an HHL circuit run on **ibm_marrakesh**.
 
-The interesting question is not how clean that run was but what it was worth. The rule decides by `sign(v · w)`, so the measured alpha's scale cancels and only the ratio of its two components reaches the boundary — one scalar, which came out **3.3% from its exact value**. Alpha's sign pattern is not measured at all, but taken from the ideal solution. Holding the map, orientation and split fixed and rebuilding the rule from the exact classical alpha tilts the boundary **1.58°** and changes **19 of 1,530** held-out predictions: none of 30 on Iris, 4 of 500 on BB84, 15 of 1,000 on MNIST. The direction is inconsistent — MNIST is 1.5 points better under the hardware alpha, BB84 0.8 worse, each inside the other's interval. So this is a small perturbation these splits cannot resolve, which is the honest reading in both directions.
+The interesting question is not how clean that run was but what it was worth. The rule decides by `sign(v · w)`, so the measured alpha's scale cancels and only the ratio of its two components reaches the boundary — one scalar, which came out **3.3% from its exact value**. Alpha's sign pattern is not measured at all, but taken from the ideal solution. Holding the map, orientation and split fixed and rebuilding the rule from the exact classical alpha tilts the boundary **1.58°** and changes **15 of 1,030** held-out predictions: none of 30 on Iris, 15 of 1,000 on MNIST. Those 15 go the measured alpha's way, putting MNIST 1.5 points above the exact solution — inside the committed interval, so this is a small perturbation these splits cannot resolve rather than a result in either direction.
 
-Scored on held-out data the rule reaches **96.7% on Iris** (29 of 30) and **89.1% on MNIST 6-vs-9**, against 100% and 91.6% for a logistic regression fitted to the same two features. On Iris the gap is not the quantum part — the exact classical α changes none of the 30 predictions — but the paper's fixed map geometry, which leaves the rule leaning on sepal width where petal length separates the pair on its own.
+Scored on held-out data the rule reaches **96.7% on Iris** (29 of 30) and **89.1% on MNIST 6-vs-9**, against 100% and 91.6% for a logistic regression fitted to the same two features. On Iris the gap is not the quantum part — the exact classical α changes none of the 30 predictions — but the paper's fixed map geometry, which leaves the rule leaning on sepal width where petal length separates the pair on its own. A second model widens that rule to all three species and all four measurements by running it once per pair and voting: 87.3% over 20 splits, on the same measured α, since the widened targets leave the kernel matrix alone.
 
 The run also sat 0.0127 from ideal by Jensen–Shannon divergence against the paper's 0.130 on IBMQX2 in 2019. That gap is seven years of IBM's hardware rather than anything built here — the circuit transpiles to depth 18 against the paper's logical depth 7 — so it is reported as context, not as a result.
 
 ## It predicts in your browser
 
-The exact preprocessing and softmax the server runs are ported client-side, on weights exported from the same models, and CI re-scores those committed weights on the real test splits so they cannot drift from the server. **BB84 as a dataset** — simulated key-distribution sessions, the video chat's channel physics, classified as clean or eavesdropped from QBER and sifted-key rate — landed with zero changes to the serving tier. Being a simulator classifying a simulator, its accuracy is bounded by how the generator's two regimes were set, which the model card says.
+The exact preprocessing and softmax the server runs are ported client-side, on weights exported from the same models, and CI re-scores those committed weights on the real test splits so they cannot drift from the server.
 
 ## Stack
 
