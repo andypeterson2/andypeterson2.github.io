@@ -642,14 +642,6 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     expect(l).not.toHaveBeenCalled();
   });
 
-  test('signOut drops the server session and forgets the identity', async () => {
-    const logout = vi.spyOn(api, 'logout').mockResolvedValue(undefined);
-    editor.identity = { email: 'ada@example.com', name: 'Ada' };
-    await editor.signOut();
-    expect(logout).toHaveBeenCalled();
-    expect(editor.identity).toBeNull();
-  });
-
   test('applyEntryFrom overwrites an entry already present in its section', () => {
     const sec = experience();
     const target = sec.entries[0];

@@ -18,7 +18,8 @@
 
   interface Props extends HTMLButtonAttributes {
     variant: Variant;
-    /** Selected/pressed — the family's `.on` modifier. */
+    /** Selected/pressed — the family's `.on` modifier, and the button's aria-pressed.
+     *  Left out entirely for a button that does not toggle. */
     active?: boolean;
     /** Emphasis (`primary` = solid ink) or destructive (`danger`) modifier. */
     tone?: 'primary' | 'danger';
@@ -30,7 +31,7 @@
 
   let {
     variant,
-    active = false,
+    active,
     tone,
     el = $bindable(),
     class: cls = '',
@@ -53,6 +54,6 @@
   const classes = $derived(['ui', FAMILY[variant], tone, cls].filter(Boolean).join(' '));
 </script>
 
-<button bind:this={el} class={classes} class:on={active} {...rest}>
+<button bind:this={el} class={classes} class:on={active} aria-pressed={active} {...rest}>
   {@render children()}
 </button>

@@ -3,8 +3,6 @@
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
   import UiButton from './components/ui/Button.svelte';
-  import MenuBar from './components/MenuBar.svelte';
-  import type { MenuDef } from './lib/menus';
   import type { Personal } from './lib/types';
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
@@ -37,74 +35,6 @@
   const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
   // the page behind inert and puts focus on the answer.
-
-  /** Open a drawer from the menu (they are mutually exclusive — one at a time). */
-  const drawerItem = (label: string, drawer: NonNullable<typeof editor.openDrawer>) => ({
-    label: `${label}…`, // the ellipsis convention: this opens a panel
-    onSelect: () => (editor.openDrawer = drawer),
-  });
-
-  // Grouped the way a System-6 user reaches for them. File is document-level: which
-  // resume you're in (Profiles), then getting it out (Export) or starting over (Reset).
-  // Edit is the change timeline — Undo/Redo and the checkpoint History that extends it.
-  // View is the shaping surface: the preview toggle and the panels that re-shape the one
-  // document (Variants, Tags, Layout, Style). Dead commands render disabled, never as
-  // live-looking text that does nothing.
-  const menus: MenuDef[] = $derived([
-    {
-      title: 'File',
-      items: [
-        drawerItem('Profiles', 'profiles'),
-        {
-          label: '⤓ Export as JSON…',
-          separatorBefore: true,
-          disabled: editor.noProfiles,
-          onSelect: () => void editor.exportJson(),
-        },
-        {
-          label: '↺ Reset demo',
-          // A no-op when connected: there is real data to protect (store.resetDemo).
-          disabled: editor.connected,
-          onSelect: () => editor.requestResetDemo(),
-        },
-      ],
-    },
-    {
-      title: 'Edit',
-      items: [
-        {
-          // The label names what will be undone, so the command is never a surprise.
-          label: editor.undo.canUndo ? `↶ Undo ${editor.undo.undoLabel}` : '↶ Undo',
-          disabled: !editor.undo.canUndo,
-          accel: '⌘Z',
-          keys: 'Meta+Z Control+Z',
-          onSelect: () => void editor.undo.undo(),
-        },
-        {
-          label: editor.undo.canRedo ? `↷ Redo ${editor.undo.redoLabel}` : '↷ Redo',
-          disabled: !editor.undo.canRedo,
-          accel: '⇧⌘Z',
-          keys: 'Meta+Shift+Z Control+Shift+Z',
-          onSelect: () => void editor.undo.redo(),
-        },
-        { ...drawerItem('History', 'history'), separatorBefore: true },
-      ],
-    },
-    {
-      title: 'View',
-      items: [
-        {
-          label: '◱ Preview',
-          checked: editor.preview.open,
-          onSelect: () => editor.preview.toggle(),
-        },
-        { ...drawerItem('Variants', 'variant'), separatorBefore: true },
-        drawerItem('Tags', 'tags'),
-        drawerItem('Layout', 'layouts'),
-        drawerItem('Style', 'style'),
-      ],
-    },
-  ]);
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
@@ -141,10 +71,6 @@
 
 <div class="stage" data-hydrated={hydrated || undefined}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
-  <div class="menubar">
-    <MenuBar {menus} />
-  </div>
-
   {#if editor.signingIn}
     <div class="invite busy" role="status">
       <span class="mk" aria-hidden="true">◆</span>
@@ -184,7 +110,10 @@
   <div class="workspace">
     <div class="workspace-body">
       <div class="toolbar-window">
-        <div class="toolbar">
+        <!-- Exempt from the reflow sweep: on a phone this row scrolls sideways inside
+             its own clip, so its buttons reach past the viewport while the page does
+             not (WCAG 1.4.10 asks that the page not scroll, and it doesn't). -->
+        <div class="toolbar" data-reflow-exempt>
           <span class="field"
             >Profile
             <button
@@ -202,12 +131,74 @@
               onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
             ></span
           >
+          <!-- Which tier is in play, and whether the work is kept: two separate
+               notices, because they answer two different questions. -->
+          <span class="note" class:live={editor.connected}
+            >{editor.connected ? 'live' : 'demo'}</span
+          >
+          <span class="note" role="status"
+            >{editor.connected
+              ? editor.saveState === 'saving'
+                ? 'saving…'
+                : editor.saveState === 'error'
+                  ? '⚠ save failed'
+                  : '✓ saved'
+              : 'not saved'}</span
+          >
+          {#if !demoMode || signedInOffline}
+            <!-- The retry for a session whose résumés didn't load. Signing in is the
+                 site menubar's, so a signed-out demo shows nothing here. -->
+            <button
+              class="conn"
+              onclick={() => editor.connect()}
+              disabled={editor.connecting || editor.signingIn}
+              title={signedInOffline
+                ? "Signed in, but your saved résumés didn't load — try again"
+                : 'Connection status'}
+            >
+              <span
+                class="dot"
+                class:live={editor.connected}
+                class:busy={editor.connecting || editor.signingIn}
+                aria-hidden="true"
+              ></span><span class="conn-label"
+                >{editor.signingIn
+                  ? 'signing in…'
+                  : editor.connecting
+                    ? 'connecting…'
+                    : editor.connected
+                      ? 'connected'
+                      : "Couldn't load your résumés — retry"}</span
+              >
+            </button>
+          {/if}
           <span class="sp"></span>
-          <!-- Action buttons grouped by job: shape (Tags/Layout/Style), a hairline
-           separator, then output (Preview/Export). `display:contents` keeps them flat
-           in the toolbar flex (the .sp above pushes the whole group right); the toolbar
-           is hidden entirely on mobile. -->
+          <!-- Every command the editor has, grouped by job and divided by hairlines:
+           the change timeline (Undo/Redo/History), what shapes the document
+           (Tags/Layout/Style), then what comes out of it (Preview/Compile/Export) and
+           starting over. `display:contents` keeps them flat in the toolbar flex (the
+           .sp above pushes the whole group right); the toolbar is hidden on mobile. -->
           <div class="actions">
+            <UiButton
+              variant="toolbar"
+              title={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Nothing to undo'}
+              aria-label={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Undo'}
+              disabled={!editor.undo.canUndo}
+              onclick={() => void editor.undo.undo()}>↶</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              title={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Nothing to redo'}
+              aria-label={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Redo'}
+              disabled={!editor.undo.canRedo}
+              onclick={() => void editor.undo.redo()}>↷</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'history'}
+              onclick={() => (editor.openDrawer = 'history')}>History</UiButton
+            >
+            <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'tags'}
@@ -243,6 +234,14 @@
               title="Export this resume as JSON"
               disabled={editor.noProfiles}
               onclick={() => editor.exportJson()}>⤓ Export</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              title={editor.connected
+                ? 'The demo sample is only shown while signed out'
+                : 'Put the demo résumé back the way it started'}
+              disabled={editor.connected}
+              onclick={() => editor.requestResetDemo()}>↺ Reset</UiButton
             >
           </div>
         </div>
@@ -311,56 +310,6 @@
             </div>
           {/if}
         </div>
-        <div class="statusbar">
-          <span class="sb-l"
-            ><span class="sb-state"
-              >{editor.connected
-                ? editor.saveState === 'saving'
-                  ? 'saving…'
-                  : editor.saveState === 'error'
-                    ? '⚠ save failed'
-                    : '✓ saved'
-                : 'demo — not saved'}</span
-            ><span class="sb-variant">{` · ${editor.variantLabel}`}</span></span
-          >
-          <!-- Connection state, and the retry for a session whose résumés didn't load.
-               Signing in is the menubar's, so a signed-out demo shows nothing here. -->
-          {#if !demoMode || signedInOffline}
-            <button
-              class="conn"
-              onclick={() => editor.connect()}
-              disabled={editor.connecting || editor.signingIn}
-              title={signedInOffline
-                ? "Signed in, but your saved résumés didn't load — try again"
-                : 'Connection status'}
-            >
-              <span
-                class="dot"
-                class:live={editor.connected}
-                class:busy={editor.connecting || editor.signingIn}
-                aria-hidden="true"
-              ></span><span class="conn-label"
-                >{editor.signingIn
-                  ? 'signing in…'
-                  : editor.connecting
-                    ? 'connecting…'
-                    : editor.connected
-                      ? 'connected'
-                      : "Couldn't load your résumés — retry"}</span
-              >
-            </button>
-          {/if}
-          {#if editor.identity}
-            <span class="sb-r account">
-              <span class="acct-who" title={editor.identity.email ?? ''}
-                >{editor.identity.name || editor.identity.email || 'Signed in'}</span
-              >
-              <button class="acct-out" onclick={() => editor.signOut()}>Sign out</button>
-            </span>
-          {:else}
-            <span class="sb-r"></span>
-          {/if}
-        </div>
       </div>
     </div>
   </div>
@@ -399,57 +348,11 @@
 </div>
 
 <style>
-  /* Fill the viewport exactly (the site-pane ancestor is a definite-height flex child
-     of the 100vh body), then lay the editor out as a flex column whose middle
-     (.workspace) fills and whose document/preview panes scroll INTERNALLY — so the
-     page itself never scrolls and the editor is always exactly window-tall. */
+  /* As tall as its content: the page's own pane is the one scroller, so the toolbar
+     can stick to its top while the document runs past underneath. */
   .stage {
-    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* The editor's chrome text, in its own windows too, is set in the mono face. */
-  .stage {
-    font-family: var(--font-mono);
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  /* The editor's own commands, under the window's title bar. No overflow:hidden
-     here — it would clip the pull-down menus. */
-  .menubar {
-    flex: none;
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
-    background: var(--paper);
-    border-bottom: 3px solid var(--ink);
-    border-radius: var(--radius-menubar) var(--radius-menubar) 0 0;
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    position: sticky;
-    top: 0;
-    z-index: var(--z-sticky);
-  }
-
-  /* On phones the floating site-nav takes over (as on the portfolio). */
-  @media (width <= 768px) {
-    .site-nav {
-      display: none;
-    }
   }
 
   /* Hollow = unset = nothing is being written: the System-6 idiom, so demo never
@@ -473,13 +376,11 @@
     background: var(--state-busy);
   }
 
-  /* The connection status + sign-in CTA lives in the status bar's centre column
-     (see .statusbar); justify-self keeps it centred there. */
+  /* The connection state, beside the notices it qualifies. */
   .conn {
-    font: inherit;
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
     display: inline-flex;
     align-items: center;
     background: none;
@@ -592,8 +493,6 @@
      inside its body, exactly as the home cards nest inside the "Home" window. */
   /* No frame of its own: the page's own .site-window is the window. */
   .workspace {
-    flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -602,24 +501,44 @@
   /* No inset of its own: the toolbar and the document run the full width of the
      page, as the menubar above them does. Each supplies its own padding. */
   .workspace-body {
-    flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
   /* The toolbar sits above the document, separated by a rule rather than a frame. */
+  /* Stuck to the top of the pane, bled out to its edges so the document passes
+     under it rather than through the strip of padding above it. */
   .toolbar-window {
-    flex: none;
+    position: sticky;
+    top: calc(-1 * var(--pane-pad-y));
+    z-index: var(--z-sticky);
+    margin: calc(-1 * var(--pane-pad-y)) calc(-1 * var(--pane-pad-x)) 0;
+    padding: var(--pane-pad-y) var(--pane-pad-x) 0;
+    background: var(--paper);
     border-bottom: 1px solid var(--ink);
   }
 
   /* The document fills the remaining height; its .wbody panes scroll inside it. */
   .doc-window {
-    flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* The editor's chrome text, in its own windows too, is set in the mono face. */
+  .stage {
+    font-family: var(--font-mono);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .toolbar {
@@ -737,20 +656,16 @@
   }
 
   .wbody {
-    flex: 1;
-    min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
   }
 
   .wbody.split {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 
+  /* No scroller of its own: the document is as tall as it is and the pane scrolls it. */
   .doc-scroll {
-    min-height: 0;
-    overflow: auto;
     background: var(--paper);
   }
 
@@ -889,65 +804,18 @@
     word-break: break-word;
   }
 
-  /* Three columns: the connection state (left), save/mode status (centre), the
-     account (right). The 1fr / auto / 1fr split keeps the centre column dead-centre
-     regardless of the side widths. */
-  .statusbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid var(--ink);
-    background: var(--chrome-hi);
-    padding: 5px 12px;
+  /* The tier and the save state, each its own notice on the toolbar. Mono and
+     muted: they report, they are not pressed. */
+  .note {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--ink-2);
-  }
-
-  /* Spans the whole row and centres its own text, so the label holds still as it
-     changes width between saving and saved. The items beside it come later in the
-     row, so they take their own clicks back. */
-  .sb-l {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    text-align: center;
     white-space: nowrap;
   }
 
-  .sb-r {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    white-space: nowrap;
-  }
-
-  .account {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .acct-who {
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .note.live {
     color: var(--ink);
-  }
-
-  .acct-out {
-    font-family: var(--mono);
-    font-size: var(--text-4xs);
-    color: var(--accent);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
-
-  .acct-out:hover {
-    color: var(--ink);
+    font-weight: 700;
   }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
@@ -992,69 +860,52 @@
     }
   }
 
-  /* ── Mobile / tablet ── A fixed shell: a top bar (the site's floating nav left, the
-     editor ☰ Menu right), the resume as the only scroll region, and the status pinned
-     at the bottom, edge-to-edge with no title. 768px matches the site's floating-nav
-     breakpoint so the nav never lands on the desktop menubar; short landscape phones
-     get this layout too. The compact JS media query must use the same bounds. */
+  /* ── Mobile / tablet ── A fixed shell: the toolbar across the top, the resume as
+     the only scroll region, and the status pinned at the bottom, edge-to-edge with no
+     title. 768px matches the site's floating-nav breakpoint so the nav never lands on
+     the desktop toolbar; short landscape phones get this layout too. The compact JS
+     media query must use the same bounds. */
   @media (width <= 768px), (height <= 500px) {
     .stage {
       --top-h: 58px;
-      --bot-h: 44px;
 
       min-height: 0;
       padding-bottom: 0;
     }
 
-    /* Top bar — the editor ☰ Menu, pushed to the far right so it clears the floating
-       site-nav at the top-left. This one menu is every command (File/Edit/View/Help). */
-    .menubar {
+    /* Top bar — the toolbar itself, scrolled sideways rather than folded into a
+       menu. Its left inset clears the floating site-nav's 44px button at top-left. */
+    .toolbar-window {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       height: var(--top-h);
-      gap: 8px;
-      padding: 0 12px;
       margin: 0;
-      justify-content: flex-end;
-      align-items: center;
+      padding: 0;
+      background: var(--paper);
       z-index: var(--z-sticky);
     }
 
     .toolbar {
-      display: none; /* its buttons all moved into the ☰ menu */
+      height: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding: 0 12px 0 64px;
     }
 
-    /* Status bar — pinned across the bottom, showing just the centred save state.
-       Its side columns are dropped on a phone; the ☰ menu and the doc carry that
-       context. This is the same bar as desktop, re-anchored. */
-    .statusbar {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: var(--bot-h);
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: var(--paper);
-      border-top: 1px solid var(--ink);
-      font-size: var(--text-3xs);
-      z-index: var(--z-sticky);
+    /* Each command keeps its own width while the row scrolls past them. */
+    .toolbar :global(.ui.btn),
+    .toolbar .popup {
+      flex: none;
     }
 
-    /* Keep the unsaved-demo label on phones; only the variant label goes. */
-    .sb-variant {
-      display: none;
-    }
-
-    /* Resume: fixed between the two bars, edge-to-edge; only its body scrolls, so the
-       three fixed regions together cover the whole viewport (no grey gaps). */
+    /* Resume: fixed below the toolbar, edge-to-edge; only its body scrolls, so the
+       two fixed regions together cover the whole viewport (no grey gaps). */
     .doc-window {
       position: fixed;
-      inset: var(--top-h) 0 var(--bot-h) 0;
+      inset: var(--top-h) 0 0 0;
       display: flex;
       flex-direction: column;
       margin: 0;

@@ -340,10 +340,10 @@
 </article>
 
 <style>
+  /* Fills the pane it sits in: the window around it already sets the measure, and
+     a page-width column inside left a wide band of paper either side of it. */
   .doc {
     font-family: var(--serif);
-    max-width: 640px;
-    margin: 0 auto;
     padding: 40px 46px 54px;
     color: var(--ink);
   }

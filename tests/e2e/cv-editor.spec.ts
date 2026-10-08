@@ -46,10 +46,9 @@ async function mockAdaWithVariant(page: Page) {
 }
 
 /** Open a menubar pull-down by title. */
-async function openMenu(page: Page, title: string) {
-  await page.locator('.menus .menu', { hasText: title }).click();
-  await expect(page.locator(`.drop[aria-label="${title}"]`)).toBeVisible();
-}
+/** Undo / Redo name what they will act on, so a test can ask for them by that. */
+const undoBtn = (page: Page) => page.getByRole('button', { name: /^Undo/ });
+const redoBtn = (page: Page) => page.getByRole('button', { name: /^Redo/ });
 
 /** Open the variant drawer and pick a variant by name. */
 async function selectVariant(page: Page, name: string | RegExp) {
@@ -64,13 +63,13 @@ async function selectFullCV(page: Page) {
 }
 
 test.describe('CV editor (document-first rewrite)', () => {
-  test('renders the full-bleed shell and the demo profile', async ({ page }) => {
+  test('renders the editor shell and the demo profile', async ({ page }) => {
     // Backend unreachable → editor stays on the local demo.
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
     // Island hydrated: the System-6 menubar is present.
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
     // The demo renders the owner's real CV, but its name and contacts come from build-time
     // env (blank here), so assert on the hardcoded professional content.
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
@@ -79,7 +78,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.title-bar .title')).toHaveText('LaTeX Resume Editor');
     // Signing in is the menubar's; the status bar says only that nothing is saved.
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
-    await expect(page.locator('.statusbar')).toContainText('demo — not saved');
+    await expect(page.locator('.toolbar')).toContainText('demo');
+    await expect(page.locator('.toolbar')).toContainText('not saved');
     await expect(page.locator('.conn')).toHaveCount(0);
   });
 
@@ -174,7 +174,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     // there to edit, and the menubar offers the way to keep those edits.
     await expect(page.locator('.doc')).toContainText('Qualcomm Institute (CALIT2)');
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
-    await expect(page.locator('.statusbar')).toContainText('demo — not saved');
+    await expect(page.locator('.toolbar')).toContainText('demo');
+    await expect(page.locator('.toolbar')).toContainText('not saved');
   });
 
   test('File ▸ Reset demo restores the sample', async ({ page }) => {
@@ -197,51 +198,12 @@ test.describe('CV editor (document-first rewrite)', () => {
       asked = d.message();
       void d.accept();
     });
-    await openMenu(page, 'File');
-    await page.getByRole('menuitem', { name: /Reset demo/ }).click();
+    await page.getByRole('button', { name: /Reset/ }).click();
     expect(asked).toMatch(/Discard your changes/);
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
-    await openMenu(page, 'Edit');
-    await page.getByRole('menuitem', { name: /Undo Reset demo/ }).click();
+    await undoBtn(page).click();
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
-  });
-
-  test('the File menu opens, closes, and drives from the keyboard', async ({ page }) => {
-    await page.route('**/api/**', (route) => route.abort());
-    await gotoEditor(page);
-
-    const file = page.locator('.menus .menu', { hasText: 'File' });
-    const drop = page.locator('.drop[aria-label="File"]');
-
-    // Every menu carries real commands now, so none of them is disabled.
-    await expect(page.locator('.menus .menu', { hasText: 'Edit' })).toBeEnabled();
-    await expect(page.locator('.menus .menu', { hasText: 'View' })).toBeEnabled();
-
-    // ArrowDown opens and lands focus on the first item (Profiles, now File's top).
-    await file.focus();
-    await page.keyboard.press('ArrowDown');
-    await expect(drop).toBeVisible();
-    await expect(file).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('menuitem', { name: /Profiles/ })).toBeFocused();
-
-    // Roving focus steps through every item and wraps; Escape closes, returns focus.
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: /Profiles/ })).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(drop).toHaveCount(0);
-    await expect(file).toBeFocused();
-
-    // A press outside dismisses it, the way a real pull-down does. The bar's left
-    // edge is the target, since its label is centred.
-    await file.click();
-    await expect(drop).toBeVisible();
-    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
-    await expect(drop).toHaveCount(0);
   });
 
   test('Edit ▸ Undo restores a typed burst, and Redo puts it back', async ({ page }) => {
@@ -249,9 +211,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page);
 
     // Nothing done yet → both commands are honestly disabled.
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
-    await expect(page.getByRole('menuitem', { name: /Redo/ })).toBeDisabled();
+    await expect(undoBtn(page)).toBeDisabled();
+    await expect(redoBtn(page)).toBeDisabled();
     await page.keyboard.press('Escape');
 
     await page.locator('.entry').first().click();
@@ -261,16 +222,14 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
 
     // The label names what will be undone, and typing collapsed into one command.
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
-    await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
+    await expect(page.getByRole('button', { name: 'Undo Position' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Undo Position' }).click();
     await expect(page.locator('.doc')).not.toContainText('Chief Tinkerer');
     await expect(page.locator('.doc')).toContainText('Research Intern');
 
     // One command covers the fourteen keystrokes: the stack is now empty.
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
-    await page.getByRole('menuitem', { name: '↷ Redo Position' }).click();
+    await expect(undoBtn(page)).toBeDisabled();
+    await page.getByRole('button', { name: 'Redo Position' }).click();
     await expect(page.locator('.doc')).toContainText('Chief Tinkerer');
   });
 
@@ -289,7 +248,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(sections).toHaveText(['Summary', 'Skills', 'Education']);
 
     // ⌘Z outside a text field drives the document-level undo.
-    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
+    await page.locator('.title-bar').click();
     await page.keyboard.press('ControlOrMeta+z');
 
     // Back at its original index, with everything that was inside it.
@@ -325,7 +284,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.doc .edit button', { hasText: 'Delete' }).click();
     await expect(page.locator('.doc .entry')).toHaveCount(0);
 
-    await page.locator('.statusbar').click({ position: { x: 8, y: 8 } });
+    await page.locator('.title-bar').click();
     await page.keyboard.press('ControlOrMeta+z');
     await expect(page.locator('.doc .entry')).toHaveCount(1);
     await expect(page.locator('.doc')).toContainText('Analyst');
@@ -357,9 +316,8 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The Edit menu names the exact rule; undoing it lifts the veto and re-dims live.
     await page.keyboard.press('Escape'); // close the drawer so ⌘Z isn't inside the chip input
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: '↶ Undo Exclude #research' })).toBeEnabled();
-    await page.getByRole('menuitem', { name: '↶ Undo Exclude #research' }).click();
+    await expect(page.getByRole('button', { name: 'Undo Exclude #research' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Undo Exclude #research' }).click();
     await expect(researchBullet).not.toHaveClass(/dim/);
   });
 
@@ -378,9 +336,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drawer.locator('.swatch.on')).toHaveAttribute('aria-label', targetLabel!);
 
     await page.keyboard.press('Escape');
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: '↶ Undo Accent color' })).toBeEnabled();
-    await page.getByRole('menuitem', { name: '↶ Undo Accent color' }).click();
+    await expect(page.getByRole('button', { name: 'Undo Accent color' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Undo Accent color' }).click();
 
     // Reopen Style: the original swatch is selected again.
     await page.locator('.toolbar .btn', { hasText: 'Style' }).click();
@@ -403,16 +360,14 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // History has the rule command…
     await page.keyboard.press('Escape');
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: /Undo Exclude/ })).toBeEnabled();
+    await expect(undoBtn(page)).toBeEnabled();
     await page.keyboard.press('Escape');
 
     // …deleting the variant clears it.
     await page.locator('.toolbar .variant-btn').click();
     await drawer.locator('.del').click();
     await page.keyboard.press('Escape');
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+    await expect(undoBtn(page)).toBeDisabled();
   });
 
   test('undo history survives a profile switch and back', async ({ page }) => {
@@ -481,8 +436,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.locator('.drawer .opt').filter({ hasText: 'Grace Hopper' }).click();
     await page.keyboard.press('Escape');
     await expect(page.locator('.doc')).toContainText('Admiral');
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: /Undo/ })).toBeDisabled();
+    await expect(undoBtn(page)).toBeDisabled();
     await page.keyboard.press('Escape');
 
     // Back to Ada — from cache (adaGets stays 1) — with her edit AND her undo intact.
@@ -493,37 +447,27 @@ test.describe('CV editor (document-first rewrite)', () => {
     expect(adaGets).toBe(1); // cache hit — no refetch
     await expect(page.locator('.doc')).toContainText('Chief Analyst');
 
-    await openMenu(page, 'Edit');
-    await expect(page.getByRole('menuitem', { name: '↶ Undo Position' })).toBeEnabled();
-    await page.getByRole('menuitem', { name: '↶ Undo Position' }).click();
+    await expect(page.getByRole('button', { name: 'Undo Position' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Undo Position' }).click();
     await expect(page.locator('.doc')).toContainText('Analyst');
     await expect(page.locator('.doc')).not.toContainText('Chief Analyst');
   });
 
-  test('the View menu toggles the preview pane and opens the panels', async ({ page }) => {
+  test('the toolbar toggles the preview pane and opens the panels', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
-    // The pane is a toggle, so it is a menuitemcheckbox — a ✓ faked into the label
-    // would leave a screen reader with no idea the thing has a state.
-    await openMenu(page, 'View');
-    const previewItem = page.getByRole('menuitemcheckbox', { name: '◱ Preview' });
-    await expect(previewItem).toHaveAttribute('aria-checked', 'false');
-    await previewItem.click();
+    // The button is a toggle, and says so through aria-pressed, which a screen
+    // reader reads as state.
+    const preview = page.getByRole('button', { name: /Preview/ });
+    await expect(preview).toHaveAttribute('aria-pressed', 'false');
+    await preview.click();
     await expect(page.locator('.preview')).toBeVisible();
-
-    // Reopen: the checkmark tracks the pane, so the menu can be read at a glance.
-    await openMenu(page, 'View');
-    await expect(page.getByRole('menuitemcheckbox', { name: '◱ Preview' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    await page.getByRole('menuitemcheckbox', { name: '◱ Preview' }).click();
+    await expect(preview).toHaveAttribute('aria-pressed', 'true');
+    await preview.click();
     await expect(page.locator('.preview')).toHaveCount(0);
 
-    // …and the panels open from here too, mirroring the toolbar.
-    await openMenu(page, 'View');
-    await page.getByRole('menuitem', { name: 'Tags…' }).click();
+    await page.getByRole('button', { name: 'Tags' }).click();
     await expect(page.locator('.drawer[aria-label="Tags"]')).toBeVisible();
   });
 
@@ -534,9 +478,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
     await expect(page.locator('.doc-head h1')).toContainText('Ada Lovelace');
 
-    await openMenu(page, 'File');
-    await expect(page.getByRole('menuitem', { name: /Reset demo/ })).toBeDisabled();
-    await expect(page.getByRole('menuitem', { name: /Export as JSON/ })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /Reset/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /Export/ })).toBeEnabled();
   });
 
   test('loads and renders a real profile when authenticated', async ({ page }) => {
@@ -638,7 +581,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // Edit Position with a '%' → debounced PUT /entries/11 with it escaped to '\%'.
     await inline.locator('.fld').first().locator('input').fill('Lead 50%');
-    await expect(page.locator('.statusbar')).toContainText('saved', { timeout: 5000 });
+    await expect(page.locator('.toolbar')).toContainText('✓ saved', { timeout: 5000 });
     await expect.poll(() => putBody?.fields?.position).toBe('Lead 50\\%');
   });
 
@@ -761,7 +704,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('toolbar opens and closes the drawers', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     // Style drawer — accent swatches; close box dismisses.
     await page.getByRole('button', { name: 'Style', exact: true }).click();
@@ -787,7 +730,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('tags drawer spotlights matching entries; chips edit tags inline', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
     // (#leadership sits on 2 entries + 2 bullets → 4).
@@ -827,7 +770,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the variant drawer applies a lens that dims excluded content', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     // Open the Variants drawer from the toolbar popup.
     const drawer = page.locator('.drawer');
@@ -1012,7 +955,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     await page.getByRole('button', { name: /Preview/ }).click();
     await expect(page.locator('.preview')).toBeVisible();
@@ -1036,14 +979,16 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The PDF renderer paints one <canvas> per page into the pane (the 2-page fixture → 2).
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
-    // The pane scrolls internally (pages taller than the viewport-capped column) rather
-    // than growing the shell — guards the "doesn't reach the bottom" regression.
-    const scrolls = await preview
+    // The editor has one scroller, so the pane lays its pages out in full rather than
+    // clipping them into a column of its own — guards the "doesn't reach the bottom"
+    // regression, which is now about being able to scroll to the last page at all.
+    const clipped = await preview
       .locator('.pv-pages')
-      .evaluate(
-        (el) => el.scrollHeight > el.clientHeight + 4 && el.clientHeight <= window.innerHeight,
-      );
-    expect(scrolls).toBe(true);
+      .evaluate((el) => el.scrollHeight > el.clientHeight + 4);
+    expect(clipped).toBe(false);
+    const lastPage = preview.locator('.pv-pages canvas').last();
+    await lastPage.scrollIntoViewIfNeeded();
+    await expect(lastPage).toBeInViewport();
     await expect.poll(() => pdfHits).toBe(1);
     // The download link carries the variant filename.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
@@ -1125,7 +1070,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .profile-btn').click();
@@ -1303,7 +1248,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     const sectionTitles = page.locator('.doc .sec h2');
     await expect(sectionTitles.first()).toHaveText('Summary');
@@ -1330,7 +1275,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.menubar')).toContainText('File');
+    await expect(page.locator('.toolbar')).toContainText('Profile');
 
     // The demo ships a cover-letter variant, labelled as such in the drawer.
     await selectVariant(page, 'Cover Letter');
@@ -1495,7 +1440,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The optimistic Skills section is removed (no phantom), and the error surfaces.
     await expect(page.locator('.sec-head h2').filter({ hasText: 'Skills' })).toHaveCount(0);
-    await expect(page.locator('.statusbar')).toContainText('save failed');
+    await expect(page.locator('.toolbar')).toContainText('save failed');
   });
 
   test('a failed field save raises a retry toast; retry clears it', async ({ page }) => {
@@ -1542,12 +1487,12 @@ test.describe('CV editor (document-first rewrite)', () => {
     // The failure surfaces as a toast offering a retry (not just a statusbar tick).
     const toast = page.locator('.save-toast');
     await expect(toast).toContainText("Couldn't save");
-    await expect(page.locator('.statusbar')).toContainText('save failed');
+    await expect(page.locator('.toolbar')).toContainText('save failed');
 
     // Retry re-sends the PUT (now 200) → toast clears and the save settles.
     await toast.locator('.st-retry').click();
     await expect(toast).toHaveCount(0);
-    await expect(page.locator('.statusbar')).toContainText('saved');
+    await expect(page.locator('.toolbar')).toContainText('✓ saved');
     expect(puts).toBe(2);
   });
 
@@ -1557,7 +1502,6 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page); // gotoEditor defaults /auth/me → 401 (signed out)
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign in');
-    await expect(page.locator('.statusbar .account')).toHaveCount(0);
   });
 
   test('signed in: the account menu shows the identity and Sign out drops the session', async ({
@@ -1592,11 +1536,11 @@ test.describe('CV editor (document-first rewrite)', () => {
       signedIn: { email: 'ada@example.com', name: 'Ada Lovelace' },
     });
 
-    const account = page.locator('.statusbar .account');
-    await expect(account).toContainText('Ada Lovelace');
-
-    // Sign out drops the server session (then the store reloads back to the demo).
-    await account.getByRole('button', { name: 'Sign out' }).click();
+    // The menubar names the account it would sign out of, and does the signing out.
+    const account = page.locator('.site-menubar .auth-btn');
+    await expect(account).toHaveText('Sign out');
+    await expect(account).toHaveAttribute('title', /ada@example\.com/);
+    await account.click();
     await expect.poll(() => loggedOut).toBe(true);
   });
 });
@@ -1796,12 +1740,12 @@ test.describe('Editor state copy', () => {
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign out');
   });
 
-  test('on a phone the status bar still says the demo is not saved', async ({ page }) => {
+  test('on a phone the toolbar still says the demo is not saved', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.sb-state')).toBeVisible();
-    await expect(page.locator('.sb-state')).toHaveText('demo — not saved');
+    await expect(page.locator('.toolbar .note').first()).toHaveText('demo');
+    await expect(page.locator('.toolbar .note').last()).toHaveText('not saved');
   });
 });
 
@@ -1810,17 +1754,19 @@ test.describe('Editor state copy', () => {
 test.describe('Editor on a touch phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('touch targets are at least 44px, and the menu button says "Commands"', async ({ page }) => {
+  test('touch targets are at least 44px, and the toolbar carries the commands', async ({
+    page,
+  }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
     const grip = page.locator('.grip').first();
     const box = (await grip.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
-    const commands = page.getByRole('button', { name: 'Commands' });
-    await expect(commands).toBeVisible();
-    await commands.click();
-    await page.getByRole('menuitem', { name: /Tags/ }).click();
+    // The toolbar is the one command surface on a phone too; it scrolls sideways.
+    const tags = page.getByRole('button', { name: 'Tags' });
+    await tags.scrollIntoViewIfNeeded();
+    await tags.click();
     const close = page.locator('.drawer .close');
     const c = (await close.boundingBox())!;
     expect(c.width).toBeGreaterThanOrEqual(24);

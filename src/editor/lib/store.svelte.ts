@@ -1119,12 +1119,6 @@ class EditorState {
     this.pendingDraft = null;
   }
 
-  /** Sign out: drop the server session, forget the identity, return to the demo. */
-  async signOut() {
-    await api.logout();
-    this.identity = null;
-    if (typeof window !== 'undefined') window.location.reload();
-  }
 }
 
 export const editor = new EditorState();
