@@ -5,11 +5,9 @@
   --chrome: var(--paper);
   --chrome-hi: var(--paper);
   --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text */
-  --dim-text: var(--ink); /* the editor is 1-bit: controls are ink or they are not there */
-  --disabled: var(--ink-4); /* disabled controls (exempt from contrast minimums) */
 
-  /* Semantic state routes to the shared status light. Demo deliberately has NO
-     colour: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
+  /* Semantic state routes to the shared status light. Demo has no colour of its
+     own: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
   --state-live: var(--color-success);
   --state-busy: var(--color-warning);
   --link-on-ink: #9ec7ff;
@@ -71,7 +69,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Button families — rendered by the shared Button component ──────────────
+/* Button families — rendered by the shared Button component.
    One definition per family; components add only contextual layout (width,
    margins) via `:global(.ui.<family>)` overrides in their own scope. The `.ui`
    marker keeps these from bleeding onto same-named bespoke classes that remain

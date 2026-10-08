@@ -38,7 +38,7 @@ export async function gotoEditor(
   await page.goto(path);
   await expect(page.locator('.stage[data-hydrated]')).toBeAttached({ timeout: 15000 });
 
-  // A signed-in test works against loaded résumés, so the handshake has to land
+  // A signed-in test works against loaded resumes, so the handshake has to land
   // before it starts. This helper owns that wait, so how the editor reports being
   // connected stays one place, and asking for a session is all a test has to say.
   if (opts.signedIn && !opts.offline) {

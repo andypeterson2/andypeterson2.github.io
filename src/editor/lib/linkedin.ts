@@ -2,9 +2,9 @@
  * LinkedIn / Indeed / Handshake export — a pure, downstream consumer of a resolved
  * variant, mirroring the cv backend's own transform so a demo session can produce
  * the same blocks offline. None of those sites expose a write API, so the resume
- * stays the source of truth and this produces paste-ready work-history blocks plus
- * a per-entry fingerprint. The fingerprint is what lets a later run say which
- * positions have drifted since they were last pasted.
+ * stays the authority and this produces paste-ready work-history blocks plus a
+ * per-entry fingerprint. The fingerprint is what lets a later run say which
+ * positions have changed since they were last pasted.
  *
  * No DB or network: feed it a resolved document, get blocks back.
  */
@@ -15,7 +15,7 @@ import { entryIncluded, entryFieldsFor, itemIncluded, sectionScopedOut } from '.
 /** Position-description limits. LinkedIn truncates at ~2000, so the caller is told. */
 export const LIMITS = { description: 2000, headline: 220, about: 2600 } as const;
 
-/** Bullet glyph per consumer. The fingerprint is glyph-free, so format is not drift. */
+/** Bullet glyph per consumer. The fingerprint is glyph-free, so the format is not part of it. */
 const BULLETS: Record<string, string> = { linkedin: '• ', plaintext: '', markdown: '- ' };
 
 const MONTHS: Record<string, number> = {
@@ -140,7 +140,7 @@ export async function exportLinkedin(
         description,
         overLimit: description.length > LIMITS.description,
         // Over normalised, glyph-free values: a cosmetic escaping or format change
-        // must not read as drift, while a real content change must.
+        // must leave it alone, while a real content change must move it.
         fingerprint: await sha256(
           JSON.stringify([title, company, location, start, end, bullets.join('\n')]),
         ),

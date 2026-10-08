@@ -16,13 +16,7 @@
   ] as const;
 
   const text = $derived(FIELDS.map((f) => editor.person.personal[f.key] ?? '').join('  '));
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') editor.clearSelection();
-  }
 </script>
-
-<svelte:window onkeydown={onKeydown} />
 
 <div class="edit">
   <div class="ehead">
@@ -67,7 +61,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim-text);
+    color: var(--ink);
     font-weight: 700;
   }
 

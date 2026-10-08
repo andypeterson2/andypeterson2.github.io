@@ -40,12 +40,6 @@
   function sectionDim(section: Section): boolean {
     return !!lens && sectionScopedOut(section, lens);
   }
-  /** A single bullet dropped by the lens, while its entry is otherwise shown. */
-  /** The fields to DISPLAY for an entry — patched by the active variant's field overrides. */
-  /** A row's accessible name is its heading, since a 540-character
-      button name makes the document exhausting by screen reader. The full text
-      is in the edit form Enter opens, one field per line. */
-
   // Scroll a newly-created section into view once it renders.
   $effect(() => {
     const id = editor.scrollTarget;
@@ -234,7 +228,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 0;
     padding: 2px 4px;
@@ -259,7 +253,7 @@
     font-family: var(--sans);
     font-size: var(--text-2xs);
     line-height: 1;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -397,7 +391,7 @@
   .tag {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--dim-text);
+    color: var(--ink);
     margin-left: 6px;
   }
 
@@ -441,7 +435,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim-text);
+    color: var(--ink);
     padding: 8px 8px 4px;
   }
 

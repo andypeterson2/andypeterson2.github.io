@@ -14,13 +14,9 @@
   }
 </script>
 
-{#if !editor.connected}
-  <p class="note">
-    Resumes live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
-      >Sign in</UiButton
-    > to create, switch, and manage them.
-  </p>
-{:else}
+<!-- Signed in only: the toolbar's Resume control is out of reach until then, and
+     the reason is in its title, so this drawer never has to explain itself. -->
+{#if editor.connected}
   <p class="note">
     Each resume has its own sections, variants, and personal details. The name here is just its
     label in this switcher; the name on the CV is set in the document header.

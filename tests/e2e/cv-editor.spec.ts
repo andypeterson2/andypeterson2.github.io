@@ -323,7 +323,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await page
       .locator('.doc .edit[data-sortable]')
       .first()
-      .getByRole('button', { name: /^Delete entry$/ })
+      .getByRole('button', { name: /^Delete / })
       .click();
     await expect(page.locator('.doc .edit[data-sortable]')).toHaveCount(0);
 
@@ -1088,20 +1088,18 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(preview.locator('.pv-pages')).toHaveCount(0);
   });
 
-  test('the resumes drawer prompts to sign in when in demo mode', async ({ page }) => {
+  test('switching resumes is out of reach in demo, and says why', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
     await expect(page.locator('.toolbar')).toContainText('Resume');
 
-    // Switching resumes needs the account that holds them, so the control is out
-    // of reach until then — and the drawer says why when the editor opens it.
-    await expect(page.locator('.toolbar .profile-btn')).toBeDisabled();
-    const drawer = page.locator('.drawer');
-    await page.evaluate(() => document.querySelector('.profile-btn')?.removeAttribute('disabled'));
-    await page.locator('.toolbar .profile-btn').click();
-    await expect(drawer).toBeVisible();
-    await expect(drawer).toContainText('Resumes live on the server');
-    await expect(drawer.getByRole('button', { name: /Sign in/ })).toBeVisible();
+    // Switching resumes needs the account that holds them. The control keeps its
+    // place in the tab order and carries the reason, and a click does nothing.
+    const btn = page.locator('.toolbar .profile-btn');
+    await expect(btn).toBeDisabled();
+    await expect(btn).toHaveAttribute('title', /sign in to switch/i);
+    await btn.click({ force: true });
+    await expect(page.locator('.drawer')).toHaveCount(0);
   });
 
   test('creates, renames, and deletes a resume when connected', async ({ page }) => {

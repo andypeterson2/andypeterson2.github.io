@@ -111,7 +111,11 @@
           onclick={() => void editor.importDraft()}
           >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
         >
-        <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
+        <button
+          class="link"
+          aria-disabled={editor.importingDraft}
+          title={editor.importingDraft ? 'Bringing your edits in — one moment' : undefined}
+          onclick={() => !editor.importingDraft && editor.discardDraft()}
           >Start fresh instead</button
         >
       </div>
@@ -132,8 +136,9 @@
               title={editor.connected
                 ? 'Switch resume'
                 : 'Your resumes live in your account — sign in to switch between them'}
-              disabled={!editor.connected}
-              onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
+              aria-disabled={!editor.connected}
+              onclick={() => editor.connected && (editor.openDrawer = 'profiles')}
+              >{editor.profileLabel} ▾</button
             ></span
           >
           <span class="field"
@@ -150,8 +155,8 @@
                  site menubar's, so a signed-out demo shows nothing here. -->
             <button
               class="conn"
-              onclick={() => editor.connect()}
-              disabled={editor.connecting || editor.signingIn}
+              aria-disabled={editor.connecting || editor.signingIn}
+              onclick={() => !(editor.connecting || editor.signingIn) && editor.connect()}
               title={signedInOffline
                 ? "Signed in, but your saved resumes didn't load — try again"
                 : 'Connection status'}
@@ -175,6 +180,7 @@
           <UiButton
             variant="toolbar"
             active={editor.openDrawer === 'history'}
+            aria-expanded={editor.openDrawer === 'history'}
             onclick={() => (editor.openDrawer = 'history')}>History</UiButton
           >
           <UiButton
@@ -233,11 +239,13 @@
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'tags'}
+              aria-expanded={editor.openDrawer === 'tags'}
               onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
             >
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'style'}
+              aria-expanded={editor.openDrawer === 'style'}
               onclick={() => (editor.openDrawer = 'style')}>Style</UiButton
             >
             <UiButton
@@ -253,6 +261,7 @@
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'layouts'}
+              aria-expanded={editor.openDrawer === 'layouts'}
               title={editor.connected
                 ? 'Choose the LaTeX template'
                 : 'Choosing a template needs an account — sign in to pick one'}
@@ -261,7 +270,7 @@
             >
             <UiButton
               variant="toolbar"
-              active={editor.preview.open}
+              pressed={editor.preview.open}
               onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
             >
             <UiButton
@@ -438,7 +447,7 @@
       <UiButton
         variant="toast"
         class="st-x"
-        aria-label="Dismiss save error"
+        aria-label="Dismiss error"
         onclick={() => editor.dismissError()}>✕</UiButton
       >
     </div>
@@ -1017,6 +1026,24 @@
 
   /* The tier and the save state, each its own notice on the toolbar. Mono and
      muted: they report, they are not pressed. */
+
+  /* Out of reach, said the same way the button families say it. */
+  .popup[aria-disabled='true'],
+  .conn[aria-disabled='true'],
+  .link[aria-disabled='true'] {
+    cursor: default;
+    background: var(--dither-light);
+    color: var(--ink);
+    text-shadow:
+      1px 0 0 var(--paper),
+      -1px 0 0 var(--paper),
+      0 1px 0 var(--paper),
+      0 -1px 0 var(--paper),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper),
+      1px -1px 0 var(--paper),
+      -1px 1px 0 var(--paper);
+  }
 
   /* Pushes whatever follows it to the right end of the row. */
   .tb-gap {

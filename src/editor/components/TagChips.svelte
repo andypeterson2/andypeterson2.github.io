@@ -45,7 +45,14 @@
       ></span
     >
   {/each}
-  <input class="tag-in" placeholder="+ tag" bind:value={input} onkeydown={onKey} onblur={commit} />
+  <input
+    class="tag-in"
+    aria-label="Add a tag"
+    placeholder="+ tag"
+    bind:value={input}
+    onkeydown={onKey}
+    onblur={commit}
+  />
   {#each suggestions as s (s.tag)}
     <span class="sug"
       ><button
@@ -88,7 +95,7 @@
   .cx {
     background: none;
     border: 0;
-    color: var(--dim-text);
+    color: var(--ink);
     cursor: pointer;
     font-size: var(--text-3xs);
     line-height: 1;
@@ -111,7 +118,7 @@
   .sug-add {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 0;
     cursor: pointer;

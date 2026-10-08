@@ -17,9 +17,11 @@
 
   interface Props extends HTMLButtonAttributes {
     variant: Variant;
-    /** Selected/pressed — the family's `.on` modifier, and the button's aria-pressed.
-     *  Left out entirely for a button that does not toggle. */
+    /** Selected — the family's `.on` modifier. Visual only: a button that opens a
+     *  panel is not "pressed", so say `pressed` or `aria-expanded` for that. */
     active?: boolean;
+    /** A true two-state control: announced as aria-pressed. */
+    pressed?: boolean;
     /** Emphasis (`primary` = solid ink) or destructive (`danger`) modifier. */
     tone?: 'primary' | 'danger';
     /** The rendered <button> element, for focus management. */
@@ -31,6 +33,7 @@
   let {
     variant,
     active,
+    pressed,
     tone,
     disabled,
     onclick,
@@ -72,8 +75,8 @@
 <button
   bind:this={el}
   class={classes}
-  class:on={active}
-  aria-pressed={active}
+  class:on={active || pressed}
+  aria-pressed={pressed}
   aria-disabled={disabled}
   onclick={press}
   {...rest}

@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 import { pdfFileName } from '../src/editor/lib/util';
 
-// The download name a compiled résumé carries: YYYY-MM-DD-NAME-VARIANT.pdf.
+// The download name a compiled resume carries: YYYY-MM-DD-NAME-VARIANT.pdf.
 describe('pdfFileName', () => {
   const day = new Date(2026, 9, 8); // 8 October 2026, local time
 
-  test('dates the file, then names whose résumé and which variant', () => {
+  test('dates the file, then names whose resume and which variant', () => {
     expect(pdfFileName('Ada Lovelace', 'Full CV', day)).toBe('2026-10-08-Ada-Lovelace-Full-CV.pdf');
   });
 

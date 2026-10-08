@@ -8,7 +8,7 @@
 
   import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
-  import { typeDef } from '../lib/section-types';
+  import { entryLead, typeDef } from '../lib/section-types';
   import { itemIncluded } from '../lib/variant-lens';
   import { sortable, reorderKeydown } from '../lib/sortable';
   import { autogrow } from '../lib/autogrow';
@@ -57,6 +57,28 @@
       .filter((v) => typeof v === 'string' && v.trim())
       .join(' ');
   }
+  /**
+   * What this entry is called, for a screen reader: every entry on the page is now
+   * an open editor, so without a name they list as identical "Reorder entry" and
+   * "Delete entry" controls with nothing to tell them apart.
+   */
+  const entryName = $derived(
+    [entryLead(section.type, entry.fields), entry.fields.organization]
+      .filter(Boolean)
+      .join(' · ') ||
+      // A type with no lead field falls back to its first filled one, clipped: a
+      // paragraph entry's only field is the whole paragraph.
+      clip(Object.values(entry.fields).find((v) => typeof v === 'string' && v.trim())) ||
+      def?.entryLabel ||
+      section.title,
+  );
+
+  /** A label's worth of text — enough to tell two entries apart. */
+  function clip(text: string | undefined): string {
+    const t = (text ?? '').trim();
+    return t.length > 60 ? `${t.slice(0, 60).trimEnd()}…` : t;
+  }
+
   /** The force-include state (1/0/null) an item carries in the active variant. */
   function itemIncl(id: number): number | null {
     return lens?.itemOverrides?.[id]?.included ?? null;
@@ -76,13 +98,7 @@
     }
     return parts.join('  ');
   });
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') editor.clearSelection();
-  }
 </script>
-
-<svelte:window onkeydown={onKeydown} />
 
 {#snippet inclSeg(state: number | null, set: (s: number | null) => void)}
   <div class="seg" role="group" aria-label="Visibility in this variant">
@@ -93,14 +109,14 @@
 {/snippet}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="edit" class:dim data-sortable>
+<div class="edit" class:dim data-sortable role="group" aria-label={entryName}>
   <div class="ehead">
     <button
       class="egrip"
       data-drag-handle
       draggable="true"
       title="Drag, or press Alt+↑/↓ to reorder"
-      aria-label="Reorder entry"
+      aria-label={`Reorder ${entryName}`}
       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
       onkeydown={(ev) =>
         reorderKeydown(ev, index, section.entries.length, (f, t) =>
@@ -116,7 +132,7 @@
           variant="mini"
           tone="danger"
           title="Delete this entry"
-          aria-label="Delete entry"
+          aria-label={`Delete ${entryName}`}
           onclick={() => editor.deleteEntry(section, entry.id)}>×</UiButton
         >
       </span>
@@ -134,6 +150,7 @@
     <div class="ov-wrap">
       <textarea
         use:autogrow={fieldVal('text')}
+        aria-label={section.title || 'Summary'}
         class="in para"
         rows="1"
         placeholder="Write your summary…"
@@ -257,12 +274,14 @@
               <div class="bl-ins">
                 <input
                   class="in bl-title"
+                  aria-label={`${def.itemLabel ?? 'Bullet'} lead-in`}
                   placeholder="lead-in (optional)"
                   bind:value={it.title}
                   oninput={() => editor.saveItem(it)}
                 />
                 <textarea
                   use:autogrow={it.content}
+                  aria-label={`${def.itemLabel ?? 'Bullet'} text`}
                   class="in bl-content"
                   rows="1"
                   placeholder={`${def.itemLabel ?? 'Bullet'} text…`}
@@ -351,7 +370,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim-text);
+    color: var(--ink);
     font-weight: 700;
   }
 
@@ -580,7 +599,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1.7;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 0;
     padding: 2px;

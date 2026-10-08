@@ -5,7 +5,7 @@
 // reactive state like `activeVariantId` stays here. The core the save infra exists
 // for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
 
-import type { Person, Personal, Selection, Section, Entry, Item } from './types';
+import type { Person, Personal, Section, Entry, Item } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta, type ApiResult } from './api';
@@ -57,7 +57,6 @@ class EditorState {
    *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo
    *  re-applies it after re-cloning the pristine sample. Never committed PII. */
   private demoIdentity: Partial<Personal> | null = null;
-  selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
   /** Human-readable save-failure message for the toast (null → no toast shown). */
@@ -77,8 +76,8 @@ class EditorState {
   /** the active variant lens (null = Main, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
-  /** When this document was last changed, for the PDF's name. Null until it is: a
-   *  resume loaded and left alone has no edit of its own to date. */
+  /** When this document was last changed in this session, for the PDF's name. Null
+   *  until an edit happens, and null again after a reload: nothing stores the date. */
   lastEditedAt = $state<number | null>(null);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
@@ -115,14 +114,18 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Main". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
-  /** What a compiled PDF downloads as: the day, whose resume it is, and which variant. */
-  pdfName = $derived(
-    pdfFileName(
+  /**
+   * What a compiled PDF downloads as: the day, whose resume it is, and which variant.
+   * A getter, so an unedited document reads today's date at the moment it compiles —
+   * a memoised value keeps yesterday's across midnight.
+   */
+  get pdfName(): string {
+    return pdfFileName(
       `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
       this.variantLabel,
       this.lastEditedAt == null ? new Date() : new Date(this.lastEditedAt),
-    ),
-  );
+    );
+  }
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
   /** the save infra every slice-controller composes. */
@@ -234,14 +237,6 @@ class EditorState {
     this.#shadow.reseat(this.person, this.style);
   }
 
-  select(sel: Selection) {
-    this.selection = sel;
-  }
-
-  clearSelection() {
-    this.selection = { kind: 'none' };
-  }
-
   /** Flag unsaved edits (used in demo, where there's no backend to save to). */
   edited() {
     this.touch();
@@ -290,6 +285,14 @@ class EditorState {
     }
     this.settle(res.ok, retry);
     return res;
+  }
+  /**
+   * Raise the error toast with a message of our own, for a failure that is not a
+   * save: the document is unchanged, so the save indicator stays as it was.
+   */
+  private fail(msg: string) {
+    this.retryOp = null;
+    this.saveError = msg;
   }
   /** Re-fire the stashed retry (used by the error toast). */
   retrySave() {
@@ -438,7 +441,6 @@ class EditorState {
     const entry = this.live(section.entries, index); // the proxy that replaced the literal
     this.#shadow.seed(entry, entry.fields);
     const tempId = entry.id;
-    this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
     this.touch();
     const remember = () =>
       this.undo.record({
@@ -453,13 +455,9 @@ class EditorState {
     const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (res.ok && res.data) {
       entry.id = res.data.id; // reconcile temp id → server id
-      if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
-        this.selection = { kind: 'entry', sectionId: section.id, entryId: res.data.id };
-      }
       remember(); // only a create that stuck is worth undoing
     } else {
       section.entries = section.entries.filter((e) => e.id !== tempId); // roll back the phantom
-      this.clearSelection();
     }
   }
   async deleteEntry(section: Section, entryId: number) {
@@ -477,7 +475,6 @@ class EditorState {
   private async detachEntry(section: Section, entry: Entry) {
     const id = entry.id;
     section.entries = section.entries.filter((e) => e.id !== id);
-    this.clearSelection();
     this.touch();
     await this.persist(() => api.deleteEntry(id));
   }
@@ -612,7 +609,6 @@ class EditorState {
   private async detachSection(section: Section) {
     const id = section.id;
     this.person.sections = this.person.sections.filter((s) => s.id !== id);
-    this.clearSelection();
     this.touch();
     await this.persist(() => api.deleteSection(id));
   }
@@ -745,11 +741,6 @@ class EditorState {
   }
 
   /**
-   * Download the current resume as import-compatible JSON. Connected profiles use
-   * the authoritative backend export; the local demo (and any unsaved edits) is
-   * serialized client-side. Either way it re-imports losslessly.
-   */
-  /**
    * The stem both JSON exports share. Keeps Unicode letters (non-Latin names);
    * strips only filesystem-unsafe characters and leading/trailing dots or spaces
    * (`\w` would flatten accents to dashes).
@@ -762,6 +753,11 @@ class EditorState {
     );
   }
 
+  /**
+   * Download the current resume as import-compatible JSON. Connected profiles use
+   * the authoritative backend export; the local demo (and any unsaved edits) is
+   * serialized client-side. Either way it re-imports losslessly.
+   */
   async exportJson() {
     if (this.noProfiles) return;
     const label = this.exportLabel();
@@ -785,8 +781,13 @@ class EditorState {
    */
   async exportLinkedin() {
     if (this.noProfiles) return;
-    const data = await exportLinkedin(this.person.sections, this.activeVariant);
-    downloadJson(data, `${this.exportLabel()}-linkedin.json`);
+    try {
+      const data = await exportLinkedin(this.person.sections, this.activeVariant);
+      downloadJson(data, `${this.exportLabel()}-linkedin.json`);
+    } catch {
+      // The fingerprints come from WebCrypto, which an insecure origin withholds.
+      this.fail("Couldn't build the LinkedIn file — this page has to be served over HTTPS.");
+    }
   }
 
   /** Save the compiled PDF, under the name the preview bar shows. */
@@ -818,7 +819,6 @@ class EditorState {
     this.activePersonId = pid;
     this.connected = true;
     this.saveState = 'saved';
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
@@ -845,7 +845,6 @@ class EditorState {
    */
   restoreDocument(doc: Person) {
     this.person = doc;
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
@@ -944,20 +943,30 @@ class EditorState {
     this.say('Demo reset — the sample resume is back to its original state.');
   }
 
-  /** The pristine sample in place of the working document (no undo bookkeeping). */
   /**
    * Empty the demo down to a blank document, so a visitor can see what starting from
-   * scratch is like. Demo only: there is no server copy to lose, and the reload that
-   * brings the sample back is one keypress.
+   * scratch is like. Demo only. Undoable, like the reset it replaced: emptying a
+   * document someone has been editing asks for a way back.
    */
   clearDemo() {
     if (this.connected) return;
-    if (
-      this.dirty &&
-      typeof window !== 'undefined' &&
-      !window.confirm('Empty this resume? Your demo edits go with it.')
-    )
-      return;
+    const before = $state.snapshot(this.person);
+    const beforeDirty = this.dirty;
+    this.applyEmptyDemo();
+    this.rebase('demo'); // the blank tree is fresh objects; nothing on the stack points at them
+    this.undo.record({
+      label: 'Clear resume',
+      undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
+      redo: () => {
+        this.applyEmptyDemo();
+        this.#shadow.reseat(this.person, this.style);
+      },
+    });
+    this.say('Emptied — undo brings the resume back.');
+  }
+
+  /** A blank document in place of the working one (no undo bookkeeping). */
+  private applyEmptyDemo() {
     this.person = {
       id: this.person.id,
       name: '',
@@ -966,7 +975,6 @@ class EditorState {
       variants: [],
       coverletter: this.person.coverletter,
     };
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
@@ -974,17 +982,14 @@ class EditorState {
     this.tags.highlight = null;
     this.openDrawer = null;
     this.scrollTarget = null;
-    this.undo.clear();
     this.dirty = false;
     this.lastEditedAt = null;
     this.saveState = 'demo';
-    this.#shadow.reseat(this.person, this.style);
-    this.say('Emptied — reload the page to bring the sample back.');
   }
 
+  /** The pristine sample in place of the working document (no undo bookkeeping). */
   private applyPristineDemo() {
     this.person = createDemoPerson(this.demoIdentity ?? undefined);
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
@@ -1000,7 +1005,6 @@ class EditorState {
   /** Put a demo document back (undoing a reset). */
   private adoptDemoDocument(doc: Person, dirty: boolean) {
     this.person = doc;
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
@@ -1017,7 +1021,6 @@ class EditorState {
     this.activePersonId = null;
     this.connected = true;
     this.saveState = 'saved';
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
@@ -1143,7 +1146,7 @@ class EditorState {
     if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
       const go = window.confirm(
         "This browser won't let the editor keep your demo edits through sign-in. " +
-          'Sign in anyway? (File ▸ Export as JSON saves a copy first.)',
+          'Sign in anyway? (Export ▸ JSON saves a copy first.)',
       );
       if (!go) return false;
     }

@@ -5,7 +5,7 @@
  */
 import { describe, test, expect } from 'vitest';
 import { exportLinkedin, clean, parseRange } from '../src/editor/lib/linkedin';
-import type { Section } from '../src/editor/lib/types';
+import type { EntryOverride, Section, Variant } from '../src/editor/lib/types';
 
 const entry = (id: number, fields: Record<string, string>, items: string[]) => ({
   id,
@@ -104,8 +104,8 @@ describe('exportLinkedin — the fingerprint', () => {
 });
 
 // The fingerprints the cv backend's own transform produces for the fixture above.
-// They are what tells a later run which positions have drifted, so the two
-// implementations have to agree digit for digit or the drift report lies.
+// They are what tells a later run which positions have changed, so the two
+// implementations have to agree digit for digit or that report lies.
 describe('exportLinkedin — parity with the cv backend', () => {
   test('fingerprints match the ones the server computes', async () => {
     const { positions } = await exportLinkedin(SECTIONS, null);
@@ -113,6 +113,74 @@ describe('exportLinkedin — parity with the cv backend', () => {
       '64ac7b4d37a26354b8d7892bcbfb7819b05fe1662c4669dd55bb85bc9f34cc58',
       'cd3062a6e47cdd6f736cc7599da77035b4e62b57c33f45da0ff13053cc2860d5',
     ]);
+  });
+});
+
+// The export applies the lens itself (the backend is handed an already-resolved
+// variant), so a variant has to drop the same content the document dims.
+const variant = (over: Partial<Variant>): Variant =>
+  ({
+    id: 7,
+    name: 'Lensed',
+    rules: { include: [], exclude: [] },
+    sections: [],
+    ...over,
+  }) as Variant;
+
+/** An entry override with only the one field a test cares about set. */
+const override = (over: Partial<EntryOverride>): EntryOverride => ({
+  included: null,
+  textOverride: null,
+  sortOverride: null,
+  fieldsOverride: null,
+  ...over,
+});
+
+describe('exportLinkedin — through a variant lens', () => {
+  test('a scoped-out experience section yields no positions', async () => {
+    const v = variant({ sections: [{ sectionId: 2, enabled: false }] });
+    const { positions } = await exportLinkedin(SECTIONS, v);
+    expect(positions).toEqual([]);
+  });
+
+  test('tag rules drop the entries the variant excludes', async () => {
+    const tagged = structuredClone(SECTIONS);
+    tagged[1].entries[0].tags = ['research'];
+    tagged[1].entries[1].tags = ['web'];
+    const v = variant({ rules: { include: ['research'], exclude: [] } });
+    const { positions } = await exportLinkedin(tagged, v);
+    expect(positions.map((p) => p.entryId)).toEqual([101]);
+  });
+
+  test('a manual include override beats the tag rules', async () => {
+    const tagged = structuredClone(SECTIONS);
+    tagged[1].entries[0].tags = ['research'];
+    tagged[1].entries[1].tags = ['web'];
+    const v = variant({
+      rules: { include: ['research'], exclude: [] },
+      entryOverrides: { 102: override({ included: 1 }) },
+    });
+    const { positions } = await exportLinkedin(tagged, v);
+    expect(positions.map((p) => p.entryId)).toEqual([101, 102]);
+  });
+
+  test('an excluded bullet leaves the description, and the fingerprint moves', async () => {
+    const tagged = structuredClone(SECTIONS);
+    tagged[1].entries[0].items[1].tags = ['internal'];
+    const v = variant({ rules: { include: [], exclude: ['internal'] } });
+    const plain = await exportLinkedin(tagged, null);
+    const lensed = await exportLinkedin(tagged, v);
+    expect(lensed.positions[0].description).not.toContain('Built two solver');
+    expect(lensed.positions[0].fingerprint).not.toBe(plain.positions[0].fingerprint);
+  });
+
+  test('a per-variant field override is what gets exported', async () => {
+    const v = variant({
+      entryOverrides: { 101: override({ fieldsOverride: { position: 'Research Engineer' } }) },
+    });
+    const { positions } = await exportLinkedin(SECTIONS, v);
+    expect(positions[0].title).toBe('Research Engineer');
+    expect(positions[0].company).toBe('Example Research Lab');
   });
 });
 

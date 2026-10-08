@@ -19,7 +19,7 @@ const person = (over: Partial<Person> = {}): Person => ({
 });
 
 // The store is a singleton; resetDemo() re-clones the pristine sample and clears
-// undo/selection/save state, giving each test a clean, isolated document.
+// undo and save state, giving each test a clean, isolated document.
 beforeEach(() => {
   editor.connected = false;
   editor.connecting = false;
@@ -55,13 +55,6 @@ describe('EditorState — demo baseline + derived labels', () => {
     expect(editor.variantLabel).toBe(letterVariant!.name);
     expect(editor.letterMode).toBe(true);
   });
-
-  test('selection round-trips through select / clearSelection', () => {
-    editor.select({ kind: 'entry', sectionId: 's', entryId: 1 });
-    expect(editor.selection).toEqual({ kind: 'entry', sectionId: 's', entryId: 1 });
-    editor.clearSelection();
-    expect(editor.selection).toEqual({ kind: 'none' });
-  });
 });
 
 describe('EditorState — content CRUD (demo: local, undoable, no network)', () => {
@@ -86,23 +79,21 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
     expect(editor.person.sections.some((s) => s.id === target.id)).toBe(true);
   });
 
-  test('addEntry appends to a section, selects it, records "Add entry"', async () => {
+  test('addEntry appends to a section and records "Add entry"', async () => {
     const sec = experience();
     const before = sec.entries.length;
     await editor.addEntry(sec);
     expect(sec.entries.length).toBe(before + 1);
-    expect(editor.selection.kind).toBe('entry');
     expect(editor.undo.undoLabel).toBe('Add entry');
   });
 
-  test('deleteEntry removes it, clears selection, records "Delete entry"', async () => {
+  test('deleteEntry removes it and records "Delete entry"', async () => {
     const sec = experience();
     await editor.addEntry(sec);
     const entry = sec.entries.at(-1)!;
     editor.undo.clear();
     await editor.deleteEntry(sec, entry.id);
     expect(sec.entries.some((e) => e.id === entry.id)).toBe(false);
-    expect(editor.selection).toEqual({ kind: 'none' });
     expect(editor.undo.undoLabel).toBe('Delete entry');
   });
 
@@ -258,11 +249,42 @@ describe('EditorState — demo / identity lifecycle', () => {
     expect(editor.undo.canUndo).toBe(false);
   });
 
+  test('clearDemo empties the document and undo brings it back', async () => {
+    const sections = editor.person.sections.length;
+    expect(sections).toBeGreaterThan(0);
+    editor.clearDemo();
+    expect(editor.person.sections).toEqual([]);
+    expect(editor.person.personal).toEqual({});
+    expect(editor.announce).toMatch(/undo brings/i);
+    expect(editor.undo.undoLabel).toBe('Clear resume');
+    await editor.undo.undo();
+    expect(editor.person.sections.length).toBe(sections);
+    await editor.undo.redo();
+    expect(editor.person.sections).toEqual([]);
+  });
+
+  test('clearDemo is a no-op when connected (real data to protect)', () => {
+    editor.connected = true;
+    editor.person.personal.firstName = 'REAL';
+    editor.clearDemo();
+    expect(editor.person.personal.firstName).toBe('REAL');
+  });
+
   test('resetDemo is a no-op when connected (real data to protect)', () => {
     editor.connected = true;
     editor.person.personal.firstName = 'REAL';
     editor.resetDemo();
     expect(editor.person.personal.firstName).toBe('REAL');
+  });
+
+  test('a LinkedIn export that cannot hash raises the error toast', async () => {
+    const digest = vi
+      .spyOn(crypto.subtle, 'digest')
+      .mockRejectedValue(new Error('no secure context'));
+    await editor.exportLinkedin();
+    expect(editor.saveError).toMatch(/HTTPS/);
+    expect(editor.canRetry).toBe(false);
+    digest.mockRestore();
   });
 
   test('exportJson is gated by noProfiles and runs offline without touching the backend', async () => {
@@ -370,7 +392,6 @@ describe('EditorState — connected content CRUD (persist + reconcile / rollback
     const before = sec.entries.length;
     await editor.addEntry(sec);
     expect(sec.entries.length).toBe(before);
-    expect(editor.selection).toEqual({ kind: 'none' });
     expect(editor.saveState).toBe('error');
   });
 

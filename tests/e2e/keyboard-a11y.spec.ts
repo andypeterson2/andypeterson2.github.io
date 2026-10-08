@@ -70,25 +70,35 @@ test.describe('Editor panels are modal', () => {
 test.describe('The editor to a screen reader', () => {
   test('each entry editor names itself and labels every field', async ({ page }) => {
     await page.goto(EDITOR);
-    const editors = page.locator('.doc .edit');
+    const editors = page.locator('.doc .edit[data-sortable]');
     await expect(editors.first()).toBeVisible();
-    const types = await editors
-      .locator('.etype')
-      .evaluateAll((els) => els.map((e) => (e.textContent ?? '').trim()));
-    expect(types.length).toBeGreaterThan(3);
-    for (const t of types) {
-      expect(t.length).toBeGreaterThan(0);
-      expect(t.length).toBeLessThan(120);
+
+    // Each entry is a named group, so its controls are told apart by what they act on.
+    const names = await editors.evaluateAll((els) =>
+      els.map((e) => e.getAttribute('aria-label') ?? ''),
+    );
+    expect(names.length).toBeGreaterThan(3);
+    for (const n of names) {
+      expect(n.trim().length).toBeGreaterThan(0);
+      expect(n.length).toBeLessThan(120);
     }
-    // No field is left for a screen reader to guess at.
-    const unlabelled = await editors
-      .locator('.fld input, .fld textarea')
-      .evaluateAll(
-        (els) =>
-          els.filter((e) => !(e.closest('label')?.querySelector('.lbl')?.textContent ?? '').trim())
-            .length,
+    // Names distinguish: a reader hearing "Delete X" knows which X.
+    expect(new Set(names).size).toBe(names.length);
+    await expect(editors.first().getByRole('button', { name: `Delete ${names[0]}` })).toBeVisible();
+
+    // No field anywhere in the document is left for a screen reader to guess at.
+    const unlabelled = await page
+      .locator('.doc .edit input, .doc .edit textarea')
+      .evaluateAll((els) =>
+        els
+          .filter((e) => {
+            const own = e.getAttribute('aria-label')?.trim();
+            const lbl = e.closest('label')?.querySelector('.lbl')?.textContent?.trim();
+            return !own && !lbl;
+          })
+          .map((e) => e.className),
       );
-    expect(unlabelled).toBe(0);
+    expect(unlabelled).toEqual([]);
   });
 });
 
