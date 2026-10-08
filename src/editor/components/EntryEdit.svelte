@@ -6,7 +6,6 @@
   // item content, tags, and add/delete/reorder are shared structure, so they are
   // read-only here and everything shown as editable really is variant-scoped.
 
-  import { onMount } from 'svelte';
   import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import { typeDef } from '../lib/section-types';
@@ -58,9 +57,6 @@
       .filter((v) => typeof v === 'string' && v.trim())
       .join(' ');
   }
-  onMount(() => {
-    if (!overriding) editor.suggest.request('entry', entry, entryText());
-  });
   /** The force-include state (1/0/null) an item carries in the active variant. */
   function itemIncl(id: number): number | null {
     return lens?.itemOverrides?.[id]?.included ?? null;
@@ -137,7 +133,7 @@
   {#if def?.isParagraph}
     <div class="ov-wrap">
       <textarea
-        use:autogrow
+        use:autogrow={fieldVal('text')}
         class="in para"
         rows="1"
         placeholder="Write your summary…"
@@ -266,7 +262,7 @@
                   oninput={() => editor.saveItem(it)}
                 />
                 <textarea
-                  use:autogrow
+                  use:autogrow={it.content}
                   class="in bl-content"
                   rows="1"
                   placeholder={`${def.itemLabel ?? 'Bullet'} text…`}

@@ -34,9 +34,13 @@ function createEdgeScroll() {
   let frame = 0;
   let step = 0;
   let target: HTMLElement | null = null;
+  let fedAt = 0;
 
   const tick = () => {
-    if (!target || step === 0) {
+    // `dragover` stops reaching this container as soon as the pointer moves over a
+    // different one, and the last step it left behind would otherwise scroll for
+    // the rest of the drag. Going stale is the only signal that it has gone.
+    if (!target || step === 0 || performance.now() - fedAt > 120) {
       frame = 0;
       return;
     }
@@ -49,6 +53,7 @@ function createEdgeScroll() {
     at(el: HTMLElement, clientY: number) {
       target ??= scrollerFor(el);
       if (!target) return;
+      fedAt = performance.now();
       const box = target.getBoundingClientRect();
       const above = clientY - box.top;
       const below = box.bottom - clientY;
@@ -122,9 +127,16 @@ export function sortable(container: HTMLElement, param: SortableParam) {
   const items = () =>
     Array.from(container.querySelectorAll<HTMLElement>(':scope > [data-sortable]'));
   const indexOfClosest = (target: EventTarget | null) => {
-    const el =
-      target instanceof HTMLElement ? target.closest<HTMLElement>('[data-sortable]') : null;
-    return el ? items().indexOf(el) : -1;
+    if (!(target instanceof HTMLElement)) return -1;
+    // Walk out to the row this container owns. `closest` would stop at a nested
+    // list's own row — a bullet inside an entry — and the drop would be discarded.
+    for (let el: HTMLElement | null = target; el; el = el.parentElement) {
+      if (el.parentElement === container && el.matches('[data-sortable]')) {
+        return items().indexOf(el);
+      }
+      if (el === container) break;
+    }
+    return -1;
   };
 
   function onStart(e: DragEvent) {
@@ -182,6 +194,8 @@ export function sortable(container: HTMLElement, param: SortableParam) {
       onReorder = next.onReorder;
     },
     destroy() {
+      // A container unmounted mid-drag would otherwise leave the loop scrolling.
+      edge.stop();
       container.removeEventListener('dragstart', onStart);
       container.removeEventListener('dragover', onOver);
       container.removeEventListener('drop', onDrop);
