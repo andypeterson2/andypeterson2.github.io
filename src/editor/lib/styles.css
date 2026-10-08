@@ -12,11 +12,10 @@
      colour: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
   --state-live: var(--color-success);
   --state-busy: var(--color-warning);
-  --state-error: var(--color-danger);
   --link-on-ink: #9ec7ff;
 
   /* UI controls use Chicago (Geneva/Monaco's small x-height is unreadable at 12px);
-     --serif, --doc-sans, and --doc-mono belong to the résumé and the compile log. */
+     --serif, --doc-sans, and --doc-mono belong to the resume and the compile log. */
   --sans: var(--font-ui);
   --mono: var(--font-ui);
   --doc-sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
@@ -24,10 +23,9 @@
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
   --shadow: var(--shadow-focus); /* alias the shared press */
 
-  /* Editor-specific shadows: the selected-item ring, the accent press, and the two
+  /* Editor-specific shadows: the selected-item ring and the two
      directional drops the side drawer casts (left on desktop, up on mobile). */
   --shadow-ring: inset 0 0 0 2px var(--ink);
-  --shadow-accent: 1px 1px 0 var(--accent);
   --shadow-drawer: -4px 0 0 rgb(28 27 25 / 50%);
   --shadow-drawer-top: 0 -4px 0 rgb(28 27 25 / 50%);
 
@@ -104,10 +102,31 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.ui.btn:disabled {
-  opacity: 0.4;
+.ui.btn:disabled,
+.ui.mini:disabled,
+.ui.del:disabled {
   cursor: default;
   box-shadow: none;
+  background: var(--dither-light);
+  color: var(--ink);
+
+  /* A hard 1-bit halo so the label reads over the stipple. No blur: that is a grey. */
+  text-shadow:
+    1px 0 0 var(--paper),
+    -1px 0 0 var(--paper),
+    0 1px 0 var(--paper),
+    0 -1px 0 var(--paper),
+    1px 1px 0 var(--paper),
+    -1px -1px 0 var(--paper),
+    1px -1px 0 var(--paper),
+    -1px 1px 0 var(--paper);
+}
+
+.ui.btn:disabled:hover,
+.ui.mini:disabled:hover,
+.ui.del:disabled:hover {
+  background: var(--dither-light);
+  color: var(--ink);
 }
 
 /* compact entry/personal editing actions */
@@ -129,8 +148,10 @@ body {
   color: var(--paper);
 }
 
-.ui.mini.danger {
-  color: var(--accent);
+.ui.mini.danger:hover,
+.ui.mini.danger:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .ui.mini.sym-toggle {
@@ -268,18 +289,25 @@ body {
   cursor: pointer;
 }
 
-/* accent-bordered destructive action */
+/* Destructive action. 1-bit like everything else: it inverts under the pointer
+   rather than carrying a colour of its own. */
 .ui.del {
   align-self: flex-start;
   font-family: var(--sans);
   font-size: var(--text-3xs);
-  color: var(--accent);
+  color: var(--ink);
   background: var(--paper);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--ink);
   border-radius: var(--radius);
   padding: 5px 12px;
   cursor: pointer;
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--shadow);
+}
+
+.ui.del:hover,
+.ui.del:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .ui.del:active {

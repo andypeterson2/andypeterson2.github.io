@@ -206,7 +206,7 @@
   }
 
   .rule-lbl.exc {
-    color: var(--accent);
+    color: var(--ink);
   }
 
   .hint {

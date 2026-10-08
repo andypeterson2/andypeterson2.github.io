@@ -213,14 +213,14 @@
     margin-bottom: 8px;
   }
 
-  /* The résumé's own type: the print faces. */
+  /* The resume's own type: the print faces. */
   .sec-head h2 {
     font-family: var(--doc-sans);
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: var(--accent, var(--ink-2));
+    color: var(--ink);
     margin: 0;
   }
 
@@ -287,8 +287,8 @@
   }
 
   .tool.danger:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .para {

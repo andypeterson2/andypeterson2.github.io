@@ -258,20 +258,6 @@ describe('EditorState — demo / identity lifecycle', () => {
     expect(editor.undo.canUndo).toBe(false);
   });
 
-  test('requestResetDemo asks before discarding edits, and respects "no"', async () => {
-    await editor.addEntry(experience());
-    const confirm = vi.fn(() => false);
-    vi.stubGlobal('window', { confirm });
-    const count = experience().entries.length;
-    editor.requestResetDemo();
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(experience().entries.length).toBe(count); // kept
-    confirm.mockReturnValue(true);
-    editor.requestResetDemo();
-    expect(editor.dirty).toBe(false);
-    vi.unstubAllGlobals();
-  });
-
   test('resetDemo is a no-op when connected (real data to protect)', () => {
     editor.connected = true;
     editor.person.personal.firstName = 'REAL';

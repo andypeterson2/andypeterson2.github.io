@@ -77,7 +77,7 @@ class EditorState {
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
   /** When this document was last changed, for the PDF's name. Null until it is: a
-   *  résumé loaded and left alone has no edit of its own to date. */
+   *  resume loaded and left alone has no edit of its own to date. */
   lastEditedAt = $state<number | null>(null);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
@@ -114,7 +114,7 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Main". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
-  /** What a compiled PDF downloads as: the day, whose résumé it is, and which variant. */
+  /** What a compiled PDF downloads as: the day, whose resume it is, and which variant. */
   pdfName = $derived(
     pdfFileName(
       `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
@@ -193,7 +193,7 @@ class EditorState {
   /** the active profile's switcher label (its person "name"); demo → the CV name. */
   profileLabel = $derived(
     this.noProfiles
-      ? 'No résumés'
+      ? 'No resumes'
       : this.persons.find((p) => p.id === this.activePersonId)?.name ||
           `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
           'Demo',
@@ -744,13 +744,13 @@ class EditorState {
   }
 
   /**
-   * Download the current résumé as import-compatible JSON. Connected profiles use
+   * Download the current resume as import-compatible JSON. Connected profiles use
    * the authoritative backend export; the local demo (and any unsaved edits) is
    * serialized client-side. Either way it re-imports losslessly.
    */
   async exportJson() {
     if (this.noProfiles) return;
-    // Keep Unicode letters (résumé, non-Latin names); strip only filesystem-unsafe
+    // Keep Unicode letters (resume, non-Latin names); strip only filesystem-unsafe
     // characters + leading/trailing dots/spaces (\w would flatten accents to dashes).
     const label =
       (this.profileLabel || 'resume')
@@ -912,23 +912,7 @@ class EditorState {
         },
       });
     }
-    this.say('Demo reset — the sample résumé is back to its original state.');
-  }
-
-  /**
-   * Reset from the UI (File ▸ Reset demo): asks first when
-   * the visitor has edits, since those edits are the only copy.
-   */
-  requestResetDemo() {
-    if (this.connected) return;
-    if (
-      this.dirty &&
-      typeof window !== 'undefined' &&
-      !window.confirm('Discard your changes and restore the sample résumé? You can undo this.')
-    ) {
-      return;
-    }
-    this.resetDemo();
+    this.say('Demo reset — the sample resume is back to its original state.');
   }
 
   /** The pristine sample in place of the working document (no undo bookkeeping). */
@@ -982,7 +966,7 @@ class EditorState {
     this.connecting = true;
     this.connectError = null;
     // Who is signed in drives the account menu, even for a brand-new account whose
-    // empty state has no résumés yet.
+    // empty state has no resumes yet.
     const who = await api.me();
     this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
     // Not signed in ⇒ stay in the local demo. The cv backend answers anonymous
@@ -1041,9 +1025,9 @@ class EditorState {
   async addPerson() {
     if (!this.connected) return;
     const existing = new Set(this.persons.map((p) => p.name));
-    let name = 'New résumé';
+    let name = 'New resume';
     let n = 2;
-    while (existing.has(name)) name = `New résumé ${n++}`;
+    while (existing.has(name)) name = `New resume ${n++}`;
     const res = await this.persist(() => api.createPerson(name));
     if (res.ok && res.data) {
       this.persons = [...this.persons, { id: res.data.id, name }];
@@ -1124,7 +1108,7 @@ class EditorState {
       this.pendingDraft = null;
       this.persons = [...this.persons, { id, name: tree.name }];
       await this.selectPerson(id);
-      this.say('Your demo edits are now a résumé in your account.');
+      this.say('Your demo edits are now a resume in your account.');
     } finally {
       this.importingDraft = false;
     }

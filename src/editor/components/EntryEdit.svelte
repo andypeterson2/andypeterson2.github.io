@@ -1,7 +1,7 @@
 <script lang="ts">
   // Expand-in-place editor for one entry, driven by the section type's field list
   // (paragraph → textarea; otherwise labelled fields, plus bullets when hasItems).
-  // Under Main it edits the base document. Under a CV/résumé variant, field edits
+  // Under Main it edits the base document. Under a CV/resume variant, field edits
   // become per-variant overrides and entries/items get a force-in/out control;
   // item content, tags, and add/delete/reorder are shared structure, so they are
   // read-only here and everything shown as editable really is variant-scoped.
@@ -367,7 +367,7 @@
     line-height: 1.5;
     color: var(--ink-2);
     background: var(--chrome-hi);
-    border: 1px solid var(--accent);
+    border: 1px solid var(--ink);
     border-left-width: 3px;
     border-radius: var(--radius);
     padding: 8px 10px;
@@ -415,7 +415,7 @@
   }
 
   .ov-badge {
-    color: var(--accent);
+    color: var(--ink);
     font-size: var(--text-4xs);
     margin-left: 5px;
     vertical-align: middle;

@@ -32,7 +32,7 @@
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
-  // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
+  // Signed in, but the backend didn't load their resumes (cold start, outage). Not the
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
   // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
@@ -82,7 +82,7 @@
       >
     </div>
   {:else if editor.pendingDraft}
-    <!-- Demo edits carried across sign-in: offer them as a résumé of their own. -->
+    <!-- Demo edits carried across sign-in: offer them as a resume of their own. -->
     <div class="invite-layer" use:modal={'#draft-primary'}>
       <div class="invite-scrim" aria-hidden="true"></div>
       <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
@@ -92,7 +92,7 @@
         </div>
         <span class="txt"
           >You edited the demo before signing in. Bring those edits into your account as a new
-          résumé? Your name and email replace the sample's contact details.</span
+          resume? Your name and email replace the sample's contact details.</span
         >
         <UiButton
           variant="toolbar"
@@ -118,10 +118,10 @@
              not (WCAG 1.4.10 asks that the page not scroll, and it doesn't). -->
         <div class="toolbar" data-reflow-exempt>
           <span class="field"
-            >Résumé
+            >Resume
             <button
               class="popup profile-btn"
-              title="Résumés"
+              title="Resumes"
               onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
             ></span
           >
@@ -149,14 +149,14 @@
               : 'not saved'}</span
           >
           {#if !demoMode || signedInOffline}
-            <!-- The retry for a session whose résumés didn't load. Signing in is the
+            <!-- The retry for a session whose resumes didn't load. Signing in is the
                  site menubar's, so a signed-out demo shows nothing here. -->
             <button
               class="conn"
               onclick={() => editor.connect()}
               disabled={editor.connecting || editor.signingIn}
               title={signedInOffline
-                ? "Signed in, but your saved résumés didn't load — try again"
+                ? "Signed in, but your saved resumes didn't load — try again"
                 : 'Connection status'}
             >
               <span
@@ -171,10 +171,15 @@
                     ? 'connecting…'
                     : editor.connected
                       ? 'connected'
-                      : "Couldn't load your résumés — retry"}</span
+                      : "Couldn't load your resumes — retry"}</span
               >
             </button>
           {/if}
+          <UiButton
+            variant="toolbar"
+            active={editor.openDrawer === 'history'}
+            onclick={() => (editor.openDrawer = 'history')}>History</UiButton
+          >
         </div>
 
         <!-- Below the line, the commands sit over what they act on: the document's
@@ -186,21 +191,15 @@
               title={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Nothing to undo'}
               aria-label={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Undo'}
               disabled={!editor.undo.canUndo}
-              onclick={() => void editor.undo.undo()}>↶</UiButton
+              onclick={() => void editor.undo.undo()}>↶ Undo</UiButton
             >
             <UiButton
               variant="toolbar"
               title={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Nothing to redo'}
               aria-label={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Redo'}
               disabled={!editor.undo.canRedo}
-              onclick={() => void editor.undo.redo()}>↷</UiButton
+              onclick={() => void editor.undo.redo()}>↷ Redo</UiButton
             >
-            <UiButton
-              variant="toolbar"
-              active={editor.openDrawer === 'history'}
-              onclick={() => (editor.openDrawer = 'history')}>History</UiButton
-            >
-            <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'tags'}
@@ -209,6 +208,10 @@
             <UiButton
               variant="toolbar"
               active={editor.openDrawer === 'layouts'}
+              title={editor.connected
+                ? 'Choose the LaTeX template'
+                : 'Choosing a template needs an account — sign in to pick one'}
+              disabled={!editor.connected}
               onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
             >
             <UiButton
@@ -221,22 +224,7 @@
               active={symbols.open}
               title="Insert a symbol"
               aria-expanded={symbols.open}
-              onclick={() => symbols.toggle()}>Ω</UiButton
-            >
-            <span class="tbar-sep" aria-hidden="true"></span>
-            <UiButton
-              variant="toolbar"
-              title="Export this resume as JSON"
-              disabled={editor.noProfiles}
-              onclick={() => editor.exportJson()}>⤓ Export</UiButton
-            >
-            <UiButton
-              variant="toolbar"
-              title={editor.connected
-                ? 'The demo sample is only shown while signed out'
-                : 'Put the demo résumé back the way it started'}
-              disabled={editor.connected}
-              onclick={() => editor.requestResetDemo()}>↺ Reset</UiButton
+              onclick={() => symbols.toggle()}>Ω Symbols</UiButton
             >
           </div>
 
@@ -249,11 +237,17 @@
             <UiButton
               variant="toolbar"
               title={editor.preview.compilable
-                ? 'Compile this résumé to a PDF'
+                ? 'Compile this resume to a PDF'
                 : 'Compiling to PDF needs an account — sign in to compile'}
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
               >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              title="Export this resume as JSON"
+              disabled={editor.noProfiles}
+              onclick={() => editor.exportJson()}>⤓ Export</UiButton
             >
           </div>
         </div>
@@ -264,10 +258,10 @@
           <div class="doc-scroll">
             {#if editor.noProfiles}
               <div class="no-profiles">
-                <p class="np-title">No résumés yet</p>
-                <p class="np-sub">Create your first résumé to start editing.</p>
+                <p class="np-title">No resumes yet</p>
+                <p class="np-sub">Create your first resume to start editing.</p>
                 <button class="np-btn" onclick={() => editor.addPerson()}
-                  >＋ Create your first résumé</button
+                  >＋ Create your first resume</button
                 >
               </div>
             {:else if editor.letterMode}
@@ -281,12 +275,6 @@
               <div class="pv-bar">
                 <span>{editor.pdfName}</span>
                 <span class="pv-tools">
-                  <button
-                    class="pv-btn"
-                    disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
-                    onclick={() => editor.preview.compile()}
-                    >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
-                  >
                   {#if editor.preview.url}
                     <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
                   {/if}
@@ -294,9 +282,9 @@
               </div>
               <div class="pv-body">
                 {#if !editor.connected}
-                  <div class="pv-note">Sign in to compile this résumé to a PDF.</div>
+                  <div class="pv-note">Sign in to compile this resume to a PDF.</div>
                 {:else if !editor.preview.compilable}
-                  <div class="pv-note">Choose a résumé to compile its PDF.</div>
+                  <div class="pv-note">Choose a resume to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}
                   <div class="pv-note">
                     Compiling {editor.variantLabel}…<br /><small
@@ -342,7 +330,7 @@
   {:else if editor.openDrawer === 'variant'}
     <Drawer title="Variants"><VariantDrawer /></Drawer>
   {:else if editor.openDrawer === 'profiles'}
-    <Drawer title="Résumés"><ProfilesDrawer /></Drawer>
+    <Drawer title="Resumes"><ProfilesDrawer /></Drawer>
   {:else if editor.openDrawer === 'history'}
     <Drawer title="History"><HistoryDrawer /></Drawer>
   {/if}
@@ -576,7 +564,7 @@
     border: 0;
   }
 
-  /* Row one: which résumé is open and whether its work is kept. */
+  /* Row one: which resume is open and whether its work is kept. */
   .toolbar {
     display: flex;
     align-items: center;
@@ -623,6 +611,22 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink-2);
+  }
+
+  /* Every control on the toolbar stands the same height, so a row of them reads as
+     one strip rather than a ragged line. */
+  .toolbar :global(.ui.btn),
+  .tb-doc :global(.ui.btn),
+  .tb-pdf :global(.ui.btn),
+  .popup {
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+
+    /* A fixed line box, so a taller glyph (the undo arrows, the preview mark) does
+       not push its own button a pixel above the rest of the row. */
+    line-height: 1;
+    padding-block: 0;
   }
 
   .popup {
@@ -896,7 +900,7 @@
   }
 
   .save-toast .st-icon {
-    color: var(--state-error);
+    color: var(--ink);
     font-size: var(--text-2xs);
     line-height: 1;
   }

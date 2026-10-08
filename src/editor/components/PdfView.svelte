@@ -27,7 +27,7 @@
       if (mine !== token) return;
       // disableFontFace: draw embedded-font glyph outlines straight onto the canvas
       // instead of injecting an @font-face with a data:/blob: src — which font-src
-      // 'self' would block, silently rendering a real (embedded-font) résumé in a
+      // 'self' would block, silently rendering a real (embedded-font) resume in a
       // wrong fallback face. isEvalSupported:false keeps it off 'unsafe-eval'.
       const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true })
         .promise;

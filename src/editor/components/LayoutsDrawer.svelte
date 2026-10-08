@@ -101,6 +101,6 @@
     margin-left: auto;
     font-size: var(--text-4xs);
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--ink);
   }
 </style>

@@ -7,7 +7,7 @@
 
   function confirmDelete(p: PersonMeta) {
     if (
-      window.confirm(`Delete the résumé "${p.name}" and everything in it? This cannot be undone.`)
+      window.confirm(`Delete the resume "${p.name}" and everything in it? This cannot be undone.`)
     ) {
       void editor.deletePerson(p.id);
     }
@@ -16,13 +16,13 @@
 
 {#if !editor.connected}
   <p class="note">
-    Résumés live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
+    Resumes live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
       >Sign in</UiButton
     > to create, switch, and manage them.
   </p>
 {:else}
   <p class="note">
-    Each résumé has its own sections, variants, and personal details. The name here is just its
+    Each resume has its own sections, variants, and personal details. The name here is just its
     label in this switcher; the name on the CV is set in the document header.
   </p>
 
@@ -40,7 +40,7 @@
   </div>
 
   <UiButton variant="new" class="new-profile" onclick={() => editor.addPerson()}
-    >＋ New résumé</UiButton
+    >＋ New resume</UiButton
   >
 
   {#if activeMeta}
@@ -54,7 +54,7 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete résumé</UiButton>
+      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete resume</UiButton>
     </div>
   {/if}
 {/if}

@@ -7,7 +7,7 @@ export function move<T>(arr: T[], from: number, to: number): T[] {
 }
 
 /**
- * The download name a compiled résumé carries: `YYYY-MM-DD-NAME-VARIANT.pdf`.
+ * The download name a compiled resume carries: `YYYY-MM-DD-NAME-VARIANT.pdf`.
  * Each part is reduced to letters, digits and dashes so the name survives every
  * filesystem, and an empty part is dropped rather than leaving a double dash.
  * Composed (NFC) so an accented letter stays one letter: decomposing first would

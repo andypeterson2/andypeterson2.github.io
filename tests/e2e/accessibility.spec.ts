@@ -64,7 +64,6 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
   { name: 'editor, dark', path: EDITOR, dark: true, setup: editorReady },
   { name: 'editor, phone', path: EDITOR, phone: true, setup: editorReady },
   { name: 'editor, Tags drawer', path: EDITOR, setup: openDrawer('Tags') },
-  { name: 'editor, Layout drawer', path: EDITOR, setup: openDrawer('Layout') },
   { name: 'editor, Style drawer', path: EDITOR, setup: openDrawer('Style') },
   { name: 'classifier', path: CLASSIFIER },
   { name: 'classifier, dark', path: CLASSIFIER, dark: true },

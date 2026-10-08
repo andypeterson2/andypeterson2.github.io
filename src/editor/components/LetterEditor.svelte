@@ -277,8 +277,8 @@
   }
 
   .del:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .empty {

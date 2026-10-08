@@ -96,7 +96,7 @@
   }
 
   .cx:hover {
-    color: var(--accent);
+    color: var(--ink);
   }
 
   .sug {

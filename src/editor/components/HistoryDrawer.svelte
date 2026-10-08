@@ -423,7 +423,7 @@
   }
 
   .s-del {
-    color: var(--state-error, var(--color-danger));
+    color: var(--ink);
   }
 
   .s-chg {
@@ -462,7 +462,7 @@
   }
 
   .b-removed {
-    color: var(--state-error, var(--color-danger));
+    color: var(--ink);
   }
 
   .b-changed {
@@ -480,7 +480,7 @@
   }
 
   .ent.e-removed {
-    border-left-color: var(--state-error, var(--color-danger));
+    border-left-color: var(--ink);
   }
 
   .ent-l {
@@ -543,7 +543,7 @@
   }
 
   .del {
-    color: var(--state-error, var(--color-danger));
+    color: var(--ink);
     text-decoration: line-through;
   }
 </style>
