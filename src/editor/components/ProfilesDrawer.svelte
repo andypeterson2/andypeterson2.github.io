@@ -7,7 +7,7 @@
 
   function confirmDelete(p: PersonMeta) {
     if (
-      window.confirm(`Delete the profile "${p.name}" and everything in it? This cannot be undone.`)
+      window.confirm(`Delete the résumé "${p.name}" and everything in it? This cannot be undone.`)
     ) {
       void editor.deletePerson(p.id);
     }
@@ -16,14 +16,14 @@
 
 {#if !editor.connected}
   <p class="note">
-    Profiles live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
+    Résumés live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
       >Sign in</UiButton
     > to create, switch, and manage them.
   </p>
 {:else}
   <p class="note">
-    Each profile is a separate resume — its own sections, variants, and personal info. The name here
-    is just its label in this switcher; the name on the CV is set in the document header.
+    Each résumé has its own sections, variants, and personal details. The name here is just its
+    label in this switcher; the name on the CV is set in the document header.
   </p>
 
   <div class="picker">
@@ -40,7 +40,7 @@
   </div>
 
   <UiButton variant="new" class="new-profile" onclick={() => editor.addPerson()}
-    >＋ New profile</UiButton
+    >＋ New résumé</UiButton
   >
 
   {#if activeMeta}
@@ -54,7 +54,7 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete profile</UiButton>
+      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete résumé</UiButton>
     </div>
   {/if}
 {/if}

@@ -200,6 +200,32 @@ describe('EditorState — the save-state machine (persist / settle / retry)', ()
   });
 });
 
+describe('EditorState — the PDF name', () => {
+  test('dates the file from the last edit, not from today', async () => {
+    editor.hydrateDemoIdentity({ firstName: 'Ada', lastName: 'Lovelace' });
+    // An untouched document has no edit of its own to date, so today stands in.
+    editor.lastEditedAt = null;
+    const today = new Date();
+    const day = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    expect(editor.pdfName).toBe(`${day}-Ada-Lovelace-Main.pdf`);
+
+    // Once it has been edited, that day is the one the file carries.
+    editor.lastEditedAt = new Date(2024, 2, 9, 12).getTime();
+    expect(editor.pdfName).toBe('2024-03-09-Ada-Lovelace-Main.pdf');
+  });
+
+  test('an edit stamps the moment it happened', async () => {
+    editor.lastEditedAt = null;
+    await editor.addEntry(experience());
+    expect(editor.lastEditedAt).not.toBeNull();
+    expect(editor.dirty).toBe(true);
+  });
+});
+
 describe('EditorState — demo / identity lifecycle', () => {
   test('hydrateDemoIdentity overlays contacts onto the demo person', () => {
     editor.hydrateDemoIdentity({ firstName: 'Andrew', email: 'a@b.dev' });

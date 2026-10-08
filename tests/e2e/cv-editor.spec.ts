@@ -130,13 +130,13 @@ async function selectFullCV(page: Page) {
 }
 
 test.describe('CV editor (document-first rewrite)', () => {
-  test('renders the editor shell and the demo profile', async ({ page }) => {
+  test('renders the editor shell and the demo résumé', async ({ page }) => {
     // Backend unreachable → editor stays on the local demo.
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
 
     // Island hydrated: the System-6 menubar is present.
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
     // The demo renders the owner's real CV, but its name and contacts come from build-time
     // env (blank here), so assert on the hardcoded professional content.
     await expect(page.getByRole('textbox', { name: 'Organization' }).first()).toHaveValue(
@@ -433,7 +433,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(undoBtn(page)).toBeDisabled();
   });
 
-  test('undo history survives a profile switch and back', async ({ page }) => {
+  test('undo history survives a résumé switch and back', async ({ page }) => {
     // Each profile keeps its own history, and returning reuses the cached tree
     // (no refetch) so the commands — which hold that tree's objects — stay valid.
     const ada = {
@@ -537,7 +537,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.locator('.drawer[aria-label="Tags"]')).toBeVisible();
   });
 
-  test('File ▸ Reset demo is disabled for a signed-in profile', async ({ page }) => {
+  test('File ▸ Reset demo is disabled for a signed-in résumé', async ({ page }) => {
     // resetDemo() is a no-op when connected — there is real data to protect. Say so
     // in the menu instead of offering a command that silently does nothing.
     await mockAdaWithVariant(page);
@@ -548,7 +548,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(page.getByRole('button', { name: /Export/ })).toBeEnabled();
   });
 
-  test('loads and renders a real profile when authenticated', async ({ page }) => {
+  test('loads and renders a real résumé when authenticated', async ({ page }) => {
     // The reworked backend is id-addressable: GET /persons lists profiles,
     // GET /persons/:pid returns the full main. Mock both and assert the mapper
     // renders the profile's name + entries (not the demo).
@@ -770,7 +770,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('toolbar opens and closes the drawers', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     // Style drawer — accent swatches; close box dismisses.
     await page.getByRole('button', { name: 'Style', exact: true }).click();
@@ -796,7 +796,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('tags drawer spotlights matching entries; chips edit tags inline', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     // The demo profile's baked-in vocabulary surfaces with usage counts
     // (#leadership sits on 2 entries + 2 bullets → 4).
@@ -833,7 +833,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the variant drawer applies a lens that dims excluded content', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     // Open the Variants drawer from the toolbar popup.
     const drawer = page.locator('.drawer');
@@ -1005,7 +1005,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     await expect(page.locator('.preview')).toBeVisible();
     await expect(page.locator('.preview')).toContainText('Sign in to compile');
@@ -1115,19 +1115,19 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(preview.locator('.pv-pages')).toHaveCount(0);
   });
 
-  test('the profiles drawer prompts to sign in when in demo mode', async ({ page }) => {
+  test('the résumés drawer prompts to sign in when in demo mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     const drawer = page.locator('.drawer');
     await page.locator('.toolbar .profile-btn').click();
     await expect(drawer).toBeVisible();
-    await expect(drawer).toContainText('Profiles live on the server');
+    await expect(drawer).toContainText('Résumés live on the server');
     await expect(drawer.getByRole('button', { name: /Sign in/ })).toBeVisible();
   });
 
-  test('creates, renames, and deletes a profile when connected', async ({ page }) => {
+  test('creates, renames, and deletes a résumé when connected', async ({ page }) => {
     const adaMain = {
       person: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
@@ -1142,7 +1142,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       variants: [],
     };
     const emptyMain = {
-      person: { id: 8, name: 'New profile' },
+      person: { id: 8, name: 'New résumé' },
       personal: {},
       sections: [],
       variants: [],
@@ -1202,7 +1202,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drawer.locator('.opt')).toHaveCount(1);
 
     // Create → a new empty profile appears, is selected, and loads (blank doc-head).
-    await drawer.getByRole('button', { name: /New profile/ }).click();
+    await drawer.getByRole('button', { name: /New résumé/ }).click();
     await expect(drawer.locator('.opt')).toHaveCount(2);
     await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('');
 
@@ -1214,13 +1214,13 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drawer.locator('.opt').filter({ hasText: 'Backend Resume' })).toBeVisible();
 
     // Delete it (confirmed) → back to Ada.
-    await drawer.getByRole('button', { name: /Delete profile/ }).click();
+    await drawer.getByRole('button', { name: /Delete résumé/ }).click();
     await expect.poll(() => deleted).toBe(true);
     await expect(drawer.locator('.opt')).toHaveCount(1);
     await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
   });
 
-  test('deleting the last profile shows an empty state and lets you start over', async ({
+  test('deleting the last résumé shows an empty state and lets you start over', async ({
     page,
   }) => {
     const adaMain = {
@@ -1281,8 +1281,8 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect(drawer).toBeVisible();
 
     // Delete the only profile → the connected empty state (not a sign-in prompt).
-    await drawer.getByRole('button', { name: /Delete profile/ }).click();
-    await expect(page.locator('.no-profiles')).toContainText('No profiles yet');
+    await drawer.getByRole('button', { name: /Delete résumé/ }).click();
+    await expect(page.locator('.no-profiles')).toContainText('No résumés yet');
     await expect(page.locator('.doc .edit')).toHaveCount(0);
 
     // Close the drawer, then create from the empty state → editing resumes.
@@ -1296,7 +1296,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('reorders with the keyboard (Alt+Arrow), keeps focus, and announces', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     const sectionTitles = page.locator('.doc .sec h2');
     await expect(sectionTitles.first()).toHaveText('Summary');
@@ -1322,7 +1322,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('a cover-letter variant switches the editor to letter mode', async ({ page }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
-    await expect(page.locator('.toolbar')).toContainText('Profile');
+    await expect(page.locator('.toolbar')).toContainText('Résumé');
 
     // The demo ships a cover-letter variant, labelled as such in the drawer.
     await selectVariant(page, 'Cover Letter');

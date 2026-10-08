@@ -25,7 +25,7 @@
      (a demo can try styles); they just don't persist until sign-in. So only the note
      changes when disconnected — the controls are always shown. -->
 {#if editor.connected}
-  <p class="note">Applies to the compiled PDF, across every profile.</p>
+  <p class="note">Applies to the compiled PDF, across every résumé.</p>
 {:else}
   <p class="note">
     Try styles here — the accent re-themes the document live.

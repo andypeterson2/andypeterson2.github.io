@@ -76,6 +76,9 @@ class EditorState {
   /** the active variant lens (null = Main, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
+  /** When this document was last changed, for the PDF's name. Null until it is: a
+   *  résumé loaded and left alone has no edit of its own to date. */
+  lastEditedAt = $state<number | null>(null);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
   signingIn = $state(false);
@@ -116,6 +119,7 @@ class EditorState {
     pdfFileName(
       `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
       this.variantLabel,
+      this.lastEditedAt == null ? new Date() : new Date(this.lastEditedAt),
     ),
   );
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
@@ -124,9 +128,7 @@ class EditorState {
   private saveHost: SaveHost = {
     connected: () => this.connected,
     nextId: () => this.seq++,
-    markDirty: () => {
-      this.dirty = true;
-    },
+    markDirty: () => this.touch(),
     setSaving: () => {
       this.saveState = 'saving';
     },
@@ -191,7 +193,7 @@ class EditorState {
   /** the active profile's switcher label (its person "name"); demo → the CV name. */
   profileLabel = $derived(
     this.noProfiles
-      ? 'No profiles'
+      ? 'No résumés'
       : this.persons.find((p) => p.id === this.activePersonId)?.name ||
           `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
           'Demo',
@@ -241,7 +243,7 @@ class EditorState {
 
   /** Flag unsaved edits (used in demo, where there's no backend to save to). */
   edited() {
-    this.dirty = true;
+    this.touch();
   }
 
   private timers: Record<string, ReturnType<typeof setTimeout>> = {};
@@ -298,6 +300,11 @@ class EditorState {
   dismissError() {
     this.saveError = null;
   }
+  /** Mark the document changed, and note when — the PDF is named after that day. */
+  private touch() {
+    this.dirty = true;
+    this.lastEditedAt = Date.now();
+  }
   /**
    * Speak through the editor's single aria-live region — one region for the whole
    * editor, so announcements never talk over each other.
@@ -326,7 +333,7 @@ class EditorState {
         redo: () => this.applyEntryField(entry, key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving'; // immediate pending indicator; the debounced push settles it
     this.debounce(`entry.${entry.id}`, () => this.pushEntry(entry));
@@ -335,7 +342,7 @@ class EditorState {
   private applyEntryField(entry: Entry, key: string, value: string) {
     entry.fields[key] = value;
     this.#shadow.patch(entry, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.pushEntry(entry);
   }
@@ -359,7 +366,7 @@ class EditorState {
         redo: () => this.applyItemField(item, key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`item.${item.id}`, () => this.pushItem(item));
@@ -368,7 +375,7 @@ class EditorState {
     if (key === 'title') item.title = value;
     else item.content = value;
     this.#shadow.patch(item, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.pushItem(item);
   }
@@ -390,7 +397,7 @@ class EditorState {
         redo: () => this.applyPersonalField(change.key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     this.saveState = 'saving';
@@ -399,7 +406,7 @@ class EditorState {
   private applyPersonalField(key: string, value: string) {
     (this.person.personal as Record<string, string>)[key] = value;
     this.#shadow.patch(this.person.personal, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     this.pushPersonal(this.activePersonId, key);
   }
@@ -431,7 +438,7 @@ class EditorState {
     this.#shadow.seed(entry, entry.fields);
     const tempId = entry.id;
     this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add entry',
@@ -470,13 +477,13 @@ class EditorState {
     const id = entry.id;
     section.entries = section.entries.filter((e) => e.id !== id);
     this.clearSelection();
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteEntry(id));
   }
   /** Put an entry back, re-creating its row, bullets and tags. Every id is new. */
   private async attachEntry(section: Section, entry: Entry, index: number) {
     section.entries.splice(Math.min(index, section.entries.length), 0, entry);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (!res.ok || !res.data) {
@@ -502,7 +509,7 @@ class EditorState {
     entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
     const item = this.live(entry.items, index);
     this.#shadow.seedItem(item);
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add bullet',
@@ -535,12 +542,12 @@ class EditorState {
   private async detachBullet(entry: Entry, item: Item) {
     const id = item.id;
     entry.items = entry.items.filter((i) => i.id !== id);
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteItem(id));
   }
   private async attachBullet(entry: Entry, item: Item, index: number) {
     entry.items.splice(Math.min(index, entry.items.length), 0, item);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const res = await this.persist(() =>
       api.createItem(entry.id, { content: item.content, title: item.title ?? '' }),
@@ -569,7 +576,7 @@ class EditorState {
     const section = this.live(this.person.sections, index);
     const tempId = section.id;
     this.scrollTarget = section.id;
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add section',
@@ -605,14 +612,14 @@ class EditorState {
     const id = section.id;
     this.person.sections = this.person.sections.filter((s) => s.id !== id);
     this.clearSelection();
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteSection(id));
   }
   /** Re-create a section and everything inside it. All ids are new; objects are not. */
   private async attachSection(section: Section, index: number) {
     this.person.sections.splice(Math.min(index, this.person.sections.length), 0, section);
     this.scrollTarget = section.id;
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     const res = await this.persist(() =>
@@ -648,7 +655,7 @@ class EditorState {
       undo: () => this.reorderEntries(section, to, from),
       redo: () => this.reorderEntries(section, from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const ids = section.entries.map((e) => e.id);
     await this.persist(() => api.reorderEntries(section.id, ids));
@@ -661,7 +668,7 @@ class EditorState {
       undo: () => this.reorderItems(entry, to, from),
       redo: () => this.reorderItems(entry, from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const ids = entry.items.map((i) => i.id);
     await this.persist(() => api.reorderItems(entry.id, ids));
@@ -674,7 +681,7 @@ class EditorState {
       undo: () => this.reorderSections(to, from),
       redo: () => this.reorderSections(from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     const ids = this.person.sections.map((s) => s.id);
@@ -707,7 +714,7 @@ class EditorState {
         redo: () => this.applyStyle(key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`style.${field}`, () => {
@@ -718,7 +725,7 @@ class EditorState {
   private applyStyle(key: string, value: string) {
     (this.style as Record<string, string>)[key] = value;
     this.#shadow.patch(this.style, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     void this.persist(() => api.patchSettings({ [`style.${key}`]: value }));
   }
@@ -732,7 +739,7 @@ class EditorState {
   }
   async chooseLayout(id: string) {
     this.defaultLayout = id;
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.setDefaultLayout(id));
   }
 
@@ -788,6 +795,7 @@ class EditorState {
     this.history.clear();
     this.preview.reset();
     this.dirty = false;
+    this.lastEditedAt = null;
     this.undo.setScope(`p${pid}`);
     if (fresh) {
       // Cache the reactive proxy (`this.person`) so undo commands and
@@ -813,7 +821,7 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.scrollTarget = null;
-    this.dirty = true;
+    this.touch();
     this.saveState = 'demo';
     this.rebase('demo');
     this.say('Document restored to the selected checkpoint.');
@@ -863,7 +871,7 @@ class EditorState {
       section.entries.push(copy);
       this.scrollTarget = section.id;
     }
-    this.dirty = true;
+    this.touch();
     this.undo.clear();
     this.#shadow.reseat(this.person, this.style);
     this.say('Restored one entry from the checkpoint.');
@@ -935,6 +943,7 @@ class EditorState {
     this.openDrawer = null;
     this.scrollTarget = null;
     this.dirty = false;
+    this.lastEditedAt = null;
     this.saveState = 'demo';
   }
 
@@ -963,6 +972,7 @@ class EditorState {
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
+    this.lastEditedAt = null;
     this.rebase('empty');
   }
 
@@ -1031,9 +1041,9 @@ class EditorState {
   async addPerson() {
     if (!this.connected) return;
     const existing = new Set(this.persons.map((p) => p.name));
-    let name = 'New profile';
+    let name = 'New résumé';
     let n = 2;
-    while (existing.has(name)) name = `New profile ${n++}`;
+    while (existing.has(name)) name = `New résumé ${n++}`;
     const res = await this.persist(() => api.createPerson(name));
     if (res.ok && res.data) {
       this.persons = [...this.persons, { id: res.data.id, name }];
@@ -1114,7 +1124,7 @@ class EditorState {
       this.pendingDraft = null;
       this.persons = [...this.persons, { id, name: tree.name }];
       await this.selectPerson(id);
-      this.say('Your demo edits are now a profile in your account.');
+      this.say('Your demo edits are now a résumé in your account.');
     } finally {
       this.importingDraft = false;
     }

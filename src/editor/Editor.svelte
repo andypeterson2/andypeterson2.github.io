@@ -82,7 +82,7 @@
       >
     </div>
   {:else if editor.pendingDraft}
-    <!-- Demo edits carried across sign-in: offer them as a profile. -->
+    <!-- Demo edits carried across sign-in: offer them as a résumé of their own. -->
     <div class="invite-layer" use:modal={'#draft-primary'}>
       <div class="invite-scrim" aria-hidden="true"></div>
       <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
@@ -92,7 +92,7 @@
         </div>
         <span class="txt"
           >You edited the demo before signing in. Bring those edits into your account as a new
-          profile? Your name and email replace the sample's contact details.</span
+          résumé? Your name and email replace the sample's contact details.</span
         >
         <UiButton
           variant="toolbar"
@@ -118,10 +118,10 @@
              not (WCAG 1.4.10 asks that the page not scroll, and it doesn't). -->
         <div class="toolbar" data-reflow-exempt>
           <span class="field"
-            >Profile
+            >Résumé
             <button
               class="popup profile-btn"
-              title="Profiles"
+              title="Résumés"
               onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
             ></span
           >
@@ -264,10 +264,10 @@
           <div class="doc-scroll">
             {#if editor.noProfiles}
               <div class="no-profiles">
-                <p class="np-title">No profiles yet</p>
-                <p class="np-sub">Create your first resume profile to start editing.</p>
+                <p class="np-title">No résumés yet</p>
+                <p class="np-sub">Create your first résumé to start editing.</p>
                 <button class="np-btn" onclick={() => editor.addPerson()}
-                  >＋ Create your first profile</button
+                  >＋ Create your first résumé</button
                 >
               </div>
             {:else if editor.letterMode}
@@ -296,7 +296,7 @@
                 {#if !editor.connected}
                   <div class="pv-note">Sign in to compile this résumé to a PDF.</div>
                 {:else if !editor.preview.compilable}
-                  <div class="pv-note">Choose a profile to compile its PDF.</div>
+                  <div class="pv-note">Choose a résumé to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}
                   <div class="pv-note">
                     Compiling {editor.variantLabel}…<br /><small
@@ -342,7 +342,7 @@
   {:else if editor.openDrawer === 'variant'}
     <Drawer title="Variants"><VariantDrawer /></Drawer>
   {:else if editor.openDrawer === 'profiles'}
-    <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
+    <Drawer title="Résumés"><ProfilesDrawer /></Drawer>
   {:else if editor.openDrawer === 'history'}
     <Drawer title="History"><HistoryDrawer /></Drawer>
   {/if}
