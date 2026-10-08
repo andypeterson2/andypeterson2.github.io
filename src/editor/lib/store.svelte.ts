@@ -1045,8 +1045,7 @@ class EditorState {
     // signing in re-runs connect() and loads your data.
     if (!this.identity) {
       this.connecting = false;
-      // Nothing here compiles, so the preview shows the resume the site publishes.
-      void this.preview.loadPublished();
+      this.showPublishedResume();
       return;
     }
     const res = await api.fetchActive();
@@ -1076,6 +1075,14 @@ class EditorState {
       this.connectError = health.ok ? 'signin' : 'offline';
     }
     this.connecting = false;
+    // Signed in, but nothing loaded: this session compiles as little as the demo
+    // does, so it gets the published PDF too.
+    this.showPublishedResume();
+  }
+
+  /** Nothing here can compile — put the site's published resume in the preview. */
+  private showPublishedResume() {
+    void this.preview.loadPublished();
   }
 
   /** Switch to another profile (the toolbar picker). */

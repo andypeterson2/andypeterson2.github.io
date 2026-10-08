@@ -21,8 +21,12 @@ export class PreviewController {
   log = $state<string | null>(null);
   /** The published resume PDF, shown in the demo where there is nothing to compile. */
   published = $state<Blob | null>(null);
-  publishedUrl = $state<string | null>(null);
   publishedState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  /** Downloaded straight from the gateway, so the browser keeps the dated name the
+   *  server sends instead of whatever a blob: URL would be called. */
+  get publishedHref(): string {
+    return api.publishedResumeUrl;
+  }
 
   #connected: () => boolean;
   #activeVariant: () => Variant | null;
@@ -65,7 +69,6 @@ export class PreviewController {
       return;
     }
     this.published = blob;
-    this.publishedUrl = URL.createObjectURL(blob);
     this.publishedState = 'ready';
   }
 

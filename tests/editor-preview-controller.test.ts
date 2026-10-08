@@ -1,7 +1,12 @@
 import { vi, describe, test, expect, beforeEach } from 'vitest';
 
 vi.mock('../src/editor/lib/api', () => ({
-  api: { compilePdf: vi.fn(), compileMainPdf: vi.fn(), fetchPublishedResume: vi.fn() },
+  api: {
+    compilePdf: vi.fn(),
+    compileMainPdf: vi.fn(),
+    fetchPublishedResume: vi.fn(),
+    publishedResumeUrl: 'https://gw.test/resume.pdf',
+  },
 }));
 
 import { api } from '../src/editor/lib/api';
@@ -147,7 +152,9 @@ describe('PreviewController — the published resume', () => {
     await p.loadPublished();
     expect(p.publishedState).toBe('ready');
     expect(p.published).toBe(pdf);
-    expect(p.publishedUrl).toBe('blob:fake');
+    // Downloaded from the gateway, so no object URL is minted for it.
+    expect(p.publishedHref).toBe('https://gw.test/resume.pdf');
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
 
     await p.loadPublished();
     expect(api.fetchPublishedResume).toHaveBeenCalledTimes(1);

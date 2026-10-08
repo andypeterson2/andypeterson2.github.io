@@ -38,10 +38,8 @@
   // Signed in, but the backend didn't load their resumes (cold start, outage). Not the
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
-  // The published PDF stands in for a compile the demo cannot run.
-  const showPublished = $derived(
-    !editor.connected && editor.preview.publishedState === 'ready' && !editor.preview.url,
-  );
+  // The published PDF stands in for a compile this session cannot run.
+  const showPublished = $derived(!editor.connected && editor.preview.publishedState === 'ready');
   // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
   // the page behind inert and puts focus on the answer.
 
@@ -311,29 +309,39 @@
             <div class="preview">
               <div class="pv-bar">
                 <span>
-                  {#if editor.preview.url}{editor.pdfName}{:else if showPublished}Published resume —
-                    sign in to compile your own edits{:else}No PDF yet{/if}
+                  {#if editor.preview.url}{editor.pdfName}{:else if showPublished}The site's
+                    published resume — not your edits{:else}No PDF yet{/if}
                 </span>
                 <span class="pv-tools">
                   {#if editor.preview.url}
                     <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
                   {:else if showPublished}
-                    <a class="pv-btn" href={editor.preview.publishedUrl} download="resume.pdf"
-                      >⤓ PDF</a
+                    <!-- Straight from the gateway, so the browser saves it under the dated
+                       name the server sends. -->
+                    <a
+                      class="pv-btn"
+                      href={editor.preview.publishedHref}
+                      target="_blank"
+                      rel="noopener noreferrer">⤓ PDF</a
                     >
                   {/if}
                 </span>
               </div>
               <div class="pv-body">
                 {#if showPublished}
-                  <!-- The demo has no compiler, so the pane shows the PDF the site already
-                     publishes. The bar says whose document it is, since it is not the one
-                     being edited beside it. -->
+                  <!-- No compiler here, so the pane shows the PDF the site already publishes.
+                     Once someone has edited the document beside it, the two differ, and the
+                     strip says so where the eye is rather than only in the bar. -->
+                  {#if editor.dirty}
+                    <p class="pv-strip">Your edits aren't in this PDF — sign in to compile them.</p>
+                  {/if}
                   <PdfView blob={editor.preview.published} />
                 {:else if !editor.connected}
                   <div class="pv-note">
                     {#if editor.preview.publishedState === 'loading'}
                       Loading the published resume…
+                    {:else if editor.identity}
+                      Couldn't reach the compiler — retry from the toolbar.
                     {:else}
                       Sign in to compile this resume to a PDF.
                     {/if}
@@ -1015,6 +1023,10 @@
   .pv-body {
     flex: 1;
     display: flex;
+
+    /* A column, so the strip above the pages is a band across the pane and the
+       pages keep the full width to render into. */
+    flex-direction: column;
     min-height: 0;
     background: var(--chrome);
   }
@@ -1027,6 +1039,20 @@
     color: var(--ink-3);
     text-align: center;
     line-height: 1.7;
+  }
+
+  /* Sits above the pages, in the pane's own ink, so it reads as part of the viewer
+     rather than as an error. */
+  .pv-strip {
+    flex: none;
+    margin: 0;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink);
+    text-align: center;
   }
 
   .pv-log {

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { gotoEditor, EDITOR_APP, MINIMAL_PDF } from './helpers';
+import { gotoEditor, EDITOR_APP, MINIMAL_PDF, expectInk } from './helpers';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
@@ -973,28 +973,29 @@ test.describe('CV editor (document-first rewrite)', () => {
     const preview = page.locator('.preview');
     await expect(preview).toBeVisible();
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
-    // The canvas has ink on it. A count alone passes on an empty pane, which is
-    // the one outcome this test exists to catch.
-    await expect
-      .poll(() =>
-        preview
-          .locator('.pv-pages canvas')
-          .first()
-          .evaluate((c: HTMLCanvasElement) => {
-            const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-            let dark = 0;
-            for (let i = 0; i < d.length; i += 4) if (d[i] < 200 && d[i + 3] > 0) dark += 1;
-            return dark;
-          }),
-      )
-      .toBeGreaterThan(100);
-    await expect(preview.locator('.pv-bar')).toContainText('Published resume');
+    await expectInk(preview.locator('.pv-pages canvas').first());
+    await expect(preview.locator('.pv-bar')).toContainText("The site's published resume");
+    await expect(preview.locator('.pv-bar')).toContainText('not your edits');
+    // Downloaded from the gateway, so the browser keeps the dated name it sends.
     await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
-      'download',
-      'resume.pdf',
+      'href',
+      /\/resume\.pdf$/,
     );
     // Compiling the document being edited is still what needs an account.
     await expect(page.locator('.tb-pdf').getByRole('button', { name: /Compile/ })).toBeDisabled();
+
+    // Once the visitor edits, the two documents have parted: say so over the pages,
+    // where someone looking at the PDF will see it.
+    await expect(preview.locator('.pv-strip')).toHaveCount(0);
+    const entry = await entryWith(page, 'UC San Diego');
+    await entry.locator('textarea, input').first().fill('Edited by a visitor.');
+    await expect(preview.locator('.pv-strip')).toContainText("Your edits aren't in this PDF");
+    // The strip is a band above the pages, so the pages keep the pane's full width.
+    const fills = await preview.evaluate((pane) => {
+      const page = pane.querySelector('.pv-pages canvas')!.getBoundingClientRect().width;
+      return page > pane.getBoundingClientRect().width * 0.8;
+    });
+    expect(fills).toBe(true);
   });
 
   test('the demo preview falls back to the sign-in note when the PDF will not load', async ({
@@ -1026,6 +1027,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
     // The PDF renderer paints one <canvas> per page into the pane (the 2-page fixture → 2).
     await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
+    await expectInk(preview.locator('.pv-pages canvas').first());
     // The pane scrolls internally (pages taller than the viewport-capped column) rather
     // than growing the shell — guards the "doesn't reach the bottom" regression.
     const scrolls = await preview
@@ -1789,6 +1791,21 @@ test.describe('Editor state copy', () => {
     // Offering a sign-in to someone already signed in would just loop, so the
     // menubar says Sign out and the retry is the only thing on offer.
     await expect(page.locator('.site-menubar .auth-btn')).toHaveText('Sign out');
+    // Nothing compiles in this state either, so the pane shows the published PDF.
+    await expectInk(page.locator('.preview .pv-pages canvas').first());
+  });
+
+  test('signed in and offline is never told to sign in', async ({ page }) => {
+    await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
+    await page.route('**/health', (r) => r.fulfill({ status: 503 }));
+    await gotoEditor(page, EDITOR_APP, {
+      signedIn: { email: 'ada@example.com', name: 'Ada' },
+      offline: true,
+      publishedPdf: false,
+    });
+    const preview = page.locator('.preview');
+    await expect(preview).toContainText("Couldn't reach the compiler");
+    await expect(preview).not.toContainText('Sign in to compile');
   });
 
   test('on a phone the toolbar still says the demo is not saved', async ({ page }) => {

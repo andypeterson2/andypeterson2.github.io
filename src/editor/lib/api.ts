@@ -215,6 +215,10 @@ export class CvApi {
   loginUrl(redirect: string): string {
     return gatewayLoginUrl(this.authBase, redirect);
   }
+  /** Where the site's published resume lives — the same URL the home page links. */
+  get publishedResumeUrl(): string {
+    return `${this.authBase}/resume.pdf`;
+  }
   /**
    * The resume PDF the site publishes, served from the gateway's root rather than
    * compiled here. It is what the demo shows: a visitor sees a finished document
@@ -223,18 +227,26 @@ export class CvApi {
   async fetchPublishedResume(): Promise<Blob | null> {
     try {
       // No cookie: this is a public file, and a credentialed request would ask the
-      // gateway to treat it as part of someone's session.
-      const res = await fetch(`${this.authBase}/resume.pdf`, { credentials: 'omit' });
+      // gateway to treat it as part of someone's session. The gateway answers these
+      // two documents to every origin, which a credentialed request forbids.
+      const res = await fetch(this.publishedResumeUrl, {
+        credentials: 'omit',
+        signal: AbortSignal.timeout(10000),
+      });
       if (!res.ok || !(res.headers.get('content-type') ?? '').includes('pdf')) return null;
       return await res.blob();
     } catch {
-      return null; // offline or blocked — the pane says what it can't show
+      return null; // offline, blocked or too slow — the pane says what it can't show
     }
   }
   /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
   async me(): Promise<{ authenticated: boolean; email: string | null; name: string | null }> {
     try {
-      const res = await fetch(`${this.authBase}/auth/me`, { credentials: 'include' });
+      const res = await fetch(`${this.authBase}/auth/me`, {
+        credentials: 'include',
+        // A hung gateway must not leave the editor saying "connecting" forever.
+        signal: AbortSignal.timeout(8000),
+      });
       if (!res.ok) return { authenticated: false, email: null, name: null };
       const d = (await res.json()) as { authenticated?: boolean; email?: string; name?: string };
       return { authenticated: !!d.authenticated, email: d.email ?? null, name: d.name ?? null };
