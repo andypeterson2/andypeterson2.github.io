@@ -1045,6 +1045,8 @@ class EditorState {
     // signing in re-runs connect() and loads your data.
     if (!this.identity) {
       this.connecting = false;
+      // Nothing here compiles, so the preview shows the resume the site publishes.
+      void this.preview.loadPublished();
       return;
     }
     const res = await api.fetchActive();

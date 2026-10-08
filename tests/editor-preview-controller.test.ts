@@ -1,7 +1,7 @@
 import { vi, describe, test, expect, beforeEach } from 'vitest';
 
 vi.mock('../src/editor/lib/api', () => ({
-  api: { compilePdf: vi.fn(), compileMainPdf: vi.fn() },
+  api: { compilePdf: vi.fn(), compileMainPdf: vi.fn(), fetchPublishedResume: vi.fn() },
 }));
 
 import { api } from '../src/editor/lib/api';
@@ -135,5 +135,36 @@ describe('PreviewController', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fake');
     expect(p.url).toBe(null);
     expect(p.state).toBe('idle');
+  });
+});
+
+describe('PreviewController — the published resume', () => {
+  test('a signed-out pane loads it once and holds the blob', async () => {
+    const pdf = new Blob(['%PDF'], { type: 'application/pdf' });
+    vi.mocked(api.fetchPublishedResume).mockResolvedValue(pdf);
+    const p = make(false, null);
+
+    await p.loadPublished();
+    expect(p.publishedState).toBe('ready');
+    expect(p.published).toBe(pdf);
+    expect(p.publishedUrl).toBe('blob:fake');
+
+    await p.loadPublished();
+    expect(api.fetchPublishedResume).toHaveBeenCalledTimes(1);
+  });
+
+  test('a session never asks for it — it compiles its own', async () => {
+    const p = make(true, variant());
+    await p.loadPublished();
+    expect(api.fetchPublishedResume).not.toHaveBeenCalled();
+    expect(p.publishedState).toBe('idle');
+  });
+
+  test('a failed fetch leaves no blob, so the pane can say so', async () => {
+    vi.mocked(api.fetchPublishedResume).mockResolvedValue(null);
+    const p = make(false, null);
+    await p.loadPublished();
+    expect(p.publishedState).toBe('error');
+    expect(p.published).toBe(null);
   });
 });

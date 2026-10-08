@@ -38,6 +38,10 @@
   // Signed in, but the backend didn't load their resumes (cold start, outage). Not the
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
+  // The published PDF stands in for a compile the demo cannot run.
+  const showPublished = $derived(
+    !editor.connected && editor.preview.publishedState === 'ready' && !editor.preview.url,
+  );
   // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
   // the page behind inert and puts focus on the answer.
 
@@ -306,16 +310,34 @@
           {#if editor.preview.open}
             <div class="preview">
               <div class="pv-bar">
-                <span>{editor.preview.url ? editor.pdfName : 'No PDF yet'}</span>
+                <span>
+                  {#if editor.preview.url}{editor.pdfName}{:else if showPublished}Published resume —
+                    sign in to compile your own edits{:else}No PDF yet{/if}
+                </span>
                 <span class="pv-tools">
                   {#if editor.preview.url}
                     <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
+                  {:else if showPublished}
+                    <a class="pv-btn" href={editor.preview.publishedUrl} download="resume.pdf"
+                      >⤓ PDF</a
+                    >
                   {/if}
                 </span>
               </div>
               <div class="pv-body">
-                {#if !editor.connected}
-                  <div class="pv-note">Sign in to compile this resume to a PDF.</div>
+                {#if showPublished}
+                  <!-- The demo has no compiler, so the pane shows the PDF the site already
+                     publishes. The bar says whose document it is, since it is not the one
+                     being edited beside it. -->
+                  <PdfView blob={editor.preview.published} />
+                {:else if !editor.connected}
+                  <div class="pv-note">
+                    {#if editor.preview.publishedState === 'loading'}
+                      Loading the published resume…
+                    {:else}
+                      Sign in to compile this resume to a PDF.
+                    {/if}
+                  </div>
                 {:else if !editor.preview.compilable}
                   <div class="pv-note">Choose a resume to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}

@@ -215,6 +215,22 @@ export class CvApi {
   loginUrl(redirect: string): string {
     return gatewayLoginUrl(this.authBase, redirect);
   }
+  /**
+   * The resume PDF the site publishes, served from the gateway's root rather than
+   * compiled here. It is what the demo shows: a visitor sees a finished document
+   * without an account, and nothing of a real session is involved.
+   */
+  async fetchPublishedResume(): Promise<Blob | null> {
+    try {
+      // No cookie: this is a public file, and a credentialed request would ask the
+      // gateway to treat it as part of someone's session.
+      const res = await fetch(`${this.authBase}/resume.pdf`, { credentials: 'omit' });
+      if (!res.ok || !(res.headers.get('content-type') ?? '').includes('pdf')) return null;
+      return await res.blob();
+    } catch {
+      return null; // offline or blocked — the pane says what it can't show
+    }
+  }
   /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
   async me(): Promise<{ authenticated: boolean; email: string | null; name: string | null }> {
     try {

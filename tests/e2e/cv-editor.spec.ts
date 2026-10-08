@@ -1,17 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { gotoEditor, EDITOR_APP } from './helpers';
+import { gotoEditor, EDITOR_APP, MINIMAL_PDF } from './helpers';
 
 /**
  * Smoke tests for the rewritten document-first CV editor (Svelte island).
  * The editor auto-connects to the live backend on mount, so each test controls
  * that fetch (abort / 403) to stay deterministic and never touch the real gateway.
  */
-
-// A real, minimal 2-page US-Letter PDF (valid xref) so the preview actually renders
-// it to canvases; a bare "%PDF" stub would fail to parse.
-const MINIMAL_PDF =
-  '%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>\nendobj\n5 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page One) Tj ET\nendstream\nendobj\n6 0 obj\n<< /Length 39 >>\nstream\nBT /F1 24 Tf 72 700 Td (Page Two) Tj ET\nendstream\nendobj\n7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\nxref\n0 8\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000121 00000 n \n0000000247 00000 n \n0000000373 00000 n \n0000000462 00000 n \n0000000551 00000 n \ntrailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n621\n%%EOF\n';
 
 /** Mock a signed-in profile that owns one no-rules variant ("Full CV", id 50). */
 /** The signed-in identity used by every connected test (only sessions connect now). */
@@ -966,14 +961,51 @@ test.describe('CV editor (document-first rewrite)', () => {
     await expect((await bulletWith(page, 'Rust')).locator('.bl-ins')).not.toHaveClass(/dim/);
   });
 
-  test('the preview pane prompts to sign in to compile in demo mode', async ({ page }) => {
+  test('the demo preview shows the published resume, and says it is not yours', async ({
+    page,
+  }) => {
     await page.route('**/api/**', (route) => route.abort());
     await gotoEditor(page);
     await expect(page.locator('.toolbar')).toContainText('Resume');
 
-    await expect(page.locator('.preview')).toBeVisible();
-    await expect(page.locator('.preview')).toContainText('Sign in to compile');
+    // A visitor with no account still sees a finished PDF beside the document —
+    // the one the site publishes, which the bar names so the two aren't confused.
+    const preview = page.locator('.preview');
+    await expect(preview).toBeVisible();
+    await expect(preview.locator('.pv-pages canvas')).toHaveCount(2);
+    // The canvas has ink on it. A count alone passes on an empty pane, which is
+    // the one outcome this test exists to catch.
+    await expect
+      .poll(() =>
+        preview
+          .locator('.pv-pages canvas')
+          .first()
+          .evaluate((c: HTMLCanvasElement) => {
+            const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+            let dark = 0;
+            for (let i = 0; i < d.length; i += 4) if (d[i] < 200 && d[i + 3] > 0) dark += 1;
+            return dark;
+          }),
+      )
+      .toBeGreaterThan(100);
+    await expect(preview.locator('.pv-bar')).toContainText('Published resume');
+    await expect(preview.getByRole('link', { name: /PDF/ })).toHaveAttribute(
+      'download',
+      'resume.pdf',
+    );
+    // Compiling the document being edited is still what needs an account.
     await expect(page.locator('.tb-pdf').getByRole('button', { name: /Compile/ })).toBeDisabled();
+  });
+
+  test('the demo preview falls back to the sign-in note when the PDF will not load', async ({
+    page,
+  }) => {
+    await page.route('**/api/**', (route) => route.abort());
+    await gotoEditor(page, EDITOR_APP, { publishedPdf: false });
+
+    const preview = page.locator('.preview');
+    await expect(preview).toContainText('Sign in to compile');
+    await expect(preview.locator('.pv-pages canvas')).toHaveCount(0);
   });
 
   test('compiles the active variant to a PDF blob in the preview', async ({ page }) => {
