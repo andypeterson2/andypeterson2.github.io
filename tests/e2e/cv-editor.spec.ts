@@ -15,7 +15,7 @@ const ADA = { email: 'ada@example.com', name: 'Ada Lovelace' };
 async function mockAdaWithVariant(page: Page) {
   const main = {
     person: { id: 7, name: 'Ada Lovelace' },
-    personal: { firstName: 'Ada', lastName: 'Lovelace' },
+    personal: { firstName: 'Ada', lastName: 'Lovelace', position: 'Mathematician' },
     sections: [
       {
         id: 2,
@@ -1838,5 +1838,66 @@ test.describe('Editor on a touch phone', () => {
     const close = page.locator('.drawer .close');
     const c = (await close.boundingBox())!;
     expect(c.width).toBeGreaterThanOrEqual(24);
+  });
+});
+
+test.describe('Per-variant tagline', () => {
+  /** Record every personal PATCH and open the drawer with "Full CV" active. */
+  async function openDrawer(page: Page, patches: (Record<string, string | null> | null)[]) {
+    await mockAdaWithVariant(page);
+    await page.route(/\/cv\/api\/variants\/50\/personal$/, (r) => {
+      patches.push(r.request().postDataJSON());
+      return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
+    await expect(page.getByRole('textbox', { name: 'First name' })).toHaveValue('Ada');
+    await page.locator('.toolbar .variant-btn').click();
+    await expect(page.locator('.drawer')).toBeVisible();
+    await page.locator('.drawer .opt').filter({ hasText: 'Full CV' }).click();
+  }
+  const taglineInput = (page: Page) =>
+    page.locator('.drawer label.rename').filter({ hasText: 'Tagline' }).locator('input');
+  const hideBtn = (page: Page) =>
+    page.locator('.drawer .check button').filter({ hasText: 'Print no tagline' });
+
+  test('starts empty, showing the main tagline as the placeholder', async ({ page }) => {
+    await openDrawer(page, []);
+    await expect(taglineInput(page)).toHaveValue('');
+    await expect(taglineInput(page)).toHaveAttribute('placeholder', 'Mathematician');
+    await expect(hideBtn(page)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('typing a tagline overrides it for this variant only', async ({ page }) => {
+    const patches: (Record<string, string | null> | null)[] = [];
+    await openDrawer(page, patches);
+    await taglineInput(page).fill('ML Engineer');
+    await taglineInput(page).blur();
+    await expect.poll(() => patches).toEqual([{ position: 'ML Engineer' }]);
+    // The main tagline is untouched, so the person's own field still reads as it did.
+    await expect(page.getByRole('textbox', { name: 'Headline' })).toHaveValue('Mathematician');
+  });
+
+  test('clearing it inherits the main tagline again', async ({ page }) => {
+    const patches: (Record<string, string | null> | null)[] = [];
+    await openDrawer(page, patches);
+    await taglineInput(page).fill('ML Engineer');
+    await taglineInput(page).blur();
+    await taglineInput(page).fill('');
+    await taglineInput(page).blur();
+    await expect.poll(() => patches).toEqual([{ position: 'ML Engineer' }, { position: null }]);
+  });
+
+  test('the toggle prints no tagline, and releasing it restores inheritance', async ({ page }) => {
+    const patches: (Record<string, string | null> | null)[] = [];
+    await openDrawer(page, patches);
+    await hideBtn(page).click();
+    await expect.poll(() => patches).toEqual([{ position: '' }]);
+    // An empty override is the suppress value, so the field has nothing to edit.
+    await expect(taglineInput(page)).toBeDisabled();
+    await expect(taglineInput(page)).toHaveAttribute('placeholder', 'Hidden in this variant');
+
+    await hideBtn(page).click();
+    await expect.poll(() => patches).toEqual([{ position: '' }, { position: null }]);
+    await expect(taglineInput(page)).toBeEnabled();
   });
 });

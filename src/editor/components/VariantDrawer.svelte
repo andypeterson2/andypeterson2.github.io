@@ -3,6 +3,7 @@
   import { editor } from '../lib/store.svelte';
   import { countIncludedEntries } from '../lib/variant-lens';
   import TagChips from './TagChips.svelte';
+  import UnknownWarning from './UnknownWarning.svelte';
   import type { Variant } from '../lib/types';
 
   const variants = $derived(editor.person.variants);
@@ -16,6 +17,19 @@
   }
   function confirmDelete(v: Variant) {
     if (window.confirm(`Delete the "${v.name}" ${noun(v)}?`)) void editor.variants.remove(v);
+  }
+
+  // A '' override means "print no tagline here", so hidden is its own control.
+  const personTagline = $derived(editor.person.personal.position ?? '');
+  const taglineOverride = $derived(active?.personal?.position ?? null);
+  const taglineHidden = $derived(taglineOverride === '');
+
+  function setTagline(v: Variant, text: string) {
+    const clean = text.trim();
+    void editor.variants.setPersonalOverride(v, 'position', clean === '' ? null : clean);
+  }
+  function setTaglineHidden(v: Variant, hidden: boolean) {
+    void editor.variants.setPersonalOverride(v, 'position', hidden ? '' : null);
   }
 </script>
 
@@ -68,6 +82,30 @@
         onchange={(e) => editor.variants.rename(v, e.currentTarget.value)}
       />
     </label>
+
+    <label class="rename">
+      <span class="rlbl">Tagline</span>
+      <input
+        class="in"
+        value={taglineHidden ? '' : (taglineOverride ?? '')}
+        placeholder={taglineHidden ? 'Hidden in this variant' : personTagline}
+        disabled={taglineHidden}
+        onchange={(e) => setTagline(v, e.currentTarget.value)}
+      />
+    </label>
+    <div class="check">
+      <UiButton
+        variant="mini"
+        pressed={taglineHidden}
+        active={taglineHidden}
+        onclick={() => setTaglineHidden(v, !taglineHidden)}>Print no tagline</UiButton
+      >
+    </div>
+    <p class="hint">
+      Empty means this {noun(v)} uses the main tagline. Anything you type here replaces it in this
+      {noun(v)} only.
+    </p>
+    <UnknownWarning text={taglineOverride ?? ''} />
 
     {#if v.kind === 'coverletter'}
       <p class="hint">
@@ -189,6 +227,11 @@
     border-radius: var(--radius);
     padding: 6px 9px;
     width: 100%;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
   }
 
   .rule {
