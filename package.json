@@ -27,7 +27,7 @@
     "@astrojs/svelte": "^9.0.1",
     "@sakun/system.css": "0.1.11",
     "astro": "^7.3.5",
-    "pdfjs-dist": "^4.10.38",
+    "pdfjs-dist": "^6.4.299",
     "svelte": "^5.57.1"
   },
   "devDependencies": {
