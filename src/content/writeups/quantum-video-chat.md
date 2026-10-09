@@ -3,7 +3,7 @@ title: Quantum Video Chat
 summary: Peer-to-peer video encrypted with keys from a simulated BB84 quantum key-distribution protocol — with an eavesdropper you can switch on and watch trip the error-rate gate.
 ---
 
-End-to-end encrypted, peer-to-peer video where the encryption keys are established through a **simulated BB84 quantum key-distribution** protocol rather than classical key exchange. Written solo in 2026; it replaces a group project from my Qualcomm Institute internship and shares no code with it.
+End-to-end encrypted, peer-to-peer video where the encryption keys are established through a **simulated BB84 quantum key-distribution** protocol rather than classical key exchange. Begun during my research internship at Qualcomm Institute as a 2023-24 group project, and reworked solo since into this browser-native version, which shares no code with that one.
 
 A research demonstration, not a production QKD system. The quantum channel is simulated, and at the per-frame sample sizes here the finite-key penalty leaves no composably secure key — the reservoir is demo-grade by construction. What the numbers below describe is the classical half: the reconciliation, its disclosure, and the threshold that follows from them.
 

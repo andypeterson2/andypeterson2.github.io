@@ -43,7 +43,7 @@ export const projects: Project[] = [
     title: 'Quantum Video Chat',
     slug: 'quantum-video-chat',
     description:
-      'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, written solo after a Qualcomm Institute internship.',
+      'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, begun at Qualcomm Institute and reworked solo since.',
     appUrl: '/projects/quantum-video-chat/app/',
     tier: 'browser',
     icon: 'video_dark.svg',
