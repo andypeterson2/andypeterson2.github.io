@@ -1,9 +1,9 @@
 <script lang="ts">
   // Renders a compiled PDF onto width-fitted canvases, since Chrome's viewer in an
   // iframe ignores #view=FitH. Under the strict CSP: the Blob is read with
-  // `.arrayBuffer()` (connect-src blocks fetching blob: URLs), and pdfjs-dist v4 with
-  // isEvalSupported:false is pure JS, needing no 'unsafe-eval' or wasm (v5+ are not
-  // CSP-clean). The library is imported lazily to keep ~300KB out of the bundle;
+  // `.arrayBuffer()` (connect-src blocks fetching blob: URLs), and the renderer stays pure
+  // JS, needing no 'unsafe-eval' and no 'wasm-unsafe-eval'. The library is imported
+  // lazily to keep ~300KB out of the bundle;
   // its worker ships as a same-origin ?url asset (worker-src 'self').
 
   import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -29,8 +29,15 @@
       // instead of injecting an @font-face with a data:/blob: src — which font-src
       // 'self' would block, silently rendering a real (embedded-font) resume in a
       // wrong fallback face. isEvalSupported:false keeps it off 'unsafe-eval'.
-      const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true })
-        .promise;
+      const doc = await pdfjs.getDocument({
+        data,
+        isEvalSupported: false,
+        disableFontFace: true,
+        // The CSP grants no 'wasm-unsafe-eval', so the image decoders stay pure JS and are
+        // fetched from wasmUrl, whose trailing slash is required.
+        useWasm: false,
+        wasmUrl: `${import.meta.env.BASE_URL.replace(/\/$/, '')}/pdfjs/`,
+      }).promise;
       if (mine !== token) return;
 
       const width = el.clientWidth || 600;
