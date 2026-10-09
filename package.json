@@ -37,7 +37,7 @@
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@typescript-eslint/eslint-plugin": "^8.71.0",
     "@typescript-eslint/parser": "^8.71.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.3",
     "eslint": "^10.12.0",
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-sonarjs": "^4.2.2",
@@ -53,6 +53,6 @@
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "~8.71.0",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.3"
   }
 }
