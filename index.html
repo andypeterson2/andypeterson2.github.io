@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Andrew Peterson</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- This host only forwards. The site itself is served from andypeterson.dev. -->
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://andypeterson.dev/" />
+    <!-- Fallback for a browser with no script: lands on the home page. -->
+    <meta http-equiv="refresh" content="0; url=https://andypeterson.dev/" />
+    <script>
+      // Carries the path across, so a deep link reaches the same page on the new host.
+      location.replace(
+        'https://andypeterson.dev' + location.pathname + location.search + location.hash
+      );
+    </script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 4rem auto;
+        max-width: 32rem;
+        padding: 0 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <p>This site is at <a href="https://andypeterson.dev/">andypeterson.dev</a>.</p>
+  </body>
+</html>
