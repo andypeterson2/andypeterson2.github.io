@@ -11,7 +11,9 @@ export interface Project {
   appUrl?: string;
   icon: string;
   repoUrl: string;
-  /** Real, cited numbers shown on the one-page showcase (no handwaving). */
+  /** Real, cited numbers shown on the one-page showcase (no handwaving). A chip claims no
+   *  more than its writeup, and a writeup no more than its README, so the reader who looks
+   *  least hard still sees the most conservative number. */
   metrics?: { value: string; label: string }[];
   /** Stack tags shown on the showcase card. */
   tech?: string[];
@@ -32,16 +34,16 @@ export const projects: Project[] = [
     icon: 'code.svg',
     repoUrl: 'https://github.com/andypeterson2/cv',
     metrics: [
-      { value: '1 -> many', label: 'variants are tag-rule lenses over one master document' },
+      { value: '84', label: 'REST endpoints behind one gateway, self-listed at GET /api' },
       { value: 'no server', label: 'the demo is the real editor; sign in only to save or compile' },
     ],
-    tech: ['Svelte 5', 'Express', 'SQLite', 'Cloudflare Access', 'XeLaTeX'],
+    tech: ['Svelte 5', 'Express', 'SQLite', 'Cloudflare Workers', 'XeLaTeX'],
   },
   {
     title: 'Quantum Video Chat',
     slug: 'quantum-video-chat',
     description:
-      'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, built at Qualcomm Institute.',
+      'End-to-end encrypted video chat whose keys come from a simulated BB84 quantum key exchange, begun at Qualcomm Institute and reworked solo since.',
     appUrl: '/projects/quantum-video-chat/app/',
     tier: 'browser',
     icon: 'video_dark.svg',
@@ -50,10 +52,11 @@ export const projects: Project[] = [
       { value: 'BB84', label: 'simulated QKD: sift -> QBER -> Cascade -> Toeplitz' },
       {
         value: '> 7.3%',
-        label: 'QBER trips frame rejection — this Cascade’s limit, not BB84’s 11%',
+        label:
+          'QBER trips frame rejection — this Cascade’s own limit, derived from its measured disclosure, not BB84’s textbook 11%',
       },
     ],
-    tech: ['WebRTC', 'BB84 QKD', 'AES-128-GCM', 'Python'],
+    tech: ['WebRTC', 'BB84 QKD', 'AES-128-GCM', 'Node', 'Python'],
   },
   {
     title: 'Quantum Nonogram Solver',
@@ -67,12 +70,13 @@ export const projects: Project[] = [
     metrics: [
       {
         value: '62,535',
-        label: 'boards enumerated to 4x4: backtracking beats Grover on 100% from 3x3 up',
+        label:
+          'boards enumerated to 4x4: backtracking beats Grover on 100% of one-solution boards from 3x3 up',
       },
       {
-        value: '5x',
+        value: '5.9x',
         label:
-          'chance on real IBM hardware: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless)',
+          'chance on ibm_fez: 36.8% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless), 377 of 1,024 shots',
       },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
@@ -88,19 +92,14 @@ export const projects: Project[] = [
     repoUrl: 'https://github.com/andypeterson2/quantum-machine-learning',
     metrics: [
       {
-        value: 'every',
+        value: '60 redraws',
         label:
-          'published accuracy carries its 95% interval and its spread across seeds, held by a test to the exported artifact that produced it',
-      },
-      {
-        value: '166 / 13,664',
-        label:
-          'held-out predictions changed by the hardware alpha readout against the exact classical solution — a 1.58 degree boundary tilt, measured on ibm_marrakesh',
+          'resampled my own significant result until it vanished: +0.42 points at p = 7.9e-6 on one split, −0.03 across sixty',
       },
       {
         value: `${pct(qsvmIrisAcc)} / ${pct(qsvmMnistAcc)}`,
         label:
-          'held out: Iris setosa vs versicolor / MNIST 6 vs 9, the paper’s QSVM rule in your browser',
+          'held out: Iris setosa vs versicolor / MNIST 6 vs 9 — the paper’s QSVM rule in your browser, below logistic regression on both',
       },
     ],
     tech: ['PyTorch', 'Qiskit', 'SSE', 'Flask', 'Jupyter'],
