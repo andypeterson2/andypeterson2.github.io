@@ -23,6 +23,8 @@ Both mapped training points are unit length, so `F` has equal diagonals and `(1,
 
 Scored on held-out data the rule reaches **96.7% on Iris** (29 of 30) and **89.8% on MNIST 6-vs-9** (13,634 digits), against 100% and 90.9% for a logistic regression fitted to the same two features. On Iris the gap is not the quantum part — the exact classical α changes none of the 30 predictions — but the paper's fixed map geometry, which leaves the rule leaning on sepal width where petal length separates the pair on its own. A second model widens that rule to all three species and all four measurements by running it once per pair and voting: 87.3% over 20 splits, on the same measured α, since the widened targets leave the kernel matrix alone.
 
+Across a corpus the preprocessing was never fitted to, the advantage reverses: on all 45 Fashion-MNIST class pairs the measured alpha is behind the exact one on 32 of the 33 pairs that resolve at all. So the sign of that MNIST difference belongs to the corpus, not to the readout. All 45 are reported, because choosing one would be choosing the answer — and the rule travels no better than the alpha does, at a median 62.1% against 73.4% for a logistic regression on the same two features, ahead of it on 6 pairs of 45.
+
 The run also sat 0.0127 from ideal by Jensen–Shannon divergence against the paper's 0.130 on IBMQX2 in 2019. That gap is seven years of IBM's hardware rather than anything built here — the circuit transpiles to depth 18 against the paper's logical depth 7 — so it is reported as context, not as a result.
 
 ## It predicts in your browser
