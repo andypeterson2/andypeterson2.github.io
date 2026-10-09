@@ -114,4 +114,9 @@ export interface Variant {
   /** Manual overrides keyed by entry/item id (from getMain), so the lens can show them live. */
   entryOverrides?: Record<string, EntryOverride>;
   itemOverrides?: Record<string, ItemOverride>;
+  /**
+   * personal.* overrides for this variant, unprefixed and unescaped. A missing key
+   * inherits the person value; an empty string suppresses the field.
+   */
+  personal?: Record<string, string>;
 }

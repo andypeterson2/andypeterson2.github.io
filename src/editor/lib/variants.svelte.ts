@@ -163,6 +163,35 @@ export class VariantController {
     await this.host.persist(() => api.setVariantRules(variant.id, variant.rules));
   }
 
+  // per-variant personal.* overrides (the tagline)
+
+  /**
+   * Override one personal.* field for this variant. `null` drops the override so the
+   * person value is inherited again; '' keeps an override that suppresses the field.
+   */
+  async setPersonalOverride(variant: Variant, key: string, value: string | null) {
+    const before = variant.personal?.[key] ?? null;
+    if (before === value) return;
+    this.host.record({
+      label: value == null ? `Reset ${key}` : `Override ${key}`,
+      undo: () => this._applyPersonalOverride(variant, key, before),
+      redo: () => this._applyPersonalOverride(variant, key, value),
+    });
+    await this._applyPersonalOverride(variant, key, value);
+  }
+
+  private async _applyPersonalOverride(variant: Variant, key: string, value: string | null) {
+    const map = (variant.personal ??= {});
+    if (value == null) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null override = inherit again, keyed by field name
+      delete map[key];
+    } else {
+      map[key] = value;
+    }
+    this.host.markDirty();
+    await this.host.persist(() => api.updateVariantPersonal(variant.id, { [key]: value }));
+  }
+
   // per-variant overrides (field patch + force include/exclude)
   // Every override write sends the WHOLE row (the backend upsert is whole-row and
   // deletes when all fields are null), so each method computes the complete next
