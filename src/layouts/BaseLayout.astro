@@ -96,7 +96,6 @@ const windowTitle = title || siteConfig.title;
         /* private mode — default to light */
       }
     </script>
-
     <!-- system.css (System 6 framework) is bundled same-origin — no render-blocking
          CDN <link>s. -->
     <slot name="head" />
@@ -137,11 +136,12 @@ const windowTitle = title || siteConfig.title;
         sameAs,
       })}
     />
-
     <!-- No global error boundary: each app page handles its own errors in its UI. -->
   </head>
   <body>
-    <a href="#main-content" class="skip-link">Skip to content</a>
+    <a href="#main-content" class="skip-link">
+      Skip to content
+    </a>
 
     <!-- Desktop menubar (>768px). A plain list of links: it looks like a System-6
          menubar, but it has no menus, so it carries no menu ARIA. -->
@@ -158,8 +158,12 @@ const windowTitle = title || siteConfig.title;
             <img src="/icons/heart.svg" alt="" class="heart-icon" width="36" height="36" />
           </button>
         </li>
-        <li><a href="/">Home</a></li>
-        <li><a href="/projects/">Projects</a></li>
+        <li>
+          <a href="/">Home</a>
+        </li>
+        <li>
+          <a href="/projects/">Projects</a>
+        </li>
       </ul>
     </nav>
 
@@ -184,8 +188,12 @@ const windowTitle = title || siteConfig.title;
             <span class="mnav-box" aria-hidden="true"></span>Dark mode
           </button>
         </li>
-        <li><a href="/">Home</a></li>
-        <li><a href="/projects/">Projects</a></li>
+        <li>
+          <a href="/">Home</a>
+        </li>
+        <li>
+          <a href="/projects/">Projects</a>
+        </li>
       </ul>
     </nav>
 
@@ -330,7 +338,6 @@ const windowTitle = title || siteConfig.title;
         });
       }
     </script>
-
     <PassLane />
     <AuthMenu />
     <!-- After the pass lane: deferred scripts run in document order, so a ?pass= token is

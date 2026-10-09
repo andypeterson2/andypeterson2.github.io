@@ -10,8 +10,12 @@ const { title } = Astro.props;
 ---
 
 <section class="window window--inactive sidebar-window">
-  <div class="title-bar"><h2 class="title">{title}</h2></div>
-  <div class="window-body"><slot /></div>
+  <div class="title-bar">
+    <h2 class="title">{title}</h2>
+  </div>
+  <div class="window-body">
+    <slot />
+  </div>
 </section>
 
 <style>

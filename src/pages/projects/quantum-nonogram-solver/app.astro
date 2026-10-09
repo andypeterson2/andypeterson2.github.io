@@ -10,8 +10,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
 >
   <!-- App shell -->
   <div id="nonogram-app">
-    <label class="gallery-label"
-      >Gallery
+    <label class="gallery-label">
+      Gallery
       <select id="gallery-select">
         <option value="">— captured runs —</option>
       </select>
@@ -21,14 +21,22 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div class="editor-row">
           <div class="editor-actions">
             <span class="mode-toggle" role="group" aria-label="Editor mode">
-              <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">Draw</button>
-              <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false"
-                >Clues</button
-              >
+              <button id="btn-mode-draw" class="s6-btn s6-btn--sm" aria-pressed="true">
+                Draw
+              </button>
+              <button id="btn-mode-clues" class="s6-btn s6-btn--sm" aria-pressed="false">
+                Clues
+              </button>
             </span>
-            <button id="btn-clear" class="s6-btn s6-btn--sm">Clear</button>
-            <button id="btn-random" class="s6-btn s6-btn--sm">Randomize</button>
-            <button id="btn-reset" class="s6-btn s6-btn--sm">Reset</button>
+            <button id="btn-clear" class="s6-btn s6-btn--sm">
+              Clear
+            </button>
+            <button id="btn-random" class="s6-btn s6-btn--sm">
+              Randomize
+            </button>
+            <button id="btn-reset" class="s6-btn s6-btn--sm">
+              Reset
+            </button>
             <span class="size-box" role="group" aria-label="Board size">
               <input
                 id="size-rows"
@@ -60,7 +68,9 @@ import DemoShell from '../../../layouts/DemoShell.astro';
             <input type="radio" id="btn-where-hw" name="run-where" />
             <label for="btn-where-hw">Hardware</label>
           </span>
-          <button id="btn-bench" class="s6-btn">&#9654; Local solve</button>
+          <button id="btn-bench" class="s6-btn">
+            &#9654; Local solve
+          </button>
         </div>
       </div>
       <div class="nono-right">
@@ -68,7 +78,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         <div class="sol-pair">
           <div class="sol-half panel">
             <div class="panel-title">
-              <span>Classical</span><span id="cl-meta" class="rule-meta"></span>
+              <span>Classical</span>
+              <span id="cl-meta" class="rule-meta"></span>
             </div>
             <div id="cl-canvas" class="sol-canvas">
               <div id="cl-placeholder" class="placeholder-msg">
@@ -78,7 +89,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
           </div>
           <div class="sol-half panel">
             <div class="panel-title">
-              <span>Quantum</span><span id="qu-meta" class="rule-meta"></span>
+              <span>Quantum</span>
+              <span id="qu-meta" class="rule-meta"></span>
             </div>
             <div id="qu-list" class="sol-canvas">
               <div id="qu-sol-placeholder" class="placeholder-msg">
@@ -89,7 +101,8 @@ import DemoShell from '../../../layouts/DemoShell.astro';
         </div>
         <div class="panel">
           <div class="panel-title">
-            <span>Quantum results</span><span id="hist-meta" class="rule-meta"></span>
+            <span>Quantum results</span>
+            <span id="hist-meta" class="rule-meta"></span>
           </div>
           <div id="qu-area" class="histogram-area">
             <!-- tabindex: the chart scrolls sideways past a frame's worth of outcomes,
@@ -108,16 +121,24 @@ import DemoShell from '../../../layouts/DemoShell.astro';
       <div id="circuit-band" class="nono-band">
         <div id="code-pane">
           <div id="circuit-view" class="circuit-view" role="group" aria-label="Circuit view">
-            <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">Circuit</button>
-            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">Qiskit</button>
-            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">OpenQASM 3</button>
+            <button type="button" id="btn-view-circuit" class="s6-btn s6-btn--sm">
+              Circuit
+            </button>
+            <button type="button" id="btn-fmt-qiskit" class="s6-btn s6-btn--sm">
+              Qiskit
+            </button>
+            <button type="button" id="btn-fmt-qasm" class="s6-btn s6-btn--sm">
+              OpenQASM 3
+            </button>
           </div>
           <div id="circuit-figure" data-reflow-exempt>
             <svg id="circuit-svg" aria-hidden="true"></svg>
           </div>
           <div class="code-box">
             <pre id="code-listing" tabindex="0"></pre>
-            <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">Copy</button>
+            <button type="button" id="btn-copy-code" class="s6-btn s6-btn--sm">
+              Copy
+            </button>
           </div>
         </div>
       </div>
