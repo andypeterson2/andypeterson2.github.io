@@ -377,7 +377,10 @@ function predictQsvmOvo(model: QsvmOvoModel, raw: number[]): Prediction {
     const width = contests
       .filter((k) => k.winner === c)
       .reduce((acc, k) => acc + Math.abs(k.lean), 0);
-    if ((votes[c] ?? 0) > (best[0] ?? 0) || ((votes[c] ?? 0) === best[0] && width > (best[1] ?? 0))) {
+    if (
+      (votes[c] ?? 0) > (best[0] ?? 0) ||
+      ((votes[c] ?? 0) === best[0] && width > (best[1] ?? 0))
+    ) {
       best = [votes[c] ?? 0, width];
       prediction = c;
     }
