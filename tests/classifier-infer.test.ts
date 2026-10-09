@@ -10,6 +10,7 @@ import {
   preprocessDigit,
   type LinearModel,
   type QsvmModel,
+  type QsvmOvoModel,
 } from '../src/apps/classifiers/infer';
 
 const load = <T>(name: string): T =>
@@ -19,10 +20,9 @@ const load = <T>(name: string): T =>
 
 const iris = load<LinearModel>('iris');
 const mnist = load<LinearModel>('mnist');
-const bb84 = load<LinearModel>('bb84');
 const qsvmIris = load<QsvmModel>('qsvm-iris');
-const qsvmBb84 = load<QsvmModel>('qsvm-bb84');
 const qsvmMnist = load<QsvmModel>('qsvm-mnist');
+const qsvmOvo = load<QsvmOvoModel>('qsvm-iris-ovo');
 
 /** s = w1·(a·f1 + b) + w2·(c·f2 + d), straight from the model file. */
 const margin = (m: QsvmModel, f1: number, f2: number) =>
@@ -43,12 +43,6 @@ describe('linear models', () => {
     expect(probs).toHaveLength(iris.classes.length);
     expect(probs.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
     expect(p.confidence).toBe(Math.max(...probs));
-  });
-
-  test('BB84: a low QBER is clean and a high one eavesdropped', () => {
-    expect(bb84.features).toEqual(['qber', 'sifted_key_rate']);
-    expect(ClassifierInfer.predict(bb84, [0.02, 0.5]).prediction).toBe('clean');
-    expect(ClassifierInfer.predict(bb84, [0.25, 0.5]).prediction).toBe('eavesdropped');
   });
 
   test('MNIST: a centred vertical bar reads as a 1', () => {
@@ -75,19 +69,19 @@ describe('QSVM paper recreation', () => {
   });
 
   test('a sign classifier reports no probability', () => {
-    const p = ClassifierInfer.predict(qsvmBb84, [0.02, 0.5]);
+    const p = ClassifierInfer.predict(qsvmIris, [3.5, 1.4]);
     expect(p.confidence).toBeNull();
     expect(p.probs).toBeNull();
   });
 
   test('the sign of s picks the class', () => {
     for (const [f1, f2] of [
-      [0.02, 0.5],
-      [0.25, 0.5],
+      [3.5, 1.4],
+      [2.8, 4.3],
     ] as const) {
-      const p = ClassifierInfer.predict(qsvmBb84, [f1, f2]);
+      const p = ClassifierInfer.predict(qsvmIris, [f1, f2]);
       expect(p.prediction).toBe(
-        margin(qsvmBb84, f1, f2) > 0 ? qsvmBb84.classes[0] : qsvmBb84.classes[1],
+        margin(qsvmIris, f1, f2) > 0 ? qsvmIris.classes[0] : qsvmIris.classes[1],
       );
     }
   });
@@ -101,5 +95,79 @@ describe('QSVM paper recreation', () => {
     expect(p.qsvm?.f1).toBeCloseTo(60 / 8, 12);
     expect(p.qsvm?.f2).toBeCloseTo(60 / 8, 12);
     expect(p.qsvm?.s).toBeCloseTo(margin(qsvmMnist, 60 / 8, 60 / 8), 12);
+  });
+});
+
+describe('QSVM one-vs-one, three species', () => {
+  /** One pairwise rule's score on the unit circle, straight from the model file. */
+  const pairScore = (m: QsvmOvoModel, i: number, f: number[]) => {
+    const rule = m.rules[i]!;
+    const v = m.w.map((_, k) => (rule.a[k] ?? 0) * (f[k] ?? 0) + (rule.b[k] ?? 0));
+    const norm = Math.hypot(...v);
+    return v.reduce((acc, vk, k) => acc + (m.w[k] ?? 0) * (vk / norm), 0);
+  };
+
+  test('it reads every measurement the form offers', () => {
+    expect(qsvmOvo.features).toEqual([
+      'sepal_length',
+      'sepal_width',
+      'petal_length',
+      'petal_width',
+    ]);
+  });
+
+  // One textbook sample per species, the third of which no binary rule in this
+  // file can answer at all.
+  test.each([
+    ['setosa', [5.1, 3.5, 1.4, 0.2]],
+    ['versicolor', [5.7, 2.8, 4.1, 1.3]],
+    ['virginica', [6.5, 3.0, 5.5, 2.0]],
+  ] as const)('%s is picked by the vote', (label, f) => {
+    const p = ClassifierInfer.predict(qsvmOvo, [...f]);
+    expect(p.prediction).toBe(label);
+    expect(p.confidence).toBeNull();
+    expect(p.probs).toBeNull();
+    expect(p.ovo?.contests).toHaveLength(3);
+    expect(p.ovo?.votes[label]).toBeGreaterThanOrEqual(2);
+  });
+
+  test('each contest is the pairwise rule computed by hand', () => {
+    const f = [5.7, 2.8, 4.1, 1.3];
+    const p = ClassifierInfer.predict(qsvmOvo, f);
+    qsvmOvo.rules.forEach((rule, i) => {
+      const contest = p.ovo?.contests[i];
+      expect(contest?.pair).toEqual(rule.pair);
+      expect(contest?.s).toBeCloseTo(pairScore(qsvmOvo, i, f), 12);
+    });
+  });
+
+  test('the tightest contest is the narrowest one the winner won', () => {
+    const p = ClassifierInfer.predict(qsvmOvo, [5.7, 2.8, 4.1, 1.3]);
+    const won = p.ovo!.contests.filter((c) => c.winner === p.prediction);
+    const narrowest = Math.min(...won.map((c) => Math.abs(c.lean)));
+    expect(Math.abs(p.ovo!.tightest.lean)).toBeCloseTo(narrowest, 12);
+  });
+
+  test('every feature moves the answer, unlike the two-feature rule beside it', () => {
+    const base = [5.8, 3.0, 4.2, 1.3];
+    for (let k = 0; k < 4; k++) {
+      const moved = [...base];
+      moved[k] = (moved[k] ?? 0) + 1.5;
+      const before = ClassifierInfer.predict(qsvmOvo, base).ovo!.contests.map((c) => c.s);
+      const after = ClassifierInfer.predict(qsvmOvo, moved).ovo!.contests.map((c) => c.s);
+      expect(after, `feature ${String(k)} moved nothing`).not.toEqual(before);
+    }
+  });
+
+  test('one weight vector serves all three rules', () => {
+    expect(qsvmOvo.w).toHaveLength(4);
+    expect(qsvmOvo.rules).toHaveLength(3);
+    // The widened targets keep the kernel matrix, so the alpha behind w is the
+    // one the binary exports already shipped.
+    const dot = (u: number[], v: number[]) => u.reduce((a, x, i) => a + x * (v[i] ?? 0), 0);
+    const [t0, t1] = qsvmOvo.targets as [number[], number[]];
+    expect(dot(t0, t0)).toBeCloseTo(1, 12);
+    expect(dot(t1, t1)).toBeCloseTo(1, 12);
+    expect(dot(t0, t1)).toBeCloseTo(0.490974, 6);
   });
 });

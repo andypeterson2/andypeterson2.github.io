@@ -33,13 +33,20 @@ const [result] = await new PurgeCSS().purge({
     // :root holds the design tokens; html/body carry base styles; [data-theme] is set by
     // the no-FOUC bootstrap script, so it never appears in the markup PurgeCSS scans.
     standard: [/^:root$/, 'html', 'body'],
-    greedy: [/data-theme/],
+    // [data-theme] is set by the no-FOUC bootstrap; [scope] is set on table
+    // headers the demos build at runtime, so neither is in the scanned markup.
+    greedy: [/data-theme/, /scope/],
   },
 });
 
 // Rules a purge has silently dropped before, which the dev server (and so e2e)
 // never sees: fail the build if one goes missing.
-const MUST_KEEP = ['a:focus-visible,button:focus-visible,select:focus-visible'];
+const MUST_KEEP = [
+  'a:focus-visible,button:focus-visible,select:focus-visible',
+  // The shared table's row headers, matched on an attribute the demos set at
+  // runtime. The needle is the minified form, with its quotes stripped.
+  '.s6-data-tableth[scope=row]',
+];
 const flat = result.css.replace(/\s+/g, '');
 const lost = MUST_KEEP.filter((sel) => !flat.includes(sel));
 if (lost.length) {

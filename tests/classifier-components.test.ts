@@ -13,7 +13,6 @@ describe('ClassifierApp sub-components', () => {
     'ClassifierTrainCard.astro',
     'ClassifierModelsCard.astro',
     'ClassifierResultsPanel.astro',
-    'ClassifierLogDrawer.astro',
   ];
 
   test.each(subComponents)('%s exists', (name) => {

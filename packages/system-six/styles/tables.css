@@ -1,0 +1,63 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Data tables — the ruled, 1-bit grid the demo pages report their numbers in.
+   A 2px frame around the whole table, 1px rules between every cell, headers in
+   the UI face at the smallest size. Inversion is the system's selected state,
+   so a header earns its weight from the face and the rule under it instead.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.s6-data-table {
+  width: 100%;
+  border: 2px solid var(--ink);
+  border-collapse: collapse;
+  font-size: var(--text-3xs);
+}
+
+.s6-data-table thead th {
+  padding: 4px 8px;
+  border: 1px solid var(--ink);
+  border-top: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-4xs);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Ruled both ways: rows separate the measurements, columns separate what is
+   being measured. */
+.s6-data-table td,
+.s6-data-table th[scope='row'] {
+  padding: 4px 8px;
+  border: 1px solid var(--ink);
+}
+
+/* Monaco is monospaced, so right alignment lines the digits up on its own. */
+.s6-data-table td {
+  text-align: right;
+}
+
+.s6-data-table th[scope='row'] {
+  width: 34%;
+  font-weight: 400;
+  text-align: left;
+}
+
+/* Where one section ends and the next begins — the one rule on the table with
+   any weight to it. */
+.s6-data-table tbody + tbody tr:first-child > * {
+  border-top: 2px solid var(--ink);
+}
+
+/* Nothing to measure here. A hatched region says that; a column of dashes
+   would read as data that went missing. */
+.s6-data-table .na {
+  background: var(--dither-light);
+
+  /* Whole-pixel paint box, or the collapsed border snaps the checker to solid ink. */
+  background-clip: padding-box;
+}
+
+/* A label with more to say marks itself, and says it on hover. */
+.s6-data-table .has-note {
+  cursor: help;
+  text-decoration: underline dotted;
+}

@@ -147,7 +147,6 @@ test.describe('Classifier dataset control', () => {
     await expect(current).toHaveText(/MNIST/);
     await page.getByRole('button', { name: /Iris/ }).click();
     await expect(trigger).toHaveAccessibleName('Dataset: Iris');
-    await expect(page.locator('#log-handle')).toHaveAccessibleName('Log');
   });
 });
 
