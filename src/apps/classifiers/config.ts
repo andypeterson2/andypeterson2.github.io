@@ -29,6 +29,9 @@ export interface DatasetDef {
 // Datasets the in-browser demo can switch between with no backend. Each carries
 // the UI shape the app reads through UI_CONFIG; the trained weights (and, for
 // tabular datasets, feature ranges) ship as per-model JSON fetched on demand.
+// The platform also trains a BB84 eavesdropper set, which is not served here: a
+// fixed QBER threshold beats both fitted models on its simulated sessions, so an
+// accuracy beside these would read as a result it is not.
 export const CLASSIFIER_DATASETS: DatasetDef[] = [
   {
     name: 'mnist',
@@ -44,16 +47,7 @@ export const CLASSIFIER_DATASETS: DatasetDef[] = [
     class_labels: ['setosa', 'versicolor', 'virginica'],
     features: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'],
     unit: 'cm',
-    local_models: ['iris', 'qsvm-iris'],
-  },
-  {
-    name: 'bb84',
-    display_name: 'BB84 Eavesdropper Detection',
-    input_type: 'tabular',
-    class_labels: ['clean', 'eavesdropped'],
-    features: ['qber', 'sifted_key_rate'],
-    feature_labels: { qber: 'QBER' },
-    local_models: ['bb84', 'qsvm-bb84'],
+    local_models: ['iris', 'qsvm-iris', 'qsvm-iris-ovo'],
   },
 ];
 

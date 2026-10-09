@@ -11,7 +11,6 @@ test.describe('Classifier app shell', () => {
     await page.goto('/projects/ai-ml/app/');
     await expect(page.locator('#classifier-app')).toBeVisible();
     await expect(page.locator('.app-navbar')).toBeVisible();
-    await expect(page.locator('#log-drawer')).toBeVisible();
   });
 
   test('renders ClassifierTrainCard with train button', async ({ page }) => {
@@ -26,14 +25,12 @@ test.describe('Classifier app shell', () => {
 
   test('renders ClassifierModelsCard regions', async ({ page }) => {
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#session-models')).toBeAttached();
     await expect(page.locator('#saved-select')).toBeAttached();
     await expect(page.locator('#import-btn')).toBeAttached();
   });
 
   test('renders ClassifierResultsPanel regions', async ({ page }) => {
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('#pred-body')).toBeAttached();
     await expect(page.locator('#metrics-head')).toBeAttached();
     await expect(page.locator('#metrics-body')).toBeAttached();
   });
@@ -48,7 +45,7 @@ test.describe('Classifier app shell', () => {
 });
 
 // Offline, the backend-only controls say so instead of failing, a blank canvas
-// predicts nothing, and the two-class QSVM says it's two-class.
+// predicts nothing, and a model that knows fewer classes than the dataset says so.
 test.describe('Classifier: the browser tier is honest about what it can do', () => {
   test('backend-only controls are folded and disabled, with the reason shown', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
@@ -63,57 +60,103 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await expect(page.locator('#saved-card')).toBeHidden();
   });
 
-  test('Models comes before Train, and the demo models carry no tier suffix', async ({ page }) => {
+  test('every model is a column, and the demo models carry no tier suffix', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    const titles = page.locator('#left-col > section:not([hidden]) .card-title');
-    await expect(titles).toHaveText(['Models', 'Train']);
-    await expect(page.locator('#session-models .ui-list-name')).toHaveText([
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveText([
       'Logistic Regression',
-      'QSVM',
+      'QSVM (6 vs 9)',
     ]);
-    await expect(page.locator('#session-models')).toContainText('Yang et al. 2019');
     await expect(page.locator('#tier-label')).toHaveCount(0);
   });
 
-  test('Evaluation shows only rows with a value', async ({ page }) => {
+  test('Evaluation shows only columns with a value', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
-    await expect(page.locator('#metrics-body .metric-label')).toHaveText([
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveCount(2);
+    // Now is drawn before a stroke lands; the rest earn their columns.
+    await expect(page.locator('#metrics-head .metric-label')).toHaveText([
+      'Prediction',
+      'Score',
       'Type',
       'Params',
+      'Reads',
       'Test Acc',
     ]);
   });
 
-  test('Iris and BB84 take a slider or an exact value, and re-score as they move', async ({
+  test('Iris takes a slider or an exact value, and re-scores as they move', async ({ page }) => {
+    await page.route('**/api/**', (r) => r.abort());
+    await page.goto('/projects/ai-ml/app/');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
+    await page.locator('#dataset-menu-btn').click();
+    await page.locator('.ui-dropdown-item', { hasText: 'Iris' }).click();
+    await expect(page.locator('.feature-label').first()).toContainText('Sepal length');
+    await expect(page.locator('.feature-hint').first()).toHaveText('4.3 – 8.0 cm');
+    const answer = page
+      .locator('#metrics-body td[data-metric="Prediction"]')
+      .first()
+      .locator('.pred-label');
+    await page.locator('#feature-petal_length').fill('1.3');
+    await expect(answer).toHaveText('setosa');
+    // The slider and the exact-value box are two views of one number.
+    await page.locator('.feature-range').nth(2).fill('5.9');
+    await expect(page.locator('#feature-petal_length')).toHaveValue('5.9');
+    await expect(answer).toHaveText('virginica');
+    await page.locator('#reset-features-btn').click();
+    await expect(page.locator('#feature-petal_length')).toHaveValue('4.0');
+  });
+
+  test('Iris carries both QSVM rules, and only one of them reads every slider', async ({
     page,
   }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
     await page.locator('#dataset-menu-btn').click();
-    await page.locator('.ui-dropdown-item', { hasText: 'BB84' }).click();
-    await expect(page.locator('.feature-label').first()).toContainText('QBER');
-    await expect(page.locator('.feature-hint').first()).toHaveText('0.00 – 0.32');
-    const answer = page.locator('#pred-body tr').first().locator('.pred-label');
-    await page.locator('#feature-qber').fill('0.01');
-    await expect(answer).toHaveText('clean');
-    await page.locator('.feature-range').first().fill('0.3');
-    await expect(page.locator('#feature-qber')).toHaveValue('0.3');
-    await expect(answer).toHaveText('eavesdropped');
-    await page.locator('#reset-features-btn').click();
-    await expect(page.locator('#feature-qber')).toHaveValue('0.16');
+    await page.locator('.ui-dropdown-item', { hasText: 'Iris' }).click();
+    await expect(page.locator('#metrics-body .col-model-name')).toHaveText([
+      'Logistic Regression',
+      'QSVM (setosa vs versicolor)',
+      'QSVM one-vs-one (3 species)',
+    ]);
+    // The paper's rule takes two of the four measurements; the one-vs-one rule
+    // takes all four, and the Reads column is where that is stated.
+    const reads = page.locator('#metrics-body td[data-metric="Reads"]');
+    await expect(reads.nth(1)).toHaveText('sepal_width, petal_length');
+    await expect(reads.nth(2)).toHaveText(
+      'sepal_length, sepal_width, petal_length, petal_width',
+    );
+
+    // sepal_length is one of the two the paper's rule ignores. Moving it must
+    // move the one-vs-one score and leave the binary one where it was.
+    const score = page.locator('#metrics-body td[data-metric="Score"]');
+    const binaryBefore = await score.nth(1).innerText();
+    const ovoBefore = await score.nth(2).innerText();
+    await page.locator('#feature-sepal_length').fill('7.8');
+    await expect(score.nth(2)).not.toHaveText(ovoBefore);
+    await expect(score.nth(1)).toHaveText(binaryBefore);
+
+    // Three species, so the third is reachable — no binary rule here can say it.
+    await page.locator('#feature-petal_width').fill('2.4');
+    await page.locator('#feature-petal_length').fill('5.8');
+    const answer = page.locator('#metrics-body td[data-metric="Prediction"]').nth(2);
+    await expect(answer).toHaveText('virginica');
+    await expect(score.nth(2)).toHaveAttribute('title', /^Vote \d of 3 for virginica\./);
   });
 
-  test('a blank canvas predicts nothing; a drawing gets a scoped QSVM row', async ({ page }) => {
+  test('a blank canvas predicts nothing; the QSVM names the classes it knows', async ({
+    page,
+  }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
     // The in-browser models load after hydration; draw only once they're listed.
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
-    await page.locator('#predict-btn').click();
-    await expect(page.locator('#pred-body')).toContainText('Draw a digit');
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
+    // Nothing to press: a stroke is what asks for a prediction. Until one lands
+    // the live rows are drawn and empty.
+    const prediction = page.locator('#metrics-body td[data-metric="Prediction"]');
+    await expect(prediction).toHaveCount(2);
+    await expect(prediction.first()).toHaveText('—');
     const cv = page.locator('#draw-canvas');
     const b = (await cv.boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.3, b.y + b.height * 0.22);
@@ -121,10 +164,10 @@ test.describe('Classifier: the browser tier is honest about what it can do', () 
     await page.mouse.move(b.x + b.width * 0.7, b.y + b.height * 0.22, { steps: 20 });
     await page.mouse.move(b.x + b.width * 0.45, b.y + b.height * 0.8, { steps: 20 });
     await page.mouse.up();
-    const rows = page.locator('.pred-model-name');
-    await expect(rows.filter({ hasText: 'QSVM' })).toContainText('6 vs 9 only');
     await expect(page.locator('.pred-label').first()).toHaveText('7');
-    await expect(page.locator('.pred-out-note')).toContainText('only answers 6 vs 9');
+    // An answer outside the pair it knows is struck through; which pair that is
+    // belongs to the model, so it is in its name rather than beside the answer.
+    await expect(page.locator('.pred-label.pred-out')).toHaveCount(1);
   });
 });
 
@@ -132,7 +175,7 @@ test.describe('Classifier: what the models see and say', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
   });
 
   async function drawSeven(page: import('@playwright/test').Page) {
@@ -192,29 +235,29 @@ test.describe('Classifier: what the models see and say', () => {
     expect(ink).toBeGreaterThan(0);
   });
 
-  test('the QSVM row shows its margin and features, not a percentage', async ({ page }) => {
+  test('the QSVM score is how far it leans, drawn out from the boundary', async ({ page }) => {
     await drawSeven(page);
-    const qsvm = page.locator('#pred-body tr').filter({ hasText: 'QSVM' });
-    await expect(qsvm.locator('td').nth(2)).toContainText(/^s [+-]\d+\.\d\d \(f1 /);
-    await expect(page.locator('#pred-body').locator('..').locator('th').nth(2)).toHaveText('Score');
+    // QSVM is the second model, so its score is the second cell of that column.
+    const score = page.locator('#metrics-body td[data-metric="Score"]').nth(1);
+    await expect(score).toContainText(/^\d+\.\d%$/);
+    // The bar is the diverging one, and the raw margin is what the hover says.
+    await expect(score.locator('.score-bar--lean')).toBeVisible();
+    await expect(score).toHaveAttribute('title', /^Margin -?\d\.\d{3}, .* of the evidence/);
   });
 
-  test('the log narrates the demo, and opening it shows more of it', async ({ page }) => {
-    const log = page.locator('#log-terminal');
-    await expect(log).toContainText('weights loaded');
+  test('a linear model fills its score bar from the left, not the middle', async ({ page }) => {
     await drawSeven(page);
-    await expect(log).toContainText('predict:');
-    await page.locator('#clear-btn').click();
-    await expect(log).toContainText('canvas cleared');
-    const closed = (await log.boundingBox())!.height;
-    await page.locator('#log-handle').click();
-    await expect(page.locator('#log-handle')).toHaveAttribute('aria-expanded', 'true');
-    const open = (await log.boundingBox())!.height;
-    expect(open).toBeGreaterThan(closed * 2);
+    const score = page.locator('#metrics-body td[data-metric="Score"]').first();
+    await expect(score).toContainText(/^\d+\.\d%$/);
+    await expect(score.locator('.score-bar')).toBeVisible();
+    await expect(score.locator('.score-bar--lean')).toHaveCount(0);
   });
 
-  test('in-browser models say which export their weights came from', async ({ page }) => {
-    await expect(page.locator('#session-models')).toContainText(/weights · [0-9a-f]{7} · \d{4}-/);
+  test('a label with more to say marks itself and says it on hover', async ({ page }) => {
+    const score = page.locator('#metrics-head th[data-metric="Score"]');
+    await expect(score).toHaveAttribute('title', /softmax of the top class/);
+    // The dotted underline is what tells a reader there is something to hover.
+    await expect(score).toHaveClass(/has-note/);
   });
 });
 
@@ -222,7 +265,7 @@ test.describe('Classifier: every stroke gets scored', () => {
   test('a stroke that runs off the pad is scored when it leaves', async ({ page }) => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto('/projects/ai-ml/app/');
-    await expect(page.locator('.pred-model-name').filter({ hasText: 'QSVM' })).toBeVisible();
+    await expect(page.locator('#metrics-body .col-model-name').nth(1)).toHaveText('QSVM (6 vs 9)');
     const b = (await page.locator('#draw-canvas').boundingBox())!;
     await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.2);
     await page.mouse.down();

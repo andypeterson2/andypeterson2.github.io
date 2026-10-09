@@ -2,16 +2,16 @@
   import { onMount } from 'svelte';
   import './lib/styles.css';
   import { editor } from './lib/store.svelte';
-  import { tour } from './lib/tour.svelte';
-  import { tourIntent } from './lib/tour';
-  import Tour from './components/Tour.svelte';
   import UiButton from './components/ui/Button.svelte';
-  import MenuBar from './components/MenuBar.svelte';
-  import type { MenuDef } from './lib/menus';
   import type { Personal } from './lib/types';
   import Document from './components/Document.svelte';
   import LetterEditor from './components/LetterEditor.svelte';
   import Drawer from './components/Drawer.svelte';
+  import SymbolPalette from './components/SymbolPalette.svelte';
+  import { symbols } from './lib/symbol-input.svelte';
+
+  /** The export menu: "Export" alone never said in what. */
+  let exportOpen = $state(false);
   import StyleDrawer from './components/StyleDrawer.svelte';
   import LayoutsDrawer from './components/LayoutsDrawer.svelte';
   import TagsDrawer from './components/TagsDrawer.svelte';
@@ -28,164 +28,35 @@
   // svelte-ignore state_referenced_locally
   if (identity) editor.hydrateDemoIdentity(identity);
 
-  const person = $derived(editor.person);
-  const fullName = $derived(
-    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim(),
-  );
-
   // Flips true once mounted → the stage gets `data-hydrated`, a deterministic
   // signal that event handlers are live (tests wait for it instead of racing).
   let hydrated = $state(false);
 
-  // The menubar heart toggles the site theme. Its aria is set imperatively: the island
-  // renders light on the server but hydrates against the real theme.
-  let heartEl: HTMLButtonElement | undefined;
-  let theme: 'light' | 'dark' = 'light';
-  function reflectTheme() {
-    const dark = theme === 'dark';
-    const btn = heartEl ?? document.querySelector<HTMLButtonElement>('.heart-toggle');
-    btn?.setAttribute('aria-pressed', String(dark)); // the name stays "Dark mode"
-  }
-  onMount(() => {
-    theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-    reflectTheme();
-  });
-  function toggleTheme() {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = theme;
-    try {
-      localStorage.setItem('sm-theme', theme);
-    } catch {
-      /* private mode: the theme just won't persist */
-    }
-    reflectTheme();
-  }
-
   // Demo is the default — and the only mode almost every visitor can reach, since
   // the backend is Access-gated. It is not a failure, so it isn't drawn like one.
   const demoMode = $derived(!editor.connected && !editor.connecting && !editor.signingIn);
-  // Signed in, but the backend didn't load their résumés (cold start, outage). Not the
+  // Signed in, but the backend didn't load their resumes (cold start, outage). Not the
   // same as signed out: offering "Sign in" again would just loop.
   const signedInOffline = $derived(demoMode && editor.identity !== null);
-  // The invite (with the guided tour) appears once, on load. Dismissing it is final —
-  // the status bar becomes a sign-in button.
-  let inviteOpen = $state(true);
-  // The invite and the carried-over-edits offer are modal pop-ups over a scrim:
-  // `use:modal` makes the page behind inert and puts focus on the answer.
-  // Escape dismisses the invite (the offer needs a real answer).
-  function onInviteKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && demoMode && inviteOpen && !editor.pendingDraft) inviteOpen = false;
-  }
-
-  // Starting the tour dismisses the invitation first: on mobile the invite is a
-  // popup window that would otherwise sit over the narrator, and on desktop the
-  // strip has served its purpose. The status chip reopens the invite afterwards.
-  function startTour() {
-    inviteOpen = false;
-    tour.start();
-  }
-
-  /** Open a drawer from the menu (they are mutually exclusive — one at a time). */
-  const drawerItem = (label: string, drawer: NonNullable<typeof editor.openDrawer>) => ({
-    label: `${label}…`, // the ellipsis convention: this opens a panel
-    onSelect: () => (editor.openDrawer = drawer),
-  });
-
-  // Grouped the way a System-6 user reaches for them. File is document-level: which
-  // resume you're in (Profiles), then getting it out (Export) or starting over (Reset).
-  // Edit is the change timeline — Undo/Redo and the checkpoint History that extends it.
-  // View is the shaping surface: the preview toggle and the panels that re-shape the one
-  // document (Variants, Tags, Layout, Style). Dead commands render disabled, never as
-  // live-looking text that does nothing.
-  const menus: MenuDef[] = $derived([
-    {
-      title: 'File',
-      items: [
-        drawerItem('Profiles', 'profiles'),
-        {
-          label: '⤓ Export as JSON…',
-          separatorBefore: true,
-          disabled: editor.noProfiles,
-          onSelect: () => void editor.exportJson(),
-        },
-        {
-          label: '↺ Reset demo',
-          // A no-op when connected: there is real data to protect (store.resetDemo).
-          disabled: editor.connected,
-          onSelect: () => editor.requestResetDemo(),
-        },
-      ],
-    },
-    {
-      title: 'Edit',
-      items: [
-        {
-          // The label names what will be undone, so the command is never a surprise.
-          label: editor.undo.canUndo ? `↶ Undo ${editor.undo.undoLabel}` : '↶ Undo',
-          disabled: !editor.undo.canUndo,
-          accel: '⌘Z',
-          keys: 'Meta+Z Control+Z',
-          onSelect: () => void editor.undo.undo(),
-        },
-        {
-          label: editor.undo.canRedo ? `↷ Redo ${editor.undo.redoLabel}` : '↷ Redo',
-          disabled: !editor.undo.canRedo,
-          accel: '⇧⌘Z',
-          keys: 'Meta+Shift+Z Control+Shift+Z',
-          onSelect: () => void editor.undo.redo(),
-        },
-        { ...drawerItem('History', 'history'), separatorBefore: true },
-      ],
-    },
-    {
-      title: 'View',
-      items: [
-        {
-          label: '◱ Preview',
-          checked: editor.preview.open,
-          onSelect: () => editor.preview.toggle(),
-        },
-        { ...drawerItem('Variants', 'variant'), separatorBefore: true },
-        drawerItem('Tags', 'tags'),
-        drawerItem('Layout', 'layouts'),
-        drawerItem('Style', 'style'),
-      ],
-    },
-    {
-      // Signed-in owners have no invite popup, so the tour lives here too (sandboxed
-      // on their own CV: nothing is saved).
-      title: 'Help',
-      items: [
-        {
-          label: '▶ Guided tour',
-          disabled: tour.state !== 'idle',
-          onSelect: () => startTour(),
-        },
-      ],
-    },
-  ]);
+  // The published PDF stands in for a compile this session cannot run.
+  const showPublished = $derived(!editor.connected && editor.preview.publishedState === 'ready');
+  // The carried-over-edits offer is a modal pop-up over a scrim: `use:modal` makes
+  // the page behind inert and puts focus on the answer.
 
   // Auto-probe the live backend once mounted (client-only). Signed-in owner →
   // real CV; anyone else → stays on the local demo + a sign-in offer.
-  // `?tour=1` lets a forwarded link open straight into the narrative — the only
-  // way the tour ever autoplays. It runs once we know which mode we're in: the
-  // demo for a visitor, or the owner's own CV (sandboxed) for a signed-in owner.
   onMount(() => {
     hydrated = true;
-    void editor.connect().then(() => {
-      if (new URLSearchParams(location.search).get('tour') === '1') startTour();
-    });
+    void editor.connect();
+    // The sign-in lives in the site menubar, which knows nothing about unsaved
+    // demo edits: this is where they are stashed before it navigates away.
+    const onSignIn = (e: Event) => {
+      if (!editor.prepareSignIn()) e.preventDefault();
+    };
+    document.addEventListener('site:signin', onSignIn);
+    return () => document.removeEventListener('site:signin', onSignIn);
   });
 
-  // A tour is staged for the mode it began in (demo vs. the owner's live CV). If
-  // the session flips mid-tour — a sign-in popup lands while a demo tour plays —
-  // the document changes under it, so end rather than drive stale steps against it.
-  $effect(() => {
-    if (tour.state !== 'idle' && editor.connected !== tour.liveAtStart) tour.end();
-  });
-
-  const inTourChrome = (t: EventTarget | null) =>
-    t instanceof Element && !!t.closest('[data-tour]');
   const isEditable = (t: EventTarget | null) =>
     t instanceof HTMLElement &&
     (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName));
@@ -196,61 +67,23 @@
    * event it fires routes through saveEntry, which records it like any other edit.
    */
   function onGlobalKey(e: KeyboardEvent) {
-    onInviteKey(e);
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
-      e.preventDefault();
-      if (tour.active) tour.takeover(); // a keystroke means the visitor is driving
-      void (e.shiftKey ? editor.undo.redo() : editor.undo.undo());
+    if (e.key === 'Escape' && (exportOpen || symbols.open)) {
+      exportOpen = false;
+      symbols.close();
       return;
     }
-    onTourKey(e);
-  }
-
-  /** Esc ends, Space pauses/resumes, anything else means the visitor is driving. */
-  function onTourKey(e: KeyboardEvent) {
-    if (!tour.active) return;
-    const intent = tourIntent({
-      type: 'keydown',
-      key: e.key,
-      insideTour: inTourChrome(e.target),
-      editable: isEditable(e.target),
-    });
-    if (intent === 'ignore') return;
-    if (intent === 'end') tour.end();
-    else if (intent === 'toggle') {
-      e.preventDefault(); // Space would otherwise scroll the document out from under them
-      tour.toggle();
-    } else tour.takeover();
-  }
-  /** A click or a scroll anywhere but the tour's own chrome hands back the wheel. */
-  function onTourPointer(e: Event) {
-    if (tour.active && !inTourChrome(e.target)) tour.takeover();
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isEditable(e.target)) {
+      e.preventDefault();
+      void (e.shiftKey ? editor.undo.redo() : editor.undo.undo());
+    }
   }
 </script>
 
-<svelte:window onkeydown={onGlobalKey} onpointerdown={onTourPointer} onwheel={onTourPointer} />
+<svelte:window onkeydown={onGlobalKey} />
 
-<div class="stage" data-hydrated={hydrated || undefined}>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="stage" data-hydrated={hydrated || undefined} onfocusin={symbols.track}>
   <div class="sr-only" aria-live="polite" aria-atomic="true">{editor.announce}</div>
-  <div class="menubar">
-    <nav class="site-nav" aria-label="Site">
-      <button
-        type="button"
-        class="navlink heart-toggle"
-        bind:this={heartEl}
-        aria-label="Dark mode"
-        title="Dark mode"
-        aria-pressed="false"
-        onclick={toggleTheme}
-      >
-        <img src="/icons/heart.svg" alt="" class="heart-icon" width="18" height="18" />
-      </button>
-      <a class="navlink" href="/">Home</a>
-      <a class="navlink" href="/projects/">Projects</a>
-    </nav>
-    <MenuBar {menus} />
-  </div>
-
   {#if editor.signingIn}
     <div class="invite busy" role="status">
       <span class="mk" aria-hidden="true">◆</span>
@@ -259,7 +92,7 @@
       >
     </div>
   {:else if editor.pendingDraft}
-    <!-- Demo edits carried across sign-in: offer them as a profile. -->
+    <!-- Demo edits carried across sign-in: offer them as a resume of their own. -->
     <div class="invite-layer" use:modal={'#draft-primary'}>
       <div class="invite-scrim" aria-hidden="true"></div>
       <div class="invite" role="dialog" aria-modal="true" aria-labelledby="draft-title">
@@ -269,90 +102,45 @@
         </div>
         <span class="txt"
           >You edited the demo before signing in. Bring those edits into your account as a new
-          profile? Your name and email replace the sample's contact details.</span
+          resume? Your name and email replace the sample's contact details.</span
         >
         <UiButton
           variant="toolbar"
-          class="tour-start"
+          class="invite-cta"
           tone="primary"
           id="draft-primary"
           disabled={editor.importingDraft}
           onclick={() => void editor.importDraft()}
           >{editor.importingDraft ? 'Bringing them in…' : 'Bring them in'}</UiButton
         >
-        <button class="link" disabled={editor.importingDraft} onclick={() => editor.discardDraft()}
+        <button
+          class="link"
+          aria-disabled={editor.importingDraft}
+          title={editor.importingDraft ? 'Bringing your edits in — one moment' : undefined}
+          onclick={() => !editor.importingDraft && editor.discardDraft()}
           >Start fresh instead</button
         >
-      </div>
-    </div>
-  {:else if demoMode && inviteOpen}
-    <!-- On phones this whole block presents as a centered pop-up window: the scrim
-         and the System-6 titlebar below are shown only there. On desktop it stays
-         the inline invitation strip and both are display:none. -->
-    <div class="invite-layer" use:modal={'.tour-start'}>
-      <!-- The scrim is for pointers; keyboards have Escape and the Dismiss buttons. -->
-      <button
-        class="invite-scrim"
-        aria-hidden="true"
-        tabindex="-1"
-        onclick={() => (inviteOpen = false)}
-      ></button>
-      <div
-        class="invite"
-        id="demo-invite"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="invite-title"
-        aria-describedby="invite-text"
-      >
-        <div class="titlebar invite-tbar">
-          <button
-            class="close invite-close"
-            aria-label="Dismiss"
-            onclick={() => (inviteOpen = false)}
-          ></button>
-          <span class="title" id="invite-title">Resume Editor</span>
-          <span class="fill"></span>
-        </div>
-        <span class="txt" id="invite-text"
-          >This is the real editor, running in your browser. Edit anything — drag, tag, switch
-          variants, export. <b
-            >Nothing is saved until you sign in — then your edits come with you.</b
-          ></span
-        >
-        <UiButton
-          variant="toolbar"
-          class="tour-start"
-          disabled={tour.state !== 'idle'}
-          title="Watch the editor drive itself — touch anything to take over"
-          onclick={startTour}>▶ Guided tour</UiButton
-        >
-        {#if editor.connectError === 'offline'}
-          <button class="link" onclick={() => editor.connect()}>Retry</button>
-        {/if}
-        <button class="x" aria-label="Dismiss" onclick={() => (inviteOpen = false)}>✕</button>
       </div>
     </div>
   {/if}
 
   <div class="workspace">
-    <div class="titlebar app-titlebar">
-      <span class="close"></span><span class="title app-title">Resume Editor</span><span
-        class="fill"
-      ></span>
-    </div>
     <div class="workspace-body">
-      <div class="window toolbar-window">
-        <div class="titlebar">
-          <span class="close"></span><span class="title">Toolbar</span><span class="fill"></span>
-        </div>
-        <div class="toolbar">
+      <div class="toolbar-window">
+        <!-- Exempt from the reflow sweep: on a phone this row scrolls sideways inside
+             its own clip, so its buttons reach past the viewport while the page does
+             not (WCAG 1.4.10 asks that the page not scroll, and it doesn't). -->
+        <div class="toolbar" data-reflow-exempt>
           <span class="field"
-            >Profile
+            >Resume
             <button
               class="popup profile-btn"
-              title="Profiles"
-              onclick={() => (editor.openDrawer = 'profiles')}>{editor.profileLabel} ▾</button
+              title={editor.connected
+                ? 'Switch resume'
+                : 'Your resumes live in your account — sign in to switch between them'}
+              aria-disabled={!editor.connected}
+              onclick={() => editor.connected && (editor.openDrawer = 'profiles')}
+              >{editor.profileLabel} ▾</button
             ></span
           >
           <span class="field"
@@ -361,71 +149,154 @@
               class="popup variant-btn"
               class:lens={editor.activeVariantId !== null}
               title="Variants + the lens"
-              data-tour-spot="variants"
               onclick={() => (editor.openDrawer = 'variant')}>{editor.variantLabel} ▾</button
             ></span
           >
-          <span class="sp"></span>
-          <!-- Action buttons grouped by job: shape (Tags/Layout/Style), a hairline
-           separator, then output (Preview/Export). `display:contents` keeps them flat
-           in the toolbar flex (the .sp above pushes the whole group right); the toolbar
-           is hidden entirely on mobile. -->
-          <div class="actions">
+          {#if !demoMode || signedInOffline}
+            <!-- The retry for a session whose resumes didn't load. Signing in is the
+                 site menubar's, so a signed-out demo shows nothing here. -->
+            <button
+              class="conn"
+              aria-disabled={editor.connecting || editor.signingIn}
+              onclick={() => !(editor.connecting || editor.signingIn) && editor.connect()}
+              title={signedInOffline
+                ? "Signed in, but your saved resumes didn't load — try again"
+                : 'Connection status'}
+            >
+              <span
+                class="dot"
+                class:live={editor.connected}
+                class:busy={editor.connecting || editor.signingIn}
+                aria-hidden="true"
+              ></span><span class="conn-label"
+                >{editor.signingIn
+                  ? 'signing in…'
+                  : editor.connecting
+                    ? 'connecting…'
+                    : editor.connected
+                      ? 'connected'
+                      : "Couldn't load your resumes — retry"}</span
+              >
+            </button>
+          {/if}
+          <UiButton
+            variant="toolbar"
+            active={editor.openDrawer === 'history'}
+            aria-expanded={editor.openDrawer === 'history'}
+            onclick={() => (editor.openDrawer = 'history')}>History</UiButton
+          >
+          <UiButton
+            variant="toolbar"
+            active={exportOpen}
+            aria-expanded={exportOpen}
+            title="Take this resume away in a chosen format"
+            disabled={editor.noProfiles}
+            onclick={() => (exportOpen = !exportOpen)}>⤓ Export</UiButton
+          >
+          <!-- Which tier is in play, and whether the work is kept: two separate
+               notices, because they answer two different questions. They report rather
+               than act, so they sit at the far end of the row. -->
+          <span class="tb-gap"></span>
+          <span class="note" class:live={editor.connected}
+            >{editor.connected ? 'live' : 'demo'}</span
+          >
+          <span class="note" role="status"
+            >{editor.connected
+              ? editor.saveState === 'saving'
+                ? 'saving…'
+                : editor.saveState === 'error'
+                  ? '⚠ save failed'
+                  : '✓ saved'
+              : 'not saved'}</span
+          >
+        </div>
+
+        <!-- Below the line, the commands sit over what they act on: the document's
+             own on the left, the PDF's on the right, splitting where the panes do. -->
+        <div class="tb-split">
+          <div class="tb-doc">
             <UiButton
               variant="toolbar"
-              active={editor.openDrawer === 'tags'}
-              onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
+              title={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Nothing to undo'}
+              aria-label={editor.undo.canUndo ? `Undo ${editor.undo.undoLabel}` : 'Undo'}
+              disabled={!editor.undo.canUndo}
+              onclick={() => void editor.undo.undo()}>↶ Undo</UiButton
             >
             <UiButton
               variant="toolbar"
-              active={editor.openDrawer === 'layouts'}
-              onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
+              title={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Nothing to redo'}
+              aria-label={editor.undo.canRedo ? `Redo ${editor.undo.redoLabel}` : 'Redo'}
+              disabled={!editor.undo.canRedo}
+              onclick={() => void editor.undo.redo()}>↷ Redo</UiButton
             >
             <UiButton
               variant="toolbar"
-              active={editor.openDrawer === 'style'}
-              onclick={() => (editor.openDrawer = 'style')}>Style</UiButton
+              title={editor.connected
+                ? 'The demo sample is only shown while signed out'
+                : 'Empty the demo, to start from nothing'}
+              disabled={editor.connected}
+              onclick={() => editor.clearDemo()}>⌫ Clear</UiButton
             >
             <span class="tbar-sep" aria-hidden="true"></span>
             <UiButton
               variant="toolbar"
-              active={editor.preview.open}
+              active={editor.openDrawer === 'tags'}
+              aria-expanded={editor.openDrawer === 'tags'}
+              onclick={() => (editor.openDrawer = 'tags')}>Tags</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'style'}
+              aria-expanded={editor.openDrawer === 'style'}
+              onclick={() => (editor.openDrawer = 'style')}>Style</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              active={symbols.open}
+              title="Insert a symbol"
+              aria-expanded={symbols.open}
+              onclick={() => symbols.toggle()}>Ω Symbols</UiButton
+            >
+          </div>
+
+          <div class="tb-pdf">
+            <UiButton
+              variant="toolbar"
+              active={editor.openDrawer === 'layouts'}
+              aria-expanded={editor.openDrawer === 'layouts'}
+              title={editor.connected
+                ? 'Choose the LaTeX template'
+                : 'Choosing a template needs an account — sign in to pick one'}
+              disabled={!editor.connected}
+              onclick={() => (editor.openDrawer = 'layouts')}>Layout</UiButton
+            >
+            <UiButton
+              variant="toolbar"
+              pressed={editor.preview.open}
               onclick={() => editor.preview.toggle()}>◱ Preview</UiButton
             >
             <UiButton
               variant="toolbar"
               title={editor.preview.compilable
-                ? 'Compile this résumé to a PDF'
+                ? 'Compile this resume to a PDF'
                 : 'Compiling to PDF needs an account — sign in to compile'}
               disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
               onclick={() => editor.preview.openAndCompile()}
               >⟳ {editor.preview.state === 'compiling' ? 'Compiling…' : 'Compile'}</UiButton
             >
-            <UiButton
-              variant="toolbar"
-              title="Export this resume as JSON"
-              data-tour-spot="export"
-              disabled={editor.noProfiles}
-              onclick={() => editor.exportJson()}>⤓ Export</UiButton
-            >
           </div>
         </div>
       </div>
 
-      <div class="window doc-window">
-        <div class="titlebar">
-          <span class="close"></span><span class="title"
-            >{fullName || editor.profileLabel} — {editor.variantLabel}</span
-          ><span class="fill"></span>
-        </div>
+      <div class="doc-window">
         <div class="wbody" class:split={editor.preview.open}>
-          <div class="doc-scroll" data-tour-spot="document">
+          <div class="doc-scroll">
             {#if editor.noProfiles}
               <div class="no-profiles">
-                <p class="np-title">No profiles yet</p>
-                <p class="np-sub">Create your first resume profile to start editing.</p>
+                <p class="np-title">No resumes yet</p>
+                <p class="np-sub">Create your first resume to start editing.</p>
                 <button class="np-btn" onclick={() => editor.addPerson()}
-                  >＋ Create your first profile</button
+                  >＋ Create your first resume</button
                 >
               </div>
             {:else if editor.letterMode}
@@ -437,28 +308,46 @@
           {#if editor.preview.open}
             <div class="preview">
               <div class="pv-bar">
-                <span>{editor.variantLabel}.pdf</span>
+                <span>
+                  {#if editor.preview.url}{editor.pdfName}{:else if showPublished}The site's
+                    published resume — not your edits{:else}No PDF yet{/if}
+                </span>
                 <span class="pv-tools">
-                  <button
-                    class="pv-btn"
-                    disabled={!editor.preview.compilable || editor.preview.state === 'compiling'}
-                    onclick={() => editor.preview.compile()}
-                    >⟳ {editor.preview.state === 'ready' ? 'Recompile' : 'Compile'}</button
-                  >
                   {#if editor.preview.url}
+                    <a class="pv-btn" href={editor.preview.url} download={editor.pdfName}>⤓ PDF</a>
+                  {:else if showPublished}
+                    <!-- Straight from the gateway, so the browser saves it under the dated
+                       name the server sends. -->
                     <a
                       class="pv-btn"
-                      href={editor.preview.url}
-                      download={`${editor.variantLabel}.pdf`}>⤓ PDF</a
+                      href={editor.preview.publishedHref}
+                      target="_blank"
+                      rel="noopener noreferrer">⤓ PDF</a
                     >
                   {/if}
                 </span>
               </div>
               <div class="pv-body">
-                {#if !editor.connected}
-                  <div class="pv-note">Sign in to compile this résumé to a PDF.</div>
+                {#if showPublished}
+                  <!-- No compiler here, so the pane shows the PDF the site already publishes.
+                     Once someone has edited the document beside it, the two differ, and the
+                     strip says so where the eye is rather than only in the bar. -->
+                  {#if editor.dirty}
+                    <p class="pv-strip">Your edits aren't in this PDF — sign in to compile them.</p>
+                  {/if}
+                  <PdfView blob={editor.preview.published} />
+                {:else if !editor.connected}
+                  <div class="pv-note">
+                    {#if editor.preview.publishedState === 'loading'}
+                      Loading the published resume…
+                    {:else if editor.identity}
+                      Couldn't reach the compiler — retry from the toolbar.
+                    {:else}
+                      Sign in to compile this resume to a PDF.
+                    {/if}
+                  </div>
                 {:else if !editor.preview.compilable}
-                  <div class="pv-note">Choose a profile to compile its PDF.</div>
+                  <div class="pv-note">Choose a resume to compile its PDF.</div>
                 {:else if editor.preview.state === 'compiling'}
                   <div class="pv-note">
                     Compiling {editor.variantLabel}…<br /><small
@@ -480,60 +369,87 @@
             </div>
           {/if}
         </div>
-        <div class="statusbar">
-          <span class="sb-l"
-            ><span class="sb-state"
-              >{editor.connected
-                ? editor.saveState === 'saving'
-                  ? 'saving…'
-                  : editor.saveState === 'error'
-                    ? '⚠ save failed'
-                    : '✓ saved'
-                : 'demo — not saved'}</span
-            ><span class="sb-variant">{` · ${editor.variantLabel}`}</span></span
-          >
-          <button
-            class="conn"
-            class:cta={demoMode && !signedInOffline}
-            onclick={() => (demoMode && !signedInOffline ? editor.signIn() : editor.connect())}
-            disabled={editor.connecting || editor.signingIn}
-            title={signedInOffline
-              ? "Signed in, but your saved résumés didn't load — try again"
-              : demoMode
-                ? 'Sign in with Google to keep your edits'
-                : 'Connection status'}
-          >
-            <span
-              class="dot"
-              class:live={editor.connected}
-              class:busy={editor.connecting || editor.signingIn}
-              aria-hidden="true"
-            ></span><span class="conn-label"
-              >{editor.signingIn
-                ? 'signing in…'
-                : editor.connecting
-                  ? 'connecting…'
-                  : editor.connected
-                    ? 'connected'
-                    : signedInOffline
-                      ? "Couldn't load your résumés — retry"
-                      : 'Sign in with Google to keep your edits'}</span
-            >
-          </button>
-          {#if editor.identity}
-            <span class="sb-r account">
-              <span class="acct-who" title={editor.identity.email ?? ''}
-                >{editor.identity.name || editor.identity.email || 'Signed in'}</span
-              >
-              <button class="acct-out" onclick={() => editor.signOut()}>Sign out</button>
-            </span>
-          {:else}
-            <span class="sb-r"></span>
-          {/if}
-        </div>
       </div>
     </div>
   </div>
+
+  {#if exportOpen}
+    <div class="modal-layer" use:modal={'.ex-opt'}>
+      <button
+        class="modal-scrim"
+        aria-hidden="true"
+        tabindex="-1"
+        onclick={() => (exportOpen = false)}
+      ></button>
+      <div class="sym-window export-window" role="dialog" aria-modal="true" aria-label="Export">
+        <div class="titlebar">
+          <button class="close" aria-label="Close export" onclick={() => (exportOpen = false)}
+          ></button>
+          <span class="title">Export</span>
+          <span class="fill"></span>
+        </div>
+        <div class="ex-body">
+          <p class="ex-note">Take this resume away in whichever form you need it.</p>
+          <button
+            class="s6-btn ex-opt"
+            aria-disabled={!editor.preview.url}
+            title={editor.preview.url
+              ? 'Save the compiled PDF'
+              : 'There is no PDF yet — press Compile first'}
+            onclick={() => {
+              if (!editor.preview.url) return;
+              editor.downloadPdf();
+              exportOpen = false;
+            }}
+          >
+            <span class="ex-name">PDF</span>
+            <span class="ex-what">The compiled document, as it prints</span>
+          </button>
+          <button
+            class="s6-btn ex-opt"
+            title="Save the whole document as JSON"
+            onclick={() => {
+              void editor.exportJson();
+              exportOpen = false;
+            }}
+          >
+            <span class="ex-name">JSON</span>
+            <span class="ex-what">Every section, variant and tag — re-imports losslessly</span>
+          </button>
+          <button
+            class="s6-btn ex-opt"
+            title="Save the work history as paste-ready blocks"
+            onclick={() => {
+              void editor.exportLinkedin();
+              exportOpen = false;
+            }}
+          >
+            <span class="ex-name">LinkedIn JSON</span>
+            <span class="ex-what"
+              >Work history as paste-ready blocks, for LinkedIn, Indeed or Handshake</span
+            >
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if symbols.open}
+    <div class="modal-layer">
+      <!-- Not inert behind it: a glyph lands in the field the caret left, and an
+           inert page would take that field's focus with it. -->
+      <button class="modal-scrim" aria-hidden="true" tabindex="-1" onclick={() => symbols.close()}
+      ></button>
+      <div class="sym-window window" role="dialog" aria-label="Insert a symbol">
+        <div class="titlebar">
+          <button class="close" aria-label="Close symbols" onclick={() => symbols.close()}></button>
+          <span class="title">Symbols</span>
+          <span class="fill"></span>
+        </div>
+        <div class="sym-body"><SymbolPalette onpick={symbols.insert} /></div>
+      </div>
+    </div>
+  {/if}
 
   {#if editor.openDrawer === 'style'}
     <Drawer title="Style"><StyleDrawer /></Drawer>
@@ -544,16 +460,12 @@
   {:else if editor.openDrawer === 'variant'}
     <Drawer title="Variants"><VariantDrawer /></Drawer>
   {:else if editor.openDrawer === 'profiles'}
-    <Drawer title="Profiles"><ProfilesDrawer /></Drawer>
+    <Drawer title="Resumes"><ProfilesDrawer /></Drawer>
   {:else if editor.openDrawer === 'history'}
     <Drawer title="History"><HistoryDrawer /></Drawer>
   {/if}
 
-  <Tour />
-
-  <!-- The toast and the tour share the bottom-center slot; the tour wins. (In demo
-       mode nothing saves, so nothing can fail — this only matters if the two ever meet.) -->
-  {#if editor.saveError && !tour.active}
+  {#if editor.saveError}
     <div class="save-toast floating-panel" role="alert" aria-live="assertive">
       <span class="st-icon" aria-hidden="true">⚠</span>
       <span class="st-msg">{editor.saveError}</span>
@@ -565,7 +477,7 @@
       <UiButton
         variant="toast"
         class="st-x"
-        aria-label="Dismiss save error"
+        aria-label="Dismiss error"
         onclick={() => editor.dismissError()}>✕</UiButton
       >
     </div>
@@ -573,103 +485,17 @@
 </div>
 
 <style>
-  /* Fill the viewport exactly (the site-pane ancestor is a definite-height flex child
-     of the 100vh body), then lay the editor out as a flex column whose middle
-     (.workspace) fills and whose document/preview panes scroll INTERNALLY — so the
-     page itself never scrolls and the editor is always exactly window-tall. */
+  /* Exactly as tall as the pane it is slotted into, so the pane never scrolls and
+     the document below the toolbar carries the editor's one scrollbar — which then
+     starts under the toolbar rather than running up alongside it. */
   .stage {
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-  }
 
-  /* The editor's chrome text, in its own windows too, is set in the mono face. */
-  .stage,
-  .stage :global(.window) {
+    /* The editor's chrome text is set in the mono face. */
     font-family: var(--font-mono);
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  /* Mirrors the portfolio menubar: Chicago face, 3px
-     rule, rounded top, flush full-height items that invert on hover. No
-     overflow:hidden here (it would clip the pull-down menus) — the corner is
-     rounded on the leftmost item (the heart) itself instead. */
-  .menubar {
-    flex: none;
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
-    background: var(--paper);
-    border-bottom: 3px solid var(--ink);
-    border-radius: var(--radius-menubar) var(--radius-menubar) 0 0;
-    font-family: var(--font-ui);
-    font-size: var(--text-xs);
-    position: sticky;
-    top: 0;
-    z-index: var(--z-sticky);
-  }
-
-  /* Site nav (heart · Home · Projects), leftmost — flush full-height items that
-     invert on hover, mirroring the portfolio menubar. */
-  .site-nav {
-    display: flex;
-    align-items: stretch;
-  }
-
-  .navlink {
-    display: flex;
-    align-items: center;
-    padding: 0.6vh 1vw;
-    font: inherit;
-    line-height: 1;
-    color: var(--ink);
-    background: none;
-    border: 0;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .navlink:hover,
-  .navlink:focus-visible {
-    background: var(--ink);
-    color: var(--paper);
-    outline: none;
-  }
-
-  /* The heart is the leftmost item, so it carries the menubar's rounded corner. */
-  .heart-toggle {
-    border-top-left-radius: 0.75vw;
-  }
-
-  .heart-icon {
-    width: 1em;
-    height: 1em;
-    display: block;
-  }
-
-  .heart-toggle:hover .heart-icon,
-  .heart-toggle:focus-visible .heart-icon {
-    filter: invert(1);
-  }
-
-  /* On phones the floating site-nav takes over (as on the portfolio). */
-  @media (width <= 768px) {
-    .site-nav {
-      display: none;
-    }
   }
 
   /* Hollow = unset = nothing is being written: the System-6 idiom, so demo never
@@ -693,17 +519,16 @@
     background: var(--state-busy);
   }
 
-  /* The connection status + sign-in CTA lives in the status bar's centre column
-     (see .statusbar); justify-self keeps it centred there. */
+  /* The connection state, beside the notices it qualifies. */
   .conn {
-    font: inherit;
-    justify-self: center;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
     display: inline-flex;
     align-items: center;
     background: none;
     border: 0;
     padding: 0;
-    color: inherit;
     cursor: pointer;
   }
 
@@ -711,19 +536,7 @@
     cursor: default;
   }
 
-  /* Sign-in CTA: drop the status dot and read as an obvious link. */
-  .conn.cta .dot {
-    display: none;
-  }
-
-  .conn.cta .conn-label {
-    font-weight: 700;
-    text-decoration: underline;
-    color: var(--ink);
-  }
-
-  /* The demo invitation — a centered System-6 pop-up window carrying the guided
-     tour, over a dismiss scrim. Shown once, on load; the same on every viewport. */
+  /* The carried-over-edits offer — a centered System-6 pop-up window over a scrim. */
   .invite-scrim {
     position: fixed;
     inset: 0;
@@ -788,7 +601,7 @@
     padding: 4px 10px;
   }
 
-  .invite :global(.ui.btn.tour-start) {
+  .invite :global(.ui.btn.invite-cta) {
     width: 100%;
     padding: 10px;
     font-size: var(--text-3xs);
@@ -817,40 +630,110 @@
     color: var(--ink-2);
   }
 
-  /* The whole editor is a System-6 window ("Resume Editor") — the outer page frame,
-     mirroring the home page's outer window. The toolbar + document are nested windows
-     inside its body, exactly as the home cards nest inside the "Home" window. */
+  /* No frame of its own: the page's own .site-window is the window. */
   .workspace {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 1320px;
-    margin: var(--canvas-pad-y) auto;
+  }
+
+  /* No inset of its own: the toolbar and the document run the full width of the
+     page, as the menubar above them does. Each supplies its own padding. */
+  .workspace-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Centred over the page it covers, with the work dimmed behind it. */
+  .modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  .modal-scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim-soft);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  /* The caret keeps its place in the field behind, so a glyph lands where it was. */
+  .sym-window {
+    position: relative;
+    width: min(34rem, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
     background: var(--paper);
     border: 2px solid var(--ink);
     border-right-width: 4px;
     border-bottom-width: 4px;
   }
 
-  .workspace-body {
-    flex: 1;
-    min-height: 0;
+  .sym-body {
+    overflow: auto;
+  }
+
+  .export-window {
+    width: min(24rem, calc(100vw - 48px));
+  }
+
+  .ex-body {
     display: flex;
     flex-direction: column;
-    padding: var(--pane-pad-y) var(--pane-pad-x);
+    gap: 8px;
+    padding: 12px;
   }
 
-  /* The toolbar is the body of its own System-6 window (.toolbar-window) above
-     the document — the .window wrapper supplies the paper/border/shadow chrome
-     and striped titlebar, matching the document and drawer windows. */
+  .ex-note {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
+  }
+
+  /* One row per format: what it is, then what it gives you. The shared .s6-btn
+     carries everything else, out-of-reach included. */
+  .ex-opt {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+    padding: 8px 10px;
+
+    /* The shared button is square-cornered; everything in this editor is not. */
+    border-radius: var(--radius);
+  }
+
+  .ex-name {
+    font-family: var(--font-ui);
+    font-size: var(--text-3xs);
+  }
+
+  .ex-what {
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+  }
+
+  /* Sits above the scroller, so the document's scrollbar begins below this. */
   .toolbar-window {
     flex: none;
-    margin-bottom: var(--window-gap);
+    background: var(--paper);
+    border-bottom: 1px solid var(--ink);
   }
 
-  /* The document window fills the remaining height; its .wbody panes scroll inside it. */
+  /* The document fills the remaining height; its .wbody panes scroll inside it. */
   .doc-window {
     flex: 1;
     min-height: 0;
@@ -858,12 +741,46 @@
     flex-direction: column;
   }
 
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Row one: which resume is open and whether its work is kept. */
   .toolbar {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 14px;
+    border-bottom: 1px solid var(--paper-3);
+  }
+
+  /* Rows two and three, on the seam the panes below them use, so each group of
+     commands sits over the pane it acts on. */
+  .tb-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .tb-doc,
+  .tb-pdf {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+  }
+
+  .tb-pdf {
+    border-left: 1px solid var(--paper-3);
   }
 
   /* Transparent to layout on desktop — the buttons sit flat in the toolbar flex. */
@@ -881,6 +798,22 @@
     color: var(--ink-2);
   }
 
+  /* Every control on the toolbar stands the same height, so a row of them reads as
+     one strip rather than a ragged line. */
+  .toolbar :global(.ui.btn),
+  .tb-doc :global(.ui.btn),
+  .tb-pdf :global(.ui.btn),
+  .popup {
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+
+    /* A fixed line box, so a taller glyph (the undo arrows, the preview mark) does
+       not push its own button a pixel above the rest of the row. */
+    line-height: 1;
+    padding-block: 0;
+  }
+
   .popup {
     font-size: var(--text-3xs);
     font-weight: 700;
@@ -890,7 +823,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius);
     padding: 4px 10px;
-    box-shadow: var(--shadow);
   }
 
   button.popup {
@@ -905,7 +837,6 @@
 
   button.popup:active {
     transform: translate(1px, 1px);
-    box-shadow: var(--shadow-sm);
   }
 
   .popup.lens {
@@ -926,11 +857,6 @@
     width: 1px;
     margin: 2px;
     background: var(--ink-5);
-  }
-
-  .window {
-    background: var(--paper);
-    border: 1.5px solid var(--ink);
   }
 
   /* min-height (not a fixed height) so the bar grows with its title: nested windows
@@ -989,6 +915,7 @@
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
 
+  /* The editor's one scrollbar, below the toolbar rather than beside it. */
   .doc-scroll {
     min-height: 0;
     overflow: auto;
@@ -1030,12 +957,10 @@
     border-radius: var(--radius-md);
     padding: 8px 16px;
     cursor: pointer;
-    box-shadow: var(--shadow);
   }
 
   .np-btn:active {
     transform: translate(1px, 1px);
-    box-shadow: var(--shadow-sm);
   }
 
   /* Cap the preview column to the same height as the document column (.doc-scroll)
@@ -1082,7 +1007,6 @@
     padding: 3px 9px;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: var(--shadow-sm);
   }
 
   .pv-btn:active {
@@ -1099,6 +1023,10 @@
   .pv-body {
     flex: 1;
     display: flex;
+
+    /* A column, so the strip above the pages is a band across the pane and the
+       pages keep the full width to render into. */
+    flex-direction: column;
     min-height: 0;
     background: var(--chrome);
   }
@@ -1111,6 +1039,20 @@
     color: var(--ink-3);
     text-align: center;
     line-height: 1.7;
+  }
+
+  /* Sits above the pages, in the pane's own ink, so it reads as part of the viewer
+     rather than as an error. */
+  .pv-strip {
+    flex: none;
+    margin: 0;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--chrome-hi);
+    font-family: var(--mono);
+    font-size: var(--text-4xs);
+    color: var(--ink);
+    text-align: center;
   }
 
   .pv-log {
@@ -1130,58 +1072,42 @@
     word-break: break-word;
   }
 
-  /* Three columns: save/mode status (left), the connection + sign-in CTA (centre),
-     the keyboard hint (right). The 1fr / auto / 1fr split keeps the CTA dead-centre
-     regardless of the side widths. */
-  .statusbar {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid var(--ink);
-    background: var(--chrome-hi);
-    padding: 5px 12px;
+  /* The tier and the save state, each its own notice on the toolbar. Mono and
+     muted: they report, they are not pressed. */
+
+  /* Out of reach, said the same way the button families say it. */
+  .popup[aria-disabled='true'],
+  .conn[aria-disabled='true'],
+  .link[aria-disabled='true'] {
+    cursor: default;
+    background: var(--dither-light);
+    color: var(--ink);
+    text-shadow:
+      1px 0 0 var(--paper),
+      -1px 0 0 var(--paper),
+      0 1px 0 var(--paper),
+      0 -1px 0 var(--paper),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper),
+      1px -1px 0 var(--paper),
+      -1px 1px 0 var(--paper);
+  }
+
+  /* Pushes whatever follows it to the right end of the row. */
+  .tb-gap {
+    flex: 1;
+  }
+
+  .note {
     font-family: var(--mono);
     font-size: var(--text-4xs);
     color: var(--ink-2);
-  }
-
-  .sb-l {
-    justify-self: start;
     white-space: nowrap;
   }
 
-  .sb-r {
-    justify-self: end;
-    white-space: nowrap;
-  }
-
-  .account {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .acct-who {
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .note.live {
     color: var(--ink);
-  }
-
-  .acct-out {
-    font-family: var(--mono);
-    font-size: var(--text-4xs);
-    color: var(--accent);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
-
-  .acct-out:hover {
-    color: var(--ink);
+    font-weight: 700;
   }
 
   /* Save-error toast. Paper/border/shadow/mono + the bottom-center anchor all come
@@ -1196,7 +1122,7 @@
   }
 
   .save-toast .st-icon {
-    color: var(--state-error);
+    color: var(--ink);
     font-size: var(--text-2xs);
     line-height: 1;
   }
@@ -1226,70 +1152,52 @@
     }
   }
 
-  /* ── Mobile / tablet ── A fixed shell: a top bar (the site's floating nav left, the
-     editor ☰ Menu right), the resume as the only scroll region, and the status pinned
-     at the bottom, edge-to-edge with no title. 768px matches the site's floating-nav
-     breakpoint so the nav never lands on the desktop menubar; short landscape phones
-     get this layout too. The compact JS media query must use the same bounds. */
+  /* ── Mobile / tablet ── A fixed shell: the toolbar across the top, the resume as
+     the only scroll region, and the status pinned at the bottom, edge-to-edge with no
+     title. 768px matches the site's floating-nav breakpoint so the nav never lands on
+     the desktop toolbar; short landscape phones get this layout too. The compact JS
+     media query must use the same bounds. */
   @media (width <= 768px), (height <= 500px) {
     .stage {
       --top-h: 58px;
-      --bot-h: 44px;
 
       min-height: 0;
       padding-bottom: 0;
     }
 
-    /* Top bar — the editor ☰ Menu, pushed to the far right so it clears the floating
-       site-nav at the top-left. This one menu is every command (File/Edit/View/Help). */
-    .menubar {
+    /* Top bar — the toolbar itself, scrolled sideways rather than folded into a
+       menu. Its left inset clears the floating site-nav's 44px button at top-left. */
+    .toolbar-window {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       height: var(--top-h);
-      gap: 8px;
-      padding: 0 12px;
       margin: 0;
-      justify-content: flex-end;
-      align-items: center;
+      padding: 0;
+      background: var(--paper);
       z-index: var(--z-sticky);
     }
 
     .toolbar {
-      display: none; /* its buttons all moved into the ☰ menu */
+      height: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding: 0 12px 0 64px;
     }
 
-    /* Status bar — pinned across the bottom, showing just the centred connection CTA.
-       Its side columns (save state, key hint) are dropped on a phone; the ☰ menu and
-       the doc carry that context. This is the same bar as desktop, re-anchored. */
-    .statusbar {
+    /* Each command keeps its own width while the row scrolls past them. */
+    .toolbar :global(.ui.btn),
+    .toolbar .popup {
+      flex: none;
+    }
+
+    /* Resume: fixed below the toolbar, edge-to-edge; only its body scrolls, so the
+       two fixed regions together cover the whole viewport (no grey gaps). */
+    .doc-window {
       position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: var(--bot-h);
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: var(--paper);
-      border-top: 1px solid var(--ink);
-      font-size: var(--text-3xs);
-      z-index: var(--z-sticky);
-    }
-
-    /* Keep the unsaved-demo label on phones; only the variant label goes. */
-    .sb-variant {
-      display: none;
-    }
-
-    /* Resume: fixed between the two bars, edge-to-edge; only its body scrolls, so the
-       three fixed regions together cover the whole viewport (no grey gaps). system.css's
-       global `.window` also adds margin:16px + min-width:320px — override those too. */
-    .window {
-      position: fixed;
-      inset: var(--top-h) 0 var(--bot-h) 0;
+      inset: var(--top-h) 0 0 0;
       display: flex;
       flex-direction: column;
       margin: 0;
@@ -1302,13 +1210,6 @@
 
     .titlebar {
       flex: none;
-    }
-
-    /* The outer "Resume Editor" frame is desktop chrome. On phones the editor is a
-       full-bleed fixed layout (menubar / document / status are each position:fixed),
-       so drop the frame and let the fixed windows fill the viewport as before. */
-    .app-titlebar {
-      display: none;
     }
 
     .workspace {
@@ -1344,17 +1245,6 @@
       max-height: none;
       border-left: 0;
       border-top: 1px solid var(--ink);
-    }
-  }
-
-  /* Short laptop windows (1366×768 minus browser chrome is ~650px): the decorative
-     "Resume Editor" frame title and the "Toolbar" window title cost ~125px of a small
-     screen; the menubar already names the app, so drop them and give the document the
-     room. */
-  @media (width > 768px) and (height > 500px) and (height <= 760px) {
-    .app-titlebar,
-    .toolbar-window > .titlebar {
-      display: none;
     }
   }
 </style>

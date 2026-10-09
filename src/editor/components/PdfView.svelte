@@ -27,7 +27,7 @@
       if (mine !== token) return;
       // disableFontFace: draw embedded-font glyph outlines straight onto the canvas
       // instead of injecting an @font-face with a data:/blob: src — which font-src
-      // 'self' would block, silently rendering a real (embedded-font) résumé in a
+      // 'self' would block, silently rendering a real (embedded-font) resume in a
       // wrong fallback face. isEvalSupported:false keeps it off 'unsafe-eval'.
       const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true })
         .promise;
@@ -94,12 +94,26 @@
   });
 </script>
 
-<div class="pv-pages" bind:this={host} aria-busy={status === 'loading'}></div>
+<!-- The pages scroll inside this box, so it takes the tab stop and a name: a
+   keyboard reader needs somewhere to stand to scroll a region it cannot drag. -->
+<div
+  class="pv-pages"
+  bind:this={host}
+  role="region"
+  aria-label="Rendered PDF pages"
+  tabindex="0"
+  aria-busy={status === 'loading'}
+></div>
 {#if status === 'error'}
   <div class="pv-note">Couldn’t render the PDF here — use the download link above.</div>
 {/if}
 
 <style>
+  .pv-pages:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: -2px;
+  }
+
   .pv-pages {
     flex: 1;
     min-height: 0;

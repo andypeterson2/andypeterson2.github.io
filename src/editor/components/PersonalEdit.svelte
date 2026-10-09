@@ -1,9 +1,6 @@
 <script lang="ts">
   // Header/identity editor — click the document masthead to edit these.
   import { editor } from '../lib/store.svelte';
-  import { symbolInput } from '../lib/symbol-input.svelte';
-  import SymbolPalette from './SymbolPalette.svelte';
-  import UiButton from './ui/Button.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
 
   const FIELDS = [
@@ -18,37 +15,13 @@
     { key: 'linkedin', label: 'LinkedIn' },
   ] as const;
 
-  const sym = symbolInput();
   const text = $derived(FIELDS.map((f) => editor.person.personal[f.key] ?? '').join('  '));
-
-  function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') editor.clearSelection();
-  }
 </script>
 
-<svelte:window onkeydown={onKeydown} />
-
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="edit" onfocusin={sym.track}>
+<div class="edit">
   <div class="ehead">
     <span class="etype">Personal details</span>
-    <span class="eacts">
-      <UiButton
-        variant="mini"
-        class="sym-toggle"
-        active={sym.open}
-        title="Insert a symbol"
-        aria-expanded={sym.open}
-        onclick={() => sym.toggle()}>Ω</UiButton
-      >
-      <UiButton variant="mini" tone="primary" onclick={() => editor.clearSelection()}>Done</UiButton
-      >
-    </span>
   </div>
-
-  {#if sym.open}
-    <SymbolPalette onpick={sym.insert} />
-  {/if}
 
   <div class="grid">
     {#each FIELDS as f (f.key)}
@@ -72,7 +45,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius-md);
     background: var(--paper);
-    box-shadow: var(--shadow);
     padding: 13px 14px;
     margin: 0 -10px;
     font-family: var(--sans);
@@ -89,7 +61,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim-text);
+    color: var(--ink);
     font-weight: 700;
   }
 

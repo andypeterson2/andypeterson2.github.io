@@ -59,7 +59,7 @@ export function clearDemoDraft(store = storage()): void {
 }
 
 /**
- * The demo is the site owner's own résumé, with their public contacts overlaid.
+ * The demo is the site owner's own resume, with their public contacts overlaid.
  * When a visitor takes it into their account, the contact header becomes theirs:
  * their name and email from the signed-in identity, and the owner's handles dropped.
  * Everything they edited in the body is kept as-is.
@@ -86,7 +86,7 @@ export function forNewOwner(
   if (identity.email) personal.email = identity.email;
   return {
     ...doc,
-    name: identity.name?.trim() ? `${identity.name.trim()} (from demo)` : 'My résumé (from demo)',
+    name: identity.name?.trim() ? `${identity.name.trim()} (from demo)` : 'My resume (from demo)',
     personal,
   };
 }

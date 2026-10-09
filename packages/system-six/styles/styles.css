@@ -4,3 +4,4 @@
 @import './base.css'; /* resets, the invert idiom, dark mode, section-rule, finder grid */
 @import './dither.css'; /* the 1-bit ordered fills */
 @import './elements.css'; /* the theme toggle and the apps' shared button */
+@import './tables.css'; /* the ruled 1-bit table the demos report numbers in */

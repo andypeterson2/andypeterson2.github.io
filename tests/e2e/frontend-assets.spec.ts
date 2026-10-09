@@ -15,6 +15,7 @@ test.describe('Owned static asset serving', () => {
     '/classifiers/models/iris.json',
     '/classifiers/models/qsvm-mnist.json',
     '/classifiers/models/qsvm-iris.json',
+  '/classifiers/models/qsvm-iris-ovo.json',
     // nonogram gallery of pre-computed quantum runs
     '/nonogram/gallery/index.json',
   ];

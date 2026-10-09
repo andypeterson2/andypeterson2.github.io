@@ -19,7 +19,7 @@ const person = (over: Partial<Person> = {}): Person => ({
 });
 
 // The store is a singleton; resetDemo() re-clones the pristine sample and clears
-// undo/selection/save state, giving each test a clean, isolated document.
+// undo and save state, giving each test a clean, isolated document.
 beforeEach(() => {
   editor.connected = false;
   editor.connecting = false;
@@ -55,13 +55,6 @@ describe('EditorState — demo baseline + derived labels', () => {
     expect(editor.variantLabel).toBe(letterVariant!.name);
     expect(editor.letterMode).toBe(true);
   });
-
-  test('selection round-trips through select / clearSelection', () => {
-    editor.select({ kind: 'entry', sectionId: 's', entryId: 1 });
-    expect(editor.selection).toEqual({ kind: 'entry', sectionId: 's', entryId: 1 });
-    editor.clearSelection();
-    expect(editor.selection).toEqual({ kind: 'none' });
-  });
 });
 
 describe('EditorState — content CRUD (demo: local, undoable, no network)', () => {
@@ -86,27 +79,25 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
     expect(editor.person.sections.some((s) => s.id === target.id)).toBe(true);
   });
 
-  test('addEntry appends to a section, selects it, records "Add entry"', async () => {
+  test('addEntry appends to a section and records "Add entry"', async () => {
     const sec = experience();
     const before = sec.entries.length;
     await editor.addEntry(sec);
     expect(sec.entries.length).toBe(before + 1);
-    expect(editor.selection.kind).toBe('entry');
     expect(editor.undo.undoLabel).toBe('Add entry');
   });
 
-  test('deleteEntry removes it, clears selection, records "Delete entry"', async () => {
+  test('deleteEntry removes it and records "Delete entry"', async () => {
     const sec = experience();
     await editor.addEntry(sec);
     const entry = sec.entries.at(-1)!;
     editor.undo.clear();
     await editor.deleteEntry(sec, entry.id);
     expect(sec.entries.some((e) => e.id === entry.id)).toBe(false);
-    expect(editor.selection).toEqual({ kind: 'none' });
     expect(editor.undo.undoLabel).toBe('Delete entry');
   });
 
-  test('addBullet records "Add bullet"; addEphemeralBullet records nothing (the tour)', async () => {
+  test('addBullet records "Add bullet"', async () => {
     const sec = experience();
     await editor.addEntry(sec);
     const entry = sec.entries.at(-1)!;
@@ -115,11 +106,6 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
     await editor.addBullet(entry);
     expect(entry.items).toHaveLength(1);
     expect(editor.undo.undoLabel).toBe('Add bullet');
-
-    editor.undo.clear();
-    const ghost = editor.addEphemeralBullet(entry);
-    expect(entry.items).toContain(ghost);
-    expect(editor.undo.canUndo).toBe(false); // ephemeral: never recorded
   });
 
   test('deleteBullet removes it and records "Delete bullet"', async () => {
@@ -205,7 +191,33 @@ describe('EditorState — the save-state machine (persist / settle / retry)', ()
   });
 });
 
-describe('EditorState — demo / identity / tour lifecycle', () => {
+describe('EditorState — the PDF name', () => {
+  test('dates the file from the last edit, not from today', async () => {
+    editor.hydrateDemoIdentity({ firstName: 'Ada', lastName: 'Lovelace' });
+    // An untouched document has no edit of its own to date, so today stands in.
+    editor.lastEditedAt = null;
+    const today = new Date();
+    const day = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    expect(editor.pdfName).toBe(`${day}-Ada-Lovelace-Main.pdf`);
+
+    // Once it has been edited, that day is the one the file carries.
+    editor.lastEditedAt = new Date(2024, 2, 9, 12).getTime();
+    expect(editor.pdfName).toBe('2024-03-09-Ada-Lovelace-Main.pdf');
+  });
+
+  test('an edit stamps the moment it happened', async () => {
+    editor.lastEditedAt = null;
+    await editor.addEntry(experience());
+    expect(editor.lastEditedAt).not.toBeNull();
+    expect(editor.dirty).toBe(true);
+  });
+});
+
+describe('EditorState — demo / identity lifecycle', () => {
   test('hydrateDemoIdentity overlays contacts onto the demo person', () => {
     editor.hydrateDemoIdentity({ firstName: 'Andrew', email: 'a@b.dev' });
     expect(editor.person.personal.firstName).toBe('Andrew');
@@ -237,29 +249,25 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
     expect(editor.undo.canUndo).toBe(false);
   });
 
-  test('requestResetDemo asks before discarding edits, and respects "no"', async () => {
-    await editor.addEntry(experience());
-    const confirm = vi.fn(() => false);
-    vi.stubGlobal('window', { confirm });
-    const count = experience().entries.length;
-    editor.requestResetDemo();
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(experience().entries.length).toBe(count); // kept
-    confirm.mockReturnValue(true);
-    editor.requestResetDemo();
-    expect(editor.dirty).toBe(false);
-    vi.unstubAllGlobals();
+  test('clearDemo empties the document and undo brings it back', async () => {
+    const sections = editor.person.sections.length;
+    expect(sections).toBeGreaterThan(0);
+    editor.clearDemo();
+    expect(editor.person.sections).toEqual([]);
+    expect(editor.person.personal).toEqual({});
+    expect(editor.announce).toMatch(/undo brings/i);
+    expect(editor.undo.undoLabel).toBe('Clear resume');
+    await editor.undo.undo();
+    expect(editor.person.sections.length).toBe(sections);
+    await editor.undo.redo();
+    expect(editor.person.sections).toEqual([]);
   });
 
-  test("the tour gives a demo visitor's edits back when it ends", async () => {
-    await editor.addEntry(experience());
-    const count = experience().entries.length;
-    editor.stageTour();
-    expect(editor.dirty).toBe(false); // the tour drives the pristine sample
-    expect(experience().entries.length).toBe(count - 1);
-    editor.unstageTour();
-    expect(experience().entries.length).toBe(count);
-    expect(editor.dirty).toBe(true);
+  test('clearDemo is a no-op when connected (real data to protect)', () => {
+    editor.connected = true;
+    editor.person.personal.firstName = 'REAL';
+    editor.clearDemo();
+    expect(editor.person.personal.firstName).toBe('REAL');
   });
 
   test('resetDemo is a no-op when connected (real data to protect)', () => {
@@ -269,12 +277,14 @@ describe('EditorState — demo / identity / tour lifecycle', () => {
     expect(editor.person.personal.firstName).toBe('REAL');
   });
 
-  test('staging the tour in demo resets to the pristine sample', async () => {
-    const sec = experience();
-    await editor.addEntry(sec);
-    const dirtyCount = sec.entries.length;
-    editor.stageTour();
-    expect(experience().entries.length).toBe(dirtyCount - 1); // reset dropped the added entry
+  test('a LinkedIn export that cannot hash raises the error toast', async () => {
+    const digest = vi
+      .spyOn(crypto.subtle, 'digest')
+      .mockRejectedValue(new Error('no secure context'));
+    await editor.exportLinkedin();
+    expect(editor.saveError).toMatch(/HTTPS/);
+    expect(editor.canRetry).toBe(false);
+    digest.mockRestore();
   });
 
   test('exportJson is gated by noProfiles and runs offline without touching the backend', async () => {
@@ -382,7 +392,6 @@ describe('EditorState — connected content CRUD (persist + reconcile / rollback
     const before = sec.entries.length;
     await editor.addEntry(sec);
     expect(sec.entries.length).toBe(before);
-    expect(editor.selection).toEqual({ kind: 'none' });
     expect(editor.saveState).toBe('error');
   });
 
@@ -664,14 +673,6 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     await editor.loadLayouts();
     expect(s).not.toHaveBeenCalled();
     expect(l).not.toHaveBeenCalled();
-  });
-
-  test('signOut drops the server session and forgets the identity', async () => {
-    const logout = vi.spyOn(api, 'logout').mockResolvedValue(undefined);
-    editor.identity = { email: 'ada@example.com', name: 'Ada' };
-    await editor.signOut();
-    expect(logout).toHaveBeenCalled();
-    expect(editor.identity).toBeNull();
   });
 
   test('applyEntryFrom overwrites an entry already present in its section', () => {
