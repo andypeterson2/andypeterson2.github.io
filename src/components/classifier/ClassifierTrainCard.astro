@@ -55,6 +55,7 @@ import Button from '../Button.astro';
       <div class="row train-row">
         <Button app variant="secondary" id="train-btn" type="button">&#9654; Train</Button>
       </div>
+      <p id="train-status" class="card-status" role="status"></p>
     </fieldset>
   </details>
 </section>
@@ -96,6 +97,16 @@ import Button from '../Button.astro';
 
   .backend-note {
     font-size: var(--text-3xs);
+  }
+
+  /* What a failed run says, beside the button that failed. */
+  .card-status {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-3xs);
+  }
+
+  .card-status:empty {
+    display: none;
   }
 
   .train-fields {

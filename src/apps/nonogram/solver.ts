@@ -805,7 +805,7 @@ function renderMetrics(report: BenchmarkReport | null | undefined, blank = false
   const ideal = groverOutcome(found, cells, iterations).markedProbability;
 
   const tbl = document.createElement('table');
-  tbl.className = 'metrics-table';
+  tbl.className = 's6-data-table metrics-table';
 
   const head = tbl.createTHead().insertRow();
   // The corner over the spine names nothing, the way a table's top left never does.

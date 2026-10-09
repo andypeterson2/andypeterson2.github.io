@@ -1,58 +1,15 @@
 /**
- * Interactive behaviours the classifier page composes: a drawer, a dropdown, a
- * drag-to-resize handle and a log terminal. Nothing auto-initialises — the page
- * calls what it needs, and each initialiser wires its own listeners for the life
- * of the page.
- *
- * Usage:
- *   import { initDrawer } from '../ui-kit/ui-kit';
- *   const drawer = initDrawer(drawerEl, handleEl);
+ * Interactive behaviours the classifier page composes. Nothing auto-initialises
+ * — the page calls what it needs, and each initialiser wires its own listeners
+ * for the life of the page.
  */
-
-/** A drawer the page can shut from elsewhere — its handle owns opening. */
-export interface DrawerHandle {
-  close(): void;
-}
 
 /** A dropdown the page can shut from elsewhere — its trigger owns opening. */
 export interface DropdownHandle {
   close(): void;
 }
 
-export interface ResizeOpts {
-  /** Minimum width in px (default 180). */
-  min?: number;
-  /** Maximum width (defaults to container width − min). */
-  max?: number;
-  /** Default width if nothing persisted (default 300). */
-  default?: number;
-  /** localStorage key for persistence. */
-  key?: string;
-}
-
-export type Logger = (msg: string, level?: string) => void;
-
 // DRAWER
-
-/** Initialise a collapsible drawer (adds/removes `.open` class). */
-export function initDrawer(drawerEl: HTMLElement, handleEl: HTMLElement): DrawerHandle {
-  function open(): void {
-    drawerEl.classList.add('open');
-    handleEl.setAttribute('aria-expanded', 'true');
-  }
-  function close(): void {
-    drawerEl.classList.remove('open');
-    handleEl.setAttribute('aria-expanded', 'false');
-  }
-  function toggle(): void {
-    if (drawerEl.classList.contains('open')) close();
-    else open();
-  }
-
-  handleEl.addEventListener('click', toggle);
-
-  return { close };
-}
 
 // DROPDOWN
 
@@ -153,79 +110,3 @@ export function onEscape(callback: () => void): () => void {
 }
 
 // RESIZE HANDLE
-
-/** Initialise a drag-to-resize handle for a split layout. */
-export function initResize(
-  handleEl: HTMLElement,
-  targetEl: HTMLElement,
-  containerEl: HTMLElement,
-  opts: ResizeOpts = {},
-): void {
-  const min = opts.min ?? 180;
-  const def = opts.default ?? 300;
-  const storageKey = opts.key ?? null;
-
-  const clamp = (w: number): number => {
-    const maxW = opts.max ?? containerEl.getBoundingClientRect().width - min;
-    return Math.max(min, Math.min(maxW, w));
-  };
-
-  // A width saved on a wider window can't push the other column off this one.
-  let saved = NaN;
-  try {
-    saved = storageKey ? parseInt(localStorage.getItem(storageKey) ?? '', 10) : NaN;
-  } catch {
-    /* storage blocked: use the default */
-  }
-  targetEl.style.width = String(clamp(isNaN(saved) ? def : saved)) + 'px';
-
-  handleEl.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    document.body.classList.add('resize-dragging');
-    handleEl.classList.add('dragging');
-    const startX = e.clientX;
-    const startW = targetEl.getBoundingClientRect().width;
-
-    function onMove(ev: MouseEvent): void {
-      const newW = clamp(startW + (ev.clientX - startX));
-      targetEl.style.width = String(newW) + 'px';
-      try {
-        if (storageKey) localStorage.setItem(storageKey, String(Math.round(newW)));
-      } catch {
-        /* storage blocked: the width lasts for this page only */
-      }
-    }
-    function onUp(): void {
-      handleEl.classList.remove('dragging');
-      document.body.classList.remove('resize-dragging');
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    }
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-}
-
-// LOG TERMINAL
-
-/** Create a log appender for a `.log-terminal` element. */
-export function createLogger(terminalEl: HTMLElement, max = 200): Logger {
-  return function addLog(msg, level) {
-    const time = new Date().toTimeString().slice(0, 8);
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    const t = document.createElement('span');
-    t.className = 'log-time';
-    t.textContent = time;
-    const m = document.createElement('span');
-    m.className = 'log-msg' + (level ? ' log-' + level : '');
-    m.textContent = msg;
-    entry.appendChild(t);
-    entry.appendChild(m);
-    terminalEl.appendChild(entry);
-    while (terminalEl.children.length > max && terminalEl.firstChild) {
-      terminalEl.removeChild(terminalEl.firstChild);
-    }
-    terminalEl.scrollTop = terminalEl.scrollHeight;
-  };
-}

@@ -19,13 +19,23 @@
 </header>
 
 <style>
+  /* Held at the top of the site pane: which dataset is loaded is the one thing
+     a reader needs while scrolling the cards below it. The negative margins pull
+     it out to the pane's own edges, and the negative offset holds it there: a
+     sticky top of 0 would leave it at the padding edge, with the cards scrolling
+     through the strip above. The dither fill is opaque, so they pass under it
+     rather than through it. */
   .app-navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 8px;
+    margin: calc(-1 * var(--pane-pad-y)) calc(-1 * var(--pane-pad-x)) 0;
+    padding: 4px calc(8px + var(--pane-pad-x));
     border-bottom: 2px solid var(--ink);
     background: var(--dither-light);
+    position: sticky;
+    top: calc(-1 * var(--pane-pad-y));
+    z-index: var(--z-sticky);
     flex-shrink: 0;
   }
 

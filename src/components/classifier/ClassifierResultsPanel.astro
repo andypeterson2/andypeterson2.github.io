@@ -16,23 +16,22 @@ import Button from '../Button.astro';
         width="280"
         height="280"
         role="img"
-        aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris or BB84 under Dataset and type the values."
+        aria-label="Drawing pad for a digit, drawn with a mouse, pen or finger. To classify from the keyboard, choose Iris under Dataset and type the values."
       ></canvas>
       <div class="draw-grid" aria-hidden="true"></div>
     </div>
-    <figure class="seen">
-      <canvas
-        id="seen-canvas"
-        width="28"
-        height="28"
-        role="img"
-        aria-label="The drawing as the model sees it"></canvas>
-      <figcaption>As the model sees it: cropped to 20px, centred by mass</figcaption>
-    </figure>
+    <!-- What the models are actually given. The title carries what it is, so the
+         picture needs no caption under it. -->
+    <canvas
+      id="seen-canvas"
+      width="28"
+      height="28"
+      role="img"
+      title="The drawing as the model sees it: cropped to 20px, centred by mass"
+      aria-label="The drawing as the model sees it: cropped to 20px, centred by mass"></canvas>
   </div>
   <div class="row">
     <Button app variant="secondary" id="clear-btn" type="button">Clear</Button>
-    <Button app variant="solid" id="predict-btn" type="button">Predict</Button>
   </div>
 </section>
 
@@ -46,104 +45,51 @@ import Button from '../Button.astro';
   </div>
 </section>
 
-<!-- Predictions -->
-<section class="card" id="predictions-card">
-  <h2 class="card-title">Predictions</h2>
-  <table class="app-table pred-table">
-    <colgroup><col class="col-name" /><col class="col-answer" /><col class="col-score" /></colgroup>
-    <thead>
-      <tr>
-        <th>Model</th><th>Prediction</th><th
-          title="Linear models: softmax of the top class, uncalibrated. QSVM: signed margin s from its decision boundary."
-          >Score</th
-        >
-      </tr>
-    </thead>
-    <tbody id="pred-body">
-      <tr class="empty-row"><td colspan="3">No prediction yet</td></tr>
-    </tbody>
-  </table>
-</section>
-
 <!-- Chart area -->
 <div id="chart-area" class="card hidden">
   <canvas id="train-chart" width="600" height="250"></canvas>
 </div>
 
-<!-- Evaluation -->
-<section class="card">
-  <h2 class="card-title">Evaluation</h2>
+<!-- Every model a row, every metric a column: what it just said, what it is,
+     how it scored. No card around it — the table is already a frame, and a
+     second one only narrows it. -->
+<section id="models-card" aria-label="Models">
   <div id="evaluate-progress" class="hidden">
     <div class="progress-bar" role="progressbar">
       <div id="eval-bar" class="progress-bar-fill"></div>
     </div>
     <span id="eval-status"></span>
   </div>
-  <!-- Focusable, so the keyboard can scroll it in every browser (Safari doesn't
-       make scrollers focusable on its own). -->
-  <div class="metrics-wrap" tabindex="0" role="region" aria-label="Evaluation table">
-    <table class="app-table metrics-table">
-      <thead id="metrics-head"></thead>
-      <tbody id="metrics-body">
-        <tr class="empty-row"><td>No models trained yet</td></tr>
-      </tbody>
-    </table>
+  <table class="s6-data-table metrics-table">
+    <thead id="metrics-head"></thead>
+    <tbody id="metrics-body">
+      <tr class="empty-row"><td>No models trained yet</td></tr>
+    </tbody>
+  </table>
+  <div class="row models-row">
+    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
   </div>
+  <p id="models-status" class="card-status" role="status"></p>
 </section>
 
 <style>
-  /* ── Tables ── */
-  .app-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: var(--text-3xs);
-  }
+  /* ── Tables: the shared 1-bit grid, with what these three add ── */
 
-  .app-table th,
-  .app-table td {
-    padding: 3px 6px;
-    border-bottom: 1px solid var(--paper-3);
-    text-align: left;
-  }
-
-  .app-table th {
-    font-weight: 700;
-    background: var(--paper-2);
-  }
-
-  /* Fixed columns, so the table holds still while predictions change under the pen. */
-  .pred-table {
-    table-layout: fixed;
-  }
-
-  .pred-table .col-name {
-    width: 42%;
-  }
-
-  .pred-table .col-answer {
-    width: 22%;
-  }
-
-  .pred-table th:last-child,
-  .pred-table :global(tr:not(.empty-row) > td:last-child) {
-    text-align: right;
-  }
-
+  /* Every metric is a column, and they share the width evenly: the table has no
+     scroller of its own, so it fits the page rather than running past it. */
   .metrics-table {
+    width: 100%;
     table-layout: fixed;
+  }
+
+  .models-row {
+    justify-content: flex-end;
+    margin-top: 6px;
   }
 
   /* Data is set in the mono face; the rest of the app is Geneva. */
   :global(#classifier-app .num) {
     font-family: var(--font-mono);
-  }
-
-  /* Reserve the table's full height up front (it's capped there anyway), so it
-     doesn't grow under the reader when the in-browser models load. */
-  .metrics-wrap {
-    overflow: auto;
-    min-height: 300px;
-    max-height: 300px;
   }
 
   :global(.sr-only) {
@@ -158,60 +104,135 @@ import Button from '../Button.astro';
     border: 0;
   }
 
-  :global(.corner-cell) {
+  :global(.corner-cell),
+  :global(#classifier-app .metrics-table th[scope='row']) {
     width: 110px;
-    min-width: 80px;
-    position: sticky;
-    left: 0;
-
-    /* Local within-table stacking, above the sticky row/col headers but below a page
-       layer — so a small raw value stands in for a --z-* token. */
-    z-index: 3;
-    background: var(--paper-2);
-  }
-
-  :global(.model-col-head) {
-    min-width: 80px;
+    text-align: left;
   }
 
   :global(.col-model-name) {
     font-weight: 600;
+    white-space: nowrap;
+    border-right: 1px solid var(--paper-3);
   }
 
-  :global(.metrics-section-row > td) {
-    background: var(--paper);
+  /* The section a run of columns belongs to, across all of them. */
+  :global(.metrics-section-head) {
+    text-align: center;
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 4px 6px;
-    border-top: 1px solid var(--paper-4);
+    border-left: 1px solid var(--ink);
   }
 
   :global(.metric-label) {
-    background: var(--paper-2);
     font-size: var(--text-4xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     white-space: nowrap;
     padding: 3px 6px;
-    text-align: left;
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    border-right: 1px solid var(--paper-3);
+    text-align: right;
+  }
+
+  /* What can be done to a model, on its own row. */
+  :global(#classifier-app .model-actions) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  /* Narrow screens: a table this wide cannot reflow into 320px, so each model
+     becomes a block and every cell names the metric it answers. */
+  @media (width <= 700px) {
+    .draw-row {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    .draw-pad,
+    #seen-canvas {
+      grid-column: 1;
+      justify-self: center;
+    }
+
+    .metrics-table,
+    :global(#classifier-app .metrics-table tbody),
+    :global(#classifier-app .metrics-table tr) {
+      display: block;
+      width: auto;
+      min-width: 0;
+    }
+
+    :global(#classifier-app .metrics-table thead) {
+      display: none;
+    }
+
+    :global(#classifier-app .metrics-table tr + tr) {
+      border-top: 2px solid var(--ink);
+    }
+
+    :global(#classifier-app .metrics-table th[scope='row']) {
+      display: block;
+      width: auto;
+      min-width: 0;
+      position: static;
+      font-size: var(--text-xs);
+      border-right: 0;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    :global(#classifier-app .metrics-table td) {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* The column header the cell lost, now beside the value. */
+    :global(#classifier-app .metrics-table td)::before {
+      content: attr(data-metric);
+      font-size: var(--text-4xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  /* ── Score: a figure over the bar that gives it a size ── */
+  :global(#classifier-app .score-cell) {
+    line-height: 1.2;
+  }
+
+  :global(#classifier-app .score-bar) {
+    position: relative;
+    display: block;
+    height: 7px;
+    margin-top: 2px;
+    border: 1px solid var(--ink);
+    background: var(--dither-light);
+  }
+
+  /* The decision boundary: the fill grows out from it, left or right. */
+  :global(#classifier-app .score-bar--lean)::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--ink);
+  }
+
+  :global(#classifier-app .score-fill) {
+    position: absolute;
+    inset-block: 0;
+    background: var(--ink);
   }
 
   /* ── Colour helpers ── */
   :global(.pred-label) {
     font-weight: 700;
-  }
-
-  /* A binary model's scope, and an answer outside it, read as caveats. */
-  :global(.pred-scope),
-  :global(.pred-out-note) {
-    color: var(--ink-3);
   }
 
   :global(.pred-out) {
@@ -236,7 +257,7 @@ import Button from '../Button.astro';
   }
 
   /* Test accuracy is the headline result: the heaviest figure in the table. */
-  :global(.metric-headline td) {
+  :global(.metric-headline) {
     font-size: var(--text-xs);
     font-weight: 700;
   }
@@ -247,14 +268,18 @@ import Button from '../Button.astro';
   }
 
   /* ── Canvas ── */
+
+  /* Three columns: the pad takes the middle one, so it is centred on the card,
+     and the 28x28 sits in the third beside it. */
   .draw-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
     gap: 12px;
   }
 
   .draw-pad {
+    grid-column: 2;
     position: relative;
     width: 100%;
     max-width: 284px;
@@ -280,23 +305,16 @@ import Button from '../Button.astro';
     background-size: calc(100% / 28) calc(100% / 28);
   }
 
-  .seen {
-    margin: 0;
-    width: 84px;
-  }
-
+  /* Beside the pad it is made from, so a stroke and its 28x28 reduction are read
+     together. */
   #seen-canvas {
     display: block;
+    grid-column: 3;
+    justify-self: start;
     width: 84px;
     height: 84px;
     border: 1px solid var(--ink);
     image-rendering: pixelated;
-  }
-
-  .seen figcaption {
-    margin-top: 4px;
-    font-size: var(--text-4xs);
-    line-height: 1.3;
   }
 
   /* ── Chart ── */
@@ -320,7 +338,7 @@ import Button from '../Button.astro';
     transition: width var(--dur);
   }
 
-  /* ── Tabular feature form (built client-side for Iris and BB84) ──
+  /* ── Tabular feature form (built client-side for Iris) ──
      Label and range hint, a slider across the middle, the exact value at the right. */
   :global(#tabular-col .feature-inputs) {
     margin-bottom: 12px;
