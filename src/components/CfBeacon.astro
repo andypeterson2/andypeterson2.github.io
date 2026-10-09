@@ -12,5 +12,8 @@ const { token } = Astro.props;
 const beacon = JSON.stringify({ token });
 ---
 
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={beacon}
+<script
+  defer
+  src="https://static.cloudflareinsights.com/beacon.min.js"
+  data-cf-beacon={beacon}
 ></script>

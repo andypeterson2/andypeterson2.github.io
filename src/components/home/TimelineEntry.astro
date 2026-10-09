@@ -12,87 +12,85 @@ interface Props {
 const { entry } = Astro.props;
 ---
 
-{
-  entry.type === 'experience' ? (
-    <div class="timeline-entry">
-      <div class="timeline-meta">
-        <div class="timeline-date">{entry.date}</div>
+{entry.type === 'experience' ? (
+  <div class="timeline-entry">
+    <div class="timeline-meta">
+      <div class="timeline-date">{entry.date}</div>
+    </div>
+    <div class="timeline-content">
+      <div class="timeline-role">{entry.role}</div>
+      <div class="timeline-org">{entry.org}</div>
+      <ul class="timeline-bullets">
+        {entry.bullets.map((b) => (
+          <li>{b}</li>
+        ))}
+      </ul>
+    </div>
+  </div>
+) : (
+  <div class="timeline-entry timeline-entry--project" id={entry.project.slug}>
+    <div class="timeline-meta">
+      <div class="timeline-date">{entry.period}</div>
+    </div>
+    <div class="timeline-content tl-project">
+      <div class="tl-eyebrow">
+        <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
+        Project
+        <span class="tl-tier">
+          · {entry.project.tier === 'browser' ? 'runs in your browser' : 'separate app'}
+        </span>
       </div>
-      <div class="timeline-content">
-        <div class="timeline-role">{entry.role}</div>
-        <div class="timeline-org">{entry.org}</div>
-        <ul class="timeline-bullets">
-          {entry.bullets.map((b) => (
-            <li>{b}</li>
+      <div class="timeline-role">{entry.project.title}</div>
+      <p class="tl-desc">{entry.project.description}</p>
+
+      {entry.project.metrics && (
+        <div class="tl-metrics">
+          {entry.project.metrics.map((m) => (
+            <span class="tl-metric">
+              <b>{m.value}</b> {m.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {entry.project.tech && (
+        <ul class="tl-tech" aria-label="Built with">
+          {entry.project.tech.map((t) => (
+            <li class="tl-tag">{t}</li>
           ))}
         </ul>
-      </div>
-    </div>
-  ) : (
-    <div class="timeline-entry timeline-entry--project" id={entry.project.slug}>
-      <div class="timeline-meta">
-        <div class="timeline-date">{entry.period}</div>
-      </div>
-      <div class="timeline-content tl-project">
-        <div class="tl-eyebrow">
-          <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
-          Project
-          <span class="tl-tier">
-            · {entry.project.tier === 'browser' ? 'runs in your browser' : 'separate app'}
-          </span>
-        </div>
-        <div class="timeline-role">{entry.project.title}</div>
-        <p class="tl-desc">{entry.project.description}</p>
+      )}
 
-        {entry.project.metrics && (
-          <div class="tl-metrics">
-            {entry.project.metrics.map((m) => (
-              <span class="tl-metric">
-                <b>{m.value}</b> {m.label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {entry.project.tech && (
-          <ul class="tl-tech" aria-label="Built with">
-            {entry.project.tech.map((t) => (
-              <li class="tl-tag">{t}</li>
-            ))}
-          </ul>
-        )}
-
-        <div class="tl-actions">
-          {entry.project.appUrl && (
-            <a
-              href={entry.project.appUrl}
-              class="action-btn action-btn--primary"
-              target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
-              rel={entry.project.appUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-              {entry.project.appUrl.startsWith('http') ? 'Launch ->' : 'Try it ->'}
-            </a>
-          )}
-          <WriteupModal
-            slug={entry.project.slug}
-            label="Writeup"
-            appUrl={entry.project.appUrl}
-            repoUrl={entry.project.repoUrl}
-            primary={!entry.project.appUrl}
-          />
+      <div class="tl-actions">
+        {entry.project.appUrl && (
           <a
-            href={entry.project.repoUrl}
-            class="action-btn"
-            target="_blank"
-            rel="noopener noreferrer"
+            href={entry.project.appUrl}
+            class="action-btn action-btn--primary"
+            target={entry.project.appUrl.startsWith('http') ? '_blank' : undefined}
+            rel={entry.project.appUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
           >
-            Source
+            {entry.project.appUrl.startsWith('http') ? 'Launch ->' : 'Try it ->'}
           </a>
-        </div>
+        )}
+        <WriteupModal
+          slug={entry.project.slug}
+          label="Writeup"
+          appUrl={entry.project.appUrl}
+          repoUrl={entry.project.repoUrl}
+          primary={!entry.project.appUrl}
+        />
+        <a
+          href={entry.project.repoUrl}
+          class="action-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Source
+        </a>
       </div>
     </div>
-  )
-}
+  </div>
+)}
 
 <style>
   .timeline-entry {

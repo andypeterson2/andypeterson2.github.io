@@ -6,19 +6,23 @@ import Button from '../Button.astro';
 <section class="card" id="saved-card" hidden>
   <h2 class="card-title">Saved</h2>
   <div class="row">
-    <select id="saved-select" aria-label="Saved model file"
-      ><option value="">-- no saved models --</option></select
-    >
+    <select id="saved-select" aria-label="Saved model file">
+      <option value="">-- no saved models --</option>
+    </select>
     <Button
       app
       variant="secondary"
       id="refresh-saved-btn"
       class="icon-btn s6-btn--icon"
-      aria-label="Refresh saved models">&#8635;</Button
+      aria-label="Refresh saved models"
     >
+      &#8635;
+    </Button>
   </div>
   <div class="row models-row">
-    <Button app variant="secondary" id="import-btn" type="button" disabled>Import</Button>
+    <Button app variant="secondary" id="import-btn" type="button" disabled>
+      Import
+    </Button>
   </div>
   <p id="saved-status" class="card-status" role="status"></p>
 </section>

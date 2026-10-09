@@ -26,71 +26,69 @@ const modalId = `writeup-${slug}`;
 ---
 
 {
-  (
-    <>
-      <button
-        type="button"
-        class:list={['action-btn', 'writeup-trigger', { 'action-btn--primary': primary }]}
-        data-writeup-open={modalId}
-        aria-haspopup="dialog"
-      >
-        <span class="writeup-q" aria-hidden="true">
-          ?
-        </span>{' '}
-        {label}
-      </button>
+  <>
+    <button
+      type="button"
+      class:list={['action-btn', 'writeup-trigger', { 'action-btn--primary': primary }]}
+      data-writeup-open={modalId}
+      aria-haspopup="dialog"
+    >
+      <span class="writeup-q" aria-hidden="true">
+        ?
+      </span>{' '}
+      {label}
+    </button>
 
-      <div id={modalId} class="writeup-overlay" data-writeup-modal data-writeup-hash={hash} hidden>
+    <div id={modalId} class="writeup-overlay" data-writeup-modal data-writeup-hash={hash} hidden>
+      <div
+        class="writeup-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${modalId}-title`}
+      >
+        {/* The site's own window chrome: pinstripes, a centred title, the
+              close box at the left. The spacer on the right balances it. */}
+        <div class="title-bar writeup-titlebar">
+          <button type="button" class="close" data-writeup-close aria-label="Close writeup">
+            <span>Close</span>
+          </button>
+          <span id={`${modalId}-title`} class="title writeup-title">
+            {entry.data.title}
+          </span>
+          <span class="writeup-balance" aria-hidden="true" />
+        </div>
+        {/* Focusable, so the keyboard can scroll it: otherwise PageDown, arrows and
+              Space have nothing to move while focus sits on Close. */}
         <div
-          class="writeup-dialog"
-          role="dialog"
-          aria-modal="true"
+          class="writeup-content"
+          tabindex="0"
+          role="region"
           aria-labelledby={`${modalId}-title`}
         >
-          {/* The site's own window chrome: pinstripes, a centred title, the
-              close box at the left. The spacer on the right balances it. */}
-          <div class="title-bar writeup-titlebar">
-            <button type="button" class="close" data-writeup-close aria-label="Close writeup">
-              <span>Close</span>
-            </button>
-            <span id={`${modalId}-title`} class="title writeup-title">
-              {entry.data.title}
-            </span>
-            <span class="writeup-balance" aria-hidden="true" />
-          </div>
-          {/* Focusable, so the keyboard can scroll it: otherwise PageDown, arrows and
-              Space have nothing to move while focus sits on Close. */}
-          <div
-            class="writeup-content"
-            tabindex="0"
-            role="region"
-            aria-labelledby={`${modalId}-title`}
-          >
-            <Content />
-          </div>
-          {(appUrl || repoUrl) && (
-            <div class="writeup-actions">
-              {appUrl && (
-                <a
-                  href={appUrl}
-                  class="action-btn action-btn--primary"
-                  target={external(appUrl) ? '_blank' : undefined}
-                  rel={external(appUrl) ? 'noopener noreferrer' : undefined}
-                >
-                  {external(appUrl) ? 'Launch ->' : 'Try it ->'}
-                </a>
-              )}
-              {repoUrl && (
-                <a href={repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
-                  Source
-                </a>
-              )}
-            </div>
-          )}
+          <Content />
         </div>
+        {(appUrl || repoUrl) && (
+          <div class="writeup-actions">
+            {appUrl && (
+              <a
+                href={appUrl}
+                class="action-btn action-btn--primary"
+                target={external(appUrl) ? '_blank' : undefined}
+                rel={external(appUrl) ? 'noopener noreferrer' : undefined}
+              >
+                {external(appUrl) ? 'Launch ->' : 'Try it ->'}
+              </a>
+            )}
+            {repoUrl && (
+              <a href={repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
+                Source
+              </a>
+            )}
+          </div>
+        )}
       </div>
-    </>
-  )
+    </div>
+  </>
 }
 
 <script>

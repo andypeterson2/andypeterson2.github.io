@@ -14,21 +14,27 @@ import Button from '../components/Button.astro';
           type="button"
           class="close"
           data-error-close
-          aria-label="Close, back to the home page"><span>Close</span></button
+          aria-label="Close, back to the home page"
         >
+          <span>Close</span>
+        </button>
         <h1 class="title">Error</h1>
-        <button class="resize hidden" aria-hidden="true" tabindex="-1" disabled
-          ><span>Resize</span></button
-        >
+        <button class="resize hidden" aria-hidden="true" tabindex="-1" disabled>
+          <span>Resize</span>
+        </button>
       </div>
       <div class="window-pane error-content">
-        <p class="error-code" aria-hidden="true">404</p>
+        <p class="error-code" aria-hidden="true">
+          404
+        </p>
         <h2>Lost in the superposition</h2>
         <p class="error-message">This page collapsed to |0⟩ — it doesn't exist in this basis.</p>
         <p class="error-suggestion">Maybe try observing one of these states instead:</p>
         <div class="error-actions">
           <Button href="/">Home</Button>
-          <Button variant="secondary" href="/#projects">Projects</Button>
+          <Button variant="secondary" href="/#projects">
+            Projects
+          </Button>
         </div>
       </div>
     </div>

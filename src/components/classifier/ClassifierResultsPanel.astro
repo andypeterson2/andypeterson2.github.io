@@ -2,7 +2,8 @@
 import Button from '../Button.astro';
 ---
 
-<!-- Draw card (image input) --><!-- Visible from the first paint: MNIST (the canvas) is the default dataset, so the
+<!-- Draw card (image input) -->
+<!-- Visible from the first paint: MNIST (the canvas) is the default dataset, so the
      card must not pop in when the script runs and shove everything down. -->
 <section class="card" id="canvas-col">
   <h2 class="card-title">Draw</h2>
@@ -28,10 +29,13 @@ import Button from '../Button.astro';
       height="28"
       role="img"
       title="The drawing as the model sees it: cropped to 20px, centred by mass"
-      aria-label="The drawing as the model sees it: cropped to 20px, centred by mass"></canvas>
+      aria-label="The drawing as the model sees it: cropped to 20px, centred by mass"
+    ></canvas>
   </div>
   <div class="row">
-    <Button app variant="secondary" id="clear-btn" type="button">Clear</Button>
+    <Button app variant="secondary" id="clear-btn" type="button">
+      Clear
+    </Button>
   </div>
 </section>
 
@@ -40,8 +44,12 @@ import Button from '../Button.astro';
   <h2 class="card-title">Predict</h2>
   <div class="feature-inputs"></div>
   <div class="row">
-    <Button app variant="secondary" id="reset-features-btn" type="button">Reset</Button>
-    <Button app variant="solid" id="predict-btn-tab" type="button">Predict</Button>
+    <Button app variant="secondary" id="reset-features-btn" type="button">
+      Reset
+    </Button>
+    <Button app variant="solid" id="predict-btn-tab" type="button">
+      Predict
+    </Button>
   </div>
 </section>
 
@@ -63,11 +71,15 @@ import Button from '../Button.astro';
   <table class="s6-data-table metrics-table">
     <thead id="metrics-head"></thead>
     <tbody id="metrics-body">
-      <tr class="empty-row"><td>No models trained yet</td></tr>
+      <tr class="empty-row">
+        <td>No models trained yet</td>
+      </tr>
     </tbody>
   </table>
   <div class="row models-row">
-    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
+    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">
+      Ensemble
+    </Button>
   </div>
   <p id="models-status" class="card-status" role="status"></p>
 </section>

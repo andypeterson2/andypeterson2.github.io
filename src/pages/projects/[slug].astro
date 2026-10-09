@@ -34,19 +34,17 @@ const tier =
         <p class="project-desc">{project.description}</p>
 
         <div class="project-actions">
-          {
-            project.appUrl && (
-              <a
-                href={project.appUrl}
-                class="action-btn action-btn--primary"
-                {...(project.tier === 'external'
-                  ? { target: '_blank', rel: 'noopener noreferrer' }
-                  : {})}
-              >
-                Open the demo
-              </a>
-            )
-          }
+          {project.appUrl && (
+            <a
+              href={project.appUrl}
+              class="action-btn action-btn--primary"
+              {...(project.tier === 'external'
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {})}
+            >
+              Open the demo
+            </a>
+          )}
           <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
             Source
           </a>
@@ -55,63 +53,57 @@ const tier =
       </div>
 
       <div class="project-facts">
-        {
-          project.metrics && project.metrics.length > 0 && (
-            <div class="project-section">
-              <div class="section-rule">
-                <span>What it does</span>
-              </div>
-              <ul class="project-metrics">
-                {project.metrics.map((m) => (
-                  <li>
-                    <b>{m.value}</b> {m.label}
-                  </li>
-                ))}
-              </ul>
+        {project.metrics && project.metrics.length > 0 && (
+          <div class="project-section">
+            <div class="section-rule">
+              <span>What it does</span>
             </div>
-          )
-        }
+            <ul class="project-metrics">
+              {project.metrics.map((m) => (
+                <li>
+                  <b>{m.value}</b> {m.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        {
-          project.tech && project.tech.length > 0 && (
-            <div class="project-section">
-              <div class="section-rule">
-                <span>Built with</span>
-              </div>
-              <ul class="project-tech">
-                {project.tech.map((t) => (
-                  <li class="btn">{t}</li>
-                ))}
-              </ul>
+        {project.tech && project.tech.length > 0 && (
+          <div class="project-section">
+            <div class="section-rule">
+              <span>Built with</span>
             </div>
-          )
-        }
+            <ul class="project-tech">
+              {project.tech.map((t) => (
+                <li class="btn">{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
 
     <div class="project-section project-footer">
-      <div class="section-rule"><span>Browse projects</span></div>
+      <div class="section-rule">
+        <span>Browse projects</span>
+      </div>
       <nav class="project-nav" aria-label="Project navigation">
-        {
-          prev ? (
-            <a href={`/projects/${prev.slug}/`} class="nav-link">
-              <span class="nav-dir">&lt;- Previous</span>
-              <span class="nav-title">{prev.title}</span>
-            </a>
-          ) : (
-            <span />
-          )
-        }
-        {
-          next ? (
-            <a href={`/projects/${next.slug}/`} class="nav-link nav-next">
-              <span class="nav-dir">Next -&gt;</span>
-              <span class="nav-title">{next.title}</span>
-            </a>
-          ) : (
-            <span />
-          )
-        }
+        {prev ? (
+          <a href={`/projects/${prev.slug}/`} class="nav-link">
+            <span class="nav-dir">&lt;- Previous</span>
+            <span class="nav-title">{prev.title}</span>
+          </a>
+        ) : (
+          <span />
+        )}
+        {next ? (
+          <a href={`/projects/${next.slug}/`} class="nav-link nav-next">
+            <span class="nav-dir">Next -&gt;</span>
+            <span class="nav-title">{next.title}</span>
+          </a>
+        ) : (
+          <span />
+        )}
       </nav>
     </div>
   </div>

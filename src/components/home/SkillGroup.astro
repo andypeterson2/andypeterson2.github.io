@@ -10,7 +10,9 @@ const { label, tags } = Astro.props;
 <div class="skill-group">
   <div class="skill-group-label">{label}</div>
   <ul class="skill-tags">
-    {tags.map((t) => <li class="tag">{t}</li>)}
+    {tags.map((t) => (
+      <li class="tag">{t}</li>
+    ))}
   </ul>
 </div>
 
