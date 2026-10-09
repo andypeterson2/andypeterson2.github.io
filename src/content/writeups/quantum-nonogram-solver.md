@@ -17,7 +17,7 @@ So I built an oracle that does not hold the answer. It raises a flag qubit per l
 
 ## What ran on hardware
 
-A 2x2 puzzle on `ibm_torino` resolved the correct state at **32.3% against 6.25% for chance** — five times chance, against 47.3% for the same one-iteration circuit run noiselessly. A measured lift on a real device, not a textbook figure. It is one 1,024-shot run whose counts and job id went unarchived; later runs record the job id, counts, backend and transpiled depth. Nothing larger fits: at 3x3 not one of the 17 required rounds survives a 200-layer coherence budget.
+A 2x2 puzzle on `ibm_fez` resolved the correct state at **36.8% against 6.25% for chance** — 377 of 1,024 shots, against 47.3% for the same one-iteration circuit run noiselessly. A measured lift on a real device, not a textbook figure. One iteration, transpiled depth 146, job `db4m98imb58s7389da60`, and the run records its own counts, job id, backend and depth so the figure can be traced back to it. Nothing larger fits: at 3x3 not one of the 17 required rounds survives a 200-layer coherence budget.
 
 ## How it is checked
 

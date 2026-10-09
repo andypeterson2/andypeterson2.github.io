@@ -74,9 +74,9 @@ export const projects: Project[] = [
           'boards enumerated to 4x4: backtracking beats Grover on 100% of one-solution boards from 3x3 up',
       },
       {
-        value: '5x',
+        value: '5.9x',
         label:
-          'chance on ibm_torino: 32.3% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless), from one 1,024-shot run',
+          'chance on ibm_fez: 36.8% correct on a 2×2 puzzle vs 6.25% (47.3% noiseless), 377 of 1,024 shots',
       },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
