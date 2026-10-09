@@ -88,7 +88,7 @@ jobs:
       - name: Deploy dist to Cloudflare Pages
         # SHA-pinned (v3.9.0): this step receives CLOUDFLARE_API_TOKEN — a mutable
         # tag here would hand the token to whoever can retag the action repo.
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
           # Repo secrets. CLOUDFLARE_API_TOKEN: a scoped token with Account ▸
           # Cloudflare Pages ▸ Edit. CLOUDFLARE_ACCOUNT_ID: the account id.
