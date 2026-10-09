@@ -97,7 +97,12 @@
       </p>
     {/if}
 
-    <UiButton variant="del" onclick={() => confirmDelete(v)}>Delete {noun(v)}</UiButton>
+    <UiButton
+      variant="del"
+      title={`Delete this ${noun(v)}`}
+      aria-label={`Delete ${noun(v)}`}
+      onclick={() => confirmDelete(v)}>×</UiButton
+    >
   </div>
 {/if}
 
@@ -155,7 +160,7 @@
   .edit {
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
     display: flex;
     flex-direction: column;
     gap: 13px;
@@ -206,7 +211,7 @@
   }
 
   .rule-lbl.exc {
-    color: var(--accent);
+    color: var(--ink);
   }
 
   .hint {

@@ -115,11 +115,3 @@ export interface Variant {
   entryOverrides?: Record<string, EntryOverride>;
   itemOverrides?: Record<string, ItemOverride>;
 }
-
-/** A selected node in the document (what the inspector edits). */
-export type Selection =
-  | { kind: 'none' }
-  | { kind: 'personal' }
-  | { kind: 'section'; sectionId: Section['id'] }
-  | { kind: 'entry'; sectionId: Section['id']; entryId: number }
-  | { kind: 'item'; entryId: number; itemId: number };

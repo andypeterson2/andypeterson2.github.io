@@ -5,18 +5,15 @@
   --chrome: var(--paper);
   --chrome-hi: var(--paper);
   --dim: var(--ink-4); /* rules, dashed outlines, hairlines — never text */
-  --dim-text: var(--ink-3); /* secondary text: passes AA in both themes */
-  --disabled: var(--ink-4); /* disabled controls (exempt from contrast minimums) */
 
-  /* Semantic state routes to the shared status light. Demo deliberately has NO
-     colour: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
+  /* Semantic state routes to the shared status light. Demo has no colour of its
+     own: its dot is hollow (paper on ink), the System-6 idiom for "unset". */
   --state-live: var(--color-success);
   --state-busy: var(--color-warning);
-  --state-error: var(--color-danger);
   --link-on-ink: #9ec7ff;
 
   /* UI controls use Chicago (Geneva/Monaco's small x-height is unreadable at 12px);
-     --serif, --doc-sans, and --doc-mono belong to the résumé and the compile log. */
+     --serif, --doc-sans, and --doc-mono belong to the resume and the compile log. */
   --sans: var(--font-ui);
   --mono: var(--font-ui);
   --doc-sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
@@ -24,10 +21,9 @@
   --serif: 'Georgia', 'Iowan Old Style', 'Times New Roman', serif;
   --shadow: var(--shadow-focus); /* alias the shared press */
 
-  /* Editor-specific shadows: the selected-item ring, the accent press, and the two
+  /* Editor-specific shadows: the selected-item ring and the two
      directional drops the side drawer casts (left on desktop, up on mobile). */
   --shadow-ring: inset 0 0 0 2px var(--ink);
-  --shadow-accent: 1px 1px 0 var(--accent);
   --shadow-drawer: -4px 0 0 rgb(28 27 25 / 50%);
   --shadow-drawer-top: 0 -4px 0 rgb(28 27 25 / 50%);
 
@@ -40,11 +36,9 @@
   box-sizing: border-box;
 }
 
-/* A small System-6 utility window floating above the statusbar. Shared by the
-   save-error toast and the guided-tour narrator: same paper, same 1px ink rule,
-   same hard shadow, same mono chrome. They are one family, so the triad is
-   named once here instead of being retyped per component. Components add only
-   their own width and inner layout. */
+/* A small System-6 utility window floating above the statusbar, used by the
+   save-error toast: paper, a 1px ink rule, a hard shadow and mono chrome.
+   Components add only their own width and inner layout. */
 .floating-panel {
   position: fixed;
   bottom: 46px;
@@ -53,7 +47,6 @@
   transform: translateX(-50%);
   background: var(--paper);
   border: 1px solid var(--ink);
-  box-shadow: var(--shadow-float);
   font-family: var(--mono);
   font-size: var(--text-3xs);
   color: var(--ink);
@@ -76,14 +69,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Button families — rendered by the shared Button component ──────────────
+/* Button families — rendered by the shared Button component.
    One definition per family; components add only contextual layout (width,
    margins) via `:global(.ui.<family>)` overrides in their own scope. The `.ui`
    marker keeps these from bleeding onto same-named bespoke classes that remain
    scoped inside components. `.on` is the shared selected/pressed modifier
    (the component's `active` prop). */
 
-/* toolbar actions (Tags/Layout/Style/Preview/Compile/Export, tour start) */
+/* toolbar actions (Tags/Layout/Style/Preview/Compile/Export) */
 .ui.btn {
   font-size: var(--text-3xs);
   font-weight: 600;
@@ -92,7 +85,6 @@ body {
   border: 1px solid var(--ink);
   border-radius: var(--radius-md);
   padding: 5px 12px;
-  box-shadow: var(--shadow);
   cursor: pointer;
 }
 
@@ -101,15 +93,54 @@ body {
   color: var(--paper);
 }
 
-.ui.btn:active {
+.ui.btn:active:not([aria-disabled='true']) {
   transform: translate(1px, 1px);
-  box-shadow: var(--shadow-sm);
 }
 
-.ui.btn:disabled {
-  opacity: 0.4;
+.ui.btn:disabled,
+.ui.mini:disabled,
+.ui.del:disabled,
+.ui.btn[aria-disabled='true'],
+.ui.mini[aria-disabled='true'],
+.ui.del[aria-disabled='true'] {
   cursor: default;
   box-shadow: none;
+  background: var(--dither-light);
+  color: var(--ink);
+
+  /* A hard 1-bit halo so the label reads over the stipple. No blur: that is a grey. */
+  text-shadow:
+    1px 0 0 var(--paper),
+    -1px 0 0 var(--paper),
+    0 1px 0 var(--paper),
+    0 -1px 0 var(--paper),
+    1px 1px 0 var(--paper),
+    -1px -1px 0 var(--paper),
+    1px -1px 0 var(--paper),
+    -1px 1px 0 var(--paper);
+}
+
+/* Under the pointer the whole surface inverts, stipple and halo with it. */
+.ui.btn:disabled:hover,
+.ui.mini:disabled:hover,
+.ui.del:disabled:hover,
+.ui.btn[aria-disabled='true']:hover,
+.ui.mini[aria-disabled='true']:hover,
+.ui.del[aria-disabled='true']:hover,
+.ui.btn[aria-disabled='true']:focus-visible,
+.ui.mini[aria-disabled='true']:focus-visible,
+.ui.del[aria-disabled='true']:focus-visible {
+  background: var(--dither-light-inverted);
+  color: var(--paper);
+  text-shadow:
+    1px 0 0 var(--ink),
+    -1px 0 0 var(--ink),
+    0 1px 0 var(--ink),
+    0 -1px 0 var(--ink),
+    1px 1px 0 var(--ink),
+    -1px -1px 0 var(--ink),
+    1px -1px 0 var(--ink),
+    -1px 1px 0 var(--ink);
 }
 
 /* compact entry/personal editing actions */
@@ -123,7 +154,6 @@ body {
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
 }
 
 .ui.mini.primary {
@@ -131,8 +161,10 @@ body {
   color: var(--paper);
 }
 
-.ui.mini.danger {
-  color: var(--accent);
+.ui.mini.danger:hover,
+.ui.mini.danger:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .ui.mini.sym-toggle {
@@ -164,27 +196,6 @@ body {
 .ui.mini:active {
   transform: translate(1px, 1px);
   box-shadow: none;
-}
-
-/* the tour bubble's mono controls */
-.ui.tbtn {
-  font-family: var(--mono);
-  font-size: var(--text-3xs);
-  color: var(--ink);
-  background: var(--chrome-hi);
-  border: 1px solid var(--ink);
-  padding: 2px 8px;
-  cursor: pointer;
-}
-
-.ui.tbtn:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.ui.tbtn:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
 }
 
 /* pill chips (history versions; go/add carry the weight) */
@@ -244,7 +255,8 @@ body {
 /* inline text-link button (drawer footers) */
 .ui.link {
   font: inherit;
-  color: var(--link);
+  color: var(--ink);
+  font-weight: 700;
   background: none;
   border: 0;
   padding: 0;
@@ -264,7 +276,6 @@ body {
   border-radius: var(--radius-md);
   padding: 8px 11px;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
   font-family: var(--sans);
 }
 
@@ -291,18 +302,24 @@ body {
   cursor: pointer;
 }
 
-/* accent-bordered destructive action */
+/* Destructive action. 1-bit like everything else: it inverts under the pointer
+   rather than carrying a colour of its own. */
 .ui.del {
   align-self: flex-start;
   font-family: var(--sans);
   font-size: var(--text-3xs);
-  color: var(--accent);
+  color: var(--ink);
   background: var(--paper);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--ink);
   border-radius: var(--radius);
   padding: 5px 12px;
   cursor: pointer;
-  box-shadow: var(--shadow-accent);
+}
+
+.ui.del:hover,
+.ui.del:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .ui.del:active {

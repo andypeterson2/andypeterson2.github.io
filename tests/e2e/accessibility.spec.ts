@@ -12,15 +12,14 @@ const QVC = '/projects/quantum-video-chat/app/';
 
 type Setup = (page: Page) => Promise<void>;
 
-async function dismissInvite(page: Page) {
+/** The editor is a hydrated island: wait for its handlers before driving it. */
+async function editorReady(page: Page) {
   await expect(page.locator('[data-hydrated]')).toBeAttached();
-  await page.locator('#demo-invite button[aria-label="Dismiss"]:visible').first().click();
-  await expect(page.locator('#demo-invite')).toHaveCount(0);
 }
 const openDrawer =
   (name: string): Setup =>
   async (page) => {
-    await dismissInvite(page);
+    await editorReady(page);
     await page.getByRole('button', { name, exact: true }).first().click();
     await expect(page.getByRole('dialog', { name: new RegExp(name) })).toBeVisible();
   };
@@ -61,18 +60,10 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
       await expect(page.locator('.qvc-qd-toggle')).toBeVisible();
     },
   },
-  {
-    name: 'editor, first-run invite',
-    path: EDITOR,
-    setup: async (page) => {
-      await expect(page.locator('#demo-invite')).toBeVisible();
-    },
-  },
-  { name: 'editor', path: EDITOR, setup: dismissInvite },
-  { name: 'editor, dark', path: EDITOR, dark: true, setup: dismissInvite },
-  { name: 'editor, phone', path: EDITOR, phone: true, setup: dismissInvite },
+  { name: 'editor', path: EDITOR, setup: editorReady },
+  { name: 'editor, dark', path: EDITOR, dark: true, setup: editorReady },
+  { name: 'editor, phone', path: EDITOR, phone: true, setup: editorReady },
   { name: 'editor, Tags drawer', path: EDITOR, setup: openDrawer('Tags') },
-  { name: 'editor, Layout drawer', path: EDITOR, setup: openDrawer('Layout') },
   { name: 'editor, Style drawer', path: EDITOR, setup: openDrawer('Style') },
   { name: 'classifier', path: CLASSIFIER },
   { name: 'classifier, dark', path: CLASSIFIER, dark: true },

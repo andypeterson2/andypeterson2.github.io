@@ -43,21 +43,9 @@ test.describe('Editor panels are modal', () => {
     await page.route('**/api/**', (r) => r.abort());
     await page.goto(EDITOR);
     await expect(page.locator('[data-hydrated]')).toBeAttached();
-    // The invite opens once the backend check settles (demo mode).
-    await expect(page.locator('#demo-invite')).toBeVisible();
-  });
-
-  test('the first-run invite takes focus, and Escape dismisses it', async ({ page }) => {
-    const invite = page.getByRole('dialog', { name: 'Resume Editor' });
-    await expect(invite).toBeVisible();
-    await expect(page.locator('#demo-invite .tour-start')).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#demo-invite')).toHaveCount(0);
   });
 
   test('a drawer takes focus, keeps Tab inside, and hands focus back', async ({ page }) => {
-    await page.keyboard.press('Escape'); // the invite
-    await expect(page.locator('#demo-invite')).toHaveCount(0); // the page is live again
     const trigger = page.getByRole('button', { name: 'Tags', exact: true }).first();
     await trigger.focus();
     await page.keyboard.press('Enter');
@@ -78,31 +66,39 @@ test.describe('Editor panels are modal', () => {
   });
 });
 
-// Entries are named by their heading; the tour announces its steps.
+// Every entry is an open editor, so each one says what it is and labels its fields.
 test.describe('The editor to a screen reader', () => {
-  test('document entries are named by their heading', async ({ page }) => {
+  test('each entry editor names itself and labels every field', async ({ page }) => {
     await page.goto(EDITOR);
-    const names = await page
-      .locator('.entry[role="button"]')
-      .evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+    const editors = page.locator('.doc .edit[data-sortable]');
+    await expect(editors.first()).toBeVisible();
+
+    // Each entry is a named group, so its controls are told apart by what they act on.
+    const names = await editors.evaluateAll((els) =>
+      els.map((e) => e.getAttribute('aria-label') ?? ''),
+    );
     expect(names.length).toBeGreaterThan(3);
     for (const n of names) {
-      expect(n).toMatch(/^Edit entry/);
+      expect(n.trim().length).toBeGreaterThan(0);
       expect(n.length).toBeLessThan(120);
     }
-  });
+    // Names distinguish: a reader hearing "Delete X" knows which X.
+    expect(new Set(names).size).toBe(names.length);
+    await expect(editors.first().getByRole('button', { name: `Delete ${names[0]}` })).toBeVisible();
 
-  test('the tour takes focus and announces its steps', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(EDITOR);
-    await expect(page.locator('[data-hydrated]')).toBeAttached();
-    await expect(page.locator('#demo-invite')).toBeVisible();
-    await expect(page.locator('#demo-invite .tour-start')).toBeFocused();
-    await page.keyboard.press('Enter'); // the invite's focus starts on "Guided tour"
-    const panel = page.getByRole('region', { name: 'Guided tour' });
-    await expect(panel).toBeFocused();
-    await expect(panel.locator('[aria-live="polite"] .cap')).not.toBeEmpty();
-    await page.keyboard.press('Escape');
+    // No field anywhere in the document is left for a screen reader to guess at.
+    const unlabelled = await page
+      .locator('.doc .edit input, .doc .edit textarea')
+      .evaluateAll((els) =>
+        els
+          .filter((e) => {
+            const own = e.getAttribute('aria-label')?.trim();
+            const lbl = e.closest('label')?.querySelector('.lbl')?.textContent?.trim();
+            return !own && !lbl;
+          })
+          .map((e) => e.className),
+      );
+    expect(unlabelled).toEqual([]);
   });
 });
 

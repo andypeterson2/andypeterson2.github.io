@@ -1,52 +1,16 @@
 <script lang="ts">
   import { editor } from '../lib/store.svelte';
-  import { typeDef, entryLead, hasBullets, presetsByCategory } from '../lib/section-types';
+  import { typeDef, presetsByCategory } from '../lib/section-types';
   import EntryEdit from './EntryEdit.svelte';
   import PersonalEdit from './PersonalEdit.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
-  import {
-    entryIncluded,
-    itemIncluded,
-    sectionScopedOut,
-    entryFieldsFor,
-  } from '../lib/variant-lens';
-  import type { Section, Entry, Item } from '../lib/types';
+  import { entryIncluded, sectionScopedOut } from '../lib/variant-lens';
+  import type { Section, Entry } from '../lib/types';
 
   const person = $derived(editor.person);
-  const sel = $derived(editor.selection);
-  const selEntry = $derived(sel.kind === 'entry' ? sel.entryId : null);
-  const personalSel = $derived(sel.kind === 'personal');
-  const fullName = $derived(
-    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim(),
-  );
   const presets = presetsByCategory();
   let picking = $state(false);
 
-  function contactLine(): string {
-    const p = person.personal;
-    return [p.position, p.email, p.address, p.github && `github/${p.github}`]
-      .filter(Boolean)
-      .join(' · ');
-  }
-  function pick(sectionId: Section['id'], entryId: number) {
-    editor.select({ kind: 'entry', sectionId, entryId });
-  }
-  function onKey(e: KeyboardEvent, fn: () => void) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      fn();
-    }
-  }
-  // A focused entry row reorders with Alt+↑/↓ (see reorderKeydown), else activates.
-  function entryKey(ev: KeyboardEvent, section: Section, index: number, entryId: number) {
-    if (
-      reorderKeydown(ev, index, section.entries.length, (f, t) =>
-        editor.reorderEntries(section, f, t),
-      )
-    )
-      return;
-    onKey(ev, () => pick(section.id, entryId));
-  }
   function chooseSection(type: string) {
     void editor.addSection(type);
     picking = false;
@@ -60,37 +24,22 @@
   // Two dimming modes compose onto the same .dim class: the tag spotlight
   // (tags.highlight) and the variant lens (activeVariant → what a variant drops).
   const hl = $derived(editor.tags.highlight);
-  const lens = $derived(editor.activeVariant);
-
+  /** Greyed by the tag spotlight: the entry carries none of the highlighted tag. */
   function spotlightDim(e: Entry): boolean {
     return !!hl && !(e.tags.includes(hl) || e.items.some((i) => i.tags.includes(hl)));
   }
-  /** Whole section greyed — the variant scopes it out entirely. */
-  function sectionDim(section: Section): boolean {
-    return !!lens && sectionScopedOut(section, lens);
-  }
+  /** Greyed by the spotlight, or dropped by the variant lens the document is under. */
   function entryDim(section: Section, e: Entry): boolean {
     if (sectionDim(section)) return false; // the section container handles it
     if (spotlightDim(e)) return true;
     return !!lens && !entryIncluded(e, lens);
   }
-  /** A single bullet dropped by the lens, while its entry is otherwise shown. */
-  function itemDim(section: Section, e: Entry, it: Item): boolean {
-    if (!lens || sectionDim(section) || !entryIncluded(e, lens)) return false;
-    return !itemIncluded(it, lens);
-  }
-  /** The fields to DISPLAY for an entry — patched by the active variant's field overrides. */
-  function fieldsOf(e: Entry): Record<string, string> {
-    return lens ? entryFieldsFor(e, lens) : e.fields;
-  }
-  /** A row's accessible name is its heading, since a 540-character
-      button name makes the document exhausting by screen reader. The full text
-      is in the edit form Enter opens, one field per line. */
-  function editName(...parts: (string | undefined)[]): string {
-    const heading = parts.filter(Boolean).join(' · ');
-    return heading ? `Edit entry: ${heading}` : 'Edit entry';
-  }
+  const lens = $derived(editor.activeVariant);
 
+  /** Whole section greyed — the variant scopes it out entirely. */
+  function sectionDim(section: Section): boolean {
+    return !!lens && sectionScopedOut(section, lens);
+  }
   // Scroll a newly-created section into view once it renders.
   $effect(() => {
     const id = editor.scrollTarget;
@@ -110,20 +59,7 @@
 </script>
 
 <article class="doc" bind:this={docEl}>
-  {#if personalSel}
-    <PersonalEdit />
-  {:else}
-    <div
-      class="doc-head"
-      role="button"
-      tabindex="0"
-      onclick={() => editor.select({ kind: 'personal' })}
-      onkeydown={(e) => onKey(e, () => editor.select({ kind: 'personal' }))}
-    >
-      <h1 class:untitled={!fullName}>{fullName || 'Your name'}</h1>
-      <p class="contact">{contactLine()}</p>
-    </div>
-  {/if}
+  <PersonalEdit />
 
   <div class="sections" use:sortable={{ onReorder: (f, t) => editor.reorderSections(f, t) }}>
     {#each person.sections as section, sIdx (section.id)}
@@ -133,7 +69,6 @@
         class:dim={sectionDim(section)}
         data-sortable
         id={`sec-${section.id}`}
-        data-tour-spot={section.type === 'experience' ? 'experience' : undefined}
         use:sortable={{ onReorder: (f, t) => editor.reorderEntries(section, f, t) }}
       >
         <div class="sec-head">
@@ -169,145 +104,26 @@
 
         {#if def?.isParagraph}
           {@const pe = section.entries[0]}
-          {#if pe && selEntry === pe.id}
-            <EntryEdit {section} entry={pe} />
-          {:else if pe}
-            <div
-              class="para entry-hit"
-              class:dim={entryDim(section, pe)}
-              role="button"
-              tabindex="0"
-              aria-label={`Edit ${section.title || 'summary'}`}
-              onclick={() => pick(section.id, pe.id)}
-              onkeydown={(e) => onKey(e, () => pick(section.id, pe.id))}
-            >
-              {fieldsOf(pe).text || 'Click to write a summary…'}
-            </div>
+          {#if pe}
+            <EntryEdit {section} entry={pe} index={0} dim={entryDim(section, pe)} />
           {:else}
             <button class="empty" onclick={() => editor.addEntry(section)}>＋ Add text</button>
           {/if}
         {:else if def?.latexType === 'cvskills'}
           {#each section.entries as e, eIdx (e.id)}
-            {#if selEntry === e.id}
-              <EntryEdit {section} entry={e} />
-            {:else}
-              <div
-                class="skill entry-hit"
-                class:dim={entryDim(section, e)}
-                role="button"
-                tabindex="0"
-                aria-label={editName(fieldsOf(e).category)}
-                draggable="true"
-                data-drag-handle
-                data-sortable
-                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                onclick={() => pick(section.id, e.id)}
-                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-              >
-                <span class="skill-cat">{fieldsOf(e).category}</span><span class="skill-list"
-                  >{#if e.items.length}{#each e.items as it, i (it.id)}{#if i > 0},
-                      {/if}<span class="skill-item" class:dim={itemDim(section, e, it)}
-                        >{it.content}{#each it.tags as t (t)}<span class="tag">#{t}</span
-                          >{/each}</span
-                      >{/each}{:else}{e.fields.skills}{/if}</span
-                >
-              </div>
-            {/if}
+            <EntryEdit {section} entry={e} index={eIdx} dim={entryDim(section, e)} />
           {/each}
         {:else if def?.latexType === 'cvhonors'}
           {#each section.entries as e, eIdx (e.id)}
-            {#if selEntry === e.id}
-              <EntryEdit {section} entry={e} />
-            {:else}
-              <div
-                class="entry"
-                class:dim={entryDim(section, e)}
-                role="button"
-                tabindex="0"
-                aria-label={editName(fieldsOf(e).award, fieldsOf(e).issuer)}
-                draggable="true"
-                data-drag-handle
-                data-sortable
-                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                onclick={() => pick(section.id, e.id)}
-                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-              >
-                <div class="entry-line">
-                  <span class="entry-title"
-                    >{[fieldsOf(e).award, fieldsOf(e).issuer].filter(Boolean).join(' · ')}</span
-                  >
-                  <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
-                </div>
-              </div>
-            {/if}
+            <EntryEdit {section} entry={e} index={eIdx} dim={entryDim(section, e)} />
           {/each}
         {:else if def?.latexType === 'cvreferences'}
           {#each section.entries as e, eIdx (e.id)}
-            {#if selEntry === e.id}
-              <EntryEdit {section} entry={e} />
-            {:else}
-              <div
-                class="entry"
-                class:dim={entryDim(section, e)}
-                role="button"
-                tabindex="0"
-                aria-label={editName(fieldsOf(e).name)}
-                draggable="true"
-                data-drag-handle
-                data-sortable
-                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                onclick={() => pick(section.id, e.id)}
-                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-              >
-                <div class="entry-line">
-                  <span class="entry-title">{fieldsOf(e).name}</span>
-                  <span class="entry-date">{fieldsOf(e).relation ?? ''}</span>
-                </div>
-              </div>
-            {/if}
+            <EntryEdit {section} entry={e} index={eIdx} dim={entryDim(section, e)} />
           {/each}
         {:else}
           {#each section.entries as e, eIdx (e.id)}
-            {#if selEntry === e.id}
-              <EntryEdit {section} entry={e} />
-            {:else}
-              <div
-                class="entry"
-                class:dim={entryDim(section, e)}
-                role="button"
-                tabindex="0"
-                aria-label={editName(
-                  entryLead(section.type, fieldsOf(e)),
-                  fieldsOf(e).organization,
-                )}
-                draggable="true"
-                data-drag-handle
-                data-sortable
-                aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                onclick={() => pick(section.id, e.id)}
-                onkeydown={(ev) => entryKey(ev, section, eIdx, e.id)}
-              >
-                <div class="entry-line">
-                  <span class="entry-title"
-                    >{[entryLead(section.type, fieldsOf(e)), fieldsOf(e).organization]
-                      .filter(Boolean)
-                      .join(' · ')}</span
-                  >
-                  <span class="entry-date">{fieldsOf(e).date ?? ''}</span>
-                </div>
-                {#if hasBullets(section.type) && e.items.length}
-                  <ul>
-                    {#each e.items as it (it.id)}
-                      <li class:dim={itemDim(section, e, it)}>
-                        {#if it.title}<b>{it.title}</b> —
-                        {/if}{it.content}{#each it.tags as t (t)}<span class="tag">#{t}</span
-                          >{/each}
-                      </li>
-                    {/each}
-                  </ul>
-                {/if}
-              </div>
-            {/if}
+            <EntryEdit {section} entry={e} index={eIdx} dim={entryDim(section, e)} />
           {/each}
         {/if}
 
@@ -341,10 +157,10 @@
 </article>
 
 <style>
+  /* Fills the pane it sits in: the window around it already sets the measure, and
+     a page-width column inside left a wide band of paper either side of it. */
   .doc {
     font-family: var(--serif);
-    max-width: 640px;
-    margin: 0 auto;
     padding: 40px 46px 54px;
     color: var(--ink);
   }
@@ -369,7 +185,7 @@
   }
 
   .doc-head h1.untitled {
-    color: var(--dim-text);
+    color: var(--ink);
   }
 
   .contact {
@@ -380,7 +196,7 @@
 
   .sec {
     margin-top: 28px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
     padding-top: 15px;
   }
 
@@ -391,42 +207,32 @@
     margin-bottom: 8px;
   }
 
-  /* The résumé's own type: the print faces. */
+  /* The resume's own type: the print faces. */
   .sec-head h2 {
     font-family: var(--doc-sans);
     font-size: var(--text-4xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: var(--accent, var(--ink-2));
+    color: var(--ink);
     margin: 0;
   }
 
+  /* Always at full strength: a control that fades until hovered reads as disabled,
+     and a half-strength mark is a grey the rest of the editor does not use. */
   .sec-tools {
     margin-left: auto;
-    opacity: 0.35;
-    transition: opacity var(--dur-fast);
   }
 
   .grip {
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 0;
     padding: 2px 4px;
     cursor: grab;
-    opacity: 0.3;
-    transition: opacity var(--dur-fast);
-  }
-
-  .sec:hover .grip {
-    opacity: 0.85;
-  }
-
-  .grip:hover {
-    opacity: 1;
   }
 
   .grip:active {
@@ -443,15 +249,11 @@
     border-radius: var(--radius);
   }
 
-  .sec:hover .sec-tools {
-    opacity: 1;
-  }
-
   .tool {
     font-family: var(--sans);
     font-size: var(--text-2xs);
     line-height: 1;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -465,8 +267,8 @@
   }
 
   .tool.danger:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .para {
@@ -589,7 +391,7 @@
   .tag {
     font-family: var(--mono);
     font-size: var(--text-4xs);
-    color: var(--dim-text);
+    color: var(--ink);
     margin-left: 6px;
   }
 
@@ -624,7 +426,6 @@
     border: 1px solid var(--ink);
     border-radius: var(--radius-md);
     background: var(--paper);
-    box-shadow: var(--shadow);
     padding: 8px;
   }
 
@@ -634,7 +435,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--dim-text);
+    color: var(--ink);
     padding: 8px 8px 4px;
   }
 
@@ -677,7 +478,6 @@
     background: var(--paper);
     padding: 5px;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
   }
 
   /* Touch: grips and section tools get a 44px hit area and stop hiding behind

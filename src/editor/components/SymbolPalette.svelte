@@ -29,20 +29,17 @@
 </div>
 
 <style>
+  /* No frame or inset of its own: the window around it already supplies both, and
+     a second rounded box inside the first read as a mistake. */
   .palette {
-    border: 1px solid var(--ink);
-    border-radius: var(--radius);
     background: var(--chrome-hi);
     padding: 9px 11px 11px;
-    margin: 0 0 11px;
-    max-height: 216px;
-    overflow-y: auto;
   }
 
   .hint {
     font-size: var(--text-4xs);
     line-height: 1.45;
-    color: var(--ink-3);
+    color: var(--ink);
     margin: 0 0 9px;
   }
 
@@ -50,7 +47,7 @@
     font-family: var(--mono);
     font-size: 0.92em;
     background: var(--paper);
-    border: 1px solid var(--faint, var(--paper-4));
+    border: 1px solid var(--ink);
     padding: 0 3px;
   }
 
@@ -72,7 +69,7 @@
     font-size: var(--text-4xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--dim-text);
+    color: var(--ink);
     padding-top: 5px;
   }
 
