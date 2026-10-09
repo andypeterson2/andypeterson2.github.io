@@ -17,6 +17,9 @@
  */
 
 const GATEWAY = 'https://api.andypeterson.dev'; // the single API front door
+
+/** How long to wait for the menu bar's session answer before reading it as a stranger. */
+const SESSION_WAIT_MS = 10_000;
 const KEY = 'site-pass';
 
 export interface SitePassApi {
@@ -136,14 +139,44 @@ export async function warmUntilHealthy(
   return 'unreachable';
 }
 
-async function activateLive(): Promise<void> {
+/**
+ * Whether the menu bar's `GET /auth/me` says this visitor holds a session.
+ *
+ * The pass gate answers an unauthorized probe with 402, which the browser logs as a
+ * failed request on every anonymous visit. The menu bar already asks who the visitor
+ * is on every page, so waiting for that answer tells an owner apart from a stranger
+ * without spending a request of its own.
+ */
+function signedIn(timeoutMs = SESSION_WAIT_MS): Promise<boolean> {
+  // The answer may already have arrived, and a past event cannot be heard.
+  if (window.SITE_SESSION) return Promise.resolve(window.SITE_SESSION.authenticated);
+  return new Promise((resolve) => {
+    const done = (value: boolean) => {
+      document.removeEventListener('site:session', onSession);
+      clearTimeout(timer);
+      resolve(value);
+    };
+    // Typed nullable because a bare Event carries no detail at all.
+    const onSession = (e: Event) =>
+      done(
+        (e as CustomEvent<{ authenticated?: boolean } | undefined>).detail?.authenticated === true,
+      );
+    // No menu bar, a blocked gateway or a slow answer all read as no session, which
+    // is what a stranger is: the client-side tier stands either way.
+    const timer = setTimeout(() => done(false), timeoutMs);
+    document.addEventListener('site:session', onSession);
+  });
+}
+
+async function activateLive({
+  probeAnyway = false,
+}: { probeAnyway?: boolean } = {}): Promise<void> {
   const service = document.querySelector('meta[name="site-backend"]')?.getAttribute('content');
   if (!service) return;
-  // A pass is one way in; an owner's Access session is the other, and the
-  // browser cannot read that cookie to tell. So the probe runs either way and
-  // the gateway's answer decides. Without a pass this costs one request, since
-  // a refusal ends the loop on the first pass through it.
+  // A pass holder probes straight away. Everyone else waits to hear whether they
+  // are signed in, since only a stranger's probe is refused.
   const held = active();
+  if (!held && !probeAnyway && !(await signedIn())) return;
   if (held) {
     document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
   }
@@ -173,7 +206,7 @@ async function activateLive(): Promise<void> {
 // Re-runs the same health-gated activation for a caller that wants another attempt
 // after a give-up. The lifecycle events above are the seam a status UI listens on.
 document.addEventListener('navbar:connect-retry', () => {
-  void activateLive();
+  void activateLive({ probeAnyway: true });
 });
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {

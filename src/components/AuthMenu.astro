@@ -75,6 +75,8 @@
     document.querySelector('.site-menubar ul')?.appendChild(item(who, 'auth-item'));
     // Phones read the same list top to bottom, so it goes at the end.
     document.getElementById('mobile-nav-menu')?.appendChild(item(who, 'auth-item--mobile'));
+    // Kept as well as announced, since a module that asks later cannot hear a past event.
+    window.SITE_SESSION = who;
     document.dispatchEvent(new CustomEvent('site:session', { detail: who }));
   }
 
