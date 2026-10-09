@@ -107,33 +107,57 @@ describe('gateway requests carry the owner session', () => {
 });
 
 describe('activation without a pass', () => {
-  /** The page as a demo page sees it: a backend named, no pass stored. */
-  async function activate(status: number) {
+  /**
+   * Drive the module's load-time activation. `session` is what the menu bar's
+   * `GET /auth/me` answered, or undefined when it never answered at all.
+   */
+  async function activate(status: number, session?: boolean) {
     vi.resetModules();
     sessionStorage.clear();
+    delete window.SITE_SESSION;
+    if (session !== undefined) window.SITE_SESSION = { authenticated: session };
     document.head.innerHTML = '<meta name="site-backend" content="classifiers" />';
     const seen: string[] = [];
     for (const n of ['navbar:connect', 'navbar:connect-pending', 'navbar:connect-failed']) {
       document.addEventListener(n, () => seen.push(n));
     }
-    window.fetch = vi.fn(async () => new Response('{}', { status })) as typeof window.fetch;
+    const urls: string[] = [];
+    window.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      urls.push(String(input instanceof Request ? input.url : input));
+      return new Response('{}', { status });
+    }) as typeof window.fetch;
     await import('../src/apps/shared/pass');
     await vi.runAllTimersAsync();
-    return seen;
+    return { seen, probes: urls.filter((u) => u.includes('/health')).length };
   }
 
-  // The owner's credential is a cookie the page cannot read, so the only way to
-  // know is to ask: a 200 means the gateway let this caller through.
-  test('an authorised probe connects even though no pass is held', async () => {
-    expect(await activate(200)).toContain('navbar:connect');
+  // The owner's credential is a cookie the page cannot read, so the menu bar's
+  // answer is what identifies them: a 200 means the gateway let this caller through.
+  test('a signed-in visitor connects even though no pass is held', async () => {
+    const { seen, probes } = await activate(200, true);
+    expect(probes).toBe(1);
+    expect(seen).toContain('navbar:connect');
   });
 
   test('a refused probe stays quiet rather than reporting a failure', async () => {
-    const seen = await activate(402);
+    const { seen } = await activate(402, true);
     expect(seen).not.toContain('navbar:connect');
     // Nothing was claimed, so there is no failure to show — the client-side
     // tier is simply what this visitor gets.
     expect(seen).not.toContain('navbar:connect-failed');
     expect(seen).not.toContain('navbar:connect-pending');
+  });
+
+  // The gate answers an unauthorized probe with 402, which the browser logs as a
+  // failed request. A stranger has nothing to gain from asking, so it never asks.
+  test('a signed-out visitor never probes the gated backend', async () => {
+    const { seen, probes } = await activate(200, false);
+    expect(probes).toBe(0);
+    expect(seen).toEqual([]);
+  });
+
+  test('no answer from the menu bar reads as signed out', async () => {
+    const { probes } = await activate(200, undefined);
+    expect(probes).toBe(0);
   });
 });

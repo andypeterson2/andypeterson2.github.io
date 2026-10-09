@@ -15,6 +15,11 @@ declare global {
     UI_CONFIG?: DatasetDef;
     /** Mutable rendezvous: seeded by each app's config, rewritten on navbar:connect. */
     API_BASE?: string;
+    /**
+     * The menu bar's answer to `GET /auth/me`, kept so a listener that attaches after
+     * the `site:session` event still learns who the visitor is.
+     */
+    SITE_SESSION?: { authenticated: boolean; email?: string | null; name?: string | null };
   }
 }
 
