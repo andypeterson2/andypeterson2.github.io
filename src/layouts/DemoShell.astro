@@ -9,17 +9,17 @@ import LiveTier from '../components/LiveTier.astro';
 interface Props {
   title: string;
   description?: string;
-  /** Full-bleed apps (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
-  bare?: boolean;
   /** The demo's optional live backend, declared once (deploy-based; no port). */
   backend?: { service: string };
   /** Demos whose window should end where their content does. */
   fitContent?: boolean;
+  /** Demos that scroll their own regions (the editor): the pane holds still. */
+  ownScroll?: boolean;
 }
-const { title, description, bare, backend, fitContent } = Astro.props;
+const { title, description, backend, fitContent, ownScroll } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} bare={bare} fitContent={fitContent}>
+<BaseLayout title={title} description={description} fitContent={fitContent} ownScroll={ownScroll}>
   <Fragment slot="head">
     {backend && <meta name="site-backend" content={backend.service} />}
     <slot name="head" />

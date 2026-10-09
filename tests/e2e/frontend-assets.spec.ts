@@ -15,6 +15,7 @@ test.describe('Owned static asset serving', () => {
     '/classifiers/models/iris.json',
     '/classifiers/models/qsvm-mnist.json',
     '/classifiers/models/qsvm-iris.json',
+  '/classifiers/models/qsvm-iris-ovo.json',
     // nonogram gallery of pre-computed quantum runs
     '/nonogram/gallery/index.json',
   ];
@@ -28,7 +29,7 @@ test.describe('Owned static asset serving', () => {
   }
 
   test('serves the vendored Socket.IO client', async ({ request }) => {
-    const response = await request.get('/vendor/socket.io-4.7.5.min.js');
+    const response = await request.get('/vendor/socket.io-4.8.4.min.js');
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('javascript');
   });

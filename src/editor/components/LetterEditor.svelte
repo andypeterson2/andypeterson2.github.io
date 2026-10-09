@@ -3,8 +3,6 @@
   // active. Header fields and body paragraphs are both per-variant.
   import { editor } from '../lib/store.svelte';
   import { sortable, reorderKeydown } from '../lib/sortable';
-  import { symbolInput } from '../lib/symbol-input.svelte';
-  import SymbolPalette from './SymbolPalette.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
 
   const cl = $derived(editor.letters.header);
@@ -12,7 +10,6 @@
     `${editor.person.personal.firstName ?? ''} ${editor.person.personal.lastName ?? ''}`.trim(),
   );
 
-  const sym = symbolInput();
   // Every editable string in the letter — header fields + each paragraph.
   const text = $derived.by(() => {
     const parts = [
@@ -32,20 +29,7 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<article class="letter" onfocusin={sym.track}>
-  <div class="ltools">
-    <button
-      class="sym-toggle"
-      class:on={sym.open}
-      title="Insert a symbol"
-      aria-expanded={sym.open}
-      onclick={() => sym.toggle()}>Ω</button
-    >
-  </div>
-  {#if sym.open}
-    <SymbolPalette onpick={sym.insert} />
-  {/if}
+<article class="letter">
   <UnknownWarning {text} />
 
   <header class="lh">
@@ -160,7 +144,6 @@
     border-radius: var(--radius);
     padding: 3px 9px;
     cursor: pointer;
-    box-shadow: var(--shadow-sm);
   }
 
   .sym-toggle.on {
@@ -180,7 +163,7 @@
   }
 
   .lh h1.untitled {
-    color: var(--dim-text);
+    color: var(--ink);
   }
 
   .fields {
@@ -188,7 +171,7 @@
     flex-direction: column;
     gap: 10px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--paper-4);
+    border-bottom: 1px solid var(--ink);
   }
 
   .fld {
@@ -245,7 +228,7 @@
     font-family: var(--sans);
     font-size: var(--text-3xs);
     line-height: 1.6;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 0;
     padding: 4px 2px;
@@ -284,7 +267,7 @@
     font-family: var(--sans);
     font-size: var(--text-2xs);
     line-height: 1;
-    color: var(--dim-text);
+    color: var(--ink);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -293,14 +276,14 @@
   }
 
   .del:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ink);
+    color: var(--paper);
   }
 
   .empty {
     font-family: var(--sans);
     font-size: var(--text-3xs);
-    color: var(--dim-text);
+    color: var(--ink);
     margin: 0;
   }
 
@@ -318,7 +301,7 @@
 
   .lf {
     padding-top: 20px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
   }
 
   .signoff {

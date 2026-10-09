@@ -10,7 +10,7 @@
  * hand-derived from the classifier backend's route handlers.
  */
 
-import { createLogger, initDrawer, initDropdown, initResize, onEscape } from '../ui-kit/ui-kit';
+import { initDropdown, onEscape } from '../ui-kit/ui-kit';
 import { connectionManager } from './connection';
 import { consumeSSE, type SseStructuredEvent } from './sse';
 import { MiniChart } from './chart';
@@ -171,7 +171,6 @@ function dropToBrowserTier(): void {
       detail: { service: 'classifiers', reason: 'unauthorized' },
     }),
   );
-  addLog('The pass was refused, so predictions are back in your browser.', 'err');
 }
 
 /**
@@ -205,18 +204,25 @@ interface ModelInfo {
   training_history?: unknown[];
   stopped_early?: boolean;
   eval_result: RawEvalResult | null;
+  /** Accuracy drop per ablated layer, filled in by an ablation run. */
+  ablation?: Record<string, number>;
   /** In-browser demo model — no backend to ablate/export/remove against. */
   _local?: boolean;
   /** Model asset name for the in-browser tier. */
   _file?: string;
-  /** Binary-subset caveat (e.g. the QSVM answers only "6 vs 9"). */
-  _subset?: string | undefined;
-  /** Binary classifiers (the QSVM) only know these classes — used to scope their answer. */
+  /** The classes a shipped model knows, which can be fewer than the dataset's. */
   _classes?: string[] | undefined;
+  /** The inputs a shipped model reads, which can be a subset of the form's. */
+  _features?: string[] | undefined;
+  /** Wilson interval on the test accuracy, with the sample it came from. */
+  _accCi?: [number, number] | undefined;
+  _testN?: number | undefined;
+  _testProtocol?: string | undefined;
+  /** Mean accuracy over several splits, where one held-out split is too small. */
+  _cvAccuracy?: number | undefined;
+  _cvSplits?: number | undefined;
   /** Computed in this page (the ensemble result); the backend has no model by this name. */
   _virtual?: boolean;
-  /** The in-browser weights' source, e.g. "weights · 63fe983 · 2026-09-04". */
-  _provenance?: string | undefined;
   /** The paper a model recreates, e.g. "Yang et al. 2019". */
   _cite?: string | undefined;
 }
@@ -263,33 +269,13 @@ function byId<T extends HTMLElement>(id: string, ctor: new () => T): T {
   return el;
 }
 
-const drawer = initDrawer(byId('log-drawer', HTMLElement), byId('log-handle', HTMLElement));
 const dropdown = initDropdown(
   byId('dataset-menu-btn', HTMLElement),
   byId('dataset-menu', HTMLElement),
 );
 
 onEscape(() => {
-  drawer.close();
   dropdown.close();
-});
-
-initResize(
-  byId('resize-h', HTMLElement),
-  byId('left-col', HTMLElement),
-  byId('split-layout', HTMLElement),
-  {
-    min: 180,
-    default: 300,
-    key: 'leftColWidth_v2',
-  },
-);
-
-const logTerminal = byId('log-terminal', HTMLElement);
-const addLog = createLogger(logTerminal, 200);
-// Closed, the log shows its newest line; open or closed, it stays at the bottom.
-byId('log-handle', HTMLElement).addEventListener('click', () => {
-  logTerminal.scrollTop = logTerminal.scrollHeight;
 });
 
 const canvasCol = byId('canvas-col', HTMLElement);
@@ -302,7 +288,6 @@ const ctx = canvasCtx;
 const seenCtx = byId('seen-canvas', HTMLCanvasElement).getContext('2d');
 const trainBtn = byId('train-btn', HTMLButtonElement);
 const clearBtn = byId('clear-btn', HTMLButtonElement);
-const predictBtn = document.getElementById('predict-btn');
 const importBtn = byId('import-btn', HTMLButtonElement);
 const refreshSavedBtn = byId('refresh-saved-btn', HTMLButtonElement);
 const savedSelect = byId('saved-select', HTMLSelectElement);
@@ -311,11 +296,14 @@ const datasetCurrent = byId('dataset-current', HTMLElement);
 const evalProgress = byId('evaluate-progress', HTMLElement);
 const evalBar = byId('eval-bar', HTMLElement);
 const evalStatus = byId('eval-status', HTMLElement);
+// What a failed run says, in the card whose button started it.
+const trainStatus = byId('train-status', HTMLElement);
+const modelsStatus = byId('models-status', HTMLElement);
+const savedStatus = byId('saved-status', HTMLElement);
+const ablationStatus = modelsStatus;
 const metricsHead = byId('metrics-head', HTMLElement);
 const metricsBody = byId('metrics-body', HTMLElement);
-const predBody = byId('pred-body', HTMLElement);
 const modelNameInput = byId('model-name', HTMLInputElement);
-const sessionModels = byId('session-models', HTMLElement);
 const chartArea = byId('chart-area', HTMLElement);
 const trainChartCanvas = byId('train-chart', HTMLCanvasElement);
 const ensembleBtn = byId('ensemble-btn', HTMLButtonElement);
@@ -625,48 +613,6 @@ function confClass(v: number): string {
 
 // Session models list (MODELS card)
 
-function buildSessionModelRow(name: string, m: ModelInfo): HTMLDivElement {
-  const row = document.createElement('div');
-  row.className = 'ui-list-row';
-  const text = document.createElement('div');
-  text.className = 'ui-list-text';
-  const nameSpan = document.createElement('div');
-  nameSpan.className = 'ui-list-name';
-  nameSpan.textContent = name;
-  text.appendChild(nameSpan);
-  const tier = m._local ? 'in your browser' : m._virtual ? 'computed here' : 'live';
-  const facts = [
-    m.model_type,
-    m.num_params ? `${m.num_params.toLocaleString()} params` : '',
-    m._subset ? `${m._subset} only` : '',
-    tier,
-  ];
-  const lines = [facts, [m._provenance ?? '', m._cite ?? '']];
-  for (const line of lines) {
-    const meta = line.filter(Boolean).join(' · ');
-    if (!meta) continue;
-    const div = document.createElement('div');
-    div.className = 'ui-list-meta';
-    div.textContent = meta;
-    text.appendChild(div);
-  }
-  row.appendChild(text);
-  if (m._local) {
-    // In-browser models have no backend to ablate/export/remove against.
-    return row;
-  }
-  if (!m._virtual) {
-    row.append(...serverModelActions(name));
-  }
-  const removeBtn = document.createElement('button');
-  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
-  removeBtn.dataset.remove = name;
-  removeBtn.setAttribute('aria-label', 'Remove ' + name);
-  removeBtn.textContent = '×';
-  row.appendChild(removeBtn);
-  return row;
-}
-
 /** Ablation and save-to-disk, for a model the backend holds. */
 function serverModelActions(name: string): HTMLButtonElement[] {
   const ablationBtn = document.createElement('button');
@@ -684,36 +630,14 @@ function serverModelActions(name: string): HTMLButtonElement[] {
 }
 
 function buildSessionModelsList(): void {
-  const entries = modelEntries();
-  if (entries.length === 0) {
-    sessionModels.innerHTML = '<p class="ui-list-empty">No models loaded</p>';
-  } else {
-    sessionModels.innerHTML = '';
-    for (const [name, m] of entries) sessionModels.appendChild(buildSessionModelRow(name, m));
-  }
   updateTeacherSelect();
   updateEnsembleBtn();
 }
 
 // Prediction table (TRY card)
 
-function predictionNameCell(name: string, m: ModelInfo | undefined): HTMLTableCellElement {
-  const td = document.createElement('td');
-  td.className = 'pred-model-name';
-  td.textContent = name;
-  // Say up front that a binary model only knows two classes.
-  if (m?._subset) {
-    const scope = document.createElement('span');
-    scope.className = 'pred-scope';
-    scope.textContent = ` · ${m._subset} only`;
-    td.appendChild(scope);
-  }
-  return td;
-}
-
 function predictionAnswerCell(
   p: (Prediction & { outOfScope?: boolean }) | undefined,
-  m: ModelInfo | undefined,
 ): HTMLTableCellElement {
   const td = document.createElement('td');
   if (!p) {
@@ -725,37 +649,86 @@ function predictionAnswerCell(
   span.className = p.outOfScope ? 'pred-label pred-out' : 'pred-label';
   span.textContent = p.prediction;
   td.appendChild(span);
-  if (p.outOfScope && m?._subset) {
-    const note = document.createElement('span');
-    note.className = 'pred-out-note';
-    note.textContent = ` (only answers ${m._subset})`;
-    td.appendChild(note);
-  }
   return td;
 }
 
-/** A QSVM margin as shown: "s +0.31". */
-function margin(s: number): string {
-  return `s ${s >= 0 ? '+' : '-'}${Math.abs(s).toFixed(2)}`;
+/**
+ * A figure and the bar that gives it a size, so a reader sees how strong a
+ * score is without knowing what scale it is on. `lean` runs -1 to 1 and fills
+ * out from the middle; otherwise the bar fills from the left.
+ */
+function scoreBar(fraction: number, opts: { lean?: boolean } = {}): HTMLElement {
+  const bar = document.createElement('span');
+  bar.className = opts.lean ? 'score-bar score-bar--lean' : 'score-bar';
+  const fill = document.createElement('span');
+  fill.className = 'score-fill';
+  const size = Math.min(Math.abs(fraction), 1);
+  if (opts.lean) {
+    fill.style.width = `${String(50 * size)}%`;
+    fill.style.left = fraction >= 0 ? '50%' : `${String(50 - 50 * size)}%`;
+  } else {
+    fill.style.width = `${String(100 * size)}%`;
+    fill.style.left = '0';
+  }
+  bar.appendChild(fill);
+  return bar;
 }
 
-function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
+/**
+ * How decisive the QSVM was, as a share of the evidence it had: its two feature
+ * terms argue for opposite classes, and the margin is what one wins by. At 0%
+ * they cancel and the answer sits on the boundary; at 100% one term decided it
+ * alone. A ratio rather than the raw margin, which is on no scale a reader knows.
+ */
+function qsvmLean(q: NonNullable<Prediction['qsvm']>): number {
+  const total = Math.abs(q.t1) + Math.abs(q.t2);
+  return total === 0 ? 0 : q.s / total;
+}
+
+function predictionScoreCell(
+  p: Prediction | undefined,
+  m: ModelInfo | undefined,
+): HTMLTableCellElement {
   const td = document.createElement('td');
-  td.className = 'num';
-  if (p?.qsvm) {
-    // A sign classifier has no probability; its margin is its strength.
-    const { f1, f2, s } = p.qsvm;
-    td.textContent = margin(s);
-    const feats = document.createElement('span');
-    feats.className = 'pred-scope';
-    feats.textContent = ` (f1 ${f1.toFixed(2)}, f2 ${f2.toFixed(2)})`;
-    td.appendChild(feats);
-    td.title = 'Signed margin from the decision boundary, computed from the two features';
+  td.className = 'num score-cell';
+  if (p?.ovo) {
+    // Three pairwise rules decide this one. The figure is the narrowest contest
+    // the winner was in: how close the answer came to going the other way.
+    const { votes, contests, tightest } = p.ovo;
+    const lean = tightest.winner === p.prediction ? tightest.lean : -Math.abs(tightest.lean);
+    const num = document.createElement('span');
+    num.className = confClass(Math.abs(lean));
+    num.textContent = pct(Math.abs(lean));
+    td.appendChild(num);
+    td.appendChild(scoreBar(lean, { lean: true }));
+    const others = contests
+      .map((k) => `${k.pair[0]} vs ${k.pair[1]} ${k.s >= 0 ? '+' : ''}${k.s.toFixed(3)}`)
+      .join(', ');
+    td.title =
+      `Vote ${String(votes[p.prediction] ?? 0)} of ${String(contests.length)} for ${p.prediction}. ` +
+      `Tightest contest ${tightest.pair[0]} vs ${tightest.pair[1]}, ` +
+      `${pct(Math.abs(tightest.lean))} of the evidence. All three: ${others}.`;
+  } else if (p?.qsvm) {
+    // A sign classifier has no probability; how far it leans is its strength.
+    const { f1, f2, s, t1, t2 } = p.qsvm;
+    const lean = qsvmLean(p.qsvm);
+    const num = document.createElement('span');
+    num.className = confClass(Math.abs(lean));
+    num.textContent = pct(Math.abs(lean));
+    td.appendChild(num);
+    td.appendChild(scoreBar(lean, { lean: true }));
+    const sides = m?._classes ?? [];
+    const toward = lean >= 0 ? sides[0] : sides[1];
+    td.title =
+      `Margin ${s.toFixed(3)}, ${pct(Math.abs(lean))} of the evidence` +
+      (toward ? ` toward ${toward}` : '') +
+      `. Feature terms ${t1.toFixed(3)} and ${t2.toFixed(3)}, from f1 ${f1.toFixed(2)} and f2 ${f2.toFixed(2)}.`;
   } else if (p?.confidence != null) {
-    const span = document.createElement('span');
-    span.className = confClass(p.confidence);
-    span.textContent = pct(p.confidence);
-    td.appendChild(span);
+    const num = document.createElement('span');
+    num.className = confClass(p.confidence);
+    num.textContent = pct(p.confidence);
+    td.appendChild(num);
+    td.appendChild(scoreBar(p.confidence));
     td.title = 'Softmax of the top class: uncalibrated, so high on a scribble too';
   } else {
     td.textContent = '—';
@@ -763,43 +736,108 @@ function predictionScoreCell(p: Prediction | undefined): HTMLTableCellElement {
   return td;
 }
 
+/**
+ * Refill the two cells that move under the pen, leaving the rest of the table
+ * alone. A stroke lands several times a second, and rebuilding eighteen columns
+ * at that rate would throw away scroll position and every open tooltip.
+ */
 function buildPredictionTable(): void {
-  const names = Object.keys(state.models);
-  if (names.length === 0) {
-    predBody.innerHTML = `<tr class="empty-row"><td colspan="3">No prediction yet</td></tr>`;
-    return;
-  }
-  predBody.innerHTML = '';
-  if (window.UI_CONFIG?.input_type === 'image' && Object.keys(state.predictions).length === 0) {
-    predBody.innerHTML = `<tr class="empty-row"><td colspan="3">Draw a digit — predictions appear as you draw.</td></tr>`;
-  }
-  for (const name of names) {
-    const p = state.predictions[name];
-    const m = state.models[name];
-    const tr = document.createElement('tr');
-    tr.append(predictionNameCell(name, m), predictionAnswerCell(p, m), predictionScoreCell(p));
-    predBody.appendChild(tr);
+  const now = metricSections(window.UI_CONFIG?.class_labels ?? []).find(
+    (sec) => sec.label === 'Now',
+  );
+  if (!now) return;
+  for (const [name, m] of modelEntries()) {
+    const tr = metricsBody.querySelector<HTMLTableRowElement>(
+      `tr[data-model="${CSS.escape(name)}"]`,
+    );
+    // No such row yet: the table has not been built, or it has no models.
+    if (!tr) continue;
+    for (const row of now.rows) {
+      const cell = tr.querySelector<HTMLTableCellElement>(
+        `td[data-metric="${CSS.escape(row.key)}"]`,
+      );
+      if (cell) cell.replaceWith(metricCell(row, m, name));
+    }
   }
 }
 
-// Columnar metrics table (TEST card)
+// Metrics table: a row per model, a column per metric (TEST card)
 
 interface MetricRow {
   key: string;
-  fn: (m: ModelInfo) => string;
+  fn: (m: ModelInfo, name: string) => string;
   cls?: string;
   html?: boolean;
-  /** The row's class, e.g. the headline Test Acc row. */
-  rowCls?: string;
+  /** An extra class on the cell, e.g. the headline Test Acc column. */
+  cellCls?: string;
+  /**
+   * Builds the cell itself, for a value that is more than text. Preferred over
+   * `html`, which would need every server-supplied string escaped by hand.
+   */
+  node?: (m: ModelInfo, name: string) => HTMLTableCellElement;
+  /** Shown on hover against the row's label. */
+  note?: string;
 }
 
 interface MetricSection {
   label: string;
   rows: MetricRow[];
+  /**
+   * Drawn even when every cell is empty. The live columns must exist before the
+   * first stroke, because the updater refills them rather than creating them.
+   */
+  always?: boolean;
+}
+
+/**
+ * What a test accuracy was measured over: the sample, the interval around it,
+ * and the protocol. A percentage on 30 samples is worth four points either way.
+ */
+function accuracyNote(m: ModelInfo): string {
+  const acc = m.eval_result?.accuracy ?? 0;
+  const parts: string[] = [];
+  if (m._testN) parts.push(`${String(Math.round(acc * m._testN))} of ${String(m._testN)}`);
+  if (m._accCi) parts.push(`95% CI ${pct(m._accCi[0])}–${pct(m._accCi[1])}`);
+  if (m._cvAccuracy != null) {
+    parts.push(`${pct(m._cvAccuracy)} over ${String(m._cvSplits ?? 0)} splits`);
+  }
+  if (m._testProtocol) parts.push(m._testProtocol);
+  return parts.length > 0 ? parts.join('; ') : 'Measured on the held-out split';
+}
+
+/** Every layer any model has an ablation figure for, in first-seen order. */
+function ablatedLayers(): string[] {
+  const seen: string[] = [];
+  for (const [, m] of modelEntries()) {
+    for (const layer of Object.keys(m.ablation ?? {})) {
+      if (!seen.includes(layer)) seen.push(layer);
+    }
+  }
+  return seen;
 }
 
 function metricSections(labels: string[]): MetricSection[] {
   return [
+    // First, because it is what changes under the pen: everything after it
+    // holds still while these two columns move.
+    {
+      label: 'Now',
+      always: true,
+      rows: [
+        {
+          key: 'Prediction',
+          fn: (_m, name) => (state.predictions[name] ? 'answered' : '—'),
+          node: (_m, name) => predictionAnswerCell(state.predictions[name]),
+          cellCls: 'metric-headline',
+        },
+        {
+          key: 'Score',
+          fn: (_m, name) => (state.predictions[name] ? 'scored' : '—'),
+          node: (m, name) => predictionScoreCell(state.predictions[name], m),
+          note: 'How sure the model is. Linear models: softmax of the top class, uncalibrated. QSVM: how far its margin leans, as a share of the evidence its features gave it; for the one-vs-one rule, the narrowest contest the winner was in.',
+        },
+      ],
+    },
     {
       label: 'Config',
       rows: [
@@ -817,6 +855,12 @@ function metricSections(labels: string[]): MetricSection[] {
           cls: 'cfg-cell num',
         },
         { key: 'Early Stop', fn: (m) => (m.stopped_early ? 'Yes' : '—'), cls: 'cfg-cell' },
+        {
+          key: 'Reads',
+          fn: (m) => m._features?.join(', ') ?? '—',
+          cls: 'cfg-cell',
+          note: 'The inputs this model takes. A form input missing here does not move its answer.',
+        },
       ],
     },
     {
@@ -824,13 +868,25 @@ function metricSections(labels: string[]): MetricSection[] {
       rows: [
         {
           key: 'Test Acc',
-          fn: (m) =>
-            m.eval_result
-              ? `<span class="${accClass(m.eval_result.accuracy)}">${pct(m.eval_result.accuracy)}</span>`
-              : '—',
-          html: true,
+          fn: (m) => (m.eval_result ? pct(m.eval_result.accuracy) : '—'),
           cls: 'num',
-          rowCls: 'metric-headline',
+          cellCls: 'metric-headline',
+          // A bare percentage on 30 samples reads as precise. The hover carries
+          // the sample it came from and the interval around it.
+          node: (m) => {
+            const td = document.createElement('td');
+            td.className = 'num';
+            if (!m.eval_result) {
+              td.textContent = '—';
+              return td;
+            }
+            const span = document.createElement('span');
+            span.className = accClass(m.eval_result.accuracy);
+            span.textContent = pct(m.eval_result.accuracy);
+            td.appendChild(span);
+            td.title = accuracyNote(m);
+            return td;
+          },
         },
         {
           key: 'Test Loss',
@@ -838,6 +894,20 @@ function metricSections(labels: string[]): MetricSection[] {
           cls: 'num',
         },
       ],
+    },
+    {
+      label: 'Ablation (accuracy drop)',
+      rows: ablatedLayers().map((layer) => ({
+        key: layer,
+        fn: (m: ModelInfo) => {
+          const drop = m.ablation?.[layer];
+          // A bigger drop means the layer carried more of the answer, so the
+          // scale runs the other way from accuracy.
+          return drop != null ? `<span class="${accClass(1 - drop)}">${pct(drop)}</span>` : '—';
+        },
+        html: true,
+        cls: 'num',
+      })),
     },
     {
       label: 'Per-Class Accuracy',
@@ -855,31 +925,70 @@ function metricSections(labels: string[]): MetricSection[] {
   ];
 }
 
-function buildMetricsHead(names: string[]): void {
-  const htr = document.createElement('tr');
+/**
+ * The two header rows: the section each metric belongs to, then the metrics
+ * themselves. Actions spans both, because it belongs to no section.
+ */
+function buildMetricsHead(sections: MetricSection[], withActions: boolean): void {
+  const groupTr = document.createElement('tr');
   const corner = document.createElement('th');
   corner.className = 'corner-cell';
   corner.scope = 'col';
+  corner.rowSpan = 2;
   // An empty header announces nothing: name it for screen readers, visually hidden.
   const cornerLabel = document.createElement('span');
   cornerLabel.className = 'sr-only';
-  cornerLabel.textContent = 'Metric';
+  cornerLabel.textContent = 'Model';
   corner.appendChild(cornerLabel);
-  htr.appendChild(corner);
-  for (const name of names) {
+  groupTr.appendChild(corner);
+  for (const section of sections) {
+    const th = document.createElement('th');
+    th.scope = 'colgroup';
+    th.colSpan = section.rows.length;
+    th.className = 'metrics-section-head';
+    th.textContent = section.label;
+    groupTr.appendChild(th);
+  }
+  if (withActions) {
     const th = document.createElement('th');
     th.scope = 'col';
-    const head = document.createElement('div');
-    head.className = 'model-col-head';
-    const colName = document.createElement('span');
-    colName.className = 'col-model-name';
-    colName.textContent = name;
-    head.appendChild(colName);
-    th.appendChild(head);
-    htr.appendChild(th);
+    th.rowSpan = 2;
+    th.className = 'metric-label';
+    th.dataset.metric = 'Actions';
+    th.textContent = 'Actions';
+    groupTr.appendChild(th);
   }
-  metricsHead.innerHTML = '';
-  metricsHead.appendChild(htr);
+
+  const keyTr = document.createElement('tr');
+  for (const section of sections) {
+    for (const row of section.rows) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.className = 'metric-label';
+      // Named, so the column that changes under the pen can be found and
+      // refilled without rebuilding the table around it.
+      th.dataset.metric = row.key;
+      th.textContent = row.key;
+      if (row.note) {
+        th.classList.add('has-note');
+        th.title = row.note;
+      }
+      keyTr.appendChild(th);
+    }
+  }
+  metricsHead.replaceChildren(groupTr, keyTr);
+}
+
+/** The sections, dropping every metric and section no model has a value for. */
+function visibleSections(entries: [string, ModelInfo][], labels: string[]): MetricSection[] {
+  return metricSections(labels)
+    .map((section) => ({
+      label: section.label,
+      rows: section.always
+        ? section.rows
+        : section.rows.filter((row) => entries.some(([n, m]) => row.fn(m, n) !== '—')),
+    }))
+    .filter((section) => section.rows.length > 0);
 }
 
 function buildMetricsTable(): void {
@@ -892,42 +1001,69 @@ function buildMetricsTable(): void {
     return;
   }
 
-  buildMetricsHead(entries.map(([name]) => name));
-
-  metricsBody.innerHTML = '';
-  for (const section of metricSections(labels)) renderMetricSection(section, entries);
+  // An in-browser model has no backend to ablate, export or remove against, so
+  // the column appears only once one of the models can use it.
+  const withActions = entries.some(([, m]) => !m._local);
+  const sections = visibleSections(entries, labels);
+  buildMetricsHead(sections, withActions);
+  metricsBody.replaceChildren(
+    ...entries.map(([name, m]) => modelRow(name, m, sections, withActions)),
+  );
 }
 
-/** A row only earns its place if some model has a value for it. */
-function renderMetricSection(section: MetricSection, entries: [string, ModelInfo][]): void {
-  const rows = section.rows.filter((row) => entries.some(([, m]) => row.fn(m) !== '—'));
-  if (rows.length === 0) return;
-  const sepTr = document.createElement('tr');
-  sepTr.className = 'metrics-section-row';
-  const sepTd = document.createElement('td');
-  sepTd.colSpan = entries.length + 1;
-  sepTd.textContent = section.label;
-  sepTr.appendChild(sepTd);
-  metricsBody.appendChild(sepTr);
-
-  for (const row of rows) {
-    const tr = document.createElement('tr');
-    if (row.rowCls) tr.className = row.rowCls;
-    const labelTh = document.createElement('th');
-    labelTh.scope = 'row';
-    labelTh.className = 'metric-label';
-    labelTh.textContent = row.key;
-    tr.appendChild(labelTh);
-    for (const [, m] of entries) {
-      const td = document.createElement('td');
-      if (row.cls) td.className = row.cls;
-      const val = row.fn(m);
-      if (row.html) td.innerHTML = val;
-      else td.textContent = val;
-      tr.appendChild(td);
-    }
-    metricsBody.appendChild(tr);
+/** One model: its name, then a cell under every column the table drew. */
+function modelRow(
+  name: string,
+  m: ModelInfo,
+  sections: MetricSection[],
+  withActions: boolean,
+): HTMLTableRowElement {
+  const tr = document.createElement('tr');
+  // Named, so the cells that change under the pen can be found by model.
+  tr.dataset.model = name;
+  const nameTh = document.createElement('th');
+  nameTh.scope = 'row';
+  nameTh.className = 'col-model-name';
+  nameTh.textContent = name;
+  tr.appendChild(nameTh);
+  for (const section of sections) {
+    for (const row of section.rows) tr.appendChild(metricCell(row, m, name));
   }
+  if (withActions) tr.appendChild(actionsCell(name, m));
+  return tr;
+}
+
+/** Ablate, export and remove, on the row of the model each acts on. */
+function actionsCell(name: string, m: ModelInfo): HTMLTableCellElement {
+  const td = document.createElement('td');
+  td.className = 'model-actions';
+  td.dataset.metric = 'Actions';
+  if (m._local) return td;
+  if (!m._virtual) td.append(...serverModelActions(name));
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 's6-btn s6-btn--icon s6-btn--danger';
+  removeBtn.dataset.remove = name;
+  removeBtn.setAttribute('aria-label', 'Remove ' + name);
+  removeBtn.textContent = '×';
+  td.appendChild(removeBtn);
+  return td;
+}
+
+/** One cell of a metric column: the metric builds it, or it is text. */
+function metricCell(row: MetricRow, m: ModelInfo, name: string): HTMLTableCellElement {
+  let td: HTMLTableCellElement;
+  if (row.node) {
+    td = row.node(m, name);
+  } else {
+    td = document.createElement('td');
+    if (row.cls) td.className = row.cls;
+    const val = row.fn(m, name);
+    if (row.html) td.innerHTML = val;
+    else td.textContent = val;
+  }
+  if (row.cellCls) td.classList.add(row.cellCls);
+  td.dataset.metric = row.key;
+  return td;
 }
 
 // Load models from server on page load
@@ -940,7 +1076,7 @@ async function loadModels(): Promise<void> {
       if (info?.model_type) state.models[name] = { eval_result: null, ...info };
     }
   } catch (err) {
-    addLog(`Couldn't load the live models — ${errText(err)}`, 'err');
+    modelsStatus.textContent = `Couldn't load the live models — ${errText(err)}`;
     return;
   }
   buildMetricsTable();
@@ -962,7 +1098,7 @@ async function loadModelTypes(): Promise<void> {
       : [];
     modelTypeSelect.replaceChildren(...types.map((t) => new Option(t, t)));
   } catch (err) {
-    addLog(`Couldn't load the model types — ${errText(err)}`, 'err');
+    trainStatus.textContent = `Couldn't load the model types — ${errText(err)}`;
   }
   modelNameInput.value = defaultName(modelTypeSelect.value);
   applyTier();
@@ -1064,7 +1200,6 @@ trainBtn.addEventListener('click', () => {
   void (async () => {
     const modelType = modelTypeSelect.value;
     if (!modelType) {
-      addLog('Choose a model type first: the list comes from the live backend.', 'err');
       return;
     }
     const epochs = parseInt(byId('epochs', HTMLInputElement).value, 10);
@@ -1087,14 +1222,6 @@ trainBtn.addEventListener('click', () => {
       body.teacher = teacher;
       body.distill_weight = distillW;
     }
-
-    logTerminal.innerHTML = '';
-    addLog(
-      `Training '${name}'  ·  ${modelType}  ·  ${String(epochs)} epoch${epochs !== 1 ? 's' : ''}  ·  lr ${String(lr)}`,
-    );
-    if (patience != null)
-      addLog(`Early stopping: patience=${String(patience)}, val every ${String(valGap)} batches`);
-    if (teacher) addLog(`Distillation: teacher='${teacher}', α=${String(distillW)}`);
 
     trainBtn.disabled = true;
     trainBtn.classList.add('btn-loading');
@@ -1125,7 +1252,6 @@ trainBtn.addEventListener('click', () => {
       syncUrl: `${base()}/train/sync`,
       onStatus(msg) {
         if (typeof msg === 'string') {
-          addLog(msg);
           return;
         }
         const hist = asHistoryEvent(msg);
@@ -1139,12 +1265,6 @@ trainBtn.addEventListener('click', () => {
           }
           trainChart.render();
         }
-        addLog(
-          `loss: ${hist.train_loss.toFixed(4)}` +
-            (hist.val_accuracy != null
-              ? `  val_acc: ${(hist.val_accuracy * 100).toFixed(1)}%`
-              : ''),
-        );
       },
       onDone(rawEvent) {
         const event = rawEvent as RawTrainDone;
@@ -1159,17 +1279,13 @@ trainBtn.addEventListener('click', () => {
           eval_result: null,
         };
         trained.name = event.name;
-        if (event.stopped_early)
-          addLog(`Early stopping triggered at epoch ${String(event.epochs_completed)}`, 'ok');
-        if (event.best_val_accuracy != null)
-          addLog(`Best val accuracy: ${(event.best_val_accuracy * 100).toFixed(1)}%`, 'ok');
         buildMetricsTable();
         buildPredictionTable();
         buildSessionModelsList();
         modelNameInput.value = defaultName(modelTypeSelect.value);
       },
       onError(err) {
-        addLog(`Error: ${err}`, 'err');
+        trainStatus.textContent = `Training failed — ${err}`;
       },
     });
 
@@ -1178,7 +1294,6 @@ trainBtn.addEventListener('click', () => {
     trainBtn.textContent = '▶ Train';
 
     if (trained.name) {
-      addLog(`'${trained.name}' trained successfully`, 'ok');
       await runEvaluate();
     }
   })();
@@ -1220,24 +1335,13 @@ async function runPredict(): Promise<void> {
     Object.assign(state.predictions, data.results);
     buildPredictionTable();
   } catch (err) {
-    addLog(`Live predict failed — ${errText(err)}`, 'err');
+    modelsStatus.textContent = `Live predict failed — ${errText(err)}`;
   }
-}
-
-/** One log line per prediction: each model's answer and its score. */
-function logPredictions(names: string[]): void {
-  const parts = names.flatMap((name) => {
-    const p = state.predictions[name];
-    if (!p) return [];
-    const score = p.qsvm ? margin(p.qsvm.s) : p.confidence != null ? pct(p.confidence) : '';
-    return [`${name} ${p.prediction}${score ? ` (${score})` : ''}`];
-  });
-  if (parts.length) addLog(`predict: ${parts.join(' · ')}`);
 }
 
 // Demo tier: run every in-browser model over the current canvas / feature
 // inputs, producing the same shape the server /predict returns. Each model
-// reads its own feature subset (the QSVM uses 2 of the 4 iris inputs).
+// reads the features it names, which can be a subset of the form's.
 async function runPredictLocal(): Promise<void> {
   const locals = modelEntries().filter(([, m]) => m._local);
   const image = window.UI_CONFIG?.input_type === 'image';
@@ -1262,7 +1366,6 @@ async function runPredictLocal(): Promise<void> {
   }
   markOutOfScope(locals);
   buildPredictionTable();
-  logPredictions(locals.map(([name]) => name));
 }
 
 /** The form's values in the order the model names its features. */
@@ -1274,8 +1377,9 @@ function featureValues(model: ClassifierModel): number[] {
 }
 
 /**
- * A binary model (the QSVM) answers every input with one of its two classes; when the
- * full model's answer is outside that pair, the binary answer is out of scope.
+ * A model that knows fewer classes than the dataset answers every input with one
+ * of the classes it has; when the full model's answer is not among them, that
+ * answer is out of scope. A model covering every class is never marked.
  */
 function markOutOfScope(locals: [string, ModelInfo][]): void {
   const reference = locals.find(([, m]) => !m._classes)?.[0];
@@ -1288,7 +1392,7 @@ function markOutOfScope(locals: [string, ModelInfo][]): void {
 
 // Client-side dataset switching
 
-// Build the tabular feature form (Iris, BB84) from the model's feature list + ranges:
+// Build the tabular feature form (Iris) from the model's feature list + ranges:
 // a slider to explore with and a box for the exact value, kept in step.
 function buildFeatureInputs(model: ClassifierModel): void {
   const wrap = document.querySelector('#tabular-col .feature-inputs');
@@ -1372,7 +1476,6 @@ async function switchDataset(name: string): Promise<void> {
   window.UI_CONFIG = ds;
   const image = ds.input_type === 'image';
   applyInputVisibility();
-  addLog(`dataset → ${ds.display_name}`);
   state.models = {};
   state.predictions = {};
   modelTypeSelect.replaceChildren();
@@ -1392,10 +1495,6 @@ async function switchDataset(name: string): Promise<void> {
   if (!image) void runPredictLocal();
 }
 
-if (predictBtn)
-  predictBtn.addEventListener('click', () => {
-    void runPredict();
-  });
 const predictBtnTab = document.getElementById('predict-btn-tab');
 if (predictBtnTab)
   predictBtnTab.addEventListener('click', () => {
@@ -1415,7 +1514,6 @@ clearBtn.addEventListener('click', () => {
   clearCanvas();
   state.predictions = {};
   buildPredictionTable();
-  addLog('canvas cleared');
 });
 
 // Saved models on disk
@@ -1440,7 +1538,7 @@ async function loadSavedModels(): Promise<void> {
       importBtn.disabled = false;
     }
   } catch (err) {
-    addLog(`Couldn't list the saved models — ${errText(err)}`, 'err');
+    savedStatus.textContent = `Couldn't list the saved models — ${errText(err)}`;
   }
 }
 savedSelect.addEventListener('change', () => {
@@ -1475,7 +1573,7 @@ importBtn.addEventListener('click', () => {
       modelNameInput.value = defaultName(modelTypeSelect.value);
       await runEvaluate();
     } catch (err) {
-      addLog(`Import failed — ${errText(err)}`, 'err');
+      savedStatus.textContent = `Import failed — ${errText(err)}`;
     } finally {
       importBtn.disabled = !savedSelect.value;
     }
@@ -1497,7 +1595,7 @@ document.addEventListener('click', (e) => {
       });
       await loadSavedModels();
     } catch (err) {
-      addLog(`Export failed — ${errText(err)}`, 'err');
+      savedStatus.textContent = `Export failed — ${errText(err)}`;
     } finally {
       btn.disabled = false;
     }
@@ -1542,7 +1640,6 @@ ensembleBtn.addEventListener('click', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model_names: names }),
       });
-      addLog(`Ensemble accuracy: ${(data.accuracy * 100).toFixed(1)}%`, 'ok');
       // Store as a virtual model for display
       state.models.Ensemble = {
         model_type: 'Ensemble',
@@ -1561,7 +1658,7 @@ ensembleBtn.addEventListener('click', () => {
       };
       buildMetricsTable();
     } catch (err) {
-      addLog(`Ensemble error — ${errText(err)}`, 'err');
+      modelsStatus.textContent = `Ensemble failed — ${errText(err)}`;
     } finally {
       ensembleBtn.disabled = false;
       ensembleBtn.textContent = 'Ensemble';
@@ -1578,7 +1675,7 @@ document.addEventListener('click', (e) => {
   if (!btn || !modelName) return;
   void (async () => {
     btn.disabled = true;
-    addLog(`Running ablation study on '${modelName}'…`);
+    ablationStatus.textContent = `Ablating ${modelName}…`;
 
     await consumeSSE(
       `${base()}/ablation`,
@@ -1586,25 +1683,24 @@ document.addEventListener('click', (e) => {
       {
         fetchImpl: apiFetch,
         onStatus(msg) {
-          if (typeof msg === 'string') {
-            addLog(msg);
-            return;
-          }
+          if (typeof msg === 'string') return;
+          // One event per ablated layer, so the layer name is what tells them
+          // apart; without it a four-layer model reports four identical rows.
           if (
             msg.type === 'ablation_result' &&
-            typeof msg.accuracy === 'number' &&
+            typeof msg.layer === 'string' &&
             typeof msg.drop === 'number'
           ) {
-            addLog(
-              `  ${String(msg.layer)}: acc=${(msg.accuracy * 100).toFixed(1)}%, drop=${(msg.drop * 100).toFixed(1)}%`,
-            );
+            const model = state.models[modelName];
+            if (model) model.ablation = { ...model.ablation, [msg.layer]: msg.drop };
           }
         },
         onDone() {
-          addLog(`Ablation complete for '${modelName}'`, 'ok');
+          buildMetricsTable();
+          ablationStatus.textContent = '';
         },
         onError(err) {
-          addLog(`Ablation error: ${err}`, 'err');
+          ablationStatus.textContent = `Ablation failed — ${err}`;
         },
       },
     );
@@ -1644,18 +1740,12 @@ function applyTier(): void {
 document.addEventListener('connection:statechange', (e) => {
   const { state: s, previous } = (e as CustomEvent<{ state: string; previous: string }>).detail;
   applyTier();
-  if (s === 'connecting')
-    addLog(connectionManager.everConnected ? 'Reconnecting…' : 'Connecting to the live backend…');
-  if (s === 'degraded') addLog('Missed a heartbeat: checking the live backend…');
-  if (s === 'connected' && previous === 'degraded') addLog('The live backend answered', 'ok');
   if (s === 'connected' && previous !== 'degraded') {
-    addLog('Connected to the live backend', 'ok');
     void loadModels();
     void loadSavedModels();
     void loadModelTypes();
   }
   if (s === 'disconnected' && (previous === 'connected' || previous === 'degraded')) {
-    addLog('Lost the live backend: predictions are back in your browser', 'err');
     dropServerModels();
   }
 });
@@ -1664,13 +1754,13 @@ document.addEventListener('connection:statechange', (e) => {
 
 /** A shipped weight file as a session model, with its real test accuracy. */
 function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
+  const quantum = model.kind === 'qsvm' || model.kind === 'qsvm-ovo';
   const numParams =
-    model.kind === 'qsvm'
+    model.kind === 'qsvm' || model.kind === 'qsvm-ovo'
       ? (model.num_params ?? null)
       : model.weight.length * (model.weight[0]?.length ?? 0) + model.bias.length;
-  const prov = model.provenance;
   return {
-    model_type: model.kind === 'qsvm' ? 'QSVM' : 'Linear',
+    model_type: quantum ? 'QSVM' : 'Linear',
     epochs: '—',
     batch_size: '—',
     lr: null,
@@ -1684,11 +1774,13 @@ function localModelInfo(model: ClassifierModel, file: string): ModelInfo {
     },
     _local: true,
     _file: file,
-    _subset: model.display?.subset,
-    _classes: model.kind === 'qsvm' ? [...model.classes] : undefined,
-    _provenance: prov?.source_sha
-      ? `weights · ${prov.source_sha.slice(0, 7)}${prov.exported_at ? ` · ${prov.exported_at}` : ''}`
-      : undefined,
+    _classes: quantum ? [...model.classes] : undefined,
+    _features: model.features ? [...model.features] : undefined,
+    _accCi: model.test_accuracy_ci,
+    _testN: model.test_n,
+    _testProtocol: model.test_protocol,
+    _cvAccuracy: model.kind === 'qsvm-ovo' ? model.cv_accuracy : undefined,
+    _cvSplits: model.kind === 'qsvm-ovo' ? model.cv_splits : undefined,
     _cite: /\(([^)]*)\)$/.exec(model.display?.label ?? '')?.[1],
   };
 }
@@ -1706,11 +1798,13 @@ async function initLocalModels(): Promise<void> {
     } catch {
       continue; // model asset missing — degrade to whatever loaded
     }
-    // "QSVM (Yang et al. 2019)" is listed as "QSVM", with the citation in its Models row.
-    const label = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
+    // "QSVM (Yang et al. 2019)" is listed as "QSVM (6 vs 9)": the citation moves to
+    // the Models row, and the two classes it knows take its place in the name.
+    const base = model.display?.label?.replace(/\s*\(.*\)$/, '') ?? 'Logistic Regression';
+    const subset = model.display?.subset;
+    const label = subset ? `${base} (${subset})` : base;
     const info = localModelInfo(model, file);
     state.models[label] = info;
-    addLog(`weights loaded: ${label} · ${info.num_params?.toLocaleString() ?? '?'} params`);
   }
   buildSessionModelsList();
   buildMetricsTable();
@@ -1722,7 +1816,5 @@ async function initLocalModels(): Promise<void> {
 void initLocalModels();
 renderDatasetMenu();
 applyTier();
-if (isOffline())
-  addLog('Running in your browser: predictions are local; training needs the live backend.');
 modelNameInput.value = defaultName(modelTypeSelect.value);
 void fetchModelInfo(modelTypeSelect.value);

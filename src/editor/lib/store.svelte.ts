@@ -5,7 +5,7 @@
 // reactive state like `activeVariantId` stays here. The core the save infra exists
 // for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
 
-import type { Person, Personal, Selection, Section, Entry, Item } from './types';
+import type { Person, Personal, Section, Entry, Item } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type PersonMeta, type ApiResult } from './api';
@@ -22,7 +22,8 @@ import { UndoController } from './undo.svelte';
 import { humanize, FieldShadow } from './undo';
 import { ProfileCache } from './profile-cache';
 import type { SaveHost } from './host';
-import { move } from './util';
+import { move, pdfFileName } from './util';
+import { exportLinkedin } from './linkedin';
 
 /** Trigger a client-side download of `data` as a pretty-printed JSON file. */
 function downloadJson(data: unknown, filename: string) {
@@ -53,10 +54,9 @@ class EditorState {
   /** The person currently being edited (demo until a backend is connected). */
   person = $state<Person>(createDemoPerson());
   /** The owner's identity — name + public contacts — overlaid onto the demo person
-   *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo and the
-   *  tour re-apply it after re-cloning the pristine sample. Never committed PII. */
+   *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo
+   *  re-applies it after re-cloning the pristine sample. Never committed PII. */
   private demoIdentity: Partial<Personal> | null = null;
-  selection = $state<Selection>({ kind: 'none' });
   connected = $state(false);
   saveState = $state<'demo' | 'saved' | 'saving' | 'error'>('demo');
   /** Human-readable save-failure message for the toast (null → no toast shown). */
@@ -76,6 +76,9 @@ class EditorState {
   /** the active variant lens (null = Main, the full document). */
   activeVariantId = $state<number | null>(null);
   dirty = $state(false);
+  /** When this document was last changed in this session, for the PDF's name. Null
+   *  until an edit happens, and null again after a reload: nothing stores the date. */
+  lastEditedAt = $state<number | null>(null);
   connecting = $state(false);
   connectError = $state<null | 'signin' | 'offline'>(null);
   signingIn = $state(false);
@@ -111,15 +114,25 @@ class EditorState {
   );
   /** label for the toolbar/titlebar — the active variant's name or "Main". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
+  /**
+   * What a compiled PDF downloads as: the day, whose resume it is, and which variant.
+   * A getter, so an unedited document reads today's date at the moment it compiles —
+   * a memoised value keeps yesterday's across midnight.
+   */
+  get pdfName(): string {
+    return pdfFileName(
+      `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
+      this.variantLabel,
+      this.lastEditedAt == null ? new Date() : new Date(this.lastEditedAt),
+    );
+  }
   /** true when the active variant is a cover letter — the editor swaps to letter mode. */
   letterMode = $derived(this.activeVariant?.kind === 'coverletter');
   /** the save infra every slice-controller composes. */
   private saveHost: SaveHost = {
     connected: () => this.connected,
     nextId: () => this.seq++,
-    markDirty: () => {
-      this.dirty = true;
-    },
+    markDirty: () => this.touch(),
     setSaving: () => {
       this.saveState = 'saving';
     },
@@ -184,7 +197,7 @@ class EditorState {
   /** the active profile's switcher label (its person "name"); demo → the CV name. */
   profileLabel = $derived(
     this.noProfiles
-      ? 'No profiles'
+      ? 'No resumes'
       : this.persons.find((p) => p.id === this.activePersonId)?.name ||
           `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
           'Demo',
@@ -202,26 +215,6 @@ class EditorState {
   // pre-edit values; #cache keeps visited profiles' trees so a switch keeps undo.
   #shadow = new FieldShadow();
   #cache = new ProfileCache();
-
-  /** A demo visitor's own edited document, held while the guided tour drives a
-   *  pristine sample, and put back when it ends. */
-  #demoResume: { doc: Person; dirty: boolean } | null = null;
-
-  /**
-   * The signed-in owner's real document, view and save status, captured when they
-   * start the guided tour so it can drive their live CV and then put everything
-   * back untouched. Null unless a connected tour is staged (the demo uses
-   * #demoResume).
-   */
-  #tourResume: {
-    doc: Person;
-    selection: Selection;
-    activeVariantId: number | null;
-    openDrawer: null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles' | 'history';
-    highlight: string | null;
-    dirty: boolean;
-    saveState: 'demo' | 'saved' | 'saving' | 'error';
-  } | null = null;
 
   /**
    * NOTE — the `$state` proxy trap. Pushing a raw object into a reactive array and
@@ -244,17 +237,9 @@ class EditorState {
     this.#shadow.reseat(this.person, this.style);
   }
 
-  select(sel: Selection) {
-    this.selection = sel;
-  }
-
-  clearSelection() {
-    this.selection = { kind: 'none' };
-  }
-
   /** Flag unsaved edits (used in demo, where there's no backend to save to). */
   edited() {
-    this.dirty = true;
+    this.touch();
   }
 
   private timers: Record<string, ReturnType<typeof setTimeout>> = {};
@@ -301,6 +286,14 @@ class EditorState {
     this.settle(res.ok, retry);
     return res;
   }
+  /**
+   * Raise the error toast with a message of our own, for a failure that is not a
+   * save: the document is unchanged, so the save indicator stays as it was.
+   */
+  private fail(msg: string) {
+    this.retryOp = null;
+    this.saveError = msg;
+  }
   /** Re-fire the stashed retry (used by the error toast). */
   retrySave() {
     const fn = this.retryOp;
@@ -311,10 +304,14 @@ class EditorState {
   dismissError() {
     this.saveError = null;
   }
+  /** Mark the document changed, and note when — the PDF is named after that day. */
+  private touch() {
+    this.dirty = true;
+    this.lastEditedAt = Date.now();
+  }
   /**
-   * Speak through the editor's single aria-live region. Public so the guided tour
-   * can narrate its captions here rather than mount a second live region — two of
-   * them talk over each other.
+   * Speak through the editor's single aria-live region — one region for the whole
+   * editor, so announcements never talk over each other.
    */
   narrate(msg: string) {
     this.say(msg);
@@ -340,7 +337,7 @@ class EditorState {
         redo: () => this.applyEntryField(entry, key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving'; // immediate pending indicator; the debounced push settles it
     this.debounce(`entry.${entry.id}`, () => this.pushEntry(entry));
@@ -349,7 +346,7 @@ class EditorState {
   private applyEntryField(entry: Entry, key: string, value: string) {
     entry.fields[key] = value;
     this.#shadow.patch(entry, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.pushEntry(entry);
   }
@@ -373,7 +370,7 @@ class EditorState {
         redo: () => this.applyItemField(item, key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`item.${item.id}`, () => this.pushItem(item));
@@ -382,7 +379,7 @@ class EditorState {
     if (key === 'title') item.title = value;
     else item.content = value;
     this.#shadow.patch(item, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.pushItem(item);
   }
@@ -404,7 +401,7 @@ class EditorState {
         redo: () => this.applyPersonalField(change.key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     this.saveState = 'saving';
@@ -413,7 +410,7 @@ class EditorState {
   private applyPersonalField(key: string, value: string) {
     (this.person.personal as Record<string, string>)[key] = value;
     this.#shadow.patch(this.person.personal, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     this.pushPersonal(this.activePersonId, key);
   }
@@ -444,8 +441,7 @@ class EditorState {
     const entry = this.live(section.entries, index); // the proxy that replaced the literal
     this.#shadow.seed(entry, entry.fields);
     const tempId = entry.id;
-    this.select({ kind: 'entry', sectionId: section.id, entryId: tempId });
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add entry',
@@ -459,13 +455,9 @@ class EditorState {
     const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (res.ok && res.data) {
       entry.id = res.data.id; // reconcile temp id → server id
-      if (this.selection.kind === 'entry' && this.selection.entryId === tempId) {
-        this.selection = { kind: 'entry', sectionId: section.id, entryId: res.data.id };
-      }
       remember(); // only a create that stuck is worth undoing
     } else {
       section.entries = section.entries.filter((e) => e.id !== tempId); // roll back the phantom
-      this.clearSelection();
     }
   }
   async deleteEntry(section: Section, entryId: number) {
@@ -483,14 +475,13 @@ class EditorState {
   private async detachEntry(section: Section, entry: Entry) {
     const id = entry.id;
     section.entries = section.entries.filter((e) => e.id !== id);
-    this.clearSelection();
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteEntry(id));
   }
   /** Put an entry back, re-creating its row, bullets and tags. Every id is new. */
   private async attachEntry(section: Section, entry: Entry, index: number) {
     section.entries.splice(Math.min(index, section.entries.length), 0, entry);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const res = await this.persist(() => api.createEntry(section.id, entry.fields));
     if (!res.ok || !res.data) {
@@ -516,7 +507,7 @@ class EditorState {
     entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
     const item = this.live(entry.items, index);
     this.#shadow.seedItem(item);
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add bullet',
@@ -535,21 +526,6 @@ class EditorState {
       entry.items = entry.items.filter((i) => i.id !== item.id); // roll back the phantom
     }
   }
-  /**
-   * Add a bullet that never touches the network and records no undo — the guided
-   * tour's one scripted mutation. In demo it's the same local write a real click
-   * makes, and it simply stays (nothing is saved anyway). When a signed-in owner
-   * takes the tour, stageTour/unstageTour sandbox it: this bullet lives only in
-   * memory and is wiped when the tour ends, so their real CV is never altered.
-   */
-  addEphemeralBullet(entry: Entry): Item {
-    const index = entry.items.length;
-    entry.items.push({ id: this.seq++, content: '', title: '', tags: [] });
-    const item = this.live(entry.items, index);
-    this.#shadow.seedItem(item);
-    this.dirty = true;
-    return item;
-  }
   async deleteBullet(entry: Entry, itemId: number) {
     const index = entry.items.findIndex((i) => i.id === itemId);
     if (index < 0) return;
@@ -564,12 +540,12 @@ class EditorState {
   private async detachBullet(entry: Entry, item: Item) {
     const id = item.id;
     entry.items = entry.items.filter((i) => i.id !== id);
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteItem(id));
   }
   private async attachBullet(entry: Entry, item: Item, index: number) {
     entry.items.splice(Math.min(index, entry.items.length), 0, item);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const res = await this.persist(() =>
       api.createItem(entry.id, { content: item.content, title: item.title ?? '' }),
@@ -598,7 +574,7 @@ class EditorState {
     const section = this.live(this.person.sections, index);
     const tempId = section.id;
     this.scrollTarget = section.id;
-    this.dirty = true;
+    this.touch();
     const remember = () =>
       this.undo.record({
         label: 'Add section',
@@ -633,15 +609,14 @@ class EditorState {
   private async detachSection(section: Section) {
     const id = section.id;
     this.person.sections = this.person.sections.filter((s) => s.id !== id);
-    this.clearSelection();
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.deleteSection(id));
   }
   /** Re-create a section and everything inside it. All ids are new; objects are not. */
   private async attachSection(section: Section, index: number) {
     this.person.sections.splice(Math.min(index, this.person.sections.length), 0, section);
     this.scrollTarget = section.id;
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     const res = await this.persist(() =>
@@ -677,7 +652,7 @@ class EditorState {
       undo: () => this.reorderEntries(section, to, from),
       redo: () => this.reorderEntries(section, from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const ids = section.entries.map((e) => e.id);
     await this.persist(() => api.reorderEntries(section.id, ids));
@@ -690,7 +665,7 @@ class EditorState {
       undo: () => this.reorderItems(entry, to, from),
       redo: () => this.reorderItems(entry, from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     const ids = entry.items.map((i) => i.id);
     await this.persist(() => api.reorderItems(entry.id, ids));
@@ -703,7 +678,7 @@ class EditorState {
       undo: () => this.reorderSections(to, from),
       redo: () => this.reorderSections(from, to),
     });
-    this.dirty = true;
+    this.touch();
     if (!this.connected || this.activePersonId == null) return;
     const pid = this.activePersonId;
     const ids = this.person.sections.map((s) => s.id);
@@ -736,7 +711,7 @@ class EditorState {
         redo: () => this.applyStyle(key, next),
       });
     }
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     this.saveState = 'saving';
     this.debounce(`style.${field}`, () => {
@@ -747,7 +722,7 @@ class EditorState {
   private applyStyle(key: string, value: string) {
     (this.style as Record<string, string>)[key] = value;
     this.#shadow.patch(this.style, key, value);
-    this.dirty = true;
+    this.touch();
     if (!this.connected) return;
     void this.persist(() => api.patchSettings({ [`style.${key}`]: value }));
   }
@@ -761,23 +736,31 @@ class EditorState {
   }
   async chooseLayout(id: string) {
     this.defaultLayout = id;
-    this.dirty = true;
+    this.touch();
     await this.persist(() => api.setDefaultLayout(id));
   }
 
   /**
-   * Download the current résumé as import-compatible JSON. Connected profiles use
+   * The stem both JSON exports share. Keeps Unicode letters (non-Latin names);
+   * strips only filesystem-unsafe characters and leading/trailing dots or spaces
+   * (`\w` would flatten accents to dashes).
+   */
+  private exportLabel(): string {
+    return (
+      (this.profileLabel || 'resume')
+        .replace(/[/\\:*?"<>|\x00-\x1f]+/g, '-')
+        .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume'
+    );
+  }
+
+  /**
+   * Download the current resume as import-compatible JSON. Connected profiles use
    * the authoritative backend export; the local demo (and any unsaved edits) is
    * serialized client-side. Either way it re-imports losslessly.
    */
   async exportJson() {
     if (this.noProfiles) return;
-    // Keep Unicode letters (résumé, non-Latin names); strip only filesystem-unsafe
-    // characters + leading/trailing dots/spaces (\w would flatten accents to dashes).
-    const label =
-      (this.profileLabel || 'resume')
-        .replace(/[/\\:*?"<>|\x00-\x1f]+/g, '-')
-        .replace(/^[-.\s]+|[-.\s]+$/g, '') || 'resume';
+    const label = this.exportLabel();
     let data: unknown;
     if (this.connected && this.activePersonId != null) {
       const res = await api.exportPerson(this.activePersonId);
@@ -790,6 +773,31 @@ class EditorState {
       data = this.localExport();
     }
     downloadJson(data, `${label}.json`);
+  }
+
+  /**
+   * The work history as LinkedIn-ready blocks. The same transform the cv backend
+   * runs, done here so a demo session gets the same file without an account.
+   */
+  async exportLinkedin() {
+    if (this.noProfiles) return;
+    try {
+      const data = await exportLinkedin(this.person.sections, this.activeVariant);
+      downloadJson(data, `${this.exportLabel()}-linkedin.json`);
+    } catch {
+      // The fingerprints come from WebCrypto, which an insecure origin withholds.
+      this.fail("Couldn't build the LinkedIn file — this page has to be served over HTTPS.");
+    }
+  }
+
+  /** Save the compiled PDF, under the name the preview bar shows. */
+  downloadPdf() {
+    const url = this.preview.url;
+    if (!url || typeof document === 'undefined') return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = this.pdfName;
+    a.click();
   }
 
   /** The working document as an import-compatible tree, serialized client-side. */
@@ -811,12 +819,12 @@ class EditorState {
     this.activePersonId = pid;
     this.connected = true;
     this.saveState = 'saved';
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
     this.preview.reset();
     this.dirty = false;
+    this.lastEditedAt = null;
     this.undo.setScope(`p${pid}`);
     if (fresh) {
       // Cache the reactive proxy (`this.person`) so undo commands and
@@ -837,12 +845,11 @@ class EditorState {
    */
   restoreDocument(doc: Person) {
     this.person = doc;
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
     this.scrollTarget = null;
-    this.dirty = true;
+    this.touch();
     this.saveState = 'demo';
     this.rebase('demo');
     this.say('Document restored to the selected checkpoint.');
@@ -892,7 +899,7 @@ class EditorState {
       section.entries.push(copy);
       this.scrollTarget = section.id;
     }
-    this.dirty = true;
+    this.touch();
     this.undo.clear();
     this.#shadow.reseat(this.person, this.style);
     this.say('Restored one entry from the checkpoint.');
@@ -902,7 +909,7 @@ class EditorState {
   /**
    * Overlay the owner's identity (name + public contacts, resolved from siteConfig
    * on the server and handed down as the editor's `identity` prop) onto the demo person.
-   * Stored so resetDemo and the tour keep it across re-clones. A no-op once connected —
+   * Stored so resetDemo keeps it across re-clones. A no-op once connected —
    * the real CV brings its own identity. Runs at mount, so the first paint already
    * shows the owner's contact fields.
    */
@@ -920,7 +927,6 @@ class EditorState {
     if (this.connected) return;
     const before = this.dirty ? $state.snapshot(this.person) : null;
     const beforeDirty = this.dirty;
-    this.#demoResume = null; // an explicit reset is the visitor's fresh start
     this.applyPristineDemo();
     this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
     // The reset itself is undoable, so "Reset demo" is never a one-way door.
@@ -934,29 +940,41 @@ class EditorState {
         },
       });
     }
-    this.say('Demo reset — the sample résumé is back to its original state.');
+    this.say('Demo reset — the sample resume is back to its original state.');
   }
 
   /**
-   * Reset from the UI (File ▸ Reset demo, the tour's closing panel): asks first when
-   * the visitor has edits, since those edits are the only copy.
+   * Empty the demo down to a blank document, so a visitor can see what starting from
+   * scratch is like. Demo only. Undoable, like the reset it replaced: emptying a
+   * document someone has been editing asks for a way back.
    */
-  requestResetDemo() {
+  clearDemo() {
     if (this.connected) return;
-    if (
-      this.dirty &&
-      typeof window !== 'undefined' &&
-      !window.confirm('Discard your changes and restore the sample résumé? You can undo this.')
-    ) {
-      return;
-    }
-    this.resetDemo();
+    const before = $state.snapshot(this.person);
+    const beforeDirty = this.dirty;
+    this.applyEmptyDemo();
+    this.rebase('demo'); // the blank tree is fresh objects; nothing on the stack points at them
+    this.undo.record({
+      label: 'Clear resume',
+      undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
+      redo: () => {
+        this.applyEmptyDemo();
+        this.#shadow.reseat(this.person, this.style);
+      },
+    });
+    this.say('Emptied — undo brings the resume back.');
   }
 
-  /** The pristine sample in place of the working document (no undo bookkeeping). */
-  private applyPristineDemo() {
-    this.person = createDemoPerson(this.demoIdentity ?? undefined);
-    this.selection = { kind: 'none' };
+  /** A blank document in place of the working one (no undo bookkeeping). */
+  private applyEmptyDemo() {
+    this.person = {
+      id: this.person.id,
+      name: '',
+      personal: {},
+      sections: [],
+      variants: [],
+      coverletter: this.person.coverletter,
+    };
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
@@ -965,13 +983,28 @@ class EditorState {
     this.openDrawer = null;
     this.scrollTarget = null;
     this.dirty = false;
+    this.lastEditedAt = null;
     this.saveState = 'demo';
   }
 
-  /** Put a demo document back (undoing a reset, or ending the tour). */
+  /** The pristine sample in place of the working document (no undo bookkeeping). */
+  private applyPristineDemo() {
+    this.person = createDemoPerson(this.demoIdentity ?? undefined);
+    this.activeVariantId = null;
+    this.letters.clear();
+    this.history.clear();
+    this.preview.reset();
+    this.tags.highlight = null;
+    this.openDrawer = null;
+    this.scrollTarget = null;
+    this.dirty = false;
+    this.lastEditedAt = null;
+    this.saveState = 'demo';
+  }
+
+  /** Put a demo document back (undoing a reset). */
   private adoptDemoDocument(doc: Person, dirty: boolean) {
     this.person = doc;
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
@@ -981,74 +1014,6 @@ class EditorState {
     this.#shadow.reseat(this.person, this.style);
   }
 
-  /**
-   * Stage the guided tour. Demo → hold the visitor's edits (if any) and drive the
-   * pristine sample (determinism beats continuity). A signed-in owner → snapshot
-   * their live document, view and save status so the tour can drive the real CV and
-   * restore it afterwards; nothing the tour does will persist or outlive it.
-   */
-  stageTour() {
-    if (!this.connected) {
-      // The tour needs the pristine sample to drive, but a visitor's own edits are
-      // held and put back when it ends.
-      const keep = this.dirty ? { doc: $state.snapshot(this.person), dirty: true } : null;
-      this.applyPristineDemo();
-      this.rebase('demo');
-      this.#demoResume = keep;
-      return;
-    }
-    this.#tourResume = {
-      doc: $state.snapshot(this.person),
-      selection: $state.snapshot(this.selection),
-      activeVariantId: this.activeVariantId,
-      openDrawer: this.openDrawer,
-      highlight: this.tags.highlight,
-      dirty: this.dirty,
-      saveState: this.saveState,
-    };
-  }
-
-  /**
-   * Tear down the guided tour. Demo → put back the visitor's own edits if they had
-   * any; otherwise leave the sample as the tour left it (the visitor keeps
-   * exploring; nothing is saved regardless). A signed-in owner → restore the captured document, view and save status, wiping every
-   * ephemeral edit. Re-activates the snapshot so the cache, shadow and undo scope
-   * follow the fresh objects; the old undo stack can't replay against them, so it
-   * is dropped (the tour clears undo when it visits a cover letter anyway).
-   */
-  unstageTour() {
-    if (!this.connected) {
-      const mine = this.#demoResume;
-      this.#demoResume = null;
-      if (mine) {
-        this.adoptDemoDocument(mine.doc, mine.dirty);
-        this.rebase('demo'); // the tour's commands point at the sample; they can't replay here
-        this.say('Tour over — your edits are back.');
-      }
-      return;
-    }
-    const resume = this.#tourResume;
-    this.#tourResume = null;
-    if (!resume) return;
-    const pid = this.activePersonId;
-    if (pid != null) {
-      this.#cache.drop(pid);
-      this.activate(resume.doc, pid, true);
-      this.undo.clear();
-    } else {
-      this.person = resume.doc;
-      this.#shadow.reseat(this.person, this.style);
-    }
-    // activate() resets the view to a clean Main; put the owner back where they were.
-    this.selection = resume.selection;
-    this.openDrawer = resume.openDrawer;
-    this.tags.highlight = resume.highlight;
-    this.scrollTarget = null;
-    this.dirty = resume.dirty;
-    this.saveState = resume.saveState;
-    if (resume.activeVariantId != null) this.variants.select(resume.activeVariantId);
-  }
-
   /** Connected but with no profiles — shows the "create your first profile" prompt. */
   enterEmpty() {
     this.person = EMPTY_PERSON;
@@ -1056,11 +1021,11 @@ class EditorState {
     this.activePersonId = null;
     this.connected = true;
     this.saveState = 'saved';
-    this.selection = { kind: 'none' };
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
     this.dirty = false;
+    this.lastEditedAt = null;
     this.rebase('empty');
   }
 
@@ -1070,7 +1035,7 @@ class EditorState {
     this.connecting = true;
     this.connectError = null;
     // Who is signed in drives the account menu, even for a brand-new account whose
-    // empty state has no résumés yet.
+    // empty state has no resumes yet.
     const who = await api.me();
     this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
     // Not signed in ⇒ stay in the local demo. The cv backend answers anonymous
@@ -1080,6 +1045,7 @@ class EditorState {
     // signing in re-runs connect() and loads your data.
     if (!this.identity) {
       this.connecting = false;
+      this.showPublishedResume();
       return;
     }
     const res = await api.fetchActive();
@@ -1109,6 +1075,14 @@ class EditorState {
       this.connectError = health.ok ? 'signin' : 'offline';
     }
     this.connecting = false;
+    // Signed in, but nothing loaded: this session compiles as little as the demo
+    // does, so it gets the published PDF too.
+    this.showPublishedResume();
+  }
+
+  /** Nothing here can compile — put the site's published resume in the preview. */
+  private showPublishedResume() {
+    void this.preview.loadPublished();
   }
 
   /** Switch to another profile (the toolbar picker). */
@@ -1129,9 +1103,9 @@ class EditorState {
   async addPerson() {
     if (!this.connected) return;
     const existing = new Set(this.persons.map((p) => p.name));
-    let name = 'New profile';
+    let name = 'New resume';
     let n = 2;
-    while (existing.has(name)) name = `New profile ${n++}`;
+    while (existing.has(name)) name = `New resume ${n++}`;
     const res = await this.persist(() => api.createPerson(name));
     if (res.ok && res.data) {
       this.persons = [...this.persons, { id: res.data.id, name }];
@@ -1170,24 +1144,29 @@ class EditorState {
   }
 
   /**
-   * Sign in with Google (self-hosted OIDC). A full-page
-   * redirect to the gateway's /auth/login, which runs the Google flow and returns
-   * here with a session cookie; `redirect` carries the browser back to this editor.
+   * Make ready for the site menubar's Google sign-in, a same-tab redirect to the
+   * gateway's /auth/login that returns here with a session cookie. Keeps a demo
+   * visitor's edits so they can bring them into the account afterwards; returns
+   * false when they'd rather not go than lose them.
    */
-  signIn() {
-    if (typeof window === 'undefined') return;
-    // Sign-in is a same-tab redirect: keep the visitor's demo edits so they can
-    // bring them into their account afterwards. If this browser won't
-    // let us keep them, say so before they're lost.
+  prepareSignIn(): boolean {
+    if (typeof window === 'undefined') return true;
+    // If this browser won't let us keep the edits, say so before they're lost.
     if (!this.connected && this.dirty && !stashDemoDraft(this.localExport())) {
       const go = window.confirm(
         "This browser won't let the editor keep your demo edits through sign-in. " +
-          'Sign in anyway? (File ▸ Export as JSON saves a copy first.)',
+          'Sign in anyway? (Export ▸ JSON saves a copy first.)',
       );
-      if (!go) return;
+      if (!go) return false;
     }
     this.signingIn = true;
     this.connectError = null;
+    return true;
+  }
+
+  /** Start the sign-in from inside the editor (the drawers' inline offers). */
+  signIn() {
+    if (typeof window === 'undefined' || !this.prepareSignIn()) return;
     window.location.href = api.loginUrl(window.location.href);
   }
 
@@ -1207,7 +1186,7 @@ class EditorState {
       this.pendingDraft = null;
       this.persons = [...this.persons, { id, name: tree.name }];
       await this.selectPerson(id);
-      this.say('Your demo edits are now a profile in your account.');
+      this.say('Your demo edits are now a resume in your account.');
     } finally {
       this.importingDraft = false;
     }
@@ -1217,13 +1196,6 @@ class EditorState {
   discardDraft() {
     clearDemoDraft();
     this.pendingDraft = null;
-  }
-
-  /** Sign out: drop the server session, forget the identity, return to the demo. */
-  async signOut() {
-    await api.logout();
-    this.identity = null;
-    if (typeof window !== 'undefined') window.location.reload();
   }
 }
 

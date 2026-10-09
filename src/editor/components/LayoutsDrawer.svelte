@@ -1,5 +1,4 @@
 <script lang="ts">
-  import UiButton from './ui/Button.svelte';
   import { onMount } from 'svelte';
   import { editor } from '../lib/store.svelte';
 
@@ -8,13 +7,8 @@
   });
 </script>
 
-{#if !editor.connected}
-  <p class="note">
-    Layouts live on the server.
-    <UiButton variant="link" onclick={() => editor.signIn()}>Sign in</UiButton> to choose the LaTeX template
-    your PDF compiles with.
-  </p>
-{:else if editor.layouts.length === 0}
+<!-- Signed in only, like the Layout control that opens it. -->
+{#if editor.layouts.length === 0}
   <p class="note">The LaTeX template used to compile the PDF.</p>
   <p class="empty">No layouts available.</p>
 {:else}
@@ -66,7 +60,6 @@
     padding: 9px 11px;
     cursor: pointer;
     font-family: var(--sans);
-    box-shadow: var(--shadow-sm);
   }
 
   .row.on {
@@ -101,6 +94,6 @@
     margin-left: auto;
     font-size: var(--text-4xs);
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--ink);
   }
 </style>

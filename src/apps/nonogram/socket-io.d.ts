@@ -1,4 +1,4 @@
-// The Socket.IO client stays a vendored classic script (4.7.5, pinned to the backend's
+// The Socket.IO client stays a vendored classic script (4.8.4, pinned to the backend's
 // socket.io family) that the page loads before this bundle, so `io` is a global.
 // Minimal surface — only what the app uses.
 

@@ -24,11 +24,11 @@ interface Props {
   ogImage?: string;
   /** Pages that shouldn't be indexed (the 404): noindex and no canonical. */
   noindex?: boolean;
-  /** Full-bleed app pages (e.g. the CV editor): skip the portal chrome, keep head/SEO. */
-  bare?: boolean;
   /** Short pages that want their last block at the foot of the window rather than
    *  floating under the content. The slotted root becomes the growing flex child. */
   fillPane?: boolean;
+  /** The page scrolls its own regions (an app): the pane holds still around it. */
+  ownScroll?: boolean;
   /** Pages whose window should end where their content does, growing to the full
    *  height and scrolling inside once it needs more. */
   fitContent?: boolean;
@@ -40,10 +40,13 @@ const {
   description,
   ogImage = '/og-card.png',
   noindex,
-  bare,
   fitContent,
   fillPane,
+  ownScroll,
 } = Astro.props;
+
+// The pane's optional modifiers, kept out of the tag so its base classes stay on one line.
+const paneMods = { 'site-pane--fill': fillPane, 'site-pane--own-scroll': ownScroll };
 // Every title names the person: "Nonogram Solver - Name"; home is "Name - Job title".
 const pageTitle =
   docTitle ??
@@ -137,7 +140,7 @@ const windowTitle = title || siteConfig.title;
 
     <!-- No global error boundary: each app page handles its own errors in its UI. -->
   </head>
-  <body class={bare ? 'is-bare' : undefined}>
+  <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     <!-- Desktop menubar (>768px). A plain list of links: it looks like a System-6
@@ -161,8 +164,7 @@ const windowTitle = title || siteConfig.title;
     </nav>
 
     <!-- Mobile site navigation (≤768px): one floating hamburger, the same on every
-         page — including full-bleed app pages like the editor (it is not hidden in
-         bare mode). -->
+         page, the app pages included. -->
     <nav class="mobile-nav" aria-label="Site navigation">
       <button
         type="button"
@@ -194,10 +196,7 @@ const windowTitle = title || siteConfig.title;
         </header>
         <!-- The page's one <main> landmark. Back to top is its last child, pinned to the
              pane's bottom-right corner, so it stays on the window's paper. -->
-        <main
-          class:list={['window-pane', 'site-pane', { 'site-pane--fill': fillPane }]}
-          id="main-content"
-        >
+        <main id="main-content" class:list={['window-pane', 'site-pane', paneMods]}>
           <slot />
           <Button
             variant="secondary"
@@ -264,8 +263,11 @@ const windowTitle = title || siteConfig.title;
 
       // The page scrolls inside .site-pane rather than the document, so until the first pointer
       // press (and only while nothing has focus) PageDown / Space / arrows / Home / End scroll it.
-      const scroller = document.querySelector<HTMLElement>('.site-pane');
-      if (scroller && !document.body.classList.contains('is-bare')) {
+      // Only a pane that scrolls has a position worth keeping; an app page keeps its own.
+      const scroller = document.querySelector<HTMLElement>(
+        '.site-pane:not(.site-pane--own-scroll)',
+      );
+      if (scroller) {
         // Browsers restore the document's scroll on Back and reload, leaving a pane's alone, so the
         // pane's position rides in this history entry's state.
         const saved = (history.state as { paneTop?: unknown } | null)?.paneTop;
@@ -338,48 +340,6 @@ const windowTitle = title || siteConfig.title;
 </html>
 
 <style is:global>
-  /* Full-bleed app pages (bare): hide the portal chrome, strip the window frame,
-     let the page fill the viewport. The <h1> stays for SEO/a11y (sr-only). */
-  body.is-bare .site-menubar,
-  body.is-bare #back-to-top {
-    display: none !important;
-  }
-
-  /* The floating site-nav is deliberately not hidden in bare mode — it is the one
-     consistent way back out of a full-bleed app page like the editor. */
-
-  body.is-bare .site-canvas {
-    max-width: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  body.is-bare .site-window {
-    border: 0;
-    box-shadow: none;
-    margin: 0;
-    background: none;
-  }
-
-  body.is-bare .title-bar {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  body.is-bare .window-pane,
-  body.is-bare .site-pane {
-    padding: 0;
-    margin: 0;
-    max-width: none;
-  }
-
   /* Mobile: no patterned System-6 scrollbar chrome (heavy on a phone) — except a
      thin ink bar on the page's own scroll pane, so a seven-screen page still shows
      where you are and that there's more. */
@@ -621,6 +581,16 @@ const windowTitle = title || siteConfig.title;
     flex: 1;
     overflow-y: auto;
     padding: var(--pane-pad-y) var(--pane-pad-x);
+  }
+
+  /* An app that scrolls its own regions: the pane gives it the exact height it has
+     and keeps still, so the app's one scrollbar begins where the app puts it. */
+  .site-pane--own-scroll {
+    overflow: hidden;
+    min-height: 0;
+
+    /* The app runs to the window's edges and insets its own regions. */
+    padding: 0;
   }
 
   /* Opt-in: the slotted root grows to take the height the content does not, so a

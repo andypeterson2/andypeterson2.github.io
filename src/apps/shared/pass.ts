@@ -84,11 +84,14 @@ function withBearer(
 }
 
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  if (!isGatewayRequest(input)) return originalFetch(input, init);
+  // Credentials on every gateway call, so an owner's Cloudflare Access cookie
+  // reaches the front door. Cross-origin fetches send none by default, which is
+  // why a signed-in owner looked anonymous and got the pass gate's 402. The
+  // gateway answers with a named origin and allow-credentials, never a wildcard.
+  const opts: RequestInit = { ...init, credentials: init?.credentials ?? 'include' };
   const pass = token();
-  if (pass && isGatewayRequest(input)) {
-    return originalFetch(input, withBearer(input, init, pass));
-  }
-  return originalFetch(input, init);
+  return originalFetch(input, pass ? withBearer(input, opts, pass) : opts);
 };
 
 // ── With a pass, activate the live tier: point the app at the gateway ──
@@ -106,6 +109,7 @@ export type WarmResult = 'ok' | 'unauthorized' | 'unreachable';
 export async function warmUntilHealthy(
   service: string,
   deadlineMs: number = WARM_DEADLINE_MS,
+  { stopOnUnreachable = false }: { stopOnUnreachable?: boolean } = {},
 ): Promise<WarmResult> {
   const deadline = Date.now() + deadlineMs;
   let delay = 1000;
@@ -120,6 +124,10 @@ export async function warmUntilHealthy(
       // 402/401: the pass is bad — waking will never help; stop immediately.
       if (r.status === 401 || r.status === 402) return 'unauthorized';
     } catch {
+      // A throw is the gateway not answering at all, not a box warming up: no
+      // CORS headers, no network, wrong origin. Nothing claimed a credential
+      // here, so there is nothing for a retry to win.
+      if (stopOnUnreachable) return 'unreachable';
       /* still waking / network blip — retry below */
     }
     await new Promise((resolve) => setTimeout(resolve, delay));
@@ -129,12 +137,23 @@ export async function warmUntilHealthy(
 }
 
 async function activateLive(): Promise<void> {
-  if (!active()) return;
   const service = document.querySelector('meta[name="site-backend"]')?.getAttribute('content');
   if (!service) return;
-  document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
-  const result = await warmUntilHealthy(service);
+  // A pass is one way in; an owner's Access session is the other, and the
+  // browser cannot read that cookie to tell. So the probe runs either way and
+  // the gateway's answer decides. Without a pass this costs one request, since
+  // a refusal ends the loop on the first pass through it.
+  const held = active();
+  if (held) {
+    document.dispatchEvent(new CustomEvent('navbar:connect-pending', { detail: { service } }));
+  }
+  const result = await warmUntilHealthy(service, WARM_DEADLINE_MS, {
+    stopOnUnreachable: !held,
+  });
   if (result !== 'ok') {
+    // Nothing was claimed, so a refusal is the ordinary case rather than a
+    // failure worth showing: the client-side tier is what this visitor gets.
+    if (!held) return;
     // A refused pass is forgotten, so a dead Bearer stops riding on later requests;
     // a backend that never woke keeps its pass for a retry.
     if (result === 'unauthorized') SitePass.clear();

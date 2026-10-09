@@ -7,23 +7,19 @@
 
   function confirmDelete(p: PersonMeta) {
     if (
-      window.confirm(`Delete the profile "${p.name}" and everything in it? This cannot be undone.`)
+      window.confirm(`Delete the resume "${p.name}" and everything in it? This cannot be undone.`)
     ) {
       void editor.deletePerson(p.id);
     }
   }
 </script>
 
-{#if !editor.connected}
+<!-- Signed in only: the toolbar's Resume control is out of reach until then, and
+     the reason is in its title, so this drawer never has to explain itself. -->
+{#if editor.connected}
   <p class="note">
-    Profiles live on the server. <UiButton variant="link" onclick={() => editor.signIn()}
-      >Sign in</UiButton
-    > to create, switch, and manage them.
-  </p>
-{:else}
-  <p class="note">
-    Each profile is a separate resume — its own sections, variants, and personal info. The name here
-    is just its label in this switcher; the name on the CV is set in the document header.
+    Each resume has its own sections, variants, and personal details. The name here is just its
+    label in this switcher; the name on the CV is set in the document header.
   </p>
 
   <div class="picker">
@@ -40,7 +36,7 @@
   </div>
 
   <UiButton variant="new" class="new-profile" onclick={() => editor.addPerson()}
-    >＋ New profile</UiButton
+    >＋ New resume</UiButton
   >
 
   {#if activeMeta}
@@ -54,7 +50,12 @@
           onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
         />
       </label>
-      <UiButton variant="del" onclick={() => confirmDelete(meta)}>Delete profile</UiButton>
+      <UiButton
+        variant="del"
+        title="Delete this resume"
+        aria-label="Delete resume"
+        onclick={() => confirmDelete(meta)}>×</UiButton
+      >
     </div>
   {/if}
 {/if}
@@ -85,7 +86,6 @@
 
   :global(.ui.opt.on) .radio {
     border-color: var(--paper);
-    box-shadow: var(--shadow-ring);
   }
 
   .opt-name {
@@ -100,7 +100,7 @@
   .edit {
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid var(--paper-4);
+    border-top: 1px solid var(--ink);
     display: flex;
     flex-direction: column;
     gap: 13px;

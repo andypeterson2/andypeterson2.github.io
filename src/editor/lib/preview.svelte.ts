@@ -7,8 +7,9 @@ import { api } from './api';
 import type { Variant } from './types';
 
 export class PreviewController {
-  /** whether the preview pane is open */
-  open = $state(false);
+  /** whether the preview pane is open — it is, from the start: the point of the
+   *  editor is seeing what the resume will look like while editing it. */
+  open = $state(true);
   /** compile lifecycle of the active variant's PDF */
   state = $state<'idle' | 'compiling' | 'ready' | 'error'>('idle');
   /** object URL of the compiled PDF, or null (used by the download link) */
@@ -18,6 +19,14 @@ export class PreviewController {
   blob = $state<Blob | null>(null);
   /** compiler log shown on failure */
   log = $state<string | null>(null);
+  /** The published resume PDF, shown in the demo where there is nothing to compile. */
+  published = $state<Blob | null>(null);
+  publishedState = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  /** Downloaded straight from the gateway, so the browser keeps the dated name the
+   *  server sends instead of whatever a blob: URL would be called. */
+  get publishedHref(): string {
+    return api.publishedResumeUrl;
+  }
 
   #connected: () => boolean;
   #activeVariant: () => Variant | null;
@@ -44,6 +53,23 @@ export class PreviewController {
 
   toggle() {
     this.open = !this.open;
+  }
+
+  /**
+   * Fetch the site's published resume once, so a signed-out visitor sees a finished
+   * PDF beside the document instead of an empty pane. A no-op when connected: a
+   * session compiles its own.
+   */
+  async loadPublished() {
+    if (this.#connected() || this.publishedState !== 'idle') return;
+    this.publishedState = 'loading';
+    const blob = await api.fetchPublishedResume();
+    if (!blob) {
+      this.publishedState = 'error';
+      return;
+    }
+    this.published = blob;
+    this.publishedState = 'ready';
   }
 
   /** Toolbar one-click: reveal the preview pane and compile (the pane also offers Recompile). */

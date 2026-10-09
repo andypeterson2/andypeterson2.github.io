@@ -9,7 +9,9 @@ import { siteConfig } from '../../../config/site';
 const identity = {
   firstName: siteConfig.firstName,
   lastName: siteConfig.lastName,
+  position: siteConfig.jobTitle,
   email: siteConfig.email,
+  address: siteConfig.location,
   github: siteConfig.github,
   linkedin: siteConfig.linkedin,
 };
@@ -18,7 +20,7 @@ const identity = {
 <DemoShell
   title="LaTeX Resume Editor"
   description="Edit, reorder and restyle a real résumé in your browser — a Svelte editor over a normalized database, with server-side XeLaTeX compilation for signed-in users."
-  bare
+  ownScroll
 >
   <Editor client:load identity={identity} />
 </DemoShell>

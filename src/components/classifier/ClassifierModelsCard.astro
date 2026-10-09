@@ -2,15 +2,6 @@
 import Button from '../Button.astro';
 ---
 
-<!-- Session models -->
-<section class="card">
-  <h2 class="card-title">Models</h2>
-  <div id="session-models"></div>
-  <div class="row models-row">
-    <Button app variant="secondary" id="ensemble-btn" type="button" class="hidden">Ensemble</Button>
-  </div>
-</section>
-
 <!-- Saved models: checkpoints on the live backend, so shown only with one. -->
 <section class="card" id="saved-card" hidden>
   <h2 class="card-title">Saved</h2>
@@ -29,46 +20,29 @@ import Button from '../Button.astro';
   <div class="row models-row">
     <Button app variant="secondary" id="import-btn" type="button" disabled>Import</Button>
   </div>
+  <p id="saved-status" class="card-status" role="status"></p>
 </section>
 
 <style>
+  /* What a failed run says, beside the button that failed. Empty until then,
+     so it takes no room on a card that is working. */
+  .card-status {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-3xs);
+  }
+
+  .card-status:empty {
+    display: none;
+  }
+
   /* The refresh glyph a size up; .s6-btn--icon gives it the 32px (44px touch)
      target. */
   :global(#classifier-app .icon-btn) {
     font-size: var(--text-2xs);
   }
 
-  /* Room for the two in-browser models before they load. */
-  #session-models {
-    min-height: 4.5em;
-  }
-
   .models-row {
     justify-content: flex-end;
     margin-top: 6px;
-  }
-
-  /* One row per model: its name, then its facts as muted lines. Facts aren't boxed,
-     so they can't be mistaken for buttons. */
-  :global(.ui-list-row) {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--paper-3);
-  }
-
-  :global(.ui-list-text) {
-    flex: 1;
-    min-width: 0;
-  }
-
-  :global(.ui-list-name) {
-    font-weight: 700;
-  }
-
-  :global(.ui-list-meta) {
-    font-size: var(--text-3xs);
-    line-height: 1.35;
   }
 </style>

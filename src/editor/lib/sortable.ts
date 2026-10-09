@@ -9,6 +9,71 @@ export interface SortableParam {
   onReorder: (from: number, to: number) => void;
 }
 
+/** How close to an edge a drag has to get before the list starts moving under it. */
+const EDGE = 56;
+/** Pixels per frame at the very edge; it eases in across the EDGE band. */
+const MAX_STEP = 18;
+
+/** The nearest ancestor that actually scrolls, which is what a drag has to move. */
+function scrollerFor(el: HTMLElement): HTMLElement | null {
+  for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+    const o = getComputedStyle(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+  }
+  return null;
+}
+
+/**
+ * Keep scrolling while a drag rests near the top or bottom of the list.
+ *
+ * HTML5 drag-and-drop fires `dragover` only while the pointer moves, so a drag held
+ * still at the edge would stall with the drop target off screen. A frame loop carries
+ * it instead, and stops as soon as the pointer leaves the band or the drag ends.
+ */
+function createEdgeScroll() {
+  let frame = 0;
+  let step = 0;
+  let target: HTMLElement | null = null;
+  let fedAt = 0;
+
+  const tick = () => {
+    // `dragover` stops reaching this container as soon as the pointer moves over a
+    // different one, and the last step it left behind would otherwise scroll for
+    // the rest of the drag. Going stale is the only signal that it has gone.
+    if (!target || step === 0 || performance.now() - fedAt > 120) {
+      frame = 0;
+      return;
+    }
+    target.scrollTop += step;
+    frame = requestAnimationFrame(tick);
+  };
+
+  return {
+    /** Called on every dragover: works out which way to go, and how fast. */
+    at(el: HTMLElement, clientY: number) {
+      target ??= scrollerFor(el);
+      if (!target) return;
+      fedAt = performance.now();
+      const box = target.getBoundingClientRect();
+      const above = clientY - box.top;
+      const below = box.bottom - clientY;
+      step =
+        above < EDGE
+          ? -Math.ceil(((EDGE - above) / EDGE) * MAX_STEP)
+          : below < EDGE
+            ? Math.ceil(((EDGE - below) / EDGE) * MAX_STEP)
+            : 0;
+      if (step !== 0 && frame === 0) frame = requestAnimationFrame(tick);
+    },
+    stop() {
+      step = 0;
+      target = null;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    },
+  };
+}
+
 /**
  * Keyboard reordering for a focused reorderable item (or its grip). Alt+ArrowUp/
  * Down moves by one; Alt+Home/End jumps to an end. Alt avoids clashing with
@@ -57,13 +122,21 @@ export function reorderKeydown(
 export function sortable(container: HTMLElement, param: SortableParam) {
   let onReorder = param.onReorder;
   let from = -1;
+  const edge = createEdgeScroll();
 
   const items = () =>
     Array.from(container.querySelectorAll<HTMLElement>(':scope > [data-sortable]'));
   const indexOfClosest = (target: EventTarget | null) => {
-    const el =
-      target instanceof HTMLElement ? target.closest<HTMLElement>('[data-sortable]') : null;
-    return el ? items().indexOf(el) : -1;
+    if (!(target instanceof HTMLElement)) return -1;
+    // Walk out to the row this container owns. `closest` would stop at a nested
+    // list's own row — a bullet inside an entry — and the drop would be discarded.
+    for (let el: HTMLElement | null = target; el; el = el.parentElement) {
+      if (el.parentElement === container && el.matches('[data-sortable]')) {
+        return items().indexOf(el);
+      }
+      if (el === container) break;
+    }
+    return -1;
   };
 
   function onStart(e: DragEvent) {
@@ -88,6 +161,7 @@ export function sortable(container: HTMLElement, param: SortableParam) {
   function onOver(e: DragEvent) {
     if (from < 0) return;
     e.preventDefault();
+    edge.at(container, e.clientY);
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     const to = indexOfClosest(e.target);
     items().forEach((el, i) => el.toggleAttribute('data-over', to >= 0 && i === to && i !== from));
@@ -102,6 +176,7 @@ export function sortable(container: HTMLElement, param: SortableParam) {
   }
 
   function clear() {
+    edge.stop();
     from = -1;
     for (const el of items()) {
       el.removeAttribute('data-dragging');
@@ -119,6 +194,8 @@ export function sortable(container: HTMLElement, param: SortableParam) {
       onReorder = next.onReorder;
     },
     destroy() {
+      // A container unmounted mid-drag would otherwise leave the loop scrolling.
+      edge.stop();
       container.removeEventListener('dragstart', onStart);
       container.removeEventListener('dragover', onOver);
       container.removeEventListener('drop', onDrop);

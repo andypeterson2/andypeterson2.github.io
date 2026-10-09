@@ -8,7 +8,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Capped rather than left to the core count. The nonogram page builds a Grover
+  // circuit and drives a canvas in the browser, so a context per core starves the
+  // others and a different handful of solver assertions times out each run. Four
+  // passes repeatedly and finishes faster than the serial run it replaces.
+  workers: process.env.CI ? 1 : 4,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: 'http://localhost:4321',
