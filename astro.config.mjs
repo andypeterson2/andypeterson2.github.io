@@ -1,4 +1,7 @@
 // @ts-check
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
@@ -19,6 +22,39 @@ const fontDisplayOptional = {
       if (hasDisplay) return;
       rule.append({ prop: 'font-display', value: 'optional' });
     },
+  },
+};
+
+// pdfjs fetches its pure-JS image decoders by exact filename, so they need a fixed path and
+// not a hashed asset name. Without them a JPEG2000 or JBIG2 image renders blank.
+const PDFJS_FALLBACK_DIR = 'pdfjs';
+const PDFJS_FALLBACK_FILES = ['openjpeg_nowasm_fallback.js', 'jbig2_nowasm_fallback.js'];
+
+const pdfjsJsFallbacks = {
+  name: 'pdfjs-js-fallbacks',
+  buildStart() {
+    const require = createRequire(import.meta.url);
+    const wasmDir = join(dirname(require.resolve('pdfjs-dist/package.json')), 'wasm');
+    for (const file of PDFJS_FALLBACK_FILES) {
+      // Throws when a release renames a fallback, failing the build rather than the preview.
+      this.emitFile({
+        type: 'asset',
+        fileName: `${PDFJS_FALLBACK_DIR}/${file}`,
+        source: readFileSync(join(wasmDir, file)),
+      });
+    }
+  },
+  configureServer(server) {
+    const require = createRequire(import.meta.url);
+    const wasmDir = join(dirname(require.resolve('pdfjs-dist/package.json')), 'wasm');
+    server.middlewares.use((req, res, next) => {
+      const name = PDFJS_FALLBACK_FILES.find(
+        (file) => req.url?.split('?')[0] === `/${PDFJS_FALLBACK_DIR}/${file}`,
+      );
+      if (!name) return next();
+      res.setHeader('Content-Type', 'text/javascript');
+      res.end(readFileSync(join(wasmDir, name)));
+    });
   },
 };
 
@@ -88,6 +124,7 @@ export default defineConfig({
     // Pre-bundle the lazily imported PDF library in dev so the first preview render doesn't
     // force a mid-session Vite re-optimize, which reloads the page under an in-flight compile.
     optimizeDeps: { include: ['pdfjs-dist'] },
+    plugins: [pdfjsJsFallbacks],
     build: {
       // Never inline fonts: as base64 they add ~20KB to the render-blocking CSS, the main FCP
       // drag on throttled connections. Other small assets keep the default (undefined), which
