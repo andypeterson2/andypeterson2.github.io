@@ -114,6 +114,23 @@ export interface StorageUsage {
   versionsPerProfile: { limit: number };
 }
 
+/** The public GitHub repository a layout follows. */
+export interface LayoutSource {
+  /** owner/repo */
+  repo: string;
+  /** Folder in the repo holding layout.json; '' for the root. */
+  path: string;
+  track: 'release' | 'branch';
+  branch: string | null;
+  lastSha: string | null;
+  lastRef: string | null;
+  lastCheckedAt: string | null;
+  /** Only on the caller's own layouts. */
+  lastError?: string | null;
+  trusted?: boolean;
+  shared?: boolean;
+}
+
 /** One layout the account can see, as GET /layouts lists it. */
 export interface LayoutInfo {
   id: string;
@@ -130,6 +147,8 @@ export interface LayoutInfo {
   state: 'private' | 'pending' | 'public' | 'unlisted' | 'rejected';
   /** Id of a newer public version of the same family, when there is one. */
   updateAvailable: string | null;
+  /** The repo it follows; null for a builtin or an upload not linked to one. */
+  source?: LayoutSource | null;
 }
 
 /** A pending version in the owner's review queue. */

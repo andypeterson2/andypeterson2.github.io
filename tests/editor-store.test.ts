@@ -803,21 +803,53 @@ describe('EditorState — layouts', () => {
     editor.connected = false;
   });
 
-  test('installing reloads the list; a failed check keeps what is missing', async () => {
+  test('linking a repo reloads the list; a failed check keeps what is missing', async () => {
     editor.connected = true;
-    const file = new File(['zip'], 'l.zip');
-    vi.spyOn(api, 'sendLayoutZip').mockResolvedValueOnce({
-      ok: false,
-      missing: ['No template for document: missing'],
+    const form = { repo: 'ada/modern', path: '', track: 'branch' as const, branch: 'main' };
+    const check = vi.spyOn(api, 'checkLayoutRepo').mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: { ok: false, missing: ['No template for document: missing'], sha: 'a'.repeat(40) },
     });
-    await editor.sendLayoutZip(file, false);
+    await editor.sendLayoutRepo(form, false);
+    expect(check).toHaveBeenCalledWith({ repo: 'ada/modern', path: undefined, ref: 'main' });
     expect(editor.layoutCheck?.missing).toEqual(['No template for document: missing']);
-    vi.spyOn(api, 'sendLayoutZip').mockResolvedValueOnce({ ok: true, missing: [] });
+
+    vi.spyOn(api, 'linkLayout').mockResolvedValueOnce({
+      ok: false,
+      status: 422,
+      error: { code: 'verification_failed', message: 'Layout failed verification', missing: ['x'] },
+    });
+    await editor.sendLayoutRepo(form, true);
+    expect(editor.layoutCheck).toMatchObject({ ok: false, missing: ['x'] });
+
+    vi.spyOn(api, 'linkLayout').mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      data: { layout: { id: 'u1-modern', name: 'Modern' } as never, missing: [] },
+    });
     const reload = vi
       .spyOn(api, 'getLayouts')
       .mockResolvedValue({ ok: true, status: 200, data: { layouts: [], default: null } });
-    await editor.sendLayoutZip(file, true);
+    await editor.sendLayoutRepo(form, true);
     expect(reload).toHaveBeenCalled();
+    editor.connected = false;
+  });
+
+  test('check now records what happened for that layout', async () => {
+    editor.connected = true;
+    vi.spyOn(api, 'syncLayout').mockResolvedValue({
+      ok: false,
+      status: 429,
+      error: { code: 'too_many_requests', message: 'Checked a moment ago; try again in 4 min' },
+    });
+    vi.spyOn(api, 'getLayouts').mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { layouts: [], default: null },
+    });
+    await editor.syncLayout('u1-modern');
+    expect(editor.layoutSyncNote['u1-modern']).toMatch(/try again/);
     editor.connected = false;
   });
 });

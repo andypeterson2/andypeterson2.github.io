@@ -7,7 +7,6 @@ import type {
   StorageUsage,
   LayoutInfo,
   LayoutReview,
-  LayoutCheck,
   SettingValue,
   Profile,
   Item,
@@ -35,6 +34,8 @@ const DEFAULT_BASE = 'https://api.andypeterson.dev/cv';
 export interface ApiError {
   code: string;
   message: string;
+  /** What a layout is missing, when its verification failed. */
+  missing?: string[];
 }
 /** One ranked suggestion from the backend's tag suggester. */
 export interface TagSuggestion {
@@ -211,7 +212,10 @@ function parseErrorEnvelope(data: unknown): ApiError | undefined {
   if (typeof err !== 'object' || err === null) return undefined;
   const { code, message } = err as { code?: unknown; message?: unknown };
   if (typeof code !== 'string' || typeof message !== 'string') return undefined;
-  return { code, message };
+  const missing = (data as { missing?: unknown }).missing;
+  return Array.isArray(missing)
+    ? { code, message, missing: missing.map(String) }
+    : { code, message };
 }
 
 /** Defaults for the length settings, by prefix, and the units a length may use. */
@@ -595,31 +599,50 @@ export class CvApi {
       body: JSON.stringify({ decision, note }),
     });
   }
-  /**
-   * Check a layout zip (`install: false`) or install it. Multipart, so it goes
-   * around `req`, which always sends JSON.
-   */
-  async sendLayoutZip(file: File, { install }: { install: boolean }): Promise<LayoutCheck> {
-    const form = new FormData();
-    form.append('bundle', file);
-    try {
-      const res = await fetch(`${this.base}/api/layouts${install ? '' : '/check'}`, {
-        method: 'POST',
-        credentials: 'include',
-        body: form,
-      });
-      const body = (await res.json().catch(() => null)) as {
-        ok?: boolean;
-        missing?: string[];
-        layout?: LayoutInfo;
-        error?: { message?: string };
-      } | null;
-      const missing = body?.missing ?? [];
-      if (res.ok) return { ok: install ? true : !!body?.ok, missing, installed: body?.layout };
-      return { ok: false, missing, error: body?.error?.message ?? `HTTP ${res.status}` };
-    } catch (e) {
-      return { ok: false, missing: [], error: e instanceof Error ? e.message : String(e) };
-    }
+  /** Verify a layout in a public GitHub repo at a branch, tag or commit, installing nothing. */
+  checkLayoutRepo(source: { repo: string; path?: string; ref?: string }) {
+    return this.req<{ ok: boolean; missing: string[]; sha: string }>('/layouts/check', {
+      method: 'POST',
+      body: JSON.stringify(source),
+    });
+  }
+  /** Install a layout from a public GitHub repo and keep it updated. */
+  linkLayout(source: { repo: string; path?: string; track: string; branch?: string }) {
+    return this.req<{ layout: LayoutInfo; missing: string[] }>('/layouts/link', {
+      method: 'POST',
+      body: JSON.stringify(source),
+    });
+  }
+  /** Change the repo an existing layout follows (or link an unlinked upload). */
+  setLayoutSource(
+    id: string,
+    source: { repo: string; path?: string; track: string; branch?: string },
+  ) {
+    return this.req<{ layout: LayoutInfo; missing: string[] }>(
+      `/layouts/${encodeURIComponent(id)}/source`,
+      { method: 'PUT', body: JSON.stringify(source) },
+    );
+  }
+  unlinkLayout(id: string) {
+    return this.req(`/layouts/${encodeURIComponent(id)}/source`, { method: 'DELETE' });
+  }
+  syncLayout(id: string) {
+    return this.req<{ changed: boolean; version?: string; error?: string }>(
+      `/layouts/${encodeURIComponent(id)}/sync`,
+      { method: 'POST', body: '{}' },
+    );
+  }
+  syncLayouts() {
+    return this.req<{ results: Record<string, { changed: boolean; error?: string }> }>(
+      '/layouts/sync',
+      { method: 'POST', body: '{}' },
+    );
+  }
+  trustLayout(id: string, trusted: boolean) {
+    return this.req(`/layouts/${encodeURIComponent(id)}/trust`, {
+      method: 'POST',
+      body: JSON.stringify({ trusted }),
+    });
   }
   /** A layout's bundle as a zip Blob, or null when it cannot be downloaded. */
   async downloadLayout(id: string): Promise<Blob | null> {
