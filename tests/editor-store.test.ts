@@ -649,14 +649,28 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     expect(editor.style.accentColor).toBe('zzz-accent');
   });
 
+  const classicRow = {
+    id: 'classic',
+    name: 'Classic',
+    status: 'ok',
+    kinds: ['cv'],
+    builtin: true,
+    own: false,
+    author: null,
+    family: 'classic',
+    versionNo: null,
+    state: 'public' as const,
+    updateAvailable: null,
+  };
+
   test('loadLayouts populates the installed layouts + default', async () => {
     vi.spyOn(api, 'getLayouts').mockResolvedValue({
       ok: true,
       status: 200,
-      data: { layouts: [{ id: 'classic', name: 'Classic', status: 'ok' }], default: 'classic' },
+      data: { layouts: [classicRow], default: 'classic' },
     });
     await editor.loadLayouts();
-    expect(editor.layouts).toEqual([{ id: 'classic', name: 'Classic', status: 'ok' }]);
+    expect(editor.layouts).toEqual([classicRow]);
     expect(editor.defaultLayout).toBe('classic');
   });
 
