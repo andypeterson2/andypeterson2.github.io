@@ -8,6 +8,7 @@ vi.mock('../src/editor/lib/api', () => ({
     setVariantRules: vi.fn(async () => ({ ok: true, status: 200 })),
     setVariantOverride: vi.fn(async () => ({ ok: true, status: 200 })),
     updateVariantPersonal: vi.fn(async () => ({ ok: true, status: 200 })),
+    patchVariantSettings: vi.fn(async () => ({ ok: true, status: 200 })),
   },
 }));
 
@@ -327,6 +328,31 @@ describe('VariantController — personal overrides', () => {
     const v = variant({ personal: { position: 'Same' } });
     await new VariantController(h.host).setPersonalOverride(v, 'position', 'Same');
     expect(api.updateVariantPersonal).not.toHaveBeenCalled();
+    expect(h.records).toHaveLength(0);
+  });
+});
+
+describe('VariantController — render setting overrides', () => {
+  test('sets a length override, persists it, and undo drops it again', async () => {
+    const h = makeHost();
+    const v = variant();
+    const len = { num: -2, unit: 'mm' };
+    await new VariantController(h.host).setSettingOverride(v, 'spacing.contentTopAdjust', len);
+    expect(v.settings).toEqual({ 'spacing.contentTopAdjust': len });
+    expect(api.patchVariantSettings).toHaveBeenCalledWith(1, { 'spacing.contentTopAdjust': len });
+
+    await h.records.at(-1)!.undo();
+    expect(v.settings).toEqual({});
+    expect(api.patchVariantSettings).toHaveBeenLastCalledWith(1, {
+      'spacing.contentTopAdjust': null,
+    });
+  });
+
+  test('an equal value is a no-op', async () => {
+    const h = makeHost();
+    const v = variant({ settings: { 'style.fontFamily': 'roboto' } });
+    await new VariantController(h.host).setSettingOverride(v, 'style.fontFamily', 'roboto');
+    expect(api.patchVariantSettings).not.toHaveBeenCalled();
     expect(h.records).toHaveLength(0);
   });
 });
