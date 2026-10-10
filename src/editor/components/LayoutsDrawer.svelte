@@ -9,9 +9,17 @@
     void editor.loadLayouts();
   });
 
-  const MAX_ZIP_BYTES = 25 * 1024 * 1024;
-  let file = $state<File | null>(null);
-  let fileError = $state<string | null>(null);
+  // The repo form: link a new layout, or relink `relinking` to another repo.
+  const form = $state({
+    repo: '',
+    path: '',
+    track: 'release' as 'release' | 'branch',
+    branch: '',
+  });
+  let relinking = $state<string | null>(null);
+  const formReady = $derived(
+    /^\S+\/\S+$/.test(form.repo.trim().replace(/^https?:\/\/(www\.)?github\.com\//, '')),
+  );
   const notes = $state<Record<string, string>>({});
 
   const groups = $derived([
@@ -24,14 +32,30 @@
     l.status === 'active' && (l.builtin || l.own || l.state === 'public');
   const label = (l: LayoutInfo) => (l.versionNo ? `${l.name} v${String(l.versionNo)}` : l.name);
 
-  function pick(e: Event) {
-    const f = (e.currentTarget as HTMLInputElement).files?.[0] ?? null;
+  function startRelink(l: LayoutInfo) {
+    relinking = l.id;
     editor.layoutCheck = null;
-    fileError = null;
-    if (f && !f.name.toLowerCase().endsWith('.zip')) fileError = 'Choose a .zip file.';
-    else if (f && f.size > MAX_ZIP_BYTES) fileError = 'The zip is larger than 25 MB.';
-    file = fileError ? null : f;
+    form.repo = l.source?.repo ?? '';
+    form.path = l.source?.path ?? '';
+    form.track = l.source?.track ?? 'release';
+    form.branch = l.source?.branch ?? '';
   }
+  function cancelRelink() {
+    relinking = null;
+    editor.layoutCheck = null;
+  }
+  const ago = (iso: string | null | undefined) => {
+    if (!iso) return 'not checked yet';
+    const mins = Math.round((Date.now() - Date.parse(iso)) / 60000);
+    if (mins < 1) return 'checked just now';
+    if (mins < 60) return `checked ${String(mins)} min ago`;
+    const hours = Math.round(mins / 60);
+    return hours < 48
+      ? `checked ${String(hours)} h ago`
+      : `checked ${String(Math.round(hours / 24))} days ago`;
+  };
+  const followLabel = (l: LayoutInfo) =>
+    l.source?.track === 'branch' ? `branch ${l.source.branch ?? 'default'}` : 'latest release';
 </script>
 
 <!-- Signed in only, like the Layout control that opens it. -->
@@ -77,9 +101,35 @@
             {#if l.author && !l.own}<span class="by">by {l.author}</span>{/if}
           </button>
           {#if !l.builtin && l.state !== 'public'}<span class="badge">{l.state}</span>{/if}
+          {#if l.source && l.versionNo == null}
+            <span class="src">
+              <a
+                href={`https://github.com/${l.source.repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                >github.com/{l.source.repo}{l.source.path ? `/${l.source.path}` : ''}</a
+              >
+              · {followLabel(l)} · {ago(l.source.lastCheckedAt)}
+              {#if editor.layoutSyncNote[l.id]}· {editor.layoutSyncNote[l.id]}{/if}
+            </span>
+            {#if l.own && l.source.lastError}<span class="err">{l.source.lastError}</span>{/if}
+          {:else if l.own && !l.builtin && l.versionNo == null}
+            <span class="src">Uploaded, not linked to a repository</span>
+          {/if}
           {#if l.status !== 'active'}<span class="badge">{l.status}</span>{/if}
           <span class="acts">
             <UiButton variant="link" onclick={() => editor.downloadLayout(l)}>Download</UiButton>
+            {#if l.source && l.versionNo == null && (l.own || l.state === 'public')}
+              <UiButton variant="link" onclick={() => editor.syncLayout(l.id)}>Check now</UiButton>
+            {/if}
+            {#if l.own && l.versionNo == null}
+              <UiButton variant="link" onclick={() => startRelink(l)}
+                >{l.source ? 'Change repo' : 'Link'}</UiButton
+              >
+            {/if}
+            {#if l.own && l.source && l.versionNo == null}
+              <UiButton variant="link" onclick={() => editor.unlinkLayout(l.id)}>Unlink</UiButton>
+            {/if}
             {#if l.own && l.versionNo == null && l.status === 'active'}
               <UiButton
                 variant="link"
@@ -102,35 +152,61 @@
   {/if}
 {/each}
 
-<div class="lbl">Upload a layout</div>
+{#if editor.layouts.some((l) => l.own && l.source)}
+  <div class="btns">
+    <UiButton variant="mini" disabled={editor.layoutBusy} onclick={() => editor.syncLayouts()}
+      >Check all for updates</UiButton
+    >
+  </div>
+{/if}
+
+<div class="lbl">{relinking ? `Change the repo of ${relinking}` : 'Add a layout from GitHub'}</div>
 <div class="upload">
-  <input
-    class="in"
-    type="file"
-    accept=".zip,application/zip"
-    aria-label="Layout zip"
-    onchange={pick}
-  />
-  {#if fileError}<p class="err">{fileError}</p>{/if}
+  <label class="field"
+    ><span>Repository</span>
+    <input class="in" placeholder="owner/repo" bind:value={form.repo} /></label
+  >
+  <label class="field"
+    ><span>Folder</span>
+    <input class="in" placeholder="(repository root)" bind:value={form.path} /></label
+  >
+  <label class="field"
+    ><span>Follow</span>
+    <select class="in" bind:value={form.track}>
+      <option value="release">Latest release</option>
+      <option value="branch">A branch</option>
+    </select></label
+  >
+  {#if form.track === 'branch'}
+    <label class="field"
+      ><span>Branch</span>
+      <input class="in" placeholder="(default branch)" bind:value={form.branch} /></label
+    >
+  {/if}
   <div class="btns">
     <UiButton
       variant="mini"
-      disabled={!file || editor.layoutBusy}
-      onclick={() => file && editor.sendLayoutZip(file, false)}>Check</UiButton
+      disabled={!formReady || editor.layoutBusy}
+      onclick={() => editor.sendLayoutRepo(form, false)}>Check</UiButton
     >
     <UiButton
       variant="mini"
-      disabled={!file || editor.layoutBusy || !editor.layoutCheck?.ok}
-      onclick={() => file && editor.sendLayoutZip(file, true)}>Install</UiButton
+      disabled={!formReady || editor.layoutBusy}
+      onclick={() => editor.sendLayoutRepo(form, true, relinking)}
+      >{relinking ? 'Change repo' : 'Link'}</UiButton
     >
-    {#if editor.layoutBusy}<span class="hint">Compiling test documents…</span>{/if}
+    {#if relinking}<UiButton variant="link" onclick={cancelRelink}>Cancel</UiButton>{/if}
+    {#if editor.layoutBusy}<span class="hint">Downloading and compiling test documents…</span>{/if}
   </div>
   {#if editor.layoutCheck}
     {@const c = editor.layoutCheck}
     {#if c.installed}
-      <p class="ok">Installed {c.installed.name}. Publish it to share it with others.</p>
+      <p class="ok">
+        Linked {c.installed.name}. It is checked for updates daily; publish it to share it with
+        others.
+      </p>
     {:else if c.ok && c.missing.length === 0}
-      <p class="ok">Ready to install.</p>
+      <p class="ok">Passes every check.</p>
     {:else}
       {#if c.error}<p class="err">{c.error}</p>{/if}
       {#if c.missing.length}
@@ -141,14 +217,35 @@
     {/if}
   {/if}
   <p class="hint">
-    A zip with a layout.json and its templates. It is test-compiled against sample documents and
-    your own résumés before anything is installed.
+    Layouts come from public GitHub repositories: a layout.json and its templates, at the root or in
+    a folder. Each new release (or commit, if you follow a branch) is test-compiled against sample
+    documents and your own résumés before it replaces the last good one.
   </p>
 </div>
 
 <StorageUsage show={['layouts']} />
 
 {#if editor.canReviewLayouts}
+  {@const trusted = [
+    ...new Map(
+      editor.layouts.filter((l) => !l.own && l.source?.trusted).map((l) => [l.family, l]),
+    ).values(),
+  ]}
+  {#if trusted.length}
+    <div class="lbl">Trusted layouts</div>
+    <p class="hint">New versions of these go public on their own when they pass every check.</p>
+    {#each trusted as l (l.family)}
+      <div class="row">
+        <span class="name">{l.name}</span>
+        <span class="by">by {l.author} · github.com/{l.source?.repo}</span>
+        <span class="acts">
+          <UiButton variant="link" onclick={() => editor.trustLayout(l.id, false)}
+            >Stop trusting</UiButton
+          >
+        </span>
+      </div>
+    {/each}
+  {/if}
   <div class="lbl">Waiting for review</div>
   {#if editor.layoutReviews.length === 0}
     <p class="empty">Nothing to review.</p>
@@ -165,6 +262,12 @@
         <ul class="missing">
           {#each r.warnings as w (w)}<li>{w}</li>{/each}
         </ul>
+      {/if}
+      {#if r.source}
+        <p class="hint">
+          From github.com/{r.source.repo}. Approving trusts it: later versions that pass every check
+          go public without review.
+        </p>
       {/if}
       <input
         class="in"
@@ -269,6 +372,26 @@
     background: var(--paper);
   }
 
+  .src {
+    flex-basis: 100%;
+    font-size: var(--text-4xs);
+    color: var(--ink-3);
+  }
+
+  .src a {
+    color: inherit;
+  }
+
+  .field {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: var(--text-4xs);
+    color: var(--ink-2);
+  }
+
   .btns {
     display: flex;
     align-items: center;
@@ -285,6 +408,11 @@
   .ok {
     font-size: var(--text-3xs);
     margin: 6px 0;
+  }
+
+  .row .err {
+    flex-basis: 100%;
+    margin: 0;
   }
 
   .err {

@@ -847,16 +847,74 @@ class EditorState {
     const res = await this.persist(() => api.setDefaultLayout(id));
     this.layoutWarnings = res.data?.warnings ?? [];
   }
-  /** Check a zip against the layout contract (`install: false`) or install it. */
-  async sendLayoutZip(file: File, install: boolean) {
+  /** Verify a GitHub repo (`install: false`) or link and install it; `layoutId` relinks. */
+  async sendLayoutRepo(
+    source: { repo: string; path: string; track: 'release' | 'branch'; branch: string },
+    install: boolean,
+    layoutId: string | null = null,
+  ) {
     if (!this.connected) return;
     this.layoutBusy = true;
+    const body = {
+      repo: source.repo.trim(),
+      path: source.path.trim() || undefined,
+      track: source.track,
+      branch: source.track === 'branch' ? source.branch.trim() || undefined : undefined,
+    };
     try {
-      this.layoutCheck = await api.sendLayoutZip(file, { install });
-      if (install && this.layoutCheck.ok) await this.loadLayouts();
+      if (!install) {
+        const res = await api.checkLayoutRepo({
+          repo: body.repo,
+          path: body.path,
+          ref: body.branch,
+        });
+        this.layoutCheck =
+          res.ok && res.data
+            ? { ok: res.data.ok, missing: res.data.missing }
+            : { ok: false, missing: res.error?.missing ?? [], error: res.error?.message };
+        return;
+      }
+      const res = layoutId ? await api.setLayoutSource(layoutId, body) : await api.linkLayout(body);
+      this.layoutCheck =
+        res.ok && res.data
+          ? { ok: true, missing: res.data.missing, installed: res.data.layout }
+          : { ok: false, missing: res.error?.missing ?? [], error: res.error?.message };
+      if (res.ok) await this.loadLayouts();
     } finally {
       this.layoutBusy = false;
     }
+  }
+  /** Check one linked layout for a newer commit now; the answer is kept per layout. */
+  layoutSyncNote = $state<Record<string, string>>({});
+  async syncLayout(id: string) {
+    const res = await api.syncLayout(id);
+    this.layoutSyncNote[id] = !res.ok
+      ? (res.error?.message ?? 'Could not check')
+      : res.data?.error
+        ? res.data.error
+        : res.data?.changed
+          ? 'Updated'
+          : 'Up to date';
+    await this.loadLayouts();
+  }
+  async syncLayouts() {
+    this.layoutBusy = true;
+    try {
+      const res = await api.syncLayouts();
+      for (const [id, r] of Object.entries(res.data?.results ?? {}))
+        this.layoutSyncNote[id] = r.error ?? (r.changed ? 'Updated' : 'Up to date');
+      await this.loadLayouts();
+    } finally {
+      this.layoutBusy = false;
+    }
+  }
+  async unlinkLayout(id: string) {
+    await this.persist(() => api.unlinkLayout(id));
+    await this.loadLayouts();
+  }
+  async trustLayout(id: string, trusted: boolean) {
+    await this.persist(() => api.trustLayout(id, trusted));
+    await this.loadLayouts();
   }
   async publishLayout(id: string) {
     this.layoutBusy = true;
