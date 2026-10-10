@@ -1,51 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" shape-rendering="crispEdges" fill="#000">
-<rect x="88" y="25" width="336" height="21"/>
-<rect x="88" y="46" width="336" height="21"/>
-<rect x="88" y="67" width="42" height="21"/>
-<rect x="382" y="67" width="42" height="21"/>
-<rect x="88" y="88" width="42" height="21"/>
-<rect x="193" y="88" width="126" height="21"/>
-<rect x="382" y="88" width="42" height="21"/>
-<rect x="88" y="109" width="42" height="21"/>
-<rect x="193" y="109" width="126" height="21"/>
-<rect x="382" y="109" width="42" height="21"/>
-<rect x="88" y="130" width="42" height="21"/>
-<rect x="193" y="130" width="42" height="21"/>
-<rect x="277" y="130" width="42" height="21"/>
-<rect x="382" y="130" width="42" height="21"/>
-<rect x="88" y="151" width="42" height="21"/>
-<rect x="193" y="151" width="42" height="21"/>
-<rect x="277" y="151" width="42" height="21"/>
-<rect x="382" y="151" width="42" height="21"/>
-<rect x="88" y="172" width="42" height="21"/>
-<rect x="193" y="172" width="126" height="21"/>
-<rect x="382" y="172" width="42" height="21"/>
-<rect x="88" y="193" width="42" height="21"/>
-<rect x="193" y="193" width="126" height="21"/>
-<rect x="382" y="193" width="42" height="21"/>
-<rect x="88" y="214" width="42" height="21"/>
-<rect x="382" y="214" width="42" height="21"/>
-<rect x="88" y="235" width="42" height="21"/>
-<rect x="382" y="235" width="42" height="21"/>
-<rect x="88" y="256" width="42" height="21"/>
-<rect x="382" y="256" width="42" height="21"/>
-<rect x="88" y="277" width="42" height="21"/>
-<rect x="382" y="277" width="42" height="21"/>
-<rect x="88" y="298" width="42" height="21"/>
-<rect x="382" y="298" width="42" height="21"/>
-<rect x="88" y="319" width="42" height="21"/>
-<rect x="382" y="319" width="42" height="21"/>
-<rect x="88" y="340" width="42" height="21"/>
-<rect x="382" y="340" width="42" height="21"/>
-<rect x="88" y="361" width="42" height="21"/>
-<rect x="382" y="361" width="42" height="21"/>
-<rect x="109" y="382" width="42" height="21"/>
-<rect x="361" y="382" width="42" height="21"/>
-<rect x="130" y="403" width="42" height="21"/>
-<rect x="340" y="403" width="42" height="21"/>
-<rect x="151" y="424" width="42" height="21"/>
-<rect x="319" y="424" width="42" height="21"/>
-<rect x="172" y="445" width="42" height="21"/>
-<rect x="298" y="445" width="42" height="21"/>
-<rect x="193" y="466" width="126" height="21"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32">
+<g fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+<path d="M 21 3 L 29 3 L 29 22 L 16 22 L 16 8 Z"/>
+<path d="M 8 10 L 16 10 L 16 29 L 3 29 L 3 15 Z" fill="#fff"/>
+</g>
+<circle cx="20.3" cy="7.3" r="1.5"/>
+<circle cx="7.3" cy="14.3" r="1.5"/>
 </svg>
