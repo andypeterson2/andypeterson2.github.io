@@ -14,20 +14,16 @@ An **Express REST API** exposes **84 endpoints** with **JSON Schema validation**
 - reorder by drag or keyboard, restyle and re-layout live;
 - track changes with **checkpoint history and undo/redo**.
 
+Tags decide what each variant includes, so a local int8 MiniLM embedding ranks the tags a bullet already has, blended with votes from the person's nearest tagged bullets. It runs offline and never invents a tag.
+
 Documents compile server-side through **XeLaTeX (Awesome-CV)** into a real PDF.
 
-## Demo-first by design
+## The result
 
 A **live in-browser demo runs the real editor with no backend**: it treats "not signed in" as the confident default and degrades gracefully instead of erroring. Any visitor can edit, reorder, tag and restyle a real document and export it as JSON. Compiling to a PDF and saving need an account, via **Sign in with Google** — and the demo edits you made come with you into your own profile.
 
-## What's real
+## What's checked
 
 Driven by a deterministic, backend-mocked **end-to-end suite** plus unit tests across its logic tier — the slice controllers, variants, tags, and history.
 
 Compiling untrusted LaTeX is the sharp edge, so it runs bounded: 10 compiles a minute per client, 100 per account per day, two XeLaTeX processes at once, 30 seconds each, and a third-party layout bundle is installed only after it passes verification. The front-door secret rolls out fail-closed — a miss is logged and allowed until `CV_ORIGIN_SECRET_ENFORCE` flips, and the secret itself takes a comma-separated set so it can be rotated one sender at a time. The rate limiter keys on `CF-Connecting-IP` only when `CV_TRUST_CF_IP` is set, because anywhere but behind Cloudflare a client picks that header's value itself.
-
-Tags decide what each variant includes, so a local int8 MiniLM embedding ranks the tags a bullet already has, blended with votes from the person's nearest tagged bullets. It runs offline and never invents a tag.
-
-## Stack
-
-Svelte 5 (runes) · Express · SQLite · Cloudflare Worker + Access · XeLaTeX · Playwright + Vitest.
