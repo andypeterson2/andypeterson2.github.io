@@ -1,0 +1,91 @@
+{
+  "source": "tiny-skill-linker, results/test",
+  "sets": {
+    "tech": 338,
+    "house": 262,
+    "techwolf": 326
+  },
+  "targets": 13891,
+  "params_millions": {
+    "fine_tuned": 22,
+    "published": 110
+  },
+  "rp5": {
+    "stock": {
+      "tech": 45.57,
+      "house": 33.85,
+      "techwolf": 36.74
+    },
+    "fine_tuned": {
+      "tech": {
+        "mean": 53.8,
+        "sd": 0.88,
+        "seeds": 3
+      },
+      "house": {
+        "mean": 46.62,
+        "sd": 0.93,
+        "seeds": 3
+      },
+      "techwolf": {
+        "mean": 47.66,
+        "sd": 0.48,
+        "seeds": 3
+      }
+    },
+    "int8": {
+      "tech": {
+        "mean": 53.79,
+        "sd": 1.51,
+        "seeds": 3
+      },
+      "house": {
+        "mean": 45.4,
+        "sd": 0.79,
+        "seeds": 3
+      },
+      "techwolf": {
+        "mean": 46.45,
+        "sd": 0.84,
+        "seeds": 3
+      }
+    },
+    "published": {
+      "tech": 54.62,
+      "house": 45.74,
+      "techwolf": 54.57
+    }
+  },
+  "unseen": {
+    "k": 5,
+    "held_out_skills": 2765,
+    "n_seen": 1414,
+    "n_unseen": 282,
+    "stock": {
+      "seen": 31.4,
+      "unseen": 33.69
+    },
+    "trained_on_all": {
+      "seen": {
+        "mean": 41.82,
+        "sd": 0.5
+      },
+      "unseen": {
+        "mean": 43.03,
+        "sd": 0.41
+      }
+    },
+    "held_out": {
+      "seen": 41.44,
+      "unseen": 41.84
+    },
+    "gain_unseen": {
+      "points": 8.16,
+      "ci": [3.55, 12.77]
+    },
+    "gain_seen": {
+      "points": 10.04,
+      "ci": [8.06, 12.02]
+    }
+  }
+}

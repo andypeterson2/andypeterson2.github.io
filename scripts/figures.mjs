@@ -8,9 +8,9 @@
  * 1-bit throughout, as the rest of the site is: ink on paper, a stipple where a second
  * fill is needed, no colour and no hue to rank by.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { W, INK, PAPER, esc, n, text, bar, note, figureWriter } from './lib/figure-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -24,88 +24,11 @@ const split = await read('nonogram-compile-split.json');
 const spread = await read('nonogram-query-spread.json');
 const perRound = await read('nonogram-per-round.json');
 
-const W = 640;
 /** What every figure has to say about itself, wherever it ends up. */
 const PROVENANCE = (env) =>
   `${env.target}, optimization level ${env.optimization_level}, qiskit ${env.qiskit}. A fit to a device model, not a run on hardware.\n` +
   `The oracle is written from the clues and compiled into one marked grid per solution, so every quantum figure is a lower bound.`;
-const INK = '#000';
-const PAPER = '#fff';
-
-/** The 4px stipple the site fills a second surface with. */
-const DEFS =
-  `<defs><pattern id="stipple" width="4" height="4" patternUnits="userSpaceOnUse">` +
-  `<rect width="4" height="4" fill="${PAPER}"/>` +
-  `<rect width="1" height="1" fill="${INK}"/><rect x="2" y="2" width="1" height="1" fill="${INK}"/>` +
-  `</pattern></defs>`;
-
-// Quotes included: `esc` feeds double-quoted attributes as well as text nodes.
-const esc = (s) =>
-  String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-const n = (v) => v.toLocaleString('en-US');
-
-function text(x, y, s, { size = 11, anchor = 'start', weight = 400, rotate } = {}) {
-  const t = rotate ? ` transform="rotate(${rotate},${x},${y})"` : '';
-  return (
-    `<text x="${x}" y="${y}" font-family="Geneva, Verdana, sans-serif" font-size="${size}" ` +
-    `font-weight="${weight}" fill="${INK}" text-anchor="${anchor}"${t}>${esc(s)}</text>`
-  );
-}
-
-function bar(x, y, w, h, fill) {
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${INK}" stroke-width="1"/>`;
-}
-
-/**
- * Wrap the marks in a figure: a frame, a title above, and the settings underneath.
- *
- * Every figure states what produced it. A depth fitted to a device model is not a run on
- * one, and a caption is the only place that distinction survives being pasted into a
- * report.
- */
-/** Fold a caption to the figure's width: about 120 characters at 10px in 640. */
-function wrap(line, max = 118) {
-  const out = [];
-  let row = '';
-  for (const word of line.split(' ')) {
-    if (row && `${row} ${word}`.length > max) {
-      out.push(row);
-      row = word;
-    } else row = row ? `${row} ${word}` : word;
-  }
-  if (row) out.push(row);
-  return out;
-}
-
-/** A block of small text inside a figure, folded to the width. */
-function note(x, y, line, max = 118) {
-  return wrap(line, max)
-    .map((l, i) => text(x, y + i * 13, l, { size: 10 }))
-    .join('');
-}
-
-function figure(name, title, height, body, caption) {
-  const lines = caption.split('\n').flatMap((l) => wrap(l));
-  const h = height + 16 + lines.length * 13;
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="${W}" height="${h}" ` +
-    `role="img" aria-label="${esc(title)}. ${esc(lines.join(' '))}">` +
-    `<title>${esc(title)}</title><desc>${esc(lines.join(' '))}</desc>` +
-    DEFS +
-    `<rect width="${W}" height="${h}" fill="${PAPER}"/>` +
-    text(0, 12, title, { size: 12, weight: 700 }) +
-    `<g transform="translate(0,26)">${body}</g>` +
-    lines.map((l, i) => text(0, height + 28 + i * 13, l, { size: 10 })).join('') +
-    `</svg>\n`;
-  mkdirSync(out, { recursive: true });
-  writeFileSync(join(out, name), svg);
-  return `${name} (${svg.length} bytes)`;
-}
+const figure = figureWriter(out);
 
 /** A log scale, since every quantity here spans decades. */
 function logScale(min, max, px) {

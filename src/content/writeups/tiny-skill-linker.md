@@ -19,24 +19,21 @@ That calibration immediately moved the baseline. Stock MiniLM scores **45.57 / 3
 
 Fine-tuned, three seeds, mean ± sd, against the paper's best fine-tuned 110M model:
 
-| Model | TECH | HOUSE | TECHWOLF |
-|---|---|---|---|
-| **MiniLM fine-tuned, 22M** | 53.80 ± 0.88 | 46.62 ± 0.93 | 47.66 ± 0.48 |
-| Decorte et al. best, 110M | 54.62 | 45.74 | 54.57 |
+![A fifth the parameters, set by set: stock MiniLM, the fine-tuned 22M model and the published 110M model, RP@5 on TECH, HOUSE and TECHWOLF.](/figures/skill-linker/against-published.svg)
+
+Three seeds, mean ± sd: **53.80 ± 0.88** on TECH, **46.62 ± 0.93** on HOUSE, **47.66 ± 0.48** on TECHWOLF, against the published 54.62 / 45.74 / 54.57.
 
 So at a fifth of the size it lands within a point on TECH, goes **ahead** on HOUSE, and **loses 6.9 points on TECHWOLF**. That last column is the honest cost of the smaller model and the one result here that does not favour it.
 
 Quantizing to int8 costs 0 to 1.2 RP@5 and at most 0.5 MRR, which leaves the int8 model 8 to 12 RP@5 above stock — the point being that the cheap model stays cheap without giving the gain back.
 
+![What fine-tuning bought and what int8 gave back, as RP@5 points on one axis.](/figures/skill-linker/gain-vs-cost.svg)
+
 ## Does it generalise, or just memorise the vocabulary?
 
 The claim that new skills work without retraining is testable, so it is tested. A separate run drops 2,765 of the 13,826 training skills — 20%, chosen at random — **and every sentence mentioning them**, then scores only the 282 test pairs whose gold skill was never seen.
 
-| Model | seen skills (n=1,414) | unseen skills (n=282) |
-|---|---|---|
-| MiniLM stock | 31.40 | 33.69 |
-| fine-tuned on all skills (3 seeds) | 41.82 ± 0.50 | 43.03 ± 0.41 |
-| fine-tuned with those skills held out | 41.44 | 41.84 |
+![Skills the model never trained on: hit@5 for stock, for the model trained on all skills, and for the model with 2,765 skills held out, on seen and unseen skills.](/figures/skill-linker/unseen-skills.svg)
 
 On skills it never saw, the held-out model still gains **+8.16 hit@5** over stock, 95% CI [+3.55, +12.77] by paired bootstrap, against +10.04 on skills it did see. Against the models that *did* train on those skills it sits 1.18 lower, and every interval on that comparison includes zero.
 
