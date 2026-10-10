@@ -115,22 +115,6 @@ test.describe('Home: the window chrome says what is in front and what to press',
     await expect(page.locator('.window--inactive')).toHaveCount(7);
   });
 
-  test('an open writeup is the one striped window, and a click outside closes it', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    const trigger = page.locator('[data-writeup-open]').first();
-    const id = await trigger.getAttribute('data-writeup-open');
-    await trigger.click();
-    const dialog = page.locator(`#${id!}`);
-    await expect(dialog).toBeVisible();
-    expect(await stripes(page, '.site-window > .title-bar')).toBe('none');
-    expect(await stripes(page, `#${id!} .writeup-titlebar`)).not.toBe('none');
-    await page.mouse.click(8, 450);
-    await expect(dialog).toBeHidden();
-    expect(await stripes(page, '.site-window > .title-bar')).not.toBe('none');
-  });
-
   test('each project card leads with the default button', async ({ page }) => {
     await page.goto('/');
     const cards = page.locator('.timeline-entry--project');

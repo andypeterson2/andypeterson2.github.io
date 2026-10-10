@@ -13,27 +13,19 @@ const activeLabel = (page: Page) =>
     return el?.getAttribute('aria-label') ?? el?.textContent?.trim() ?? '';
   });
 
-// A writeup opens with focus on its text, so the keyboard can scroll to its last
-// section. On a phone every writeup overflows.
-test.describe('Writeups scroll from the keyboard', () => {
-  test('each writeup opens on its text, and PageDown scrolls it', async ({ page }) => {
+// Each card's writeup link reaches that project's page from the keyboard alone.
+test.describe('Writeups open from the keyboard', () => {
+  test('a card writeup link reaches the project page on Enter', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
-    const triggers = page.locator('[data-writeup-open]');
-    const count = await triggers.count();
-    expect(count).toBeGreaterThan(0);
-    for (let i = 0; i < count; i++) {
-      const trigger = triggers.nth(i);
-      await trigger.scrollIntoViewIfNeeded();
-      await trigger.focus();
-      await page.keyboard.press('Enter');
-      const content = page.locator('[data-writeup-modal]:not([hidden]) .writeup-content');
-      await expect(content).toBeFocused();
-      await page.keyboard.press('PageDown');
-      await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-      await page.keyboard.press('Escape');
-      await expect(trigger).toBeFocused();
-    }
+    // A demo link can also sit under /projects/, so match the writeup link by its name.
+    const link = page.getByRole('link', { name: /^Writeup/ }).first();
+    const href = await link.getAttribute('href');
+    await link.scrollIntoViewIfNeeded();
+    await link.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    await expect(page.locator('.project-writeup')).toBeVisible();
   });
 });
 

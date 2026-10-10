@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import WriteupModal from '../../components/WriteupModal.astro';
 import { projects } from '../../data/projects';
+import { getEntry, render } from 'astro:content';
 
 export function getStaticPaths() {
   return projects.map((project) => ({ params: { slug: project.slug } }));
@@ -18,6 +18,12 @@ const TIER_LABELS = {
   offline: 'no hosted demo — the model and its benchmarks run from the repo',
 } as const;
 const tier = TIER_LABELS[project.tier];
+
+// This page is the writeup, so the body is rendered here rather than behind a dialog.
+// A missing entry is a broken content contract: the id must match the project slug.
+const writeup = await getEntry('writeups', slug!);
+if (!writeup) throw new Error(`No writeup for slug "${slug}" in src/content/writeups`);
+const { Content } = await render(writeup);
 ---
 
 <BaseLayout title={project.title} description={project.description} fillPane>
@@ -49,7 +55,6 @@ const tier = TIER_LABELS[project.tier];
           <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
             Source
           </a>
-          <WriteupModal slug={slug!} />
         </div>
       </div>
 
@@ -82,6 +87,15 @@ const tier = TIER_LABELS[project.tier];
           </div>
         )}
       </div>
+
+      <div class="project-section">
+        <div class="section-rule">
+          <span>The writeup</span>
+        </div>
+        <div class="project-writeup">
+          <Content />
+        </div>
+      </div>
     </div>
   </div>
 </BaseLayout>
@@ -103,7 +117,7 @@ const tier = TIER_LABELS[project.tier];
   }
 
   .project-lede {
-    max-width: 68ch;
+    max-width: 90ch;
   }
 
   .project-head {
@@ -156,6 +170,58 @@ const tier = TIER_LABELS[project.tier];
     padding: clamp(12px, 2vw, 24px) 0 0;
   }
 
+  /* Markdown body — the same System-6 treatment the dialog gives it. */
+  .project-writeup {
+    font-size: var(--text-xs);
+    line-height: 1.55;
+  }
+
+  .project-writeup > :global(*) {
+    max-width: 90ch;
+  }
+
+  .project-writeup :global(h2) {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 1.4em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .project-writeup :global(p) {
+    margin: 0 0 0.85em;
+  }
+
+  .project-writeup :global(ul),
+  .project-writeup :global(ol) {
+    margin: 0 0 0.85em;
+    padding-left: 1.4em;
+  }
+
+  .project-writeup :global(li) {
+    margin: 0.25em 0;
+  }
+
+  .project-writeup :global(a) {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .project-writeup :global(table) {
+    border-collapse: collapse;
+    margin: 0 0 1em;
+    font-size: var(--text-3xs);
+  }
+
+  .project-writeup :global(th),
+  .project-writeup :global(td) {
+    border: 1px solid var(--ink);
+    padding: 4px 8px;
+    text-align: left;
+  }
+
   .project-metrics {
     margin: 0;
     padding: 0;
@@ -163,11 +229,11 @@ const tier = TIER_LABELS[project.tier];
     display: flex;
     flex-direction: column;
     gap: clamp(4px, 0.6vw, 8px);
-    font-size: var(--text-2xs);
+    font-size: var(--text-xs);
     line-height: 1.4;
 
     /* The rule above spans the page; the sentence under it keeps a readable measure. */
-    max-width: 68ch;
+    max-width: 90ch;
   }
 
   .project-tech {

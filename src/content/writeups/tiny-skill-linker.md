@@ -19,7 +19,7 @@ That calibration immediately moved the baseline. Stock MiniLM scores **45.57 / 3
 
 Fine-tuned, three seeds, mean ± sd, against the paper's best fine-tuned 110M model:
 
-| | TECH | HOUSE | TECHWOLF |
+| Model | TECH | HOUSE | TECHWOLF |
 |---|---|---|---|
 | **MiniLM fine-tuned, 22M** | 53.80 ± 0.88 | 46.62 ± 0.93 | 47.66 ± 0.48 |
 | Decorte et al. best, 110M | 54.62 | 45.74 | 54.57 |
@@ -32,7 +32,7 @@ Quantizing to int8 costs 0 to 1.2 RP@5 and at most 0.5 MRR, which leaves the int
 
 The claim that new skills work without retraining is testable, so it is tested. A separate run drops 2,765 of the 13,826 training skills — 20%, chosen at random — **and every sentence mentioning them**, then scores only the 282 test pairs whose gold skill was never seen.
 
-| | seen skills (n=1,414) | unseen skills (n=282) |
+| Model | seen skills (n=1,414) | unseen skills (n=282) |
 |---|---|---|
 | MiniLM stock | 31.40 | 33.69 |
 | fine-tuned on all skills (3 seeds) | 41.82 ± 0.50 | 43.03 ± 0.41 |

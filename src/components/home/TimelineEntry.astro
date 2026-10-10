@@ -1,5 +1,4 @@
 ---
-import WriteupModal from '../WriteupModal.astro';
 import type { TimelineItem } from '../../lib/timeline';
 
 // One row on the home-page unified timeline. An experience period renders role /
@@ -81,13 +80,12 @@ const { entry } = Astro.props;
             {entry.project.appUrl.startsWith('http') ? 'Launch ->' : 'Try it ->'}
           </a>
         )}
-        <WriteupModal
-          slug={entry.project.slug}
-          label="Writeup"
-          appUrl={entry.project.appUrl}
-          repoUrl={entry.project.repoUrl}
-          primary={!entry.project.appUrl}
-        />
+        <a
+          href={`/projects/${entry.project.slug}/`}
+          class:list={['action-btn', { 'action-btn--primary': !entry.project.appUrl }]}
+        >
+          Writeup -&gt;
+        </a>
         <a
           href={entry.project.repoUrl}
           class="action-btn"
