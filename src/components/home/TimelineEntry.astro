@@ -1,5 +1,4 @@
 ---
-import WriteupModal from '../WriteupModal.astro';
 import type { TimelineItem } from '../../lib/timeline';
 
 // One row on the home-page unified timeline. An experience period renders role /
@@ -34,10 +33,19 @@ const { entry } = Astro.props;
     </div>
     <div class="timeline-content tl-project">
       <div class="tl-eyebrow">
-        <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
+        <img
+          src={`/icons/${entry.project.iconSmall ?? entry.project.icon}`}
+          alt=""
+          class="tl-icon"
+        />
         Project
         <span class="tl-tier">
-          · {entry.project.tier === 'browser' ? 'runs in your browser' : 'separate app'}
+          ·{' '}
+          {entry.project.tier === 'browser'
+            ? 'runs in your browser'
+            : entry.project.tier === 'offline'
+              ? 'no demo, code and measurements'
+              : 'separate app'}
         </span>
       </div>
       <div class="timeline-role">{entry.project.title}</div>
@@ -72,13 +80,12 @@ const { entry } = Astro.props;
             {entry.project.appUrl.startsWith('http') ? 'Launch ->' : 'Try it ->'}
           </a>
         )}
-        <WriteupModal
-          slug={entry.project.slug}
-          label="Writeup"
-          appUrl={entry.project.appUrl}
-          repoUrl={entry.project.repoUrl}
-          primary={!entry.project.appUrl}
-        />
+        <a
+          href={`/projects/${entry.project.slug}/`}
+          class:list={['action-btn', { 'action-btn--primary': !entry.project.appUrl }]}
+        >
+          Writeup -&gt;
+        </a>
         <a
           href={entry.project.repoUrl}
           class="action-btn"

@@ -38,12 +38,8 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
     },
   },
   {
-    name: 'home, writeup open',
-    path: '/',
-    setup: async (page) => {
-      await page.locator('[data-writeup-open]').first().click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-    },
+    name: 'project page, writeup body',
+    path: '/projects/tiny-skill-linker/',
   },
   { name: '404', path: '/intentionally-missing/' },
   { name: 'nonogram', path: NONOGRAM },

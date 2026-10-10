@@ -25,6 +25,7 @@ const availability = openTo.length > 0 ? `open to ${openTo.join(' · ')}` : '';
 // presentation) rather than in the core project data.
 const projectTimeline: TimelineItem[] = [
   { slug: 'quantum-ml-classifier', period: '2024 – 2026' },
+  { slug: 'tiny-skill-linker', period: '2026' },
   { slug: 'latex-resume-editor', period: '2025' },
   { slug: 'quantum-nonogram-solver', period: '2024' },
   { slug: 'quantum-video-chat', period: '2024' },
@@ -84,9 +85,9 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
             I build systems that have to prove they work. As a{' '}
             <strong>Research Intern at the Qualcomm Institute (CALIT2)</strong> from 2022 to 2024, I
             built browser-native video encrypted with keys from a simulated BB84 quantum key
-            exchange, Grover search that found the right answer five times as often as chance on
-            real IBM hardware (32.3% against 6.25%), and machine-learning classification pipelines.
-            I graduated in Computer Science from <strong>UC San Diego</strong> in December 2024, and
+            exchange, Grover search that found the right answer six times as often as chance on real
+            IBM hardware (36.8% against 6.25%), and machine-learning classification pipelines. I
+            graduated in Computer Science from <strong>UC San Diego</strong> in December 2024, and
             since then I've been building independently: the demos below, a quantum SVM paper
             recreation run on IBM hardware, and this site.
           </p>
@@ -145,7 +146,7 @@ const timeline: TimelineItem[] = [current, ...projectTimeline, ...past];
             <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"></path>
             <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"></path>
           </svg>{' '}
-          Résumé
+          Resume
         </a>
         <a
           href={`https://api.${siteConfig.domain}/cv.pdf`}

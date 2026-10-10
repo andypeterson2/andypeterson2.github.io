@@ -1,22 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import WriteupModal from '../../components/WriteupModal.astro';
 import { projects } from '../../data/projects';
+import { getEntry, render } from 'astro:content';
 
 export function getStaticPaths() {
   return projects.map((project) => ({ params: { slug: project.slug } }));
 }
 
 const { slug } = Astro.params;
-const at = projects.findIndex((p) => p.slug === slug);
-const project = projects[at]!;
-const prev = at > 0 ? projects[at - 1] : null;
-const next = at < projects.length - 1 ? projects[at + 1] : null;
+const project = projects.find((p) => p.slug === slug)!;
 
 // Where the demo runs, said once rather than implied — the same wording the
 // timeline cards use.
-const tier =
-  project.tier === 'browser' ? 'runs in your browser' : 'runs elsewhere, opens in a new tab';
+const TIER_LABELS = {
+  browser: 'runs in your browser',
+  external: 'runs elsewhere, opens in a new tab',
+  offline: 'no hosted demo — the model and its benchmarks run from the repo',
+} as const;
+const tier = TIER_LABELS[project.tier];
+
+// This page is the writeup, so the body is rendered here rather than behind a dialog.
+// A missing entry is a broken content contract: the id must match the project slug.
+const writeup = await getEntry('writeups', slug!);
+if (!writeup) throw new Error(`No writeup for slug "${slug}" in src/content/writeups`);
+const { Content } = await render(writeup);
 ---
 
 <BaseLayout title={project.title} description={project.description} fillPane>
@@ -48,7 +55,6 @@ const tier =
           <a href={project.repoUrl} class="action-btn" target="_blank" rel="noopener noreferrer">
             Source
           </a>
-          <WriteupModal slug={slug!} />
         </div>
       </div>
 
@@ -81,30 +87,15 @@ const tier =
           </div>
         )}
       </div>
-    </div>
 
-    <div class="project-section project-footer">
-      <div class="section-rule">
-        <span>Browse projects</span>
+      <div class="project-section">
+        <div class="section-rule">
+          <span>The writeup</span>
+        </div>
+        <div class="project-writeup">
+          <Content />
+        </div>
       </div>
-      <nav class="project-nav" aria-label="Project navigation">
-        {prev ? (
-          <a href={`/projects/${prev.slug}/`} class="nav-link">
-            <span class="nav-dir">&lt;- Previous</span>
-            <span class="nav-title">{prev.title}</span>
-          </a>
-        ) : (
-          <span />
-        )}
-        {next ? (
-          <a href={`/projects/${next.slug}/`} class="nav-link nav-next">
-            <span class="nav-dir">Next -&gt;</span>
-            <span class="nav-title">{next.title}</span>
-          </a>
-        ) : (
-          <span />
-        )}
-      </nav>
     </div>
   </div>
 </BaseLayout>
@@ -119,21 +110,14 @@ const tier =
     flex-direction: column;
   }
 
-  .project-footer {
-    margin-top: auto;
-  }
-
-  /* Two columns while there is room for both: the lede keeps a readable measure and
-     the numbers take the width beside it. */
+  /* One column, read in order: what it is, then what it does, then what it is built with. */
   .project-main {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-    gap: 0 clamp(20px, 3vw, 48px);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
   }
 
   .project-lede {
-    max-width: 68ch;
+    max-width: 90ch;
   }
 
   .project-head {
@@ -186,6 +170,67 @@ const tier =
     padding: clamp(12px, 2vw, 24px) 0 0;
   }
 
+  /* Markdown body — the same System-6 treatment the dialog gives it. */
+  .project-writeup {
+    font-size: var(--text-xs);
+    line-height: 1.55;
+  }
+
+  .project-writeup > :global(*) {
+    max-width: 90ch;
+  }
+
+  .project-writeup :global(h2) {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 1.4em 0 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .project-writeup :global(p) {
+    margin: 0 0 0.85em;
+  }
+
+  .project-writeup :global(ul),
+  .project-writeup :global(ol) {
+    margin: 0 0 0.85em;
+    padding-left: 1.4em;
+  }
+
+  .project-writeup :global(li) {
+    margin: 0.25em 0;
+  }
+
+  /* A figure is drawn at 640 and carries its own caption, so it scales to the measure. */
+  .project-writeup :global(img) {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 1em 0 1.2em;
+  }
+
+  .project-writeup :global(a) {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  .project-writeup :global(table) {
+    border-collapse: collapse;
+    margin: 0 0 1em;
+    font-size: var(--text-3xs);
+  }
+
+  .project-writeup :global(th),
+  .project-writeup :global(td) {
+    border: 1px solid var(--ink);
+    padding: 4px 8px;
+    text-align: left;
+  }
+
   .project-metrics {
     margin: 0;
     padding: 0;
@@ -193,8 +238,11 @@ const tier =
     display: flex;
     flex-direction: column;
     gap: clamp(4px, 0.6vw, 8px);
-    font-size: var(--text-2xs);
+    font-size: var(--text-xs);
     line-height: 1.4;
+
+    /* The rule above spans the page; the sentence under it keeps a readable measure. */
+    max-width: 90ch;
   }
 
   .project-tech {
@@ -215,43 +263,5 @@ const tier =
     min-height: 0;
     padding: 3px clamp(8px, 1vw, 12px);
     cursor: default;
-  }
-
-  .project-nav {
-    display: flex;
-    justify-content: space-between;
-    gap: clamp(8px, 1.5vw, 20px);
-  }
-
-  .nav-link {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    text-decoration: none;
-    color: var(--ink);
-    padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
-    border: 2px solid var(--ink);
-    max-width: 45%;
-  }
-
-  .nav-link:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .nav-next {
-    text-align: right;
-    margin-left: auto;
-  }
-
-  .nav-dir {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .nav-title {
-    font-size: var(--text-xs);
   }
 </style>
