@@ -15,10 +15,11 @@ import type {
   LayoutInfo,
   LayoutReview,
   LayoutCheck,
+  StorageUsage,
 } from './types';
 import { createDemoProfile, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
-import { api, type ProfileMeta, type ApiResult, type RenderCatalog } from './api';
+import { api, type ProfileMeta, type ApiResult, type ApiError, type RenderCatalog } from './api';
 import { resolveAccent } from './accent';
 import { buildExport, type ExportDoc } from './export';
 import { stashDemoDraft, peekDemoDraft, clearDemoDraft, forNewOwner } from './draft';
@@ -122,6 +123,8 @@ class EditorState {
   layoutCheck = $state<LayoutCheck | null>(null);
   layoutBusy = $state(false);
   layoutReviews = $state<LayoutReview[]>([]);
+  /** The account's storage against its limits; null until loaded or when signed out. */
+  usage = $state<StorageUsage | null>(null);
   /** accent hex the document themes with — mirrors the Style drawer live. */
   /** Where a Style-drawer edit goes while a variant is active: every resume, or this one. */
   settingsScope = $state<'account' | 'variant'>('variant');
@@ -279,7 +282,7 @@ class EditorState {
    * Pass `retry` only for idempotent saves (field PUTs) — re-running a create
    * would orphan a second server row, since the failed one was rolled back.
    */
-  private settle(ok: boolean, retry?: () => void) {
+  private settle(ok: boolean, retry?: () => void, error?: ApiError) {
     if (ok) {
       this.saveState = 'saved';
       this.saveError = null;
@@ -288,6 +291,13 @@ class EditorState {
     }
     this.saveState = 'error';
     this.retryOp = retry ?? null;
+    // A full account is not a connection problem: say what is full, and refresh the meter.
+    if (error?.code === 'quota_exceeded') {
+      this.retryOp = null;
+      this.saveError = error.message;
+      void this.loadUsage();
+      return;
+    }
     this.saveError = retry
       ? "Couldn't save your edit — it's still here. Retry?"
       : "Couldn't save your last change. Check your connection.";
@@ -308,7 +318,7 @@ class EditorState {
     } catch {
       res = { ok: false, status: 0, error: { code: 'threw', message: 'save failed' } };
     }
-    this.settle(res.ok, retry);
+    this.settle(res.ok, retry, res.error);
     return res;
   }
   /**
@@ -814,8 +824,14 @@ class EditorState {
     if (!this.connected) return;
     void this.persist(() => api.patchSettings({ [`style.${key}`]: value }));
   }
+  async loadUsage() {
+    if (!this.connected) return;
+    const res = await api.getUsage();
+    if (res.ok && res.data) this.usage = res.data;
+  }
   async loadLayouts() {
     if (!this.connected) return;
+    void this.loadUsage();
     const res = await api.getLayouts();
     if (res.ok && res.data) {
       this.layouts = res.data.layouts ?? [];
@@ -1251,6 +1267,7 @@ class EditorState {
       this.profiles = [...this.profiles, { id: res.data.id, name }];
       await this.selectProfile(res.data.id); // load the new (empty) profile
     }
+    void this.loadUsage();
   }
   async renameProfile(pid: number, name: string) {
     const clean = name.trim();
@@ -1273,6 +1290,7 @@ class EditorState {
       this.profiles = snapshot;
       return;
     }
+    void this.loadUsage();
     this.#cache.drop(pid); // its working tree and history die with it
     this.undo.dropScope(`p${pid}`);
     if (wasActive) {

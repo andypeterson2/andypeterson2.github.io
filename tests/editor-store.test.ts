@@ -821,3 +821,38 @@ describe('EditorState — layouts', () => {
     editor.connected = false;
   });
 });
+
+describe('EditorState — storage usage', () => {
+  const usage = {
+    unlimited: false,
+    bytes: { used: 49 * 1048576, content: 40 * 1048576, layouts: 9 * 1048576, limit: 50 * 1048576 },
+    profiles: { used: 2, limit: 20 },
+    layouts: { used: 3, limit: 20 },
+    pendingLayouts: { used: 0, limit: 3 },
+    versionsPerProfile: { limit: 100 },
+  };
+
+  test('loads the account usage when signed in', async () => {
+    editor.connected = true;
+    vi.spyOn(api, 'getUsage').mockResolvedValue({ ok: true, status: 200, data: usage });
+    await editor.loadUsage();
+    expect(editor.usage).toEqual(usage);
+    editor.connected = false;
+  });
+
+  test('a save refused for quota says what is full, offers no retry, and refreshes usage', async () => {
+    editor.connected = true;
+    const refresh = vi
+      .spyOn(api, 'getUsage')
+      .mockResolvedValue({ ok: true, status: 200, data: usage });
+    const message = 'This account stores 50.0 MB of its 50.0 MB limit. Delete old versions.';
+    await editor.persist(
+      async () => ({ ok: false, status: 413, error: { code: 'quota_exceeded', message } }),
+      () => {},
+    );
+    expect(editor.saveError).toBe(message);
+    expect(editor.retryOp).toBe(null);
+    expect(refresh).toHaveBeenCalled();
+    editor.connected = false;
+  });
+});

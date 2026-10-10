@@ -3,6 +3,7 @@
   import UiButton from './ui/Button.svelte';
   import { editor } from '../lib/store.svelte';
   import type { LayoutInfo } from '../lib/types';
+  import StorageUsage from './StorageUsage.svelte';
 
   onMount(() => {
     void editor.loadLayouts();
@@ -144,6 +145,8 @@
     your own résumés before anything is installed.
   </p>
 </div>
+
+<StorageUsage show={['layouts']} />
 
 {#if editor.canReviewLayouts}
   <div class="lbl">Waiting for review</div>
