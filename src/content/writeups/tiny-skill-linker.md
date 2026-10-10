@@ -23,7 +23,7 @@ Fine-tuned, three seeds, mean ± sd, against the paper's best fine-tuned 110M mo
 
 Three seeds, mean ± sd: **53.80 ± 0.88** on TECH, **46.62 ± 0.93** on HOUSE, **47.66 ± 0.48** on TECHWOLF, against the published 54.62 / 45.74 / 54.57.
 
-So at a fifth of the size it lands within a point on TECH, goes **ahead** on HOUSE, and **loses 6.9 points on TECHWOLF**. That last column is the honest cost of the smaller model and the one result here that does not favour it.
+So at a fifth of the size it lands within a point on TECH, goes **ahead** on HOUSE, and **loses 6.9 points on TECHWOLF**. That last column is what the smaller model costs, and the one result here that does not favour it.
 
 Quantizing to int8 costs 0 to 1.2 RP@5 and at most 0.5 MRR, which leaves the int8 model 8 to 12 RP@5 above stock — the point being that the cheap model stays cheap without giving the gain back.
 
@@ -39,11 +39,21 @@ On skills it never saw, the held-out model still gains **+8.16 hit@5** over stoc
 
 The caveat belongs next to the result: the held-out run is one seed, and only 282 test pairs involve held-out skills. The models it is compared against cover three seeds, so the spread is known on one side of that comparison and not the other.
 
+## Where the gain stops
+
+A gain on one task is not a gain on every task, so the model — seed 1, int8, in transformers.js — was tried on a second one: tagging 68 private resume bullets with 26 broad categories such as `system-architecture` and `leadership`. The set has one annotator, and the check was run once, after the model was chosen. It is worse than stock there — hit@3 0.809 against 0.868, a difference of **-0.059** (95% CI [-0.133, 0.000], cluster bootstrap), better on 1 bullet and worse on 5 (McNemar p = 0.22). It wins on tags named like concrete skills and loses on broad categories, which is what training on fine-grained ESCO skill names would predict. The resume tagger this site's editor uses keeps the stock model.
+
+The bullets are not published, so these numbers cannot be reproduced from this repository. The method can be re-run: the script takes any set of texts with gold tags and writes the metrics and the input's digest, never the text.
+
 ## What's checked
 
 No training sentence appears in any evaluation set — zero overlap, exact and after normalising case and punctuation, across all five splits. Query prefixes for the bge and arctic comparisons were chosen on validation, never on test. Weight interpolation against stock was swept under a rule fixed before the sweep, and the answer was that no blend is needed.
 
 Every row in every table is one evaluation run stored as its own file with the library versions, dataset revisions and machine that produced it, plus a digest of the code and the weights, so a row stays checkable after the commit it names has moved.
+
+## See it for yourself
+
+[The benchmark viewer](/projects/tiny-skill-linker/app/) carries what the stock model, one fine-tuned seed and the held-out run ranked for all 926 test sentences, with the correct skills marked. Its RP@5 is counted in the browser from the rows on screen, so the stock row above and the gain over it can be arrived at rather than taken on trust.
 
 ## Stack
 

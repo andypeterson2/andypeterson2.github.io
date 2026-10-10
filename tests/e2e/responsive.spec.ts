@@ -43,6 +43,7 @@ test.describe('Reflow at 320px', () => {
     '/projects/quantum-nonogram-solver/app/',
     '/projects/quantum-video-chat/app/',
     '/projects/latex-resume-editor/app/',
+    '/projects/tiny-skill-linker/app/',
     '/nope',
   ]) {
     test(`no horizontal scroll on ${path}`, async ({ page }) => {

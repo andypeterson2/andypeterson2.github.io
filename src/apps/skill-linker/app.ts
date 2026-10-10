@@ -1,0 +1,340 @@
+/**
+ * The skill-linker benchmark viewer.
+ *
+ * Two states over one file of precomputed candidates: a walk through the
+ * sentences one at a time, with each arm's running RP@5 converging on the figure
+ * its own run recorded, and a table of all of them with filters. Both read their
+ * figures from the candidates it was served, so a reader can count the same rows.
+ */
+import {
+  applyFilters,
+  buildRows,
+  loadDemo,
+  outcome,
+  rankOf,
+  RP_K,
+  summarize,
+  type Filters,
+  type Row,
+  type SkillLinkerDemo,
+  type Summary,
+} from './link';
+
+const PAGE = 100;
+const SET_NAMES: Partial<Record<string, string>> = {
+  tech: 'TECH',
+  house: 'HOUSE',
+  techwolf: 'TECHWOLF',
+};
+/** The two arms the walk puts side by side; the third is what the held-out filter is for. */
+const WALK_ARMS = ['stock', 'tuned'] as const;
+/** What each arm is called in the view. The run label it was scored under stays beside it. */
+const ARM_NAMES: Partial<Record<string, string>> = {
+  stock: 'Stock MiniLM',
+  tuned: 'Fine-tuned',
+  holdout: 'Fine-tuned, these skills held out',
+};
+
+const el = <K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  text?: string,
+): HTMLElementTagNameMap[K] => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+
+const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
+const setName = (key: string) => SET_NAMES[key] ?? key.toUpperCase();
+
+function armName(demo: SkillLinkerDemo, key: string): string {
+  return ARM_NAMES[key] ?? demo.arms[key]?.label ?? key;
+}
+
+/** The label the arm's own published run was recorded under. */
+function armRun(demo: SkillLinkerDemo, key: string): string {
+  return demo.arms[key]?.label ?? key;
+}
+
+/** A skill name as a chip, marked when it is one the sentence's answer key names. */
+function skillChip(name: string, gold: boolean, heldout = false): HTMLElement {
+  const chip = el('li', gold ? 'sl-chip sl-chip--gold' : 'sl-chip', name);
+  if (gold) {
+    const mark = el('span', 'sl-mark', heldout ? 'correct, held out' : 'correct');
+    chip.prepend(mark);
+  }
+  return chip;
+}
+
+/** One arm's candidate list for a sentence, with the correct skills marked in place. */
+function candidateList(demo: SkillLinkerDemo, row: Row, arm: string, depth: number): HTMLElement {
+  const wrap = el('div', 'sl-arm');
+  const head = el('h3', 'sl-arm-title', armName(demo, arm));
+  head.title = armRun(demo, arm);
+  const score = rpAt(row, arm);
+  head.append(el('span', 'sl-arm-score', `RP@${String(RP_K)} ${score.toFixed(2)}`));
+  wrap.append(head);
+  const list = el('ol', 'sl-candidates');
+  const gold = new Set(row.gold);
+  const heldout = new Set(row.heldoutGold);
+  (row.top[arm] ?? []).slice(0, depth).forEach((id) => {
+    list.append(skillChip(demo.labels[id], gold.has(id), heldout.has(id)));
+  });
+  wrap.append(list);
+  return wrap;
+}
+
+function rpAt(row: Row, arm: string): number {
+  return summarize([row], arm).rp5;
+}
+
+/** Each correct skill's rank for one arm: "3, 418" — an em dash past the export's depth. */
+function rankCell(row: Row, arm: string, depth: number): string {
+  const ranked = row.top[arm] ?? [];
+  return row.gold
+    .map((g) => {
+      const rank = rankOf(g, ranked);
+      return rank < 0 ? `>${String(depth)}` : String(rank + 1);
+    })
+    .join(', ');
+}
+
+function summaryTable(
+  demo: SkillLinkerDemo,
+  rows: Row[],
+  heldoutOnly: boolean,
+  shown: number,
+): HTMLElement {
+  const table = el('table', 's6-data-table sl-summary');
+  const caption = el(
+    'caption',
+    'sl-caption',
+    heldoutOnly
+      ? `${String(rows.length)} sentences, scoring only their held-out skills.`
+      : `All ${String(rows.length)} kept sentences, not just the ${String(Math.min(shown, rows.length))} shown.`,
+  );
+  table.append(caption);
+  const head = el('thead');
+  const headRow = el('tr');
+  [
+    'Model',
+    `RP@${String(RP_K)}`,
+    `hit@${String(RP_K)}`,
+    `MRR@${String(demo.k)}`,
+    'Sentences',
+  ].forEach((label) => headRow.append(el('th', undefined, label)));
+  head.append(headRow);
+  table.append(head);
+  const body = el('tbody');
+  for (const arm of Object.keys(demo.arms)) {
+    const stats: Summary = summarize(rows, arm, (row) =>
+      heldoutOnly ? row.heldoutGold : row.gold,
+    );
+    const tr = el('tr');
+    const label = el('th', undefined, armName(demo, arm));
+    label.append(el('span', 'sl-run', armRun(demo, arm)));
+    tr.append(label);
+    [pct(stats.rp5), pct(stats.hit5), stats.mrr.toFixed(3), String(stats.queries)].forEach(
+      (value) => tr.append(el('td', 'sl-num', value)),
+    );
+    body.append(tr);
+  }
+  table.append(body);
+  return table;
+}
+
+function mount(demo: SkillLinkerDemo, root: HTMLElement): void {
+  const rows = buildRows(demo);
+  const arms = Object.keys(demo.arms);
+  const filters: Filters = {
+    set: 'all',
+    outcome: 'any',
+    outcomeArm: 'tuned',
+    heldoutOnly: false,
+  };
+  let walkSet = 'tech';
+  let walkAt = 0;
+  let shown = PAGE;
+
+  /** A node the view cannot be drawn without. Its absence means the markup is broken. */
+  const need = (selector: string): HTMLElement => {
+    const node = root.querySelector<HTMLElement>(selector);
+    if (!node) throw new Error(`skill-linker markup is missing ${selector}`);
+    return node;
+  };
+
+  const walkPanel = need('#sl-walk');
+  const tablePanel = need('#sl-table');
+  const sentence = need('#sl-sentence');
+  const answer = need('#sl-answer');
+  const columns = need('#sl-columns');
+  const progress = need('#sl-progress');
+  const running = need('#sl-running');
+  const head = need('#sl-head');
+  const rowsHost = need('#sl-rows');
+  const summaryHost = need('#sl-summary');
+  const more = need('#sl-more');
+
+  const walkRows = () => rows.filter((row) => row.set === walkSet);
+
+  function drawWalk(): void {
+    const subset = walkRows();
+    if (subset.length === 0) return;
+    const row = subset[walkAt];
+    progress.textContent = `Sentence ${String(walkAt + 1)} of ${String(subset.length)} · ${setName(walkSet)}`;
+    sentence.textContent = row.text;
+
+    answer.replaceChildren();
+    answer.append(el('span', 'sl-answer-label', `Correct skills (${String(row.gold.length)}):`));
+    const list = el('ul', 'sl-answer-list');
+    const heldout = new Set(row.heldoutGold);
+    row.gold.forEach((g) => {
+      list.append(skillChip(demo.labels[g], true, heldout.has(g)));
+    });
+    answer.append(list);
+
+    columns.replaceChildren(...WALK_ARMS.map((arm) => candidateList(demo, row, arm, RP_K)));
+
+    const seen = subset.slice(0, walkAt + 1);
+    running.replaceChildren();
+    WALK_ARMS.forEach((arm) => {
+      const stats = summarize(seen, arm);
+      const published = demo.arms[arm]?.published_rp5[walkSet] ?? 0;
+      const line = el('div', 'sl-running-row');
+      line.append(el('span', 'sl-running-name', armName(demo, arm)));
+      line.append(el('span', 'sl-num', `${pct(stats.rp5)} · n=${String(stats.queries)}`));
+      line.append(el('span', 'sl-running-aim', `full set ${pct(published)}`));
+      running.append(line);
+    });
+  }
+
+  function drawTable(): void {
+    head.replaceChildren(
+      ...['Set', 'Sentence', 'Correct skills'].map((label) => el('th', undefined, label)),
+      ...arms.map((arm) => {
+        const cell = el('th', undefined, armName(demo, arm));
+        cell.title = armRun(demo, arm);
+        return cell;
+      }),
+    );
+    const kept = applyFilters(rows, filters);
+    summaryHost.replaceChildren(summaryTable(demo, kept, filters.heldoutOnly, shown));
+
+    const page = kept.slice(0, shown);
+    rowsHost.replaceChildren();
+    page.forEach((row) => {
+      const tr = el('tr');
+      tr.append(el('th', 'sl-set', setName(row.set)));
+      const text = el('td', 'sl-text', row.text);
+      text.title = row.text;
+      tr.append(text);
+      const golds = el('td', 'sl-golds', row.gold.map((g) => demo.labels[g]).join('; '));
+      if (row.heldoutGold.length > 0) {
+        golds.append(
+          el('span', 'sl-mark', `${String(row.heldoutGold.length)} held out of training`),
+        );
+      }
+      tr.append(golds);
+      arms.forEach((arm) => {
+        const cell = el('td', `sl-num sl-${outcome(row, arm)}`, rankCell(row, arm, demo.k));
+        cell.title = `${armName(demo, arm)}: rank of each correct skill`;
+        tr.append(cell);
+      });
+      rowsHost.append(tr);
+    });
+
+    more.hidden = kept.length <= shown;
+    more.textContent = `Show ${String(Math.min(PAGE, kept.length - shown))} more of ${String(kept.length)}`;
+  }
+
+  root.querySelectorAll<HTMLButtonElement>('[data-state]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const wanted = button.dataset.state;
+      root.querySelectorAll<HTMLButtonElement>('[data-state]').forEach((other) => {
+        other.setAttribute('aria-selected', String(other.dataset.state === wanted));
+      });
+      walkPanel.hidden = wanted !== 'walk';
+      tablePanel.hidden = wanted !== 'table';
+      if (wanted === 'table') drawTable();
+    });
+  });
+
+  root.querySelector<HTMLButtonElement>('#sl-next')?.addEventListener('click', () => {
+    walkAt = (walkAt + 1) % walkRows().length;
+    drawWalk();
+  });
+  root.querySelector<HTMLSelectElement>('#sl-walk-set')?.addEventListener('change', (event) => {
+    walkSet = (event.target as HTMLSelectElement).value;
+    walkAt = 0;
+    drawWalk();
+  });
+  root.querySelector<HTMLSelectElement>('#sl-filter-set')?.addEventListener('change', (event) => {
+    filters.set = (event.target as HTMLSelectElement).value;
+    shown = PAGE;
+    drawTable();
+  });
+  root
+    .querySelector<HTMLSelectElement>('#sl-filter-outcome')
+    ?.addEventListener('change', (event) => {
+      filters.outcome = (event.target as HTMLSelectElement).value as Filters['outcome'];
+      shown = PAGE;
+      drawTable();
+    });
+  root.querySelector<HTMLSelectElement>('#sl-filter-arm')?.addEventListener('change', (event) => {
+    filters.outcomeArm = (event.target as HTMLSelectElement).value;
+    shown = PAGE;
+    drawTable();
+  });
+  root
+    .querySelector<HTMLInputElement>('#sl-filter-heldout')
+    ?.addEventListener('change', (event) => {
+      filters.heldoutOnly = (event.target as HTMLInputElement).checked;
+      shown = PAGE;
+      drawTable();
+    });
+  more.addEventListener('click', () => {
+    shown += PAGE;
+    drawTable();
+  });
+
+  // The arm pickers name the models the export actually carries, so a renamed arm
+  // cannot leave a stale option behind.
+  const armOptions = root.querySelector<HTMLSelectElement>('#sl-filter-arm');
+  if (armOptions) {
+    armOptions.replaceChildren(
+      ...arms.map((arm) => {
+        const option = el('option', undefined, armName(demo, arm));
+        option.value = arm;
+        option.selected = arm === filters.outcomeArm;
+        return option;
+      }),
+    );
+  }
+
+  const header = root.querySelector<HTMLElement>('#sl-scope');
+  if (header) {
+    const targets = Object.values(demo.sets)[0]?.n_targets ?? 0;
+    header.textContent =
+      `${String(rows.length)} test sentences, each ranked against all ` +
+      `${targets.toLocaleString('en-US')} skills in ESCO ${demo.esco_version}. ` +
+      `Top ${String(demo.k)} kept.`;
+  }
+
+  drawWalk();
+}
+
+const root = document.getElementById('skill-linker-app');
+if (root) {
+  loadDemo()
+    .then((demo) => {
+      mount(demo, root);
+      root.querySelector('#sl-loading')?.remove();
+    })
+    .catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      const note = root.querySelector('#sl-loading');
+      if (note) note.textContent = `Could not load the benchmark data: ${message}`;
+    });
+}

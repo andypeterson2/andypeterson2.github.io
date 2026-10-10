@@ -15,6 +15,7 @@ const project = projects.find((p) => p.slug === slug)!;
 const TIER_LABELS = {
   browser: 'runs in your browser',
   external: 'runs elsewhere, opens in a new tab',
+  precomputed: 'the benchmark can be re-counted here; the model itself runs from the repo',
   offline: 'no hosted demo — the model and its benchmarks run from the repo',
 } as const;
 const tier = TIER_LABELS[project.tier];
