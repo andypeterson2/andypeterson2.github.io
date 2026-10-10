@@ -67,6 +67,14 @@ describe('the export agrees with the figures the writeup is drawn from', () => {
     expect(counts).toEqual(benchmarks.sets);
   });
 
+  test('on the depth and taxonomy the page states before the data arrives', () => {
+    // The scope line is built from the benchmarks file, so only the one constant the
+    // page spells out needs holding to the export.
+    expect(pageText).toContain('const DEPTH = 10');
+    expect(demo.k).toBe(10);
+    expect(demo.esco_version).toBe(benchmarks.esco_version);
+  });
+
   test('on how many skills were ranked per sentence', () => {
     for (const data of Object.values(demo.sets)) {
       expect(data.n_targets).toBe(benchmarks.targets);

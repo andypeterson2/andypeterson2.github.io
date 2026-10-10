@@ -66,5 +66,6 @@ test.describe('Skill linker benchmark viewer', () => {
   test('the scope line states what was ranked against what', async ({ page }) => {
     await expect(page.locator('#sl-scope')).toContainText('926 test sentences');
     await expect(page.locator('#sl-scope')).toContainText('13,891 skills');
+    await expect(page.locator('#sl-scope')).toContainText('Top 10 kept');
   });
 });

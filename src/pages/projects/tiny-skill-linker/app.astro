@@ -1,6 +1,12 @@
 ---
 import DemoShell from '../../../layouts/DemoShell.astro';
+import benchmarks from '../../../data/skill-linker-benchmarks.json';
 import '../../../styles/skill-linker.css';
+
+// In the first paint, so the data arriving later moves nothing under it. A test holds
+// both to the export.
+const sentences = Object.values(benchmarks.sets).reduce((n, count) => n + count, 0);
+const DEPTH = 10;
 
 // No `backend` prop: nothing here talks to a server, so LiveTier and the contract
 // client never load. The page reads one precomputed file and does its own arithmetic.
@@ -13,7 +19,11 @@ import '../../../styles/skill-linker.css';
   <div id="skill-linker-app">
     <!-- No heading of its own: the window chrome's title is this page's h1. -->
     <header class="sl-head">
-      <p class="sl-scope" id="sl-scope"></p>
+      <p class="sl-scope" id="sl-scope">
+        {sentences.toLocaleString('en-US')} test sentences, each ranked against all{' '}
+        {benchmarks.targets.toLocaleString('en-US')} skills in ESCO {benchmarks.esco_version}. Top{' '}
+        {DEPTH} kept.
+      </p>
     </header>
 
     <div class="sl-tabs" role="tablist" aria-label="View">
@@ -41,10 +51,6 @@ import '../../../styles/skill-linker.css';
       </button>
     </div>
 
-    <p class="sl-loading" id="sl-loading">
-      Loading the benchmark data.
-    </p>
-
     <section class="sl-panel" id="sl-walk" role="tabpanel" aria-labelledby="sl-tab-walk">
       <div class="sl-controls">
         <label class="sl-field">
@@ -67,11 +73,35 @@ import '../../../styles/skill-linker.css';
       <div class="sl-answer" id="sl-answer"></div>
 
       <h2 class="sl-h2 sl-columns-head">Top 5</h2>
-      <div class="sl-columns" id="sl-columns"></div>
+      <!-- Both cards and their five slots are here from the start: the script writes
+           text into them, so the data arriving moves nothing below it. -->
+      <div class="sl-columns" id="sl-columns">
+        {['stock', 'tuned'].map((arm) => (
+          <div class="sl-arm" data-arm={arm}>
+            <h3 class="sl-arm-title">
+              <span class="sl-arm-name"></span>
+              <span class="sl-arm-score"></span>
+            </h3>
+            <ol class="sl-candidates">
+              {[0, 1, 2, 3, 4].map(() => (
+                <li class="sl-chip"></li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
 
       <div class="sl-running-box">
         <h2 class="sl-h2">RP@5 so far</h2>
-        <div class="sl-running" id="sl-running"></div>
+        <div class="sl-running" id="sl-running">
+          {['stock', 'tuned'].map((arm) => (
+            <div class="sl-running-row" data-arm={arm}>
+              <span class="sl-running-name"></span>
+              <span class="sl-num"></span>
+              <span class="sl-running-aim"></span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
 

@@ -97,6 +97,7 @@
 /* The sentence is the subject of the view, so it takes the one size step up. */
 #skill-linker-app .sl-sentence {
   margin: 0;
+  min-height: 4.4em;
   padding: 8px 10px;
   border-left: 4px solid var(--ink);
   background: var(--paper-2);
@@ -105,6 +106,7 @@
 }
 
 #skill-linker-app .sl-answer {
+  min-height: 2.6em;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -151,6 +153,7 @@
 }
 
 #skill-linker-app .sl-arm-title {
+  min-height: 1.4em;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -179,6 +182,9 @@
   gap: 6px;
   padding: 2px 0;
   line-height: 1.35;
+
+  /* An empty slot still holds its line, so the five do not collapse before they fill. */
+  min-height: 1.35em;
 }
 
 #skill-linker-app .sl-candidates .sl-chip::before {
@@ -224,6 +230,7 @@
 }
 
 #skill-linker-app .sl-running-row {
+  min-height: 1.4em;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;

@@ -49,22 +49,33 @@ function skillChip(name: string, gold: boolean, heldout = false): HTMLElement {
   return chip;
 }
 
-/** One arm's candidate list for a sentence, with the correct skills marked in place. */
-function candidateList(demo: SkillLinkerDemo, row: Row, arm: string, depth: number): HTMLElement {
-  const wrap = el('div', 'sl-arm');
-  const head = el('h3', 'sl-arm-title', armName(demo, arm));
-  head.title = armRun(demo, arm);
-  const score = rpAt(row, arm);
-  head.append(el('span', 'sl-arm-score', `RP@${String(RP_K)} ${score.toFixed(2)}`));
-  wrap.append(head);
-  const list = el('ol', 'sl-candidates');
+/** Write one arm's candidates into the card already on the page. */
+function fillCandidates(demo: SkillLinkerDemo, row: Row, arm: string, card: HTMLElement): void {
+  const name = card.querySelector('.sl-arm-name');
+  const score = card.querySelector('.sl-arm-score');
+  const list = card.querySelector('.sl-candidates');
+  if (!name || !score || !list) return;
+  name.textContent = armName(demo, arm);
+  (name as HTMLElement).title = armRun(demo, arm);
+  score.textContent = `RP@${String(RP_K)} ${rpAt(row, arm).toFixed(2)}`;
   const gold = new Set(row.gold);
   const heldout = new Set(row.heldoutGold);
-  (row.top[arm] ?? []).slice(0, depth).forEach((id) => {
-    list.append(skillChip(demo.labels[id], gold.has(id), heldout.has(id)));
+  const ranked = (row.top[arm] ?? []).slice(0, RP_K);
+  // The slots are fixed, so each one is rewritten rather than the list rebuilt.
+  const slots = [...list.querySelectorAll('.sl-chip')];
+  slots.forEach((slot) => {
+    slot.replaceChildren();
+    slot.classList.remove('sl-chip--gold');
   });
-  wrap.append(list);
-  return wrap;
+  // Clipped to the slots that exist, so every index below lands on one.
+  ranked.slice(0, slots.length).forEach((id, i) => {
+    const slot = slots[i];
+    const isGold = gold.has(id);
+    slot.classList.toggle('sl-chip--gold', isGold);
+    if (isGold)
+      slot.append(el('span', 'sl-mark', heldout.has(id) ? 'correct, held out' : 'correct'));
+    slot.append(document.createTextNode(demo.labels[id]));
+  });
 }
 
 function rpAt(row: Row, arm: string): number {
@@ -165,18 +176,21 @@ function mount(demo: SkillLinkerDemo, root: HTMLElement): void {
     });
     answer.append(list);
 
-    columns.replaceChildren(...WALK_ARMS.map((arm) => candidateList(demo, row, arm, RP_K)));
-
     const seen = subset.slice(0, walkAt + 1);
-    running.replaceChildren();
     WALK_ARMS.forEach((arm) => {
+      const card = columns.querySelector<HTMLElement>(`[data-arm="${arm}"]`);
+      if (card) fillCandidates(demo, row, arm, card);
+
+      const line = running.querySelector<HTMLElement>(`[data-arm="${arm}"]`);
+      if (!line) return;
       const stats = summarize(seen, arm);
       const published = demo.arms[arm]?.published_rp5[walkSet] ?? 0;
-      const line = el('div', 'sl-running-row');
-      line.append(el('span', 'sl-running-name', armName(demo, arm)));
-      line.append(el('span', 'sl-num', `${pct(stats.rp5)} · n=${String(stats.queries)}`));
-      line.append(el('span', 'sl-running-aim', `full set ${pct(published)}`));
-      running.append(line);
+      const name = line.querySelector('.sl-running-name');
+      const now = line.querySelector('.sl-num');
+      const aim = line.querySelector('.sl-running-aim');
+      if (name) name.textContent = armName(demo, arm);
+      if (now) now.textContent = `${pct(stats.rp5)} · n=${String(stats.queries)}`;
+      if (aim) aim.textContent = `full set ${pct(published)}`;
     });
   }
 
@@ -283,15 +297,6 @@ function mount(demo: SkillLinkerDemo, root: HTMLElement): void {
     );
   }
 
-  const header = root.querySelector<HTMLElement>('#sl-scope');
-  if (header) {
-    const targets = Object.values(demo.sets)[0]?.n_targets ?? 0;
-    header.textContent =
-      `${String(rows.length)} test sentences, each ranked against all ` +
-      `${targets.toLocaleString('en-US')} skills in ESCO ${demo.esco_version}. ` +
-      `Top ${String(demo.k)} kept.`;
-  }
-
   drawWalk();
 }
 
@@ -300,11 +305,10 @@ if (root) {
   loadDemo()
     .then((demo) => {
       mount(demo, root);
-      root.querySelector('#sl-loading')?.remove();
     })
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
-      const note = root.querySelector('#sl-loading');
+      const note = root.querySelector('#sl-scope');
       if (note) note.textContent = `Could not load the benchmark data: ${message}`;
     });
 }
