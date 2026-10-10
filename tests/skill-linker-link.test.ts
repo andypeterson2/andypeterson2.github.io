@@ -6,15 +6,20 @@
  * compare against the aggregate each model's own run recorded, which the export
  * carries alongside them.
  */
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   applyFilters,
+  armName,
+  armRun,
   buildRows,
   outcome,
+  pct,
+  rankCell,
   rankOf,
   rpAt,
+  setName,
   summarize,
   type SkillLinkerDemo,
 } from '../src/apps/skill-linker/link';
@@ -143,6 +148,50 @@ describe('filters', () => {
   });
 });
 
+describe('what the view calls things', () => {
+  test('an arm is named for a reader, and its run label is kept separately', () => {
+    expect(armName(demo, 'stock')).toBe('Stock MiniLM');
+    expect(armRun(demo, 'stock')).toBe('all-MiniLM-L6-v2');
+    expect(armName(demo, 'tuned')).toBe('Fine-tuned');
+    expect(armRun(demo, 'tuned')).toBe('ft-seed0');
+  });
+
+  test('an arm the export does not carry falls back to its key', () => {
+    expect(armName(demo, 'nope')).toBe('nope');
+    expect(armRun(demo, 'nope')).toBe('nope');
+  });
+
+  test('a set is named in capitals', () => {
+    expect(setName('techwolf')).toBe('TECHWOLF');
+    expect(setName('other')).toBe('OTHER');
+  });
+
+  test('a share reads as a percentage to one place', () => {
+    expect(pct(0.4557)).toBe('45.6%');
+    expect(pct(0)).toBe('0.0%');
+    expect(pct(1)).toBe('100.0%');
+  });
+});
+
+describe('a rank cell', () => {
+  const row = {
+    set: 'tech',
+    q: 0,
+    text: 'x',
+    gold: [7, 9],
+    heldoutGold: [],
+    top: { tuned: [1, 7, 2, 3, 4, 5, 6, 8, 10, 11] },
+  };
+
+  test('counts ranks from one, in the order the gold skills are listed', () => {
+    expect(rankCell(row, 'tuned', 10)).toBe('2, >10');
+  });
+
+  test('says nothing about an arm the row has no candidates for', () => {
+    expect(rankCell(row, 'missing', 10)).toBe('>10, >10');
+  });
+});
+
 describe('a rank past the export depth', () => {
   test('reads as absent rather than as rank zero', () => {
     expect(rankOf(999_999, [1, 2, 3])).toBe(-1);
@@ -154,5 +203,41 @@ describe('a rank past the export depth', () => {
     );
     // The page says this task is hard; the share saying so must stay true of the data.
     expect(bothMiss.length / rows.length).toBeGreaterThan(0.2);
+  });
+});
+
+describe('loading the export', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** A fresh module each time: the promise cache lives at module scope. */
+  async function freshModule() {
+    vi.resetModules();
+    return import('../src/apps/skill-linker/link');
+  }
+
+  test('reads the shipped path and hands back what it parsed', async () => {
+    const payload = { schema: 1 };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(payload) });
+    vi.stubGlobal('fetch', fetchMock);
+    const mod = await freshModule();
+    await expect(mod.loadDemo()).resolves.toBe(payload);
+    expect(fetchMock).toHaveBeenCalledWith('/skill-linker/demo.json');
+  });
+
+  test('fetches once however many callers ask', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const mod = await freshModule();
+    const [first, second] = await Promise.all([mod.loadDemo(), mod.loadDemo()]);
+    expect(first).toBe(second);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('names the status when the file is not served', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    const mod = await freshModule();
+    await expect(mod.loadDemo()).rejects.toThrow('benchmark data unavailable (404)');
   });
 });

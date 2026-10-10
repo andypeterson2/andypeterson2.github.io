@@ -1,5 +1,6 @@
 /**
- * The skill-linker viewer's arithmetic, with no DOM in it.
+ * The skill-linker viewer's arithmetic and the names it puts on things, with no DOM
+ * in it.
  *
  * The page is served the candidates three models returned for every sentence in
  * the ESCO skill-linking test split. Every number it shows is reduced from those
@@ -52,6 +53,32 @@ export interface Row {
 
 export const RP_K = 5;
 
+const SET_NAMES: Partial<Record<string, string>> = {
+  tech: 'TECH',
+  house: 'HOUSE',
+  techwolf: 'TECHWOLF',
+};
+
+/** What each arm is called in the view. Its run label stays beside it, never instead. */
+const ARM_NAMES: Partial<Record<string, string>> = {
+  stock: 'Stock MiniLM',
+  tuned: 'Fine-tuned',
+  holdout: 'Fine-tuned, these skills held out',
+};
+
+export const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
+
+export const setName = (key: string) => SET_NAMES[key] ?? key.toUpperCase();
+
+export function armName(demo: SkillLinkerDemo, key: string): string {
+  return ARM_NAMES[key] ?? demo.arms[key]?.label ?? key;
+}
+
+/** The label the arm's own published run was recorded under. */
+export function armRun(demo: SkillLinkerDemo, key: string): string {
+  return demo.arms[key]?.label ?? key;
+}
+
 /**
  * Share of a sentence's correct skills found in the first k candidates.
  *
@@ -70,6 +97,22 @@ export function rpAt(gold: number[], ranked: number[], k = RP_K): number {
 /** Rank of a skill among the candidates, or -1 when it is deeper than the export goes. */
 export function rankOf(skill: number, ranked: number[]): number {
   return ranked.indexOf(skill);
+}
+
+/**
+ * Where one arm put a sentence's correct skills, as a cell: "3, 418".
+ *
+ * Ranks count from 1 for a reader. A skill the export never reached reads as deeper
+ * than the depth rather than as a rank, since its true position is not in the file.
+ */
+export function rankCell(row: Row, arm: string, depth: number): string {
+  const ranked = row.top[arm] ?? [];
+  return row.gold
+    .map((g) => {
+      const rank = rankOf(g, ranked);
+      return rank < 0 ? `>${String(depth)}` : String(rank + 1);
+    })
+    .join(', ');
 }
 
 export interface Summary {

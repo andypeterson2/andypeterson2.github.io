@@ -8,11 +8,15 @@
  */
 import {
   applyFilters,
+  armName,
+  armRun,
   buildRows,
   loadDemo,
   outcome,
-  rankOf,
+  pct,
+  rankCell,
   RP_K,
+  setName,
   summarize,
   type Filters,
   type Row,
@@ -21,19 +25,8 @@ import {
 } from './link';
 
 const PAGE = 100;
-const SET_NAMES: Partial<Record<string, string>> = {
-  tech: 'TECH',
-  house: 'HOUSE',
-  techwolf: 'TECHWOLF',
-};
 /** The two arms the walk puts side by side; the third is what the held-out filter is for. */
 const WALK_ARMS = ['stock', 'tuned'] as const;
-/** What each arm is called in the view. The run label it was scored under stays beside it. */
-const ARM_NAMES: Partial<Record<string, string>> = {
-  stock: 'Stock MiniLM',
-  tuned: 'Fine-tuned',
-  holdout: 'Fine-tuned, these skills held out',
-};
 
 const el = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -45,18 +38,6 @@ const el = <K extends keyof HTMLElementTagNameMap>(
   if (text !== undefined) node.textContent = text;
   return node;
 };
-
-const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
-const setName = (key: string) => SET_NAMES[key] ?? key.toUpperCase();
-
-function armName(demo: SkillLinkerDemo, key: string): string {
-  return ARM_NAMES[key] ?? demo.arms[key]?.label ?? key;
-}
-
-/** The label the arm's own published run was recorded under. */
-function armRun(demo: SkillLinkerDemo, key: string): string {
-  return demo.arms[key]?.label ?? key;
-}
 
 /** A skill name as a chip, marked when it is one the sentence's answer key names. */
 function skillChip(name: string, gold: boolean, heldout = false): HTMLElement {
@@ -88,17 +69,6 @@ function candidateList(demo: SkillLinkerDemo, row: Row, arm: string, depth: numb
 
 function rpAt(row: Row, arm: string): number {
   return summarize([row], arm).rp5;
-}
-
-/** Each correct skill's rank for one arm: "3, 418" — an em dash past the export's depth. */
-function rankCell(row: Row, arm: string, depth: number): string {
-  const ranked = row.top[arm] ?? [];
-  return row.gold
-    .map((g) => {
-      const rank = rankOf(g, ranked);
-      return rank < 0 ? `>${String(depth)}` : String(rank + 1);
-    })
-    .join(', ');
 }
 
 function summaryTable(
