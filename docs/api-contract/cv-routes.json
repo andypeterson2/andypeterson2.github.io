@@ -39,6 +39,7 @@
     "GET /api/profiles/:p/versions/:p",
     "GET /api/sections/:p",
     "GET /api/settings",
+    "GET /api/usage",
     "GET /api/variants/:p",
     "GET /api/variants/:p/letter-sections",
     "GET /api/variants/:p/pdf",

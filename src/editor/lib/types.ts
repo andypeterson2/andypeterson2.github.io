@@ -103,6 +103,17 @@ export interface ItemOverride {
   sortOverride: number | null;
 }
 
+/** An account's storage against its limits, as GET /usage reports it. */
+export interface StorageUsage {
+  /** The site owner and the demo account have no limits. */
+  unlimited: boolean;
+  bytes: { used: number; content: number; layouts: number; limit: number };
+  profiles: { used: number; limit: number };
+  layouts: { used: number; limit: number };
+  pendingLayouts: { used: number; limit: number };
+  versionsPerProfile: { limit: number };
+}
+
 /** One layout the account can see, as GET /layouts lists it. */
 export interface LayoutInfo {
   id: string;

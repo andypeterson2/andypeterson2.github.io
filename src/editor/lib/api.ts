@@ -4,6 +4,7 @@
 // returns one profile's full record (profile, sections, variants, tag vocab).
 // The allowlisted owner sees every profile; other signed-in users see their own.
 import type {
+  StorageUsage,
   LayoutInfo,
   LayoutReview,
   LayoutCheck,
@@ -553,6 +554,10 @@ export class CvApi {
       method: 'PATCH',
       body: JSON.stringify(patch),
     });
+  }
+  /** What the signed-in account stores against its limits. */
+  getUsage() {
+    return this.req<StorageUsage>('/usage');
   }
   getLayouts() {
     return this.req<{ layouts?: LayoutInfo[]; default?: string | null; canReview?: boolean }>(

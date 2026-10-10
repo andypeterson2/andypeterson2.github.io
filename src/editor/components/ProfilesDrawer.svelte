@@ -2,6 +2,13 @@
   import { editor } from '../lib/store.svelte';
   import UiButton from './ui/Button.svelte';
   import type { ProfileMeta } from '../lib/api';
+  import StorageUsage from './StorageUsage.svelte';
+
+  const atProfileLimit = $derived(
+    !!editor.usage &&
+      !editor.usage.unlimited &&
+      editor.usage.profiles.used >= editor.usage.profiles.limit,
+  );
 
   const activeMeta = $derived(editor.profiles.find((p) => p.id === editor.activeProfileId) ?? null);
 
@@ -35,8 +42,12 @@
     {/each}
   </div>
 
-  <UiButton variant="new" class="new-profile" onclick={() => editor.addProfile()}
-    >＋ New resume</UiButton
+  <UiButton
+    variant="new"
+    class="new-profile"
+    disabled={atProfileLimit}
+    title={atProfileLimit ? 'This account has the most resumes allowed' : undefined}
+    onclick={() => editor.addProfile()}>＋ New resume</UiButton
   >
 
   {#if activeMeta}
@@ -58,6 +69,8 @@
       >
     </div>
   {/if}
+
+  <StorageUsage show={['profiles']} />
 {/if}
 
 <style>
