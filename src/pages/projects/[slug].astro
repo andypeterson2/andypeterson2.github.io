@@ -204,6 +204,15 @@ const { Content } = await render(writeup);
     margin: 0.25em 0;
   }
 
+  /* A figure is drawn at 640 and carries its own caption, so it scales to the measure. */
+  .project-writeup :global(img) {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 1em 0 1.2em;
+  }
+
   .project-writeup :global(a) {
     color: inherit;
     text-decoration: underline;
