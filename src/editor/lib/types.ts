@@ -118,7 +118,7 @@ export interface StorageUsage {
 export interface LayoutSource {
   /** owner/repo */
   repo: string;
-  /** Folder in the repo holding layout.json; '' for the root. */
+  /** Folder in the repo holding the layout's manifest; '' for the root. */
   path: string;
   track: 'release' | 'branch';
   branch: string | null;
