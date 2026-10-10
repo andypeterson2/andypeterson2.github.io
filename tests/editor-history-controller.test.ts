@@ -13,9 +13,9 @@ vi.mock('../src/editor/lib/api', () => ({
 
 import { api } from '../src/editor/lib/api';
 import { HistoryController, type HistoryHost } from '../src/editor/lib/history.svelte';
-import type { Person } from '../src/editor/lib/types';
+import type { Profile } from '../src/editor/lib/types';
 
-const SAMPLE: Person = {
+const SAMPLE: Profile = {
   id: 1,
   name: 'Ada Lovelace',
   personal: { firstName: 'Ada' },
@@ -26,9 +26,9 @@ const SAMPLE: Person = {
 
 function makeHost(over: Partial<HistoryHost> = {}) {
   const announced: string[] = [];
-  const applied: Person[] = [];
-  const appliedEntries: { source: Person; entryId: number }[] = [];
-  let current: Person = structuredClone(SAMPLE);
+  const applied: Profile[] = [];
+  const appliedEntries: { source: Profile; entryId: number }[] = [];
+  let current: Profile = structuredClone(SAMPLE);
   let seq = 1;
   const host: HistoryHost = {
     connected: () => false,
@@ -40,7 +40,7 @@ function makeHost(over: Partial<HistoryHost> = {}) {
     announce: (m) => announced.push(m),
     record: () => {},
     forgetHistory: () => {},
-    activePersonId: () => null,
+    activeProfileId: () => null,
     capture: () => structuredClone(current),
     apply: (doc) => {
       applied.push(doc);
@@ -53,7 +53,7 @@ function makeHost(over: Partial<HistoryHost> = {}) {
     reload: vi.fn(async () => {}),
     ...over,
   };
-  return { host, announced, applied, appliedEntries, setCurrent: (d: Person) => (current = d) };
+  return { host, announced, applied, appliedEntries, setCurrent: (d: Profile) => (current = d) };
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -116,7 +116,7 @@ describe('HistoryController — demo (in-memory)', () => {
 
 describe('HistoryController — connected (persisted)', () => {
   test('a snapshot persists and reconciles the server id', async () => {
-    const { host } = makeHost({ connected: () => true, activePersonId: () => 7 });
+    const { host } = makeHost({ connected: () => true, activeProfileId: () => 7 });
     const h = new HistoryController(host);
     await h.snapshot('milestone');
     expect(api.commitVersion).toHaveBeenCalledWith(
@@ -130,7 +130,7 @@ describe('HistoryController — connected (persisted)', () => {
     const reload = vi.fn(async () => {});
     const { host, applied } = makeHost({
       connected: () => true,
-      activePersonId: () => 7,
+      activeProfileId: () => 7,
       reload,
     });
     const h = new HistoryController(host);

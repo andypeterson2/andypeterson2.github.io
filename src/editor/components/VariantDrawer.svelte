@@ -6,11 +6,11 @@
   import UnknownWarning from './UnknownWarning.svelte';
   import type { Variant } from '../lib/types';
 
-  const variants = $derived(editor.person.variants);
+  const variants = $derived(editor.profile.variants);
   const active = $derived(editor.activeVariant);
 
   function counts(v: Variant) {
-    return countIncludedEntries(editor.person.sections, v);
+    return countIncludedEntries(editor.profile.sections, v);
   }
   function noun(v: Variant) {
     return v.kind === 'coverletter' ? 'cover letter' : 'variant';
@@ -20,7 +20,7 @@
   }
 
   // A '' override means "print no tagline here", so hidden is its own control.
-  const personTagline = $derived(editor.person.personal.position ?? '');
+  const profileTagline = $derived(editor.profile.personal.position ?? '');
   const taglineOverride = $derived(active?.personal?.position ?? null);
   const taglineHidden = $derived(taglineOverride === '');
 
@@ -88,7 +88,7 @@
       <input
         class="in"
         value={taglineHidden ? '' : (taglineOverride ?? '')}
-        placeholder={taglineHidden ? 'Hidden in this variant' : personTagline}
+        placeholder={taglineHidden ? 'Hidden in this variant' : profileTagline}
         disabled={taglineHidden}
         onchange={(e) => setTagline(v, e.currentTarget.value)}
       />

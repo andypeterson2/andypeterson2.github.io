@@ -5,16 +5,16 @@
  */
 import { describe, test, expect } from 'vitest';
 import { buildExport } from '../src/editor/lib/export';
-import type { Person, Variant } from '../src/editor/lib/types';
+import type { Profile, Variant } from '../src/editor/lib/types';
 
-function person(over: Partial<Person> = {}): Person {
+function profile(over: Partial<Profile> = {}): Profile {
   return { id: 1, name: 'Ada', personal: {}, sections: [], variants: [], coverletter: {}, ...over };
 }
 
 describe('buildExport', () => {
   test('produces an id-less, positional tree with LaTeX-escaped text', () => {
     const doc = buildExport(
-      person({
+      profile({
         personal: { firstName: 'Ada', address: '50% Analytical Rd' },
         sections: [
           {
@@ -64,20 +64,20 @@ describe('buildExport', () => {
       sections: [],
     };
     const doc = buildExport(
-      person({ variants: [cv, cl], coverletter: { opening: 'Dear R&D,' } }),
+      profile({ variants: [cv, cl], coverletter: { opening: 'Dear R&D,' } }),
       (v) => (v.id === 2 ? [{ id: 9, title: '', body: 'saved 50% time' }] : []),
       (v) => (v.id === 2 ? { recipientName: 'Acme R&D' } : {}),
     );
-    expect(doc.coverletter.opening).toBe('Dear R\\&D,'); // person-level header kept (expand compat)
+    expect(doc.coverletter.opening).toBe('Dear R\\&D,'); // profile-level header kept (expand compat)
     expect(doc.variants[0].letterSections).toBeUndefined();
     expect(doc.variants[0].header).toBeUndefined(); // cv variant has no header
     expect(doc.variants[1].letterSections).toEqual([{ title: '', body: 'saved 50\\% time' }]);
     expect(doc.variants[1].header).toEqual({ recipientName: 'Acme R\\&D' }); // per-variant, escaped
   });
 
-  test('falls back to the CV name when the person has no label', () => {
+  test('falls back to the CV name when the profile has no label', () => {
     const doc = buildExport(
-      person({ name: '', personal: { firstName: 'Grace', lastName: 'Hopper' } }),
+      profile({ name: '', personal: { firstName: 'Grace', lastName: 'Hopper' } }),
       () => [],
       () => ({}),
     );

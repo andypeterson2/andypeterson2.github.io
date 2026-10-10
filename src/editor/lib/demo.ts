@@ -1,12 +1,12 @@
-import type { Person, Personal, LetterSection } from './types';
+import type { Profile, Personal, LetterSection } from './types';
 
 // The resume rendered when not connected to a backend: the owner's public
 // professional history, so a visitor sees a real CV. Name, email, and handles are
 // blank here and overlaid at runtime from env-driven `siteConfig`, keeping identity
 // strings out of the committed file. This is a SEED: the store's `$state` proxy
-// mutates whatever it is handed, so callers take a deep clone via createDemoPerson()
+// mutates whatever it is handed, so callers take a deep clone via createDemoProfile()
 // and "Reset demo" always has a pristine copy to restore.
-const DEMO_PERSON_SEED: Person = {
+const DEMO_PROFILE_SEED: Profile = {
   id: 0,
   name: 'Sample',
   personal: {
@@ -248,12 +248,12 @@ const DEMO_PERSON_SEED: Person = {
  * instance — the store's `$state` proxy writes through to whatever object it
  * wraps, so a shared constant would accumulate every edit a visitor ever made.
  * `identity` is optional so tests (and any build without env configured) still get
- * a valid person — just with blank contact fields.
+ * a valid profile — just with blank contact fields.
  */
-export function createDemoPerson(identity?: Partial<Personal>): Person {
-  const person = structuredClone(DEMO_PERSON_SEED);
-  if (identity) Object.assign(person.personal, identity);
-  return person;
+export function createDemoProfile(identity?: Partial<Personal>): Profile {
+  const profile = structuredClone(DEMO_PROFILE_SEED);
+  if (identity) Object.assign(profile.personal, identity);
+  return profile;
 }
 
 /** Demo cover-letter body paragraphs, keyed by coverletter-variant id (offline only). */

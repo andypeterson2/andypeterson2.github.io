@@ -1,9 +1,9 @@
-// The permitted-symbol allowlist: the single source of truth for what LaTeX a field
-// may contain, powering the escape transform, the symbol palette, and the
-// "unrecognized command" warning. xelatex renders Unicode natively, so a permitted
-// `\command` becomes its glyph before escaping and the compiler never sees a raw
-// control word from a field. To permit a symbol, add a row: `cmd` is the exact
-// control word a LaTeX user types; `glyph` must be renderable by xelatex's font.
+// The permitted-symbol allowlist, powering the escape transform, the symbol palette,
+// and the "unrecognized command" warning. xelatex renders Unicode natively, so a
+// permitted `\command` becomes its glyph before escaping and the compiler never sees
+// a raw control word from a field. The cv backend owns the list (GET /api/catalog →
+// `symbols`, checked there to render and extract from the PDF); the rows below are
+// the offline copy the demo uses until `useSymbols` loads the backend's.
 
 export interface SymbolDef {
   /** the control word as typed, with backslash — e.g. '\\rightarrow' */
@@ -15,7 +15,7 @@ export interface SymbolDef {
   category: 'Arrows' | 'Relations' | 'Operators' | 'Set & logic' | 'Greek' | 'Misc';
 }
 
-export const SYMBOLS: SymbolDef[] = [
+const BUNDLED_SYMBOLS: SymbolDef[] = [
   { cmd: '\\rightarrow', glyph: '→', label: 'right arrow', category: 'Arrows' },
   { cmd: '\\to', glyph: '→', label: 'to', category: 'Arrows' },
   { cmd: '\\leftarrow', glyph: '←', label: 'left arrow', category: 'Arrows' },
@@ -101,8 +101,10 @@ export const SYMBOLS: SymbolDef[] = [
   { cmd: '\\pounds', glyph: '£', label: 'pounds', category: 'Misc' },
 ];
 
+export let SYMBOLS: SymbolDef[] = BUNDLED_SYMBOLS;
+
 /** bare control word (no backslash) → glyph, for the escape transform's lookup. */
-export const GLYPH_BY_CMD = new Map<string, string>(SYMBOLS.map((s) => [s.cmd.slice(1), s.glyph]));
+export const GLYPH_BY_CMD = new Map<string, string>();
 
 /** Is `\name` (pass the bare `name`) a permitted symbol command? */
 export function isPermitted(name: string): boolean {
@@ -125,11 +127,37 @@ function dedupeByGlyph(list: SymbolDef[]): SymbolDef[] {
 }
 
 /** The allowlist grouped for the palette — one chip per glyph, in a stable order. */
-export const SYMBOL_CATEGORIES: { name: SymbolDef['category']; symbols: SymbolDef[] }[] =
-  CATEGORY_ORDER.map((name) => ({
+export let SYMBOL_CATEGORIES: { name: SymbolDef['category']; symbols: SymbolDef[] }[] = [];
+
+function isSymbolDef(x: unknown): x is SymbolDef {
+  if (typeof x !== 'object' || x === null) return false;
+  const s = x as SymbolDef;
+  return (
+    typeof s.cmd === 'string' &&
+    /^\\[a-zA-Z]+$/.test(s.cmd) &&
+    typeof s.glyph === 'string' &&
+    typeof s.label === 'string' &&
+    CATEGORY_ORDER.includes(s.category)
+  );
+}
+
+/**
+ * Replace the allowlist (the backend's, from the catalog). Rows of an unknown
+ * shape are dropped; an empty result keeps the current list.
+ */
+export function useSymbols(list: unknown): void {
+  const rows = Array.isArray(list) ? list.filter(isSymbolDef) : [];
+  if (rows.length === 0) return;
+  SYMBOLS = rows;
+  GLYPH_BY_CMD.clear();
+  for (const s of rows) GLYPH_BY_CMD.set(s.cmd.slice(1), s.glyph);
+  SYMBOL_CATEGORIES = CATEGORY_ORDER.map((name) => ({
     name,
-    symbols: dedupeByGlyph(SYMBOLS.filter((s) => s.category === name)),
+    symbols: dedupeByGlyph(rows.filter((s) => s.category === name)),
   }));
+}
+
+useSymbols(BUNDLED_SYMBOLS);
 
 /**
  * The `\command` tokens in `text` that are not permitted — they will print

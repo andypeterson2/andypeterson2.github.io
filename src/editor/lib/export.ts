@@ -2,7 +2,7 @@
 // offline demo, so unsaved work re-imports losslessly. Connected exports fetch the
 // authoritative backend /export instead.
 
-import type { Person, Variant, LetterSection } from './types';
+import type { Profile, Variant, LetterSection } from './types';
 import { tex, texFields } from './api';
 
 export interface ExportSection {
@@ -40,31 +40,31 @@ function texMap(obj: Record<string, string | undefined>): Record<string, string>
   for (const [k, v] of Object.entries(obj)) if (v) out[k] = tex(v);
   return out;
 }
-function slugOf(person: Person, sectionId: number | string): string {
-  const s = person.sections.find((x) => String(x.id) === String(sectionId));
+function slugOf(profile: Profile, sectionId: number | string): string {
+  const s = profile.sections.find((x) => String(x.id) === String(sectionId));
   return s?.slug ?? s?.type ?? String(sectionId);
 }
 
 /**
- * Build the import-compatible export for a person from in-memory editor state.
+ * Build the import-compatible export for a profile from in-memory editor state.
  * `letterFor` / `headerFor` supply a coverletter variant's paragraphs + header
  * (only the active variant's are loaded in the store, so the caller resolves the
  * rest). All display text is re-escaped to LaTeX so a re-import round-trips.
  */
 export function buildExport(
-  person: Person,
+  profile: Profile,
   letterFor: (v: Variant) => LetterSection[],
   headerFor: (v: Variant) => Record<string, string | undefined>,
 ): ExportDoc {
   const name =
-    person.name ||
-    `${person.personal.firstName ?? ''} ${person.personal.lastName ?? ''}`.trim() ||
+    profile.name ||
+    `${profile.personal.firstName ?? ''} ${profile.personal.lastName ?? ''}`.trim() ||
     'resume';
   return {
     name,
-    personal: texMap(person.personal),
-    coverletter: texMap(person.coverletter),
-    sections: person.sections.map((s, si) => ({
+    personal: texMap(profile.personal),
+    coverletter: texMap(profile.coverletter),
+    sections: profile.sections.map((s, si) => ({
       slug: s.slug ?? s.type,
       type: s.type,
       title: s.title,
@@ -79,12 +79,12 @@ export function buildExport(
         })),
       })),
     })),
-    variants: person.variants.map((v) => ({
+    variants: profile.variants.map((v) => ({
       name: v.name,
       kind: v.kind,
       rules: v.rules,
       sections: v.sections.map((r, i) => ({
-        slug: slugOf(person, r.sectionId),
+        slug: slugOf(profile, r.sectionId),
         enabled: r.enabled,
         sortOrder: i,
       })),

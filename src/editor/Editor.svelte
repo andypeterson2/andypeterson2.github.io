@@ -9,6 +9,8 @@
   import Drawer from './components/Drawer.svelte';
   import SymbolPalette from './components/SymbolPalette.svelte';
   import { symbols } from './lib/symbol-input.svelte';
+  import { useSymbols } from './lib/symbols';
+  import { api } from './lib/api';
 
   /** The export menu: "Export" alone never said in what. */
   let exportOpen = $state(false);
@@ -21,7 +23,7 @@
   import PdfView from './components/PdfView.svelte';
   import { modal } from './lib/modal';
 
-  // The owner's identity from siteConfig, overlaid onto the demo person so visitors
+  // The owner's identity from siteConfig, overlaid onto the demo profile so visitors
   // see the real CV while committed source carries no PII.
   let { identity }: { identity?: Partial<Personal> } = $props();
   // A static prop, read at init (not in an $effect) so the overlay beats first paint.
@@ -48,6 +50,7 @@
   onMount(() => {
     hydrated = true;
     void editor.connect();
+    void api.fetchSymbols().then((list) => list && useSymbols(list));
     // The sign-in lives in the site menubar, which knows nothing about unsaved
     // demo edits: this is where they are stashed before it navigates away.
     const onSignIn = (e: Event) => {
@@ -295,7 +298,7 @@
               <div class="no-profiles">
                 <p class="np-title">No resumes yet</p>
                 <p class="np-sub">Create your first resume to start editing.</p>
-                <button class="np-btn" onclick={() => editor.addPerson()}
+                <button class="np-btn" onclick={() => editor.addProfile()}
                   >＋ Create your first resume</button
                 >
               </div>

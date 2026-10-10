@@ -6,7 +6,7 @@
 
 import { api } from './api';
 import type { SaveHost } from './host';
-import type { Variant, Entry, Item, EntryOverride, ItemOverride } from './types';
+import type { Variant, Entry, Item, EntryOverride, ItemOverride, SettingValue } from './types';
 
 /** True when a resolved override carries no signal — the backend drops such a row. */
 function emptyEntryOv(o: EntryOverride): boolean {
@@ -70,7 +70,7 @@ function withItemIncluded(before: ItemOverride | null, state: number | null): It
 
 /** The shared save infra plus the reads/writes the variants concern needs. */
 export interface VariantHost extends SaveHost {
-  activePersonId(): number | null;
+  activeProfileId(): number | null;
   activeId(): number | null;
   setActiveId(id: number | null): void;
   variants(): Variant[];
@@ -102,7 +102,7 @@ export class VariantController {
     this.host.setActiveId(tempId);
     this.host.syncActive(false); // a fresh variant has no letter paragraphs yet
     this.host.markDirty();
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (!this.host.connected() || pid == null) return;
     const res = await this.host.persist(() => api.createVariant(pid, { name: clean, kind }));
     if (res.ok && res.data) {
@@ -167,7 +167,7 @@ export class VariantController {
 
   /**
    * Override one personal.* field for this variant. `null` drops the override so the
-   * person value is inherited again; '' keeps an override that suppresses the field.
+   * profile value is inherited again; '' keeps an override that suppresses the field.
    */
   async setPersonalOverride(variant: Variant, key: string, value: string | null) {
     const before = variant.personal?.[key] ?? null;
@@ -192,10 +192,39 @@ export class VariantController {
     await this.host.persist(() => api.updateVariantPersonal(variant.id, { [key]: value }));
   }
 
+  // per-variant style/spacing/fonts overrides
+
+  /**
+   * Override one render setting (`spacing.marginTop`, …) for this variant. `null`
+   * drops the override so the account value applies again.
+   */
+  async setSettingOverride(variant: Variant, key: string, value: SettingValue | null) {
+    const before = variant.settings?.[key] ?? null;
+    if (JSON.stringify(before) === JSON.stringify(value)) return;
+    this.host.record({
+      label: value == null ? `Reset ${key}` : `Override ${key}`,
+      undo: () => this._applySettingOverride(variant, key, before),
+      redo: () => this._applySettingOverride(variant, key, value),
+    });
+    await this._applySettingOverride(variant, key, value);
+  }
+
+  private async _applySettingOverride(variant: Variant, key: string, value: SettingValue | null) {
+    const map = (variant.settings ??= {});
+    if (value == null) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null override = inherit again, keyed by setting name
+      delete map[key];
+    } else {
+      map[key] = value;
+    }
+    this.host.markDirty();
+    await this.host.persist(() => api.patchVariantSettings(variant.id, { [key]: value }));
+  }
+
   // per-variant overrides (field patch + force include/exclude)
   // Every override write sends the WHOLE row (the backend upsert is whole-row and
   // deletes when all fields are null), so each method computes the complete next
-  // state from the current one. `variant` is a live proxy in `person.variants`, so
+  // state from the current one. `variant` is a live proxy in `profile.variants`, so
   // mutating `entryOverrides`/`itemOverrides` re-runs the lens instantly. undo/redo
   // carry snapshots straight to `_applyEntryOverride`, so they never re-record.
 

@@ -43,7 +43,7 @@ function makeController(connected = true) {
   };
   const tags = new TagController(host);
   const c = new SuggestionController(
-    { connected: () => connected, activePersonId: () => 7 },
+    { connected: () => connected, activeProfileId: () => 7 },
     tags,
     100,
   );

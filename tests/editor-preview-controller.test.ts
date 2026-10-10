@@ -21,17 +21,17 @@ const variant = (id = 1): Variant => ({
   sections: [],
 });
 
-// The controller takes three thunks (connected, active variant, active person id).
+// The controller takes three thunks (connected, active variant, active profile id).
 // This wraps plain values so each test reads its scenario at a glance.
 const make = (
   connected: boolean,
   activeVariant: Variant | null,
-  activePersonId: number | null = null,
+  activeProfileId: number | null = null,
 ) =>
   new PreviewController(
     () => connected,
     () => activeVariant,
-    () => activePersonId,
+    () => activeProfileId,
   );
 
 // URL.createObjectURL / revokeObjectURL are browser-only; the controller uses them
@@ -92,7 +92,7 @@ describe('PreviewController', () => {
     expect(p.url).toBe('blob:fake');
   });
 
-  test('compile on Main (no variant) → compileMainPdf(person id)', async () => {
+  test('compile on Main (no variant) → compileMainPdf(profile id)', async () => {
     (api.compileMainPdf as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,

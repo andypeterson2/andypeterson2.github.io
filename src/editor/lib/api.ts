@@ -1,10 +1,11 @@
 // cv API client: credentialed fetches through the gateway, whose session cookie
 // rides along via credentials:'include'. The backend is id-addressable with no
-// active-person state: GET /persons lists profiles ({id,name}); GET /persons/:pid
-// returns one profile's full record (person, sections, variants, tag vocab).
+// active-profile state: GET /profiles lists profiles ({id,name}); GET /profiles/:pid
+// returns one profile's full record (profile, sections, variants, tag vocab).
 // The allowlisted owner sees every profile; other signed-in users see their own.
 import type {
-  Person,
+  SettingValue,
+  Profile,
   Item,
   Entry,
   Variant,
@@ -55,13 +56,13 @@ export interface ApiResult<T> {
   error?: ApiError;
 }
 
-export interface PersonMeta {
+export interface ProfileMeta {
   id: number;
   name: string;
 }
 export interface ActiveLoad {
-  person: Person;
-  persons: PersonMeta[];
+  profile: Profile;
+  profiles: ProfileMeta[];
 }
 
 /** Every LaTeX special → its literal-text escape. */
@@ -167,6 +168,7 @@ function mapVariant(v: RawMainVariant): Variant {
     entryOverrides: mapEntryOverrides(v.entryOverrides),
     itemOverrides: mapItemOverrides(v.itemOverrides),
     personal: mapVariantPersonal(v.personal),
+    settings: { ...(v.settings ?? {}) },
   };
 }
 /** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */
@@ -178,13 +180,13 @@ function mapCoverletter(cl?: Record<string, string>): CoverletterHeader & Record
   }
   return out;
 }
-/** GET /persons/:pid → the editor's Person. Rows arrive pre-ordered. */
-function mapMain(m: RawMain): Person {
+/** GET /profiles/:pid → the editor's Profile. Rows arrive pre-ordered. */
+function mapMain(m: RawMain): Profile {
   const personal: Record<string, string> = {};
   for (const [k, v] of Object.entries(m.personal ?? {})) personal[k] = untex(v);
   return {
-    id: m.person.id,
-    name: m.person.name,
+    id: m.profile.id,
+    name: m.profile.name,
     personal: personal,
     sections: (m.sections ?? []).map((s) => ({
       id: s.id,
@@ -206,6 +208,13 @@ function parseErrorEnvelope(data: unknown): ApiError | undefined {
   const { code, message } = err as { code?: unknown; message?: unknown };
   if (typeof code !== 'string' || typeof message !== 'string') return undefined;
   return { code, message };
+}
+
+/** Defaults for the length settings, by prefix, and the units a length may use. */
+export interface RenderCatalog {
+  spacing: Record<string, string>;
+  fonts: Record<string, string>;
+  units: string[];
 }
 
 export class CvApi {
@@ -244,6 +253,42 @@ export class CvApi {
       return await res.blob();
     } catch {
       return null; // offline, blocked or too slow — the pane says what it can't show
+    }
+  }
+  /**
+   * The backend's render-setting defaults (by prefix) and the LaTeX units a length
+   * may use, or null when it cannot be reached.
+   */
+  async fetchRenderCatalog(): Promise<RenderCatalog | null> {
+    try {
+      const res = await fetch(`${this.base}/api/catalog`, {
+        credentials: 'omit',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+      const d = (await res.json()) as {
+        styleDefaults?: Partial<Record<string, Record<string, string>>>;
+        latexUnits?: string[];
+      };
+      const sd = d.styleDefaults ?? {};
+      if (!sd.SPACING_DEFAULTS || !sd.FONT_DEFAULTS || !Array.isArray(d.latexUnits)) return null;
+      return { spacing: sd.SPACING_DEFAULTS, fonts: sd.FONT_DEFAULTS, units: d.latexUnits };
+    } catch {
+      return null;
+    }
+  }
+  /** The backend's permitted-symbol list, or null when it cannot be reached. */
+  async fetchSymbols(): Promise<unknown[] | null> {
+    try {
+      const res = await fetch(`${this.base}/api/catalog`, {
+        credentials: 'omit',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+      const d = (await res.json()) as { symbols?: unknown };
+      return Array.isArray(d.symbols) ? d.symbols : null;
+    } catch {
+      return null;
     }
   }
   /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
@@ -317,15 +362,15 @@ export class CvApi {
   health() {
     return this.req<{ status: string; service: string }>('/health');
   }
-  listPersons() {
-    return this.req<{ persons?: PersonMeta[] }>('/persons');
+  listProfiles() {
+    return this.req<{ profiles?: ProfileMeta[] }>('/profiles');
   }
   private getMain(pid: number | string) {
-    return this.req<RawMain>(`/persons/${pid}`);
+    return this.req<RawMain>(`/profiles/${pid}`);
   }
 
-  /** Load one profile by id and map it to the editor's Person shape. */
-  async fetchPerson(pid: number | string): Promise<ApiResult<Person>> {
+  /** Load one profile by id and map it to the editor's Profile shape. */
+  async fetchProfile(pid: number | string): Promise<ApiResult<Profile>> {
     const res = await this.getMain(pid);
     if (!res.ok || !res.data) {
       return {
@@ -343,40 +388,43 @@ export class CvApi {
    * sign-in and fall back to the local demo.
    */
   async fetchActive(): Promise<ApiResult<ActiveLoad>> {
-    const list = await this.listPersons();
+    const list = await this.listProfiles();
     if (!list.ok || !list.data) {
       return { ok: false, status: list.status, error: list.error };
     }
-    const persons = list.data.persons ?? [];
-    if (!persons.length) {
+    const profiles = list.data.profiles ?? [];
+    if (!profiles.length) {
       return {
         ok: false,
         status: 404,
-        error: { code: 'no_persons', message: 'No profiles available' },
+        error: { code: 'no_profiles', message: 'No profiles available' },
       };
     }
     // Default to the most recently created (highest id) profile; the user can
     // switch via the profile picker.
-    const pid = persons[persons.length - 1].id;
-    const loaded = await this.fetchPerson(pid);
+    const pid = profiles[profiles.length - 1].id;
+    const loaded = await this.fetchProfile(pid);
     if (!loaded.ok || !loaded.data) {
       return { ok: false, status: loaded.status, error: loaded.error };
     }
-    return { ok: true, status: 200, data: { person: loaded.data, persons } };
+    return { ok: true, status: 200, data: { profile: loaded.data, profiles } };
   }
 
-  // person (profile) CRUD
-  createPerson(name: string) {
-    return this.req<{ id: number }>('/persons', { method: 'POST', body: JSON.stringify({ name }) });
+  // profile (profile) CRUD
+  createProfile(name: string) {
+    return this.req<{ id: number }>('/profiles', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
   }
-  renamePerson(id: number, name: string) {
-    return this.req(`/persons/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
+  renameProfile(id: number, name: string) {
+    return this.req(`/profiles/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
   }
-  deletePerson(id: number) {
-    return this.req(`/persons/${id}`, { method: 'DELETE' });
+  deleteProfile(id: number) {
+    return this.req(`/profiles/${id}`, { method: 'DELETE' });
   }
 
-  // ---- version history. A version's `doc` is the editor's Person snapshot,
+  // ---- version history. A version's `doc` is the editor's Profile snapshot,
   // stored as an opaque JSON blob; the backend rebuilds its tables from it on
   // restore.
   listVersions(pid: number) {
@@ -388,9 +436,9 @@ export class CvApi {
         branch: string;
         tag?: string | null;
         parent?: number | null;
-        doc: Person;
+        doc: Profile;
       }[];
-    }>(`/persons/${pid}/versions`);
+    }>(`/profiles/${pid}/versions`);
   }
   /** One checkpoint in full, including its `doc` snapshot — for the diff view. */
   getVersion(pid: number, id: number) {
@@ -401,21 +449,21 @@ export class CvApi {
       branch: string;
       tag?: string | null;
       parent?: number | null;
-      doc: Person;
-    }>(`/persons/${pid}/versions/${id}`);
+      doc: Profile;
+    }>(`/profiles/${pid}/versions/${id}`);
   }
-  commitVersion(pid: number, v: { label: string; doc: Person; branch?: string; parent?: number }) {
-    return this.req<{ id: number }>(`/persons/${pid}/versions`, {
+  commitVersion(pid: number, v: { label: string; doc: Profile; branch?: string; parent?: number }) {
+    return this.req<{ id: number }>(`/profiles/${pid}/versions`, {
       method: 'POST',
       body: JSON.stringify(v),
     });
   }
   restoreVersion(pid: number, id: number) {
-    return this.req(`/persons/${pid}/versions/${id}/restore`, { method: 'POST' });
+    return this.req(`/profiles/${pid}/versions/${id}/restore`, { method: 'POST' });
   }
   /** Set (or clear, with '') a checkpoint's frozen provenance tag. */
   tagVersion(pid: number, id: number, tag: string) {
-    return this.req(`/persons/${pid}/versions/${id}/tag`, {
+    return this.req(`/profiles/${pid}/versions/${id}/tag`, {
       method: 'POST',
       body: JSON.stringify({ tag }),
     });
@@ -437,7 +485,7 @@ export class CvApi {
   updatePersonal(pid: number, patch: Record<string, string>) {
     const body: Record<string, string> = {};
     for (const [k, v] of Object.entries(patch)) body[k] = tex(v);
-    return this.req(`/persons/${pid}/personal`, {
+    return this.req(`/profiles/${pid}/personal`, {
       method: 'PATCH',
       body: JSON.stringify(body),
     });
@@ -461,7 +509,7 @@ export class CvApi {
     return this.req(`/items/${id}`, { method: 'DELETE' });
   }
   createSection(pid: number, section: { slug: string; type: string; title: string }) {
-    return this.req<{ id: number }>(`/persons/${pid}/sections`, {
+    return this.req<{ id: number }>(`/profiles/${pid}/sections`, {
       method: 'POST',
       body: JSON.stringify(section),
     });
@@ -482,7 +530,7 @@ export class CvApi {
     });
   }
   reorderSections(pid: number, ids: (number | string)[]) {
-    return this.req(`/persons/${pid}/sections/order`, {
+    return this.req(`/profiles/${pid}/sections/order`, {
       method: 'PATCH',
       body: JSON.stringify({ ids }),
     });
@@ -492,8 +540,16 @@ export class CvApi {
   getSettings(prefix: string) {
     return this.req<Record<string, unknown>>(`/settings?prefix=${prefix}`);
   }
-  patchSettings(patch: Record<string, string>) {
+  /** A null value resets the key to its default. */
+  patchSettings(patch: Record<string, SettingValue | null>) {
     return this.req('/settings', { method: 'PATCH', body: JSON.stringify(patch) });
+  }
+  /** A variant's own style/spacing/fonts; a null value drops the override. */
+  patchVariantSettings(variantId: number, patch: Record<string, SettingValue | null>) {
+    return this.req(`/variants/${variantId}/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
   }
   getLayouts() {
     return this.req<{
@@ -521,13 +577,13 @@ export class CvApi {
 
   // tag suggestion
   suggestTags(pid: number, text: string, limit: number) {
-    return this.req<{ query: string; results: TagSuggestion[] }>(`/persons/${pid}/tags/suggest`, {
+    return this.req<{ query: string; results: TagSuggestion[] }>(`/profiles/${pid}/tags/suggest`, {
       method: 'POST',
       body: JSON.stringify({ text, limit, scorer: 'embedding' }),
     });
   }
   recordTagEvents(pid: number, events: TagEvent[]) {
-    return this.req(`/persons/${pid}/tags/events`, {
+    return this.req(`/profiles/${pid}/tags/events`, {
       method: 'POST',
       body: JSON.stringify({ events }),
     });
@@ -535,7 +591,7 @@ export class CvApi {
 
   // variants (the lens)
   createVariant(pid: number, variant: { name: string; kind: Variant['kind'] }) {
-    return this.req<{ id: number }>(`/persons/${pid}/variants`, {
+    return this.req<{ id: number }>(`/profiles/${pid}/variants`, {
       method: 'POST',
       body: JSON.stringify(variant),
     });
@@ -604,7 +660,7 @@ export class CvApi {
   }
   /**
    * Per-variant personal.* overrides. A null value clears the override, so the
-   * field inherits the person value again; '' suppresses it for this variant.
+   * field inherits the profile value again; '' suppresses it for this variant.
    */
   updateVariantPersonal(variantId: number, patch: Record<string, string | null>) {
     const body: Record<string, string | null> = {};
@@ -649,14 +705,14 @@ export class CvApi {
   deleteLetterSection(variantId: number, lid: number) {
     return this.req(`/variants/${variantId}/letter-sections/${lid}`, { method: 'DELETE' });
   }
-  /** POST /persons/:pid/import — load an export tree into a (new, empty) profile. Used to
+  /** POST /profiles/:pid/import — load an export tree into a (new, empty) profile. Used to
    *  carry a visitor's demo edits into their account after sign-in. */
-  importPerson(pid: number, tree: unknown) {
-    return this.req(`/persons/${pid}/import`, { method: 'POST', body: JSON.stringify(tree) });
+  importProfile(pid: number, tree: unknown) {
+    return this.req(`/profiles/${pid}/import`, { method: 'POST', body: JSON.stringify(tree) });
   }
-  /** GET /persons/:pid/export → the backend's import-compatible tree (authoritative). */
-  exportPerson(pid: number) {
-    return this.req<unknown>(`/persons/${pid}/export`);
+  /** GET /profiles/:pid/export → the backend's import-compatible tree (authoritative). */
+  exportProfile(pid: number) {
+    return this.req<unknown>(`/profiles/${pid}/export`);
   }
   reorderLetterSections(variantId: number, ids: number[]) {
     return this.req(`/variants/${variantId}/letter-sections/order`, {
@@ -705,11 +761,11 @@ export class CvApi {
    * Compile the full "main" document to PDF (GET /variants/main/:pid/pdf — the whole
    * CV with no variant lens). Same shape as compilePdf: application/pdf → Blob on
    * success, { success:false, log } → error message on failure. Owner-gated (the
-   * backend treats any /pdf GET as a compile GET regardless of person).
+   * backend treats any /pdf GET as a compile GET regardless of profile).
    */
-  async compileMainPdf(personId: number): Promise<ApiResult<Blob>> {
+  async compileMainPdf(profileId: number): Promise<ApiResult<Blob>> {
     try {
-      const res = await fetch(`${this.base}/api/variants/main/${personId}/pdf`, {
+      const res = await fetch(`${this.base}/api/variants/main/${profileId}/pdf`, {
         credentials: 'include',
       });
       if (res.status === 401 || res.status === 403) {

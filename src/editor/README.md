@@ -37,7 +37,7 @@ components/
 lib/
   store.svelte.ts      EditorState — the single reactive store (see below)
   api.ts               REST client, the wire⇄view mappers, LaTeX escaping, auth
-  types.ts             Person / Section / Entry / Item / Variant / LetterSection
+  types.ts             Profile / Section / Entry / Item / Variant / LetterSection
   demo.ts              the offline demo resume (owner's public CV) + demo letters
   section-types.ts     the section catalog (fields, labels, defaults) per type
   variant-lens.ts      resolves which entries a variant's rules include/exclude
@@ -69,9 +69,9 @@ lib/
 
 One class in `store.svelte.ts`, exported as the `editor` singleton, holds all
 UI state as Svelte 5 runes (`$state` / `$derived`). Components read fields
-directly (`editor.person`, `editor.saveState`, …) and call methods to mutate.
+directly (`editor.profile`, `editor.saveState`, …) and call methods to mutate.
 
-- **Content model** — `person` is the document: `personal` + `sections[]` (each
+- **Content model** — `profile` is the document: `personal` + `sections[]` (each
   with `entries[]`, each with `items[]`). `variants[]` are alternate lenses.
 - **Derived views** — e.g. `tagVocab`, `activeVariant`, `profileLabel`,
   `accentHex` recompute automatically from the content.
@@ -86,8 +86,8 @@ directly (`editor.person`, `editor.saveState`, …) and call methods to mutate.
 
 ## Talking to the backend — `api.ts`
 
-The cv API is **id-addressable**: `GET /persons` lists profiles, `GET /persons/:pid`
-returns one full document ("main"), and CRUD hangs off `/persons/:pid/...`,
+The cv API is **id-addressable**: `GET /profiles` lists profiles, `GET /profiles/:pid`
+returns one full document ("main"), and CRUD hangs off `/profiles/:pid/...`,
 `/entries/:id`, `/items/:id`, etc. `api.ts` wraps `fetch` (always
 `credentials: 'include'` for the session cookie), unwraps the `{ ok, data }` reply,
 and maps the wire shape ⇄ the view types.
@@ -96,7 +96,7 @@ and maps the wire shape ⇄ the view types.
 first, then loads:
 - **a session** → load that account's profiles and documents.
 - **no session** → stay in the local demo. The backend answers an anonymous
-  request with the shared public person, so a logged-out visitor's edits must
+  request with the shared public profile, so a logged-out visitor's edits must
   never be sent anywhere.
 - **network error** → stay on the demo, offline.
 

@@ -7,14 +7,14 @@ One master document, many targeted CVs. A resume is kept as structured records i
 
 ## How it works
 
-An **Express REST API** exposes **84 endpoints** with **JSON Schema validation**, and `GET /api` lists every one of them, so the running service is its own reference. It is reached through a **Cloudflare Worker gateway with its own Google sign-in**; every person belongs to an account, and an account sees only its own. A second Worker serves the same API to an LLM as a **remote MCP server** over OAuth. The frontend is a **Svelte 5 island**:
+An **Express REST API** exposes **84 endpoints** with **JSON Schema validation**, and `GET /api` lists every one of them, so the running service is its own reference. It is reached through a **Cloudflare Worker gateway with its own Google sign-in**; every profile belongs to an account, and an account sees only its own. A second Worker serves the same API to an LLM as a **remote MCP server** over OAuth. The frontend is a **Svelte 5 island**:
 
 - edit the document inline;
 - save a variant, and switch between them;
 - reorder by drag or keyboard, restyle and re-layout live;
 - track changes with **checkpoint history and undo/redo**.
 
-Tags decide what each variant includes, so a local int8 MiniLM embedding ranks the tags a bullet already has, blended with votes from the person's nearest tagged bullets. It runs offline and never invents a tag. The embedding is the stock model rather than the fine-tuned one from [the skill linker](/projects/tiny-skill-linker/) — measured on these bullets, fine-tuning made it worse.
+Tags decide what each variant includes, so a local int8 MiniLM embedding ranks the tags a bullet already has, blended with votes from the profile's nearest tagged bullets. It runs offline and never invents a tag. The embedding is the stock model rather than the fine-tuned one from [the skill linker](/projects/tiny-skill-linker/) — measured on these bullets, fine-tuning made it worse.
 
 Documents compile server-side through **XeLaTeX (Awesome-CV)** into a real PDF.
 

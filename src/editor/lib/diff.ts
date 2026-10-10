@@ -1,9 +1,9 @@
-// Structural diff of two Person snapshots: added / removed / changed sections,
+// Structural diff of two Profile snapshots: added / removed / changed sections,
 // entries, bullets, and personal fields, matched by id so an edited or moved row
 // reads as a change. Ids are stable across a snapshot's lineage; a restore that
 // renumbers ids reads as wholesale removed + added.
 
-import type { Person, Section, Entry, Item } from './types';
+import type { Profile, Section, Entry, Item } from './types';
 
 /**
  * A value AS STORED: version-history `doc` snapshots round-trip through the
@@ -215,7 +215,7 @@ function tally(personal: FieldChange[], sections: SectionDiff[]): DocDiff['count
  * the reverse. So `diffDocuments(checkpoint, current)` reads as "what changed since
  * this checkpoint."
  */
-export function diffDocuments(base: Stored<Person>, target: Stored<Person>): DocDiff {
+export function diffDocuments(base: Stored<Profile>, target: Stored<Profile>): DocDiff {
   const personal = diffFields(base.personal ?? {}, target.personal ?? {});
   const sections = diffSections(base.sections ?? [], target.sections ?? []);
   return {

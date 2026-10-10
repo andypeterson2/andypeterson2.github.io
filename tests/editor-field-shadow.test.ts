@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { FieldShadow } from '../src/editor/lib/undo';
 import { ProfileCache } from '../src/editor/lib/profile-cache';
-import { createDemoPerson } from '../src/editor/lib/demo';
+import { createDemoProfile } from '../src/editor/lib/demo';
 
 /**
  * FieldShadow and ProfileCache were pulled out of the 983-line store (round-two
@@ -38,7 +38,7 @@ describe('FieldShadow', () => {
 
   test('reseat baselines a whole document — every field starts unchanged', () => {
     const s = new FieldShadow();
-    const p = createDemoPerson();
+    const p = createDemoProfile();
     const style: Record<string, string> = { accentColor: 'spinel' };
     s.reseat(p, style);
 
@@ -68,7 +68,7 @@ describe('FieldShadow', () => {
 describe('ProfileCache', () => {
   test('round-trips a working tree by id and drops it', () => {
     const c = new ProfileCache();
-    const p = createDemoPerson();
+    const p = createDemoProfile();
     expect(c.get(7)).toBeUndefined();
     c.set(7, p);
     expect(c.get(7)).toBe(p); // the SAME reference back (the reused, edited proxy)

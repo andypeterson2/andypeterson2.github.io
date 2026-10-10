@@ -2,7 +2,7 @@
 // the editor's domain model. Hand-derived from the backend's route handlers (there
 // is no OpenAPI); the e2e suite drives the real mapping over mocked responses.
 
-// raw shapes as returned by GET /persons/:pid
+// raw shapes as returned by GET /profiles/:pid
 export interface RawMainItem {
   id: number;
   title?: string;
@@ -38,8 +38,10 @@ export interface RawMainVariant {
   sections?: { section_id: number | string; enabled?: number | boolean; sort_order?: number }[];
   entryOverrides?: Record<string, RawOverride>;
   itemOverrides?: Record<string, RawOverride>;
-  /** personal.* overrides, unprefixed; an absent key inherits the person value */
+  /** personal.* overrides, unprefixed; an absent key inherits the profile value */
   personal?: Record<string, string>;
+  /** style/spacing/fonts overrides, prefixed; an absent key inherits the account value */
+  settings?: Record<string, string | { num: number; unit: string }>;
 }
 export interface RawLetterSection {
   id: number;
@@ -47,7 +49,7 @@ export interface RawLetterSection {
   body?: string;
 }
 export interface RawMain {
-  person: { id: number; name: string };
+  profile: { id: number; name: string };
   personal?: Record<string, string>;
   sections?: RawMainSection[];
   variants?: RawMainVariant[];

@@ -7,7 +7,7 @@
   import { entryIncluded, sectionScopedOut } from '../lib/variant-lens';
   import type { Section, Entry } from '../lib/types';
 
-  const person = $derived(editor.person);
+  const profile = $derived(editor.profile);
   const presets = presetsByCategory();
   let picking = $state(false);
 
@@ -62,7 +62,7 @@
   <PersonalEdit />
 
   <div class="sections" use:sortable={{ onReorder: (f, t) => editor.reorderSections(f, t) }}>
-    {#each person.sections as section, sIdx (section.id)}
+    {#each profile.sections as section, sIdx (section.id)}
       {@const def = typeDef(section.type)}
       <section
         class="sec"
@@ -80,7 +80,7 @@
             aria-label="Reorder section"
             aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
             onkeydown={(ev) =>
-              reorderKeydown(ev, sIdx, person.sections.length, (f, t) =>
+              reorderKeydown(ev, sIdx, profile.sections.length, (f, t) =>
                 editor.reorderSections(f, t),
               )}
             onclick={(e) => e.stopPropagation()}>⠿</button

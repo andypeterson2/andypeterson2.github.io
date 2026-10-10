@@ -6,6 +6,7 @@ import {
   GLYPH_BY_CMD,
   isPermitted,
   unknownCommands,
+  useSymbols,
 } from '../src/editor/lib/symbols';
 
 /**
@@ -189,5 +190,31 @@ describe('SYMBOL_CATEGORIES — the palette source', () => {
     for (const cat of SYMBOL_CATEGORIES) {
       for (const s of cat.symbols) expect(isPermitted(s.cmd.slice(1))).toBe(true);
     }
+  });
+});
+
+describe('useSymbols — the backend list replaces the bundled one', () => {
+  test('swaps the lookup, palette and warning to the new rows', () => {
+    const bundled = SYMBOLS;
+    try {
+      useSymbols([
+        { cmd: '\\to', glyph: '→', label: 'to', category: 'Arrows' },
+        { cmd: 'bad', glyph: 'x', label: 'bad', category: 'Arrows' },
+      ]);
+      expect(tex('a \\to b')).toBe('a → b');
+      expect(isPermitted('alpha')).toBe(false);
+      expect(unknownCommands('\\alpha')).toEqual(['\\alpha']);
+      const arrows = SYMBOL_CATEGORIES.find((c) => c.name === 'Arrows');
+      expect(arrows?.symbols.map((s) => s.glyph)).toEqual(['→']);
+    } finally {
+      useSymbols(bundled);
+    }
+  });
+
+  test('ignores an empty or malformed list', () => {
+    const before = SYMBOLS;
+    useSymbols([]);
+    useSymbols('nope');
+    expect(SYMBOLS).toBe(before);
   });
 });
