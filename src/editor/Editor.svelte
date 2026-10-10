@@ -9,6 +9,8 @@
   import Drawer from './components/Drawer.svelte';
   import SymbolPalette from './components/SymbolPalette.svelte';
   import { symbols } from './lib/symbol-input.svelte';
+  import { useSymbols } from './lib/symbols';
+  import { api } from './lib/api';
 
   /** The export menu: "Export" alone never said in what. */
   let exportOpen = $state(false);
@@ -48,6 +50,7 @@
   onMount(() => {
     hydrated = true;
     void editor.connect();
+    void api.fetchSymbols().then((list) => list && useSymbols(list));
     // The sign-in lives in the site menubar, which knows nothing about unsaved
     // demo edits: this is where they are stashed before it navigates away.
     const onSignIn = (e: Event) => {
