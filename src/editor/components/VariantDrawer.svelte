@@ -5,6 +5,30 @@
   import TagChips from './TagChips.svelte';
   import UnknownWarning from './UnknownWarning.svelte';
   import type { Variant } from '../lib/types';
+  import { onMount } from 'svelte';
+
+  onMount(() => {
+    if (editor.connected && editor.layouts.length === 0) void editor.loadLayouts();
+  });
+
+  // Layouts this variant may use: builtins, the account's own, and public versions,
+  // plus the one it already uses (which may since have been unpublished).
+  const layoutChoices = $derived(
+    editor.layouts.filter(
+      (l) =>
+        l.status === 'active' &&
+        (l.builtin || l.own || l.state === 'public' || l.id === active?.layoutId) &&
+        (!active || l.kinds.includes(active.kind)),
+    ),
+  );
+  const defaultLayoutName = $derived(
+    editor.layouts.find((l) => l.id === editor.defaultLayout)?.name ?? 'default',
+  );
+  let layoutWarnings = $state<string[]>([]);
+
+  async function setLayout(v: Variant, id: string) {
+    layoutWarnings = await editor.variants.setLayout(v, id === '' ? null : id);
+  }
 
   const variants = $derived(editor.profile.variants);
   const active = $derived(editor.activeVariant);
@@ -106,6 +130,31 @@
       {noun(v)} only.
     </p>
     <UnknownWarning text={taglineOverride ?? ''} />
+
+    {#if editor.connected}
+      <label class="rename">
+        <span class="rlbl">Layout</span>
+        <select
+          class="in"
+          value={v.layoutId ?? ''}
+          onchange={(e) => setLayout(v, e.currentTarget.value)}
+        >
+          <option value="">Default ({defaultLayoutName})</option>
+          {#each layoutChoices as l (l.id)}
+            <option value={l.id}
+              >{l.versionNo ? `${l.name} v${String(l.versionNo)}` : l.name}{l.author && !l.own
+                ? ` — ${l.author}`
+                : ''}</option
+            >
+          {/each}
+        </select>
+      </label>
+      {#if layoutWarnings.length}
+        <ul class="hint">
+          {#each layoutWarnings as w (w)}<li>{w}</li>{/each}
+        </ul>
+      {/if}
+    {/if}
 
     {#if v.kind === 'coverletter'}
       <p class="hint">

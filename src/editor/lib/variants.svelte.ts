@@ -192,6 +192,34 @@ export class VariantController {
     await this.host.persist(() => api.updateVariantPersonal(variant.id, { [key]: value }));
   }
 
+  // per-variant layout pin
+
+  /**
+   * Pin this variant to a layout, or `null` to follow the account default.
+   * Resolves to the warnings from a test compile when the layout is someone else's.
+   */
+  async setLayout(variant: Variant, layoutId: string | null): Promise<string[]> {
+    const before = variant.layoutId ?? null;
+    if (before === layoutId) return [];
+    this.host.record({
+      label: 'Change layout',
+      undo: async () => {
+        await this._applyLayout(variant, before);
+      },
+      redo: async () => {
+        await this._applyLayout(variant, layoutId);
+      },
+    });
+    return this._applyLayout(variant, layoutId);
+  }
+
+  private async _applyLayout(variant: Variant, layoutId: string | null): Promise<string[]> {
+    variant.layoutId = layoutId;
+    this.host.markDirty();
+    const res = await this.host.persist(() => api.setVariantLayout(variant.id, layoutId));
+    return res.data?.warnings ?? [];
+  }
+
   // per-variant style/spacing/fonts overrides
 
   /**

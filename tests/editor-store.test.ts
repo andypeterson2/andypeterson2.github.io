@@ -649,14 +649,28 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     expect(editor.style.accentColor).toBe('zzz-accent');
   });
 
+  const classicRow = {
+    id: 'classic',
+    name: 'Classic',
+    status: 'ok',
+    kinds: ['cv'],
+    builtin: true,
+    own: false,
+    author: null,
+    family: 'classic',
+    versionNo: null,
+    state: 'public' as const,
+    updateAvailable: null,
+  };
+
   test('loadLayouts populates the installed layouts + default', async () => {
     vi.spyOn(api, 'getLayouts').mockResolvedValue({
       ok: true,
       status: 200,
-      data: { layouts: [{ id: 'classic', name: 'Classic', status: 'ok' }], default: 'classic' },
+      data: { layouts: [classicRow], default: 'classic' },
     });
     await editor.loadLayouts();
-    expect(editor.layouts).toEqual([{ id: 'classic', name: 'Classic', status: 'ok' }]);
+    expect(editor.layouts).toEqual([classicRow]);
     expect(editor.defaultLayout).toBe('classic');
   });
 
@@ -741,5 +755,69 @@ describe('EditorState — render settings by scope', () => {
     expect(editor.accentHex.toLowerCase()).toBe('#123456');
     editor.activeVariantId = null;
     expect(editor.accentHex.toLowerCase()).not.toBe('#123456');
+  });
+});
+
+describe('EditorState — layouts', () => {
+  const layout = (over = {}) => ({
+    id: 'classic',
+    name: 'Classic',
+    status: 'active',
+    kinds: ['cv'],
+    builtin: true,
+    own: false,
+    author: null,
+    family: 'classic',
+    versionNo: null,
+    state: 'public' as const,
+    updateAvailable: null,
+    ...over,
+  });
+
+  test('loading reads the review flag and, for the owner, the queue', async () => {
+    editor.connected = true;
+    vi.spyOn(api, 'getLayouts').mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { layouts: [layout()], default: 'classic', canReview: true },
+    });
+    const reviews = vi
+      .spyOn(api, 'getLayoutReviews')
+      .mockResolvedValue({ ok: true, status: 200, data: { pending: [] } });
+    await editor.loadLayouts();
+    expect(editor.canReviewLayouts).toBe(true);
+    expect(reviews).toHaveBeenCalled();
+    editor.connected = false;
+  });
+
+  test("choosing someone else's layout keeps the test-compile warnings", async () => {
+    editor.connected = true;
+    vi.spyOn(api, 'setDefaultLayout').mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { warnings: ['compile:real:5:cv: xelatex failed'] },
+    });
+    await editor.chooseLayout('u3-modern@2');
+    expect(editor.defaultLayout).toBe('u3-modern@2');
+    expect(editor.layoutWarnings).toEqual(['compile:real:5:cv: xelatex failed']);
+    editor.connected = false;
+  });
+
+  test('installing reloads the list; a failed check keeps what is missing', async () => {
+    editor.connected = true;
+    const file = new File(['zip'], 'l.zip');
+    vi.spyOn(api, 'sendLayoutZip').mockResolvedValueOnce({
+      ok: false,
+      missing: ['No template for document: missing'],
+    });
+    await editor.sendLayoutZip(file, false);
+    expect(editor.layoutCheck?.missing).toEqual(['No template for document: missing']);
+    vi.spyOn(api, 'sendLayoutZip').mockResolvedValueOnce({ ok: true, missing: [] });
+    const reload = vi
+      .spyOn(api, 'getLayouts')
+      .mockResolvedValue({ ok: true, status: 200, data: { layouts: [], default: null } });
+    await editor.sendLayoutZip(file, true);
+    expect(reload).toHaveBeenCalled();
+    editor.connected = false;
   });
 });

@@ -4,6 +4,9 @@
 // returns one profile's full record (profile, sections, variants, tag vocab).
 // The allowlisted owner sees every profile; other signed-in users see their own.
 import type {
+  LayoutInfo,
+  LayoutReview,
+  LayoutCheck,
   SettingValue,
   Profile,
   Item,
@@ -552,13 +555,77 @@ export class CvApi {
     });
   }
   getLayouts() {
-    return this.req<{
-      layouts?: { id: string; name: string; status: string }[];
-      default?: string | null;
-    }>('/layouts');
+    return this.req<{ layouts?: LayoutInfo[]; default?: string | null; canReview?: boolean }>(
+      '/layouts',
+    );
   }
   setDefaultLayout(id: string) {
-    return this.req('/layouts/default', { method: 'PUT', body: JSON.stringify({ layout_id: id }) });
+    return this.req<{ warnings?: string[] }>('/layouts/default', {
+      method: 'PUT',
+      body: JSON.stringify({ layout_id: id }),
+    });
+  }
+  /** Pin a variant to a layout, or null to follow the account default. */
+  setVariantLayout(variantId: number, layoutId: string | null) {
+    return this.req<{ warnings?: string[] }>(`/variants/${variantId}/layout`, {
+      method: 'PUT',
+      body: JSON.stringify({ layout_id: layoutId }),
+    });
+  }
+  publishLayout(id: string) {
+    return this.req(`/layouts/${encodeURIComponent(id)}/publish`, { method: 'POST', body: '{}' });
+  }
+  unpublishLayout(id: string) {
+    return this.req(`/layouts/${encodeURIComponent(id)}/unpublish`, { method: 'POST', body: '{}' });
+  }
+  deleteLayout(id: string) {
+    return this.req(`/layouts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  }
+  getLayoutReviews() {
+    return this.req<{ pending?: LayoutReview[]; maxCompileMs?: number }>('/layouts/review');
+  }
+  reviewLayout(id: string, decision: 'approve' | 'reject', note: string) {
+    return this.req(`/layouts/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, note }),
+    });
+  }
+  /**
+   * Check a layout zip (`install: false`) or install it. Multipart, so it goes
+   * around `req`, which always sends JSON.
+   */
+  async sendLayoutZip(file: File, { install }: { install: boolean }): Promise<LayoutCheck> {
+    const form = new FormData();
+    form.append('bundle', file);
+    try {
+      const res = await fetch(`${this.base}/api/layouts${install ? '' : '/check'}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const body = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        missing?: string[];
+        layout?: LayoutInfo;
+        error?: { message?: string };
+      } | null;
+      const missing = body?.missing ?? [];
+      if (res.ok) return { ok: install ? true : !!body?.ok, missing, installed: body?.layout };
+      return { ok: false, missing, error: body?.error?.message ?? `HTTP ${res.status}` };
+    } catch (e) {
+      return { ok: false, missing: [], error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+  /** A layout's bundle as a zip Blob, or null when it cannot be downloaded. */
+  async downloadLayout(id: string): Promise<Blob | null> {
+    try {
+      const res = await fetch(`${this.base}/api/layouts/${encodeURIComponent(id)}/bundle`, {
+        credentials: 'include',
+      });
+      return res.ok ? await res.blob() : null;
+    } catch {
+      return null;
+    }
   }
 
   // tags on entries + items
