@@ -43,9 +43,11 @@ const { entry } = Astro.props;
           ·{' '}
           {entry.project.tier === 'browser'
             ? 'runs in your browser'
-            : entry.project.tier === 'offline'
-              ? 'no demo, code and measurements'
-              : 'separate app'}
+            : entry.project.tier === 'precomputed'
+              ? 'benchmark here, model in the repo'
+              : entry.project.tier === 'offline'
+                ? 'no demo, code and measurements'
+                : 'separate app'}
         </span>
       </div>
       <div class="timeline-role">{entry.project.title}</div>

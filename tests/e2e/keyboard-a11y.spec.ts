@@ -6,6 +6,7 @@ import { test, expect, type Page } from '@playwright/test';
 const EDITOR = '/projects/latex-resume-editor/app/';
 const NONOGRAM = '/projects/quantum-nonogram-solver/app/';
 const CLASSIFIER = '/projects/ai-ml/app/';
+const SKILL_LINKER = '/projects/tiny-skill-linker/app/';
 
 const activeLabel = (page: Page) =>
   page.evaluate(() => {
@@ -143,6 +144,29 @@ test.describe('Classifier dataset control', () => {
 });
 
 // The shared chrome.
+test.describe('Skill linker controls', () => {
+  test('the two states are tabs, and the held-out box is reachable by its label', async ({
+    page,
+  }) => {
+    await page.goto(SKILL_LINKER);
+    const tabs = page.getByRole('tab');
+    await expect(tabs).toHaveCount(2);
+    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+
+    await tabs.last().press('Enter');
+    await expect(tabs.last()).toHaveAttribute('aria-selected', 'true');
+
+    // system.css hides the box itself and draws it on the label, so the label is
+    // what a visitor clicks and what names the control.
+    const heldOut = page.getByLabel('Only skills held out of training');
+    await expect(heldOut).toHaveAttribute('type', 'checkbox');
+    await heldOut.focus();
+    await page.keyboard.press('Space');
+    await expect(heldOut).toBeChecked();
+    await expect(page.locator('#sl-summary caption')).toContainText('held-out skills');
+  });
+});
+
 test.describe('Site chrome', () => {
   test('Back to top is out of the tab order until it shows', async ({ page }) => {
     await page.goto('/');

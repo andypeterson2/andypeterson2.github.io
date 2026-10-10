@@ -1,5 +1,6 @@
 {
   "source": "tiny-skill-linker, results/test",
+  "esco_version": "1.1.0",
   "sets": {
     "tech": 338,
     "house": 262,

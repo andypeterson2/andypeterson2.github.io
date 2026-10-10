@@ -9,6 +9,7 @@ const EDITOR = '/projects/latex-resume-editor/app/';
 const NONOGRAM = '/projects/quantum-nonogram-solver/app/';
 const CLASSIFIER = '/projects/ai-ml/app/';
 const QVC = '/projects/quantum-video-chat/app/';
+const SKILL_LINKER = '/projects/tiny-skill-linker/app/';
 
 type Setup = (page: Page) => Promise<void>;
 
@@ -42,6 +43,17 @@ const states: { name: string; path: string; phone?: boolean; dark?: boolean; set
     path: '/projects/tiny-skill-linker/',
   },
   { name: '404', path: '/intentionally-missing/' },
+  { name: 'skill linker', path: SKILL_LINKER },
+  { name: 'skill linker, dark', path: SKILL_LINKER, dark: true },
+  { name: 'skill linker, phone', path: SKILL_LINKER, phone: true },
+  {
+    name: 'skill linker, every sentence',
+    path: SKILL_LINKER,
+    setup: async (page) => {
+      await page.getByRole('tab', { name: 'Every sentence' }).click();
+      await expect(page.locator('#sl-rows tr').first()).toBeVisible();
+    },
+  },
   { name: 'nonogram', path: NONOGRAM },
   { name: 'nonogram, dark', path: NONOGRAM, dark: true },
   { name: 'nonogram, phone', path: NONOGRAM, phone: true },

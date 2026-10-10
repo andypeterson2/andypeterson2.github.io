@@ -23,8 +23,9 @@ export interface Project {
   /** Where the demo runs — shown as one chip on every card so the tier is never implied.
    *  browser: embedded here and works with nothing running on the owner's side;
    *  external: a separate app (opens in a new tab, needs its own server / a second person);
+   *  precomputed: the measurements are embedded and recounted here, but no model runs;
    *  offline: no demo at all — a model and the measurements, re-runnable from the repo. */
-  tier: 'browser' | 'external' | 'offline';
+  tier: 'browser' | 'external' | 'precomputed' | 'offline';
 }
 
 export const projects: Project[] = [
@@ -90,7 +91,8 @@ export const projects: Project[] = [
     slug: 'tiny-skill-linker',
     description:
       'A 22M-parameter sentence embedder fine-tuned to link resume and job-ad sentences to the 13,891 skills in the ESCO taxonomy, measured against a published 110M model on public held-out benchmarks.',
-    tier: 'offline',
+    appUrl: '/projects/tiny-skill-linker/app/',
+    tier: 'precomputed',
     icon: 'tag.svg',
     iconSmall: 'tag-small.svg',
     repoUrl: 'https://github.com/andypeterson2/tiny-skill-linker',

@@ -18,6 +18,8 @@ test.describe('Owned static asset serving', () => {
   '/classifiers/models/qsvm-iris-ovo.json',
     // nonogram gallery of pre-computed quantum runs
     '/nonogram/gallery/index.json',
+    // the skill-linking benchmark the viewer recounts its metrics from
+    '/skill-linker/demo.json',
   ];
 
   for (const path of jsonAssets) {

@@ -1,0 +1,189 @@
+---
+import DemoShell from '../../../layouts/DemoShell.astro';
+import benchmarks from '../../../data/skill-linker-benchmarks.json';
+import '../../../styles/skill-linker.css';
+
+// In the first paint, so the data arriving later moves nothing under it. A test holds
+// both to the export.
+const sentences = Object.values(benchmarks.sets).reduce((n, count) => n + count, 0);
+const DEPTH = 10;
+
+// No `backend` prop: nothing here talks to a server, so LiveTier and the contract
+// client never load. The page reads one precomputed file and does its own arithmetic.
+---
+
+<DemoShell
+  title="Skill Linker Benchmark"
+  description="Walk the ESCO skill-linking test split sentence by sentence and watch a 22M-parameter model's RP@5 accumulate, next to the stock model it was fine-tuned from."
+>
+  <div id="skill-linker-app">
+    <!-- No heading of its own: the window chrome's title is this page's h1. -->
+    <header class="sl-head">
+      <p class="sl-scope" id="sl-scope">
+        {sentences.toLocaleString('en-US')} test sentences, each ranked against all{' '}
+        {benchmarks.targets.toLocaleString('en-US')} skills in ESCO {benchmarks.esco_version}. Top{' '}
+        {DEPTH} kept.
+      </p>
+    </header>
+
+    <div class="sl-tabs" role="tablist" aria-label="View">
+      <button
+        type="button"
+        class="s6-btn s6-btn--sm"
+        role="tab"
+        data-state="walk"
+        aria-selected="true"
+        aria-controls="sl-walk"
+        id="sl-tab-walk"
+      >
+        One sentence at a time
+      </button>
+      <button
+        type="button"
+        class="s6-btn s6-btn--sm"
+        role="tab"
+        data-state="table"
+        aria-selected="false"
+        aria-controls="sl-table"
+        id="sl-tab-table"
+      >
+        Every sentence
+      </button>
+    </div>
+
+    <section class="sl-panel" id="sl-walk" role="tabpanel" aria-labelledby="sl-tab-walk">
+      <div class="sl-controls">
+        <label class="sl-field">
+          <span>Set</span>
+          <select id="sl-walk-set">
+            <option value="tech" selected>
+              TECH
+            </option>
+            <option value="house">HOUSE</option>
+            <option value="techwolf">TECHWOLF</option>
+          </select>
+        </label>
+        <button type="button" class="s6-btn s6-btn--sm" id="sl-next">
+          Next
+        </button>
+        <p class="sl-progress" id="sl-progress"></p>
+      </div>
+
+      <blockquote class="sl-sentence" id="sl-sentence"></blockquote>
+      <div class="sl-answer" id="sl-answer"></div>
+
+      <h2 class="sl-h2 sl-columns-head">Top 5</h2>
+      <!-- Both cards and their five slots are here from the start: the script writes
+           text into them, so the data arriving moves nothing below it. -->
+      <div class="sl-columns" id="sl-columns">
+        {['stock', 'tuned'].map((arm) => (
+          <div class="sl-arm" data-arm={arm}>
+            <h3 class="sl-arm-title">
+              <span class="sl-arm-name"></span>
+              <span class="sl-arm-score"></span>
+            </h3>
+            <ol class="sl-candidates">
+              {[0, 1, 2, 3, 4].map(() => (
+                <li class="sl-chip"></li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
+
+      <div class="sl-running-box">
+        <h2 class="sl-h2">RP@5 so far</h2>
+        <div class="sl-running" id="sl-running">
+          {['stock', 'tuned'].map((arm) => (
+            <div class="sl-running-row" data-arm={arm}>
+              <span class="sl-running-name"></span>
+              <span class="sl-num"></span>
+              <span class="sl-running-aim"></span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="sl-panel" id="sl-table" role="tabpanel" aria-labelledby="sl-tab-table" hidden>
+      <div class="sl-controls">
+        <label class="sl-field">
+          <span>Set</span>
+          <select id="sl-filter-set">
+            <option value="all" selected>
+              All three
+            </option>
+            <option value="tech">TECH</option>
+            <option value="house">HOUSE</option>
+            <option value="techwolf">TECHWOLF</option>
+          </select>
+        </label>
+        <label class="sl-field">
+          <span>Top 5 holds</span>
+          <select id="sl-filter-outcome">
+            <option value="any" selected>
+              all sentences
+            </option>
+            <option value="hit">every correct skill</option>
+            <option value="partial">some</option>
+            <option value="miss">none</option>
+          </select>
+        </label>
+        <label class="sl-field">
+          <span>for</span>
+          <select id="sl-filter-arm"></select>
+        </label>
+        <div class="sl-check">
+          <input type="checkbox" id="sl-filter-heldout" />
+          <label for="sl-filter-heldout">Only skills held out of training</label>
+        </div>
+      </div>
+
+      <div id="sl-summary"></div>
+
+      <!-- Focusable and named: it scrolls, so it must be reachable without a mouse. -->
+      <div class="sl-scroller" tabindex="0" role="region" aria-label="All 926 sentences">
+        <table class="s6-data-table sl-rows">
+          <caption class="sl-caption">Rank of each correct skill; 1 is the top candidate.</caption>
+          <thead>
+            <tr id="sl-head"></tr>
+          </thead>
+          <tbody id="sl-rows"></tbody>
+        </table>
+      </div>
+      <button type="button" class="s6-btn s6-btn--sm" id="sl-more" hidden>
+        Show more sentences
+      </button>
+    </section>
+
+    <section class="sl-panel sl-meaning">
+      <h2 class="sl-h2">Notes</h2>
+      <ul class="sl-meaning-list">
+        <li>
+          RP@5 divides the correct skills in the top five by min(5, how many there are). 436 of the
+          926 sentences have more than one, up to ten.
+        </li>
+        <li>
+          Sentences with no ESCO skill were dropped upstream, so every one here has at least one
+          correct answer.
+        </li>
+        <li>
+          Skill names are ranked, not extracted from the sentence, and there is no free-text box.
+        </li>
+        <li>Seed 0, fp32. The writeup's headline is the three-seed mean.</li>
+        <li>
+          Held-out arm: 2,765 skills and every sentence mentioning them removed from training. One
+          seed, 282 pairs.
+        </li>
+      </ul>
+      <p class="sl-credit">
+        TechWolf skill-extraction TECH, HOUSE and TECHWOLF, CC BY 4.0. ESCO 1.1.0, &#169; European
+        Union.
+      </p>
+    </section>
+  </div>
+
+  <script>
+    import '../../../apps/skill-linker/entry';
+  </script>
+</DemoShell>

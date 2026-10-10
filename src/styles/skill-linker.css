@@ -1,0 +1,326 @@
+/* Styles for the skill-linker benchmark viewer.
+   Imported globally by its page rather than scoped to it: most of this view is
+   built by the script at runtime, and a scoped rule never reaches a node the
+   server did not render. Every rule is under #skill-linker-app, so nothing here
+   escapes the app. */
+
+/* No scroller of its own except the wide table: the page pane does the scrolling. */
+#skill-linker-app {
+  font-family: var(--font-sans);
+  font-size: var(--text-3xs);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  min-width: 0;
+}
+
+#skill-linker-app .sl-scope,
+#skill-linker-app .sl-credit {
+  margin: 4px 0 0;
+  max-width: 80ch;
+  line-height: 1.45;
+  font-family: var(--font-mono);
+  font-size: var(--text-4xs);
+}
+
+#skill-linker-app .sl-h2 {
+  font-size: var(--text-3xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 6px;
+}
+
+#skill-linker-app .sl-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#skill-linker-app .sl-tabs [aria-selected='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+#skill-linker-app .sl-panel {
+  border: 2px solid var(--ink);
+  padding: 10px;
+  background: var(--paper);
+  min-width: 0;
+}
+
+#skill-linker-app .sl-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#skill-linker-app .sl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+#skill-linker-app .sl-field > span,
+#skill-linker-app .sl-check label {
+  font-size: var(--text-4xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#skill-linker-app .sl-field select {
+  font-family: inherit;
+  font-size: var(--text-4xs);
+  padding: 3px 5px;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  max-width: 28ch;
+}
+
+#skill-linker-app .sl-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#skill-linker-app .sl-progress {
+  margin: 0 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-4xs);
+}
+
+/* The sentence is the subject of the view, so it takes the one size step up. */
+#skill-linker-app .sl-sentence {
+  margin: 0;
+  min-height: 4.4em;
+  padding: 8px 10px;
+  border-left: 4px solid var(--ink);
+  background: var(--paper-2);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+}
+
+#skill-linker-app .sl-answer {
+  min-height: 2.6em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+#skill-linker-app .sl-answer-label {
+  font-size: var(--text-4xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#skill-linker-app .sl-answer-list,
+#skill-linker-app .sl-candidates {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+#skill-linker-app .sl-candidates {
+  flex-direction: column;
+  counter-reset: candidate;
+}
+
+#skill-linker-app .sl-columns-head {
+  margin-top: 12px;
+}
+
+#skill-linker-app .sl-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 8px;
+}
+
+#skill-linker-app .sl-arm {
+  border: 1.5px solid var(--ink);
+  padding: 7px 8px;
+  min-width: 0;
+}
+
+#skill-linker-app .sl-arm-title {
+  min-height: 1.4em;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: var(--text-4xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 5px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--ink-4);
+}
+
+#skill-linker-app .sl-arm-score {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* A candidate carries its rank, since the order of the list is the claim. */
+#skill-linker-app .sl-candidates .sl-chip {
+  counter-increment: candidate;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  line-height: 1.35;
+
+  /* An empty slot still holds its line, so the five do not collapse before they fill. */
+  min-height: 1.35em;
+}
+
+#skill-linker-app .sl-candidates .sl-chip::before {
+  content: counter(candidate);
+  font-family: var(--font-mono);
+  font-size: var(--text-4xs);
+  min-width: 1.6em;
+  text-align: right;
+  color: var(--ink-3);
+}
+
+/* A correct answer is marked by weight and by a word, never by colour alone. */
+#skill-linker-app .sl-chip--gold {
+  font-weight: 700;
+}
+
+#skill-linker-app .sl-candidates .sl-chip--gold::before {
+  color: var(--ink);
+}
+
+#skill-linker-app .sl-answer-list .sl-chip {
+  border: 1.5px solid var(--ink);
+  padding: 1px 6px;
+}
+
+#skill-linker-app .sl-mark {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 0 4px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: var(--text-4xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+#skill-linker-app .sl-running-box {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px solid var(--ink);
+}
+
+#skill-linker-app .sl-running-row {
+  min-height: 1.4em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+#skill-linker-app .sl-running-name {
+  font-weight: 700;
+  min-width: 18ch;
+}
+
+#skill-linker-app .sl-running-aim,
+#skill-linker-app .sl-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-4xs);
+}
+
+#skill-linker-app .sl-running-aim {
+  color: var(--ink-3);
+}
+
+/* The only scroller in the app: 926 rows of six columns will not fold onto a phone. */
+#skill-linker-app .sl-scroller {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1.5px solid var(--ink);
+}
+
+#skill-linker-app .sl-rows,
+#skill-linker-app .sl-summary {
+  font-size: var(--text-4xs);
+  width: 100%;
+}
+
+#skill-linker-app .sl-caption {
+  text-align: left;
+  font-size: var(--text-4xs);
+  padding: 4px 6px;
+  color: var(--ink-2);
+}
+
+#skill-linker-app .sl-summary {
+  margin-bottom: 8px;
+}
+
+/* The run a row was scored under, kept with its name so the two never part. */
+#skill-linker-app .sl-run {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+#skill-linker-app .sl-set {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+#skill-linker-app .sl-text {
+  min-width: 24ch;
+  max-width: 48ch;
+}
+
+#skill-linker-app .sl-golds {
+  min-width: 18ch;
+  max-width: 30ch;
+}
+
+/* Outcome by fill, with the rank numbers in the cell saying the same thing. */
+#skill-linker-app .sl-hit {
+  background: var(--paper-3);
+}
+
+#skill-linker-app .sl-miss {
+  color: var(--ink-3);
+}
+
+#skill-linker-app #sl-more {
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+#skill-linker-app .sl-meaning-list {
+  margin: 0;
+  padding-left: 1.3em;
+  max-width: 80ch;
+}
+
+#skill-linker-app .sl-meaning-list li {
+  margin: 0.3em 0;
+  line-height: 1.45;
+}
