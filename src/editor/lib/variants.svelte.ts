@@ -70,7 +70,7 @@ function withItemIncluded(before: ItemOverride | null, state: number | null): It
 
 /** The shared save infra plus the reads/writes the variants concern needs. */
 export interface VariantHost extends SaveHost {
-  activePersonId(): number | null;
+  activeProfileId(): number | null;
   activeId(): number | null;
   setActiveId(id: number | null): void;
   variants(): Variant[];
@@ -102,7 +102,7 @@ export class VariantController {
     this.host.setActiveId(tempId);
     this.host.syncActive(false); // a fresh variant has no letter paragraphs yet
     this.host.markDirty();
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (!this.host.connected() || pid == null) return;
     const res = await this.host.persist(() => api.createVariant(pid, { name: clean, kind }));
     if (res.ok && res.data) {
@@ -167,7 +167,7 @@ export class VariantController {
 
   /**
    * Override one personal.* field for this variant. `null` drops the override so the
-   * person value is inherited again; '' keeps an override that suppresses the field.
+   * profile value is inherited again; '' keeps an override that suppresses the field.
    */
   async setPersonalOverride(variant: Variant, key: string, value: string | null) {
     const before = variant.personal?.[key] ?? null;
@@ -224,7 +224,7 @@ export class VariantController {
   // per-variant overrides (field patch + force include/exclude)
   // Every override write sends the WHOLE row (the backend upsert is whole-row and
   // deletes when all fields are null), so each method computes the complete next
-  // state from the current one. `variant` is a live proxy in `person.variants`, so
+  // state from the current one. `variant` is a live proxy in `profile.variants`, so
   // mutating `entryOverrides`/`itemOverrides` re-runs the lens instantly. undo/redo
   // carry snapshots straight to `_applyEntryOverride`, so they never re-record.
 

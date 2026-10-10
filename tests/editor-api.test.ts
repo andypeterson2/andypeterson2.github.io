@@ -37,7 +37,7 @@ describe('CvApi.req — the request envelope', () => {
   test('401 / 403 collapse to a single auth_required error', async () => {
     for (const status of [401, 403]) {
       fetchMock.mockResolvedValue(respond(status));
-      const res = await api().listPersons();
+      const res = await api().listProfiles();
       expect(res.ok).toBe(false);
       expect(res.error?.code).toBe('auth_required');
     }
@@ -45,13 +45,13 @@ describe('CvApi.req — the request envelope', () => {
 
   test('a non-ok response with an error body surfaces that error verbatim', async () => {
     fetchMock.mockResolvedValue(respond(400, { error: { code: 'bad_request', message: 'nope' } }));
-    const res = await api().listPersons();
+    const res = await api().listProfiles();
     expect(res.error).toEqual({ code: 'bad_request', message: 'nope' });
   });
 
   test('a non-ok response without an error body synthesizes http_<status>', async () => {
     fetchMock.mockResolvedValue(respond(500, {}, true, 'Server Error'));
-    const res = await api().listPersons();
+    const res = await api().listProfiles();
     expect(res.status).toBe(500);
     expect(res.error?.code).toBe('http_500');
   });
@@ -65,31 +65,31 @@ describe('CvApi.req — the request envelope', () => {
 
   test('a non-JSON 200 yields no data (never tries to parse it)', async () => {
     fetchMock.mockResolvedValue(respond(204, undefined, false));
-    const res = await api().listPersons();
+    const res = await api().listProfiles();
     expect(res.ok).toBe(true);
     expect(res.data).toBeUndefined();
   });
 
   test('a write sends JSON with the Content-Type header; a read sends none', async () => {
     fetchMock.mockResolvedValue(respond(200, { id: 1 }));
-    await api().createPerson('Ada');
+    await api().createProfile('Ada');
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://test.example/cv/api/persons');
+    expect(url).toBe('https://test.example/cv/api/profiles');
     expect(init.method).toBe('POST');
     expect(init.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(init.body)).toEqual({ name: 'Ada' });
 
-    fetchMock.mockResolvedValue(respond(200, { persons: [] }));
-    await api().listPersons();
+    fetchMock.mockResolvedValue(respond(200, { profiles: [] }));
+    await api().listProfiles();
     expect(fetchMock.mock.calls[1][1].headers).toBeUndefined(); // GET → no content-type
   });
 });
 
-describe('CvApi.fetchPerson / fetchActive', () => {
-  test('fetchPerson maps the raw main record into the editor Person shape', async () => {
+describe('CvApi.fetchProfile / fetchActive', () => {
+  test('fetchProfile maps the raw main record into the editor Profile shape', async () => {
     fetchMock.mockResolvedValue(
       respond(200, {
-        person: { id: 3, name: 'Ada' },
+        profile: { id: 3, name: 'Ada' },
         personal: { firstName: 'Ada' },
         sections: [
           {
@@ -110,7 +110,7 @@ describe('CvApi.fetchPerson / fetchActive', () => {
         coverletter: { opening: 'Dear' },
       }),
     );
-    const res = await api().fetchPerson(3);
+    const res = await api().fetchProfile(3);
     expect(res.ok).toBe(true);
     expect(res.data?.name).toBe('Ada');
     expect(res.data?.sections[0].entries[0].fields.position).toBe('Engineer');
@@ -119,9 +119,9 @@ describe('CvApi.fetchPerson / fetchActive', () => {
     expect(res.data?.variants[0]).toMatchObject({ id: 5, name: 'Quantum', kind: 'cv' });
   });
 
-  test('fetchPerson forwards a failed load as an error', async () => {
+  test('fetchProfile forwards a failed load as an error', async () => {
     fetchMock.mockResolvedValue(respond(403));
-    const res = await api().fetchPerson(3);
+    const res = await api().fetchProfile(3);
     expect(res.ok).toBe(false);
     expect(res.error?.code).toBe('auth_required');
   });
@@ -130,25 +130,25 @@ describe('CvApi.fetchPerson / fetchActive', () => {
     fetchMock
       .mockResolvedValueOnce(
         respond(200, {
-          persons: [
+          profiles: [
             { id: 1, name: 'A' },
             { id: 8, name: 'B' },
           ],
         }),
       )
-      .mockResolvedValueOnce(respond(200, { person: { id: 8, name: 'B' } }));
+      .mockResolvedValueOnce(respond(200, { profile: { id: 8, name: 'B' } }));
     const res = await api().fetchActive();
     expect(res.ok).toBe(true);
-    expect(res.data?.person.id).toBe(8);
-    expect(res.data?.persons).toHaveLength(2);
-    expect(fetchMock.mock.calls[1][0]).toContain('/persons/8'); // loaded the newest
+    expect(res.data?.profile.id).toBe(8);
+    expect(res.data?.profiles).toHaveLength(2);
+    expect(fetchMock.mock.calls[1][0]).toContain('/profiles/8'); // loaded the newest
   });
 
-  test('fetchActive with zero profiles → no_persons', async () => {
-    fetchMock.mockResolvedValue(respond(200, { persons: [] }));
+  test('fetchActive with zero profiles → no_profiles', async () => {
+    fetchMock.mockResolvedValue(respond(200, { profiles: [] }));
     const res = await api().fetchActive();
     expect(res.status).toBe(404);
-    expect(res.error?.code).toBe('no_persons');
+    expect(res.error?.code).toBe('no_profiles');
   });
 
   test('fetchActive propagates a failed profile list', async () => {

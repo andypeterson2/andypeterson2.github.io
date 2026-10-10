@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'vitest';
 import { diffDocuments, entryLabel } from '../src/editor/lib/diff';
-import type { Person, Entry } from '../src/editor/lib/types';
+import type { Profile, Entry } from '../src/editor/lib/types';
 
 // A tiny document builder — ids are explicit so the diff can match by identity.
-function doc(over: Partial<Person> = {}): Person {
+function doc(over: Partial<Profile> = {}): Profile {
   return {
     id: 1,
     name: 'Ada',
@@ -33,7 +33,7 @@ function doc(over: Partial<Person> = {}): Person {
 }
 
 // deep clone so edits don't alias the original
-const clone = (p: Person): Person => JSON.parse(JSON.stringify(p));
+const clone = (p: Profile): Profile => JSON.parse(JSON.stringify(p));
 
 describe('diffDocuments', () => {
   test('identical documents diff to empty', () => {

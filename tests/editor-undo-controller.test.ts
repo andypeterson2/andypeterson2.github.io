@@ -102,7 +102,7 @@ describe('UndoController — per-profile scopes (item behind the profile-switch 
     expect(c.undoLabel).toBe('B-edit'); // and so did p7's
   });
 
-  test('dropScope forgets a profile’s history (deleted person)', () => {
+  test('dropScope forgets a profile’s history (deleted profile)', () => {
     const { c } = make();
     c.record(cmd());
     c.dropScope('demo'); // the current scope

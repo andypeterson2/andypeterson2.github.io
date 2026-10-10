@@ -1,15 +1,15 @@
 <script lang="ts">
   import { editor } from '../lib/store.svelte';
   import UiButton from './ui/Button.svelte';
-  import type { PersonMeta } from '../lib/api';
+  import type { ProfileMeta } from '../lib/api';
 
-  const activeMeta = $derived(editor.persons.find((p) => p.id === editor.activePersonId) ?? null);
+  const activeMeta = $derived(editor.profiles.find((p) => p.id === editor.activeProfileId) ?? null);
 
-  function confirmDelete(p: PersonMeta) {
+  function confirmDelete(p: ProfileMeta) {
     if (
       window.confirm(`Delete the resume "${p.name}" and everything in it? This cannot be undone.`)
     ) {
-      void editor.deletePerson(p.id);
+      void editor.deleteProfile(p.id);
     }
   }
 </script>
@@ -23,11 +23,11 @@
   </p>
 
   <div class="picker">
-    {#each editor.persons as p (p.id)}
+    {#each editor.profiles as p (p.id)}
       <UiButton
         variant="opt"
-        active={editor.activePersonId === p.id}
-        onclick={() => editor.selectPerson(p.id)}
+        active={editor.activeProfileId === p.id}
+        onclick={() => editor.selectProfile(p.id)}
       >
         <span class="radio"></span>
         <span class="opt-name">{p.name}</span>
@@ -35,7 +35,7 @@
     {/each}
   </div>
 
-  <UiButton variant="new" class="new-profile" onclick={() => editor.addPerson()}
+  <UiButton variant="new" class="new-profile" onclick={() => editor.addProfile()}
     >＋ New resume</UiButton
   >
 
@@ -47,7 +47,7 @@
         <input
           class="in"
           value={meta.name}
-          onchange={(e) => editor.renamePerson(meta.id, e.currentTarget.value)}
+          onchange={(e) => editor.renameProfile(meta.id, e.currentTarget.value)}
         />
       </label>
       <UiButton

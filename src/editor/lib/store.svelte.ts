@@ -5,10 +5,10 @@
 // reactive state like `activeVariantId` stays here. The core the save infra exists
 // for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
 
-import type { Person, Personal, Section, Entry, Item, SettingValue } from './types';
-import { createDemoPerson, DEMO_LETTERS } from './demo';
+import type { Profile, Personal, Section, Entry, Item, SettingValue } from './types';
+import { createDemoProfile, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
-import { api, type PersonMeta, type ApiResult, type RenderCatalog } from './api';
+import { api, type ProfileMeta, type ApiResult, type RenderCatalog } from './api';
 import { resolveAccent } from './accent';
 import { buildExport, type ExportDoc } from './export';
 import { stashDemoDraft, peekDemoDraft, clearDemoDraft, forNewOwner } from './draft';
@@ -41,7 +41,7 @@ function downloadJson(data: unknown, filename: string) {
 }
 
 /** A blank profile held while connected with zero profiles — nothing stale renders. */
-const EMPTY_PERSON: Person = {
+const EMPTY_PROFILE: Profile = {
   id: 0,
   name: '',
   personal: {},
@@ -51,9 +51,9 @@ const EMPTY_PERSON: Person = {
 };
 
 class EditorState {
-  /** The person currently being edited (demo until a backend is connected). */
-  person = $state<Person>(createDemoPerson());
-  /** The owner's identity — name + public contacts — overlaid onto the demo person
+  /** The profile currently being edited (demo until a backend is connected). */
+  profile = $state<Profile>(createDemoProfile());
+  /** The owner's identity — name + public contacts — overlaid onto the demo profile
    *  from `siteConfig` (via the editor's `identity` prop). Held so resetDemo
    *  re-applies it after re-cloning the pristine sample. Never committed PII. */
   private demoIdentity: Partial<Personal> | null = null;
@@ -67,7 +67,7 @@ class EditorState {
   preview = new PreviewController(
     () => this.connected,
     () => this.activeVariant,
-    () => this.activePersonId,
+    () => this.activeProfileId,
   );
   /** the undo/redo history behind the Edit menu. */
   undo = new UndoController({ announce: (msg) => this.say(msg) });
@@ -89,8 +89,8 @@ class EditorState {
   pendingDraft = $state<ExportDoc | null>(null);
   importingDraft = $state(false);
   /** Profiles available to the signed-in identity (empty in demo). */
-  persons = $state<PersonMeta[]>([]);
-  activePersonId = $state<number | null>(null);
+  profiles = $state<ProfileMeta[]>([]);
+  activeProfileId = $state<number | null>(null);
   /** a section id the document should scroll into view (set on create) */
   scrollTarget = $state<number | string | null>(null);
   openDrawer = $state<null | 'variant' | 'tags' | 'layouts' | 'style' | 'profiles' | 'history'>(
@@ -117,7 +117,7 @@ class EditorState {
   activeVariant = $derived(
     this.activeVariantId == null
       ? null
-      : (this.person.variants.find((v) => v.id === this.activeVariantId) ?? null),
+      : (this.profile.variants.find((v) => v.id === this.activeVariantId) ?? null),
   );
   /** label for the toolbar/titlebar — the active variant's name or "Main". */
   variantLabel = $derived(this.activeVariant?.name ?? 'Main');
@@ -128,7 +128,7 @@ class EditorState {
    */
   get pdfName(): string {
     return pdfFileName(
-      `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim(),
+      `${this.profile.personal.firstName ?? ''} ${this.profile.personal.lastName ?? ''}`.trim(),
       this.variantLabel,
       this.lastEditedAt == null ? new Date() : new Date(this.lastEditedAt),
     );
@@ -154,19 +154,19 @@ class EditorState {
     ...this.saveHost,
     activeVariant: () => this.activeVariant,
     activeVariantId: () => this.activeVariantId,
-    coverletter: () => this.person.coverletter,
+    coverletter: () => this.profile.coverletter,
   });
   /** the variants concern — alternate lenses + include/exclude rules. */
   variants = new VariantController({
     ...this.saveHost,
-    activePersonId: () => this.activePersonId,
+    activeProfileId: () => this.activeProfileId,
     activeId: () => this.activeVariantId,
     setActiveId: (id) => {
       this.activeVariantId = id;
     },
-    variants: () => this.person.variants,
+    variants: () => this.profile.variants,
     setVariants: (v) => {
-      this.person.variants = v;
+      this.profile.variants = v;
     },
     syncActive: (load) => {
       this.preview.reset();
@@ -183,37 +183,37 @@ class EditorState {
   /** the tags concern — entry/bullet tags, the spotlight, the vocabulary. */
   tags = new TagController({
     ...this.saveHost,
-    sections: () => this.person.sections,
+    sections: () => this.profile.sections,
   });
   /** the tag-suggestion concern — ranked suggestions beside the chips, with feedback. */
   suggest = new SuggestionController(
-    { connected: () => this.connected, activePersonId: () => this.activePersonId },
+    { connected: () => this.connected, activeProfileId: () => this.activeProfileId },
     this.tags,
   );
   /** the version-history concern — document checkpoints + restore. */
   history = new HistoryController({
     ...this.saveHost,
-    activePersonId: () => this.activePersonId,
-    capture: () => $state.snapshot(this.person),
+    activeProfileId: () => this.activeProfileId,
+    capture: () => $state.snapshot(this.profile),
     apply: (doc) => this.restoreDocument(doc),
     reload: () => this.reloadActive(),
     applyEntry: (source, entryId) => this.applyEntryFrom(source, entryId),
   });
   /** connected, but the account has no profiles yet (e.g. after deleting the last). */
-  noProfiles = $derived(this.connected && this.persons.length === 0);
-  /** the active profile's switcher label (its person "name"); demo → the CV name. */
+  noProfiles = $derived(this.connected && this.profiles.length === 0);
+  /** the active profile's switcher label (its profile "name"); demo → the CV name. */
   profileLabel = $derived(
     this.noProfiles
       ? 'No resumes'
-      : this.persons.find((p) => p.id === this.activePersonId)?.name ||
-          `${this.person.personal.firstName ?? ''} ${this.person.personal.lastName ?? ''}`.trim() ||
+      : this.profiles.find((p) => p.id === this.activeProfileId)?.name ||
+          `${this.profile.personal.firstName ?? ''} ${this.profile.personal.lastName ?? ''}`.trim() ||
           'Demo',
   );
   /** local id source for entries/bullets created before an API round-trip */
   private seq = 1000;
 
   constructor() {
-    this.#shadow.reseat(this.person, this.style);
+    this.#shadow.reseat(this.profile, this.style);
   }
 
   // undo plumbing
@@ -241,7 +241,7 @@ class EditorState {
   private rebase(scopeKey: string) {
     this.undo.setScope(scopeKey);
     this.undo.clear();
-    this.#shadow.reseat(this.person, this.style);
+    this.#shadow.reseat(this.profile, this.style);
   }
 
   /** Flag unsaved edits (used in demo, where there's no backend to save to). */
@@ -397,8 +397,8 @@ class EditorState {
     );
   }
   savePersonal(key: string) {
-    const personal = this.person.personal as Record<string, string | undefined>;
-    const change = this.#shadow.diff(this.person.personal, personal);
+    const personal = this.profile.personal as Record<string, string | undefined>;
+    const change = this.#shadow.diff(this.profile.personal, personal);
     if (change) {
       const { old, next } = change;
       this.undo.record({
@@ -409,23 +409,23 @@ class EditorState {
       });
     }
     this.touch();
-    if (!this.connected || this.activePersonId == null) return;
-    const pid = this.activePersonId;
+    if (!this.connected || this.activeProfileId == null) return;
+    const pid = this.activeProfileId;
     this.saveState = 'saving';
     this.debounce(`personal.${key}`, () => this.pushPersonal(pid, key));
   }
   private applyPersonalField(key: string, value: string) {
-    (this.person.personal as Record<string, string>)[key] = value;
-    this.#shadow.patch(this.person.personal, key, value);
+    (this.profile.personal as Record<string, string>)[key] = value;
+    this.#shadow.patch(this.profile.personal, key, value);
     this.touch();
-    if (!this.connected || this.activePersonId == null) return;
-    this.pushPersonal(this.activePersonId, key);
+    if (!this.connected || this.activeProfileId == null) return;
+    this.pushPersonal(this.activeProfileId, key);
   }
   private pushPersonal(pid: number, key: string) {
     void this.persist(
       () =>
         api.updatePersonal(pid, {
-          [key]: (this.person.personal as Record<string, string>)[key] ?? '',
+          [key]: (this.profile.personal as Record<string, string>)[key] ?? '',
         }),
       () => this.pushPersonal(pid, key),
     );
@@ -571,14 +571,14 @@ class EditorState {
 
   async addSection(type: string) {
     // Section-type keys are valid slugs (^[a-z0-9_-]+$); dedup against existing.
-    const existing = new Set(this.person.sections.map((s) => s.slug).filter(Boolean));
+    const existing = new Set(this.profile.sections.map((s) => s.slug).filter(Boolean));
     let slug = type;
     let n = 2;
     while (existing.has(slug)) slug = `${type}-${n++}`;
     const title = SECTION_TYPES[type]?.label ?? type;
-    const index = this.person.sections.length;
-    this.person.sections.push({ id: this.seq++, slug, type, title, entries: [] });
-    const section = this.live(this.person.sections, index);
+    const index = this.profile.sections.length;
+    this.profile.sections.push({ id: this.seq++, slug, type, title, entries: [] });
+    const section = this.live(this.profile.sections, index);
     const tempId = section.id;
     this.scrollTarget = section.id;
     this.touch();
@@ -588,24 +588,24 @@ class EditorState {
         undo: () => this.detachSection(section),
         redo: () => this.attachSection(section, index),
       });
-    if (!this.connected || this.activePersonId == null) {
+    if (!this.connected || this.activeProfileId == null) {
       remember();
       return;
     }
-    const pid = this.activePersonId;
+    const pid = this.activeProfileId;
     const res = await this.persist(() => api.createSection(pid, { slug, type, title }));
     if (res.ok && res.data) {
       section.id = res.data.id; // reconcile temp id → server id
       remember();
     } else {
-      this.person.sections = this.person.sections.filter((s) => s.id !== tempId); // roll back
+      this.profile.sections = this.profile.sections.filter((s) => s.id !== tempId); // roll back
       this.scrollTarget = null;
     }
   }
   async deleteSection(sectionId: Section['id']) {
-    const index = this.person.sections.findIndex((s) => s.id === sectionId);
+    const index = this.profile.sections.findIndex((s) => s.id === sectionId);
     if (index < 0) return;
-    const section = this.live(this.person.sections, index);
+    const section = this.live(this.profile.sections, index);
     this.undo.record({
       label: 'Delete section',
       undo: () => this.attachSection(section, index),
@@ -615,17 +615,17 @@ class EditorState {
   }
   private async detachSection(section: Section) {
     const id = section.id;
-    this.person.sections = this.person.sections.filter((s) => s.id !== id);
+    this.profile.sections = this.profile.sections.filter((s) => s.id !== id);
     this.touch();
     await this.persist(() => api.deleteSection(id));
   }
   /** Re-create a section and everything inside it. All ids are new; objects are not. */
   private async attachSection(section: Section, index: number) {
-    this.person.sections.splice(Math.min(index, this.person.sections.length), 0, section);
+    this.profile.sections.splice(Math.min(index, this.profile.sections.length), 0, section);
     this.scrollTarget = section.id;
     this.touch();
-    if (!this.connected || this.activePersonId == null) return;
-    const pid = this.activePersonId;
+    if (!this.connected || this.activeProfileId == null) return;
+    const pid = this.activeProfileId;
     const res = await this.persist(() =>
       api.createSection(pid, {
         slug: section.slug ?? section.type,
@@ -634,7 +634,7 @@ class EditorState {
       }),
     );
     if (!res.ok || !res.data) {
-      this.person.sections = this.person.sections.filter((s) => s !== section);
+      this.profile.sections = this.profile.sections.filter((s) => s !== section);
       return;
     }
     section.id = res.data.id;
@@ -644,7 +644,7 @@ class EditorState {
     for (const [i, entry] of entries.entries()) await this.attachEntry(section, entry, i);
     await api.reorderSections(
       pid,
-      this.person.sections.map((s) => s.id),
+      this.profile.sections.map((s) => s.id),
     );
   }
 
@@ -678,17 +678,17 @@ class EditorState {
     await this.persist(() => api.reorderItems(entry.id, ids));
   }
   async reorderSections(from: number, to: number) {
-    this.person.sections = move(this.person.sections, from, to);
-    this.say(`Section moved to position ${to + 1} of ${this.person.sections.length}`);
+    this.profile.sections = move(this.profile.sections, from, to);
+    this.say(`Section moved to position ${to + 1} of ${this.profile.sections.length}`);
     this.undo.record({
       label: 'Reorder',
       undo: () => this.reorderSections(to, from),
       redo: () => this.reorderSections(from, to),
     });
     this.touch();
-    if (!this.connected || this.activePersonId == null) return;
-    const pid = this.activePersonId;
-    const ids = this.person.sections.map((s) => s.id);
+    if (!this.connected || this.activeProfileId == null) return;
+    const pid = this.activeProfileId;
+    const ids = this.profile.sections.map((s) => s.id);
     await this.persist(() => api.reorderSections(pid, ids));
   }
 
@@ -832,8 +832,8 @@ class EditorState {
     if (this.noProfiles) return;
     const label = this.exportLabel();
     let data: unknown;
-    if (this.connected && this.activePersonId != null) {
-      const res = await api.exportPerson(this.activePersonId);
+    if (this.connected && this.activeProfileId != null) {
+      const res = await api.exportProfile(this.activeProfileId);
       if (!res.ok || res.data == null) {
         this.settle(false);
         return;
@@ -852,7 +852,7 @@ class EditorState {
   async exportLinkedin() {
     if (this.noProfiles) return;
     try {
-      const data = await exportLinkedin(this.person.sections, this.activeVariant);
+      const data = await exportLinkedin(this.profile.sections, this.activeVariant);
       downloadJson(data, `${this.exportLabel()}-linkedin.json`);
     } catch {
       // The fingerprints come from WebCrypto, which an insecure origin withholds.
@@ -873,9 +873,9 @@ class EditorState {
   /** The working document as an import-compatible tree, serialized client-side. */
   private localExport(): ExportDoc {
     return buildExport(
-      this.person,
+      this.profile,
       (v) => (this.activeVariantId === v.id ? this.letters.sections : (DEMO_LETTERS[v.id] ?? [])),
-      (v) => (this.activeVariantId === v.id ? this.letters.header : this.person.coverletter),
+      (v) => (this.activeVariantId === v.id ? this.letters.header : this.profile.coverletter),
     );
   }
 
@@ -884,9 +884,9 @@ class EditorState {
    * the tree and seeds its shadow; a reused (cached) tree keeps both. Either way we
    * switch the undo scope to this profile, so its history follows it.
    */
-  private activate(p: Person, pid: number, fresh: boolean) {
-    this.person = p;
-    this.activePersonId = pid;
+  private activate(p: Profile, pid: number, fresh: boolean) {
+    this.profile = p;
+    this.activeProfileId = pid;
     this.connected = true;
     this.saveState = 'saved';
     this.activeVariantId = null;
@@ -897,14 +897,14 @@ class EditorState {
     this.lastEditedAt = null;
     this.undo.setScope(`p${pid}`);
     if (fresh) {
-      // Cache the reactive proxy (`this.person`) so undo commands and
+      // Cache the reactive proxy (`this.profile`) so undo commands and
       // the shadow hold the proxy's nested objects. Re-assigning a proxy is idempotent.
-      this.#cache.set(pid, this.person);
-      this.#shadow.reseat(this.person, this.style);
+      this.#cache.set(pid, this.profile);
+      this.#shadow.reseat(this.profile, this.style);
     }
   }
 
-  loadPerson(p: Person) {
+  loadProfile(p: Profile) {
     this.activate(p, p.id, true);
   }
 
@@ -913,8 +913,8 @@ class EditorState {
    * path). Like a demo reset it drops undo — the restored objects are fresh, so the
    * old stack can't be replayed against them.
    */
-  restoreDocument(doc: Person) {
-    this.person = doc;
+  restoreDocument(doc: Profile) {
+    this.profile = doc;
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
@@ -926,15 +926,15 @@ class EditorState {
   }
 
   /**
-   * Refetch the active profile from scratch (after a connected restore). selectPerson
+   * Refetch the active profile from scratch (after a connected restore). selectProfile
    * short-circuits on the current id and reuses the cached tree; a restore must
    * bypass both — drop the cache, then re-activate the server's copy.
    */
   async reloadActive() {
-    const pid = this.activePersonId;
+    const pid = this.activeProfileId;
     if (pid == null) return;
     this.#cache.drop(pid);
-    const res = await api.fetchPerson(pid);
+    const res = await api.fetchProfile(pid);
     if (res.ok && res.data) this.activate(res.data, pid, true);
   }
 
@@ -945,7 +945,7 @@ class EditorState {
    * replayed against the fresh objects).
    * Demo path; a connected cherry-restore would persist through the entry writes.
    */
-  applyEntryFrom(source: Person, entryId: number): boolean {
+  applyEntryFrom(source: Profile, entryId: number): boolean {
     let src: Entry | undefined;
     let sectionId: number | string | undefined;
     for (const s of source.sections) {
@@ -957,7 +957,7 @@ class EditorState {
       }
     }
     if (!src) return false;
-    const section = this.person.sections.find((s) => s.id === sectionId);
+    const section = this.profile.sections.find((s) => s.id === sectionId);
     if (!section) return false; // the section is gone — nowhere to place it
     const copy = JSON.parse(JSON.stringify(src)) as Entry;
     const existing = section.entries.find((e) => e.id === entryId);
@@ -971,21 +971,21 @@ class EditorState {
     }
     this.touch();
     this.undo.clear();
-    this.#shadow.reseat(this.person, this.style);
+    this.#shadow.reseat(this.profile, this.style);
     this.say('Restored one entry from the checkpoint.');
     return true;
   }
 
   /**
    * Overlay the owner's identity (name + public contacts, resolved from siteConfig
-   * on the server and handed down as the editor's `identity` prop) onto the demo person.
+   * on the server and handed down as the editor's `identity` prop) onto the demo profile.
    * Stored so resetDemo keeps it across re-clones. A no-op once connected —
    * the real CV brings its own identity. Runs at mount, so the first paint already
    * shows the owner's contact fields.
    */
   hydrateDemoIdentity(identity: Partial<Personal>) {
     this.demoIdentity = identity;
-    if (!this.connected) Object.assign(this.person.personal, identity);
+    if (!this.connected) Object.assign(this.profile.personal, identity);
   }
 
   /**
@@ -995,7 +995,7 @@ class EditorState {
    */
   resetDemo() {
     if (this.connected) return;
-    const before = this.dirty ? $state.snapshot(this.person) : null;
+    const before = this.dirty ? $state.snapshot(this.profile) : null;
     const beforeDirty = this.dirty;
     this.applyPristineDemo();
     this.rebase('demo'); // fresh clone → fresh objects; nothing on the stack still points at them
@@ -1006,7 +1006,7 @@ class EditorState {
         undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
         redo: () => {
           this.applyPristineDemo();
-          this.#shadow.reseat(this.person, this.style);
+          this.#shadow.reseat(this.profile, this.style);
         },
       });
     }
@@ -1020,7 +1020,7 @@ class EditorState {
    */
   clearDemo() {
     if (this.connected) return;
-    const before = $state.snapshot(this.person);
+    const before = $state.snapshot(this.profile);
     const beforeDirty = this.dirty;
     this.applyEmptyDemo();
     this.rebase('demo'); // the blank tree is fresh objects; nothing on the stack points at them
@@ -1029,7 +1029,7 @@ class EditorState {
       undo: () => this.adoptDemoDocument(structuredClone(before), beforeDirty),
       redo: () => {
         this.applyEmptyDemo();
-        this.#shadow.reseat(this.person, this.style);
+        this.#shadow.reseat(this.profile, this.style);
       },
     });
     this.say('Emptied — undo brings the resume back.');
@@ -1037,13 +1037,13 @@ class EditorState {
 
   /** A blank document in place of the working one (no undo bookkeeping). */
   private applyEmptyDemo() {
-    this.person = {
-      id: this.person.id,
+    this.profile = {
+      id: this.profile.id,
       name: '',
       personal: {},
       sections: [],
       variants: [],
-      coverletter: this.person.coverletter,
+      coverletter: this.profile.coverletter,
     };
     this.activeVariantId = null;
     this.letters.clear();
@@ -1059,7 +1059,7 @@ class EditorState {
 
   /** The pristine sample in place of the working document (no undo bookkeeping). */
   private applyPristineDemo() {
-    this.person = createDemoPerson(this.demoIdentity ?? undefined);
+    this.profile = createDemoProfile(this.demoIdentity ?? undefined);
     this.activeVariantId = null;
     this.letters.clear();
     this.history.clear();
@@ -1073,22 +1073,22 @@ class EditorState {
   }
 
   /** Put a demo document back (undoing a reset). */
-  private adoptDemoDocument(doc: Person, dirty: boolean) {
-    this.person = doc;
+  private adoptDemoDocument(doc: Profile, dirty: boolean) {
+    this.profile = doc;
     this.activeVariantId = null;
     this.letters.clear();
     this.preview.reset();
     this.scrollTarget = null;
     this.dirty = dirty;
     this.saveState = 'demo';
-    this.#shadow.reseat(this.person, this.style);
+    this.#shadow.reseat(this.profile, this.style);
   }
 
   /** Connected but with no profiles — shows the "create your first profile" prompt. */
   enterEmpty() {
-    this.person = EMPTY_PERSON;
-    this.persons = [];
-    this.activePersonId = null;
+    this.profile = EMPTY_PROFILE;
+    this.profiles = [];
+    this.activeProfileId = null;
     this.connected = true;
     this.saveState = 'saved';
     this.activeVariantId = null;
@@ -1109,7 +1109,7 @@ class EditorState {
     const who = await api.me();
     this.identity = who.authenticated ? { email: who.email, name: who.name } : null;
     // Not signed in ⇒ stay in the local demo. The cv backend answers anonymous
-    // requests with the SHARED public person, so connecting a
+    // requests with the SHARED public profile, so connecting a
     // logged-out visitor would both look like a saving session and let their edits
     // land on everyone's demo. The demo is local until there's a real session;
     // signing in re-runs connect() and loads your data.
@@ -1121,15 +1121,15 @@ class EditorState {
     const res = await api.fetchActive();
     if (res.ok && res.data) {
       this.connecting = false;
-      this.persons = res.data.persons;
-      this.activePersonId = res.data.person.id;
-      this.loadPerson(res.data.person);
+      this.profiles = res.data.profiles;
+      this.activeProfileId = res.data.profile.id;
+      this.loadProfile(res.data.profile);
       this.pendingDraft = peekDemoDraft();
       return;
     }
     // Signed in but the account has no profiles yet → connected empty state,
     // not a sign-in prompt (the request succeeded; the list was just empty).
-    if (res.error?.code === 'no_persons') {
+    if (res.error?.code === 'no_profiles') {
       this.connecting = false;
       this.enterEmpty();
       this.pendingDraft = peekDemoDraft();
@@ -1156,8 +1156,8 @@ class EditorState {
   }
 
   /** Switch to another profile (the toolbar picker). */
-  async selectPerson(pid: number) {
-    if (pid === this.activePersonId) return;
+  async selectProfile(pid: number) {
+    if (pid === this.activeProfileId) return;
     // Return to an already-loaded profile without refetching: reusing its working
     // tree keeps its undo history (whose commands hold these very objects) alive.
     const cached = this.#cache.get(pid);
@@ -1165,50 +1165,50 @@ class EditorState {
       this.activate(cached, pid, false);
       return;
     }
-    const res = await api.fetchPerson(pid);
+    const res = await api.fetchProfile(pid);
     if (res.ok && res.data) this.activate(res.data, pid, true);
   }
 
-  // profile (person) CRUD — connected only (profiles live on the server)
-  async addPerson() {
+  // profile (profile) CRUD — connected only (profiles live on the server)
+  async addProfile() {
     if (!this.connected) return;
-    const existing = new Set(this.persons.map((p) => p.name));
+    const existing = new Set(this.profiles.map((p) => p.name));
     let name = 'New resume';
     let n = 2;
     while (existing.has(name)) name = `New resume ${n++}`;
-    const res = await this.persist(() => api.createPerson(name));
+    const res = await this.persist(() => api.createProfile(name));
     if (res.ok && res.data) {
-      this.persons = [...this.persons, { id: res.data.id, name }];
-      await this.selectPerson(res.data.id); // load the new (empty) profile
+      this.profiles = [...this.profiles, { id: res.data.id, name }];
+      await this.selectProfile(res.data.id); // load the new (empty) profile
     }
   }
-  async renamePerson(pid: number, name: string) {
+  async renameProfile(pid: number, name: string) {
     const clean = name.trim();
-    const meta = this.persons.find((p) => p.id === pid);
+    const meta = this.profiles.find((p) => p.id === pid);
     if (!clean || !meta || clean === meta.name) return;
     const old = meta.name;
-    this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: clean } : p));
+    this.profiles = this.profiles.map((p) => (p.id === pid ? { ...p, name: clean } : p));
     if (!this.connected) return;
-    const res = await this.persist(() => api.renamePerson(pid, clean));
-    if (!res.ok) this.persons = this.persons.map((p) => (p.id === pid ? { ...p, name: old } : p));
+    const res = await this.persist(() => api.renameProfile(pid, clean));
+    if (!res.ok) this.profiles = this.profiles.map((p) => (p.id === pid ? { ...p, name: old } : p));
   }
-  async deletePerson(pid: number) {
+  async deleteProfile(pid: number) {
     if (!this.connected) return;
-    const snapshot = this.persons;
-    const wasActive = this.activePersonId === pid;
-    const remaining = this.persons.filter((p) => p.id !== pid);
-    this.persons = remaining;
-    const res = await this.persist(() => api.deletePerson(pid));
+    const snapshot = this.profiles;
+    const wasActive = this.activeProfileId === pid;
+    const remaining = this.profiles.filter((p) => p.id !== pid);
+    this.profiles = remaining;
+    const res = await this.persist(() => api.deleteProfile(pid));
     if (!res.ok) {
-      this.persons = snapshot;
+      this.profiles = snapshot;
       return;
     }
     this.#cache.drop(pid); // its working tree and history die with it
     this.undo.dropScope(`p${pid}`);
     if (wasActive) {
       // Guard the reuse path: the just-deleted tree must never be re-adopted.
-      this.activePersonId = null;
-      if (remaining.length) await this.selectPerson(remaining[0].id);
+      this.activeProfileId = null;
+      if (remaining.length) await this.selectProfile(remaining[0].id);
       else this.enterEmpty(); // deleted the last one → connected empty state
     }
   }
@@ -1247,15 +1247,15 @@ class EditorState {
     this.importingDraft = true;
     try {
       const tree = forNewOwner(doc, this.identity);
-      const created = await this.persist(() => api.createPerson(tree.name));
+      const created = await this.persist(() => api.createProfile(tree.name));
       if (!created.ok || !created.data) return; // the save toast reports it; the offer stays
       const id = created.data.id;
-      const imported = await this.persist(() => api.importPerson(id, tree));
+      const imported = await this.persist(() => api.importProfile(id, tree));
       if (!imported.ok) return;
       clearDemoDraft();
       this.pendingDraft = null;
-      this.persons = [...this.persons, { id, name: tree.name }];
-      await this.selectPerson(id);
+      this.profiles = [...this.profiles, { id, name: tree.name }];
+      await this.selectProfile(id);
       this.say('Your demo edits are now a resume in your account.');
     } finally {
       this.importingDraft = false;

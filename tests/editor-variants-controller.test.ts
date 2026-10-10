@@ -48,7 +48,7 @@ function makeHost(opts: { connected?: boolean; pid?: number | null } = {}) {
     forgetHistory: () => {
       calls.forgetHistory++;
     },
-    activePersonId: () => opts.pid ?? null,
+    activeProfileId: () => opts.pid ?? null,
     activeId: () => activeId,
     setActiveId: (id) => {
       activeId = id;
@@ -315,7 +315,7 @@ describe('VariantController — personal overrides', () => {
     expect(api.updateVariantPersonal).toHaveBeenCalledWith(1, { position: '' });
   });
 
-  test('null drops the override so the person value is inherited again', async () => {
+  test('null drops the override so the profile value is inherited again', async () => {
     const h = makeHost();
     const v = variant({ personal: { position: 'Old' } });
     await new VariantController(h.host).setPersonalOverride(v, 'position', null);

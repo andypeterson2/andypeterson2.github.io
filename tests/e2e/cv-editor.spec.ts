@@ -14,7 +14,7 @@ const ADA = { email: 'ada@example.com', name: 'Ada Lovelace' };
 
 async function mockAdaWithVariant(page: Page) {
   const main = {
-    person: { id: 7, name: 'Ada Lovelace' },
+    profile: { id: 7, name: 'Ada Lovelace' },
     personal: { firstName: 'Ada', lastName: 'Lovelace', position: 'Mathematician' },
     sections: [
       {
@@ -28,14 +28,14 @@ async function mockAdaWithVariant(page: Page) {
       { id: 50, name: 'Full CV', kind: 'cv', rules: { include: [], exclude: [] }, sections: [] },
     ],
   };
-  await page.route(/\/cv\/api\/persons$/, (r) =>
+  await page.route(/\/cv\/api\/profiles$/, (r) =>
     r.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+      body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
     }),
   );
-  await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+  await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
   );
 }
@@ -225,7 +225,7 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('a blocked backend reads as an invitation, not a failure', async ({ page }) => {
     // Simulate Cloudflare Access blocking the unauthenticated data probe — the
     // state every visitor lands in, since the backend is owner-only.
-    await page.route('**/api/persons', (route) => route.fulfill({ status: 403 }));
+    await page.route('**/api/profiles', (route) => route.fulfill({ status: 403 }));
     await gotoEditor(page);
 
     // With the gateway reachable, a 403 means "sign in", not "down": the demo is
@@ -410,7 +410,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     // Each profile keeps its own history, and returning reuses the cached tree
     // (no refetch) so the commands — which hold that tree's objects — stay valid.
     const ada = {
-      person: { id: 8, name: 'Ada Lovelace' },
+      profile: { id: 8, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -423,7 +423,7 @@ test.describe('CV editor (document-first rewrite)', () => {
       variants: [],
     };
     const grace = {
-      person: { id: 7, name: 'Grace Hopper' },
+      profile: { id: 7, name: 'Grace Hopper' },
       personal: { firstName: 'Grace', lastName: 'Hopper' },
       sections: [
         {
@@ -435,12 +435,12 @@ test.describe('CV editor (document-first rewrite)', () => {
       ],
       variants: [],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          persons: [
+          profiles: [
             { id: 7, name: 'Grace Hopper' },
             { id: 8, name: 'Ada Lovelace' },
           ],
@@ -448,11 +448,11 @@ test.describe('CV editor (document-first rewrite)', () => {
       }),
     );
     let adaGets = 0;
-    await page.route(/\/cv\/api\/persons\/8$/, (r) => {
+    await page.route(/\/cv\/api\/profiles\/8$/, (r) => {
       adaGets += 1; // count refetches of Ada — a cache hit must not add one
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ada) });
     });
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(grace) }),
     );
     await page.route(/\/cv\/api\/entries\/\d+$/, (r) =>
@@ -511,11 +511,11 @@ test.describe('CV editor (document-first rewrite)', () => {
   });
 
   test('loads and renders a real resume when authenticated', async ({ page }) => {
-    // The reworked backend is id-addressable: GET /persons lists profiles,
-    // GET /persons/:pid returns the full main. Mock both and assert the mapper
+    // The reworked backend is id-addressable: GET /profiles lists profiles,
+    // GET /profiles/:pid returns the full main. Mock both and assert the mapper
     // renders the profile's name + entries (not the demo).
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: {
         firstName: 'Ada',
         lastName: 'Lovelace',
@@ -549,14 +549,14 @@ test.describe('CV editor (document-first rewrite)', () => {
         },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
@@ -568,7 +568,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('autosaves an edited field to the backend, LaTeX-escaped', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -586,14 +586,14 @@ test.describe('CV editor (document-first rewrite)', () => {
         },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let putBody: { fields?: Record<string, string> } | null = null;
@@ -614,7 +614,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('creates a section against the backend when connected', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -625,18 +625,18 @@ test.describe('CV editor (document-first rewrite)', () => {
         },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let postBody: { slug?: string; type?: string; title?: string } | null = null;
-    await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) => {
+    await page.route(/\/cv\/api\/profiles\/7\/sections$/, (r) => {
       postBody = r.request().postDataJSON();
       return r.fulfill({
         status: 201,
@@ -656,21 +656,21 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('deletes a section via the backend (confirmed)', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         { id: 2, type: 'experience', title: 'Experience', entries: [] },
         { id: 3, type: 'skills', title: 'Skills', entries: [] },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let deletedPath: string | null = null;
@@ -690,7 +690,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('drag-reorders entries and persists the new id order', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -704,14 +704,14 @@ test.describe('CV editor (document-first rewrite)', () => {
         },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     let orderBody: { ids?: number[] } | null = null;
@@ -902,7 +902,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     page,
   }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -926,14 +926,14 @@ test.describe('CV editor (document-first rewrite)', () => {
         { id: 50, name: 'Full CV', kind: 'cv', rules: { include: [], exclude: [] }, sections: [] },
       ],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     const overrides: Array<Record<string, unknown>> = [];
@@ -1048,7 +1048,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await mockAdaWithVariant(page);
     let mainHits = 0;
     // No variant selected → the editor stays on "Main" (the full document), which now
-    // compiles through the person-keyed base-compile route.
+    // compiles through the profile-keyed base-compile route.
     await page.route(/\/cv\/api\/variants\/main\/7\/pdf$/, (r) => {
       mainHits += 1;
       return r.fulfill({ status: 200, contentType: 'application/pdf', body: MINIMAL_PDF });
@@ -1138,7 +1138,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('creates, renames, and deletes a resume when connected', async ({ page }) => {
     const adaMain = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -1151,14 +1151,14 @@ test.describe('CV editor (document-first rewrite)', () => {
       variants: [],
     };
     const emptyMain = {
-      person: { id: 8, name: 'New resume' },
+      profile: { id: 8, name: 'New resume' },
       personal: {},
       sections: [],
       variants: [],
     };
 
-    // GET /persons lists; POST /persons creates id 8.
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    // GET /profiles lists; POST /profiles creates id 8.
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.request().method() === 'POST'
         ? r.fulfill({
             status: 201,
@@ -1168,16 +1168,16 @@ test.describe('CV editor (document-first rewrite)', () => {
         : r.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+            body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
           }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(adaMain) }),
     );
-    // /persons/8 serves the main (GET), the rename (PUT), and the delete (DELETE).
+    // /profiles/8 serves the main (GET), the rename (PUT), and the delete (DELETE).
     let renamedTo: string | null = null;
     let deleted = false;
-    await page.route(/\/cv\/api\/persons\/8$/, (r) => {
+    await page.route(/\/cv\/api\/profiles\/8$/, (r) => {
       const m = r.request().method();
       if (m === 'PUT') {
         renamedTo = (r.request().postDataJSON() as { name: string }).name;
@@ -1233,7 +1233,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     page,
   }) => {
     const adaMain = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -1246,13 +1246,13 @@ test.describe('CV editor (document-first rewrite)', () => {
       variants: [],
     };
     const emptyMain9 = {
-      person: { id: 9, name: 'New profile' },
+      profile: { id: 9, name: 'New profile' },
       personal: {},
       sections: [],
       variants: [],
     };
 
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.request().method() === 'POST'
         ? r.fulfill({
             status: 201,
@@ -1262,10 +1262,10 @@ test.describe('CV editor (document-first rewrite)', () => {
         : r.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+            body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
           }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.request().method() === 'DELETE'
         ? r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' })
         : r.fulfill({
@@ -1274,7 +1274,7 @@ test.describe('CV editor (document-first rewrite)', () => {
             body: JSON.stringify(adaMain),
           }),
     );
-    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/9$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1364,7 +1364,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     page,
   }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [],
       variants: [
@@ -1376,17 +1376,17 @@ test.describe('CV editor (document-first rewrite)', () => {
           sections: [],
         },
       ],
-      // legacy person-level header — the new frontend reads the variant's instead of this
-      coverletter: { recipientName: 'Legacy Person Header' },
+      // legacy profile-level header — the new frontend reads the variant's instead of this
+      coverletter: { recipientName: 'Legacy Profile Header' },
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     // The letter loads via GET /variants/60 (header + paragraphs together); POST adds one.
@@ -1428,7 +1428,7 @@ test.describe('CV editor (document-first rewrite)', () => {
     await selectVariant(page, 'Cover Letter');
     const letter = page.locator('.letter');
     await expect(letter.locator('.para .body')).toHaveValue('Existing paragraph.');
-    // the header comes from the variant (GET /variants/60) rather than the person
+    // the header comes from the variant (GET /variants/60) rather than the profile
     await expect(letter.locator('.fields .in').first()).toHaveValue('Globex');
 
     // Edit the recipient → debounced PATCH /variants/60/header, LaTeX-escaped.
@@ -1470,23 +1470,23 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('rolls back an optimistic create when the backend rejects it', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [{ id: 2, type: 'experience', title: 'Experience', entries: [] }],
       variants: [],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     // The section create fails.
-    await page.route(/\/cv\/api\/persons\/7\/sections$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7\/sections$/, (r) =>
       r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"nope"}' }),
     );
     await gotoEditor(page, EDITOR_APP, { signedIn: ADA });
@@ -1501,7 +1501,7 @@ test.describe('CV editor (document-first rewrite)', () => {
 
   test('a failed field save raises a retry toast; retry clears it', async ({ page }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -1513,14 +1513,14 @@ test.describe('CV editor (document-first rewrite)', () => {
       ],
       variants: [],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     // The first PUT fails; the retry (second) succeeds.
@@ -1562,19 +1562,19 @@ test.describe('CV editor (document-first rewrite)', () => {
   test('signed in: the account menu shows the identity and Sign out drops the session', async ({
     page,
   }) => {
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 9, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 9, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/9$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          person: { id: 9, name: 'Ada Lovelace' },
+          profile: { id: 9, name: 'Ada Lovelace' },
           personal: { firstName: 'Ada', lastName: 'Lovelace' },
           sections: [],
           variants: [],
@@ -1608,7 +1608,7 @@ test.describe('Tag suggestions', () => {
     page,
   }) => {
     const main = {
-      person: { id: 7, name: 'Ada Lovelace' },
+      profile: { id: 7, name: 'Ada Lovelace' },
       personal: { firstName: 'Ada', lastName: 'Lovelace' },
       sections: [
         {
@@ -1627,21 +1627,21 @@ test.describe('Tag suggestions', () => {
       ],
       variants: [],
     };
-    await page.route(/\/cv\/api\/persons$/, (r) =>
+    await page.route(/\/cv\/api\/profiles$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons: [{ id: 7, name: 'Ada Lovelace' }] }),
+        body: JSON.stringify({ profiles: [{ id: 7, name: 'Ada Lovelace' }] }),
       }),
     );
-    await page.route(/\/cv\/api\/persons\/7$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7$/, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(main) }),
     );
     const suggested = ['python', 'backend', 'postgresql'].map((tag, i) => ({
       tag,
       score: 0.45 - i / 100,
     }));
-    await page.route(/\/cv\/api\/persons\/7\/tags\/suggest$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/7\/tags\/suggest$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -1649,7 +1649,7 @@ test.describe('Tag suggestions', () => {
       }),
     );
     const events: unknown[] = [];
-    await page.route(/\/cv\/api\/persons\/7\/tags\/events$/, (r) => {
+    await page.route(/\/cv\/api\/profiles\/7\/tags\/events$/, (r) => {
       events.push(...r.request().postDataJSON().events);
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
@@ -1733,29 +1733,29 @@ test.describe('Demo edits survive sign-in', () => {
     await page.route('**/auth/login**', (r) =>
       r.fulfill({ status: 302, headers: { location: page.url() } }),
     );
-    let persons: { id: number; name: string }[] = [];
+    let profiles: { id: number; name: string }[] = [];
     let importBody: Record<string, unknown> | null = null;
-    await page.route(/\/cv\/api\/persons$/, (r) => {
+    await page.route(/\/cv\/api\/profiles$/, (r) => {
       if (r.request().method() === 'POST') {
-        persons = [{ id: 9, name: 'Ada (from demo)' }];
+        profiles = [{ id: 9, name: 'Ada (from demo)' }];
         return r.fulfill({ status: 201, contentType: 'application/json', body: '{"id":9}' });
       }
       return r.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ persons }),
+        body: JSON.stringify({ profiles }),
       });
     });
-    await page.route(/\/cv\/api\/persons\/9\/import$/, (r) => {
+    await page.route(/\/cv\/api\/profiles\/9\/import$/, (r) => {
       importBody = r.request().postDataJSON() as Record<string, unknown>;
       return r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
-    await page.route(/\/cv\/api\/persons\/9$/, (r) =>
+    await page.route(/\/cv\/api\/profiles\/9$/, (r) =>
       r.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          person: { id: 9, name: 'Ada (from demo)' },
+          profile: { id: 9, name: 'Ada (from demo)' },
           personal: { firstName: 'Ada' },
           sections: [],
           variants: [],
@@ -1781,7 +1781,7 @@ test.describe('Editor state copy', () => {
   test('signed in with an unreachable backend offers a retry, not another sign-in', async ({
     page,
   }) => {
-    await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
+    await page.route(/\/cv\/api\/profiles$/, (r) => r.fulfill({ status: 503 }));
     await page.route('**/health', (r) => r.fulfill({ status: 503 }));
     await gotoEditor(page, EDITOR_APP, {
       signedIn: { email: 'ada@example.com', name: 'Ada' },
@@ -1796,7 +1796,7 @@ test.describe('Editor state copy', () => {
   });
 
   test('signed in and offline is never told to sign in', async ({ page }) => {
-    await page.route(/\/cv\/api\/persons$/, (r) => r.fulfill({ status: 503 }));
+    await page.route(/\/cv\/api\/profiles$/, (r) => r.fulfill({ status: 503 }));
     await page.route('**/health', (r) => r.fulfill({ status: 503 }));
     await gotoEditor(page, EDITOR_APP, {
       signedIn: { email: 'ada@example.com', name: 'Ada' },
@@ -1873,7 +1873,7 @@ test.describe('Per-variant tagline', () => {
     await taglineInput(page).fill('ML Engineer');
     await taglineInput(page).blur();
     await expect.poll(() => patches).toEqual([{ position: 'ML Engineer' }]);
-    // The main tagline is untouched, so the person's own field still reads as it did.
+    // The main tagline is untouched, so the profile's own field still reads as it did.
     await expect(page.getByRole('textbox', { name: 'Headline' })).toHaveValue('Mathematician');
   });
 

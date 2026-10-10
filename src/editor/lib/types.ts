@@ -1,5 +1,5 @@
-// Data model for the CV editor — mirrors the cv API's normalized person tree
-// returned by GET /api/persons/:id.
+// Data model for the CV editor — mirrors the cv API's normalized profile tree
+// returned by GET /api/profiles/:id.
 
 // A type alias ON PURPOSE (not an interface): all-optional string shapes get an
 // implicit index signature only as aliases, which texMap/diffFields rely on.
@@ -46,7 +46,7 @@ export interface Section {
   entries: Entry[];
 }
 
-/** The cover-letter header (per-person `coverletter.*` settings). */
+/** The cover-letter header (per-profile `coverletter.*` settings). */
 // Type alias ON PURPOSE — same implicit-index-signature reason as Personal.
 export type CoverletterHeader = {
   title?: string;
@@ -65,7 +65,7 @@ export interface LetterSection {
   body: string;
 }
 
-export interface Person {
+export interface Profile {
   id: number;
   name: string;
   personal: Personal;
@@ -119,7 +119,7 @@ export interface Variant {
   itemOverrides?: Record<string, ItemOverride>;
   /**
    * personal.* overrides for this variant, unprefixed and unescaped. A missing key
-   * inherits the person value; an empty string suppresses the field.
+   * inherits the profile value; an empty string suppresses the field.
    */
   personal?: Record<string, string>;
   /**

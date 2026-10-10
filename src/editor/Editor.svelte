@@ -23,7 +23,7 @@
   import PdfView from './components/PdfView.svelte';
   import { modal } from './lib/modal';
 
-  // The owner's identity from siteConfig, overlaid onto the demo person so visitors
+  // The owner's identity from siteConfig, overlaid onto the demo profile so visitors
   // see the real CV while committed source carries no PII.
   let { identity }: { identity?: Partial<Personal> } = $props();
   // A static prop, read at init (not in an $effect) so the overlay beats first paint.
@@ -298,7 +298,7 @@
               <div class="no-profiles">
                 <p class="np-title">No resumes yet</p>
                 <p class="np-sub">Create your first resume to start editing.</p>
-                <button class="np-btn" onclick={() => editor.addPerson()}
+                <button class="np-btn" onclick={() => editor.addProfile()}
                   >＋ Create your first resume</button
                 >
               </div>
