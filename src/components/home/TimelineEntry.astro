@@ -34,7 +34,11 @@ const { entry } = Astro.props;
     </div>
     <div class="timeline-content tl-project">
       <div class="tl-eyebrow">
-        <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
+        <img
+          src={`/icons/${entry.project.iconSmall ?? entry.project.icon}`}
+          alt=""
+          class="tl-icon"
+        />
         Project
         <span class="tl-tier">
           ·{' '}

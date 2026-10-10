@@ -10,6 +10,9 @@ export interface Project {
   description: string;
   appUrl?: string;
   icon: string;
+  /** A coarser drawing for the 14px timeline, where a detailed icon breaks up.
+   *  One cell of a 30-cell grid lands on half a device pixel there. Falls back to `icon`. */
+  iconSmall?: string;
   repoUrl: string;
   /** Real, cited numbers shown on the one-page showcase (no handwaving). A chip claims no
    *  more than its writeup, and a writeup no more than its README, so the reader who looks
@@ -89,6 +92,7 @@ export const projects: Project[] = [
       'A 22M-parameter sentence embedder fine-tuned to link résumé and job-ad sentences to the 13,891 skills in the ESCO taxonomy, measured against a published 110M model on public held-out benchmarks.',
     tier: 'offline',
     icon: 'tag.svg',
+    iconSmall: 'tag-small.svg',
     repoUrl: 'https://github.com/andypeterson2/tiny-skill-linker',
     metrics: [
       {
