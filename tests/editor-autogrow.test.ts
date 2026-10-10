@@ -44,7 +44,7 @@ describe('autogrow', () => {
     expect(el.style.height).toBe('120px');
   });
 
-  test('re-measures as the person types', () => {
+  test('re-measures as the profile types', () => {
     let tall = 40;
     const el = field(() => tall);
     autogrow(el);

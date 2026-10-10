@@ -5,7 +5,7 @@
 // Track identity rather than id: undoing a delete re-creates the row under a new server id while
 // the JS object survives.
 
-import type { Person } from './types';
+import type { Profile } from './types';
 
 export interface UndoCommand {
   /** shown in the Edit menu: "Undo Position" */
@@ -156,10 +156,10 @@ export class FieldShadow {
   }
 
   /** Re-seed a whole document + the global style object — a fresh set of objects. */
-  reseat(person: Person, style: Record<string, string>): void {
-    this.seed(person.personal, person.personal);
+  reseat(profile: Profile, style: Record<string, string>): void {
+    this.seed(profile.personal, profile.personal);
     this.seed(style, style);
-    for (const section of person.sections)
+    for (const section of profile.sections)
       for (const entry of section.entries) {
         this.seed(entry, entry.fields);
         for (const item of entry.items) this.seedItem(item);

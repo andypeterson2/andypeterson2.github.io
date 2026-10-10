@@ -4,11 +4,11 @@ import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 // connected-path suite spies on the real `api` singleton, restored after each test.
 import { editor } from '../src/editor/lib/store.svelte';
 import { api } from '../src/editor/lib/api';
-import type { Person, Section } from '../src/editor/lib/types';
+import type { Profile, Section } from '../src/editor/lib/types';
 
 const experience = (): Section =>
-  editor.person.sections.find((s) => s.type === 'experience') ?? editor.person.sections[0];
-const person = (over: Partial<Person> = {}): Person => ({
+  editor.profile.sections.find((s) => s.type === 'experience') ?? editor.profile.sections[0];
+const profile = (over: Partial<Profile> = {}): Profile => ({
   id: 1,
   name: 'X',
   personal: {},
@@ -23,8 +23,8 @@ const person = (over: Partial<Person> = {}): Person => ({
 beforeEach(() => {
   editor.connected = false;
   editor.connecting = false;
-  editor.persons = [];
-  editor.activePersonId = null;
+  editor.profiles = [];
+  editor.activeProfileId = null;
   editor.saveError = null;
   editor.retryOp = null;
   editor.connectError = null;
@@ -39,7 +39,7 @@ describe('EditorState — demo baseline + derived labels', () => {
     expect(editor.activeVariant).toBe(null); // Main
     expect(editor.variantLabel).toBe('Main');
     expect(editor.letterMode).toBe(false);
-    expect(editor.person.sections.length).toBeGreaterThan(0);
+    expect(editor.profile.sections.length).toBeGreaterThan(0);
   });
 
   test('noProfiles is false in demo; profileLabel falls back to the CV name', () => {
@@ -48,7 +48,7 @@ describe('EditorState — demo baseline + derived labels', () => {
   });
 
   test('the active variant + letter mode track the selected lens', () => {
-    const letterVariant = editor.person.variants.find((v) => v.kind === 'coverletter');
+    const letterVariant = editor.profile.variants.find((v) => v.kind === 'coverletter');
     expect(letterVariant).toBeDefined();
     editor.activeVariantId = letterVariant!.id;
     expect(editor.activeVariant?.id).toBe(letterVariant!.id);
@@ -59,9 +59,9 @@ describe('EditorState — demo baseline + derived labels', () => {
 
 describe('EditorState — content CRUD (demo: local, undoable, no network)', () => {
   test('addSection appends a section, targets it for scroll, records "Add section"', async () => {
-    const before = editor.person.sections.length;
+    const before = editor.profile.sections.length;
     await editor.addSection('projects');
-    expect(editor.person.sections.length).toBe(before + 1);
+    expect(editor.profile.sections.length).toBe(before + 1);
     expect(editor.scrollTarget).not.toBe(null);
     expect(editor.dirty).toBe(true);
     expect(editor.undo.undoLabel).toBe('Add section');
@@ -69,14 +69,14 @@ describe('EditorState — content CRUD (demo: local, undoable, no network)', () 
 
   test('deleteSection removes it and records "Delete section"; undo brings it back', async () => {
     await editor.addSection('projects');
-    const target = editor.person.sections.at(-1)!;
-    const count = editor.person.sections.length;
+    const target = editor.profile.sections.at(-1)!;
+    const count = editor.profile.sections.length;
     editor.undo.clear();
     await editor.deleteSection(target.id);
-    expect(editor.person.sections.length).toBe(count - 1);
+    expect(editor.profile.sections.length).toBe(count - 1);
     expect(editor.undo.undoLabel).toBe('Delete section');
     await editor.undo.undo();
-    expect(editor.person.sections.some((s) => s.id === target.id)).toBe(true);
+    expect(editor.profile.sections.some((s) => s.id === target.id)).toBe(true);
   });
 
   test('addEntry appends to a section and records "Add entry"', async () => {
@@ -218,10 +218,10 @@ describe('EditorState — the PDF name', () => {
 });
 
 describe('EditorState — demo / identity lifecycle', () => {
-  test('hydrateDemoIdentity overlays contacts onto the demo person', () => {
+  test('hydrateDemoIdentity overlays contacts onto the demo profile', () => {
     editor.hydrateDemoIdentity({ firstName: 'Andrew', email: 'a@b.dev' });
-    expect(editor.person.personal.firstName).toBe('Andrew');
-    expect(editor.person.personal.email).toBe('a@b.dev');
+    expect(editor.profile.personal.firstName).toBe('Andrew');
+    expect(editor.profile.personal.email).toBe('a@b.dev');
   });
 
   test('resetDemo re-clones a pristine sample and announces it', async () => {
@@ -250,31 +250,31 @@ describe('EditorState — demo / identity lifecycle', () => {
   });
 
   test('clearDemo empties the document and undo brings it back', async () => {
-    const sections = editor.person.sections.length;
+    const sections = editor.profile.sections.length;
     expect(sections).toBeGreaterThan(0);
     editor.clearDemo();
-    expect(editor.person.sections).toEqual([]);
-    expect(editor.person.personal).toEqual({});
+    expect(editor.profile.sections).toEqual([]);
+    expect(editor.profile.personal).toEqual({});
     expect(editor.announce).toMatch(/undo brings/i);
     expect(editor.undo.undoLabel).toBe('Clear resume');
     await editor.undo.undo();
-    expect(editor.person.sections.length).toBe(sections);
+    expect(editor.profile.sections.length).toBe(sections);
     await editor.undo.redo();
-    expect(editor.person.sections).toEqual([]);
+    expect(editor.profile.sections).toEqual([]);
   });
 
   test('clearDemo is a no-op when connected (real data to protect)', () => {
     editor.connected = true;
-    editor.person.personal.firstName = 'REAL';
+    editor.profile.personal.firstName = 'REAL';
     editor.clearDemo();
-    expect(editor.person.personal.firstName).toBe('REAL');
+    expect(editor.profile.personal.firstName).toBe('REAL');
   });
 
   test('resetDemo is a no-op when connected (real data to protect)', () => {
     editor.connected = true;
-    editor.person.personal.firstName = 'REAL';
+    editor.profile.personal.firstName = 'REAL';
     editor.resetDemo();
-    expect(editor.person.personal.firstName).toBe('REAL');
+    expect(editor.profile.personal.firstName).toBe('REAL');
   });
 
   test('a LinkedIn export that cannot hash raises the error toast', async () => {
@@ -291,7 +291,7 @@ describe('EditorState — demo / identity lifecycle', () => {
     await editor.exportJson(); // demo: serializes client-side, download is a no-op in node
     // now simulate the connected-with-zero-profiles state — export must bail
     editor.connected = true;
-    editor.persons = [];
+    editor.profiles = [];
     expect(editor.noProfiles).toBe(true);
     await expect(editor.exportJson()).resolves.toBeUndefined();
   });
@@ -310,7 +310,7 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
     await editor.connect();
     expect(editor.identity).toBeNull();
     expect(editor.connected).toBe(false);
-    expect(fetchActive).not.toHaveBeenCalled(); // the shared public person is never loaded/written
+    expect(fetchActive).not.toHaveBeenCalled(); // the shared public profile is never loaded/written
   });
 
   test('loads the newest profile and goes live', async () => {
@@ -318,15 +318,15 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: true,
       status: 200,
-      data: { person: person({ id: 8, name: 'Ada' }), persons: [{ id: 8, name: 'Ada' }] },
+      data: { profile: profile({ id: 8, name: 'Ada' }), profiles: [{ id: 8, name: 'Ada' }] },
     });
     await editor.connect();
     expect(editor.identity).toEqual({ email: 'ada@example.com', name: 'Ada' });
     expect(editor.connected).toBe(true);
-    expect(editor.activePersonId).toBe(8);
-    expect(editor.persons).toEqual([{ id: 8, name: 'Ada' }]);
+    expect(editor.activeProfileId).toBe(8);
+    expect(editor.profiles).toEqual([{ id: 8, name: 'Ada' }]);
     expect(editor.saveState).toBe('saved');
-    expect(editor.person.name).toBe('Ada');
+    expect(editor.profile.name).toBe('Ada');
   });
 
   test('a signed-in account with zero profiles enters the empty state', async () => {
@@ -334,12 +334,12 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: false,
       status: 404,
-      error: { code: 'no_persons', message: '' },
+      error: { code: 'no_profiles', message: '' },
     });
     await editor.connect();
     expect(editor.connected).toBe(true);
     expect(editor.noProfiles).toBe(true);
-    expect(editor.person.sections).toHaveLength(0);
+    expect(editor.profile.sections).toHaveLength(0);
   });
 
   test('auth_required stays offline and raises the sign-in prompt', async () => {
@@ -375,7 +375,7 @@ describe('EditorState — connect() (api spied on the singleton)', () => {
 describe('EditorState — connected content CRUD (persist + reconcile / rollback)', () => {
   beforeEach(() => {
     editor.connected = true;
-    editor.activePersonId = 7;
+    editor.activeProfileId = 7;
   });
 
   test('addEntry reconciles the temp id from the server and settles "saved"', async () => {
@@ -398,7 +398,7 @@ describe('EditorState — connected content CRUD (persist + reconcile / rollback
   test('addSection reconciles the temp id', async () => {
     vi.spyOn(api, 'createSection').mockResolvedValue({ ok: true, status: 200, data: { id: 999 } });
     await editor.addSection('projects');
-    expect(editor.person.sections.at(-1)!.id).toBe(999);
+    expect(editor.profile.sections.at(-1)!.id).toBe(999);
   });
 
   test('addBullet reconciles the temp id', async () => {
@@ -413,64 +413,64 @@ describe('EditorState — connected content CRUD (persist + reconcile / rollback
 });
 
 describe('EditorState — profile CRUD + restore', () => {
-  test('selectPerson fetches an uncached profile and activates it', async () => {
+  test('selectProfile fetches an uncached profile and activates it', async () => {
     editor.connected = true;
-    editor.activePersonId = 1;
-    vi.spyOn(api, 'fetchPerson').mockResolvedValue({
+    editor.activeProfileId = 1;
+    vi.spyOn(api, 'fetchProfile').mockResolvedValue({
       ok: true,
       status: 200,
-      data: person({ id: 9, name: 'Grace' }),
+      data: profile({ id: 9, name: 'Grace' }),
     });
-    await editor.selectPerson(9);
-    expect(editor.activePersonId).toBe(9);
-    expect(editor.person.name).toBe('Grace');
+    await editor.selectProfile(9);
+    expect(editor.activeProfileId).toBe(9);
+    expect(editor.profile.name).toBe('Grace');
   });
 
-  test('addPerson creates a profile, appends it, and switches onto it', async () => {
+  test('addProfile creates a profile, appends it, and switches onto it', async () => {
     editor.connected = true;
-    editor.persons = [{ id: 1, name: 'Ada' }];
-    vi.spyOn(api, 'createPerson').mockResolvedValue({ ok: true, status: 200, data: { id: 20 } });
-    vi.spyOn(api, 'fetchPerson').mockResolvedValue({
+    editor.profiles = [{ id: 1, name: 'Ada' }];
+    vi.spyOn(api, 'createProfile').mockResolvedValue({ ok: true, status: 200, data: { id: 20 } });
+    vi.spyOn(api, 'fetchProfile').mockResolvedValue({
       ok: true,
       status: 200,
-      data: person({ id: 20, name: 'New profile' }),
+      data: profile({ id: 20, name: 'New profile' }),
     });
-    await editor.addPerson();
-    expect(editor.persons.some((p) => p.id === 20)).toBe(true);
-    expect(editor.activePersonId).toBe(20);
+    await editor.addProfile();
+    expect(editor.profiles.some((p) => p.id === 20)).toBe(true);
+    expect(editor.activeProfileId).toBe(20);
   });
 
-  test('renamePerson updates the label and rolls back on failure', async () => {
+  test('renameProfile updates the label and rolls back on failure', async () => {
     editor.connected = true;
-    editor.persons = [{ id: 1, name: 'Old' }];
-    const spy = vi.spyOn(api, 'renamePerson').mockResolvedValue({ ok: true, status: 200 });
-    await editor.renamePerson(1, ' New ');
-    expect(editor.persons[0].name).toBe('New');
+    editor.profiles = [{ id: 1, name: 'Old' }];
+    const spy = vi.spyOn(api, 'renameProfile').mockResolvedValue({ ok: true, status: 200 });
+    await editor.renameProfile(1, ' New ');
+    expect(editor.profiles[0].name).toBe('New');
     spy.mockResolvedValue({ ok: false, status: 500 });
-    await editor.renamePerson(1, 'Newer');
-    expect(editor.persons[0].name).toBe('New'); // rolled back
+    await editor.renameProfile(1, 'Newer');
+    expect(editor.profiles[0].name).toBe('New'); // rolled back
   });
 
-  test('deletePerson removes a non-active profile and rolls back on failure', async () => {
+  test('deleteProfile removes a non-active profile and rolls back on failure', async () => {
     editor.connected = true;
-    editor.activePersonId = 99; // deleting a different id → no reactivation branch
-    editor.persons = [
+    editor.activeProfileId = 99; // deleting a different id → no reactivation branch
+    editor.profiles = [
       { id: 1, name: 'A' },
       { id: 2, name: 'B' },
     ];
-    const spy = vi.spyOn(api, 'deletePerson').mockResolvedValue({ ok: true, status: 200 });
-    await editor.deletePerson(1);
-    expect(editor.persons.some((p) => p.id === 1)).toBe(false);
+    const spy = vi.spyOn(api, 'deleteProfile').mockResolvedValue({ ok: true, status: 200 });
+    await editor.deleteProfile(1);
+    expect(editor.profiles.some((p) => p.id === 1)).toBe(false);
 
-    editor.persons = [{ id: 3, name: 'C' }];
+    editor.profiles = [{ id: 3, name: 'C' }];
     spy.mockResolvedValue({ ok: false, status: 500 });
-    await editor.deletePerson(3);
-    expect(editor.persons.some((p) => p.id === 3)).toBe(true); // restored
+    await editor.deleteProfile(3);
+    expect(editor.profiles.some((p) => p.id === 3)).toBe(true); // restored
   });
 
   test('restoreDocument swaps in a checkpoint, drops undo, and announces it', () => {
-    editor.restoreDocument(person({ personal: { firstName: 'Snapshot' } }));
-    expect(editor.person.personal.firstName).toBe('Snapshot');
+    editor.restoreDocument(profile({ personal: { firstName: 'Snapshot' } }));
+    expect(editor.profile.personal.firstName).toBe('Snapshot');
     expect(editor.saveState).toBe('demo');
     expect(editor.undo.canUndo).toBe(false);
     expect(editor.announce).toMatch(/restored to the selected checkpoint/i);
@@ -478,7 +478,7 @@ describe('EditorState — profile CRUD + restore', () => {
 
   test('applyEntryFrom cherry-restores one entry by id into its section', () => {
     const sec = experience();
-    const source = person({
+    const source = profile({
       sections: [
         {
           id: sec.id,
@@ -497,14 +497,14 @@ describe('EditorState — profile CRUD + restore', () => {
 
   test('reloadActive drops the cache and re-activates the server copy', async () => {
     editor.connected = true;
-    editor.activePersonId = 5;
-    vi.spyOn(api, 'fetchPerson').mockResolvedValue({
+    editor.activeProfileId = 5;
+    vi.spyOn(api, 'fetchProfile').mockResolvedValue({
       ok: true,
       status: 200,
-      data: person({ id: 5, name: 'Reloaded' }),
+      data: profile({ id: 5, name: 'Reloaded' }),
     });
     await editor.reloadActive();
-    expect(editor.person.name).toBe('Reloaded');
+    expect(editor.profile.name).toBe('Reloaded');
   });
 });
 
@@ -514,7 +514,7 @@ describe('EditorState — profile CRUD + restore', () => {
 describe('EditorState — connected field autosave (debounced PUT + undo/redo inverse)', () => {
   beforeEach(() => {
     editor.connected = true;
-    editor.activePersonId = 7;
+    editor.activeProfileId = 7;
     vi.useFakeTimers();
   });
   afterEach(() => vi.useRealTimers());
@@ -547,7 +547,7 @@ describe('EditorState — connected field autosave (debounced PUT + undo/redo in
 
   test('saveItem debounces updateItem (content + lead-in) and undo persists the inverse', async () => {
     const spy = vi.spyOn(api, 'updateItem').mockResolvedValue({ ok: true, status: 200 });
-    const entry = editor.person.sections.flatMap((s) => s.entries).find((e) => e.items.length);
+    const entry = editor.profile.sections.flatMap((s) => s.entries).find((e) => e.items.length);
     expect(entry).toBeDefined();
     const item = entry!.items[0];
     item.content = 'Reworded bullet';
@@ -566,7 +566,7 @@ describe('EditorState — connected field autosave (debounced PUT + undo/redo in
 
   test('savePersonal debounces updatePersonal for the active profile', async () => {
     const spy = vi.spyOn(api, 'updatePersonal').mockResolvedValue({ ok: true, status: 200 });
-    (editor.person.personal as Record<string, string>).email = 'ada@lovelace.dev';
+    (editor.profile.personal as Record<string, string>).email = 'ada@lovelace.dev';
 
     editor.savePersonal('email');
     await vi.runAllTimersAsync();
@@ -596,7 +596,7 @@ describe('EditorState — connected field autosave (debounced PUT + undo/redo in
 describe('EditorState — connected reorder + style/layout drawers + sign-out', () => {
   beforeEach(() => {
     editor.connected = true;
-    editor.activePersonId = 7;
+    editor.activeProfileId = 7;
   });
 
   test('reorderEntries persists the section’s new entry order', async () => {
@@ -614,7 +614,9 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
 
   test('reorderItems persists the entry’s new bullet order', async () => {
     const spy = vi.spyOn(api, 'reorderItems').mockResolvedValue({ ok: true, status: 200 });
-    const entry = editor.person.sections.flatMap((s) => s.entries).find((e) => e.items.length >= 2);
+    const entry = editor.profile.sections
+      .flatMap((s) => s.entries)
+      .find((e) => e.items.length >= 2);
     expect(entry).toBeDefined();
     const ids = entry!.items.map((i) => i.id);
     await editor.reorderItems(entry!, 0, 1);
@@ -627,13 +629,13 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
 
   test('reorderSections persists the profile’s new section order', async () => {
     const spy = vi.spyOn(api, 'reorderSections').mockResolvedValue({ ok: true, status: 200 });
-    const ids = editor.person.sections.map((s) => s.id);
+    const ids = editor.profile.sections.map((s) => s.id);
     expect(ids.length).toBeGreaterThanOrEqual(2);
     await editor.reorderSections(0, 1);
-    expect(editor.person.sections.map((s) => s.id)).toEqual([ids[1], ids[0], ...ids.slice(2)]);
+    expect(editor.profile.sections.map((s) => s.id)).toEqual([ids[1], ids[0], ...ids.slice(2)]);
     expect(spy).toHaveBeenCalledWith(
       7,
-      editor.person.sections.map((s) => s.id),
+      editor.profile.sections.map((s) => s.id),
     );
   });
 
@@ -679,7 +681,7 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     const sec = experience();
     const target = sec.entries[0];
     const [field] = Object.keys(target.fields);
-    const source: Person = JSON.parse(JSON.stringify(editor.person));
+    const source: Profile = JSON.parse(JSON.stringify(editor.profile));
     const srcEntry = source.sections
       .find((s) => s.id === sec.id)!
       .entries.find((e) => e.id === target.id)!;
@@ -701,7 +703,7 @@ describe('EditorState — render settings by scope', () => {
   test('a value resolves variant, then account, then default', () => {
     editor.renderCatalog = catalog;
     editor.accountSettings = {};
-    const v = editor.person.variants[0];
+    const v = editor.profile.variants[0];
     v.settings = {};
     editor.activeVariantId = v.id;
     expect(editor.settingValue('spacing.marginTop')).toBe('0.6cm');
@@ -716,7 +718,7 @@ describe('EditorState — render settings by scope', () => {
   test('writes go to the variant in variant scope and to the account otherwise', () => {
     editor.renderCatalog = catalog;
     editor.accountSettings = {};
-    const v = editor.person.variants[0];
+    const v = editor.profile.variants[0];
     v.settings = {};
     editor.activeVariantId = v.id;
     editor.settingsScope = 'variant';
@@ -733,7 +735,7 @@ describe('EditorState — render settings by scope', () => {
   });
 
   test('a variant accent override re-themes the document only under that lens', () => {
-    const v = editor.person.variants[0];
+    const v = editor.profile.variants[0];
     v.settings = { 'style.accentColor': 'custom', 'style.customHex': '#123456' };
     editor.activeVariantId = v.id;
     expect(editor.accentHex.toLowerCase()).toBe('#123456');

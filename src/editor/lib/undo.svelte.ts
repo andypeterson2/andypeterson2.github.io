@@ -85,7 +85,7 @@ export class UndoController {
   /**
    * Switch to a profile's history, stashing the current one first. A profile
    * seen for the first time starts empty; returning to one restores where you
-   * left off. Keying is the caller's job (the store uses the person id).
+   * left off. Keying is the caller's job (the store uses the profile id).
    */
   setScope(key: string) {
     if (key === this.#scope) return;

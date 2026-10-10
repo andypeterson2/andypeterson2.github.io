@@ -29,7 +29,7 @@ const doc = (): ExportDoc =>
     name: 'Sample',
     personal: {
       firstName: 'Owner',
-      lastName: 'Person',
+      lastName: 'Profile',
       email: 'owner@example.com',
       github: 'owner',
       linkedin: 'owner',
@@ -97,8 +97,8 @@ describe('store: sign in keeps demo edits, then offers them as a profile', () =>
     editor.connected = false;
     editor.connecting = false;
     editor.signingIn = false;
-    editor.persons = [];
-    editor.activePersonId = null;
+    editor.profiles = [];
+    editor.activeProfileId = null;
     editor.pendingDraft = null;
     editor.resetDemo();
   });
@@ -141,19 +141,21 @@ describe('store: sign in keeps demo edits, then offers them as a profile', () =>
     vi.spyOn(api, 'fetchActive').mockResolvedValue({
       ok: false,
       status: 404,
-      error: { code: 'no_persons', message: '' },
+      error: { code: 'no_profiles', message: '' },
     });
     await editor.connect();
     expect(editor.connected).toBe(true);
     expect(editor.pendingDraft?.name).toBe('Sample');
 
-    const create = vi.spyOn(api, 'createPerson').mockResolvedValue({
+    const create = vi.spyOn(api, 'createProfile').mockResolvedValue({
       ok: true,
       status: 200,
       data: { id: 42 },
     });
-    const importPerson = vi.spyOn(api, 'importPerson').mockResolvedValue({ ok: true, status: 200 });
-    vi.spyOn(api, 'fetchPerson').mockResolvedValue({
+    const importProfile = vi
+      .spyOn(api, 'importProfile')
+      .mockResolvedValue({ ok: true, status: 200 });
+    vi.spyOn(api, 'fetchProfile').mockResolvedValue({
       ok: true,
       status: 200,
       data: {
@@ -167,20 +169,20 @@ describe('store: sign in keeps demo edits, then offers them as a profile', () =>
     });
     await editor.importDraft();
     expect(create).toHaveBeenCalledWith('Ada (from demo)');
-    const [pid, tree] = importPerson.mock.calls[0] as [number, ExportDoc];
+    const [pid, tree] = importProfile.mock.calls[0] as [number, ExportDoc];
     expect(pid).toBe(42);
     expect(tree.personal.email).toBe('ada@example.com');
     expect(tree.personal.github).toBeUndefined();
     expect(editor.pendingDraft).toBeNull();
     expect(peekDemoDraft(Date.now(), store)).toBeNull();
-    expect(editor.persons.map((p) => p.id)).toContain(42);
+    expect(editor.profiles.map((p) => p.id)).toContain(42);
   });
 
   test('a failed import keeps the offer so it can be retried', async () => {
     editor.connected = true;
     editor.identity = { name: 'Ada', email: 'ada@example.com' };
     editor.pendingDraft = doc();
-    vi.spyOn(api, 'createPerson').mockResolvedValue({
+    vi.spyOn(api, 'createProfile').mockResolvedValue({
       ok: false,
       status: 500,
       error: { code: 'x', message: 'x' },

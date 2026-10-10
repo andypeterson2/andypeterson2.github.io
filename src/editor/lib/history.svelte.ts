@@ -8,7 +8,7 @@
 import { api } from './api';
 import { diffDocuments, type DocDiff } from './diff';
 import type { SaveHost } from './host';
-import type { Person } from './types';
+import type { Profile } from './types';
 
 /** A saved point in a document's history — a named (or untitled) checkpoint. */
 export interface Version {
@@ -18,7 +18,7 @@ export interface Version {
   /** epoch ms the checkpoint was taken */
   createdAt: number;
   /** the whole document as it stood — a plain, independent snapshot */
-  doc: Person;
+  doc: Profile;
   /** the audience line (branch) this checkpoint belongs to; 'main' by default */
   branch: string;
   /** the version this descends from — the provenance chain, if any */
@@ -30,15 +30,15 @@ export interface Version {
 /** The shared save infra plus the reads/writes the history concern needs. */
 export interface HistoryHost extends SaveHost {
   /** the active profile's id, or null in demo / the empty state */
-  activePersonId(): number | null;
+  activeProfileId(): number | null;
   /** a plain, independent snapshot of the working document */
-  capture(): Person;
+  capture(): Profile;
   /** replace the working document with a restored snapshot (drops undo) */
-  apply(doc: Person): void;
+  apply(doc: Profile): void;
   /** refetch the active profile from the backend, after a server-side restore */
   reload(): Promise<void>;
   /** cherry-restore: copy one entry (by id) from `source` onto the working document */
-  applyEntry(source: Person, entryId: number): boolean;
+  applyEntry(source: Profile, entryId: number): boolean;
 }
 
 export class HistoryController {
@@ -63,7 +63,7 @@ export class HistoryController {
 
   /** Load the active profile's checkpoints (connected only; demo keeps its in-memory list). */
   async load() {
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (!this.host.connected() || pid == null) return;
     const res = await api.listVersions(pid);
     if (res.ok && res.data) {
@@ -95,7 +95,7 @@ export class HistoryController {
     };
     this.versions = [version, ...this.versions];
     this.host.announce(version.label ? `Checkpoint “${version.label}” saved` : 'Checkpoint saved');
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (!this.host.connected() || pid == null) return;
     // Best-effort persistence — a backend not yet serving /versions must not toast.
     const res = await api.commitVersion(pid, {
@@ -120,7 +120,7 @@ export class HistoryController {
     }
     this.restoring = true;
     try {
-      const pid = this.host.activePersonId();
+      const pid = this.host.activeProfileId();
       if (this.host.connected() && pid != null) {
         const res = await api.restoreVersion(pid, id);
         if (res.ok) {
@@ -134,7 +134,7 @@ export class HistoryController {
         }
       } else {
         // Demo: swap the local document (JSON clone keeps the stored checkpoint pristine).
-        this.host.apply(JSON.parse(JSON.stringify(version.doc)) as Person);
+        this.host.apply(JSON.parse(JSON.stringify(version.doc)) as Profile);
         this.currentBranch = version.branch;
         this.host.announce(version.label ? `Restored “${version.label}”` : 'Checkpoint restored');
       }
@@ -154,12 +154,12 @@ export class HistoryController {
   }
 
   /** Resolve a version's document — from memory (demo) or by fetching it (connected). */
-  async #docFor(versionId: number): Promise<Person | undefined> {
+  async #docFor(versionId: number): Promise<Profile | undefined> {
     const version = this.versions.find((v) => v.id === versionId);
     if (!version) return undefined;
-    let doc = version.doc as Person | undefined;
+    let doc = version.doc as Profile | undefined;
     if (!doc) {
-      const pid = this.host.activePersonId();
+      const pid = this.host.activeProfileId();
       if (this.host.connected() && pid != null) {
         const res = await api.getVersion(pid, versionId);
         if (res.ok && res.data) doc = res.data.doc;
@@ -175,7 +175,7 @@ export class HistoryController {
     version.tag = name.trim() || undefined;
     this.versions = [...this.versions]; // a member mutated — nudge the derived list
     this.host.announce(version.tag ? `Tagged “${version.tag}”` : 'Tag removed');
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (this.host.connected() && pid != null) void api.tagVersion(pid, id, version.tag ?? '');
   }
 
@@ -196,7 +196,7 @@ export class HistoryController {
     this.branches = [...this.branches, branch];
     this.currentBranch = branch;
     this.host.announce(`Forked branch “${branch}”`);
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (this.host.connected() && pid != null) {
       const res = await api.commitVersion(pid, {
         label: version.label,

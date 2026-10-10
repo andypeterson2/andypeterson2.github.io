@@ -7,7 +7,7 @@
 
   const cl = $derived(editor.letters.header);
   const sender = $derived(
-    `${editor.person.personal.firstName ?? ''} ${editor.person.personal.lastName ?? ''}`.trim(),
+    `${editor.profile.personal.firstName ?? ''} ${editor.profile.personal.lastName ?? ''}`.trim(),
   );
 
   // Every editable string in the letter — header fields + each paragraph.

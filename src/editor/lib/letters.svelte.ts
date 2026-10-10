@@ -14,7 +14,7 @@ import type { LetterSection, Variant } from './types';
 export interface LetterHost extends SaveHost {
   activeVariant(): Variant | null;
   activeVariantId(): number | null;
-  /** the demo person's shared header — the fallback header source when offline. */
+  /** the demo profile's shared header — the fallback header source when offline. */
   coverletter(): Record<string, string>;
 }
 
@@ -58,7 +58,7 @@ export class LetterController {
       });
     } else {
       this.sections = (DEMO_LETTERS[v.id] ?? []).map((s) => ({ ...s }));
-      this.header = { ...this.host.coverletter() }; // demo: the shared person header
+      this.header = { ...this.host.coverletter() }; // demo: the shared profile header
       this.#reshadow();
     }
   }

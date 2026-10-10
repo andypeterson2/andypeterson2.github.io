@@ -12,7 +12,7 @@ type Target = Entry | Item;
 
 export interface SuggestHost {
   connected(): boolean;
-  activePersonId(): number | null;
+  activeProfileId(): number | null;
 }
 
 /** Suggestions shown per entry or bullet. */
@@ -63,7 +63,7 @@ export class SuggestionController {
   }
 
   private async fetch(kind: SuggestKind, target: Target, text: string) {
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     const k = key(kind, target.id);
     if (!this.host.connected() || pid == null || !text.trim()) {
       this.shown[k] = [];
@@ -119,7 +119,7 @@ export class SuggestionController {
   }
 
   private log(event: TagEvent) {
-    const pid = this.host.activePersonId();
+    const pid = this.host.activeProfileId();
     if (!this.host.connected() || pid == null) return;
     void api.recordTagEvents(pid, [event]);
   }

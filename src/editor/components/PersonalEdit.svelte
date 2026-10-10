@@ -15,7 +15,7 @@
     { key: 'linkedin', label: 'LinkedIn' },
   ] as const;
 
-  const text = $derived(FIELDS.map((f) => editor.person.personal[f.key] ?? '').join('  '));
+  const text = $derived(FIELDS.map((f) => editor.profile.personal[f.key] ?? '').join('  '));
 </script>
 
 <div class="edit">
@@ -30,7 +30,7 @@
         <input
           class="in"
           placeholder={f.label}
-          bind:value={editor.person.personal[f.key]}
+          bind:value={editor.profile.personal[f.key]}
           oninput={() => editor.savePersonal(f.key)}
         />
       </label>

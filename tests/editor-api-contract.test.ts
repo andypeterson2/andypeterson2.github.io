@@ -29,7 +29,7 @@ function clientCalls(): { call: string; raw: string }[] {
 describe('editor client against the cv route list', () => {
   test('the vendored list is present and plausible', () => {
     expect(vendored.routes.length).toBeGreaterThan(50);
-    expect(vendored.routes).toContain('GET /api/persons/:p');
+    expect(vendored.routes).toContain('GET /api/profiles/:p');
   });
 
   test('every call the client makes is a route cv serves', () => {

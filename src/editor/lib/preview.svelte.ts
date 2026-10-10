@@ -30,16 +30,16 @@ export class PreviewController {
 
   #connected: () => boolean;
   #activeVariant: () => Variant | null;
-  #activePersonId: () => number | null;
+  #activeProfileId: () => number | null;
 
   constructor(
     connected: () => boolean,
     activeVariant: () => Variant | null,
-    activePersonId: () => number | null,
+    activeProfileId: () => number | null,
   ) {
     this.#connected = connected;
     this.#activeVariant = activeVariant;
-    this.#activePersonId = activePersonId;
+    this.#activeProfileId = activeProfileId;
   }
 
   /**
@@ -48,7 +48,9 @@ export class PreviewController {
    * document via the base-compile route. The demo is never connected, so it never compiles.
    */
   get compilable(): boolean {
-    return this.#connected() && (this.#activeVariant() !== null || this.#activePersonId() !== null);
+    return (
+      this.#connected() && (this.#activeVariant() !== null || this.#activeProfileId() !== null)
+    );
   }
 
   toggle() {
@@ -87,11 +89,11 @@ export class PreviewController {
     this.state = 'idle';
   }
 
-  /** The compile call for the current target — variant, Main (needs a person id), or nothing. */
+  /** The compile call for the current target — variant, Main (needs a profile id), or nothing. */
   #compileCall(): (() => ReturnType<typeof api.compilePdf>) | null {
     const v = this.#activeVariant();
     if (v) return () => api.compilePdf(v.id);
-    const pid = this.#activePersonId();
+    const pid = this.#activeProfileId();
     if (pid != null) return () => api.compileMainPdf(pid);
     return null;
   }
