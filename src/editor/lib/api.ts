@@ -246,6 +246,20 @@ export class CvApi {
       return null; // offline, blocked or too slow — the pane says what it can't show
     }
   }
+  /** The backend's permitted-symbol list, or null when it cannot be reached. */
+  async fetchSymbols(): Promise<unknown[] | null> {
+    try {
+      const res = await fetch(`${this.base}/api/catalog`, {
+        credentials: 'omit',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+      const d = (await res.json()) as { symbols?: unknown };
+      return Array.isArray(d.symbols) ? d.symbols : null;
+    } catch {
+      return null;
+    }
+  }
   /** Who is signed in (self-hosted session), or unauthenticated. Never throws. */
   async me(): Promise<{ authenticated: boolean; email: string | null; name: string | null }> {
     try {
