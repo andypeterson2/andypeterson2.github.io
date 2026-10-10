@@ -96,13 +96,10 @@ const tier = TIER_LABELS[project.tier];
     flex-direction: column;
   }
 
-  /* Two columns while there is room for both: the lede keeps a readable measure and
-     the numbers take the width beside it. */
+  /* One column, read in order: what it is, then what it does, then what it is built with. */
   .project-main {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-    gap: 0 clamp(20px, 3vw, 48px);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
   }
 
   .project-lede {
@@ -168,6 +165,9 @@ const tier = TIER_LABELS[project.tier];
     gap: clamp(4px, 0.6vw, 8px);
     font-size: var(--text-2xs);
     line-height: 1.4;
+
+    /* The rule above spans the page; the sentence under it keeps a readable measure. */
+    max-width: 68ch;
   }
 
   .project-tech {
