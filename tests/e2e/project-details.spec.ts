@@ -7,6 +7,7 @@ const SLUGS = [
   'quantum-nonogram-solver',
   'quantum-ml-classifier',
   'latex-resume-editor',
+  'tiny-skill-linker',
 ];
 
 test.describe('Project pages', () => {

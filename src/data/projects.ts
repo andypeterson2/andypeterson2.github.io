@@ -19,8 +19,9 @@ export interface Project {
   tech?: string[];
   /** Where the demo runs — shown as one chip on every card so the tier is never implied.
    *  browser: embedded here and works with nothing running on the owner's side;
-   *  external: a separate app (opens in a new tab, needs its own server / a second person). */
-  tier: 'browser' | 'external';
+   *  external: a separate app (opens in a new tab, needs its own server / a second person);
+   *  offline: no demo at all — a model and the measurements, re-runnable from the repo. */
+  tier: 'browser' | 'external' | 'offline';
 }
 
 export const projects: Project[] = [
@@ -80,6 +81,28 @@ export const projects: Project[] = [
       },
     ],
     tech: ['Qiskit', 'Grover', 'Flask', 'Socket.IO', 'IBM Quantum'],
+  },
+  {
+    title: 'Tiny Skill Linker',
+    slug: 'tiny-skill-linker',
+    description:
+      'A 22M-parameter sentence embedder fine-tuned to link résumé and job-ad sentences to the 13,891 skills in the ESCO taxonomy, measured against a published 110M model on public held-out benchmarks.',
+    tier: 'offline',
+    icon: 'tag.svg',
+    repoUrl: 'https://github.com/andypeterson2/tiny-skill-linker',
+    metrics: [
+      {
+        value: '53.8 / 54.6',
+        label:
+          'RP@5 on TECH against the published 110M model at a fifth the parameters — ahead on HOUSE, 6.9 points behind on TECHWOLF',
+      },
+      {
+        value: '+8.2',
+        label:
+          'hit@5 over stock on skills held out of training entirely, 95% CI [+3.6, +12.8] — one seed, 282 pairs',
+      },
+    ],
+    tech: ['PyTorch', 'sentence-transformers', 'ONNX int8', 'ESCO'],
   },
   {
     title: 'Quantum ML Classifier Platform',

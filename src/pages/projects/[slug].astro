@@ -15,8 +15,12 @@ const next = at < projects.length - 1 ? projects[at + 1] : null;
 
 // Where the demo runs, said once rather than implied — the same wording the
 // timeline cards use.
-const tier =
-  project.tier === 'browser' ? 'runs in your browser' : 'runs elsewhere, opens in a new tab';
+const TIER_LABELS = {
+  browser: 'runs in your browser',
+  external: 'runs elsewhere, opens in a new tab',
+  offline: 'no hosted demo — the model and its benchmarks run from the repo',
+} as const;
+const tier = TIER_LABELS[project.tier];
 ---
 
 <BaseLayout title={project.title} description={project.description} fillPane>

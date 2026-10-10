@@ -37,7 +37,12 @@ const { entry } = Astro.props;
         <img src={`/icons/${entry.project.icon}`} alt="" class="tl-icon" />
         Project
         <span class="tl-tier">
-          · {entry.project.tier === 'browser' ? 'runs in your browser' : 'separate app'}
+          ·{' '}
+          {entry.project.tier === 'browser'
+            ? 'runs in your browser'
+            : entry.project.tier === 'offline'
+              ? 'no demo, code and measurements'
+              : 'separate app'}
         </span>
       </div>
       <div class="timeline-role">{entry.project.title}</div>
