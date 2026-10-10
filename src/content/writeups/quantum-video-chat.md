@@ -5,7 +5,7 @@ summary: Peer-to-peer video encrypted with keys from a simulated BB84 quantum ke
 
 End-to-end encrypted, peer-to-peer video where the encryption keys are established through a **simulated BB84 quantum key-distribution** protocol rather than classical key exchange. Begun during my research internship at Qualcomm Institute as a 2023-24 group project, and reworked solo since into this browser-native version, which shares no code with that one.
 
-A research demonstration, not a production QKD system. The quantum channel is simulated, and at the per-frame sample sizes here the finite-key penalty leaves no composably secure key — the reservoir is demo-grade by construction. What the numbers below describe is the classical half: the reconciliation, its disclosure, and the threshold that follows from them.
+A research demonstration, not a production QKD system. The quantum channel is simulated, and a real security proof has to pay for sampling from a finite number of bits — at the few thousand bits a frame draws on, that penalty eats the whole key, so the reservoir is demo-grade by construction. What the numbers below describe is the classical half: the reconciliation, its disclosure, and the threshold that follows from them.
 
 ## How it works
 
@@ -26,7 +26,11 @@ The same engine also drives a bench harness: emulated instruments behind driver 
 
 The protocol carries its own tamper alarm: **every frame whose QBER exceeds 7.3% is rejected**, and an intercept-resend eavesdropper lands near 25%, so a tapped channel mints nothing at all.
 
-7.3% rather than the textbook 11%, because those two numbers measure different things. 11% is where BB84's own rate `1 − 2h(Q)` reaches zero, and it charges error correction the Shannon bound. Cascade does not reach that bound — at the block sizes here the budget charges it about 1.65 times `h(Q)`, while measured disclosure runs 1.25 to 1.37, so the estimator errs high on purpose — so this implementation runs out of key budget first. The gate is computed from the leakage model rather than quoted from the literature, and above it no pool of any size yields a key. Below it the cost is steep but payable: a clean channel mints from a few thousand pooled bits, 5% needs tens of thousands, and 7% needs millions.
+That is a switch in the call, not a figure in a table. Turn the eavesdropper on mid-conversation and the error rate climbs from about 1.5% to about 25%, every frame is refused, and the video stops — because no key is being minted to decrypt it.
+
+7.3% rather than the textbook 11%, because those two numbers measure different things. 11% is where BB84's own rate `1 − 2h(Q)` reaches zero, charging error correction the Shannon bound. Cascade does not reach that bound, so this implementation runs out of key budget first — the gate is computed from what this code actually leaks, not quoted from the literature. The budget charges Cascade about 1.65 times `h(Q)` where measured disclosure runs 1.25 to 1.37, so the estimator errs high on purpose.
+
+Above the gate, no pool of any size yields a key. Below it the cost is steep but payable: a clean channel mints from a few thousand pooled bits, 5% needs tens of thousands, and 7% needs millions.
 
 ## What's checked
 
