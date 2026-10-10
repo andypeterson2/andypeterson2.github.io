@@ -8,10 +8,7 @@ export function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const at = projects.findIndex((p) => p.slug === slug);
-const project = projects[at]!;
-const prev = at > 0 ? projects[at - 1] : null;
-const next = at < projects.length - 1 ? projects[at + 1] : null;
+const project = projects.find((p) => p.slug === slug)!;
 
 // Where the demo runs, said once rather than implied — the same wording the
 // timeline cards use.
@@ -86,30 +83,6 @@ const tier = TIER_LABELS[project.tier];
         )}
       </div>
     </div>
-
-    <div class="project-section project-footer">
-      <div class="section-rule">
-        <span>Browse projects</span>
-      </div>
-      <nav class="project-nav" aria-label="Project navigation">
-        {prev ? (
-          <a href={`/projects/${prev.slug}/`} class="nav-link">
-            <span class="nav-dir">&lt;- Previous</span>
-            <span class="nav-title">{prev.title}</span>
-          </a>
-        ) : (
-          <span />
-        )}
-        {next ? (
-          <a href={`/projects/${next.slug}/`} class="nav-link nav-next">
-            <span class="nav-dir">Next -&gt;</span>
-            <span class="nav-title">{next.title}</span>
-          </a>
-        ) : (
-          <span />
-        )}
-      </nav>
-    </div>
   </div>
 </BaseLayout>
 
@@ -121,10 +94,6 @@ const tier = TIER_LABELS[project.tier];
        foot of a short page. */
     display: flex;
     flex-direction: column;
-  }
-
-  .project-footer {
-    margin-top: auto;
   }
 
   /* Two columns while there is room for both: the lede keeps a readable measure and
@@ -219,43 +188,5 @@ const tier = TIER_LABELS[project.tier];
     min-height: 0;
     padding: 3px clamp(8px, 1vw, 12px);
     cursor: default;
-  }
-
-  .project-nav {
-    display: flex;
-    justify-content: space-between;
-    gap: clamp(8px, 1.5vw, 20px);
-  }
-
-  .nav-link {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    text-decoration: none;
-    color: var(--ink);
-    padding: clamp(6px, 0.8vw, 12px) clamp(8px, 1vw, 16px);
-    border: 2px solid var(--ink);
-    max-width: 45%;
-  }
-
-  .nav-link:hover {
-    background: var(--ink);
-    color: var(--paper);
-  }
-
-  .nav-next {
-    text-align: right;
-    margin-left: auto;
-  }
-
-  .nav-dir {
-    font-family: var(--font-ui);
-    font-size: var(--text-3xs);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .nav-title {
-    font-size: var(--text-xs);
   }
 </style>

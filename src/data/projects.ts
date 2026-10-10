@@ -89,7 +89,7 @@ export const projects: Project[] = [
     title: 'Tiny Skill Linker',
     slug: 'tiny-skill-linker',
     description:
-      'A 22M-parameter sentence embedder fine-tuned to link résumé and job-ad sentences to the 13,891 skills in the ESCO taxonomy, measured against a published 110M model on public held-out benchmarks.',
+      'A 22M-parameter sentence embedder fine-tuned to link resume and job-ad sentences to the 13,891 skills in the ESCO taxonomy, measured against a published 110M model on public held-out benchmarks.',
     tier: 'offline',
     icon: 'tag.svg',
     iconSmall: 'tag-small.svg',

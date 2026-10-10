@@ -1,9 +1,9 @@
 ---
 title: Tiny Skill Linker
-summary: A 22M-parameter sentence embedder fine-tuned to link résumé and job-ad sentences to ESCO skills — matching a published 110M model on two of three public benchmarks.
+summary: A 22M-parameter sentence embedder fine-tuned to link resume and job-ad sentences to ESCO skills — matching a published 110M model on two of three public benchmarks.
 ---
 
-Given one sentence from a résumé or a job ad, which of the 13,891 skills in the European ESCO taxonomy does it describe? The usual answer is a large embedding model. This fine-tunes a **22M-parameter** one, all-MiniLM-L6-v2, and measures what the smaller model gives up.
+Given one sentence from a resume or a job ad, which of the 13,891 skills in the European ESCO taxonomy does it describe? The usual answer is a large embedding model. This fine-tunes a **22M-parameter** one, all-MiniLM-L6-v2, and measures what the smaller model gives up.
 
 ## How it works
 
