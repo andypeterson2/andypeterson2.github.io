@@ -4,6 +4,7 @@
 // returns one profile's full record (person, sections, variants, tag vocab).
 // The allowlisted owner sees every profile; other signed-in users see their own.
 import type {
+  SettingValue,
   Person,
   Item,
   Entry,
@@ -167,6 +168,7 @@ function mapVariant(v: RawMainVariant): Variant {
     entryOverrides: mapEntryOverrides(v.entryOverrides),
     itemOverrides: mapItemOverrides(v.itemOverrides),
     personal: mapVariantPersonal(v.personal),
+    settings: { ...(v.settings ?? {}) },
   };
 }
 /** coverletter.* header fields, unescaped for display. `tex`/`sections` are internal. */
@@ -208,6 +210,13 @@ function parseErrorEnvelope(data: unknown): ApiError | undefined {
   return { code, message };
 }
 
+/** Defaults for the length settings, by prefix, and the units a length may use. */
+export interface RenderCatalog {
+  spacing: Record<string, string>;
+  fonts: Record<string, string>;
+  units: string[];
+}
+
 export class CvApi {
   constructor(private base: string = DEFAULT_BASE) {}
 
@@ -244,6 +253,28 @@ export class CvApi {
       return await res.blob();
     } catch {
       return null; // offline, blocked or too slow — the pane says what it can't show
+    }
+  }
+  /**
+   * The backend's render-setting defaults (by prefix) and the LaTeX units a length
+   * may use, or null when it cannot be reached.
+   */
+  async fetchRenderCatalog(): Promise<RenderCatalog | null> {
+    try {
+      const res = await fetch(`${this.base}/api/catalog`, {
+        credentials: 'omit',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+      const d = (await res.json()) as {
+        styleDefaults?: Partial<Record<string, Record<string, string>>>;
+        latexUnits?: string[];
+      };
+      const sd = d.styleDefaults ?? {};
+      if (!sd.SPACING_DEFAULTS || !sd.FONT_DEFAULTS || !Array.isArray(d.latexUnits)) return null;
+      return { spacing: sd.SPACING_DEFAULTS, fonts: sd.FONT_DEFAULTS, units: d.latexUnits };
+    } catch {
+      return null;
     }
   }
   /** The backend's permitted-symbol list, or null when it cannot be reached. */
@@ -506,8 +537,16 @@ export class CvApi {
   getSettings(prefix: string) {
     return this.req<Record<string, unknown>>(`/settings?prefix=${prefix}`);
   }
-  patchSettings(patch: Record<string, string>) {
+  /** A null value resets the key to its default. */
+  patchSettings(patch: Record<string, SettingValue | null>) {
     return this.req('/settings', { method: 'PATCH', body: JSON.stringify(patch) });
+  }
+  /** A variant's own style/spacing/fonts; a null value drops the override. */
+  patchVariantSettings(variantId: number, patch: Record<string, SettingValue | null>) {
+    return this.req(`/variants/${variantId}/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
   }
   getLayouts() {
     return this.req<{

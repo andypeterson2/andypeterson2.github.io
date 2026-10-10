@@ -103,6 +103,9 @@ export interface ItemOverride {
   sortOverride: number | null;
 }
 
+/** A render setting: a plain string, or a length kept as number + LaTeX unit. */
+export type SettingValue = string | { num: number; unit: string };
+
 export interface Variant {
   id: number;
   name: string;
@@ -119,4 +122,9 @@ export interface Variant {
    * inherits the person value; an empty string suppresses the field.
    */
   personal?: Record<string, string>;
+  /**
+   * style/spacing/fonts overrides for this variant, keyed prefixed
+   * (`spacing.marginTop`). A missing key inherits the account value.
+   */
+  settings?: Record<string, SettingValue>;
 }

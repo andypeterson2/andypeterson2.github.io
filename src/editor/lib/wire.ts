@@ -40,6 +40,8 @@ export interface RawMainVariant {
   itemOverrides?: Record<string, RawOverride>;
   /** personal.* overrides, unprefixed; an absent key inherits the person value */
   personal?: Record<string, string>;
+  /** style/spacing/fonts overrides, prefixed; an absent key inherits the account value */
+  settings?: Record<string, string | { num: number; unit: string }>;
 }
 export interface RawLetterSection {
   id: number;

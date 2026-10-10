@@ -6,7 +6,7 @@
 
 import { api } from './api';
 import type { SaveHost } from './host';
-import type { Variant, Entry, Item, EntryOverride, ItemOverride } from './types';
+import type { Variant, Entry, Item, EntryOverride, ItemOverride, SettingValue } from './types';
 
 /** True when a resolved override carries no signal — the backend drops such a row. */
 function emptyEntryOv(o: EntryOverride): boolean {
@@ -190,6 +190,35 @@ export class VariantController {
     }
     this.host.markDirty();
     await this.host.persist(() => api.updateVariantPersonal(variant.id, { [key]: value }));
+  }
+
+  // per-variant style/spacing/fonts overrides
+
+  /**
+   * Override one render setting (`spacing.marginTop`, …) for this variant. `null`
+   * drops the override so the account value applies again.
+   */
+  async setSettingOverride(variant: Variant, key: string, value: SettingValue | null) {
+    const before = variant.settings?.[key] ?? null;
+    if (JSON.stringify(before) === JSON.stringify(value)) return;
+    this.host.record({
+      label: value == null ? `Reset ${key}` : `Override ${key}`,
+      undo: () => this._applySettingOverride(variant, key, before),
+      redo: () => this._applySettingOverride(variant, key, value),
+    });
+    await this._applySettingOverride(variant, key, value);
+  }
+
+  private async _applySettingOverride(variant: Variant, key: string, value: SettingValue | null) {
+    const map = (variant.settings ??= {});
+    if (value == null) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null override = inherit again, keyed by setting name
+      delete map[key];
+    } else {
+      map[key] = value;
+    }
+    this.host.markDirty();
+    await this.host.persist(() => api.patchVariantSettings(variant.id, { [key]: value }));
   }
 
   // per-variant overrides (field patch + force include/exclude)

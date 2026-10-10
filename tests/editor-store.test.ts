@@ -690,3 +690,54 @@ describe('EditorState — connected reorder + style/layout drawers + sign-out', 
     expect(sec.entries[0].fields[field]).toBe('FROM_CHECKPOINT');
   });
 });
+
+describe('EditorState — render settings by scope', () => {
+  const catalog = {
+    spacing: { marginTop: '0.6cm' },
+    fonts: { contentTextSize: '9pt' },
+    units: ['pt', 'mm', 'cm'],
+  };
+
+  test('a value resolves variant, then account, then default', () => {
+    editor.renderCatalog = catalog;
+    editor.accountSettings = {};
+    const v = editor.person.variants[0];
+    v.settings = {};
+    editor.activeVariantId = v.id;
+    expect(editor.settingValue('spacing.marginTop')).toBe('0.6cm');
+    editor.accountSettings = { 'spacing.marginTop': { num: 1, unit: 'cm' } };
+    expect(editor.settingValue('spacing.marginTop')).toEqual({ num: 1, unit: 'cm' });
+    v.settings = { 'spacing.marginTop': { num: 4, unit: 'mm' } };
+    expect(editor.settingValue('spacing.marginTop')).toEqual({ num: 4, unit: 'mm' });
+    editor.activeVariantId = null;
+    expect(editor.settingValue('spacing.marginTop')).toEqual({ num: 1, unit: 'cm' });
+  });
+
+  test('writes go to the variant in variant scope and to the account otherwise', () => {
+    editor.renderCatalog = catalog;
+    editor.accountSettings = {};
+    const v = editor.person.variants[0];
+    v.settings = {};
+    editor.activeVariantId = v.id;
+    editor.settingsScope = 'variant';
+    editor.setSetting('fonts.contentTextSize', { num: 10, unit: 'pt' });
+    expect(v.settings).toEqual({ 'fonts.contentTextSize': { num: 10, unit: 'pt' } });
+    expect(editor.accountSettings).toEqual({});
+    expect(editor.isSettingSet('fonts.contentTextSize')).toBe(true);
+
+    editor.settingsScope = 'account';
+    editor.setSetting('fonts.contentTextSize', { num: 11, unit: 'pt' });
+    expect(editor.accountSettings).toEqual({ 'fonts.contentTextSize': { num: 11, unit: 'pt' } });
+    editor.setSetting('fonts.contentTextSize', null);
+    expect(editor.accountSettings).toEqual({});
+  });
+
+  test('a variant accent override re-themes the document only under that lens', () => {
+    const v = editor.person.variants[0];
+    v.settings = { 'style.accentColor': 'custom', 'style.customHex': '#123456' };
+    editor.activeVariantId = v.id;
+    expect(editor.accentHex.toLowerCase()).toBe('#123456');
+    editor.activeVariantId = null;
+    expect(editor.accentHex.toLowerCase()).not.toBe('#123456');
+  });
+});

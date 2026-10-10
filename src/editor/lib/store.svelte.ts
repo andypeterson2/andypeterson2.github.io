@@ -5,10 +5,10 @@
 // reactive state like `activeVariantId` stays here. The core the save infra exists
 // for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
 
-import type { Person, Personal, Section, Entry, Item } from './types';
+import type { Person, Personal, Section, Entry, Item, SettingValue } from './types';
 import { createDemoPerson, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
-import { api, type PersonMeta, type ApiResult } from './api';
+import { api, type PersonMeta, type ApiResult, type RenderCatalog } from './api';
 import { resolveAccent } from './accent';
 import { buildExport, type ExportDoc } from './export';
 import { stashDemoDraft, peekDemoDraft, clearDemoDraft, forNewOwner } from './draft';
@@ -105,8 +105,15 @@ class EditorState {
   layouts = $state<{ id: string; name: string; status: string }[]>([]);
   defaultLayout = $state<string | null>(null);
   /** accent hex the document themes with — mirrors the Style drawer live. */
-  accentHex = $derived(resolveAccent(this.style.accentColor, this.style.customHex));
-  /** the Variant object for the active lens, or null for Main (full document). */
+  /** Where a Style-drawer edit goes while a variant is active: every resume, or this one. */
+  settingsScope = $state<'account' | 'variant'>('variant');
+  /** the account's spacing.* / fonts.* values, keyed prefixed; absent = the default */
+  accountSettings = $state<Record<string, SettingValue>>({});
+  /** defaults + units for the length settings, from the backend catalog */
+  renderCatalog = $state<RenderCatalog | null>(null);
+  accentHex = $derived(
+    resolveAccent(this.styleSetting('style.accentColor'), this.styleSetting('style.customHex')),
+  ); /** the Variant object for the active lens, or null for Main (full document). */
   activeVariant = $derived(
     this.activeVariantId == null
       ? null
@@ -685,9 +692,72 @@ class EditorState {
     await this.persist(() => api.reorderSections(pid, ids));
   }
 
-  // drawers: global style + layouts
+  // drawers: style (account or per-variant) + layouts
+
+  /** The scope a Style-drawer edit writes to right now. */
+  get writeScope(): 'account' | 'variant' {
+    return this.activeVariant ? this.settingsScope : 'account';
+  }
+  /** A setting as the active document renders it: variant, then account, then default. */
+  settingValue(key: string): SettingValue | undefined {
+    const own = this.activeVariant?.settings?.[key];
+    if (own !== undefined) return own;
+    const [prefix, field] = key.split('.', 2);
+    if (prefix === 'style') return (this.style as Record<string, string>)[field];
+    if (prefix !== 'spacing' && prefix !== 'fonts') return undefined;
+    return this.accountSettings[key] ?? this.renderCatalog?.[prefix][field];
+  }
+  /** A string-valued setting as rendered, or '' when unset or not a string. */
+  styleSetting(key: string): string {
+    const v = this.settingValue(key);
+    return typeof v === 'string' ? v : '';
+  }
+  /** True when the current scope holds its own value for `key` (so it can be reset). */
+  isSettingSet(key: string): boolean {
+    if (this.writeScope === 'variant') return this.activeVariant?.settings?.[key] !== undefined;
+    return key in this.accountSettings;
+  }
+  /** Write a setting to the current scope; `null` resets it to what the scope inherits. */
+  setSetting(key: string, value: SettingValue | null) {
+    const variant = this.activeVariant;
+    if (variant && this.writeScope === 'variant') {
+      void this.variants.setSettingOverride(variant, key, value);
+      return;
+    }
+    const field = key.slice(key.indexOf('.') + 1);
+    if (key.startsWith('style.')) {
+      if (typeof value !== 'string' || !(field in this.style)) return;
+      (this.style as Record<string, string>)[field] = value;
+      this.saveStyle(field as 'accentColor' | 'customHex' | 'pageSize' | 'fontSize');
+      return;
+    }
+    const before = this.accountSettings[key] ?? null;
+    if (JSON.stringify(before) === JSON.stringify(value)) return;
+    this.undo.record({
+      label: humanize(field),
+      undo: () => this.applyAccountSetting(key, before),
+      redo: () => this.applyAccountSetting(key, value),
+    });
+    this.applyAccountSetting(key, value);
+  }
+  private applyAccountSetting(key: string, value: SettingValue | null) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- null resets one setting, keyed by name
+    if (value == null) delete this.accountSettings[key];
+    else this.accountSettings[key] = value;
+    this.touch();
+    if (!this.connected) return;
+    void this.persist(() => api.patchSettings({ [key]: value }));
+  }
+
   async loadStyle() {
     if (!this.connected) return;
+    void api.fetchRenderCatalog().then((c) => {
+      if (c) this.renderCatalog = c;
+    });
+    const lengths = await Promise.all([api.getSettings('spacing'), api.getSettings('fonts')]);
+    const account: Record<string, SettingValue> = {};
+    for (const r of lengths) if (r.ok && r.data) Object.assign(account, r.data);
+    this.accountSettings = account;
     const res = await api.getSettings('style');
     if (!res.ok || !res.data) return;
     for (const [k, v] of Object.entries(res.data)) {
