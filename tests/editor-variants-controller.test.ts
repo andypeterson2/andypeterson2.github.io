@@ -9,6 +9,11 @@ vi.mock('../src/editor/lib/api', () => ({
     setVariantOverride: vi.fn(async () => ({ ok: true, status: 200 })),
     updateVariantPersonal: vi.fn(async () => ({ ok: true, status: 200 })),
     patchVariantSettings: vi.fn(async () => ({ ok: true, status: 200 })),
+    setVariantLayout: vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      data: { warnings: ['text:real:5:cv: missing-word: Jane'] },
+    })),
   },
 }));
 
@@ -353,6 +358,27 @@ describe('VariantController — render setting overrides', () => {
     const v = variant({ settings: { 'style.fontFamily': 'roboto' } });
     await new VariantController(h.host).setSettingOverride(v, 'style.fontFamily', 'roboto');
     expect(api.patchVariantSettings).not.toHaveBeenCalled();
+    expect(h.records).toHaveLength(0);
+  });
+});
+
+describe('VariantController — layout pin', () => {
+  test('pins a layout, returns the test-compile warnings, and undo restores the default', async () => {
+    const h = makeHost();
+    const v = variant();
+    const warnings = await new VariantController(h.host).setLayout(v, 'u3-modern@2');
+    expect(v.layoutId).toBe('u3-modern@2');
+    expect(warnings).toEqual(['text:real:5:cv: missing-word: Jane']);
+    expect(api.setVariantLayout).toHaveBeenCalledWith(1, 'u3-modern@2');
+    await h.records.at(-1)!.undo();
+    expect(v.layoutId).toBe(null);
+    expect(api.setVariantLayout).toHaveBeenLastCalledWith(1, null);
+  });
+
+  test('choosing the layout it already has does nothing', async () => {
+    const h = makeHost();
+    const v = variant({ layoutId: 'classic' });
+    expect(await new VariantController(h.host).setLayout(v, 'classic')).toEqual([]);
     expect(h.records).toHaveLength(0);
   });
 });

@@ -103,6 +103,39 @@ export interface ItemOverride {
   sortOverride: number | null;
 }
 
+/** One layout the account can see, as GET /layouts lists it. */
+export interface LayoutInfo {
+  id: string;
+  name: string;
+  status: string;
+  kinds: string[];
+  builtin: boolean;
+  /** The caller uploaded it (their private upload or one of its versions). */
+  own: boolean;
+  author: string | null;
+  /** The upload a version was published from (the layout's own id when unversioned). */
+  family: string;
+  versionNo: number | null;
+  state: 'private' | 'pending' | 'public' | 'unlisted' | 'rejected';
+  /** Id of a newer public version of the same family, when there is one. */
+  updateAvailable: string | null;
+}
+
+/** A pending version in the owner's review queue. */
+export interface LayoutReview extends LayoutInfo {
+  compileMs: number | null;
+  warnings: string[];
+  report: { ok: boolean; checks: { name: string; ok: boolean; detail?: string }[] } | null;
+}
+
+/** The result of checking or installing a layout zip. */
+export interface LayoutCheck {
+  ok: boolean;
+  missing: string[];
+  installed?: LayoutInfo;
+  error?: string;
+}
+
 /** A render setting: a plain string, or a length kept as number + LaTeX unit. */
 export type SettingValue = string | { num: number; unit: string };
 

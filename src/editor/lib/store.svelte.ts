@@ -5,7 +5,17 @@
 // reactive state like `activeVariantId` stays here. The core the save infra exists
 // for (field autosave, content CRUD, reorder, drawers, profiles) sits under banners.
 
-import type { Profile, Personal, Section, Entry, Item, SettingValue } from './types';
+import type {
+  Profile,
+  Personal,
+  Section,
+  Entry,
+  Item,
+  SettingValue,
+  LayoutInfo,
+  LayoutReview,
+  LayoutCheck,
+} from './types';
 import { createDemoProfile, DEMO_LETTERS } from './demo';
 import { defaultFields, SECTION_TYPES } from './section-types';
 import { api, type ProfileMeta, type ApiResult, type RenderCatalog } from './api';
@@ -102,8 +112,16 @@ class EditorState {
     pageSize: 'letterpaper',
     fontSize: '11pt',
   });
-  layouts = $state<{ id: string; name: string; status: string }[]>([]);
+  layouts = $state<LayoutInfo[]>([]);
   defaultLayout = $state<string | null>(null);
+  /** The signed-in account is the site owner, who reviews layouts before they go public. */
+  canReviewLayouts = $state(false);
+  /** What a test compile on this account's résumés found when it last chose someone else's layout. */
+  layoutWarnings = $state<string[]>([]);
+  /** The last zip check or install, shown under the upload control. */
+  layoutCheck = $state<LayoutCheck | null>(null);
+  layoutBusy = $state(false);
+  layoutReviews = $state<LayoutReview[]>([]);
   /** accent hex the document themes with — mirrors the Style drawer live. */
   /** Where a Style-drawer edit goes while a variant is active: every resume, or this one. */
   settingsScope = $state<'account' | 'variant'>('variant');
@@ -802,12 +820,64 @@ class EditorState {
     if (res.ok && res.data) {
       this.layouts = res.data.layouts ?? [];
       this.defaultLayout = res.data.default ?? null;
+      this.canReviewLayouts = !!res.data.canReview;
     }
+    if (this.canReviewLayouts) await this.loadLayoutReviews();
   }
   async chooseLayout(id: string) {
     this.defaultLayout = id;
+    this.layoutWarnings = [];
     this.touch();
-    await this.persist(() => api.setDefaultLayout(id));
+    const res = await this.persist(() => api.setDefaultLayout(id));
+    this.layoutWarnings = res.data?.warnings ?? [];
+  }
+  /** Check a zip against the layout contract (`install: false`) or install it. */
+  async sendLayoutZip(file: File, install: boolean) {
+    if (!this.connected) return;
+    this.layoutBusy = true;
+    try {
+      this.layoutCheck = await api.sendLayoutZip(file, { install });
+      if (install && this.layoutCheck.ok) await this.loadLayouts();
+    } finally {
+      this.layoutBusy = false;
+    }
+  }
+  async publishLayout(id: string) {
+    this.layoutBusy = true;
+    try {
+      await this.persist(() => api.publishLayout(id));
+      await this.loadLayouts();
+    } finally {
+      this.layoutBusy = false;
+    }
+  }
+  async unpublishLayout(id: string) {
+    await this.persist(() => api.unpublishLayout(id));
+    await this.loadLayouts();
+  }
+  async deleteLayout(id: string) {
+    await this.persist(() => api.deleteLayout(id));
+    await this.loadLayouts();
+  }
+  async downloadLayout(layout: LayoutInfo) {
+    const blob = await api.downloadLayout(layout.id);
+    if (!blob || typeof document === 'undefined') return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${layout.family}${layout.versionNo ? `-v${String(layout.versionNo)}` : ''}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  async loadLayoutReviews() {
+    const res = await api.getLayoutReviews();
+    this.layoutReviews = res.ok && res.data ? (res.data.pending ?? []) : [];
+  }
+  async reviewLayout(id: string, decision: 'approve' | 'reject', note: string) {
+    await this.persist(() => api.reviewLayout(id, decision, note));
+    await this.loadLayouts();
   }
 
   /**
